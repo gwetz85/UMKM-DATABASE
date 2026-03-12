@@ -50,6 +50,7 @@ export function AppSidebar() {
   const [copied, setCopied] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
 
+  // Gunakan useEffect untuk memastikan rendering konten dinamis hanya terjadi setelah hidrasi selesai
   React.useEffect(() => {
     setMounted(true)
   }, [])
@@ -63,19 +64,17 @@ export function AppSidebar() {
   
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
-  // We only show items if we are mounted and the condition is met
-  // This prevents hydration mismatches where the server (no user) 
-  // renders a different list than the client (logged in user).
+  // Definisi navigasi dasar
   const navigation = [
-    { name: "Dashboard", href: "/", icon: LayoutDashboard, show: mounted && !!user },
-    { name: "Input Data", href: "/input", icon: UserPlus, show: mounted && !!user },
-    { name: "Cek Data", href: "/check-data", icon: SearchCheck, show: mounted && !!user },
-    { name: "Verifikasi Admin", href: "/verify-actor", icon: ShieldCheck, show: mounted && isAdmin },
-    { name: "Data Pelaku", href: "/actor-data", icon: Users, show: mounted && !!user },
-    { name: "Verifikasi Data", href: "/verify-bank", icon: CreditCard, show: mounted && !!user },
-    { name: "Finish", href: "/finish", icon: CheckCircle2, show: mounted && !!user },
-    { name: "Manajemen User", href: "/users", icon: UserCog, show: mounted && isAdmin },
-    { name: "Pengaturan", href: "/settings", icon: Settings, show: mounted && !!user },
+    { name: "Dashboard", href: "/", icon: LayoutDashboard, show: !!user },
+    { name: "Input Data", href: "/input", icon: UserPlus, show: !!user },
+    { name: "Cek Data", href: "/check-data", icon: SearchCheck, show: !!user },
+    { name: "Verifikasi Admin", href: "/verify-actor", icon: ShieldCheck, show: isAdmin },
+    { name: "Data Pelaku", href: "/actor-data", icon: Users, show: !!user },
+    { name: "Verifikasi Data", href: "/verify-bank", icon: CreditCard, show: !!user },
+    { name: "Finish", href: "/finish", icon: CheckCircle2, show: !!user },
+    { name: "Manajemen User", href: "/users", icon: UserCog, show: isAdmin },
+    { name: "Pengaturan", href: "/settings", icon: Settings, show: !!user },
   ]
 
   const copyUid = () => {
@@ -120,7 +119,8 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1.5">
-              {navigation.filter(i => i.show).map((item) => (
+              {/* Render item navigasi hanya jika sudah mounted untuk menghindari mismatch SSR */}
+              {mounted && navigation.filter(i => i.show).map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
                     asChild
