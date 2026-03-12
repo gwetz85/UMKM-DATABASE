@@ -28,8 +28,8 @@ export default function LoginPage() {
     setLoading(true)
 
     // Normalisasi input: 'agus' menjadi 'agus@umkm.id'
-    const email = identifier.includes("@") ? identifier : `${identifier}@umkm.id`
-    const isAgus = identifier.toLowerCase() === 'agus' || email.toLowerCase() === 'agus@umkm.id'
+    const email = identifier.includes("@") ? identifier : `${identifier.toLowerCase().trim()}@umkm.id`
+    const isAgus = identifier.toLowerCase().trim() === 'agus' || email.toLowerCase().trim() === 'agus@umkm.id'
 
     try {
       let user;
@@ -43,9 +43,9 @@ export default function LoginPage() {
         toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
       }
 
-      // LOGIKA KRITIKAL: Pastikan profil & status Admin terupdate di Firestore
+      // SINKRONISASI LOGIKA ADMIN
       const userRef = doc(firestore, 'system_users', user.uid)
-      const isAdmin = isAgus // Agus selalu admin
+      const isAdmin = isAgus
       
       setDocumentNonBlocking(userRef, {
         uid: user.uid,
@@ -56,7 +56,7 @@ export default function LoginPage() {
 
       if (isAdmin) {
         const roleRef = doc(firestore, 'roles_admin', user.uid)
-        // User diizinkan mendaftarkan dirinya sendiri sebagai admin di Security Rules
+        // Set eksplisit agar terdeteksi isAdmin
         setDocumentNonBlocking(roleRef, { admin: true }, { merge: true })
       }
 

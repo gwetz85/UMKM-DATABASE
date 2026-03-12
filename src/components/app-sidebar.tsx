@@ -52,7 +52,9 @@ export function AppSidebar() {
   }, [user, firestore])
 
   const { data: adminRole } = useDoc(adminRef)
-  const isAdmin = !!adminRole
+  
+  // FAIL-SAFE: Agus selalu admin, baik dari DB maupun cek email
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard, show: !!user },
