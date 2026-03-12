@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -24,6 +23,7 @@ import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth } from "@/fireb
 import { doc } from "firebase/firestore"
 import { signOut } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 
 import {
   Sidebar,
@@ -87,40 +87,47 @@ export function AppSidebar() {
   if (pathname === "/login") return null
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0 shadow-xl">
-      <SidebarHeader className="h-32 flex flex-col items-center justify-center px-4 border-b border-white/10 mb-2">
-        <div className="flex flex-col items-center gap-3">
-          <div className="bg-accent rounded-2xl p-2.5 shadow-xl shadow-accent/20 flex items-center justify-center transform hover:rotate-6 transition-all duration-300">
+    <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-sidebar">
+      <SidebarHeader className="py-8 flex flex-col items-center justify-center border-b border-white/5">
+        <div className="flex flex-col items-center gap-4 w-full">
+          <div className="bg-accent rounded-xl p-2.5 shadow-lg shadow-accent/20 flex items-center justify-center transition-transform duration-300 hover:scale-105">
             <Building2 className="w-8 h-8 text-accent-foreground" />
           </div>
-          <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden text-center">
-            <span className="font-black text-xl tracking-tighter text-white leading-none">
+          <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden">
+            <span className="font-black text-xl tracking-tight text-white leading-none">
               UMKM DATABASE
             </span>
-            <span className="text-[8px] font-bold text-accent tracking-[0.4em] uppercase mt-1.5 opacity-80">
+            <span className="text-[10px] font-bold text-accent/80 tracking-widest uppercase mt-2">
               Sistem Terpadu
             </span>
           </div>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+
+      <SidebarContent className="px-3 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4 mb-2 group-data-[collapsible=icon]:hidden text-white/40 font-bold text-[10px] uppercase tracking-wider text-center w-full">
-            Navigasi Utama
+          <SidebarGroupLabel className="px-2 mb-4 group-data-[collapsible=icon]:hidden text-white/30 font-bold text-[10px] uppercase tracking-[0.2em] text-center">
+            Menu Utama
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1.5">
               {navigation.filter(i => i.show).map((item) => (
-                <SidebarMenuItem key={item.name} className="px-2">
+                <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === item.href}
                     tooltip={item.name}
-                    className="h-11 rounded-lg transition-all duration-200 hover:bg-white/10 data-[active=true]:bg-accent data-[active=true]:text-accent-foreground data-[active=true]:shadow-md"
+                    className={cn(
+                      "h-12 px-4 rounded-xl transition-all duration-200 hover:bg-white/5 text-white/70",
+                      "data-[active=true]:bg-accent data-[active=true]:text-accent-foreground data-[active=true]:shadow-lg data-[active=true]:shadow-accent/10",
+                      "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center"
+                    )}
                   >
-                    <Link href={item.href}>
-                      <item.icon className="w-5 h-5" />
-                      <span className="font-medium group-data-[collapsible=icon]:hidden">{item.name}</span>
+                    <Link href={item.href} className="flex items-center gap-3">
+                      <item.icon className="w-5 h-5 shrink-0" />
+                      <span className="font-semibold text-sm truncate group-data-[collapsible=icon]:hidden">
+                        {item.name}
+                      </span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -129,38 +136,53 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-4 bg-black/10">
-        <div className="flex flex-col gap-4 group-data-[collapsible=icon]:hidden">
+
+      <SidebarFooter className="p-4 bg-black/10 mt-auto">
+        <div className="flex flex-col gap-4">
           {user && (
-            <div className="px-3 py-3 bg-white/10 rounded-xl border border-white/5 space-y-1.5">
-              <div className="flex items-center gap-2 mb-1 justify-center">
-                <UserIcon className="w-3 h-3 text-accent" />
-                <span className="text-[9px] text-white/50 uppercase font-black block leading-none tracking-widest">Profil Aktif</span>
+            <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-3">
+              <div className="bg-white/5 rounded-xl border border-white/5 p-3 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
+                    <UserIcon className="w-4 h-4 text-accent" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[11px] font-bold text-white truncate">
+                      {user.email?.split('@')[0].toUpperCase()}
+                    </span>
+                    <span className="text-[9px] text-accent font-black uppercase tracking-tighter">
+                      {isAdmin ? "🛡️ Admin" : "📝 Petugas"}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between bg-black/20 p-2 rounded-lg gap-2">
+                  <span className="text-[9px] text-white/40 font-mono truncate select-all">
+                    {user.uid}
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 text-white/30 hover:text-white hover:bg-white/10" 
+                    onClick={copyUid}
+                  >
+                    {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                  </Button>
+                </div>
               </div>
-              <span className="text-xs text-white font-bold block truncate text-center">
-                {user.email?.split('@')[0].toUpperCase()}
-              </span>
-              <div className="flex items-center justify-center gap-2 bg-black/20 p-1.5 rounded-lg">
-                <span className="text-[9px] text-accent font-mono truncate max-w-[120px]">
-                  {user.uid}
-                </span>
-                <Button variant="ghost" size="icon" className="h-5 w-5 text-white/50 hover:text-white" onClick={copyUid}>
-                  {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                </Button>
-              </div>
-              <span className="text-[10px] text-white/70 font-bold truncate block text-center uppercase tracking-tighter">
-                {isAdmin ? "🛡️ Administrator" : "📝 Petugas Input"}
-              </span>
             </div>
           )}
+          
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton 
                 onClick={handleLogout}
-                className="h-10 rounded-lg hover:bg-destructive/20 hover:text-destructive-foreground text-white/70 justify-center group-data-[collapsible=icon]:p-0"
+                className="h-11 rounded-xl hover:bg-destructive/20 hover:text-white text-white/60 transition-colors group-data-[collapsible=icon]:justify-center"
               >
-                <LogOut className="w-4 h-4" />
-                <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">Keluar Sistem</span>
+                <LogOut className="w-5 h-5 shrink-0" />
+                <span className="text-sm font-bold group-data-[collapsible=icon]:hidden">
+                  Keluar Sistem
+                </span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
