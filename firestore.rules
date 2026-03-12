@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * USHA LINK SECURITY RULES
+     *
+     * CORE PHILOSOPHY:
+     * This ruleset enforces a strict hierarchical user-ownership model. Access is primarily 
+     * determined by the user's presence in the document path and verified against 
+     * denormalized ownership fields within the documents themselves.
+     *
+     * DATA STRUCTURE:
+     * All application data is nested under the /users/{userId} tree.
+     * - /users/{userId} (Profile)
+     * - /users/{userId}/businessActors/{baId} (Business Entities)
+     * - /users/{userId}/businessActors/{baId}/documents/{docId} (Associated Files)
+     *
+     * KEY SECURITY DECISIONS:
+     * 1. Authorization Independence: We use denormalized 'ownerId' and 'businessActorId' 
+     *    fields to allow rules to evaluate access without expensive get() calls to 
+     *    parent documents.
+     * 2. Administrative Access: A dedicated /roles_admin collection is used to store 
+     *    administrative UIDs. The existence of a document here grants global read access 
+     *    to business data for support and auditing.
+     * 3. Structural Segregation: User data is kept strictly separate from administrative 
+     *    role definitions.
+     * 4. Prototyping Flexibility: While authorization is strictly enforced based on 
+     *    UIDs, specific data schemas (types, optional fields) are not validated to 
+     *    allow for rapid frontend iteration.
+     */
+
+    // --- Global Helper Functions ---
+
+    /** @description Checks if the request is from an authenticated user. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the authenticated user's UID matches the provided userId. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** @description Checks if the user is an owner and the document already exists. */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /** @description Checks if the authenticated user has global administrative privileges. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for the root User profile document.
+     * @path /users/{userId}
+     * @allow Authenticated user (create/get/list/update) if userId matches their UID.
+     * @deny Any user attempting to access or modify another user's root profile.
+     * @principle Self-creation and strict path-based ownership.
+     */
+    match /users/{userId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if false; // Profiles are generally preserved in this system.
+    }
+
+    /**
+     * @description Rules for BusinessActor entities.
+     * @path /users/{userId}/businessActors/{businessActorId}
+     * @allow Owner (all operations); Admin (read-only).
+     * @deny Non-owners and non-admins (all operations).
+     * @principle Ownership-based writes with administrative read overrides.
+     */
+    match /users/{userId}/businessActors/{businessActorId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for Documents associated with a BusinessActor.
+     * @path /users/{userId}/businessActors/{businessActorId}/documents/{documentId}
+     * @allow Owner of the parent path (all operations); Admin (read-only).
+     * @deny Any user not matching the path userId for writes.
+     * @principle Relational integrity and ownership validation via denormalized fields.
+     */
+    match /users/{userId}/businessActors/{businessActorId}/documents/{documentId} {
+      allow get, list: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.ownerId == request.auth.uid && request.resource.data.businessActorId == businessActorId;
+      allow update: if isExistingOwner(userId) && request.resource.data.ownerId == resource.data.ownerId && request.resource.data.businessActorId == resource.data.businessActorId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Rules for the Admin Roles collection.
+     * @path /roles_admin/{adminId}
+     * @allow Authenticated users to 'get' their own status.
+     * @deny Any public listing or client-side modification of admin roles.
+     * @principle DBAC (Database Based Access Control) via document existence.
+     */
+    match /roles_admin/{adminId} {
+      allow get: if isOwner(adminId);
+      allow list: if false;
+      allow create, update, delete: if false; // Admin roles managed via backend/CLI only.
+    }
+
+    // Default deny for any unmatched paths.
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
