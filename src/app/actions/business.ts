@@ -1,9 +1,8 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { BusinessActor } from '@/app/lib/types';
-import { sheets, drive, SPREADSHEET_ID, DRIVE_FOLDER_ID } from '@/src/lib/google-api';
+import { sheets, drive, SPREADSHEET_ID, DRIVE_FOLDER_ID } from '@/lib/google-api';
 import { Readable } from 'stream';
 
 const RANGE = 'Sheet1!A2:L'; // Asumsi data mulai dari baris 2
