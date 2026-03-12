@@ -20,14 +20,14 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased bg-background">
         <FirebaseClientProvider>
           <SidebarProvider>
             <div className="flex min-h-screen w-full">
               <AppSidebar />
-              <main className="flex-1 overflow-auto bg-[#F8FAFC]">
+              <main className="flex-1 overflow-auto">
                 {children}
               </main>
             </div>

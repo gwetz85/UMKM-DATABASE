@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useMemoFirebase, useCollection, useUser, useFirestore } from "@/firebase"
@@ -27,7 +26,7 @@ export default function DashboardPage() {
 
   const { data: allData, isLoading } = useCollection<BusinessActor>(memoQuery)
 
-  if (isUserLoading || isLoading) {
+  if (isUserLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -73,7 +72,7 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div className="space-y-1">
           <h1 className="text-4xl font-black tracking-tight font-headline text-primary">
-            Dashboard UMKM Database
+            Dashboard
           </h1>
           <p className="text-muted-foreground font-medium">
             Monitor dan kelola pendaftaran pelaku usaha secara real-time.
@@ -97,7 +96,7 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-black text-slate-800">{stat.value}</div>
+              <div className="text-3xl font-black text-slate-800">{isLoading ? "..." : stat.value}</div>
               <div className="flex items-center gap-1 mt-1 text-[10px] font-bold text-muted-foreground uppercase">
                 <TrendingUp className="w-3 h-3 text-emerald-500" />
                 Data Terkini
