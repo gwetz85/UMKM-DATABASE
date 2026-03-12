@@ -1,43 +1,78 @@
+
 "use client"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/firebase"
-import { signInWithEmailAndPassword } from "firebase/auth"
+import { useAuth, useFirestore } from "@/firebase"
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
+import { doc, setDoc } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Building2, Lock, Mail, Loader2 } from "lucide-react"
+import { Building2, Lock, Mail, Loader2, UserPlus, LogIn } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
+  const [isRegister, setIsRegister] = useState(false)
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const auth = useAuth()
+  const firestore = useFirestore()
   const router = useRouter()
   const { toast } = useToast()
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    // Logika: Jika user hanya memasukkan username tanpa @, tambahkan domain default
     const email = identifier.includes("@") ? identifier : `${identifier}@umkm.id`
 
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      toast({
-        title: "Login Berhasil",
-        description: "Selamat datang kembali di UMKM Database.",
-      })
+      if (isRegister) {
+        // Proses Pendaftaran (Sign Up)
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+        const user = userCredential.user
+
+        // Logika Otomatis: Jika Agus, jadikan Admin
+        const isAdmin = identifier.toLowerCase() === 'agus' || email.toLowerCase() === 'agus@umkm.id'
+        
+        // Simpan ke Firestore
+        await setDoc(doc(firestore, 'system_users', user.uid), {
+          uid: user.uid,
+          fullName: identifier.charAt(0).toUpperCase() + identifier.slice(1),
+          role: isAdmin ? 'admin' : 'petugas',
+          addedAt: new Date().toISOString()
+        })
+
+        if (isAdmin) {
+          await setDoc(doc(firestore, 'roles_admin', user.uid), { admin: true })
+        }
+
+        toast({
+          title: "Akun Berhasil Dibuat",
+          description: `Selamat datang ${isAdmin ? 'Admin' : ''} ${identifier}!`,
+        })
+      } else {
+        // Proses Masuk (Login)
+        await signInWithEmailAndPassword(auth, email, password)
+        toast({
+          title: "Login Berhasil",
+          description: "Selamat datang kembali di UMKM Database.",
+        })
+      }
       router.push("/")
     } catch (error: any) {
+      console.error(error)
+      let message = "Terjadi kesalahan. Silakan coba lagi."
+      if (error.code === 'auth/email-already-in-use') message = "Username/Email sudah terdaftar."
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') message = "Username atau kata sandi salah."
+      
       toast({
         variant: "destructive",
-        title: "Login Gagal",
-        description: "Username/Email atau kata sandi salah. Silakan coba lagi.",
+        title: isRegister ? "Gagal Mendaftar" : "Login Gagal",
+        description: message,
       })
     } finally {
       setLoading(false)
@@ -56,10 +91,10 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-3xl font-black tracking-tighter text-primary">UMKM DATABASE</CardTitle>
           <CardDescription className="font-medium text-muted-foreground">
-            Sistem Manajemen Terpadu Pelaku Usaha
+            {isRegister ? "Pendaftaran Akun Baru" : "Sistem Manajemen Terpadu Pelaku Usaha"}
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleAuth}>
           <CardContent className="grid gap-5 py-6">
             <div className="grid gap-2">
               <Label htmlFor="identifier" className="font-bold text-slate-700">Username / Email</Label>
@@ -77,9 +112,7 @@ export default function LoginPage() {
               </div>
             </div>
             <div className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" title="Kata sandi anda" className="font-bold text-slate-700">Kata Sandi</Label>
-              </div>
+              <Label htmlFor="password" title="Kata sandi anda" className="font-bold text-slate-700">Kata Sandi</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -94,16 +127,28 @@ export default function LoginPage() {
               </div>
             </div>
           </CardContent>
-          <CardFooter className="pb-10">
+          <CardFooter className="flex flex-col gap-4 pb-10">
             <Button className="w-full bg-primary hover:bg-primary/90 h-12 text-md font-bold shadow-lg shadow-primary/20" disabled={loading}>
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Memverifikasi...
+                  Memproses...
                 </>
               ) : (
-                "Masuk ke Sistem"
+                isRegister ? (
+                  <><UserPlus className="w-5 h-5 mr-2" /> Daftar Akun</>
+                ) : (
+                  <><LogIn className="w-5 h-5 mr-2" /> Masuk ke Sistem</>
+                )
               )}
+            </Button>
+            <Button 
+              type="button" 
+              variant="ghost" 
+              className="text-xs text-muted-foreground"
+              onClick={() => setIsRegister(!isRegister)}
+            >
+              {isRegister ? "Sudah punya akun? Masuk" : "Belum punya akun? Daftar di sini"}
             </Button>
           </CardFooter>
         </form>
