@@ -1,30 +1,41 @@
+
 "use client"
 
-import { useMemoFirebase, useCollection, useUser, useAuth, useFirestore } from "@/firebase"
+import { useMemoFirebase, useCollection, useUser, useFirestore } from "@/firebase"
 import { collection, query, orderBy } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, UserCheck, Activity, Loader2, Building2, TrendingUp } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { signInAnonymously } from "firebase/auth"
 import { BusinessActor } from "./lib/types"
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
-  const auth = useAuth()
   const firestore = useFirestore()
+  const router = useRouter()
 
   useEffect(() => {
     if (!isUserLoading && !user) {
-      signInAnonymously(auth)
+      router.push("/login")
     }
-  }, [user, isUserLoading, auth])
+  }, [user, isUserLoading, router])
   
   const memoQuery = useMemoFirebase(() => {
-    if (!firestore) return null
+    if (!firestore || !user) return null
     return query(collection(firestore, 'businessActors'), orderBy('createdAt', 'desc'))
-  }, [firestore])
+  }, [firestore, user])
 
   const { data: allData, isLoading } = useCollection<BusinessActor>(memoQuery)
+
+  if (isUserLoading || isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!user) return null
 
   const stats = [
     { 
@@ -56,14 +67,6 @@ export default function DashboardPage() {
       bg: "bg-emerald-100/50" 
     },
   ]
-
-  if (isUserLoading || isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    )
-  }
 
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
@@ -118,7 +121,7 @@ export default function DashboardPage() {
                 <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs">{allData?.filter(d => d.status === 'pending').length} Data</span>
               </div>
               <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                 <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'pending').length || 0) / (allData?.length || 1)) * 100}%` }}></div>
+                 <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'pending').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
               </div>
             </div>
             
@@ -128,7 +131,7 @@ export default function DashboardPage() {
                 <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-xs">{allData?.filter(d => d.status === 'bank_pending').length} Data</span>
               </div>
               <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                 <div className="bg-amber-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'bank_pending').length || 0) / (allData?.length || 1)) * 100}%` }}></div>
+                 <div className="bg-amber-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'bank_pending').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
               </div>
             </div>
 
@@ -138,7 +141,7 @@ export default function DashboardPage() {
                 <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-xs">{allData?.filter(d => d.status === 'finish').length} Data</span>
               </div>
               <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                 <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'finish').length || 0) / (allData?.length || 1)) * 100}%` }}></div>
+                 <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'finish').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
               </div>
             </div>
           </CardContent>
