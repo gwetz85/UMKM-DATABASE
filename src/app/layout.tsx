@@ -1,10 +1,11 @@
 import type {Metadata} from 'next';
 import './globals.css';
-import {SidebarProvider} from '@/components/ui/sidebar';
+import {SidebarProvider, SidebarTrigger} from '@/components/ui/sidebar';
 import {AppSidebar} from '@/components/app-sidebar';
 import {Toaster} from '@/components/ui/toaster';
 import {FirebaseClientProvider} from '@/firebase';
 import {FooterTicker} from '@/components/footer-ticker';
+import {Building2} from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'UMKM Database - Sistem Manajemen Terpadu',
@@ -27,10 +28,30 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <SidebarProvider>
             <div className="flex flex-col min-h-screen w-full overflow-hidden">
+              {/* Mobile Header */}
+              <header className="flex md:hidden items-center justify-between px-4 h-14 bg-sidebar text-white shrink-0 z-30 shadow-md">
+                <div className="flex items-center gap-2">
+                  <SidebarTrigger className="text-white hover:bg-white/10" />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-black tracking-tight leading-none">UMKM DATABASE</span>
+                    <span className="text-[8px] font-bold text-accent tracking-widest uppercase">Versi 3.1</span>
+                  </div>
+                </div>
+                <div className="bg-accent/20 p-1.5 rounded-lg">
+                  <Building2 className="w-4 h-4 text-accent" />
+                </div>
+              </header>
+
               <div className="flex flex-1 w-full overflow-hidden">
                 <AppSidebar />
                 <main className="flex-1 overflow-auto bg-background pb-12">
-                  {children}
+                  {/* Desktop Sidebar Trigger (Visible when sidebar is collapsed) */}
+                  <div className="hidden md:flex p-4 items-center">
+                    <SidebarTrigger className="text-primary hover:bg-primary/10" />
+                  </div>
+                  <div className="w-full">
+                    {children}
+                  </div>
                 </main>
               </div>
               <FooterTicker />

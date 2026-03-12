@@ -72,15 +72,15 @@ export default function ActorDataPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="p-4 md:p-8 space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-primary font-headline">Data Pelaku Usaha</h1>
-          <p className="text-muted-foreground">Data yang telah lolos verifikasi awal. {isAdmin ? "Kelola atau hapus data di sini." : "Isi data rekening atau cetak data."}</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Data Pelaku Usaha</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">Data yang telah lolos verifikasi awal. {isAdmin ? "Kelola atau hapus data di sini." : "Isi data rekening atau cetak data."}</p>
         </div>
         {isAdmin && (
-          <div className="hidden md:flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-xl text-primary font-bold text-xs uppercase tracking-widest border border-primary/20">
-            <ShieldCheck className="w-4 h-4" /> Akses Admin
+          <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-primary font-bold text-[10px] md:text-xs uppercase tracking-widest border border-primary/20">
+            <ShieldCheck className="w-3.5 h-3.5 md:w-4 md:h-4" /> Akses Admin
           </div>
         )}
       </div>
@@ -90,89 +90,91 @@ export default function ActorDataPage() {
           {isLoading ? (
             <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
           ) : (
-            <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow>
-                  <TableHead>Nama</TableHead>
-                  <TableHead>Usaha</TableHead>
-                  <TableHead>Status Rekening</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {actors?.map((actor) => (
-                  <TableRow key={actor.id} className="hover:bg-muted/10 transition-colors">
-                    <TableCell className="font-medium text-slate-700">{actor.fullName}</TableCell>
-                    <TableCell>{actor.businessName}</TableCell>
-                    <TableCell>
-                      {actor.bankNumber ? (
-                        <span className="text-[10px] px-2 py-1 bg-green-100 text-green-700 rounded-full font-black uppercase">TERISI</span>
-                      ) : (
-                        <span className="text-[10px] px-2 py-1 bg-amber-100 text-amber-700 rounded-full font-black uppercase">BELUM</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="outline" onClick={() => handlePrint(actor)} title="Cetak Data">
-                          <Printer className="w-4 h-4" /> <span className="hidden lg:inline ml-2">PRINT</span>
-                        </Button>
-                        
-                        <Dialog open={!!editingActor && editingActor.id === actor.id} onOpenChange={(open) => !open && setEditingActor(null)}>
-                          <DialogTrigger asChild>
-                            <Button size="sm" variant="secondary" onClick={() => setEditingActor(actor)} title="Edit Rekening">
-                              <Edit3 className="w-4 h-4" /> <span className="hidden lg:inline ml-2">EDIT</span>
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <form onSubmit={handleSaveBank}>
-                              <DialogHeader>
-                                <DialogTitle>Input Data Rekening</DialogTitle>
-                              </DialogHeader>
-                              <div className="grid gap-4 py-4">
-                                <div className="space-y-2">
-                                  <Label>Nomor Rekening</Label>
-                                  <Input name="bankNumber" defaultValue={actor.bankNumber} required />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label>Nama Pemilik Rekening</Label>
-                                  <Input name="bankOwner" defaultValue={actor.bankOwner} required />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label>Nama Bank</Label>
-                                  <Input name="bankName" defaultValue={actor.bankName} required />
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button type="submit"><Save className="w-4 h-4 mr-2" /> Simpan Rekening</Button>
-                              </DialogFooter>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
-
-                        {isAdmin && (
-                          <Button 
-                            size="sm" 
-                            variant="destructive" 
-                            onClick={() => handleDelete(actor.id, actor.fullName)}
-                            title="Hapus Data Pelaku"
-                            className="bg-red-500 hover:bg-red-600"
-                          >
-                            <Trash2 className="w-4 h-4" /> <span className="hidden lg:inline ml-2">HAPUS</span>
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {(!actors || actors.length === 0) && (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-muted/30">
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-20 text-muted-foreground font-medium italic">
-                      Belum ada data pelaku usaha yang terverifikasi.
-                    </TableCell>
+                    <TableHead className="whitespace-nowrap">Nama</TableHead>
+                    <TableHead className="whitespace-nowrap">Usaha</TableHead>
+                    <TableHead className="whitespace-nowrap">Status Rekening</TableHead>
+                    <TableHead className="text-right whitespace-nowrap">Aksi</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {actors?.map((actor) => (
+                    <TableRow key={actor.id} className="hover:bg-muted/10 transition-colors">
+                      <TableCell className="font-medium text-slate-700 whitespace-nowrap">{actor.fullName}</TableCell>
+                      <TableCell className="whitespace-nowrap">{actor.businessName}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {actor.bankNumber ? (
+                          <span className="text-[9px] md:text-[10px] px-2 py-0.5 md:py-1 bg-green-100 text-green-700 rounded-full font-black uppercase">TERISI</span>
+                        ) : (
+                          <span className="text-[9px] md:text-[10px] px-2 py-0.5 md:py-1 bg-amber-100 text-amber-700 rounded-full font-black uppercase">BELUM</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1.5 md:gap-2">
+                          <Button size="sm" variant="outline" onClick={() => handlePrint(actor)} title="Cetak Data" className="h-8 px-2 md:h-9 md:px-3">
+                            <Printer className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">PRINT</span>
+                          </Button>
+                          
+                          <Dialog open={!!editingActor && editingActor.id === actor.id} onOpenChange={(open) => !open && setEditingActor(null)}>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="secondary" onClick={() => setEditingActor(actor)} title="Edit Rekening" className="h-8 px-2 md:h-9 md:px-3">
+                                <Edit3 className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">EDIT</span>
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                              <form onSubmit={handleSaveBank}>
+                                <DialogHeader>
+                                  <DialogTitle>Input Data Rekening</DialogTitle>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                  <div className="space-y-2">
+                                    <Label>Nomor Rekening</Label>
+                                    <Input name="bankNumber" defaultValue={actor.bankNumber} required />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Nama Pemilik Rekening</Label>
+                                    <Input name="bankOwner" defaultValue={actor.bankOwner} required />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label>Nama Bank</Label>
+                                    <Input name="bankName" defaultValue={actor.bankName} required />
+                                  </div>
+                                </div>
+                                <DialogFooter>
+                                  <Button type="submit" className="w-full sm:w-auto"><Save className="w-4 h-4 mr-2" /> Simpan Rekening</Button>
+                                </DialogFooter>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
+
+                          {isAdmin && (
+                            <Button 
+                              size="sm" 
+                              variant="destructive" 
+                              onClick={() => handleDelete(actor.id, actor.fullName)}
+                              title="Hapus Data Pelaku"
+                              className="bg-red-500 hover:bg-red-600 h-8 px-2 md:h-9 md:px-3"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">HAPUS</span>
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!actors || actors.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-20 text-muted-foreground font-medium italic">
+                        Belum ada data pelaku usaha yang terverifikasi.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
