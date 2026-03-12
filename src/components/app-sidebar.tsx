@@ -64,7 +64,6 @@ export function AppSidebar() {
   
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
-  // Navigasi dikonfigurasi di dalam useMemo untuk efisiensi
   const navigation = React.useMemo(() => [
     { name: "Dashboard", href: "/", icon: LayoutDashboard, show: !!user },
     { name: "Input Data", href: "/input", icon: UserPlus, show: !!user },
@@ -94,6 +93,19 @@ export function AppSidebar() {
 
   if (pathname === "/login") return null
 
+  // Jika belum mounted, render skeleton/kerangka kosong untuk menghindari hydration mismatch
+  if (!mounted) {
+    return (
+      <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-sidebar">
+        <SidebarHeader className="py-8 flex flex-col items-center justify-center border-b border-white/5">
+          <div className="bg-accent rounded-xl p-2.5 w-12 h-12" />
+        </SidebarHeader>
+        <SidebarContent />
+        <SidebarFooter className="p-4 bg-black/10 mt-auto" />
+      </Sidebar>
+    )
+  }
+
   return (
     <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-sidebar">
       <SidebarHeader className="py-8 flex flex-col items-center justify-center border-b border-white/5">
@@ -119,8 +131,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1.5">
-              {/* Hanya render menu setelah mounted untuk menghindari hydration mismatch */}
-              {mounted && navigation.filter(i => i.show).map((item) => (
+              {navigation.filter(i => i.show).map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
                     asChild
@@ -148,7 +159,7 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-4 bg-black/10 mt-auto">
         <div className="flex flex-col gap-4">
-          {mounted && user && (
+          {user && (
             <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-3">
               <div className="bg-white/5 rounded-xl border border-white/5 p-3 space-y-3">
                 <div className="flex items-center gap-2">
