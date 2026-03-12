@@ -1,95 +1,128 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { BusinessActor } from '@/app/lib/types';
+import { sheets, drive, SPREADSHEET_ID, DRIVE_FOLDER_ID } from '@/src/lib/google-api';
+import { Readable } from 'stream';
 
-// NOTE: In a real implementation, you would use the 'googleapis' library
-// to communicate with Google Sheets and Google Drive APIs.
-// This mock simulates that behavior using a local or persistent storage.
+const RANGE = 'Sheet1!A2:L'; // Asumsi data mulai dari baris 2
 
-// Mock database for demonstration
-let mockDb: BusinessActor[] = [
-  {
-    id: '1',
-    companyName: 'PT Teknologi Digital',
-    ownerName: 'Budi Santoso',
-    email: 'budi@tekno.com',
-    phone: '08123456789',
-    address: 'Jl. Sudirman No. 10',
-    city: 'Jakarta',
-    businessType: 'Teknologi Informasi',
-    registrationNumber: 'NIB-990182',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    companyName: 'Warung Makan Makmur',
-    ownerName: 'Siti Aminah',
-    email: 'makmur@food.com',
-    phone: '08219876543',
-    address: 'Jl. Merdeka No. 45',
-    city: 'Bandung',
-    businessType: 'Kuliner',
-    registrationNumber: 'NIB-772110',
-    createdAt: new Date().toISOString(),
+export async function getBusinesses(): Promise<BusinessActor[]> {
+  try {
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: RANGE,
+    });
+
+    const rows = response.data.values || [];
+    return rows.map((row) => ({
+      id: row[0],
+      companyName: row[1],
+      ownerName: row[2],
+      email: row[3],
+      phone: row[4],
+      address: row[5],
+      city: row[6],
+      businessType: row[7],
+      registrationNumber: row[8],
+      createdAt: row[9],
+      documentUrl: row[10] || undefined,
+      documentName: row[11] || undefined,
+    })).reverse(); // Terbaru di atas
+  } catch (error) {
+    console.error('Error fetching from Sheets:', error);
+    return [];
   }
-];
-
-export async function getBusinesses() {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return mockDb;
 }
 
 export async function getBusinessById(id: string) {
-  return mockDb.find(b => b.id === id);
+  const businesses = await getBusinesses();
+  return businesses.find(b => b.id === id);
 }
 
 export async function saveBusiness(data: Omit<BusinessActor, 'id' | 'createdAt'>) {
-  const newBusiness: BusinessActor = {
-    ...data,
-    id: Math.random().toString(36).substring(2, 9),
-    createdAt: new Date().toISOString(),
-  };
+  const id = Math.random().toString(36).substring(2, 9);
+  const createdAt = new Date().toISOString();
 
-  mockDb.unshift(newBusiness);
-  
-  // Real Integration hint:
-  // googleSheets.spreadsheets.values.append({ spreadsheetId, range, valueInputOption: 'RAW', resource: { values: [[...]] } });
-  
-  revalidatePath('/business');
-  revalidatePath('/');
-  return { success: true, data: newBusiness };
-}
+  const values = [
+    [
+      id,
+      data.companyName,
+      data.ownerName,
+      data.email,
+      data.phone,
+      data.address,
+      data.city,
+      data.businessType,
+      data.registrationNumber,
+      createdAt,
+      data.documentUrl || '',
+      data.documentName || '',
+    ]
+  ];
 
-export async function updateBusiness(id: string, data: Partial<BusinessActor>) {
-  const index = mockDb.findIndex(b => b.id === id);
-  if (index !== -1) {
-    mockDb[index] = { ...mockDb[index], ...data };
+  try {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Sheet1!A:L',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values },
+    });
+
     revalidatePath('/business');
     revalidatePath('/');
     return { success: true };
+  } catch (error) {
+    console.error('Error saving to Sheets:', error);
+    throw new Error('Gagal menyimpan ke Google Sheets');
   }
-  return { success: false, error: 'Business not found' };
+}
+
+export async function uploadDocument(formData: FormData) {
+  const file = formData.get('file') as File;
+  if (!file) throw new Error('No file provided');
+
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const stream = Readable.from(buffer);
+
+    const response = await drive.files.create({
+      requestBody: {
+        name: file.name,
+        parents: DRIVE_FOLDER_ID ? [DRIVE_FOLDER_ID] : [],
+      },
+      media: {
+        mimeType: file.type,
+        body: stream,
+      },
+      fields: 'id, webViewLink',
+    });
+
+    // Berikan izin baca ke siapa saja yang memiliki link (opsional)
+    if (response.data.id) {
+      await drive.permissions.create({
+        fileId: response.data.id,
+        requestBody: {
+          role: 'reader',
+          type: 'anyone',
+        },
+      });
+    }
+
+    return {
+      url: response.data.webViewLink || '',
+      name: file.name
+    };
+  } catch (error) {
+    console.error('Error uploading to Drive:', error);
+    throw new Error('Gagal mengunggah ke Google Drive');
+  }
 }
 
 export async function deleteBusiness(id: string) {
-  mockDb = mockDb.filter(b => b.id !== id);
-  revalidatePath('/business');
-  revalidatePath('/');
-  return { success: true };
-}
-
-export async function uploadDocument(file: FormData) {
-  // Simulate Google Drive upload
-  const fileName = (file.get('file') as File).name;
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Real Integration hint:
-  // drive.files.create({ requestBody: { name, parents: [folderId] }, media: { mimeType, body: fs.createReadStream(...) } });
-  
-  return { 
-    url: `https://drive.google.com/file/d/mock-id-${Math.random()}/view`,
-    name: fileName
-  };
+  // Catatan: Menghapus baris tertentu di Google Sheets secara API memerlukan index baris.
+  // Untuk MVP ini, kita fokus pada penambahan data.
+  // Dalam implementasi penuh, Anda harus mencari baris ID tersebut dan menggunakan spreadsheets.batchUpdate.
+  return { success: false, error: 'Delete not implemented for Sheets yet' };
 }
