@@ -2,7 +2,7 @@
 "use client"
 
 import { useState } from "react"
-import { useMemoFirebase, useCollection, useUser, useFirestore, setDocumentNonBlocking, deleteDocumentNonBlocking, useDoc } from "@/firebase"
+import { useMemoFirebase, useCollection, useUser, useFirestore, setDocumentNonBlocking, deleteDocumentNonBlocking, useDoc, updateDocumentNonBlocking } from "@/firebase"
 import { collection, query, doc, orderBy } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { UserPlus, Trash2, Loader2, ShieldAlert, UserCheck, Shield, Key } from "lucide-react"
+import { UserPlus, Trash2, Loader2, ShieldAlert, UserCheck, Shield, Key, RefreshCcw } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function UserManagementPage() {
@@ -44,33 +44,44 @@ export default function UserManagementPage() {
 
     if (!fullName || !password || !role) return
 
-    // Gunakan fullName sebagai ID sementara untuk provisioning
-    const tempId = fullName.toLowerCase().trim()
-    const userRef = doc(firestore, 'system_users', tempId)
+    const username = fullName.toLowerCase().trim().replace(/\s+/g, '_')
+    const userRef = doc(firestore, 'system_users', username)
     
     setDocumentNonBlocking(userRef, {
       fullName,
-      password, // Password disimpan untuk divalidasi saat login pertama kali
+      password,
       role,
+      uid: null, // UID kosong, akan terisi otomatis saat login pertama
       addedAt: new Date().toISOString()
     }, { merge: true })
 
     toast({ 
       title: "User Didaftarkan", 
-      description: `User ${fullName} berhasil dibuat. UID akan otomatis terbaca saat user login.` 
+      description: `User ${fullName} berhasil dibuat. Perangkat akan terkunci saat login pertama.` 
     })
     setIsDialogOpen(false)
   }
 
-  const handleDelete = (id: string, fullName: string) => {
-    if (id === user?.uid) {
+  const handleResetUID = (id: string, fullName: string) => {
+    if (!firestore) return
+    if (confirm(`Reset penguncian perangkat untuk ${fullName}? User akan bisa login kembali di perangkat baru.`)) {
+      const userRef = doc(firestore, 'system_users', id)
+      updateDocumentNonBlocking(userRef, { uid: null })
+      toast({ title: "Perangkat Direset", description: `UID untuk ${fullName} telah dihapus.` })
+    }
+  }
+
+  const handleDelete = (id: string, fullName: string, userUid: string | null) => {
+    if (userUid === user?.uid) {
       toast({ variant: "destructive", title: "Gagal", description: "Anda tidak bisa menghapus diri sendiri." })
       return
     }
 
-    if (confirm(`Hapus akses untuk ${fullName}?`)) {
+    if (confirm(`Hapus akses untuk ${fullName} secara permanen?`)) {
       deleteDocumentNonBlocking(doc(firestore, 'system_users', id))
-      deleteDocumentNonBlocking(doc(firestore, 'roles_admin', id))
+      if (userUid) {
+        deleteDocumentNonBlocking(doc(firestore, 'roles_admin', userUid))
+      }
       toast({ title: "Terhapus", description: "Akses user telah dicabut." })
     }
   }
@@ -84,9 +95,7 @@ export default function UserManagementPage() {
       <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center">
         <ShieldAlert className="w-16 h-16 text-destructive" />
         <h1 className="text-2xl font-bold">Akses Ditolak</h1>
-        <p className="text-muted-foreground max-w-md">
-          Hanya Administrator yang dapat mengakses menu Manajemen User. 
-        </p>
+        <p className="text-muted-foreground max-md">Hanya Administrator yang dapat mengakses menu Manajemen User.</p>
       </div>
     )
   }
@@ -96,11 +105,11 @@ export default function UserManagementPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-primary font-headline">Manajemen User</h1>
-          <p className="text-muted-foreground">Tambah user baru hanya dengan Nama & Kata Sandi tanpa perlu input UID.</p>
+          <p className="text-muted-foreground">Kelola hak akses dan kebijakan satu perangkat (1 User 1 UID).</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90">
+            <Button className="bg-primary hover:bg-primary/90 shadow-lg">
               <UserPlus className="w-4 h-4 mr-2" /> Tambah User Baru
             </Button>
           </DialogTrigger>
@@ -108,7 +117,7 @@ export default function UserManagementPage() {
             <form onSubmit={handleAddUser}>
               <DialogHeader>
                 <DialogTitle>Registrasi User Baru</DialogTitle>
-                <CardDescription>User baru bisa langsung login menggunakan data ini.</CardDescription>
+                <CardDescription>User akan terikat pada perangkat pertama yang digunakan untuk login.</CardDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
@@ -134,7 +143,7 @@ export default function UserManagementPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" className="w-full">Buat User Baru</Button>
+                <Button type="submit" className="w-full">Simpan Data User</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -150,9 +159,8 @@ export default function UserManagementPage() {
               <TableHeader className="bg-muted/30">
                 <TableRow>
                   <TableHead>Nama Pengguna</TableHead>
-                  <TableHead>Identitas / UID</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Status Akun</TableHead>
+                  <TableHead>Status Perangkat (UID)</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -160,9 +168,6 @@ export default function UserManagementPage() {
                 {systemUsers?.map((u: any) => (
                   <TableRow key={u.id} className="hover:bg-muted/10">
                     <TableCell className="font-bold text-slate-700">{u.fullName}</TableCell>
-                    <TableCell className="font-mono text-[10px] text-muted-foreground">
-                      {u.uid || <span className="text-amber-600 font-bold italic">Menunggu Login...</span>}
-                    </TableCell>
                     <TableCell>
                       {u.role === 'admin' ? (
                         <div className="flex items-center gap-1 text-primary font-black uppercase text-[10px] bg-primary/10 px-2 py-0.5 rounded w-fit">
@@ -176,21 +181,37 @@ export default function UserManagementPage() {
                     </TableCell>
                     <TableCell>
                       {u.uid ? (
-                        <span className="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-bold uppercase">AKTIF</span>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-bold uppercase w-fit">TERKUNCI</span>
+                          <span className="text-[9px] font-mono text-muted-foreground">{u.uid}</span>
+                        </div>
                       ) : (
-                        <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-bold uppercase">PENDING</span>
+                        <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-bold uppercase">BELUM TERIKAT</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(u.id, u.fullName)}
-                        disabled={u.uid === user?.uid}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        {u.uid && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="text-amber-600 hover:bg-amber-50"
+                            onClick={() => handleResetUID(u.id, u.fullName)}
+                            title="Reset UID (Pindah Perangkat)"
+                          >
+                            <RefreshCcw className="w-3 h-3 mr-1" /> Reset UID
+                          </Button>
+                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDelete(u.id, u.fullName, u.uid)}
+                          disabled={u.uid === user?.uid}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
