@@ -31,6 +31,18 @@
         "ownerId": { "type": "string" }
       },
       "required": ["fullName", "nik", "noKK", "status"]
+    },
+    "SystemUser": {
+      "title": "SystemUser",
+      "type": "object",
+      "description": "Data pengguna sistem (Admin atau Petugas).",
+      "properties": {
+        "uid": { "type": "string" },
+        "fullName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "petugas"] },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "fullName", "role"]
     }
   },
   "auth": {
@@ -51,6 +63,14 @@
         "definition": {
           "entityName": "RoleAdmin",
           "description": "Menandai user sebagai Admin"
+        }
+      },
+      {
+        "path": "/system_users/{uid}",
+        "definition": {
+          "entityName": "SystemUser",
+          "schema": { "$ref": "#/backend/entities/SystemUser" },
+          "description": "Daftar pengguna yang diizinkan masuk ke sistem"
         }
       }
     ]

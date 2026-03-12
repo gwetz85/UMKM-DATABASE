@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -9,12 +10,16 @@ import {
   CreditCard,
   CheckCircle2,
   LogOut,
-  Building2
+  Building2,
+  UserCog,
+  Copy,
+  Check
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase"
 import { doc } from "firebase/firestore"
+import { useToast } from "@/hooks/use-toast"
 
 import {
   Sidebar,
@@ -28,11 +33,14 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
 } from "@/components/ui/sidebar"
+import { Button } from "./ui/button"
 
 export function AppSidebar() {
   const pathname = usePathname()
   const { user } = useUser()
+  const { toast } = useToast()
   const firestore = useFirestore()
+  const [copied, setCopied] = React.useState(false)
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !firestore) return null
@@ -49,7 +57,17 @@ export function AppSidebar() {
     { name: "Data Pelaku", href: "/actor-data", icon: Users, show: true },
     { name: "Verifikasi Bank", href: "/verify-bank", icon: CreditCard, show: true },
     { name: "Finish", href: "/finish", icon: CheckCircle2, show: true },
+    { name: "Manajemen User", href: "/users", icon: UserCog, show: isAdmin },
   ]
+
+  const copyUid = () => {
+    if (user?.uid) {
+      navigator.clipboard.writeText(user.uid)
+      setCopied(true)
+      toast({ title: "UID Disalin", description: "Berikan UID ini ke Admin untuk akses penuh." })
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   return (
     <Sidebar collapsible="icon" className="border-r-0 shadow-xl">
@@ -96,10 +114,18 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-4 bg-black/10">
         <div className="flex flex-col gap-4 group-data-[collapsible=icon]:hidden">
-          <div className="px-2 py-1 bg-white/10 rounded-md border border-white/5">
-            <span className="text-[9px] text-white/50 uppercase font-black block">Role Pengguna</span>
-            <span className="text-xs text-accent font-bold truncate">
-              {isAdmin ? "Administrator" : (user?.isAnonymous ? "Petugas Input" : "User Publik")}
+          <div className="px-2 py-2 bg-white/10 rounded-md border border-white/5 space-y-1">
+            <span className="text-[9px] text-white/50 uppercase font-black block leading-none">ID Perangkat</span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] text-accent font-mono truncate max-w-[140px]">
+                {user?.uid || "Mencari..."}
+              </span>
+              <Button variant="ghost" size="icon" className="h-5 w-5 text-white/50 hover:text-white" onClick={copyUid}>
+                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              </Button>
+            </div>
+            <span className="text-[10px] text-white/70 font-bold truncate block">
+              {isAdmin ? "Administrator" : "User Publik"}
             </span>
           </div>
           <SidebarMenu>

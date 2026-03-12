@@ -12,18 +12,20 @@ service cloud.firestore {
     }
 
     match /businessActors/{actorId} {
-      // Izinkan semua user login baca untuk dashboard & list
       allow read: if isSignedIn();
-      // Siapapun bisa input awal
       allow create: if isSignedIn();
-      // Update data rekening (petugas) atau verifikasi (admin)
       allow update: if isSignedIn();
       allow delete: if isAdmin();
     }
 
     match /roles_admin/{adminId} {
-      allow get: if isSignedIn() && request.auth.uid == adminId;
-      allow list, create, update, delete: if false;
+      allow get: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /system_users/{uid} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
   }
 }
