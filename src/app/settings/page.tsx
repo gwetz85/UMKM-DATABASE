@@ -1,9 +1,8 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
 import { useFirestore, useUser, useDoc, useMemoFirebase } from "@/firebase"
-import { collection, doc, getDocs, writeBatch, query, addDoc } from "firebase/firestore"
+import { collection, doc, getDocs, writeBatch } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -130,14 +129,14 @@ export default function SettingsPage() {
         const ws = wb.Sheets[wsname]
         const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[]
 
-        // Column 0: No KK, Column 1: NIK (Starting from row 1 to skip header if exists)
-        const masterData = data.slice(1).map(row => ({
+        // Column 0: No KK, Column 1: NIK
+        const masterData = data.map(row => ({
           noKK: String(row[0] || '').trim(),
           nik: String(row[1] || '').trim(),
           uploadedAt: new Date().toISOString()
-        })).filter(item => item.noKK && item.nik)
+        })).filter(item => item.noKK && item.nik && item.noKK !== 'undefined')
 
-        if (masterData.length === 0) throw new Error("Tidak ada data valid ditemukan di kolom 1 & 2")
+        if (masterData.length === 0) throw new Error("Tidak ada data valid ditemukan. Pastikan Kolom A (No KK) dan Kolom B (NIK) terisi.")
 
         const batchSize = 500
         const colRef = collection(firestore, "master_data")
@@ -203,7 +202,6 @@ export default function SettingsPage() {
       )}
 
       <div className="grid gap-6">
-        {/* Tema & Warna */}
         <Card className="border-none shadow-sm bg-white">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -243,7 +241,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Manajemen Data - Hanya Admin */}
         {isAdmin && (
           <Card className="border-none shadow-sm bg-white">
             <CardHeader>
@@ -258,7 +255,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2 font-bold text-sm">
                     <Download className="w-4 h-4 text-emerald-600" /> Backup Data
                   </div>
-                  <p className="text-xs text-muted-foreground">Unduh semua data pelaku usaha dalam format JSON untuk cadangan.</p>
+                  <p className="text-xs text-muted-foreground">Unduh semua data pelaku usaha dalam format JSON.</p>
                   <Button variant="outline" size="sm" onClick={handleBackup} disabled={loading} className="w-full">
                     {loading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null} Unduh Backup
                   </Button>
@@ -268,7 +265,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2 font-bold text-sm">
                     <Upload className="w-4 h-4 text-blue-600" /> Restore Data
                   </div>
-                  <p className="text-xs text-muted-foreground">Unggah file backup JSON untuk memulihkan data ke sistem.</p>
+                  <p className="text-xs text-muted-foreground">Unggah file backup JSON untuk memulihkan data.</p>
                   <div className="relative">
                     <input type="file" accept=".json" onChange={handleRestore} className="hidden" id="restore-input" disabled={loading} />
                     <Label htmlFor="restore-input" className="cursor-pointer">
@@ -279,12 +276,11 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Upload Excel Section */}
                 <div className="p-4 border border-accent/20 bg-accent/5 rounded-xl space-y-3 sm:col-span-2">
                   <div className="flex items-center gap-2 font-bold text-sm text-primary">
-                    <FileSpreadsheet className="w-4 h-4" /> Import Data Master Excel
+                    <FileSpreadsheet className="w-4 h-4" /> Import Data Master (Excel)
                   </div>
-                  <p className="text-xs text-muted-foreground">Upload Excel (Kolom 1: No KK, Kolom 2: NIK) untuk data referensi Cek Data.</p>
+                  <p className="text-xs text-muted-foreground">Upload file .xlsx. Kolom A: Nomor KK, Kolom B: NIK individu.</p>
                   <div className="relative">
                     <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="hidden" id="excel-upload" disabled={uploadingExcel} />
                     <Label htmlFor="excel-upload" className="cursor-pointer">
@@ -304,7 +300,7 @@ export default function SettingsPage() {
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle className="font-bold">Zona Bahaya</AlertTitle>
                   <AlertDescription className="flex flex-col gap-3">
-                    <span className="text-xs">Fungsi Reset akan menghapus SEMUA data pelaku usaha tanpa bisa dikembalikan. Gunakan hanya jika Anda ingin memulai dari nol.</span>
+                    <span className="text-xs">Hapus SEMUA data pelaku usaha secara permanen.</span>
                     <Button variant="destructive" size="sm" onClick={handleReset} disabled={loading} className="w-fit font-bold">
                       <Trash2 className="w-4 h-4 mr-2" /> Reset Seluruh Data
                     </Button>
@@ -314,10 +310,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         )}
-      </div>
-      
-      <div className="flex justify-center text-xs text-muted-foreground font-bold uppercase tracking-widest gap-2">
-        <CheckCircle2 className="w-3 h-3" /> Konfigurasi Sistem Optimal
       </div>
     </div>
   )

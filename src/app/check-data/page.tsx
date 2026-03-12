@@ -1,39 +1,42 @@
-
 "use client"
 
 import { useState } from "react"
 import { useFirestore } from "@/firebase"
-import { collection, query, where, getDocs, limit } from "firebase/firestore"
+import { collection, query, where, getDocs } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database } from "lucide-react"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database, Users } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export default function CheckDataPage() {
   const firestore = useFirestore()
   const [loading, setLoading] = useState(false)
   const [searchDone, setSearchDone] = useState(false)
-  const [found, setFound] = useState(false)
-  const [formData, setFormData] = useState({ nik: "", noKK: "" })
+  const [results, setResults] = useState<any[]>([])
+  const [searchType, setSearchType] = useState<"nik" | "noKK">("nik")
+  const [inputValue, setInputValue] = useState("")
 
   const handleCheck = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.nik || !formData.noKK) return
+    if (!inputValue.trim()) return
 
     setLoading(true)
     setSearchDone(false)
+    setResults([])
+
     try {
       const q = query(
         collection(firestore, 'master_data'),
-        where('nik', '==', formData.nik.trim()),
-        where('noKK', '==', formData.noKK.trim()),
-        limit(1)
+        where(searchType, '==', inputValue.trim())
       )
       
       const snapshot = await getDocs(q)
-      setFound(!snapshot.empty)
+      const data = snapshot.docs.map(doc => doc.data())
+      setResults(data)
       setSearchDone(true)
     } catch (error) {
       console.error(error)
@@ -43,97 +46,129 @@ export default function CheckDataPage() {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8">
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
       <div className="text-center space-y-3">
         <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl mb-2">
           <Database className="w-8 h-8 text-primary" />
         </div>
         <h1 className="text-4xl font-black text-primary font-headline">Cek Data Master</h1>
         <p className="text-muted-foreground max-w-xl mx-auto font-medium">
-          Lakukan pengecekan NIK dan Nomor KK untuk memastikan data terdaftar dalam database master.
+          Lakukan pengecekan data penduduk berdasarkan NIK individu atau seluruh anggota dalam satu Kartu Keluarga.
         </p>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-5">
-        <Card className="md:col-span-2 border-none shadow-xl bg-white h-fit">
+      <div className="grid gap-8 lg:grid-cols-12">
+        <Card className="lg:col-span-4 border-none shadow-xl bg-white h-fit">
           <CardHeader>
-            <CardTitle className="text-lg">Form Pencarian</CardTitle>
-            <CardDescription>Masukkan data yang ingin divalidasi.</CardDescription>
+            <CardTitle className="text-lg">Parameter Pencarian</CardTitle>
+            <CardDescription>Pilih salah satu metode pencarian.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleCheck} className="space-y-5">
+            <form onSubmit={handleCheck} className="space-y-6">
+              <div className="space-y-4">
+                <Label className="text-sm font-bold text-slate-700">Tipe Pencarian</Label>
+                <RadioGroup 
+                  value={searchType} 
+                  onValueChange={(v: any) => {
+                    setSearchType(v)
+                    setInputValue("")
+                    setSearchDone(false)
+                  }}
+                  className="flex flex-col gap-3"
+                >
+                  <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted hover:bg-muted/50 cursor-pointer transition-colors">
+                    <RadioGroupItem value="nik" id="r-nik" />
+                    <Label htmlFor="r-nik" className="flex-1 cursor-pointer font-bold">Berdasarkan NIK</Label>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted hover:bg-muted/50 cursor-pointer transition-colors">
+                    <RadioGroupItem value="noKK" id="r-kk" />
+                    <Label htmlFor="r-kk" className="flex-1 cursor-pointer font-bold">Berdasarkan Nomor KK</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="noKK" className="font-bold text-slate-700">Nomor Kartu Keluarga</Label>
+                <Label htmlFor="inputValue" className="font-bold text-slate-700">
+                  {searchType === "nik" ? "Nomor Induk Kependudukan (16 Digit)" : "Nomor Kartu Keluarga (16 Digit)"}
+                </Label>
                 <Input 
-                  id="noKK" 
-                  placeholder="16 Digit No KK" 
+                  id="inputValue" 
+                  placeholder={searchType === "nik" ? "Input NIK" : "Input No KK"} 
                   maxLength={16}
-                  value={formData.noKK}
-                  onChange={(e) => setFormData({ ...formData, noKK: e.target.value })}
-                  className="h-11"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  className="h-12 text-lg font-mono tracking-widest"
                   required 
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="nik" className="font-bold text-slate-700">NIK (No Induk Kependudukan)</Label>
-                <Input 
-                  id="nik" 
-                  placeholder="16 Digit NIK" 
-                  maxLength={16}
-                  value={formData.nik}
-                  onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
-                  className="h-11"
-                  required 
-                />
-              </div>
+
               <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20" disabled={loading}>
                 {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <SearchCheck className="w-5 h-5 mr-2" />}
-                Verifikasi Data
+                Cari Data
               </Button>
             </form>
           </CardContent>
         </Card>
 
-        <div className="md:col-span-3 space-y-6">
+        <div className="lg:col-span-8 space-y-6">
           {!searchDone && !loading && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[300px] border-2 border-dashed rounded-3xl border-muted bg-white/50 p-8 text-center">
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed rounded-3xl border-muted bg-white/50 p-8 text-center">
               <div className="bg-muted p-4 rounded-full mb-4">
                 <Info className="w-8 h-8 text-muted-foreground/60" />
               </div>
-              <h3 className="text-lg font-bold text-slate-700 mb-2">Belum Ada Hasil</h3>
+              <h3 className="text-lg font-bold text-slate-700 mb-2">Siap Melakukan Pengecekan</h3>
               <p className="text-sm text-muted-foreground">
-                Silakan isi Nomor KK dan NIK pada form di samping untuk mulai melakukan pengecekan data master.
+                Silakan pilih metode pencarian dan masukkan nomor yang valid pada form di samping.
               </p>
             </div>
           )}
 
           {loading && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[300px] bg-white rounded-3xl shadow-sm border p-8 text-center animate-pulse">
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-white rounded-3xl shadow-sm border p-8 text-center">
               <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-              <p className="text-primary font-bold">Sedang Menghubungkan ke Database Master...</p>
+              <p className="text-primary font-bold animate-pulse">Menghubungkan ke Database Master...</p>
             </div>
           )}
 
           {searchDone && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {found ? (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+              {results.length > 0 ? (
                 <div className="space-y-6">
                   <Alert className="bg-emerald-50 border-emerald-200 text-emerald-900 rounded-2xl p-6">
                     <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                    <AlertTitle className="text-xl font-black mb-2">DATA DITEMUKAN!</AlertTitle>
+                    <AlertTitle className="text-xl font-black mb-1">DATA DITEMUKAN</AlertTitle>
                     <AlertDescription className="font-medium">
-                      Pasangan NIK <strong>{formData.nik}</strong> dan KK <strong>{formData.noKK}</strong> terdaftar valid dalam database master.
+                      Ditemukan <strong>{results.length}</strong> record data yang terhubung dengan pencarian Anda.
                     </AlertDescription>
                   </Alert>
-                  
-                  <Card className="border-none shadow-lg bg-emerald-600 text-white overflow-hidden">
-                    <CardContent className="p-8 flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-xs font-black uppercase tracking-widest opacity-80">Status Verifikasi</p>
-                        <p className="text-3xl font-black">VALID / REGISTERED</p>
+
+                  <Card className="border-none shadow-xl overflow-hidden bg-white">
+                    <CardHeader className="bg-primary text-white p-4">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-5 h-5" />
+                        <CardTitle className="text-sm uppercase tracking-widest font-bold">Hasil Penelusuran Master Data</CardTitle>
                       </div>
-                      <CheckCircle2 className="w-16 h-16 opacity-20" />
-                    </CardContent>
+                    </CardHeader>
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow>
+                          <TableHead className="font-bold">No. KK</TableHead>
+                          <TableHead className="font-bold">NIK</TableHead>
+                          <TableHead className="text-right font-bold">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {results.map((res, idx) => (
+                          <TableRow key={idx} className="hover:bg-emerald-50 transition-colors">
+                            <TableCell className="font-mono text-sm">{res.noKK}</TableCell>
+                            <TableCell className="font-mono text-sm font-bold text-primary">{res.nik}</TableCell>
+                            <TableCell className="text-right">
+                              <span className="text-[10px] px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full font-black uppercase">Terdaftar</span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </Card>
                 </div>
               ) : (
@@ -142,7 +177,7 @@ export default function CheckDataPage() {
                     <XCircle className="w-6 h-6 text-red-600" />
                     <AlertTitle className="text-xl font-black mb-2">DATA TIDAK TERDAFTAR</AlertTitle>
                     <AlertDescription className="font-medium">
-                      Mohon maaf, kombinasi NIK dan KK yang Anda masukkan tidak ditemukan dalam database master kami.
+                      Mohon maaf, nomor <strong>{inputValue}</strong> tidak ditemukan dalam database master.
                     </AlertDescription>
                   </Alert>
                   
@@ -154,8 +189,8 @@ export default function CheckDataPage() {
                       <p className="text-sm font-bold text-amber-900">Saran Tindakan:</p>
                       <ul className="text-xs text-amber-800 space-y-1 list-disc pl-4">
                         <li>Pastikan angka yang dimasukkan sudah benar (16 Digit).</li>
-                        <li>Pastikan NIK dan KK berasal dari satu kartu keluarga yang sama.</li>
-                        <li>Jika data Anda baru, hubungi Admin untuk pembaruan database master.</li>
+                        <li>Pastikan pencarian sesuai dengan jenis identitas (NIK/KK).</li>
+                        <li>Hubungi Administrator jika yakin data seharusnya sudah terdaftar.</li>
                       </ul>
                     </div>
                   </div>
@@ -164,10 +199,11 @@ export default function CheckDataPage() {
               
               <Button 
                 variant="outline" 
-                className="w-full mt-6 h-11 rounded-xl" 
+                className="w-full h-11 rounded-xl" 
                 onClick={() => {
                   setSearchDone(false);
-                  setFormData({ nik: "", noKK: "" });
+                  setInputValue("");
+                  setResults([]);
                 }}
               >
                 Ulangi Pencarian
