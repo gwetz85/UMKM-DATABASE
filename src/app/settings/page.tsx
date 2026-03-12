@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -129,14 +130,24 @@ export default function SettingsPage() {
         const ws = wb.Sheets[wsname]
         const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[]
 
-        // Column 0: No KK, Column 1: NIK
-        const masterData = data.map(row => ({
+        // Mappings based on user request: 
+        // 0: KK, 1: NIK, 2: Nomor, 3: Tahun, 4: Nama, 5: Status, 6: LPJ, 7: Nominal, 8: Usaha, 9: Alamat, 10: Kelurahan
+        const masterData = data.slice(1).map(row => ({
           noKK: String(row[0] || '').trim(),
           nik: String(row[1] || '').trim(),
+          nomor: String(row[2] || '').trim(),
+          tahunPengajuan: String(row[3] || '').trim(),
+          nama: String(row[4] || '').trim(),
+          status: String(row[5] || '').trim(),
+          statusLpj: String(row[6] || '').trim(),
+          nominal: String(row[7] || '').trim(),
+          usaha: String(row[8] || '').trim(),
+          alamat: String(row[9] || '').trim(),
+          kelurahan: String(row[10] || '').trim(),
           uploadedAt: new Date().toISOString()
-        })).filter(item => item.noKK && item.nik && item.noKK !== 'undefined' && item.noKK !== '')
+        })).filter(item => item.noKK && item.nik)
 
-        if (masterData.length === 0) throw new Error("Tidak ada data valid ditemukan. Pastikan Kolom A (No KK) dan Kolom B (NIK) terisi.")
+        if (masterData.length === 0) throw new Error("Tidak ada data valid ditemukan. Pastikan format kolom A (KK) dan B (NIK) terisi.")
 
         const batchSize = 500
         const colRef = collection(firestore, "master_data")
@@ -307,7 +318,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2 font-bold text-sm text-primary">
                     <FileSpreadsheet className="w-4 h-4" /> Import Data Master (Excel)
                   </div>
-                  <p className="text-xs text-muted-foreground">Upload file .xlsx. Kolom A: Nomor KK, Kolom B: NIK individu. Data akan tersimpan permanen di sistem.</p>
+                  <p className="text-xs text-muted-foreground">Upload .xlsx (Kolom A-K: KK, NIK, No, Tahun, Nama, Status, LPJ, Nominal, Usaha, Alamat, Kelurahan).</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="relative">
                       <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="hidden" id="excel-upload" disabled={uploadingExcel} />

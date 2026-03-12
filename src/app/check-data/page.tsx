@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -46,7 +47,7 @@ export default function CheckDataPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8">
+    <div className="p-8 max-w-[95rem] mx-auto space-y-8">
       <div className="text-center space-y-3">
         <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl mb-2">
           <Database className="w-8 h-8 text-primary" />
@@ -58,7 +59,7 @@ export default function CheckDataPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
-        <Card className="lg:col-span-4 border-none shadow-xl bg-white h-fit">
+        <Card className="lg:col-span-3 border-none shadow-xl bg-white h-fit">
           <CardHeader>
             <CardTitle className="text-lg">Parameter Pencarian</CardTitle>
             <CardDescription>Pilih salah satu metode pencarian.</CardDescription>
@@ -89,7 +90,7 @@ export default function CheckDataPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="inputValue" className="font-bold text-slate-700">
-                  {searchType === "nik" ? "Nomor Induk Kependudukan (16 Digit)" : "Nomor Kartu Keluarga (16 Digit)"}
+                  {searchType === "nik" ? "NIK (16 Digit)" : "Nomor KK (16 Digit)"}
                 </Label>
                 <Input 
                   id="inputValue" 
@@ -110,7 +111,7 @@ export default function CheckDataPage() {
           </CardContent>
         </Card>
 
-        <div className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-9 space-y-6">
           {!searchDone && !loading && (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed rounded-3xl border-muted bg-white/50 p-8 text-center">
               <div className="bg-muted p-4 rounded-full mb-4">
@@ -149,26 +150,42 @@ export default function CheckDataPage() {
                         <CardTitle className="text-sm uppercase tracking-widest font-bold">Hasil Penelusuran Master Data</CardTitle>
                       </div>
                     </CardHeader>
-                    <Table>
-                      <TableHeader className="bg-muted/50">
-                        <TableRow>
-                          <TableHead className="font-bold">No. KK</TableHead>
-                          <TableHead className="font-bold">NIK</TableHead>
-                          <TableHead className="text-right font-bold">Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {results.map((res, idx) => (
-                          <TableRow key={idx} className="hover:bg-emerald-50 transition-colors">
-                            <TableCell className="font-mono text-sm">{res.noKK}</TableCell>
-                            <TableCell className="font-mono text-sm font-bold text-primary">{res.nik}</TableCell>
-                            <TableCell className="text-right">
-                              <span className="text-[10px] px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full font-black uppercase">Terdaftar</span>
-                            </TableCell>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader className="bg-muted/50">
+                          <TableRow>
+                            <TableHead className="font-bold text-[11px] whitespace-nowrap">NO. KK</TableHead>
+                            <TableHead className="font-bold text-[11px] whitespace-nowrap">NIK</TableHead>
+                            <TableHead className="font-bold text-[11px] whitespace-nowrap">NOMOR</TableHead>
+                            <TableHead className="font-bold text-[11px] whitespace-nowrap">TAHUN</TableHead>
+                            <TableHead className="font-bold text-[11px] whitespace-nowrap">NAMA</TableHead>
+                            <TableHead className="font-bold text-[11px] whitespace-nowrap">STATUS</TableHead>
+                            <TableHead className="font-bold text-[11px] whitespace-nowrap">STATUS LPJ</TableHead>
+                            <TableHead className="font-bold text-[11px] whitespace-nowrap">NOMINAL</TableHead>
+                            <TableHead className="font-bold text-[11px] whitespace-nowrap">USAHA</TableHead>
+                            <TableHead className="font-bold text-[11px] whitespace-nowrap">ALAMAT</TableHead>
+                            <TableHead className="font-bold text-[11px] whitespace-nowrap">KELURAHAN</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {results.map((res, idx) => (
+                            <TableRow key={idx} className="hover:bg-emerald-50 transition-colors">
+                              <TableCell className="font-mono text-[10px] whitespace-nowrap">{res.noKK}</TableCell>
+                              <TableCell className="font-mono text-[10px] whitespace-nowrap font-bold text-primary">{res.nik}</TableCell>
+                              <TableCell className="text-[10px] whitespace-nowrap">{res.nomor}</TableCell>
+                              <TableCell className="text-[10px] whitespace-nowrap">{res.tahunPengajuan}</TableCell>
+                              <TableCell className="text-[10px] whitespace-nowrap font-bold">{res.nama}</TableCell>
+                              <TableCell className="text-[10px] whitespace-nowrap">{res.status}</TableCell>
+                              <TableCell className="text-[10px] whitespace-nowrap">{res.statusLpj}</TableCell>
+                              <TableCell className="text-[10px] whitespace-nowrap font-bold text-emerald-600">{res.nominal}</TableCell>
+                              <TableCell className="text-[10px] whitespace-nowrap">{res.usaha}</TableCell>
+                              <TableCell className="text-[10px] whitespace-nowrap">{res.alamat}</TableCell>
+                              <TableCell className="text-[10px] whitespace-nowrap">{res.kelurahan}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </Card>
                 </div>
               ) : (

@@ -47,10 +47,19 @@
     "MasterData": {
       "title": "MasterData",
       "type": "object",
-      "description": "Data master NIK dan KK untuk pengecekkan validasi.",
+      "description": "Data master lengkap untuk pengecekkan validasi dari Excel.",
       "properties": {
         "noKK": { "type": "string" },
         "nik": { "type": "string" },
+        "nomor": { "type": "string" },
+        "tahunPengajuan": { "type": "string" },
+        "nama": { "type": "string" },
+        "status": { "type": "string" },
+        "statusLpj": { "type": "string" },
+        "nominal": { "type": "string" },
+        "usaha": { "type": "string" },
+        "alamat": { "type": "string" },
+        "kelurahan": { "type": "string" },
         "uploadedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["noKK", "nik"]
@@ -89,7 +98,7 @@
         "definition": {
           "entityName": "MasterData",
           "schema": { "$ref": "#/backend/entities/MasterData" },
-          "description": "Data referensi NIK/KK dari Excel"
+          "description": "Data referensi lengkap dari Excel"
         }
       }
     ]
