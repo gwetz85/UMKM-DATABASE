@@ -1,8 +1,7 @@
-
 "use client"
 
 import { useState } from "react"
-import { useMemoFirebase, useCollection, useFirestore, updateDocumentNonBlocking, useDoc, useUser, deleteDocumentNonBlocking } from "@/firebase"
+import { useMemoFirebase, useCollection, useUser, useFirestore, updateDocumentNonBlocking, useDoc, deleteDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, doc } from "firebase/firestore"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -57,19 +56,18 @@ export default function ActorDataPage() {
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !firestore) return
     
-    if (confirm(`Hapus permanen data pelaku "${fullName}"? Tindakan ini tidak dapat dibatalkan.`)) {
+    if (confirm(`Hapus permanen data pelaku "${fullName}"? Data ini tidak akan bisa diakses lagi di tahapan manapun.`)) {
       const actorRef = doc(firestore, 'businessActors', actorId)
       deleteDocumentNonBlocking(actorRef)
       toast({ 
         variant: "destructive",
-        title: "Data Terhapus", 
-        description: `Data ${fullName} telah dihapus dari sistem.` 
+        title: "Data Dihapus Permanen", 
+        description: `Data ${fullName} telah dihapus dari database.` 
       })
     }
   }
 
   const handlePrint = (actor: BusinessActor) => {
-    // Basic print logic
     window.print()
   }
 
@@ -78,11 +76,11 @@ export default function ActorDataPage() {
       <div className="flex justify-between items-center">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold text-primary font-headline">Data Pelaku Usaha</h1>
-          <p className="text-muted-foreground">Data yang telah diverifikasi admin. Lanjutkan dengan mengisi data rekening atau cetak.</p>
+          <p className="text-muted-foreground">Data yang telah lolos verifikasi awal. {isAdmin ? "Kelola atau hapus data di sini." : "Isi data rekening atau cetak data."}</p>
         </div>
         {isAdmin && (
           <div className="hidden md:flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-xl text-primary font-bold text-xs uppercase tracking-widest border border-primary/20">
-            <ShieldCheck className="w-4 h-4" /> Mode Admin Aktif
+            <ShieldCheck className="w-4 h-4" /> Akses Admin
           </div>
         )}
       </div>
