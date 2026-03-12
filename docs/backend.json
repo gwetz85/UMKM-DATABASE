@@ -16,6 +16,7 @@
         "address": { "type": "string" },
         "rtRw": { "type": "string" },
         "kelurahan": { "type": "string" },
+        "kecamatan": { "type": "string" },
         "businessCategory": { "type": "string", "enum": ["Kuliner", "Bukan Kuliner"] },
         "businessName": { "type": "string" },
         "businessLocation": { "type": "string" },

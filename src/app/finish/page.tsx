@@ -30,10 +30,10 @@ export default function FinishPage() {
       </div>
       <p className="text-muted-foreground">Daftar semua data pelaku usaha yang telah melewati semua tahap verifikasi.</p>
 
-      <Card className="border-none shadow-sm overflow-hidden">
+      <Card className="border-none shadow-sm overflow-hidden bg-card text-card-foreground">
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="py-20 flex justify-center"><Loader2 className="animate-spin" /></div>
+            <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
           ) : (
             <Table>
               <TableHeader className="bg-muted/30">
@@ -55,7 +55,7 @@ export default function FinishPage() {
                     <TableCell className="text-right">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button size="sm" variant="ghost" onClick={() => setSelectedActor(actor)}>
+                          <Button size="sm" variant="ghost" onClick={() => setSelectedActor(actor)} className="text-primary font-bold">
                             <Eye className="w-4 h-4 mr-2" /> VIEW
                           </Button>
                         </DialogTrigger>
@@ -89,9 +89,17 @@ export default function FinishPage() {
                               <p className="text-muted-foreground">HP</p>
                               <p className="font-medium">{actor.phone}</p>
                             </div>
+                            <div>
+                              <p className="text-muted-foreground">Kecamatan</p>
+                              <p className="font-medium">{actor.kecamatan || "-"}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Kelurahan</p>
+                              <p className="font-medium">{actor.kelurahan}</p>
+                            </div>
                             <div className="col-span-2">
                               <p className="text-muted-foreground">Alamat</p>
-                              <p className="font-medium">{actor.address} (RT/RW: {actor.rtRw}, Kel: {actor.kelurahan})</p>
+                              <p className="font-medium">{actor.address} (RT/RW: {actor.rtRw})</p>
                             </div>
 
                             <div className="col-span-2 bg-muted/50 p-2 font-bold rounded mt-4">DATA USAHA</div>

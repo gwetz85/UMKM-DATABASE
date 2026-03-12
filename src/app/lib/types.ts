@@ -12,6 +12,7 @@ export interface BusinessActor {
   address: string;
   rtRw: string;
   kelurahan: string;
+  kecamatan: string;
   businessCategory: 'Kuliner' | 'Bukan Kuliner';
   businessName: string;
   businessLocation: string;

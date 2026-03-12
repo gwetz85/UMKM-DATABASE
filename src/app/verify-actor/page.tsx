@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -8,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, Building2, MapPin, FileText } from "lucide-react"
+import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, Building2, FileText } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 
@@ -34,7 +35,6 @@ export default function VerifyActorPage() {
 
   const { data: actors, isLoading } = useCollection<BusinessActor>(memoQuery)
 
-  // Filter data berdasarkan search query
   const filteredActors = actors?.filter(actor => 
     actor.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     actor.nik.includes(searchQuery) ||
@@ -79,14 +79,14 @@ export default function VerifyActorPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input 
             placeholder="Cari Nama, NIK, atau Usaha..." 
-            className="pl-9 h-11 border-primary/20 bg-white"
+            className="pl-9 h-11 border-primary/20 bg-card text-card-foreground"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
 
-      <Card className="border-none shadow-sm overflow-hidden bg-white">
+      <Card className="border-none shadow-sm overflow-hidden bg-card text-card-foreground">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
@@ -105,7 +105,7 @@ export default function VerifyActorPage() {
                 <TableBody>
                   {filteredActors?.map((actor) => (
                     <TableRow key={actor.id} className="hover:bg-muted/5 transition-colors">
-                      <TableCell className="font-bold text-slate-700 whitespace-nowrap">{actor.fullName}</TableCell>
+                      <TableCell className="font-bold whitespace-nowrap">{actor.fullName}</TableCell>
                       <TableCell className="font-mono text-xs">{actor.nik}</TableCell>
                       <TableCell className="whitespace-nowrap">{actor.businessCategory}</TableCell>
                       <TableCell className="font-medium">{actor.businessName}</TableCell>
@@ -136,17 +136,18 @@ export default function VerifyActorPage() {
                                       { label: "Gender", value: actor.gender },
                                       { label: "Tempat / Tgl Lahir", value: actor.pobDob },
                                       { label: "No HP / WA", value: actor.phone },
+                                      { label: "Kecamatan", value: actor.kecamatan },
                                       { label: "Kelurahan", value: actor.kelurahan },
                                       { label: "RT / RW", value: actor.rtRw },
                                     ].map((item, i) => (
                                       <div key={i} className="space-y-1">
                                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                        <p className="text-sm font-bold text-slate-800">{item.value || "-"}</p>
+                                        <p className="text-sm font-bold text-foreground">{item.value || "-"}</p>
                                       </div>
                                     ))}
                                     <div className="md:col-span-2 space-y-1">
                                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Alamat Lengkap</p>
-                                      <p className="text-sm font-bold text-slate-800">{actor.address || "-"}</p>
+                                      <p className="text-sm font-bold text-foreground">{actor.address || "-"}</p>
                                     </div>
                                   </div>
                                 </section>
@@ -163,7 +164,7 @@ export default function VerifyActorPage() {
                                     ].map((item, i) => (
                                       <div key={i} className="space-y-1">
                                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                        <p className="text-sm font-bold text-slate-800">{item.value || "-"}</p>
+                                        <p className="text-sm font-bold text-foreground">{item.value || "-"}</p>
                                       </div>
                                     ))}
                                   </div>
@@ -171,14 +172,14 @@ export default function VerifyActorPage() {
                               </div>
                               <DialogFooter className="gap-2">
                                 <Button variant="outline" onClick={() => setViewingActor(null)} className="font-bold">Tutup</Button>
-                                <Button onClick={() => { handleVerify(actor.id); setViewingActor(null); }} className="bg-green-600 hover:bg-green-700 font-bold">
+                                <Button onClick={() => { handleVerify(actor.id); setViewingActor(null); }} className="bg-green-600 hover:bg-green-700 font-bold text-white">
                                   <Check className="w-4 h-4 mr-2" /> VERIFIKASI SEKARANG
                                 </Button>
                               </DialogFooter>
                             </DialogContent>
                           </Dialog>
 
-                          <Button size="sm" onClick={() => handleVerify(actor.id)} className="bg-green-600 hover:bg-green-700 font-bold h-9">
+                          <Button size="sm" onClick={() => handleVerify(actor.id)} className="bg-green-600 hover:bg-green-700 font-bold h-9 text-white">
                             <Check className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">VERIFIKASI</span>
                           </Button>
                           

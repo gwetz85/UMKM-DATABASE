@@ -1,6 +1,7 @@
+
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, getDocs } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,13 +11,37 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Save, AlertCircle } from "lucide-react"
+import { Loader2, Save } from "lucide-react"
 
 export default function InputDataPage() {
   const { toast } = useToast()
   const { user } = useUser()
   const firestore = useFirestore()
   const [loading, setLoading] = useState(false)
+  const [kelurahan, setKelurahan] = useState<string>("")
+  const [kecamatan, setKecamatan] = useState<string>("")
+
+  // Mapping Kelurahan ke Kecamatan sesuai instruksi
+  useEffect(() => {
+    if (!kelurahan) {
+      setKecamatan("")
+      return
+    }
+
+    const group1And2 = ["Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat", "Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru"]
+    const group3 = ["Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana"]
+    const group4 = ["Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"]
+
+    if (group1And2.includes(kelurahan)) {
+      setKecamatan("Tanjungpinang Kota")
+    } else if (group3.includes(kelurahan)) {
+      setKecamatan("Tanjungpinang Timur")
+    } else if (group4.includes(kelurahan)) {
+      setKecamatan("Bukit Bestari")
+    } else {
+      setKecamatan("")
+    }
+  }, [kelurahan])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -28,7 +53,6 @@ export default function InputDataPage() {
     const noKK = formData.get("noKK") as string
 
     try {
-      // 1. Validasi Duplikasi: Cek apakah NIK atau No KK sudah ada di database
       const actorsRef = collection(firestore, 'businessActors')
       
       const qNik = query(actorsRef, where('nik', '==', nik))
@@ -49,7 +73,6 @@ export default function InputDataPage() {
         return
       }
 
-      // 2. Jika tidak ada duplikasi, lanjut simpan
       const data = {
         ownerId: user.uid,
         fullName: formData.get("fullName"),
@@ -60,7 +83,8 @@ export default function InputDataPage() {
         phone: formData.get("phone"),
         address: formData.get("address"),
         rtRw: formData.get("rtRw"),
-        kelurahan: formData.get("kelurahan"),
+        kelurahan: kelurahan,
+        kecamatan: kecamatan,
         businessCategory: formData.get("businessCategory"),
         businessName: formData.get("businessName"),
         businessLocation: formData.get("businessLocation"),
@@ -75,6 +99,8 @@ export default function InputDataPage() {
         description: "Mohon menunggu ADMIN memverifikasi data anda" 
       })
       e.currentTarget.reset()
+      setKelurahan("")
+      setKecamatan("")
     } catch (error) {
       console.error(error)
       toast({
@@ -87,6 +113,13 @@ export default function InputDataPage() {
     }
   }
 
+  const kelurahanList = [
+    "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
+    "Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru",
+    "Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana",
+    "Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"
+  ]
+
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col gap-2">
@@ -95,7 +128,7 @@ export default function InputDataPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card className="border-none shadow-sm">
+        <Card className="border-none shadow-sm bg-card text-card-foreground">
           <CardHeader>
             <CardTitle className="text-lg">Biodata Pribadi</CardTitle>
           </CardHeader>
@@ -133,7 +166,7 @@ export default function InputDataPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm">
+        <Card className="border-none shadow-sm bg-card text-card-foreground">
           <CardHeader>
             <CardTitle className="text-lg">Alamat & Lokasi</CardTitle>
           </CardHeader>
@@ -148,12 +181,23 @@ export default function InputDataPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="kelurahan">Kelurahan</Label>
-              <Input id="kelurahan" name="kelurahan" required />
+              <Select value={kelurahan} onValueChange={setKelurahan} required>
+                <SelectTrigger><SelectValue placeholder="Pilih Kelurahan" /></SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {kelurahanList.map((k) => (
+                    <SelectItem key={k} value={k}>{k}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="kecamatan">Kecamatan (Otomatis)</Label>
+              <Input id="kecamatan" name="kecamatan" value={kecamatan} readOnly className="bg-muted font-bold" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm">
+        <Card className="border-none shadow-sm bg-card text-card-foreground">
           <CardHeader>
             <CardTitle className="text-lg">Data Usaha</CardTitle>
           </CardHeader>
@@ -180,7 +224,7 @@ export default function InputDataPage() {
         </Card>
 
         <div className="flex justify-end pb-8">
-          <Button type="submit" disabled={loading} className="w-full md:w-auto min-w-[200px]">
+          <Button type="submit" disabled={loading} className="w-full md:w-auto min-w-[200px] bg-primary text-primary-foreground font-bold">
             {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
             Simpan Data Input
           </Button>

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard, FileText } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 
@@ -74,7 +75,6 @@ export default function ActorDataPage() {
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      {/* Header Cetak (Hanya terlihat saat diprint) */}
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
         <h1 className="text-2xl font-black uppercase">LAPORAN DATA PELAKU USAHA UMKM</h1>
         <p className="text-sm font-bold">Sistem Manajemen Terpadu Database UMKM</p>
@@ -98,7 +98,7 @@ export default function ActorDataPage() {
         </div>
       </div>
 
-      <Card className="border-none shadow-sm overflow-hidden print:shadow-none print:border print:rounded-none">
+      <Card className="border-none shadow-sm overflow-hidden bg-card text-card-foreground print:shadow-none print:border print:rounded-none">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="py-20 flex justify-center print:hidden"><Loader2 className="animate-spin text-primary" /></div>
@@ -119,7 +119,7 @@ export default function ActorDataPage() {
                 <TableBody>
                   {actors?.map((actor) => (
                     <TableRow key={actor.id} className="hover:bg-muted/10 transition-colors print:border-b print:border-gray-300">
-                      <TableCell className="font-bold text-foreground whitespace-nowrap">{actor.fullName}</TableCell>
+                      <TableCell className="font-bold whitespace-nowrap">{actor.fullName}</TableCell>
                       <TableCell className="font-mono">{actor.nik}</TableCell>
                       <TableCell className="font-medium">{actor.businessName}</TableCell>
                       <TableCell>{actor.businessCategory}</TableCell>
@@ -152,6 +152,7 @@ export default function ActorDataPage() {
                                       { label: "Gender", value: actor.gender },
                                       { label: "Tempat / Tgl Lahir", value: actor.pobDob },
                                       { label: "No HP / WA", value: actor.phone },
+                                      { label: "Kecamatan", value: actor.kecamatan },
                                       { label: "Kelurahan", value: actor.kelurahan },
                                       { label: "RT / RW", value: actor.rtRw },
                                     ].map((item, i) => (
@@ -237,7 +238,7 @@ export default function ActorDataPage() {
                                   </div>
                                 </div>
                                 <DialogFooter>
-                                  <Button type="submit" className="w-full bg-primary font-bold"><Save className="w-4 h-4 mr-2" /> Simpan Rekening</Button>
+                                  <Button type="submit" className="w-full bg-primary font-bold text-white"><Save className="w-4 h-4 mr-2" /> Simpan Rekening</Button>
                                 </DialogFooter>
                               </form>
                             </DialogContent>
@@ -271,7 +272,6 @@ export default function ActorDataPage() {
         </CardContent>
       </Card>
 
-      {/* Tanda Tangan Cetak (Hanya terlihat saat diprint) */}
       <div className="hidden print:flex justify-end mt-12 pr-12">
         <div className="text-center space-y-16">
           <p className="font-bold">Dicetak oleh Admin Database,</p>
