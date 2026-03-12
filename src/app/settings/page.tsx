@@ -128,26 +128,37 @@ export default function SettingsPage() {
         const wb = XLSX.read(bstr, { type: 'binary' })
         const wsname = wb.SheetNames[0]
         const ws = wb.Sheets[wsname]
-        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[]
+        
+        // Use header: 1 to get array of arrays
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as any[]
 
-        // Mappings based on user request: 
+        if (data.length <= 1) throw new Error("File Excel kosong atau tidak memiliki data.")
+
+        // Mappings based on user request (Kolom A-K):
         // 0: KK, 1: NIK, 2: Nomor, 3: Tahun, 4: Nama, 5: Status, 6: LPJ, 7: Nominal, 8: Usaha, 9: Alamat, 10: Kelurahan
-        const masterData = data.slice(1).map(row => ({
-          noKK: String(row[0] || '').trim(),
-          nik: String(row[1] || '').trim(),
-          nomor: String(row[2] || '').trim(),
-          tahunPengajuan: String(row[3] || '').trim(),
-          nama: String(row[4] || '').trim(),
-          status: String(row[5] || '').trim(),
-          statusLpj: String(row[6] || '').trim(),
-          nominal: String(row[7] || '').trim(),
-          usaha: String(row[8] || '').trim(),
-          alamat: String(row[9] || '').trim(),
-          kelurahan: String(row[10] || '').trim(),
-          uploadedAt: new Date().toISOString()
-        })).filter(item => item.noKK && item.nik)
+        const masterData = data.slice(1).map((row: any[]) => {
+          const getStr = (idx: number) => {
+            const val = row[idx]
+            return val !== undefined && val !== null ? String(val).trim() : ""
+          }
 
-        if (masterData.length === 0) throw new Error("Tidak ada data valid ditemukan. Pastikan format kolom A (KK) dan B (NIK) terisi.")
+          return {
+            noKK: getStr(0),
+            nik: getStr(1),
+            nomor: getStr(2),
+            tahunPengajuan: getStr(3),
+            nama: getStr(4),
+            status: getStr(5),
+            statusLpj: getStr(6),
+            nominal: getStr(7),
+            usaha: getStr(8),
+            alamat: getStr(9),
+            kelurahan: getStr(10),
+            uploadedAt: new Date().toISOString()
+          }
+        }).filter(item => item.noKK && item.nik)
+
+        if (masterData.length === 0) throw new Error("Tidak ada data valid ditemukan. Pastikan kolom KK dan NIK terisi.")
 
         const batchSize = 500
         const colRef = collection(firestore, "master_data")

@@ -144,13 +144,13 @@ export default function CheckDataPage() {
 
                   <div className="space-y-4">
                     {results.map((res, idx) => (
-                      <Card key={idx} className="border-none shadow-sm bg-[#F8FAFC] p-6 rounded-xl">
-                        <div className="flex items-center gap-3 mb-8">
+                      <Card key={idx} className="border-none shadow-sm bg-[#F8FAFC] p-8 rounded-xl">
+                        <div className="flex items-center gap-3 mb-10">
                           <UserSearch className="w-6 h-6 text-slate-600" />
-                          <h3 className="text-xl font-medium text-slate-800 tracking-tight">Data Ditemukan!</h3>
+                          <h3 className="text-2xl font-black text-slate-800 tracking-tight">Data Ditemukan!</h3>
                         </div>
                         
-                        <div className="grid gap-y-4 max-w-4xl">
+                        <div className="grid gap-y-6 max-w-4xl">
                           {[
                             { label: "NOMOR KK", value: res.noKK },
                             { label: "NIK", value: res.nik },
@@ -164,7 +164,7 @@ export default function CheckDataPage() {
                             { label: "ALAMAT", value: res.alamat },
                             { label: "KELURAHAN", value: res.kelurahan },
                           ].map((item, i) => (
-                            <div key={i} className="grid grid-cols-[220px_1fr] items-start gap-4">
+                            <div key={i} className="grid grid-cols-[250px_1fr] items-start gap-8">
                               <span className="text-sm font-black text-slate-700 uppercase leading-relaxed">
                                 {item.label}
                               </span>
