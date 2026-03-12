@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemoFirebase, useCollection, useUser } from "@/firebase"
+import { useMemoFirebase, useCollection, useUser, useFirestore } from "@/firebase"
 import { collection, query, orderBy } from "firebase/firestore"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -10,10 +10,8 @@ import {
   Search, 
   Plus, 
   MoreHorizontal, 
-  FileText, 
   Edit, 
   Trash2, 
-  ExternalLink,
   Loader2
 } from "lucide-react"
 import Link from "next/link"
@@ -22,14 +20,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 
 export default function BusinessListPage() {
   const { user } = useUser()
-  const { firestore } = (typeof window !== 'undefined') ? require('@/firebase') : { firestore: null }
+  const firestore = useFirestore()
 
   const memoQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null
@@ -87,7 +84,7 @@ export default function BusinessListPage() {
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-medium text-primary">{item.companyName}</span>
-                        <span className="text-xs text-muted-foreground">{item.ownerName}</span>
+                        <span className="text-xs text-muted-foreground">{item.ownerName || '-'}</span>
                       </div>
                     </TableCell>
                     <TableCell>

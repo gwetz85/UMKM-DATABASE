@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemoFirebase, useCollection, useUser, useAuth } from "@/firebase"
+import { useMemoFirebase, useCollection, useUser, useAuth, useFirestore } from "@/firebase"
 import { collection, query, orderBy, limit } from "firebase/firestore"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, Building2, ShieldCheck, TrendingUp, Loader2 } from "lucide-react"
@@ -12,28 +12,21 @@ import { signInAnonymously } from "firebase/auth"
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
   const auth = useAuth()
+  const firestore = useFirestore()
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       signInAnonymously(auth)
     }
   }, [user, isUserLoading, auth])
-
-  const businessQuery = useMemoFirebase(() => {
-    if (!user) return null
-    return query(
-      collection(document.getElementById('db') as any, 'users', user.uid, 'businessActors'),
-      orderBy('createdAt', 'desc')
-    )
-  }, [user])
-
-  // In reality, useMemoFirebase needs the firestore instance. 
-  // Let's refine the query using the hook correctly.
-  const { firestore } = (typeof window !== 'undefined') ? require('@/firebase') : { firestore: null }
   
   const memoQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null
-    return query(collection(firestore, 'users', user.uid, 'businessActors'), orderBy('createdAt', 'desc'))
+    return query(
+      collection(firestore, 'users', user.uid, 'businessActors'), 
+      orderBy('createdAt', 'desc'),
+      limit(10)
+    )
   }, [user, firestore])
 
   const { data: businesses, isLoading } = useCollection(memoQuery)
