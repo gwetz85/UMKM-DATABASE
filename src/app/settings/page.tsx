@@ -15,10 +15,10 @@ import {
   Upload, 
   AlertTriangle, 
   Loader2, 
-  CheckCircle2,
   RefreshCcw,
   Info,
-  FileSpreadsheet
+  FileSpreadsheet,
+  DatabaseZap
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -134,7 +134,7 @@ export default function SettingsPage() {
           noKK: String(row[0] || '').trim(),
           nik: String(row[1] || '').trim(),
           uploadedAt: new Date().toISOString()
-        })).filter(item => item.noKK && item.nik && item.noKK !== 'undefined')
+        })).filter(item => item.noKK && item.nik && item.noKK !== 'undefined' && item.noKK !== '')
 
         if (masterData.length === 0) throw new Error("Tidak ada data valid ditemukan. Pastikan Kolom A (No KK) dan Kolom B (NIK) terisi.")
 
@@ -151,11 +151,12 @@ export default function SettingsPage() {
           await batch.commit()
         }
 
-        toast({ title: "Upload Excel Berhasil", description: `${masterData.length} data master telah diimpor.` })
+        toast({ title: "Upload Excel Berhasil", description: `${masterData.length} data master telah disimpan ke sistem.` })
       } catch (error: any) {
         toast({ variant: "destructive", title: "Gagal Impor Excel", description: error.message || "Pastikan format kolom benar." })
       } finally {
         setUploadingExcel(false)
+        e.target.value = ''
       }
     }
     reader.readAsBinaryString(file)
@@ -175,6 +176,32 @@ export default function SettingsPage() {
       toast({ title: "Reset Berhasil", description: "Seluruh data pelaku usaha telah dihapus." })
     } catch (error) {
       toast({ variant: "destructive", title: "Reset Gagal", description: "Terjadi kesalahan saat menghapus data." })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleResetMaster = async () => {
+    if (!confirm("Hapus semua data Master (Data Pembanding)? Tindakan ini tidak dapat dibatalkan.")) return
+
+    setLoading(true)
+    try {
+      const colRef = collection(firestore, "master_data")
+      const snapshot = await getDocs(colRef)
+      
+      const batchSize = 500
+      const docs = snapshot.docs
+      
+      for (let i = 0; i < docs.length; i += batchSize) {
+        const batch = writeBatch(firestore)
+        const chunk = docs.slice(i, i + batchSize)
+        chunk.forEach((doc) => batch.delete(doc.ref))
+        await batch.commit()
+      }
+      
+      toast({ title: "Hapus Berhasil", description: "Seluruh data master pembanding telah dihapus." })
+    } catch (error) {
+      toast({ variant: "destructive", title: "Gagal Hapus", description: "Terjadi kesalahan saat menghapus data master." })
     } finally {
       setLoading(false)
     }
@@ -280,17 +307,22 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2 font-bold text-sm text-primary">
                     <FileSpreadsheet className="w-4 h-4" /> Import Data Master (Excel)
                   </div>
-                  <p className="text-xs text-muted-foreground">Upload file .xlsx. Kolom A: Nomor KK, Kolom B: NIK individu.</p>
-                  <div className="relative">
-                    <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="hidden" id="excel-upload" disabled={uploadingExcel} />
-                    <Label htmlFor="excel-upload" className="cursor-pointer">
-                      <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5" asChild>
-                        <div className="flex items-center justify-center gap-2">
-                          {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                          Upload Excel Master
-                        </div>
-                      </Button>
-                    </Label>
+                  <p className="text-xs text-muted-foreground">Upload file .xlsx. Kolom A: Nomor KK, Kolom B: NIK individu. Data akan tersimpan permanen di sistem.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="relative">
+                      <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="hidden" id="excel-upload" disabled={uploadingExcel} />
+                      <Label htmlFor="excel-upload" className="cursor-pointer">
+                        <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5" asChild>
+                          <div className="flex items-center justify-center gap-2">
+                            {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                            Upload Excel Master
+                          </div>
+                        </Button>
+                      </Label>
+                    </div>
+                    <Button variant="outline" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={handleResetMaster} disabled={loading}>
+                      <DatabaseZap className="w-4 h-4 mr-2" /> HAPUS DATA PEMBANDING
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -300,9 +332,9 @@ export default function SettingsPage() {
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle className="font-bold">Zona Bahaya</AlertTitle>
                   <AlertDescription className="flex flex-col gap-3">
-                    <span className="text-xs">Hapus SEMUA data pelaku usaha secara permanen.</span>
+                    <span className="text-xs">Hapus SEMUA data pelaku usaha secara permanen. Tindakan ini tidak berpengaruh pada data Master/Pembanding.</span>
                     <Button variant="destructive" size="sm" onClick={handleReset} disabled={loading} className="w-fit font-bold">
-                      <Trash2 className="w-4 h-4 mr-2" /> Reset Seluruh Data
+                      <Trash2 className="w-4 h-4 mr-2" /> Reset Seluruh Data Pelaku
                     </Button>
                   </AlertDescription>
                 </Alert>
