@@ -9,9 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database, Users } from "lucide-react"
+import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database, UserSearch } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export default function CheckDataPage() {
   const firestore = useFirestore()
@@ -92,13 +91,13 @@ export default function CheckDataPage() {
                 <Label htmlFor="inputValue" className="font-bold text-slate-700">
                   {searchType === "nik" ? "NIK (16 Digit)" : "Nomor KK (16 Digit)"}
                 </Label>
-                <Input 
+                <input 
                   id="inputValue" 
                   placeholder={searchType === "nik" ? "Input NIK" : "Input No KK"} 
                   maxLength={16}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  className="h-12 text-lg font-mono tracking-widest"
+                  className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-lg ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono tracking-widest"
                   required 
                 />
               </div>
@@ -132,67 +131,58 @@ export default function CheckDataPage() {
           )}
 
           {searchDone && (
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+            <div className="animate-in fade-in duration-500 space-y-6">
               {results.length > 0 ? (
                 <div className="space-y-6">
                   <Alert className="bg-emerald-50 border-emerald-200 text-emerald-900 rounded-2xl p-6">
                     <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                    <AlertTitle className="text-xl font-black mb-1">DATA DITEMUKAN</AlertTitle>
+                    <AlertTitle className="text-xl font-black mb-1 uppercase">DATA DITEMUKAN</AlertTitle>
                     <AlertDescription className="font-medium">
                       Ditemukan <strong>{results.length}</strong> record data yang terhubung dengan pencarian Anda.
                     </AlertDescription>
                   </Alert>
 
-                  <Card className="border-none shadow-xl overflow-hidden bg-white">
-                    <CardHeader className="bg-primary text-white p-4">
-                      <div className="flex items-center gap-2">
-                        <Users className="w-5 h-5" />
-                        <CardTitle className="text-sm uppercase tracking-widest font-bold">Hasil Penelusuran Master Data</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader className="bg-muted/50">
-                          <TableRow>
-                            <TableHead className="font-bold text-[11px] whitespace-nowrap">NO. KK</TableHead>
-                            <TableHead className="font-bold text-[11px] whitespace-nowrap">NIK</TableHead>
-                            <TableHead className="font-bold text-[11px] whitespace-nowrap">NOMOR</TableHead>
-                            <TableHead className="font-bold text-[11px] whitespace-nowrap">TAHUN</TableHead>
-                            <TableHead className="font-bold text-[11px] whitespace-nowrap">NAMA</TableHead>
-                            <TableHead className="font-bold text-[11px] whitespace-nowrap">STATUS</TableHead>
-                            <TableHead className="font-bold text-[11px] whitespace-nowrap">STATUS LPJ</TableHead>
-                            <TableHead className="font-bold text-[11px] whitespace-nowrap">NOMINAL</TableHead>
-                            <TableHead className="font-bold text-[11px] whitespace-nowrap">USAHA</TableHead>
-                            <TableHead className="font-bold text-[11px] whitespace-nowrap">ALAMAT</TableHead>
-                            <TableHead className="font-bold text-[11px] whitespace-nowrap">KELURAHAN</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {results.map((res, idx) => (
-                            <TableRow key={idx} className="hover:bg-emerald-50 transition-colors">
-                              <TableCell className="font-mono text-[10px] whitespace-nowrap">{res.noKK}</TableCell>
-                              <TableCell className="font-mono text-[10px] whitespace-nowrap font-bold text-primary">{res.nik}</TableCell>
-                              <TableCell className="text-[10px] whitespace-nowrap">{res.nomor}</TableCell>
-                              <TableCell className="text-[10px] whitespace-nowrap">{res.tahunPengajuan}</TableCell>
-                              <TableCell className="text-[10px] whitespace-nowrap font-bold">{res.nama}</TableCell>
-                              <TableCell className="text-[10px] whitespace-nowrap">{res.status}</TableCell>
-                              <TableCell className="text-[10px] whitespace-nowrap">{res.statusLpj}</TableCell>
-                              <TableCell className="text-[10px] whitespace-nowrap font-bold text-emerald-600">{res.nominal}</TableCell>
-                              <TableCell className="text-[10px] whitespace-nowrap">{res.usaha}</TableCell>
-                              <TableCell className="text-[10px] whitespace-nowrap">{res.alamat}</TableCell>
-                              <TableCell className="text-[10px] whitespace-nowrap">{res.kelurahan}</TableCell>
-                            </TableRow>
+                  <div className="space-y-4">
+                    {results.map((res, idx) => (
+                      <Card key={idx} className="border-none shadow-sm bg-[#F8FAFC] p-6 rounded-xl">
+                        <div className="flex items-center gap-3 mb-8">
+                          <UserSearch className="w-6 h-6 text-slate-600" />
+                          <h3 className="text-xl font-medium text-slate-800 tracking-tight">Data Ditemukan!</h3>
+                        </div>
+                        
+                        <div className="grid gap-y-4 max-w-4xl">
+                          {[
+                            { label: "NOMOR KK", value: res.noKK },
+                            { label: "NIK", value: res.nik },
+                            { label: "NO", value: res.nomor },
+                            { label: "TAHUN PENGAJUAN", value: res.tahunPengajuan },
+                            { label: "NAMA", value: res.nama },
+                            { label: "STATUS", value: res.status },
+                            { label: "STATUS LPJ", value: res.statusLpj },
+                            { label: "NOMINAL", value: res.nominal },
+                            { label: "USAHA", value: res.usaha },
+                            { label: "ALAMAT", value: res.alamat },
+                            { label: "KELURAHAN", value: res.kelurahan },
+                          ].map((item, i) => (
+                            <div key={i} className="grid grid-cols-[220px_1fr] items-start gap-4">
+                              <span className="text-sm font-black text-slate-700 uppercase leading-relaxed">
+                                {item.label}
+                              </span>
+                              <span className="text-sm font-medium text-slate-600 uppercase leading-relaxed">
+                                {item.value || "-"}
+                              </span>
+                            </div>
                           ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </Card>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-6">
                   <Alert className="bg-red-50 border-red-200 text-red-900 rounded-2xl p-6">
                     <XCircle className="w-6 h-6 text-red-600" />
-                    <AlertTitle className="text-xl font-black mb-2">DATA TIDAK TERDAFTAR</AlertTitle>
+                    <AlertTitle className="text-xl font-black mb-2 uppercase">DATA TIDAK TERDAFTAR</AlertTitle>
                     <AlertDescription className="font-medium">
                       Mohon maaf, nomor <strong>{inputValue}</strong> tidak ditemukan dalam database master.
                     </AlertDescription>
