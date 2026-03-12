@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { UserPlus, Trash2, Loader2, ShieldAlert, UserCheck, Shield } from "lucide-react"
+import { UserPlus, Trash2, Loader2, ShieldAlert, UserCheck, Shield, Key } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function UserManagementPage() {
@@ -38,39 +38,39 @@ export default function UserManagementPage() {
   const handleAddUser = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
-    const uid = formData.get("uid") as string
     const fullName = formData.get("fullName") as string
+    const password = formData.get("password") as string
     const role = formData.get("role") as string
 
-    if (!uid || !fullName || !role) return
+    if (!fullName || !password || !role) return
 
-    const userRef = doc(firestore, 'system_users', uid)
+    // Gunakan fullName sebagai ID sementara untuk provisioning
+    const tempId = fullName.toLowerCase().trim()
+    const userRef = doc(firestore, 'system_users', tempId)
+    
     setDocumentNonBlocking(userRef, {
-      uid,
       fullName,
+      password, // Password disimpan untuk divalidasi saat login pertama kali
       role,
       addedAt: new Date().toISOString()
     }, { merge: true })
 
-    // Jika role admin, tambahkan ke roles_admin juga
-    if (role === 'admin') {
-      const roleRef = doc(firestore, 'roles_admin', uid)
-      setDocumentNonBlocking(roleRef, { admin: true }, { merge: true })
-    }
-
-    toast({ title: "Berhasil", description: `User ${fullName} telah ditambahkan sebagai ${role}.` })
+    toast({ 
+      title: "User Didaftarkan", 
+      description: `User ${fullName} berhasil dibuat. UID akan otomatis terbaca saat user login.` 
+    })
     setIsDialogOpen(false)
   }
 
-  const handleDelete = (uid: string, fullName: string) => {
-    if (uid === user?.uid) {
+  const handleDelete = (id: string, fullName: string) => {
+    if (id === user?.uid) {
       toast({ variant: "destructive", title: "Gagal", description: "Anda tidak bisa menghapus diri sendiri." })
       return
     }
 
     if (confirm(`Hapus akses untuk ${fullName}?`)) {
-      deleteDocumentNonBlocking(doc(firestore, 'system_users', uid))
-      deleteDocumentNonBlocking(doc(firestore, 'roles_admin', uid))
+      deleteDocumentNonBlocking(doc(firestore, 'system_users', id))
+      deleteDocumentNonBlocking(doc(firestore, 'roles_admin', id))
       toast({ title: "Terhapus", description: "Akses user telah dicabut." })
     }
   }
@@ -86,7 +86,6 @@ export default function UserManagementPage() {
         <h1 className="text-2xl font-bold">Akses Ditolak</h1>
         <p className="text-muted-foreground max-w-md">
           Hanya Administrator yang dapat mengakses menu Manajemen User. 
-          Mintalah Admin utama untuk mendaftarkan ID Perangkat Anda (UID) yang tertera di sidebar.
         </p>
       </div>
     )
@@ -97,7 +96,7 @@ export default function UserManagementPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-primary font-headline">Manajemen User</h1>
-          <p className="text-muted-foreground">Kelola daftar pengguna dan hak akses ke dalam aplikasi UMKM Database.</p>
+          <p className="text-muted-foreground">Tambah user baru hanya dengan Nama & Kata Sandi tanpa perlu input UID.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -109,16 +108,19 @@ export default function UserManagementPage() {
             <form onSubmit={handleAddUser}>
               <DialogHeader>
                 <DialogTitle>Registrasi User Baru</DialogTitle>
-                <CardDescription>Masukkan UID yang didapatkan dari sidebar user tersebut.</CardDescription>
+                <CardDescription>User baru bisa langsung login menggunakan data ini.</CardDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label>User ID (UID)</Label>
-                  <Input name="uid" placeholder="Tempelkan UID di sini..." required />
+                  <Label>Nama Lengkap (Username)</Label>
+                  <Input name="fullName" placeholder="Contoh: Budi Santoso" required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Nama Lengkap</Label>
-                  <Input name="fullName" placeholder="Masukkan nama user" required />
+                  <Label>Kata Sandi</Label>
+                  <div className="relative">
+                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input name="password" type="password" placeholder="Buat kata sandi..." className="pl-10" required />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Role / Jabatan</Label>
@@ -132,7 +134,7 @@ export default function UserManagementPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" className="w-full">Simpan Akses User</Button>
+                <Button type="submit" className="w-full">Buat User Baru</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -148,9 +150,9 @@ export default function UserManagementPage() {
               <TableHeader className="bg-muted/30">
                 <TableRow>
                   <TableHead>Nama Pengguna</TableHead>
-                  <TableHead>User ID (UID)</TableHead>
+                  <TableHead>Identitas / UID</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Tanggal Gabung</TableHead>
+                  <TableHead>Status Akun</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -158,7 +160,9 @@ export default function UserManagementPage() {
                 {systemUsers?.map((u: any) => (
                   <TableRow key={u.id} className="hover:bg-muted/10">
                     <TableCell className="font-bold text-slate-700">{u.fullName}</TableCell>
-                    <TableCell className="font-mono text-[10px] text-muted-foreground">{u.uid}</TableCell>
+                    <TableCell className="font-mono text-[10px] text-muted-foreground">
+                      {u.uid || <span className="text-amber-600 font-bold italic">Menunggu Login...</span>}
+                    </TableCell>
                     <TableCell>
                       {u.role === 'admin' ? (
                         <div className="flex items-center gap-1 text-primary font-black uppercase text-[10px] bg-primary/10 px-2 py-0.5 rounded w-fit">
@@ -170,15 +174,19 @@ export default function UserManagementPage() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {u.addedAt ? new Date(u.addedAt).toLocaleDateString('id-ID') : '-'}
+                    <TableCell>
+                      {u.uid ? (
+                        <span className="text-[10px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-bold uppercase">AKTIF</span>
+                      ) : (
+                        <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-bold uppercase">PENDING</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         className="text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(u.uid, u.fullName)}
+                        onClick={() => handleDelete(u.id, u.fullName)}
                         disabled={u.uid === user?.uid}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -186,26 +194,11 @@ export default function UserManagementPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {(!systemUsers || systemUsers.length === 0) && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-20 text-muted-foreground">
-                      Belum ada user yang terdaftar. Klik tombol Tambah untuk memulai.
-                    </TableCell>
-                  </TableRow>
-                )}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
-
-      <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-xs flex gap-3">
-        <ShieldAlert className="w-5 h-5 shrink-0" />
-        <p>
-          <strong>Catatan Keamanan:</strong> Pastikan Anda hanya menambahkan UID dari orang yang berhak. 
-          User dengan role <strong>Admin</strong> akan memiliki kontrol penuh terhadap database dan manajemen user lainnya.
-        </p>
-      </div>
     </div>
   )
 }

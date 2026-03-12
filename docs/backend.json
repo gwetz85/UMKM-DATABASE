@@ -40,9 +40,10 @@
         "uid": { "type": "string" },
         "fullName": { "type": "string" },
         "role": { "type": "string", "enum": ["admin", "petugas"] },
+        "password": { "type": "string", "description": "Password sementara untuk provisioning" },
         "addedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["uid", "fullName", "role"]
+      "required": ["fullName", "role"]
     },
     "MasterData": {
       "title": "MasterData",
