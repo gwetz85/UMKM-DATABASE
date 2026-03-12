@@ -4,7 +4,6 @@ import {SidebarProvider, SidebarTrigger} from '@/components/ui/sidebar';
 import {AppSidebar} from '@/components/app-sidebar';
 import {Toaster} from '@/components/ui/toaster';
 import {FirebaseClientProvider} from '@/firebase';
-import {FooterTicker} from '@/components/footer-ticker';
 import {Building2} from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -44,7 +43,7 @@ export default function RootLayout({
 
               <div className="flex flex-1 w-full overflow-hidden">
                 <AppSidebar />
-                <main className="flex-1 overflow-auto bg-background pb-12">
+                <main className="flex-1 overflow-auto bg-background">
                   {/* Desktop Sidebar Trigger (Visible when sidebar is collapsed) */}
                   <div className="hidden md:flex p-4 items-center">
                     <SidebarTrigger className="text-primary hover:bg-primary/10" />
@@ -54,7 +53,6 @@ export default function RootLayout({
                   </div>
                 </main>
               </div>
-              <FooterTicker />
             </div>
           </SidebarProvider>
           <Toaster />
