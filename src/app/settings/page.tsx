@@ -18,7 +18,8 @@ import {
   Loader2, 
   ShieldAlert,
   CheckCircle2,
-  RefreshCcw
+  RefreshCcw,
+  Info
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -132,22 +133,22 @@ export default function SettingsPage() {
     return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>
   }
 
-  if (!isAdmin) {
-    return (
-      <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center">
-        <ShieldAlert className="w-16 h-16 text-destructive" />
-        <h1 className="text-2xl font-bold">Akses Ditolak</h1>
-        <p className="text-muted-foreground max-w-md">Hanya Administrator yang dapat mengakses menu Pengaturan Sistem.</p>
-      </div>
-    )
-  }
-
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
-      <div>
+      <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-black text-primary font-headline">Pengaturan</h1>
-        <p className="text-muted-foreground font-medium">Konfigurasi tampilan dan manajemen data aplikasi.</p>
+        <p className="text-muted-foreground font-medium">Konfigurasi tampilan {isAdmin ? "dan manajemen data aplikasi." : "aplikasi Anda."}</p>
       </div>
+
+      {!isAdmin && (
+        <Alert className="bg-blue-50 border-blue-200">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-800 font-bold">Akses Terbatas</AlertTitle>
+          <AlertDescription className="text-blue-700">
+            Sebagai Petugas Input, Anda hanya dapat merubah tema dan warna aplikasi. Fitur manajemen data hanya tersedia untuk Administrator.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-6">
         {/* Tema & Warna */}
@@ -190,56 +191,58 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Manajemen Data */}
-        <Card className="border-none shadow-sm bg-white">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <RefreshCcw className="w-5 h-5 text-primary" /> Manajemen Data
-            </CardTitle>
-            <CardDescription>Ekspor, impor, dan bersihkan data database.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="p-4 border rounded-xl space-y-3">
-                <div className="flex items-center gap-2 font-bold text-sm">
-                  <Download className="w-4 h-4 text-emerald-600" /> Backup Data
-                </div>
-                <p className="text-xs text-muted-foreground">Unduh semua data pelaku usaha dalam format JSON untuk cadangan.</p>
-                <Button variant="outline" size="sm" onClick={handleBackup} disabled={loading} className="w-full">
-                  {loading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null} Unduh Backup
-                </Button>
-              </div>
-
-              <div className="p-4 border rounded-xl space-y-3">
-                <div className="flex items-center gap-2 font-bold text-sm">
-                  <Upload className="w-4 h-4 text-blue-600" /> Restore Data
-                </div>
-                <p className="text-xs text-muted-foreground">Unggah file backup JSON untuk memulihkan data ke sistem.</p>
-                <div className="relative">
-                  <input type="file" accept=".json" onChange={handleRestore} className="hidden" id="restore-input" disabled={loading} />
-                  <Label htmlFor="restore-input" className="cursor-pointer">
-                    <div className="flex items-center justify-center w-full h-9 px-3 text-sm font-medium border rounded-md hover:bg-muted transition-colors">
-                      {loading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null} Pilih File & Restore
-                    </div>
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t">
-              <Alert variant="destructive" className="bg-red-50 border-red-200">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle className="font-bold">Zona Bahaya</AlertTitle>
-                <AlertDescription className="flex flex-col gap-3">
-                  <span className="text-xs">Fungsi Reset akan menghapus SEMUA data pelaku usaha tanpa bisa dikembalikan. Gunakan hanya jika Anda ingin memulai dari nol.</span>
-                  <Button variant="destructive" size="sm" onClick={handleReset} disabled={loading} className="w-fit font-bold">
-                    <Trash2 className="w-4 h-4 mr-2" /> Reset Seluruh Data
+        {/* Manajemen Data - Hanya Admin */}
+        {isAdmin && (
+          <Card className="border-none shadow-sm bg-white">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <RefreshCcw className="w-5 h-5 text-primary" /> Manajemen Data
+              </CardTitle>
+              <CardDescription>Ekspor, impor, dan bersihkan data database.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-xl space-y-3">
+                  <div className="flex items-center gap-2 font-bold text-sm">
+                    <Download className="w-4 h-4 text-emerald-600" /> Backup Data
+                  </div>
+                  <p className="text-xs text-muted-foreground">Unduh semua data pelaku usaha dalam format JSON untuk cadangan.</p>
+                  <Button variant="outline" size="sm" onClick={handleBackup} disabled={loading} className="w-full">
+                    {loading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null} Unduh Backup
                   </Button>
-                </AlertDescription>
-              </Alert>
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+
+                <div className="p-4 border rounded-xl space-y-3">
+                  <div className="flex items-center gap-2 font-bold text-sm">
+                    <Upload className="w-4 h-4 text-blue-600" /> Restore Data
+                  </div>
+                  <p className="text-xs text-muted-foreground">Unggah file backup JSON untuk memulihkan data ke sistem.</p>
+                  <div className="relative">
+                    <input type="file" accept=".json" onChange={handleRestore} className="hidden" id="restore-input" disabled={loading} />
+                    <Label htmlFor="restore-input" className="cursor-pointer">
+                      <div className="flex items-center justify-center w-full h-9 px-3 text-sm font-medium border rounded-md hover:bg-muted transition-colors">
+                        {loading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null} Pilih File & Restore
+                      </div>
+                    </Label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <Alert variant="destructive" className="bg-red-50 border-red-200">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle className="font-bold">Zona Bahaya</AlertTitle>
+                  <AlertDescription className="flex flex-col gap-3">
+                    <span className="text-xs">Fungsi Reset akan menghapus SEMUA data pelaku usaha tanpa bisa dikembalikan. Gunakan hanya jika Anda ingin memulai dari nol.</span>
+                    <Button variant="destructive" size="sm" onClick={handleReset} disabled={loading} className="w-fit font-bold">
+                      <Trash2 className="w-4 h-4 mr-2" /> Reset Seluruh Data
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
       
       <div className="flex justify-center text-xs text-muted-foreground font-bold uppercase tracking-widest gap-2">
