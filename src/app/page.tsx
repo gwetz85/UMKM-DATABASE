@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useMemoFirebase, useCollection, useUser, useAuth, useFirestore } from "@/firebase"
@@ -70,7 +69,7 @@ export default function DashboardPage() {
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight font-headline text-primary">Dashboard UsahaLink</h1>
+          <h1 className="text-3xl font-bold tracking-tight font-headline text-primary">Dashboard UMKM Database</h1>
           <p className="text-muted-foreground mt-2">Ringkasan status data pelaku usaha saat ini.</p>
         </div>
         <div className="bg-white px-4 py-2 rounded-lg border flex items-center gap-2 shadow-sm">

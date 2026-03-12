@@ -6,7 +6,7 @@ import {Toaster} from '@/components/ui/toaster';
 import {FirebaseClientProvider} from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'UsahaLink - Business Management System',
+  title: 'UMKM Database - Business Management System',
   description: 'Streamline your business actor data and compliance requirements.',
 };
 
