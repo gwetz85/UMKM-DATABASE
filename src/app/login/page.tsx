@@ -3,15 +3,17 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth, useFirestore } from "@/firebase"
+import { useAuth, useFirestore, setDocumentNonBlocking } from "@/firebase"
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
-import { doc, setDoc } from "firebase/firestore"
+import { doc } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Building2, Lock, Mail, Loader2, UserPlus, LogIn } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { errorEmitter } from "@/firebase/error-emitter"
+import { FirestorePermissionError } from "@/firebase/errors"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -38,16 +40,20 @@ export default function LoginPage() {
         // Logika Otomatis: Jika Agus, jadikan Admin
         const isAdmin = identifier.toLowerCase() === 'agus' || email.toLowerCase() === 'agus@umkm.id'
         
-        // Simpan ke Firestore
-        await setDoc(doc(firestore, 'system_users', user.uid), {
+        // Simpan ke Firestore (Non-blocking)
+        const userRef = doc(firestore, 'system_users', user.uid)
+        const userData = {
           uid: user.uid,
           fullName: identifier.charAt(0).toUpperCase() + identifier.slice(1),
           role: isAdmin ? 'admin' : 'petugas',
           addedAt: new Date().toISOString()
-        })
+        }
+        
+        setDocumentNonBlocking(userRef, userData, { merge: true })
 
         if (isAdmin) {
-          await setDoc(doc(firestore, 'roles_admin', user.uid), { admin: true })
+          const roleRef = doc(firestore, 'roles_admin', user.uid)
+          setDocumentNonBlocking(roleRef, { admin: true }, { merge: true })
         }
 
         toast({
@@ -64,10 +70,12 @@ export default function LoginPage() {
       }
       router.push("/")
     } catch (error: any) {
-      console.error(error)
+      // Tangani error auth standar
       let message = "Terjadi kesalahan. Silakan coba lagi."
       if (error.code === 'auth/email-already-in-use') message = "Username/Email sudah terdaftar."
-      if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') message = "Username atau kata sandi salah."
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+        message = "Username atau kata sandi salah."
+      }
       
       toast({
         variant: "destructive",
