@@ -1,7 +1,6 @@
-
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useMemoFirebase, useCollection, useUser, useFirestore, setDocumentNonBlocking, deleteDocumentNonBlocking, useDoc, updateDocumentNonBlocking } from "@/firebase"
 import { collection, query, doc, orderBy } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -15,10 +14,15 @@ import { UserPlus, Trash2, Loader2, ShieldAlert, UserCheck, Shield, Key, Refresh
 import { useToast } from "@/hooks/use-toast"
 
 export default function UserManagementPage() {
+  const [mounted, setMounted] = useState(false)
   const { user } = useUser()
   const { toast } = useToast()
   const firestore = useFirestore()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !firestore) return null
@@ -51,7 +55,7 @@ export default function UserManagementPage() {
       fullName,
       password,
       role,
-      uid: null, // UID kosong, akan terisi otomatis saat login pertama
+      uid: null,
       addedAt: new Date().toISOString()
     }, { merge: true })
 
@@ -85,6 +89,8 @@ export default function UserManagementPage() {
       toast({ title: "Terhapus", description: "Akses user telah dicabut." })
     }
   }
+
+  if (!mounted) return null
 
   if (isAdminLoading) {
     return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>

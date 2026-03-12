@@ -4,6 +4,7 @@ import {SidebarProvider} from '@/components/ui/sidebar';
 import {AppSidebar} from '@/components/app-sidebar';
 import {Toaster} from '@/components/ui/toaster';
 import {FirebaseClientProvider} from '@/firebase';
+import {FooterTicker} from '@/components/footer-ticker';
 
 export const metadata: Metadata = {
   title: 'UMKM Database - Sistem Manajemen Terpadu',
@@ -25,11 +26,14 @@ export default function RootLayout({
       <body className="font-body antialiased bg-background">
         <FirebaseClientProvider>
           <SidebarProvider>
-            <div className="flex min-h-screen w-full">
-              <AppSidebar />
-              <main className="flex-1 overflow-auto">
-                {children}
-              </main>
+            <div className="flex flex-col min-h-screen w-full overflow-hidden">
+              <div className="flex flex-1 w-full overflow-hidden">
+                <AppSidebar />
+                <main className="flex-1 overflow-auto bg-background pb-12">
+                  {children}
+                </main>
+              </div>
+              <FooterTicker />
             </div>
           </SidebarProvider>
           <Toaster />
