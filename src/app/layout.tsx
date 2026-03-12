@@ -5,6 +5,7 @@ import {AppSidebar} from '@/components/app-sidebar';
 import {Toaster} from '@/components/ui/toaster';
 import {FirebaseClientProvider} from '@/firebase';
 import {Building2} from 'lucide-react';
+import {AboutDialog} from '@/components/about-dialog';
 
 export const metadata: Metadata = {
   title: 'UMKM Database - Sistem Manajemen Terpadu',
@@ -36,8 +37,11 @@ export default function RootLayout({
                     <span className="text-[8px] font-bold text-accent tracking-widest uppercase">Versi 3.1</span>
                   </div>
                 </div>
-                <div className="bg-accent/20 p-1.5 rounded-lg">
-                  <Building2 className="w-4 h-4 text-accent" />
+                <div className="flex items-center gap-3">
+                  <AboutDialog variant="ghost" className="text-white hover:bg-white/10 border-white/10" />
+                  <div className="bg-accent/20 p-1.5 rounded-lg">
+                    <Building2 className="w-4 h-4 text-accent" />
+                  </div>
                 </div>
               </header>
 
@@ -47,8 +51,9 @@ export default function RootLayout({
                 </div>
                 <main className="flex-1 overflow-auto bg-background print:bg-white">
                   {/* Desktop Sidebar Trigger */}
-                  <div className="hidden md:flex p-4 items-center print:hidden">
+                  <div className="hidden md:flex p-4 items-center justify-between print:hidden">
                     <SidebarTrigger className="text-primary hover:bg-primary/10" />
+                    <AboutDialog className="border-primary/20 text-primary hover:bg-primary/5" />
                   </div>
                   <div className="w-full">
                     {children}
