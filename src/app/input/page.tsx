@@ -21,16 +21,22 @@ export default function InputDataPage() {
   const [kelurahan, setKelurahan] = useState<string>("")
   const [kecamatan, setKecamatan] = useState<string>("")
 
-  // Mapping Kelurahan ke Kecamatan sesuai instruksi
+  // Mapping Kelurahan ke Kecamatan sesuai instruksi revisi
   useEffect(() => {
     if (!kelurahan) {
       setKecamatan("")
       return
     }
 
-    const group1And2 = ["Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat", "Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru"]
-    const group3 = ["Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana"]
-    const group4 = ["Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"]
+    // Kelompok 1 & 2 -> Tanjungpinang Kota
+    const group1And2 = [
+      "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat", 
+      "Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru"
+    ]
+    // Kelompok 3 -> Tanjungpinang Timur (Termasuk Air Raja)
+    const group3 = ["Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana", "Air Raja"]
+    // Kelompok 4 -> Bukit Bestari
+    const group4 = ["Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"]
 
     if (group1And2.includes(kelurahan)) {
       setKecamatan("Tanjungpinang Kota")
