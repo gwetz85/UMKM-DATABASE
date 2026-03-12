@@ -42,7 +42,6 @@ export default function SettingsPage() {
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
   useEffect(() => {
-    // Inisialisasi status tema dari kelas dokumen
     const isDark = document.documentElement.classList.contains("dark")
     setTheme(isDark ? "dark" : "light")
   }, [])
@@ -61,7 +60,6 @@ export default function SettingsPage() {
   }
 
   const changePalette = (colorHsl: string, name: string) => {
-    // Mengupdate variabel CSS --primary dan --sidebar-background agar sinkron
     document.documentElement.style.setProperty('--primary', colorHsl)
     document.documentElement.style.setProperty('--sidebar-background', colorHsl)
     toast({ 
@@ -247,17 +245,17 @@ export default function SettingsPage() {
       </div>
 
       {!isAdmin && (
-        <Alert className="bg-blue-50 border-blue-200">
-          <Info className="h-4 w-4 text-blue-600" />
-          <AlertTitle className="text-blue-800 font-bold">Akses Terbatas</AlertTitle>
-          <AlertDescription className="text-blue-700">
+        <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertTitle className="text-blue-800 dark:text-blue-300 font-bold">Akses Terbatas</AlertTitle>
+          <AlertDescription className="text-blue-700 dark:text-blue-400">
             Sebagai Petugas Input, Anda hanya dapat merubah tema dan warna aplikasi. Fitur manajemen data hanya tersedia untuk Administrator.
           </AlertDescription>
         </Alert>
       )}
 
       <div className="grid gap-6">
-        <Card className="border-none shadow-sm bg-white">
+        <Card className="border-none shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Palette className="w-5 h-5 text-primary" /> Tampilan & Tema
@@ -297,7 +295,7 @@ export default function SettingsPage() {
                   <button 
                     key={color.name}
                     onClick={() => changePalette(color.hsl, color.name)} 
-                    className="w-12 h-12 rounded-2xl border-4 border-white shadow-lg hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center group"
+                    className="w-12 h-12 rounded-2xl border-4 border-white dark:border-slate-800 shadow-lg hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center group"
                     style={{ backgroundColor: color.hex }}
                     title={color.name}
                   >
@@ -313,7 +311,7 @@ export default function SettingsPage() {
         </Card>
 
         {isAdmin && (
-          <Card className="border-none shadow-sm bg-white">
+          <Card className="border-none shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <RefreshCcw className="w-5 h-5 text-primary" /> Manajemen Data
@@ -347,7 +345,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="p-4 border border-accent/20 bg-accent/5 rounded-xl space-y-3 sm:col-span-2">
+                <div className="p-4 border border-accent/20 bg-accent/5 dark:bg-accent/10 rounded-xl space-y-3 sm:col-span-2">
                   <div className="flex items-center gap-2 font-bold text-sm text-primary">
                     <FileSpreadsheet className="w-4 h-4" /> Import Data Master (Excel)
                   </div>
@@ -372,7 +370,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="pt-4 border-t">
-                <Alert variant="destructive" className="bg-red-50 border-red-200">
+                <Alert variant="destructive" className="bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle className="font-bold">Zona Bahaya</AlertTitle>
                   <AlertDescription className="flex flex-col gap-3">

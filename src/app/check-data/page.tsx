@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -58,7 +57,7 @@ export default function CheckDataPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
-        <Card className="lg:col-span-3 border-none shadow-xl bg-white h-fit">
+        <Card className="lg:col-span-3 border-none shadow-xl h-fit">
           <CardHeader>
             <CardTitle className="text-lg">Parameter Pencarian</CardTitle>
             <CardDescription>Pilih salah satu metode pencarian.</CardDescription>
@@ -66,7 +65,7 @@ export default function CheckDataPage() {
           <CardContent>
             <form onSubmit={handleCheck} className="space-y-6">
               <div className="space-y-4">
-                <Label className="text-sm font-bold text-slate-700">Tipe Pencarian</Label>
+                <Label className="text-sm font-bold text-foreground">Tipe Pencarian</Label>
                 <RadioGroup 
                   value={searchType} 
                   onValueChange={(v: any) => {
@@ -88,16 +87,16 @@ export default function CheckDataPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="inputValue" className="font-bold text-slate-700">
+                <Label htmlFor="inputValue" className="font-bold text-foreground">
                   {searchType === "nik" ? "NIK (16 Digit)" : "Nomor KK (16 Digit)"}
                 </Label>
-                <input 
+                <Input 
                   id="inputValue" 
                   placeholder={searchType === "nik" ? "Input NIK" : "Input No KK"} 
                   maxLength={16}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-lg ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono tracking-widest"
+                  className="flex h-12 w-full text-lg font-mono tracking-widest"
                   required 
                 />
               </div>
@@ -112,11 +111,11 @@ export default function CheckDataPage() {
 
         <div className="lg:col-span-9 space-y-6">
           {!searchDone && !loading && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed rounded-3xl border-muted bg-white/50 p-8 text-center">
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed rounded-3xl border-muted bg-card/50 p-8 text-center">
               <div className="bg-muted p-4 rounded-full mb-4">
                 <Info className="w-8 h-8 text-muted-foreground/60" />
               </div>
-              <h3 className="text-lg font-bold text-slate-700 mb-2">Siap Melakukan Pengecekan</h3>
+              <h3 className="text-lg font-bold text-foreground mb-2">Siap Melakukan Pengecekan</h3>
               <p className="text-sm text-muted-foreground">
                 Silakan pilih metode pencarian dan masukkan nomor yang valid pada form di samping.
               </p>
@@ -124,7 +123,7 @@ export default function CheckDataPage() {
           )}
 
           {loading && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-white rounded-3xl shadow-sm border p-8 text-center">
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-card rounded-3xl shadow-sm border p-8 text-center">
               <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
               <p className="text-primary font-bold animate-pulse">Menghubungkan ke Database Master...</p>
             </div>
@@ -134,8 +133,8 @@ export default function CheckDataPage() {
             <div className="animate-in fade-in duration-500 space-y-6">
               {results.length > 0 ? (
                 <div className="space-y-6">
-                  <Alert className="bg-emerald-50 border-emerald-200 text-emerald-900 rounded-2xl p-6">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                  <Alert className="bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100 rounded-2xl p-6">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                     <AlertTitle className="text-xl font-black mb-1 uppercase">DATA DITEMUKAN</AlertTitle>
                     <AlertDescription className="font-medium">
                       Ditemukan <strong>{results.length}</strong> record data yang terhubung dengan pencarian Anda.
@@ -144,10 +143,10 @@ export default function CheckDataPage() {
 
                   <div className="space-y-4">
                     {results.map((res, idx) => (
-                      <Card key={idx} className="border-none shadow-sm bg-[#F8FAFC] p-8 rounded-xl">
+                      <Card key={idx} className="border-none shadow-sm bg-muted/20 dark:bg-muted/10 p-8 rounded-xl">
                         <div className="flex items-center gap-3 mb-10">
-                          <UserSearch className="w-6 h-6 text-slate-600" />
-                          <h3 className="text-2xl font-black text-slate-800 tracking-tight">Data Ditemukan!</h3>
+                          <UserSearch className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+                          <h3 className="text-2xl font-black text-foreground tracking-tight uppercase">Data Ditemukan!</h3>
                         </div>
                         
                         <div className="grid gap-y-6 max-w-4xl">
@@ -164,11 +163,11 @@ export default function CheckDataPage() {
                             { label: "ALAMAT", value: res.alamat },
                             { label: "KELURAHAN", value: res.kelurahan },
                           ].map((item, i) => (
-                            <div key={i} className="grid grid-cols-[250px_1fr] items-start gap-8">
-                              <span className="text-sm font-black text-slate-700 uppercase leading-relaxed">
+                            <div key={i} className="grid grid-cols-1 md:grid-cols-[250px_1fr] items-start gap-2 md:gap-8">
+                              <span className="text-sm font-black text-foreground/80 uppercase leading-relaxed">
                                 {item.label}
                               </span>
-                              <span className="text-sm font-medium text-slate-600 uppercase leading-relaxed">
+                              <span className="text-sm font-medium text-foreground uppercase leading-relaxed">
                                 {item.value || "-"}
                               </span>
                             </div>
@@ -180,21 +179,21 @@ export default function CheckDataPage() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <Alert className="bg-red-50 border-red-200 text-red-900 rounded-2xl p-6">
-                    <XCircle className="w-6 h-6 text-red-600" />
+                  <Alert className="bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800 text-red-900 dark:text-red-100 rounded-2xl p-6">
+                    <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
                     <AlertTitle className="text-xl font-black mb-2 uppercase">DATA TIDAK TERDAFTAR</AlertTitle>
                     <AlertDescription className="font-medium">
                       Mohon maaf, nomor <strong>{inputValue}</strong> tidak ditemukan dalam database master.
                     </AlertDescription>
                   </Alert>
                   
-                  <div className="p-6 bg-amber-50 rounded-2xl border border-amber-200 flex gap-4">
-                    <div className="bg-amber-100 p-2 h-fit rounded-lg">
-                      <Info className="w-5 h-5 text-amber-700" />
+                  <div className="p-6 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-200 dark:border-amber-800 flex gap-4">
+                    <div className="bg-amber-100 dark:bg-amber-900/30 p-2 h-fit rounded-lg">
+                      <Info className="w-5 h-5 text-amber-700 dark:text-amber-400" />
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm font-bold text-amber-900">Saran Tindakan:</p>
-                      <ul className="text-xs text-amber-800 space-y-1 list-disc pl-4">
+                      <p className="text-sm font-bold text-amber-900 dark:text-amber-100">Saran Tindakan:</p>
+                      <ul className="text-xs text-amber-800 dark:text-amber-400 space-y-1 list-disc pl-4">
                         <li>Pastikan angka yang dimasukkan sudah benar (16 Digit).</li>
                         <li>Pastikan pencarian sesuai dengan jenis identitas (NIK/KK).</li>
                         <li>Hubungi Administrator jika yakin data seharusnya sudah terdaftar.</li>

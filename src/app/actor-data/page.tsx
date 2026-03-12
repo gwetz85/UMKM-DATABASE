@@ -98,7 +98,7 @@ export default function ActorDataPage() {
         </div>
       </div>
 
-      <Card className="border-none shadow-sm overflow-hidden bg-white print:shadow-none print:border print:rounded-none">
+      <Card className="border-none shadow-sm overflow-hidden print:shadow-none print:border print:rounded-none">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="py-20 flex justify-center print:hidden"><Loader2 className="animate-spin text-primary" /></div>
@@ -119,7 +119,7 @@ export default function ActorDataPage() {
                 <TableBody>
                   {actors?.map((actor) => (
                     <TableRow key={actor.id} className="hover:bg-muted/10 transition-colors print:border-b print:border-gray-300">
-                      <TableCell className="font-bold text-slate-700 whitespace-nowrap">{actor.fullName}</TableCell>
+                      <TableCell className="font-bold text-foreground whitespace-nowrap">{actor.fullName}</TableCell>
                       <TableCell className="font-mono">{actor.nik}</TableCell>
                       <TableCell className="font-medium">{actor.businessName}</TableCell>
                       <TableCell>{actor.businessCategory}</TableCell>
@@ -157,12 +157,12 @@ export default function ActorDataPage() {
                                     ].map((item, i) => (
                                       <div key={i} className="space-y-1">
                                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                        <p className="text-sm font-bold text-slate-700">{item.value || "-"}</p>
+                                        <p className="text-sm font-bold text-foreground">{item.value || "-"}</p>
                                       </div>
                                     ))}
                                     <div className="md:col-span-2 space-y-1">
                                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Alamat Lengkap</p>
-                                      <p className="text-sm font-bold text-slate-700">{actor.address || "-"}</p>
+                                      <p className="text-sm font-bold text-foreground">{actor.address || "-"}</p>
                                     </div>
                                   </div>
                                 </section>
@@ -179,7 +179,7 @@ export default function ActorDataPage() {
                                     ].map((item, i) => (
                                       <div key={i} className="space-y-1">
                                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                        <p className="text-sm font-bold text-slate-700">{item.value || "-"}</p>
+                                        <p className="text-sm font-bold text-foreground">{item.value || "-"}</p>
                                       </div>
                                     ))}
                                   </div>
