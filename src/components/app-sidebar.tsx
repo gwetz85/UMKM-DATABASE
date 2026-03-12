@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -16,7 +15,8 @@ import {
   Check,
   User as UserIcon,
   Settings,
-  SearchCheck
+  SearchCheck,
+  Clock
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -49,10 +49,26 @@ export function AppSidebar() {
   const firestore = useFirestore()
   const [copied, setCopied] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
+  const [timeStr, setTimeStr] = React.useState<string>("")
 
-  // Pastikan rendering konten dinamis hanya terjadi setelah hidrasi selesai
+  // Clock Update Effect
   React.useEffect(() => {
     setMounted(true)
+    const updateTime = () => {
+      const now = new Date()
+      const days = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"]
+      const day = days[now.getDay()]
+      const date = now.getDate().toString().padStart(2, '0')
+      const month = (now.getMonth() + 1).toString().padStart(2, '0')
+      const year = now.getFullYear()
+      const hours = now.getHours().toString().padStart(2, '0')
+      const minutes = now.getMinutes().toString().padStart(2, '0')
+      const seconds = now.getSeconds().toString().padStart(2, '0')
+      setTimeStr(`${day}, ${date}/${month}/${year} ${hours}:${minutes}:${seconds}`)
+    }
+    updateTime()
+    const interval = setInterval(updateTime, 1000)
+    return () => clearInterval(interval)
   }, [])
 
   const adminRef = useMemoFirebase(() => {
@@ -93,7 +109,7 @@ export function AppSidebar() {
 
   if (pathname === "/login") return null
 
-  // Jika belum mounted, render skeleton/kerangka kosong untuk menghindari hydration mismatch
+  // Skeleton during hydration to prevent mismatch
   if (!mounted) {
     return (
       <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-sidebar">
@@ -125,6 +141,19 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-3 py-4">
+        {/* Real Time Clock Display */}
+        <div className="mb-4 group-data-[collapsible=icon]:hidden px-2">
+          <div className="bg-black/20 rounded-lg p-3 border border-white/5 flex items-center gap-3">
+            <Clock className="w-4 h-4 text-accent animate-pulse" />
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Waktu Server</span>
+              <span className="text-[11px] font-mono font-black text-white whitespace-nowrap">
+                {timeStr}
+              </span>
+            </div>
+          </div>
+        </div>
+
         <SidebarGroup>
           <SidebarGroupLabel className="px-2 mb-4 group-data-[collapsible=icon]:hidden text-white/30 font-bold text-[10px] uppercase tracking-[0.2em] text-center">
             Menu Utama
