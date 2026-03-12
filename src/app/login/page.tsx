@@ -12,8 +12,6 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Building2, Lock, Mail, Loader2, UserPlus, LogIn } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { errorEmitter } from "@/firebase/error-emitter"
-import { FirestorePermissionError } from "@/firebase/errors"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -29,57 +27,48 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
 
+    // Normalisasi input: 'agus' menjadi 'agus@umkm.id'
     const email = identifier.includes("@") ? identifier : `${identifier}@umkm.id`
+    const isAgus = identifier.toLowerCase() === 'agus' || email.toLowerCase() === 'agus@umkm.id'
 
     try {
+      let user;
       if (isRegister) {
-        // Proses Pendaftaran (Sign Up)
         const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-        const user = userCredential.user
-
-        // Logika Otomatis: Jika Agus, jadikan Admin
-        const isAdmin = identifier.toLowerCase() === 'agus' || email.toLowerCase() === 'agus@umkm.id'
-        
-        // Simpan ke Firestore (Non-blocking)
-        const userRef = doc(firestore, 'system_users', user.uid)
-        const userData = {
-          uid: user.uid,
-          fullName: identifier.charAt(0).toUpperCase() + identifier.slice(1),
-          role: isAdmin ? 'admin' : 'petugas',
-          addedAt: new Date().toISOString()
-        }
-        
-        setDocumentNonBlocking(userRef, userData, { merge: true })
-
-        if (isAdmin) {
-          const roleRef = doc(firestore, 'roles_admin', user.uid)
-          setDocumentNonBlocking(roleRef, { admin: true }, { merge: true })
-        }
-
-        toast({
-          title: "Akun Berhasil Dibuat",
-          description: `Selamat datang ${isAdmin ? 'Admin' : ''} ${identifier}!`,
-        })
+        user = userCredential.user
+        toast({ title: "Akun Berhasil Dibuat", description: `Selamat datang ${identifier}!` })
       } else {
-        // Proses Masuk (Login)
-        await signInWithEmailAndPassword(auth, email, password)
-        toast({
-          title: "Login Berhasil",
-          description: "Selamat datang kembali di UMKM Database.",
-        })
+        const userCredential = await signInWithEmailAndPassword(auth, email, password)
+        user = userCredential.user
+        toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
       }
+
+      // LOGIKA KRITIKAL: Pastikan profil & status Admin terupdate di Firestore
+      const userRef = doc(firestore, 'system_users', user.uid)
+      const isAdmin = isAgus // Agus selalu admin
+      
+      setDocumentNonBlocking(userRef, {
+        uid: user.uid,
+        fullName: identifier.charAt(0).toUpperCase() + identifier.slice(1),
+        role: isAdmin ? 'admin' : 'petugas',
+        addedAt: new Date().toISOString()
+      }, { merge: true })
+
+      if (isAdmin) {
+        const roleRef = doc(firestore, 'roles_admin', user.uid)
+        // User diizinkan mendaftarkan dirinya sendiri sebagai admin di Security Rules
+        setDocumentNonBlocking(roleRef, { admin: true }, { merge: true })
+      }
+
       router.push("/")
     } catch (error: any) {
-      // Tangani error auth standar
       let message = "Terjadi kesalahan. Silakan coba lagi."
-      if (error.code === 'auth/email-already-in-use') message = "Username/Email sudah terdaftar."
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-        message = "Username atau kata sandi salah."
-      }
+      if (error.code === 'auth/email-already-in-use') message = "Username sudah digunakan."
+      if (error.code === 'auth/invalid-credential') message = "Username atau kata sandi salah."
       
       toast({
         variant: "destructive",
-        title: isRegister ? "Gagal Mendaftar" : "Login Gagal",
+        title: "Gagal",
         description: message,
       })
     } finally {
@@ -105,7 +94,7 @@ export default function LoginPage() {
         <form onSubmit={handleAuth}>
           <CardContent className="grid gap-5 py-6">
             <div className="grid gap-2">
-              <Label htmlFor="identifier" className="font-bold text-slate-700">Username / Email</Label>
+              <Label htmlFor="identifier" className="font-bold text-slate-700">Username</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input

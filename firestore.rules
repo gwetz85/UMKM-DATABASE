@@ -19,15 +19,15 @@ service cloud.firestore {
     }
 
     match /roles_admin/{adminId} {
-      allow get: if isSignedIn();
-      // Mengizinkan user mendaftarkan dirinya sendiri sebagai admin (untuk setup awal/Agus)
+      allow read: if isSignedIn();
+      // Mengizinkan user mendaftarkan dirinya sendiri (penting untuk setup awal Admin Agus)
       allow create: if isSignedIn() && request.auth.uid == adminId;
       allow update, delete: if isAdmin();
     }
 
     match /system_users/{uid} {
       allow read: if isSignedIn();
-      // Mengizinkan user mendaftarkan/mengupdate data profilnya sendiri
+      // Mengizinkan user mengupdate profilnya sendiri
       allow create, update: if isSignedIn() && request.auth.uid == uid;
       allow delete: if isAdmin();
     }
