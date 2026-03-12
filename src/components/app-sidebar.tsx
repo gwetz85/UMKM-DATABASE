@@ -50,7 +50,7 @@ export function AppSidebar() {
   const [copied, setCopied] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
 
-  // Gunakan useEffect untuk memastikan rendering konten dinamis hanya terjadi setelah hidrasi selesai
+  // Pastikan rendering konten dinamis hanya terjadi setelah hidrasi selesai
   React.useEffect(() => {
     setMounted(true)
   }, [])
@@ -64,8 +64,8 @@ export function AppSidebar() {
   
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
-  // Definisi navigasi dasar
-  const navigation = [
+  // Navigasi dikonfigurasi di dalam useMemo untuk efisiensi
+  const navigation = React.useMemo(() => [
     { name: "Dashboard", href: "/", icon: LayoutDashboard, show: !!user },
     { name: "Input Data", href: "/input", icon: UserPlus, show: !!user },
     { name: "Cek Data", href: "/check-data", icon: SearchCheck, show: !!user },
@@ -75,7 +75,7 @@ export function AppSidebar() {
     { name: "Finish", href: "/finish", icon: CheckCircle2, show: !!user },
     { name: "Manajemen User", href: "/users", icon: UserCog, show: isAdmin },
     { name: "Pengaturan", href: "/settings", icon: Settings, show: !!user },
-  ]
+  ], [user, isAdmin])
 
   const copyUid = () => {
     if (user?.uid) {
@@ -119,7 +119,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1.5">
-              {/* Render item navigasi hanya jika sudah mounted untuk menghindari mismatch SSR */}
+              {/* Hanya render menu setelah mounted untuk menghindari hydration mismatch */}
               {mounted && navigation.filter(i => i.show).map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
