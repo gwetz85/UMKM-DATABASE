@@ -1,13 +1,13 @@
+
 "use client"
 
 import { useMemoFirebase, useCollection, useUser, useAuth, useFirestore } from "@/firebase"
-import { collection, query, orderBy, limit } from "firebase/firestore"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, Building2, ShieldCheck, TrendingUp, Loader2 } from "lucide-react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { collection, query, orderBy } from "firebase/firestore"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Users, UserCheck, ShieldCheck, Activity, Loader2 } from "lucide-react"
 import { useEffect } from "react"
 import { signInAnonymously } from "firebase/auth"
+import { BusinessActor } from "./lib/types"
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
@@ -21,41 +21,67 @@ export default function DashboardPage() {
   }, [user, isUserLoading, auth])
   
   const memoQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return query(
-      collection(firestore, 'users', user.uid, 'businessActors'), 
-      orderBy('createdAt', 'desc'),
-      limit(10)
-    )
-  }, [user, firestore])
+    if (!firestore) return null
+    return query(collection(firestore, 'businessActors'), orderBy('createdAt', 'desc'))
+  }, [firestore])
 
-  const { data: businesses, isLoading } = useCollection(memoQuery)
+  const { data: allData, isLoading } = useCollection<BusinessActor>(memoQuery)
 
   const stats = [
-    { name: "Total Pelaku Usaha", value: businesses?.length || 0, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-    { name: "Tipe Bisnis", value: new Set(businesses?.map(b => b.businessType)).size || 0, icon: Building2, color: "text-green-600", bg: "bg-green-50" },
-    { name: "Tingkat Kepatuhan", value: "85%", icon: ShieldCheck, color: "text-purple-600", bg: "bg-purple-50" },
-    { name: "Pertumbuhan", value: "+12%", icon: TrendingUp, color: "text-orange-600", bg: "bg-orange-50" },
+    { 
+      name: "Total Data", 
+      value: allData?.length || 0, 
+      icon: Users, 
+      color: "text-blue-600", 
+      bg: "bg-blue-50" 
+    },
+    { 
+      name: "Laki-laki", 
+      value: allData?.filter(d => d.gender === "Laki-laki").length || 0, 
+      icon: Users, 
+      color: "text-cyan-600", 
+      bg: "bg-cyan-50" 
+    },
+    { 
+      name: "Perempuan", 
+      value: allData?.filter(d => d.gender === "Perempuan").length || 0, 
+      icon: Users, 
+      color: "text-pink-600", 
+      bg: "bg-pink-50" 
+    },
+    { 
+      name: "Terverifikasi", 
+      value: allData?.filter(d => d.status === "finish").length || 0, 
+      icon: UserCheck, 
+      color: "text-green-600", 
+      bg: "bg-green-50" 
+    },
   ]
 
   if (isUserLoading || isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
   }
 
   return (
-    <div className="p-8 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight font-headline text-primary">Dashboard UsahaLink</h1>
-        <p className="text-muted-foreground mt-2">Selamat datang kembali! Berikut ringkasan data pelaku usaha Anda.</p>
+    <div className="p-8 space-y-8 max-w-7xl mx-auto">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight font-headline text-primary">Dashboard UsahaLink</h1>
+          <p className="text-muted-foreground mt-2">Ringkasan status data pelaku usaha saat ini.</p>
+        </div>
+        <div className="bg-white px-4 py-2 rounded-lg border flex items-center gap-2 shadow-sm">
+          <Activity className="w-4 h-4 text-green-500 animate-pulse" />
+          <span className="text-xs font-medium">Status Server: <span className="text-green-600">Online</span></span>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.name} className="border-none shadow-sm hover:shadow-md transition-shadow">
+          <Card key={stat.name} className="border-none shadow-sm hover:shadow-md transition-all">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{stat.name}</CardTitle>
               <div className={`${stat.bg} p-2 rounded-lg`}>
@@ -63,57 +89,49 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className="text-3xl font-bold">{stat.value}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-7">
-        <Card className="lg:col-span-4 border-none shadow-sm">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="border-none shadow-sm">
           <CardHeader>
-            <CardTitle>Aksi Cepat</CardTitle>
-            <CardDescription>Mulai kelola data dan kepatuhan hari ini.</CardDescription>
+            <CardTitle className="text-lg">Progres Verifikasi</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <Link href="/business/new" className="w-full">
-              <Button className="w-full h-24 text-lg bg-primary hover:bg-primary/90 flex flex-col gap-2 rounded-xl">
-                <Users className="w-6 h-6" />
-                Tambah Pelaku Usaha
-              </Button>
-            </Link>
-            <Link href="/compliance" className="w-full">
-              <Button className="w-full h-24 text-lg bg-accent text-accent-foreground hover:bg-accent/90 flex flex-col gap-2 rounded-xl">
-                <ShieldCheck className="w-6 h-6" />
-                Cek Kepatuhan AI
-              </Button>
-            </Link>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center text-sm">
+              <span>Menunggu Verifikasi Admin</span>
+              <span className="font-bold">{allData?.filter(d => d.status === 'pending').length}</span>
+            </div>
+            <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+               <div className="bg-blue-500 h-full" style={{ width: `${((allData?.filter(d => d.status === 'pending').length || 0) / (allData?.length || 1)) * 100}%` }}></div>
+            </div>
+            
+            <div className="flex justify-between items-center text-sm">
+              <span>Menunggu Verifikasi Bank</span>
+              <span className="font-bold">{allData?.filter(d => d.status === 'bank_pending').length}</span>
+            </div>
+            <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+               <div className="bg-orange-500 h-full" style={{ width: `${((allData?.filter(d => d.status === 'bank_pending').length || 0) / (allData?.length || 1)) * 100}%` }}></div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-3 border-none shadow-sm">
+        <Card className="border-none shadow-sm">
           <CardHeader>
-            <CardTitle>Data Terbaru</CardTitle>
-            <CardDescription>Pendaftaran pelaku usaha terakhir.</CardDescription>
+            <CardTitle className="text-lg">Kategori Usaha</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {businesses?.slice(0, 5).map((business) => (
-                <div key={business.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">{business.companyName}</p>
-                    <p className="text-xs text-muted-foreground">{business.city} • {business.businessType}</p>
-                  </div>
-                  <div className="text-xs font-medium text-primary">
-                    {business.createdAt ? new Date(business.createdAt).toLocaleDateString('id-ID') : '-'}
-                  </div>
-                </div>
-              ))}
-              {(!businesses || businesses.length === 0) && (
-                <div className="text-center py-8 text-muted-foreground">
-                  Belum ada data tersedia.
-                </div>
-              )}
+          <CardContent className="flex gap-8 items-center h-full pb-8">
+            <div className="flex flex-col items-center gap-2">
+              <div className="text-2xl font-bold text-primary">{allData?.filter(d => d.businessCategory === "Kuliner").length}</div>
+              <div className="text-xs text-muted-foreground">Kuliner</div>
+            </div>
+            <div className="h-12 w-px bg-muted" />
+            <div className="flex flex-col items-center gap-2">
+              <div className="text-2xl font-bold text-primary">{allData?.filter(d => d.businessCategory === "Bukan Kuliner").length}</div>
+              <div className="text-xs text-muted-foreground">Bukan Kuliner</div>
             </div>
           </CardContent>
         </Card>

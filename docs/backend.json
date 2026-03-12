@@ -1,228 +1,58 @@
+
 {
   "entities": {
     "BusinessActor": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "BusinessActor",
       "type": "object",
-      "description": "Represents a business entity or actor with comprehensive details, contact information, and business type. This is the primary entity for data input and management in UsahaLink.",
+      "description": "Data pelaku usaha lengkap dengan status verifikasi dan informasi rekening.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the BusinessActor entity."
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "nik": { "type": "string" },
+        "noKK": { "type": "string" },
+        "pobDob": { "type": "string", "description": "Tempat / Tanggal Lahir" },
+        "gender": { "type": "string", "enum": ["Laki-laki", "Perempuan"] },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "rtRw": { "type": "string" },
+        "kelurahan": { "type": "string" },
+        "businessCategory": { "type": "string", "enum": ["Kuliner", "Bukan Kuliner"] },
+        "businessName": { "type": "string" },
+        "businessLocation": { "type": "string" },
+        "bankNumber": { "type": "string" },
+        "bankOwner": { "type": "string" },
+        "bankName": { "type": "string" },
+        "status": { 
+          "type": "string", 
+          "enum": ["pending", "verified_actor", "bank_pending", "finish"],
+          "description": "Status alur verifikasi data"
         },
-        "companyName": {
-          "type": "string",
-          "description": "The official registered name of the business or company."
-        },
-        "businessType": {
-          "type": "string",
-          "description": "The general category or type of business (e.g., Sole Proprietorship, Partnership, Corporation)."
-        },
-        "industry": {
-          "type": "string",
-          "description": "The industry sector in which the business operates (e.g., Retail, Manufacturing, Services, Technology)."
-        },
-        "legalForm": {
-          "type": "string",
-          "description": "The legal structure of the business as per local regulations (e.g., PT, CV, UD, Koperasi in Indonesia)."
-        },
-        "registrationNumber": {
-          "type": "string",
-          "description": "The official registration number of the business, such as Nomor Induk Berusaha (NIB) in Indonesia, if applicable."
-        },
-        "addressStreet": {
-          "type": "string",
-          "description": "The street address of the business's primary location."
-        },
-        "addressCity": {
-          "type": "string",
-          "description": "The city where the business is located."
-        },
-        "addressProvince": {
-          "type": "string",
-          "description": "The province where the business is located."
-        },
-        "addressPostalCode": {
-          "type": "string",
-          "description": "The postal code for the business's location."
-        },
-        "contactPersonName": {
-          "type": "string",
-          "description": "The name of the primary contact person for the business."
-        },
-        "contactPersonEmail": {
-          "type": "string",
-          "description": "The email address of the primary contact person.",
-          "format": "email"
-        },
-        "contactPersonPhone": {
-          "type": "string",
-          "description": "The phone number of the primary contact person."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the business actor record was initially created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the business actor record was last updated.",
-          "format": "date-time"
-        }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "ownerId": { "type": "string" }
       },
-      "required": [
-        "id",
-        "companyName",
-        "businessType",
-        "industry",
-        "legalForm",
-        "addressStreet",
-        "addressCity",
-        "addressProvince",
-        "addressPostalCode",
-        "contactPersonName",
-        "contactPersonEmail",
-        "contactPersonPhone",
-        "createdAt"
-      ]
-    },
-    "Document": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Document",
-      "type": "object",
-      "description": "Represents a document uploaded to Google Drive, associated with a specific business actor. These documents can be permits, licenses, or other relevant files.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Document entity."
-        },
-        "businessActorId": {
-          "type": "string",
-          "description": "Reference to the unique identifier of the BusinessActor this document is associated with. (Relationship: BusinessActor 1:N Document)"
-        },
-        "fileName": {
-          "type": "string",
-          "description": "The original name of the file when it was uploaded."
-        },
-        "googleDriveFileId": {
-          "type": "string",
-          "description": "The unique identifier assigned by Google Drive to the uploaded file."
-        },
-        "googleDriveFileUrl": {
-          "type": "string",
-          "description": "The shareable URL to directly access the document in Google Drive.",
-          "format": "uri"
-        },
-        "documentType": {
-          "type": "string",
-          "description": "The category or classification of the document, such as 'Permit', 'License', or 'Certificate'."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description or summary of the document's content or purpose."
-        },
-        "uploadedAt": {
-          "type": "string",
-          "description": "Timestamp indicating when the document was uploaded to Google Drive.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "businessActorId",
-        "fileName",
-        "googleDriveFileId",
-        "googleDriveFileUrl",
-        "documentType",
-        "uploadedAt"
-      ]
+      "required": ["fullName", "nik", "noKK", "status"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
     "structure": [
       {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Stores user profiles and metadata, including global roles (if not using a separate roles collection). Primarily used for path-based authorization to user-owned data. (Implicit entity, schema not provided)",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user (from Firebase Authentication)."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/businessActors/{businessActorId}",
+        "path": "/businessActors/{actorId}",
         "definition": {
           "entityName": "BusinessActor",
-          "schema": {
-            "$ref": "#/backend/entities/BusinessActor"
-          },
-          "description": "Stores comprehensive details for business entities, each owned by a specific user. Includes denormalized 'ownerId' field to facilitate direct and independent authorization checks based on the user's UID.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user who owns this BusinessActor."
-            },
-            {
-              "name": "businessActorId",
-              "description": "The unique ID of the BusinessActor entity."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/businessActors/{businessActorId}/documents/{documentId}",
-        "definition": {
-          "entityName": "Document",
-          "schema": {
-            "$ref": "#/backend/entities/Document"
-          },
-          "description": "Stores metadata for documents uploaded to Google Drive, associated with a specific BusinessActor. Includes denormalized 'ownerId' (from the user) and 'businessActorId' (from the parent BusinessActor) for complete authorization independence.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique ID of the user who owns the parent BusinessActor."
-            },
-            {
-              "name": "businessActorId",
-              "description": "The unique ID of the parent BusinessActor."
-            },
-            {
-              "name": "documentId",
-              "description": "The unique ID of the Document entity."
-            }
-          ]
+          "schema": { "$ref": "#/backend/entities/BusinessActor" },
+          "description": "Koleksi utama data pelaku usaha (Top-level untuk akses Admin)"
         }
       },
       {
         "path": "/roles_admin/{adminId}",
         "definition": {
           "entityName": "RoleAdmin",
-          "schema": {
-            "$ref": "#/backend/entities/RoleAdmin"
-          },
-          "description": "A top-level collection where the document ID is the UID of an administrator. The mere existence of a document in this collection grants global administrative privileges. (Implicit entity, schema not provided)",
-          "params": [
-            {
-              "name": "adminId",
-              "description": "The unique ID of the user designated as a global administrator."
-            }
-          ]
+          "description": "Menandai user sebagai Admin"
         }
       }
-    ],
-    "reasoning": "The Firestore structure for UsahaLink prioritizes secure, scalable, and debuggable access control by strictly adhering to authorization independence, structural segregation, and predictable access modeling. We employ a hierarchical path structure to inherently link data ownership, starting with individual users. BusinessActor entities are nested directly under the user who owns them, at /users/{userId}/businessActors/{businessActorId}. Subsequently, Document entities are nested under their respective BusinessActor at /users/{userId}/businessActors/{businessActorId}/documents/{documentId}. Authorization for these entities is primarily driven by the userId segment in the path, ensuring that a user can only access their own data. The ownerId field is denormalized into both the BusinessActor and Document documents, explicitly storing the userId of the owner. For Documents, the businessActorId is also denormalized. This critical denormalization strategy ensures Authorization Independence: security rules can evaluate access by directly checking request.auth.uid == resource.data.ownerId without performing expensive and non-atomic get() operations on parent or grandparent documents. This makes rules robust against race conditions and significantly easier to write and debug. This structure also inherently supports Query Ability Predictability (QAPs). For example, a user listing their own business actors can perform a query on /users/{request.auth.uid}/businessActors and the security rules can efficiently ensure that only documents owned by request.auth.uid are returned (or allowed to be queried) because the userId is part of the query path. Similarly, for documents, list operations are secured by the hierarchical path. Global administrative roles are managed via a dedicated top-level collection /roles_admin/{adminId}, where the mere existence of a document with the user's UID grants admin privileges. This enforces DBAC without relying on custom claims, and maintains Structural Segregation as admin roles are distinct from application data. All path wildcards are semantically named, and critical authorization fields are consistently denormalized, enhancing overall data clarity and predictability."
+    ]
   }
 }
