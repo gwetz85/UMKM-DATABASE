@@ -71,8 +71,8 @@ export default function InputDataPage() {
       addDocumentNonBlocking(actorsRef, data)
       
       toast({ 
-        title: "Berhasil", 
-        description: "Data telah dikirim untuk verifikasi admin." 
+        title: "DATA TELAH TERSIMPAN", 
+        description: "Mohon menunggu ADMIN memverifikasi data anda" 
       })
       e.currentTarget.reset()
     } catch (error) {
