@@ -65,3 +65,16 @@
     @apply bg-background text-foreground font-body antialiased;
   }
 }
+
+@media print {
+  @page {
+    margin: 1cm;
+    size: landscape;
+  }
+  body {
+    background: white !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+}

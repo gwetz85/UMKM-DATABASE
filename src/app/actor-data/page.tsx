@@ -9,10 +9,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard, FileText } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
-import { Separator } from "@/components/ui/separator"
 
 export default function ActorDataPage() {
   const { user } = useUser()
@@ -69,56 +68,68 @@ export default function ActorDataPage() {
     }
   }
 
-  const handlePrint = () => {
+  const handlePrintAll = () => {
     window.print()
   }
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Data Pelaku Usaha</h1>
-          <p className="text-xs md:text-sm text-muted-foreground">Data yang telah lolos verifikasi awal. {isAdmin ? "Kelola atau hapus data di sini." : "Isi data rekening atau cetak data."}</p>
-        </div>
-        {isAdmin && (
-          <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-primary font-bold text-[10px] md:text-xs uppercase tracking-widest border border-primary/20">
-            <ShieldCheck className="w-3.5 h-3.5 md:w-4 md:h-4" /> Akses Admin
-          </div>
-        )}
+      {/* Header Cetak (Hanya terlihat saat diprint) */}
+      <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
+        <h1 className="text-2xl font-black uppercase">LAPORAN DATA PELAKU USAHA UMKM</h1>
+        <p className="text-sm font-bold">Sistem Manajemen Terpadu Database UMKM</p>
+        <p className="text-xs italic">Dicetak pada: {new Date().toLocaleString('id-ID')}</p>
       </div>
 
-      <Card className="border-none shadow-sm overflow-hidden bg-white">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
+        <div className="space-y-1">
+          <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Data Pelaku Usaha</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">Data yang telah lolos verifikasi awal.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={handlePrintAll} variant="default" className="bg-primary hover:bg-primary/90 font-bold shadow-md">
+            <Printer className="w-4 h-4 mr-2" /> CETAK SEMUA DATA
+          </Button>
+          {isAdmin && (
+            <div className="hidden md:flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-xl text-primary font-bold text-xs uppercase tracking-widest border border-primary/20">
+              <ShieldCheck className="w-4 h-4" /> Akses Admin
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Card className="border-none shadow-sm overflow-hidden bg-white print:shadow-none print:border print:rounded-none">
         <CardContent className="p-0">
           {isLoading ? (
-            <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
+            <div className="py-20 flex justify-center print:hidden"><Loader2 className="animate-spin text-primary" /></div>
           ) : (
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-muted/30">
+              <Table className="print:text-[10px] print:w-full">
+                <TableHeader className="bg-muted/30 print:bg-gray-100">
                   <TableRow>
-                    <TableHead className="whitespace-nowrap">Nama</TableHead>
-                    <TableHead className="whitespace-nowrap">Usaha</TableHead>
-                    <TableHead className="whitespace-nowrap">Status Rekening</TableHead>
-                    <TableHead className="text-right whitespace-nowrap">Aksi</TableHead>
+                    <TableHead className="whitespace-nowrap font-bold">Nama Pelaku</TableHead>
+                    <TableHead className="whitespace-nowrap font-bold">NIK</TableHead>
+                    <TableHead className="whitespace-nowrap font-bold">Nama Usaha</TableHead>
+                    <TableHead className="whitespace-nowrap font-bold">Kategori</TableHead>
+                    <TableHead className="whitespace-nowrap font-bold">Bank</TableHead>
+                    <TableHead className="whitespace-nowrap font-bold">No. Rekening</TableHead>
+                    <TableHead className="text-right whitespace-nowrap font-bold print:hidden">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {actors?.map((actor) => (
-                    <TableRow key={actor.id} className="hover:bg-muted/10 transition-colors">
+                    <TableRow key={actor.id} className="hover:bg-muted/10 transition-colors print:border-b print:border-gray-300">
                       <TableCell className="font-bold text-slate-700 whitespace-nowrap">{actor.fullName}</TableCell>
-                      <TableCell className="whitespace-nowrap font-medium">{actor.businessName}</TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {actor.bankNumber ? (
-                          <span className="text-[9px] md:text-[10px] px-2 py-0.5 md:py-1 bg-green-100 text-green-700 rounded-full font-black uppercase">TERISI</span>
-                        ) : (
-                          <span className="text-[9px] md:text-[10px] px-2 py-0.5 md:py-1 bg-amber-100 text-amber-700 rounded-full font-black uppercase">BELUM</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="font-mono">{actor.nik}</TableCell>
+                      <TableCell className="font-medium">{actor.businessName}</TableCell>
+                      <TableCell>{actor.businessCategory}</TableCell>
+                      <TableCell>{actor.bankName || "-"}</TableCell>
+                      <TableCell className="font-mono">{actor.bankNumber || "-"}</TableCell>
+                      <TableCell className="text-right print:hidden">
                         <div className="flex justify-end gap-1.5 md:gap-2">
                           <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
                             <DialogTrigger asChild>
-                              <Button size="sm" variant="outline" onClick={() => setViewingActor(actor)} title="Lihat Detail" className="h-8 px-2 md:h-9 md:px-3 border-primary/20 hover:bg-primary/5 text-primary font-bold">
+                              <Button size="sm" variant="outline" onClick={() => setViewingActor(actor)} className="h-8 px-2 md:h-9 md:px-3 border-primary/20 hover:bg-primary/5 text-primary font-bold">
                                 <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">VIEW</span>
                               </Button>
                             </DialogTrigger>
@@ -192,9 +203,9 @@ export default function ActorDataPage() {
                                   </div>
                                 </section>
                               </div>
-                              <DialogFooter>
-                                <Button onClick={handlePrint} variant="secondary" className="w-full sm:w-auto font-bold">
-                                  <Printer className="w-4 h-4 mr-2" /> Cetak Detail
+                              <DialogFooter className="print:hidden">
+                                <Button onClick={() => window.print()} variant="secondary" className="w-full sm:w-auto font-bold">
+                                  <Printer className="w-4 h-4 mr-2" /> Cetak Detail Ini
                                 </Button>
                               </DialogFooter>
                             </DialogContent>
@@ -202,7 +213,7 @@ export default function ActorDataPage() {
                           
                           <Dialog open={!!editingActor && editingActor.id === actor.id} onOpenChange={(open) => !open && setEditingActor(null)}>
                             <DialogTrigger asChild>
-                              <Button size="sm" variant="secondary" onClick={() => setEditingActor(actor)} title="Edit Rekening" className="h-8 px-2 md:h-9 md:px-3 font-bold">
+                              <Button size="sm" variant="secondary" onClick={() => setEditingActor(actor)} className="h-8 px-2 md:h-9 md:px-3 font-bold">
                                 <Edit3 className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">EDIT BANK</span>
                               </Button>
                             </DialogTrigger>
@@ -237,7 +248,6 @@ export default function ActorDataPage() {
                               size="sm" 
                               variant="destructive" 
                               onClick={() => handleDelete(actor.id, actor.fullName)}
-                              title="Hapus Data Pelaku"
                               className="bg-red-500 hover:bg-red-600 h-8 px-2 md:h-9 md:px-3 font-bold"
                             >
                               <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">HAPUS</span>
@@ -249,7 +259,7 @@ export default function ActorDataPage() {
                   ))}
                   {(!actors || actors.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-20 text-muted-foreground font-medium italic">
+                      <TableCell colSpan={7} className="text-center py-20 text-muted-foreground font-medium italic print:hidden">
                         Belum ada data pelaku usaha yang terverifikasi.
                       </TableCell>
                     </TableRow>
@@ -260,6 +270,17 @@ export default function ActorDataPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Tanda Tangan Cetak (Hanya terlihat saat diprint) */}
+      <div className="hidden print:flex justify-end mt-12 pr-12">
+        <div className="text-center space-y-16">
+          <p className="font-bold">Dicetak oleh Admin Database,</p>
+          <div className="space-y-1">
+            <p className="font-black underline uppercase">{user?.email?.split('@')[0]}</p>
+            <p className="text-[10px]">ID: {user?.uid}</p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

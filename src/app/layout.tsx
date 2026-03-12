@@ -28,7 +28,7 @@ export default function RootLayout({
           <SidebarProvider>
             <div className="flex flex-col min-h-screen w-full overflow-hidden">
               {/* Mobile Header */}
-              <header className="flex md:hidden items-center justify-between px-4 h-14 bg-sidebar text-white shrink-0 z-30 shadow-md">
+              <header className="flex md:hidden items-center justify-between px-4 h-14 bg-sidebar text-white shrink-0 z-30 shadow-md print:hidden">
                 <div className="flex items-center gap-2">
                   <SidebarTrigger className="text-white hover:bg-white/10" />
                   <div className="flex flex-col">
@@ -42,10 +42,12 @@ export default function RootLayout({
               </header>
 
               <div className="flex flex-1 w-full overflow-hidden">
-                <AppSidebar />
-                <main className="flex-1 overflow-auto bg-background">
-                  {/* Desktop Sidebar Trigger (Visible when sidebar is collapsed) */}
-                  <div className="hidden md:flex p-4 items-center">
+                <div className="print:hidden">
+                  <AppSidebar />
+                </div>
+                <main className="flex-1 overflow-auto bg-background print:bg-white">
+                  {/* Desktop Sidebar Trigger */}
+                  <div className="hidden md:flex p-4 items-center print:hidden">
                     <SidebarTrigger className="text-primary hover:bg-primary/10" />
                   </div>
                   <div className="w-full">
