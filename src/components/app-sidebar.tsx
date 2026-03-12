@@ -9,7 +9,7 @@ import {
   CreditCard,
   CheckCircle2,
   LogOut,
-  UserCheck
+  Building2
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -52,33 +52,40 @@ export function AppSidebar() {
   ]
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="h-16 flex items-center px-6 border-b border-sidebar-border/50">
-        <div className="flex items-center gap-2">
-          <div className="bg-accent rounded-lg p-1.5">
-            <UserCheck className="w-5 h-5 text-accent-foreground" />
+    <Sidebar collapsible="icon" className="border-r-0 shadow-xl">
+      <SidebarHeader className="h-20 flex items-center px-6 mb-2">
+        <div className="flex items-center gap-3">
+          <div className="bg-accent rounded-xl p-2 shadow-lg shadow-accent/20 flex items-center justify-center transform hover:scale-105 transition-transform">
+            <Building2 className="w-6 h-6 text-accent-foreground" />
           </div>
-          <span className="font-bold text-xl tracking-tight group-data-[collapsible=icon]:hidden text-white">
-            UMKM Database
-          </span>
+          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+            <span className="font-extrabold text-lg tracking-tight text-white leading-tight">
+              UMKM
+            </span>
+            <span className="text-[10px] font-medium text-white/70 tracking-widest uppercase">
+              Database
+            </span>
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4 py-2 group-data-[collapsible=icon]:hidden text-sidebar-foreground/50">Menu Utama</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-4 mb-2 group-data-[collapsible=icon]:hidden text-white/40 font-bold text-[10px] uppercase tracking-wider">
+            Navigasi Utama
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigation.filter(i => i.show).map((item) => (
-                <SidebarMenuItem key={item.name}>
+                <SidebarMenuItem key={item.name} className="px-2">
                   <SidebarMenuButton
                     asChild
                     isActive={pathname === item.href}
                     tooltip={item.name}
-                    className="h-11"
+                    className="h-11 rounded-lg transition-all duration-200 hover:bg-white/10 data-[active=true]:bg-accent data-[active=true]:text-accent-foreground data-[active=true]:shadow-md"
                   >
                     <Link href={item.href}>
                       <item.icon className="w-5 h-5" />
-                      <span className="group-data-[collapsible=icon]:hidden">{item.name}</span>
+                      <span className="font-medium group-data-[collapsible=icon]:hidden">{item.name}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -87,18 +94,23 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border/50 p-2">
-        <div className="px-4 py-2 text-[10px] text-white/50 uppercase font-bold group-data-[collapsible=icon]:hidden">
-          User: {isAdmin ? "ADMIN" : (user?.isAnonymous ? "Petugas" : "User")}
+      <SidebarFooter className="p-4 bg-black/10">
+        <div className="flex flex-col gap-4 group-data-[collapsible=icon]:hidden">
+          <div className="px-2 py-1 bg-white/10 rounded-md border border-white/5">
+            <span className="text-[9px] text-white/50 uppercase font-black block">Role Pengguna</span>
+            <span className="text-xs text-accent font-bold truncate">
+              {isAdmin ? "Administrator" : (user?.isAnonymous ? "Petugas Input" : "User Publik")}
+            </span>
+          </div>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton className="h-10 rounded-lg hover:bg-destructive/10 hover:text-destructive-foreground text-white/70">
+                <LogOut className="w-4 h-4" />
+                <span className="text-sm font-medium">Keluar Sistem</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </div>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton className="h-11">
-              <LogOut className="w-5 h-5" />
-              <span className="group-data-[collapsible=icon]:hidden">Keluar</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   )

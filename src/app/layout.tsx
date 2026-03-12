@@ -6,8 +6,8 @@ import {Toaster} from '@/components/ui/toaster';
 import {FirebaseClientProvider} from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'UMKM Database - Business Management System',
-  description: 'Streamline your business actor data and compliance requirements.',
+  title: 'UMKM Database - Sistem Manajemen Terpadu',
+  description: 'Pendataan dan verifikasi pelaku usaha UMKM yang modern dan efisien.',
 };
 
 export default function RootLayout({
@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="id">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -27,7 +27,7 @@ export default function RootLayout({
           <SidebarProvider>
             <div className="flex min-h-screen w-full">
               <AppSidebar />
-              <main className="flex-1 overflow-auto">
+              <main className="flex-1 overflow-auto bg-[#F8FAFC]">
                 {children}
               </main>
             </div>
