@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -60,7 +61,7 @@ export function AppSidebar() {
     { name: "Input Data", href: "/input", icon: UserPlus, show: !!user },
     { name: "Verifikasi Admin", href: "/verify-actor", icon: ShieldCheck, show: isAdmin },
     { name: "Data Pelaku", href: "/actor-data", icon: Users, show: !!user },
-    { name: "Verifikasi Bank", href: "/verify-bank", icon: CreditCard, show: !!user },
+    { name: "Verifikasi Data", href: "/verify-bank", icon: CreditCard, show: !!user },
     { name: "Finish", href: "/finish", icon: CheckCircle2, show: !!user },
     { name: "Manajemen User", href: "/users", icon: UserCog, show: isAdmin },
     { name: "Pengaturan", href: "/settings", icon: Settings, show: isAdmin },

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -133,10 +134,10 @@ export default function SettingsPage() {
 
   if (!isAdmin) {
     return (
-      <div className="p-20 flex flex-col items-center justify-center space-y-4">
+      <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center">
         <ShieldAlert className="w-16 h-16 text-destructive" />
         <h1 className="text-2xl font-bold">Akses Ditolak</h1>
-        <p className="text-muted-foreground">Hanya Admin yang dapat mengakses Pengaturan Sistem.</p>
+        <p className="text-muted-foreground max-w-md">Hanya Administrator yang dapat mengakses menu Pengaturan Sistem.</p>
       </div>
     )
   }

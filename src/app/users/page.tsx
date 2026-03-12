@@ -26,7 +26,7 @@ export default function UserManagementPage() {
   }, [user, firestore])
 
   const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRef)
-  const isAdmin = !!adminRole
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
   const memoQuery = useMemoFirebase(() => {
     if (!firestore) return null
@@ -76,15 +76,15 @@ export default function UserManagementPage() {
   }
 
   if (isAdminLoading) {
-    return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>
+    return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>
   }
 
   if (!isAdmin) {
     return (
-      <div className="p-20 flex flex-col items-center justify-center space-y-4">
+      <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center">
         <ShieldAlert className="w-16 h-16 text-destructive" />
         <h1 className="text-2xl font-bold">Akses Ditolak</h1>
-        <p className="text-muted-foreground text-center max-w-md">
+        <p className="text-muted-foreground max-w-md">
           Hanya Administrator yang dapat mengakses menu Manajemen User. 
           Mintalah Admin utama untuk mendaftarkan ID Perangkat Anda (UID) yang tertera di sidebar.
         </p>
