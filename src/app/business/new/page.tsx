@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { saveBusiness, uploadDocument } from "@/app/actions/business"
+import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
+import { collection } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,7 +15,6 @@ import {
   Mail, 
   Phone, 
   MapPin, 
-  FileUp, 
   Check,
   ChevronLeft,
   Loader2
@@ -25,42 +25,21 @@ import { useToast } from "@/hooks/use-toast"
 export default function NewBusinessPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { user } = useUser()
+  const firestore = useFirestore()
   const [loading, setLoading] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [docData, setDocData] = useState<{ url: string, name: string } | null>(null)
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setUploading(true)
-    const formData = new FormData()
-    formData.append("file", file)
-
-    try {
-      const result = await uploadDocument(formData)
-      setDocData(result)
-      toast({
-        title: "Dokumen terunggah",
-        description: `File ${result.name} berhasil disimpan di Google Drive.`
-      })
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Gagal unggah",
-        description: "Terjadi kesalahan saat mengunggah dokumen."
-      })
-    } finally {
-      setUploading(false)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setLoading(true)
+    if (!user) {
+      toast({ variant: "destructive", title: "Gagal", description: "Anda harus masuk terlebih dahulu." })
+      return
+    }
 
+    setLoading(true)
     const formData = new FormData(e.currentTarget)
     const data = {
+      ownerId: user.uid,
       companyName: formData.get("companyName") as string,
       ownerName: formData.get("ownerName") as string,
       email: formData.get("email") as string,
@@ -69,22 +48,23 @@ export default function NewBusinessPage() {
       city: formData.get("city") as string,
       businessType: formData.get("businessType") as string,
       registrationNumber: formData.get("registrationNumber") as string,
-      documentUrl: docData?.url,
-      documentName: docData?.name,
+      createdAt: new Date().toISOString(),
     }
 
     try {
-      await saveBusiness(data)
+      const colRef = collection(firestore, 'users', user.uid, 'businessActors')
+      addDocumentNonBlocking(colRef, data)
+      
       toast({
         title: "Data Disimpan",
-        description: "Profil pelaku usaha berhasil ditambahkan ke database Google Sheets."
+        description: "Profil pelaku usaha berhasil ditambahkan ke Firebase Firestore."
       })
       router.push("/business")
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Gagal menyimpan",
-        description: "Terjadi kesalahan sistem."
+        description: "Terjadi kesalahan saat menyimpan ke database."
       })
     } finally {
       setLoading(false)
@@ -167,44 +147,6 @@ export default function NewBusinessPage() {
                 <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                 <Textarea id="address" name="address" placeholder="Jalan, RT/RW, Kecamatan..." className="pl-9 min-h-[100px]" required />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <FileUp className="w-5 h-5 text-primary" /> Berkas & Dokumen
-            </CardTitle>
-            <CardDescription>Unggah dokumen pendukung ke Google Drive (Izin, Legalitas, dsb).</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/20 rounded-xl p-8 bg-muted/5">
-              {uploading ? (
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                  <span className="text-sm font-medium">Sedang mengunggah...</span>
-                </div>
-              ) : docData ? (
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 bg-accent/20 rounded-full flex items-center justify-center text-accent">
-                    <Check className="w-6 h-6" />
-                  </div>
-                  <span className="text-sm font-medium">{docData.name}</span>
-                  <Button variant="outline" size="sm" onClick={() => setDocData(null)}>Hapus & Ganti</Button>
-                </div>
-              ) : (
-                <>
-                  <FileUp className="w-12 h-12 text-muted-foreground/50 mb-4" />
-                  <Label htmlFor="file-upload" className="cursor-pointer">
-                    <div className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors">
-                      Pilih Dokumen
-                    </div>
-                    <input id="file-upload" type="file" className="hidden" onChange={handleFileUpload} />
-                  </Label>
-                  <p className="mt-2 text-xs text-muted-foreground">PDF, JPG, atau PNG (Max. 5MB)</p>
-                </>
-              )}
             </div>
           </CardContent>
         </Card>

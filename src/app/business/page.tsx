@@ -1,5 +1,8 @@
-import { getBusinesses } from "@/app/actions/business"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+"use client"
+
+import { useMemoFirebase, useCollection, useUser } from "@/firebase"
+import { collection, query, orderBy } from "firebase/firestore"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -10,7 +13,8 @@ import {
   FileText, 
   Edit, 
   Trash2, 
-  ExternalLink 
+  ExternalLink,
+  Loader2
 } from "lucide-react"
 import Link from "next/link"
 import {
@@ -23,15 +27,23 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 
-export default async function BusinessListPage() {
-  const businesses = await getBusinesses()
+export default function BusinessListPage() {
+  const { user } = useUser()
+  const { firestore } = (typeof window !== 'undefined') ? require('@/firebase') : { firestore: null }
+
+  const memoQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null
+    return query(collection(firestore, 'users', user.uid, 'businessActors'), orderBy('createdAt', 'desc'))
+  }, [user, firestore])
+
+  const { data: businesses, isLoading } = useCollection(memoQuery)
 
   return (
     <div className="p-8 space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-primary font-headline">Pelaku Usaha</h1>
-          <p className="text-muted-foreground">Kelola basis data pelaku usaha Anda melalui integrasi Google Sheets.</p>
+          <p className="text-muted-foreground">Kelola basis data pelaku usaha Anda melalui Firebase Firestore.</p>
         </div>
         <Link href="/business/new">
           <Button className="bg-primary hover:bg-primary/90">
@@ -54,81 +66,67 @@ export default async function BusinessListPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-muted/30">
-              <TableRow>
-                <TableHead className="font-semibold">Nama Perusahaan</TableHead>
-                <TableHead className="font-semibold">Tipe Bisnis</TableHead>
-                <TableHead className="font-semibold">Lokasi</TableHead>
-                <TableHead className="font-semibold">NIB / No Reg</TableHead>
-                <TableHead className="font-semibold">Dokumen</TableHead>
-                <TableHead className="text-right font-semibold">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {businesses.map((item) => (
-                <TableRow key={item.id} className="hover:bg-muted/20">
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span className="font-medium text-primary">{item.companyName}</span>
-                      <span className="text-xs text-muted-foreground">{item.ownerName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none">
-                      {item.businessType}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{item.city}</TableCell>
-                  <TableCell className="font-mono text-xs">{item.registrationNumber}</TableCell>
-                  <TableCell>
-                    {item.documentUrl ? (
-                      <a 
-                        href={item.documentUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-accent font-medium hover:underline text-xs"
-                      >
-                        <FileText className="w-3 h-3" />
-                        {item.documentName || 'Lihat'}
-                      </a>
-                    ) : (
-                      <span className="text-muted-foreground text-xs italic">Kosong</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuLabel>Opsi</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                          <Edit className="w-4 h-4 mr-2" /> Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="w-4 h-4 mr-2" /> Hapus
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <ExternalLink className="w-4 h-4 mr-2" /> Detail
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {businesses.length === 0 && (
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
-                    Tidak ada data pelaku usaha ditemukan.
-                  </TableCell>
+                  <TableHead className="font-semibold">Nama Perusahaan</TableHead>
+                  <TableHead className="font-semibold">Tipe Bisnis</TableHead>
+                  <TableHead className="font-semibold">Lokasi</TableHead>
+                  <TableHead className="font-semibold">NIB / No Reg</TableHead>
+                  <TableHead className="text-right font-semibold">Aksi</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {businesses?.map((item) => (
+                  <TableRow key={item.id} className="hover:bg-muted/20">
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-primary">{item.companyName}</span>
+                        <span className="text-xs text-muted-foreground">{item.ownerName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none">
+                        {item.businessType}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{item.city}</TableCell>
+                    <TableCell className="font-mono text-xs">{item.registrationNumber}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuLabel>Opsi</DropdownMenuLabel>
+                          <DropdownMenuItem>
+                            <Edit className="w-4 h-4 mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive">
+                            <Trash2 className="w-4 h-4 mr-2" /> Hapus
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {(!businesses || businesses.length === 0) && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                      Tidak ada data pelaku usaha ditemukan.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -1,18 +1,57 @@
-import { getBusinesses } from "@/app/actions/business"
+"use client"
+
+import { useMemoFirebase, useCollection, useUser, useAuth } from "@/firebase"
+import { collection, query, orderBy, limit } from "firebase/firestore"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, Building2, ShieldCheck, TrendingUp } from "lucide-react"
+import { Users, Building2, ShieldCheck, TrendingUp, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { useEffect } from "react"
+import { signInAnonymously } from "firebase/auth"
 
-export default async function Home() {
-  const businesses = await getBusinesses()
+export default function DashboardPage() {
+  const { user, isUserLoading } = useUser()
+  const auth = useAuth()
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      signInAnonymously(auth)
+    }
+  }, [user, isUserLoading, auth])
+
+  const businessQuery = useMemoFirebase(() => {
+    if (!user) return null
+    return query(
+      collection(document.getElementById('db') as any, 'users', user.uid, 'businessActors'),
+      orderBy('createdAt', 'desc')
+    )
+  }, [user])
+
+  // In reality, useMemoFirebase needs the firestore instance. 
+  // Let's refine the query using the hook correctly.
+  const { firestore } = (typeof window !== 'undefined') ? require('@/firebase') : { firestore: null }
+  
+  const memoQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null
+    return query(collection(firestore, 'users', user.uid, 'businessActors'), orderBy('createdAt', 'desc'))
+  }, [user, firestore])
+
+  const { data: businesses, isLoading } = useCollection(memoQuery)
 
   const stats = [
-    { name: "Total Pelaku Usaha", value: businesses.length, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-    { name: "Tipe Bisnis", value: new Set(businesses.map(b => b.businessType)).size, icon: Building2, color: "text-green-600", bg: "bg-green-50" },
+    { name: "Total Pelaku Usaha", value: businesses?.length || 0, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
+    { name: "Tipe Bisnis", value: new Set(businesses?.map(b => b.businessType)).size || 0, icon: Building2, color: "text-green-600", bg: "bg-green-50" },
     { name: "Tingkat Kepatuhan", value: "85%", icon: ShieldCheck, color: "text-purple-600", bg: "bg-purple-50" },
     { name: "Pertumbuhan", value: "+12%", icon: TrendingUp, color: "text-orange-600", bg: "bg-orange-50" },
   ]
+
+  if (isUserLoading || isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
     <div className="p-8 space-y-8">
@@ -66,18 +105,18 @@ export default async function Home() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {businesses.slice(0, 5).map((business) => (
+              {businesses?.slice(0, 5).map((business) => (
                 <div key={business.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
                   <div className="space-y-1">
                     <p className="text-sm font-medium leading-none">{business.companyName}</p>
                     <p className="text-xs text-muted-foreground">{business.city} • {business.businessType}</p>
                   </div>
                   <div className="text-xs font-medium text-primary">
-                    {new Date(business.createdAt).toLocaleDateString('id-ID')}
+                    {business.createdAt ? new Date(business.createdAt).toLocaleDateString('id-ID') : '-'}
                   </div>
                 </div>
               ))}
-              {businesses.length === 0 && (
+              {(!businesses || businesses.length === 0) && (
                 <div className="text-center py-8 text-muted-foreground">
                   Belum ada data tersedia.
                 </div>
