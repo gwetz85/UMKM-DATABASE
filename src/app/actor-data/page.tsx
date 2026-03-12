@@ -9,15 +9,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
+import { Separator } from "@/components/ui/separator"
 
 export default function ActorDataPage() {
   const { user } = useUser()
   const firestore = useFirestore()
   const { toast } = useToast()
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
+  const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
 
   // Admin Check
   const adminRef = useMemoFirebase(() => {
@@ -67,7 +69,7 @@ export default function ActorDataPage() {
     }
   }
 
-  const handlePrint = (actor: BusinessActor) => {
+  const handlePrint = () => {
     window.print()
   }
 
@@ -85,7 +87,7 @@ export default function ActorDataPage() {
         )}
       </div>
 
-      <Card className="border-none shadow-sm overflow-hidden">
+      <Card className="border-none shadow-sm overflow-hidden bg-white">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
@@ -103,8 +105,8 @@ export default function ActorDataPage() {
                 <TableBody>
                   {actors?.map((actor) => (
                     <TableRow key={actor.id} className="hover:bg-muted/10 transition-colors">
-                      <TableCell className="font-medium text-slate-700 whitespace-nowrap">{actor.fullName}</TableCell>
-                      <TableCell className="whitespace-nowrap">{actor.businessName}</TableCell>
+                      <TableCell className="font-bold text-slate-700 whitespace-nowrap">{actor.fullName}</TableCell>
+                      <TableCell className="whitespace-nowrap font-medium">{actor.businessName}</TableCell>
                       <TableCell className="whitespace-nowrap">
                         {actor.bankNumber ? (
                           <span className="text-[9px] md:text-[10px] px-2 py-0.5 md:py-1 bg-green-100 text-green-700 rounded-full font-black uppercase">TERISI</span>
@@ -114,37 +116,117 @@ export default function ActorDataPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1.5 md:gap-2">
-                          <Button size="sm" variant="outline" onClick={() => handlePrint(actor)} title="Cetak Data" className="h-8 px-2 md:h-9 md:px-3">
-                            <Printer className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">PRINT</span>
-                          </Button>
+                          <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="outline" onClick={() => setViewingActor(actor)} title="Lihat Detail" className="h-8 px-2 md:h-9 md:px-3 border-primary/20 hover:bg-primary/5 text-primary font-bold">
+                                <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">VIEW</span>
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle className="text-2xl font-black text-primary uppercase tracking-tight flex items-center gap-2">
+                                  <Eye className="w-6 h-6" /> Detail Pelaku Usaha
+                                </DialogTitle>
+                              </DialogHeader>
+                              <div className="grid gap-6 py-4">
+                                <section className="space-y-4">
+                                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
+                                    <User className="w-4 h-4" /> Informasi Pribadi
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
+                                    {[
+                                      { label: "Nama Lengkap", value: actor.fullName },
+                                      { label: "NIK", value: actor.nik },
+                                      { label: "Nomor KK", value: actor.noKK },
+                                      { label: "Gender", value: actor.gender },
+                                      { label: "Tempat / Tgl Lahir", value: actor.pobDob },
+                                      { label: "No HP / WA", value: actor.phone },
+                                      { label: "Kelurahan", value: actor.kelurahan },
+                                      { label: "RT / RW", value: actor.rtRw },
+                                    ].map((item, i) => (
+                                      <div key={i} className="space-y-1">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                        <p className="text-sm font-bold text-slate-700">{item.value || "-"}</p>
+                                      </div>
+                                    ))}
+                                    <div className="md:col-span-2 space-y-1">
+                                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Alamat Lengkap</p>
+                                      <p className="text-sm font-bold text-slate-700">{actor.address || "-"}</p>
+                                    </div>
+                                  </div>
+                                </section>
+
+                                <section className="space-y-4">
+                                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
+                                    <Building2 className="w-4 h-4" /> Data Usaha
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
+                                    {[
+                                      { label: "Nama Usaha", value: actor.businessName },
+                                      { label: "Kategori Usaha", value: actor.businessCategory },
+                                      { label: "Lokasi Usaha", value: actor.businessLocation },
+                                    ].map((item, i) => (
+                                      <div key={i} className="space-y-1">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                        <p className="text-sm font-bold text-slate-700">{item.value || "-"}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </section>
+
+                                <section className="space-y-4">
+                                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
+                                    <CreditCard className="w-4 h-4" /> Data Rekening
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border border-primary/10">
+                                    {[
+                                      { label: "Nama Bank", value: actor.bankName },
+                                      { label: "Nomor Rekening", value: actor.bankNumber },
+                                      { label: "Nama Pemilik Rekening", value: actor.bankOwner },
+                                    ].map((item, i) => (
+                                      <div key={i} className="space-y-1">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                        <p className="text-sm font-black text-primary">{item.value || "BELUM TERISI"}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </section>
+                              </div>
+                              <DialogFooter>
+                                <Button onClick={handlePrint} variant="secondary" className="w-full sm:w-auto font-bold">
+                                  <Printer className="w-4 h-4 mr-2" /> Cetak Detail
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
                           
                           <Dialog open={!!editingActor && editingActor.id === actor.id} onOpenChange={(open) => !open && setEditingActor(null)}>
                             <DialogTrigger asChild>
-                              <Button size="sm" variant="secondary" onClick={() => setEditingActor(actor)} title="Edit Rekening" className="h-8 px-2 md:h-9 md:px-3">
-                                <Edit3 className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">EDIT</span>
+                              <Button size="sm" variant="secondary" onClick={() => setEditingActor(actor)} title="Edit Rekening" className="h-8 px-2 md:h-9 md:px-3 font-bold">
+                                <Edit3 className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">EDIT BANK</span>
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="sm:max-w-[425px]">
                               <form onSubmit={handleSaveBank}>
                                 <DialogHeader>
-                                  <DialogTitle>Input Data Rekening</DialogTitle>
+                                  <DialogTitle className="text-xl font-black text-primary">INPUT REKENING</DialogTitle>
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
                                   <div className="space-y-2">
-                                    <Label>Nomor Rekening</Label>
-                                    <Input name="bankNumber" defaultValue={actor.bankNumber} required />
+                                    <Label className="font-bold">Nomor Rekening</Label>
+                                    <Input name="bankNumber" defaultValue={actor.bankNumber} className="font-mono" required />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label>Nama Pemilik Rekening</Label>
-                                    <Input name="bankOwner" defaultValue={actor.bankOwner} required />
+                                    <Label className="font-bold">Nama Pemilik Rekening</Label>
+                                    <Input name="bankOwner" defaultValue={actor.bankOwner} className="uppercase font-bold" required />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label>Nama Bank</Label>
-                                    <Input name="bankName" defaultValue={actor.bankName} required />
+                                    <Label className="font-bold">Nama Bank</Label>
+                                    <Input name="bankName" defaultValue={actor.bankName} placeholder="Contoh: BANK NTB SYARIAH" required />
                                   </div>
                                 </div>
                                 <DialogFooter>
-                                  <Button type="submit" className="w-full sm:w-auto"><Save className="w-4 h-4 mr-2" /> Simpan Rekening</Button>
+                                  <Button type="submit" className="w-full bg-primary font-bold"><Save className="w-4 h-4 mr-2" /> Simpan Rekening</Button>
                                 </DialogFooter>
                               </form>
                             </DialogContent>
@@ -156,7 +238,7 @@ export default function ActorDataPage() {
                               variant="destructive" 
                               onClick={() => handleDelete(actor.id, actor.fullName)}
                               title="Hapus Data Pelaku"
-                              className="bg-red-500 hover:bg-red-600 h-8 px-2 md:h-9 md:px-3"
+                              className="bg-red-500 hover:bg-red-600 h-8 px-2 md:h-9 md:px-3 font-bold"
                             >
                               <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">HAPUS</span>
                             </Button>
