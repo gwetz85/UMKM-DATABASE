@@ -8,6 +8,12 @@ import { Readable } from 'stream';
 const RANGE = 'Sheet1!A2:L'; // Asumsi data mulai dari baris 2
 
 export async function getBusinesses(): Promise<BusinessActor[]> {
+  // Validasi SPREADSHEET_ID untuk mencegah error "Missing required parameters"
+  if (!SPREADSHEET_ID) {
+    console.error('ERROR: GOOGLE_SHEETS_ID tidak ditemukan di environment variables.');
+    return [];
+  }
+
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
@@ -16,16 +22,16 @@ export async function getBusinesses(): Promise<BusinessActor[]> {
 
     const rows = response.data.values || [];
     return rows.map((row) => ({
-      id: row[0],
-      companyName: row[1],
-      ownerName: row[2],
-      email: row[3],
-      phone: row[4],
-      address: row[5],
-      city: row[6],
-      businessType: row[7],
-      registrationNumber: row[8],
-      createdAt: row[9],
+      id: row[0] || '',
+      companyName: row[1] || '',
+      ownerName: row[2] || '',
+      email: row[3] || '',
+      phone: row[4] || '',
+      address: row[5] || '',
+      city: row[6] || '',
+      businessType: row[7] || '',
+      registrationNumber: row[8] || '',
+      createdAt: row[9] || '',
       documentUrl: row[10] || undefined,
       documentName: row[11] || undefined,
     })).reverse(); // Terbaru di atas
@@ -41,6 +47,10 @@ export async function getBusinessById(id: string) {
 }
 
 export async function saveBusiness(data: Omit<BusinessActor, 'id' | 'createdAt'>) {
+  if (!SPREADSHEET_ID) {
+    throw new Error('Konfigurasi Google Sheets tidak lengkap. Harap isi GOOGLE_SHEETS_ID di file .env');
+  }
+
   const id = Math.random().toString(36).substring(2, 9);
   const createdAt = new Date().toISOString();
 
@@ -72,9 +82,9 @@ export async function saveBusiness(data: Omit<BusinessActor, 'id' | 'createdAt'>
     revalidatePath('/business');
     revalidatePath('/');
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving to Sheets:', error);
-    throw new Error('Gagal menyimpan ke Google Sheets');
+    throw new Error(error.message || 'Gagal menyimpan ke Google Sheets');
   }
 }
 
@@ -98,7 +108,7 @@ export async function uploadDocument(formData: FormData) {
       fields: 'id, webViewLink',
     });
 
-    // Berikan izin baca ke siapa saja yang memiliki link (opsional)
+    // Berikan izin baca ke siapa saja yang memiliki link
     if (response.data.id) {
       await drive.permissions.create({
         fileId: response.data.id,
@@ -113,15 +123,12 @@ export async function uploadDocument(formData: FormData) {
       url: response.data.webViewLink || '',
       name: file.name
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error uploading to Drive:', error);
-    throw new Error('Gagal mengunggah ke Google Drive');
+    throw new Error(error.message || 'Gagal mengunggah ke Google Drive');
   }
 }
 
 export async function deleteBusiness(id: string) {
-  // Catatan: Menghapus baris tertentu di Google Sheets secara API memerlukan index baris.
-  // Untuk MVP ini, kita fokus pada penambahan data.
-  // Dalam implementasi penuh, Anda harus mencari baris ID tersebut dan menggunakan spreadsheets.batchUpdate.
-  return { success: false, error: 'Delete not implemented for Sheets yet' };
+  return { success: false, error: 'Fitur hapus belum diimplementasikan untuk integrasi Sheets' };
 }
