@@ -8,7 +8,6 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      // Cek apakah UID ada di roles_admin ATAU user adalah agus@umkm.id
       return isSignedIn() && (
         exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) || 
         request.auth.token.email == "agus@umkm.id"
@@ -24,16 +23,19 @@ service cloud.firestore {
 
     match /roles_admin/{adminId} {
       allow read: if isSignedIn();
-      // Backdoor: Mengizinkan Agus mendaftarkan dirinya sendiri
       allow create, update: if isSignedIn() && (request.auth.uid == adminId && request.auth.token.email == "agus@umkm.id");
       allow delete: if isAdmin();
     }
 
     match /system_users/{uid} {
       allow read: if isSignedIn();
-      // Mengizinkan user mengupdate profilnya sendiri
       allow create, update: if isSignedIn() && request.auth.uid == uid;
       allow delete: if isAdmin();
+    }
+
+    match /master_data/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import { useFirestore, useUser, useDoc, useMemoFirebase } from "@/firebase"
-import { collection, doc, getDocs, writeBatch, query } from "firebase/firestore"
+import { collection, doc, getDocs, writeBatch, query, addDoc } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -16,20 +16,22 @@ import {
   Upload, 
   AlertTriangle, 
   Loader2, 
-  ShieldAlert,
   CheckCircle2,
   RefreshCcw,
-  Info
+  Info,
+  FileSpreadsheet
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import * as XLSX from 'xlsx'
 
 export default function SettingsPage() {
   const { user } = useUser()
   const { toast } = useToast()
   const firestore = useFirestore()
   const [loading, setLoading] = useState(false)
+  const [uploadingExcel, setUploadingExcel] = useState(false)
   const [theme, setTheme] = useState<"light" | "dark">("light")
 
   const adminRef = useMemoFirebase(() => {
@@ -92,13 +94,17 @@ export default function SettingsPage() {
         const data = JSON.parse(event.target?.result as string)
         if (!Array.isArray(data)) throw new Error("Format file tidak valid")
 
-        const batch = writeBatch(firestore)
-        data.forEach((item) => {
-          const { id, ...rest } = item
-          const docRef = doc(firestore, "businessActors", id)
-          batch.set(docRef, rest, { merge: true })
-        })
-        await batch.commit()
+        const batchSize = 500
+        for (let i = 0; i < data.length; i += batchSize) {
+          const batch = writeBatch(firestore)
+          const chunk = data.slice(i, i + batchSize)
+          chunk.forEach((item) => {
+            const { id, ...rest } = item
+            const docRef = doc(firestore, "businessActors", id)
+            batch.set(docRef, rest, { merge: true })
+          })
+          await batch.commit()
+        }
         
         toast({ title: "Restore Berhasil", description: `${data.length} data telah dipulihkan.` })
       } catch (error) {
@@ -108,6 +114,52 @@ export default function SettingsPage() {
       }
     }
     reader.readAsText(file)
+  }
+
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingExcel(true)
+    const reader = new FileReader()
+    reader.onload = async (event) => {
+      try {
+        const bstr = event.target?.result
+        const wb = XLSX.read(bstr, { type: 'binary' })
+        const wsname = wb.SheetNames[0]
+        const ws = wb.Sheets[wsname]
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[]
+
+        // Column 0: No KK, Column 1: NIK (Starting from row 1 to skip header if exists)
+        const masterData = data.slice(1).map(row => ({
+          noKK: String(row[0] || '').trim(),
+          nik: String(row[1] || '').trim(),
+          uploadedAt: new Date().toISOString()
+        })).filter(item => item.noKK && item.nik)
+
+        if (masterData.length === 0) throw new Error("Tidak ada data valid ditemukan di kolom 1 & 2")
+
+        const batchSize = 500
+        const colRef = collection(firestore, "master_data")
+        
+        for (let i = 0; i < masterData.length; i += batchSize) {
+          const batch = writeBatch(firestore)
+          const chunk = masterData.slice(i, i + batchSize)
+          chunk.forEach((item) => {
+            const newDocRef = doc(colRef)
+            batch.set(newDocRef, item)
+          })
+          await batch.commit()
+        }
+
+        toast({ title: "Upload Excel Berhasil", description: `${masterData.length} data master telah diimpor.` })
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Gagal Impor Excel", description: error.message || "Pastikan format kolom benar." })
+      } finally {
+        setUploadingExcel(false)
+      }
+    }
+    reader.readAsBinaryString(file)
   }
 
   const handleReset = async () => {
@@ -223,6 +275,25 @@ export default function SettingsPage() {
                       <div className="flex items-center justify-center w-full h-9 px-3 text-sm font-medium border rounded-md hover:bg-muted transition-colors">
                         {loading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null} Pilih File & Restore
                       </div>
+                    </Label>
+                  </div>
+                </div>
+
+                {/* Upload Excel Section */}
+                <div className="p-4 border border-accent/20 bg-accent/5 rounded-xl space-y-3 sm:col-span-2">
+                  <div className="flex items-center gap-2 font-bold text-sm text-primary">
+                    <FileSpreadsheet className="w-4 h-4" /> Import Data Master Excel
+                  </div>
+                  <p className="text-xs text-muted-foreground">Upload Excel (Kolom 1: No KK, Kolom 2: NIK) untuk data referensi Cek Data.</p>
+                  <div className="relative">
+                    <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="hidden" id="excel-upload" disabled={uploadingExcel} />
+                    <Label htmlFor="excel-upload" className="cursor-pointer">
+                      <Button variant="outline" className="w-full border-primary/20 hover:bg-primary/5" asChild>
+                        <div className="flex items-center justify-center gap-2">
+                          {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                          Upload Excel Master
+                        </div>
+                      </Button>
                     </Label>
                   </div>
                 </div>

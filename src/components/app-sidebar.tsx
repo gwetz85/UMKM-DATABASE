@@ -15,7 +15,8 @@ import {
   Copy,
   Check,
   User as UserIcon,
-  Settings
+  Settings,
+  SearchCheck
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -59,6 +60,7 @@ export function AppSidebar() {
   const navigation = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard, show: !!user },
     { name: "Input Data", href: "/input", icon: UserPlus, show: !!user },
+    { name: "Cek Data", href: "/check-data", icon: SearchCheck, show: !!user },
     { name: "Verifikasi Admin", href: "/verify-actor", icon: ShieldCheck, show: isAdmin },
     { name: "Data Pelaku", href: "/actor-data", icon: Users, show: !!user },
     { name: "Verifikasi Data", href: "/verify-bank", icon: CreditCard, show: !!user },

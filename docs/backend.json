@@ -43,6 +43,17 @@
         "addedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "fullName", "role"]
+    },
+    "MasterData": {
+      "title": "MasterData",
+      "type": "object",
+      "description": "Data master NIK dan KK untuk pengecekkan validasi.",
+      "properties": {
+        "noKK": { "type": "string" },
+        "nik": { "type": "string" },
+        "uploadedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["noKK", "nik"]
     }
   },
   "auth": {
@@ -55,7 +66,7 @@
         "definition": {
           "entityName": "BusinessActor",
           "schema": { "$ref": "#/backend/entities/BusinessActor" },
-          "description": "Koleksi utama data pelaku usaha (Top-level untuk akses Admin)"
+          "description": "Koleksi utama data pelaku usaha"
         }
       },
       {
@@ -70,7 +81,15 @@
         "definition": {
           "entityName": "SystemUser",
           "schema": { "$ref": "#/backend/entities/SystemUser" },
-          "description": "Daftar pengguna yang diizinkan masuk ke sistem"
+          "description": "Daftar pengguna sistem"
+        }
+      },
+      {
+        "path": "/master_data/{id}",
+        "definition": {
+          "entityName": "MasterData",
+          "schema": { "$ref": "#/backend/entities/MasterData" },
+          "description": "Data referensi NIK/KK dari Excel"
         }
       }
     ]
