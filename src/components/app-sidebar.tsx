@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -110,7 +109,6 @@ export function AppSidebar() {
 
   if (pathname === "/login") return null
 
-  // Skeleton during hydration to prevent mismatch
   if (!mounted) {
     return (
       <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-sidebar">
@@ -124,26 +122,25 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-sidebar">
-      <SidebarHeader className="py-4 flex flex-col items-center justify-center border-b border-white/5 sticky top-0 bg-sidebar z-20">
+    <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-sidebar text-white">
+      <SidebarHeader className="py-4 flex flex-col items-center justify-center border-b border-white/10 sticky top-0 bg-sidebar z-20">
         <div className="flex flex-col items-center gap-2 w-full mb-4">
-          <div className="bg-accent rounded-xl p-2 shadow-lg shadow-accent/20 flex items-center justify-center transition-transform duration-300 hover:scale-105">
-            <Building2 className="w-6 h-6 text-accent-foreground" />
+          <div className="bg-white/20 rounded-xl p-2 shadow-lg flex items-center justify-center transition-transform duration-300 hover:scale-105">
+            <Building2 className="w-6 h-6 text-white" />
           </div>
           <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden">
             <span className="font-black text-lg tracking-tight text-white leading-none">
               UMKM DATABASE
             </span>
-            <span className="text-[9px] font-bold text-accent/80 tracking-widest uppercase mt-1">
+            <span className="text-[9px] font-bold text-white/60 tracking-widest uppercase mt-1">
               Sistem Terpadu
             </span>
           </div>
         </div>
 
-        {/* Real Time Clock Display - Fixed in Header to remain sticky */}
         <div className="w-full group-data-[collapsible=icon]:hidden px-2">
-          <div className="bg-black/20 rounded-lg p-2.5 border border-white/5 flex items-center gap-2.5">
-            <Clock className="w-3.5 h-3.5 text-accent animate-pulse" />
+          <div className="bg-black/20 rounded-lg p-2.5 border border-white/10 flex items-center gap-2.5">
+            <Clock className="w-3.5 h-3.5 text-white/80 animate-pulse" />
             <div className="flex flex-col">
               <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest">Waktu Server</span>
               <span className="text-[10px] font-mono font-black text-white whitespace-nowrap">
@@ -156,7 +153,7 @@ export function AppSidebar() {
 
       <SidebarContent className="px-3 py-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-2 mb-2 group-data-[collapsible=icon]:hidden text-white/30 font-bold text-[10px] uppercase tracking-[0.2em]">
+          <SidebarGroupLabel className="px-2 mb-2 group-data-[collapsible=icon]:hidden text-white/40 font-bold text-[10px] uppercase tracking-[0.2em]">
             Menu Utama
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -168,14 +165,14 @@ export function AppSidebar() {
                     isActive={pathname === item.href}
                     tooltip={item.name}
                     className={cn(
-                      "h-10 px-3 rounded-xl transition-all duration-200 hover:bg-white/5 text-white/70",
-                      "data-[active=true]:bg-accent data-[active=true]:text-accent-foreground data-[active=true]:shadow-lg data-[active=true]:shadow-accent/10",
+                      "h-10 px-3 rounded-xl transition-all duration-200 hover:bg-white/10 text-white/80",
+                      "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-lg",
                       "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center"
                     )}
                   >
                     <Link href={item.href} className="flex items-center gap-3">
                       <item.icon className="w-4.5 h-4.5 shrink-0" />
-                      <span className="font-semibold text-xs truncate group-data-[collapsible=icon]:hidden">
+                      <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
                         {item.name}
                       </span>
                     </Link>
@@ -191,16 +188,16 @@ export function AppSidebar() {
         <div className="flex flex-col gap-3">
           {user && (
             <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-2">
-              <div className="bg-white/5 rounded-xl border border-white/5 p-2.5 space-y-2">
+              <div className="bg-white/10 rounded-xl border border-white/10 p-2.5 space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
-                    <UserIcon className="w-3.5 h-3.5 text-accent" />
+                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+                    <UserIcon className="w-3.5 h-3.5 text-white" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] font-bold text-white truncate">
+                    <span className="text-[10px] font-black text-white truncate">
                       {user.email?.split('@')[0].toUpperCase()}
                     </span>
-                    <span className="text-[8px] text-accent font-black uppercase tracking-tighter">
+                    <span className="text-[8px] text-white/60 font-black uppercase tracking-tighter">
                       {isAdmin ? "🛡️ Admin" : "📝 Petugas"}
                     </span>
                   </div>
@@ -227,7 +224,7 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton 
                 onClick={handleLogout}
-                className="h-10 rounded-xl hover:bg-destructive/20 hover:text-white text-white/60 transition-colors group-data-[collapsible=icon]:justify-center"
+                className="h-10 rounded-xl hover:bg-white/20 hover:text-white text-white/60 transition-colors group-data-[collapsible=icon]:justify-center"
               >
                 <LogOut className="w-4.5 h-4.5 shrink-0" />
                 <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">

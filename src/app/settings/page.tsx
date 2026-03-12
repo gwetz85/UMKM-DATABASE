@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -43,6 +42,7 @@ export default function SettingsPage() {
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
   useEffect(() => {
+    // Inisialisasi status tema dari kelas dokumen
     const isDark = document.documentElement.classList.contains("dark")
     setTheme(isDark ? "dark" : "light")
   }, [])
@@ -54,11 +54,20 @@ export default function SettingsPage() {
     } else {
       document.documentElement.classList.remove("dark")
     }
+    toast({ 
+      title: "Tema Diperbarui", 
+      description: `Aplikasi sekarang dalam Mode ${val === "dark" ? "Gelap" : "Terang"}.` 
+    })
   }
 
-  const changePalette = (colorHsl: string) => {
+  const changePalette = (colorHsl: string, name: string) => {
+    // Mengupdate variabel CSS --primary dan --sidebar-background agar sinkron
     document.documentElement.style.setProperty('--primary', colorHsl)
-    toast({ title: "Warna Diperbarui", description: "Palet warna aplikasi telah berubah." })
+    document.documentElement.style.setProperty('--sidebar-background', colorHsl)
+    toast({ 
+      title: "Warna Diperbarui", 
+      description: `Warna utama aplikasi telah diubah ke ${name}.` 
+    })
   }
 
   const handleBackup = async () => {
@@ -129,13 +138,10 @@ export default function SettingsPage() {
         const wsname = wb.SheetNames[0]
         const ws = wb.Sheets[wsname]
         
-        // Use header: 1 to get array of arrays
         const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as any[]
 
         if (data.length <= 1) throw new Error("File Excel kosong atau tidak memiliki data.")
 
-        // Mappings based on user request (Kolom A-K):
-        // 0: KK, 1: NIK, 2: Nomor, 3: Tahun, 4: Nama, 5: Status, 6: LPJ, 7: Nominal, 8: Usaha, 9: Alamat, 10: Kelurahan
         const masterData = data.slice(1).map((row: any[]) => {
           const getStr = (idx: number) => {
             const val = row[idx]
@@ -265,27 +271,43 @@ export default function SettingsPage() {
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="light" id="light" />
                   <Label htmlFor="light" className="flex items-center gap-1.5 cursor-pointer">
-                    <Sun className="w-4 h-4 text-amber-500" /> Terang
+                    <Sun className="w-4 h-4 text-amber-500" /> Terang (Light)
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="dark" id="dark" />
                   <Label htmlFor="dark" className="flex items-center gap-1.5 cursor-pointer">
-                    <Moon className="w-4 h-4 text-blue-500" /> Gelap
+                    <Moon className="w-4 h-4 text-blue-500" /> Gelap (Dark)
                   </Label>
                 </div>
               </RadioGroup>
             </div>
 
             <div className="space-y-4">
-              <Label className="font-bold">Palet Warna Utama</Label>
+              <Label className="font-bold">Palet Warna Utama (Sidebar & Aksen)</Label>
               <div className="flex flex-wrap gap-4">
-                <button onClick={() => changePalette('212 68% 42%')} className="w-10 h-10 rounded-full bg-[#2266B3] border-2 border-white shadow-sm hover:scale-110 transition-transform" title="Biru (Default)" />
-                <button onClick={() => changePalette('151 81% 40%')} className="w-10 h-10 rounded-full bg-[#198E53] border-2 border-white shadow-sm hover:scale-110 transition-transform" title="Hijau" />
-                <button onClick={() => changePalette('346 84% 45%')} className="w-10 h-10 rounded-full bg-[#D41B42] border-2 border-white shadow-sm hover:scale-110 transition-transform" title="Merah" />
-                <button onClick={() => changePalette('262 83% 58%')} className="w-10 h-10 rounded-full bg-[#8B5CF6] border-2 border-white shadow-sm hover:scale-110 transition-transform" title="Ungu" />
-                <button onClick={() => changePalette('25 95% 45%')} className="w-10 h-10 rounded-full bg-[#E65C00] border-2 border-white shadow-sm hover:scale-110 transition-transform" title="Oranye" />
+                {[
+                  { name: "Biru", hsl: "212 68% 42%", hex: "#2266B3" },
+                  { name: "Hijau", hsl: "151 81% 40%", hex: "#198E53" },
+                  { name: "Merah", hsl: "346 84% 45%", hex: "#D41B42" },
+                  { name: "Ungu", hsl: "262 83% 58%", hex: "#8B5CF6" },
+                  { name: "Oranye", hsl: "25 95% 45%", hex: "#E65C00" },
+                  { name: "Hitam", hsl: "210 40% 10%", hex: "#0F172A" },
+                ].map((color) => (
+                  <button 
+                    key={color.name}
+                    onClick={() => changePalette(color.hsl, color.name)} 
+                    className="w-12 h-12 rounded-2xl border-4 border-white shadow-lg hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center group"
+                    style={{ backgroundColor: color.hex }}
+                    title={color.name}
+                  >
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Palette className="w-4 h-4 text-white" />
+                    </div>
+                  </button>
+                ))}
               </div>
+              <p className="text-[10px] text-muted-foreground italic">Pilihan warna ini akan merubah warna Sidebar dan elemen utama aplikasi.</p>
             </div>
           </CardContent>
         </Card>
