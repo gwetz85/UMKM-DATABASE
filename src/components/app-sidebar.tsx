@@ -13,7 +13,8 @@ import {
   UserCog,
   Copy,
   Check,
-  User as UserIcon
+  User as UserIcon,
+  Settings
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -52,7 +53,6 @@ export function AppSidebar() {
 
   const { data: adminRole } = useDoc(adminRef)
   
-  // FAIL-SAFE: Agus selalu admin, baik dari DB maupun cek email
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
   const navigation = [
@@ -63,6 +63,7 @@ export function AppSidebar() {
     { name: "Verifikasi Bank", href: "/verify-bank", icon: CreditCard, show: !!user },
     { name: "Finish", href: "/finish", icon: CheckCircle2, show: !!user },
     { name: "Manajemen User", href: "/users", icon: UserCog, show: isAdmin },
+    { name: "Pengaturan", href: "/settings", icon: Settings, show: isAdmin },
   ]
 
   const copyUid = () => {
