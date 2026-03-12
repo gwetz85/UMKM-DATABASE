@@ -38,7 +38,7 @@ export default function ActorDataPage() {
 
   const handleSaveBank = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!editingActor) return
+    if (!editingActor || !firestore) return
 
     const formData = new FormData(e.currentTarget)
     const actorRef = doc(firestore, 'businessActors', editingActor.id)
@@ -55,10 +55,11 @@ export default function ActorDataPage() {
   }
 
   const handleDelete = (actorId: string, fullName: string) => {
-    if (!isAdmin) return
+    if (!isAdmin || !firestore) return
     
     if (confirm(`Hapus permanen data pelaku "${fullName}"? Tindakan ini tidak dapat dibatalkan.`)) {
-      deleteDocumentNonBlocking(doc(firestore, 'businessActors', actorId))
+      const actorRef = doc(firestore, 'businessActors', actorId)
+      deleteDocumentNonBlocking(actorRef)
       toast({ 
         variant: "destructive",
         title: "Data Terhapus", 
@@ -68,6 +69,7 @@ export default function ActorDataPage() {
   }
 
   const handlePrint = (actor: BusinessActor) => {
+    // Basic print logic
     window.print()
   }
 
