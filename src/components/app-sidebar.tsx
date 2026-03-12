@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -113,8 +114,8 @@ export function AppSidebar() {
   if (!mounted) {
     return (
       <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-sidebar">
-        <SidebarHeader className="py-8 flex flex-col items-center justify-center border-b border-white/5">
-          <div className="bg-accent rounded-xl p-2.5 w-12 h-12" />
+        <SidebarHeader className="py-6 flex flex-col items-center justify-center border-b border-white/5">
+          <div className="bg-accent rounded-xl p-2 w-10 h-10" />
         </SidebarHeader>
         <SidebarContent />
         <SidebarFooter className="p-4 bg-black/10 mt-auto" />
@@ -124,42 +125,42 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-sidebar">
-      <SidebarHeader className="py-8 flex flex-col items-center justify-center border-b border-white/5">
-        <div className="flex flex-col items-center gap-4 w-full">
-          <div className="bg-accent rounded-xl p-2.5 shadow-lg shadow-accent/20 flex items-center justify-center transition-transform duration-300 hover:scale-105">
-            <Building2 className="w-8 h-8 text-accent-foreground" />
+      <SidebarHeader className="py-4 flex flex-col items-center justify-center border-b border-white/5 sticky top-0 bg-sidebar z-20">
+        <div className="flex flex-col items-center gap-2 w-full mb-4">
+          <div className="bg-accent rounded-xl p-2 shadow-lg shadow-accent/20 flex items-center justify-center transition-transform duration-300 hover:scale-105">
+            <Building2 className="w-6 h-6 text-accent-foreground" />
           </div>
           <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden">
-            <span className="font-black text-xl tracking-tight text-white leading-none">
+            <span className="font-black text-lg tracking-tight text-white leading-none">
               UMKM DATABASE
             </span>
-            <span className="text-[10px] font-bold text-accent/80 tracking-widest uppercase mt-2">
+            <span className="text-[9px] font-bold text-accent/80 tracking-widest uppercase mt-1">
               Sistem Terpadu
             </span>
           </div>
         </div>
-      </SidebarHeader>
 
-      <SidebarContent className="px-3 py-4">
-        {/* Real Time Clock Display */}
-        <div className="mb-4 group-data-[collapsible=icon]:hidden px-2">
-          <div className="bg-black/20 rounded-lg p-3 border border-white/5 flex items-center gap-3">
-            <Clock className="w-4 h-4 text-accent animate-pulse" />
+        {/* Real Time Clock Display - Fixed in Header to remain sticky */}
+        <div className="w-full group-data-[collapsible=icon]:hidden px-2">
+          <div className="bg-black/20 rounded-lg p-2.5 border border-white/5 flex items-center gap-2.5">
+            <Clock className="w-3.5 h-3.5 text-accent animate-pulse" />
             <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Waktu Server</span>
-              <span className="text-[11px] font-mono font-black text-white whitespace-nowrap">
+              <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest">Waktu Server</span>
+              <span className="text-[10px] font-mono font-black text-white whitespace-nowrap">
                 {timeStr}
               </span>
             </div>
           </div>
         </div>
+      </SidebarHeader>
 
+      <SidebarContent className="px-3 py-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-2 mb-4 group-data-[collapsible=icon]:hidden text-white/30 font-bold text-[10px] uppercase tracking-[0.2em] text-center">
+          <SidebarGroupLabel className="px-2 mb-2 group-data-[collapsible=icon]:hidden text-white/30 font-bold text-[10px] uppercase tracking-[0.2em]">
             Menu Utama
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1.5">
+            <SidebarMenu className="gap-1">
               {navigation.filter(i => i.show).map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
@@ -167,14 +168,14 @@ export function AppSidebar() {
                     isActive={pathname === item.href}
                     tooltip={item.name}
                     className={cn(
-                      "h-12 px-4 rounded-xl transition-all duration-200 hover:bg-white/5 text-white/70",
+                      "h-10 px-3 rounded-xl transition-all duration-200 hover:bg-white/5 text-white/70",
                       "data-[active=true]:bg-accent data-[active=true]:text-accent-foreground data-[active=true]:shadow-lg data-[active=true]:shadow-accent/10",
                       "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center"
                     )}
                   >
                     <Link href={item.href} className="flex items-center gap-3">
-                      <item.icon className="w-5 h-5 shrink-0" />
-                      <span className="font-semibold text-sm truncate group-data-[collapsible=icon]:hidden">
+                      <item.icon className="w-4.5 h-4.5 shrink-0" />
+                      <span className="font-semibold text-xs truncate group-data-[collapsible=icon]:hidden">
                         {item.name}
                       </span>
                     </Link>
@@ -186,36 +187,36 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 bg-black/10 mt-auto">
-        <div className="flex flex-col gap-4">
+      <SidebarFooter className="p-3 bg-black/10 mt-auto">
+        <div className="flex flex-col gap-3">
           {user && (
-            <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-3">
-              <div className="bg-white/5 rounded-xl border border-white/5 p-3 space-y-3">
+            <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-2">
+              <div className="bg-white/5 rounded-xl border border-white/5 p-2.5 space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
-                    <UserIcon className="w-4 h-4 text-accent" />
+                  <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center">
+                    <UserIcon className="w-3.5 h-3.5 text-accent" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-bold text-white truncate">
+                    <span className="text-[10px] font-bold text-white truncate">
                       {user.email?.split('@')[0].toUpperCase()}
                     </span>
-                    <span className="text-[9px] text-accent font-black uppercase tracking-tighter">
+                    <span className="text-[8px] text-accent font-black uppercase tracking-tighter">
                       {isAdmin ? "🛡️ Admin" : "📝 Petugas"}
                     </span>
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between bg-black/20 p-2 rounded-lg gap-2">
-                  <span className="text-[9px] text-white/40 font-mono truncate select-all">
+                <div className="flex items-center justify-between bg-black/20 p-1.5 rounded-lg gap-2">
+                  <span className="text-[8px] text-white/40 font-mono truncate select-all">
                     {user.uid}
                   </span>
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-6 w-6 text-white/30 hover:text-white hover:bg-white/10" 
+                    className="h-5 w-5 text-white/30 hover:text-white hover:bg-white/10" 
                     onClick={copyUid}
                   >
-                    {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                    {copied ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
                   </Button>
                 </div>
               </div>
@@ -226,10 +227,10 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton 
                 onClick={handleLogout}
-                className="h-11 rounded-xl hover:bg-destructive/20 hover:text-white text-white/60 transition-colors group-data-[collapsible=icon]:justify-center"
+                className="h-10 rounded-xl hover:bg-destructive/20 hover:text-white text-white/60 transition-colors group-data-[collapsible=icon]:justify-center"
               >
-                <LogOut className="w-5 h-5 shrink-0" />
-                <span className="text-sm font-bold group-data-[collapsible=icon]:hidden">
+                <LogOut className="w-4.5 h-4.5 shrink-0" />
+                <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">
                   Keluar Sistem
                 </span>
               </SidebarMenuButton>
