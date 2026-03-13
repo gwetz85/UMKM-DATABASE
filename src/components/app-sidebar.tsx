@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -16,7 +17,8 @@ import {
   User as UserIcon,
   Settings,
   SearchCheck,
-  Clock
+  Clock,
+  LogIn
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -83,7 +85,7 @@ export function AppSidebar() {
   const navigation = React.useMemo(() => [
     { name: "Dashboard", href: "/", icon: LayoutDashboard, show: !!user },
     { name: "Input Data", href: "/input", icon: UserPlus, show: !!user },
-    { name: "Cek Data", href: "/check-data", icon: SearchCheck, show: !!user },
+    { name: "Cek Data", href: "/check-data", icon: SearchCheck, show: true }, // Selalu tampil (Publik)
     { name: "Verifikasi Admin", href: "/verify-actor", icon: ShieldCheck, show: isAdmin },
     { name: "Data Pelaku", href: "/actor-data", icon: Users, show: !!user },
     { name: "Verifikasi Data", href: "/verify-bank", icon: CreditCard, show: !!user },
@@ -101,10 +103,14 @@ export function AppSidebar() {
     }
   }
 
-  const handleLogout = async () => {
-    await signOut(auth)
-    router.push("/login")
-    toast({ title: "Keluar Sistem", description: "Anda telah berhasil keluar." })
+  const handleAuthAction = async () => {
+    if (user) {
+      await signOut(auth)
+      router.push("/login")
+      toast({ title: "Keluar Sistem", description: "Anda telah berhasil keluar." })
+    } else {
+      router.push("/login")
+    }
   }
 
   if (pathname === "/login") return null
@@ -223,13 +229,24 @@ export function AppSidebar() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton 
-                onClick={handleLogout}
+                onClick={handleAuthAction}
                 className="h-10 rounded-xl hover:bg-white/20 hover:text-white text-white/60 transition-colors group-data-[collapsible=icon]:justify-center"
               >
-                <LogOut className="w-4.5 h-4.5 shrink-0" />
-                <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">
-                  Keluar Sistem
-                </span>
+                {user ? (
+                  <>
+                    <LogOut className="w-4.5 h-4.5 shrink-0" />
+                    <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">
+                      Keluar Sistem
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="w-4.5 h-4.5 shrink-0" />
+                    <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">
+                      Masuk (Login)
+                    </span>
+                  </>
+                )}
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

@@ -10,8 +10,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Building2, Lock, Mail, Loader2, LogIn, MonitorOff } from "lucide-react"
+import { Building2, Lock, Mail, Loader2, LogIn, MonitorOff, SearchCheck } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import Link from "next/link"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -177,6 +178,15 @@ export default function LoginPage() {
                 <><LogIn className="w-5 h-5 mr-2" /> Masuk ke Sistem</>
               )}
             </Button>
+            
+            <div className="w-full h-px bg-slate-100 my-2" />
+            
+            <Link href="/check-data" className="w-full">
+              <Button variant="outline" type="button" className="w-full h-11 border-primary/20 text-primary font-bold hover:bg-primary/5">
+                <SearchCheck className="w-4 h-4 mr-2" /> Cek Data Tanpa Login
+              </Button>
+            </Link>
+
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-medium justify-center">
               <MonitorOff className="w-3 h-3" /> Kebijakan 1 User 1 Perangkat Aktif
             </div>

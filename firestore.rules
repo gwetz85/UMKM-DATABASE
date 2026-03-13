@@ -34,7 +34,8 @@ service cloud.firestore {
     }
 
     match /master_data/{id} {
-      allow read: if isSignedIn();
+      // Izinkan pengecekkan data oleh publik tanpa login
+      allow read: if true;
       allow write: if isAdmin();
     }
   }
