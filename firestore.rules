@@ -28,9 +28,21 @@ service cloud.firestore {
     }
 
     match /system_users/{uid} {
+      // uid di sini adalah 'username' (ID dokumen)
       allow read: if isSignedIn();
-      allow create, update: if isSignedIn() && request.auth.uid == uid;
-      allow delete: if isAdmin();
+      
+      // Admin memiliki akses penuh untuk manajemen user
+      allow create, delete: if isAdmin();
+      
+      // Update diizinkan untuk Admin, atau User yang sedang melakukan provisioning (kunci UID)
+      allow update: if isAdmin() || (
+        isSignedIn() && (
+          // Jika dokumen belum punya UID, izinkan user tersebut mengunci dengan UID-nya
+          (resource.data.uid == null && request.resource.data.uid == request.auth.uid) ||
+          // Atau jika UID dokumen sudah cocok dengan user yang sedang login
+          (resource.data.uid == request.auth.uid)
+        )
+      );
     }
 
     match /master_data/{id} {
