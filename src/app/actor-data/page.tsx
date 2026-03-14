@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useMemoFirebase, useCollection, useUser, useFirestore, updateDocumentNonBlocking, useDoc, deleteDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, doc, limit } from "firebase/firestore"
 import { Card, CardContent } from "@/components/ui/card"
@@ -20,6 +20,11 @@ export default function ActorDataPage() {
   const { toast } = useToast()
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
+  const [printDate, setPrintDate] = useState<string>("")
+
+  useEffect(() => {
+    setPrintDate(new Date().toLocaleString('id-ID'))
+  }, [])
 
   // Role Checks
   const adminRef = useMemoFirebase(() => {
@@ -86,7 +91,7 @@ export default function ActorDataPage() {
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
         <h1 className="text-2xl font-black uppercase">LAPORAN DATA PELAKU USAHA UMKM</h1>
         <p className="text-sm font-bold">Sistem Manajemen Terpadu Database UMKM</p>
-        <p className="text-xs italic">Dicetak pada: {new Date().toLocaleString('id-ID')}</p>
+        <p className="text-xs italic">Dicetak pada: {printDate}</p>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
