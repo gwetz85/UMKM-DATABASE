@@ -51,22 +51,33 @@ export function AppSidebar() {
   const firestore = useFirestore()
   const [copied, setCopied] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
-  const [timeStr, setTimeStr] = React.useState<string>("")
+  const [currentTime, setCurrentTime] = React.useState<string>("")
+  const [currentDate, setCurrentDate] = React.useState<string>("")
 
   // Clock Update Effect
   React.useEffect(() => {
     setMounted(true)
     const updateTime = () => {
       const now = new Date()
-      const days = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"]
-      const day = days[now.getDay()]
-      const date = now.getDate().toString().padStart(2, '0')
-      const month = (now.getMonth() + 1).toString().padStart(2, '0')
-      const year = now.getFullYear()
-      const hours = now.getHours().toString().padStart(2, '0')
-      const minutes = now.getMinutes().toString().padStart(2, '0')
-      const seconds = now.getSeconds().toString().padStart(2, '0')
-      setTimeStr(`${day}, ${date}/${month}/${year} ${hours}:${minutes}:${seconds}`)
+      
+      // Format Jam: 14:44:45
+      const time = now.toLocaleTimeString('id-ID', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit', 
+        hour12: false 
+      })
+      
+      // Format Tanggal: Sabtu, 14 Maret 2026
+      const date = now.toLocaleDateString('id-ID', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      })
+      
+      setCurrentTime(time)
+      setCurrentDate(date)
     }
     updateTime()
     const interval = setInterval(updateTime, 1000)
@@ -198,14 +209,18 @@ export function AppSidebar() {
           </div>
         </div>
 
-        <div className="w-full group-data-[collapsible=icon]:hidden px-2">
-          <div className="bg-black/20 rounded-lg p-2.5 border border-white/10 flex items-center gap-2.5">
-            <Clock className="w-3.5 h-3.5 text-white/80 animate-pulse" />
-            <div className="flex flex-col">
-              <span className="text-[8px] font-bold text-white/40 uppercase tracking-widest">Waktu Server</span>
-              <span className="text-[10px] font-mono font-black text-white whitespace-nowrap">
-                {timeStr}
-              </span>
+        {/* Waktu Server - Redesigned Display */}
+        <div className="w-full group-data-[collapsible=icon]:hidden px-2 mb-2">
+          <div className="bg-black/40 rounded-2xl p-4 border border-white/5 flex flex-col items-start gap-1 relative overflow-hidden shadow-inner">
+            <div className="flex items-center justify-between w-full mb-1">
+              <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] leading-none">SERVER REAL-TIME</span>
+              <Clock className="w-3.5 h-3.5 text-primary/40" />
+            </div>
+            <div className="text-2xl font-black text-primary tracking-tight leading-none mb-1 tabular-nums">
+              {currentTime}
+            </div>
+            <div className="text-[11px] font-medium text-white/70 whitespace-nowrap">
+              {currentDate}
             </div>
           </div>
         </div>
