@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -10,10 +11,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Upload } from "lucide-react"
+import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Building2, MapPin, History } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function VerifyActorPage() {
   const { user } = useUser()
@@ -137,7 +137,7 @@ export default function VerifyActorPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input 
             placeholder="Cari Nama, NIK, atau Usaha..." 
-            className="flex h-11 w-full rounded-md border border-primary/20 bg-card px-3 py-2 pl-9 text-sm text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" 
+            className="flex h-11 w-full rounded-md border border-primary/20 bg-card px-3 py-2 pl-9 text-sm text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
             value={searchQuery} 
             onChange={(e) => setSearchQuery(e.target.value)} 
           />
@@ -173,7 +173,7 @@ export default function VerifyActorPage() {
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                            {viewingActor && viewingActor.id === actor.id && (
+                            {viewingActor && (
                               <>
                                 <DialogHeader>
                                   <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
@@ -182,24 +182,73 @@ export default function VerifyActorPage() {
                                 </DialogHeader>
                                 <div className="grid gap-6 py-4">
                                   <section className="space-y-4">
-                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase"><User className="w-4 h-4" /> Informasi Pribadi</div>
+                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
                                       {[
-                                        { label: "Nama", value: viewingActor.fullName },
+                                        { label: "Nama Lengkap", value: viewingActor.fullName },
                                         { label: "NIK", value: viewingActor.nik },
-                                        { label: "KK", value: viewingActor.noKK },
-                                        { label: "Gender", value: viewingActor.gender },
-                                        { label: "Lahir", value: viewingActor.pobDob },
-                                        { label: "HP", value: viewingActor.phone },
-                                        { label: "Kecamatan", value: viewingActor.kecamatan },
-                                        { label: "Kelurahan", value: viewingActor.kelurahan },
-                                        { label: "RT/RW", value: viewingActor.rtRw }
+                                        { label: "Nomor KK", value: viewingActor.noKK },
+                                        { label: "Jenis Kelamin", value: viewingActor.gender },
+                                        { label: "Tempat/Tgl Lahir", value: viewingActor.pobDob },
+                                        { label: "Nomor HP", value: viewingActor.phone }
                                       ].map((item, i) => (
                                         <div key={i} className="space-y-1">
                                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
                                           <p className="text-xs font-bold">{item.value || "-"}</p>
                                         </div>
                                       ))}
+                                    </div>
+                                  </section>
+
+                                  <section className="space-y-4">
+                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
+                                      {[
+                                        { label: "Kecamatan", value: viewingActor.kecamatan },
+                                        { label: "Kelurahan", value: viewingActor.kelurahan },
+                                        { label: "RT/RW", value: viewingActor.rtRw },
+                                        { label: "Alamat Lengkap", value: viewingActor.address, fullWidth: true }
+                                      ].map((item, i) => (
+                                        <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
+                                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                          <p className="text-xs font-bold">{item.value || "-"}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </section>
+
+                                  <section className="space-y-4">
+                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
+                                      {[
+                                        { label: "Nama Usaha", value: viewingActor.businessName },
+                                        { label: "Kategori Usaha", value: viewingActor.businessCategory },
+                                        { label: "Lokasi Usaha", value: viewingActor.businessLocation },
+                                        { label: "Koordinator Lapangan", value: viewingActor.coordinator }
+                                      ].map((item, i) => (
+                                        <div key={i} className="space-y-1">
+                                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                          <p className="text-xs font-bold">{item.value || "-"}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </section>
+
+                                  <section className="space-y-4">
+                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem</div>
+                                    <div className="bg-slate-50 p-4 rounded-xl text-[10px] font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
+                                      <div className="space-y-1">
+                                        <p className="text-muted-foreground uppercase">Status</p>
+                                        <p className="text-primary">{viewingActor.status.toUpperCase()}</p>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <p className="text-muted-foreground uppercase">Diinput Oleh</p>
+                                        <p>{viewingActor.createdBy || "System"}</p>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <p className="text-muted-foreground uppercase">Waktu Input</p>
+                                        <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
+                                      </div>
                                     </div>
                                   </section>
                                 </div>
