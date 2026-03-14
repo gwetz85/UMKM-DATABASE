@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2 } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -129,7 +129,15 @@ function ActorDataContent() {
                 <TableBody>
                   {actors?.map((actor) => (
                     <TableRow key={actor.id} className="hover:bg-muted/10 print:border-b">
-                      <TableCell className="font-bold">{actor.fullName}</TableCell>
+                      <TableCell className="font-bold">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-primary/10 p-1.5 rounded-full shrink-0 print:hidden">
+                            <User className="w-4 h-4 text-primary" />
+                          </div>
+                          <span className="uppercase whitespace-nowrap">{actor.fullName}</span>
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                        </div>
+                      </TableCell>
                       <TableCell className="font-mono">{actor.nik}</TableCell>
                       <TableCell className="font-medium">{actor.businessName}</TableCell>
                       <TableCell>{actor.bankName || "-"}</TableCell>
