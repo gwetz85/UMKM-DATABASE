@@ -11,13 +11,23 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Save } from "lucide-react"
+import { Loader2, Save, CheckCircle2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function InputDataPage() {
   const { toast } = useToast()
   const { user } = useUser()
   const firestore = useFirestore()
   const [loading, setLoading] = useState(false)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [kelurahan, setKelurahan] = useState<string>("")
   const [kecamatan, setKecamatan] = useState<string>("")
 
@@ -50,7 +60,8 @@ export default function InputDataPage() {
     if (!user || !firestore) return
 
     setLoading(true)
-    const formData = new FormData(e.currentTarget)
+    const formElement = e.currentTarget
+    const formData = new FormData(formElement)
     const nik = formData.get("nik") as string
     const noKK = formData.get("noKK") as string
 
@@ -97,11 +108,11 @@ export default function InputDataPage() {
 
       addDocumentNonBlocking(actorsRef, data)
       
-      toast({ 
-        title: "DATA TELAH TERSIMPAN", 
-        description: "Mohon menunggu ADMIN memverifikasi data anda" 
-      })
-      e.currentTarget.reset()
+      // Munculkan Pop Out Sukses
+      setShowSuccessDialog(true)
+      
+      // Reset Form
+      formElement.reset()
       setKelurahan("")
       setKecamatan("")
     } catch (error) {
@@ -231,12 +242,34 @@ export default function InputDataPage() {
         </Card>
 
         <div className="flex justify-end pb-8">
-          <Button type="submit" disabled={loading} className="w-full md:w-auto min-w-[200px] bg-primary text-primary-foreground font-bold">
+          <Button type="submit" disabled={loading} className="w-full md:w-auto min-w-[200px] bg-primary text-primary-foreground font-bold shadow-lg">
             {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
             Simpan Data Input
           </Button>
         </div>
       </form>
+
+      {/* Pop Out Sukses */}
+      <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <AlertDialogContent className="max-w-[400px] border-none shadow-2xl rounded-2xl">
+          <AlertDialogHeader className="items-center text-center">
+            <div className="bg-primary/10 p-4 rounded-full mb-4">
+              <CheckCircle2 className="w-12 h-12 text-primary" />
+            </div>
+            <AlertDialogTitle className="text-2xl font-black text-primary uppercase tracking-tight">
+              DATA TELAH TERSIMPAN
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base font-bold text-slate-700 leading-relaxed pt-2">
+              Mohon menunggu ADMIN memverifikasi data anda.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-6">
+            <AlertDialogAction className="w-full h-12 bg-primary hover:bg-primary/90 font-bold text-white rounded-xl">
+              OKE, MENGERTI
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
