@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard, History, X } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard, History, X, RotateCcw } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -79,6 +79,19 @@ function ActorDataContent() {
 
     toast({ title: "Tersimpan", description: "Data rekening telah dikirim untuk verifikasi." })
     setEditingActor(null)
+  }
+
+  const handleRevert = (actorId: string, fullName: string) => {
+    if (!isAdmin || !firestore) return
+    
+    if (confirm(`Kembalikan data pelaku "${fullName}" ke status Belum Verifikasi (Antrean Awal)?`)) {
+      const actorRef = doc(firestore, 'businessActors', actorId)
+      updateDocumentNonBlocking(actorRef, { status: 'pending' })
+      toast({ 
+        title: "Verifikasi Dibatalkan", 
+        description: `Data ${fullName} telah dikembalikan ke antrean verifikasi Admin.` 
+      })
+    }
   }
 
   const handleDelete = (actorId: string, fullName: string) => {
@@ -308,14 +321,25 @@ function ActorDataContent() {
                           )}
 
                           {isAdmin && (
-                            <Button 
-                              size="sm" 
-                              variant="destructive" 
-                              onClick={() => handleDelete(actor.id, actor.fullName)}
-                              className="bg-red-500 hover:bg-red-600 h-8 px-2 md:h-9 md:px-3 font-bold"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">HAPUS</span>
-                            </Button>
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => handleRevert(actor.id, actor.fullName)}
+                                className="h-8 px-2 md:h-9 md:px-3 font-bold border-amber-500 text-amber-600 hover:bg-amber-50"
+                                title="Batal Verifikasi (Kembali ke Awal)"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">REVERT</span>
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="destructive" 
+                                onClick={() => handleDelete(actor.id, actor.fullName)}
+                                className="bg-red-500 hover:bg-red-600 h-8 px-2 md:h-9 md:px-3 font-bold"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">HAPUS</span>
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>

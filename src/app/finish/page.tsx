@@ -1,25 +1,34 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
-import { useMemoFirebase, useCollection, useFirestore, useUser } from "@/firebase"
+import { useMemoFirebase, useCollection, useFirestore, useUser, doc, useDoc, updateDocumentNonBlocking } from "@/firebase"
 import { collection, query, where } from "firebase/firestore"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Eye, Loader2, BadgeCheck, Printer, History } from "lucide-react"
+import { Eye, Loader2, BadgeCheck, Printer, History, RotateCcw } from "lucide-react"
 import { BusinessActor } from "../lib/types"
+import { useToast } from "@/hooks/use-toast"
 
 export default function FinishPage() {
   const { user } = useUser()
   const firestore = useFirestore()
+  const { toast } = useToast()
   const [selectedActor, setSelectedActor] = useState<BusinessActor | null>(null)
   const [printDate, setPrintDate] = useState<string>("")
 
   useEffect(() => {
     setPrintDate(new Date().toLocaleString('id-ID'))
   }, [])
+
+  // Admin Check
+  const adminRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null
+    return doc(firestore, 'roles_admin', user.uid)
+  }, [user, firestore])
+  const { data: adminRole } = useDoc(adminRef)
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
   const memoQuery = useMemoFirebase(() => {
     if (!firestore) return null
@@ -30,6 +39,15 @@ export default function FinishPage() {
 
   const handlePrint = () => {
     window.print()
+  }
+
+  const handleRevert = (actorId: string, fullName: string) => {
+    if (!isAdmin || !firestore) return
+    if (confirm(`Kembalikan data final "${fullName}" ke status Belum Verifikasi (Antrean Awal)?`)) {
+      const actorRef = doc(firestore, 'businessActors', actorId)
+      updateDocumentNonBlocking(actorRef, { status: 'pending' })
+      toast({ title: "Berhasil", description: "Data dikembalikan ke antrean verifikasi Admin awal." })
+    }
   }
 
   return (
@@ -96,99 +114,106 @@ export default function FinishPage() {
                       <TableCell className="whitespace-nowrap">{actor.businessCategory}</TableCell>
                       <TableCell className="whitespace-nowrap">{actor.businessLocation}</TableCell>
                       <TableCell className="text-right print:hidden">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button size="sm" variant="ghost" onClick={() => setSelectedActor(actor)} className="text-primary font-bold">
-                              <Eye className="w-4 h-4 mr-2" /> VIEW
+                        <div className="flex justify-end gap-2">
+                          {isAdmin && (
+                            <Button size="sm" variant="ghost" onClick={() => handleRevert(actor.id, actor.fullName)} className="text-amber-600 font-bold hover:bg-amber-50">
+                              <RotateCcw className="w-4 h-4 mr-2" /> BATAL
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle className="text-2xl font-black text-primary uppercase">Detail Lengkap Pelaku Usaha</DialogTitle>
-                            </DialogHeader>
-                            <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm pt-4">
-                              <div className="col-span-2 bg-muted/50 p-2 font-black rounded text-[10px] uppercase tracking-widest">INFORMASI PRIBADI</div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Nama Lengkap</p>
-                                <p className="font-bold">{actor.fullName}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Gender</p>
-                                <p className="font-bold">{actor.gender}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">NIK</p>
-                                <p className="font-mono font-bold">{actor.nik}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">No KK</p>
-                                <p className="font-mono font-bold">{actor.noKK}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Tempat / Tgl Lahir</p>
-                                <p className="font-bold">{actor.pobDob}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">HP</p>
-                                <p className="font-bold">{actor.phone}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Kecamatan</p>
-                                <p className="font-bold">{actor.kecamatan || "-"}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Kelurahan</p>
-                                <p className="font-bold">{actor.kelurahan}</p>
-                              </div>
-                              <div className="col-span-2">
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Alamat</p>
-                                <p className="font-bold">{actor.address} (RT/RW: {actor.rtRw})</p>
-                              </div>
+                          )}
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="ghost" onClick={() => setSelectedActor(actor)} className="text-primary font-bold">
+                                <Eye className="w-4 h-4 mr-2" /> VIEW
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle className="text-2xl font-black text-primary uppercase">Detail Lengkap Pelaku Usaha</DialogTitle>
+                              </DialogHeader>
+                              <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm pt-4">
+                                <div className="col-span-2 bg-muted/50 p-2 font-black rounded text-[10px] uppercase tracking-widest">INFORMASI PRIBADI</div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Nama Lengkap</p>
+                                  <p className="font-bold">{actor.fullName}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Gender</p>
+                                  <p className="font-bold">{actor.gender}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">NIK</p>
+                                  <p className="font-mono font-bold">{actor.nik}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">No KK</p>
+                                  <p className="font-mono font-bold">{actor.noKK}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Tempat / Tgl Lahir</p>
+                                  <p className="font-bold">{actor.pobDob}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">HP</p>
+                                  <p className="font-bold">{actor.phone}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Kecamatan</p>
+                                  <p className="font-bold">{actor.kecamatan || "-"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Kelurahan</p>
+                                  <p className="font-bold">{actor.kelurahan}</p>
+                                </div>
+                                <div className="col-span-2">
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Alamat</p>
+                                  <p className="font-bold">{actor.address} (RT/RW: {actor.rtRw})</p>
+                                </div>
 
-                              <div className="col-span-2 bg-muted/50 p-2 font-black rounded text-[10px] uppercase tracking-widest mt-4">DATA USAHA</div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Nama Usaha</p>
-                                <p className="font-bold">{actor.businessName}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Kategori</p>
-                                <p className="font-bold">{actor.businessCategory}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Lokasi Usaha</p>
-                                <p className="font-bold">{actor.businessLocation}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Koordinator</p>
-                                <p className="font-bold">{actor.coordinator}</p>
-                              </div>
+                                <div className="col-span-2 bg-muted/50 p-2 font-black rounded text-[10px] uppercase tracking-widest mt-4">DATA USAHA</div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Nama Usaha</p>
+                                  <p className="font-bold">{actor.businessName}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Kategori</p>
+                                  <p className="font-bold">{actor.businessCategory}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Lokasi Usaha</p>
+                                  <p className="font-bold">{actor.businessLocation}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Koordinator</p>
+                                  <p className="font-bold">{actor.coordinator}</p>
+                                </div>
 
-                              <div className="col-span-2 bg-muted/50 p-2 font-black rounded text-[10px] uppercase tracking-widest mt-4">DATA REKENING</div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Bank</p>
-                                <p className="font-bold text-primary">{actor.bankName}</p>
-                              </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Nomor Rekening</p>
-                                <p className="font-mono font-black text-primary text-lg">{actor.bankNumber}</p>
-                              </div>
-                              <div className="col-span-2">
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Nama Pemilik Rekening</p>
-                                <p className="font-black uppercase text-primary">{actor.bankOwner}</p>
-                              </div>
+                                <div className="col-span-2 bg-muted/50 p-2 font-black rounded text-[10px] uppercase tracking-widest mt-4">DATA REKENING</div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Bank</p>
+                                  <p className="font-bold text-primary">{actor.bankName}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Nomor Rekening</p>
+                                  <p className="font-mono font-black text-primary text-lg">{actor.bankNumber}</p>
+                                </div>
+                                <div className="col-span-2">
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Nama Pemilik Rekening</p>
+                                  <p className="font-black uppercase text-primary">{actor.bankOwner}</p>
+                                </div>
 
-                              <div className="col-span-2 bg-blue-50/50 p-2 font-black rounded text-[10px] uppercase tracking-widest mt-4">AUDIT PENGINPUTAN</div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Petugas Input</p>
-                                <p className="font-black text-primary uppercase">{actor.createdBy || "System"}</p>
+                                <div className="col-span-2 bg-blue-50/50 p-2 font-black rounded text-[10px] uppercase tracking-widest mt-4">AUDIT PENGINPUTAN</div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Petugas Input</p>
+                                  <p className="font-black text-primary uppercase">{actor.createdBy || "System"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase">Waktu Daftar</p>
+                                  <p className="font-bold">{actor.createdAt ? new Date(actor.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "-"}</p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Waktu Daftar</p>
-                                <p className="font-bold">{actor.createdAt ? new Date(actor.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "-"}</p>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

@@ -5,7 +5,7 @@ import { collection, query, where, doc } from "firebase/firestore"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { CheckCircle, ShieldAlert, Loader2, Trash2 } from "lucide-react"
+import { CheckCircle, ShieldAlert, Loader2, Trash2, RotateCcw } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 
@@ -34,6 +34,15 @@ export default function VerifyBankPage() {
     const actorRef = doc(firestore, 'businessActors', actorId)
     updateDocumentNonBlocking(actorRef, { status: 'finish' })
     toast({ title: "Selesai", description: "Data telah diverifikasi penuh dan masuk tahap Finish." })
+  }
+
+  const handleRevert = (actorId: string, fullName: string) => {
+    if (!isAdmin || !firestore) return
+    if (confirm(`Kembalikan data pelaku "${fullName}" ke antrean verifikasi Admin awal?`)) {
+      const actorRef = doc(firestore, 'businessActors', actorId)
+      updateDocumentNonBlocking(actorRef, { status: 'pending' })
+      toast({ title: "Verifikasi Dibatalkan", description: "Data dikembalikan ke antrean verifikasi awal." })
+    }
   }
 
   const handleDelete = (actorId: string, fullName: string) => {
@@ -77,6 +86,14 @@ export default function VerifyBankPage() {
                     <TableCell className="text-right">
                       {isAdmin ? (
                         <div className="flex justify-end gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleRevert(actor.id, actor.fullName)}
+                            className="border-amber-500 text-amber-600 hover:bg-amber-50"
+                          >
+                            <RotateCcw className="w-4 h-4 mr-2" /> BATAL
+                          </Button>
                           <Button size="sm" onClick={() => handleFinalVerify(actor.id)} className="bg-primary hover:bg-primary/90">
                             <CheckCircle className="w-4 h-4 mr-2" /> SESUAI
                           </Button>
