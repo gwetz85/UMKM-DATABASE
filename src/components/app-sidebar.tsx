@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -23,7 +22,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, useCollection } from "@/firebase"
+import { useUser, useDoc, useMemoFirebase, useAuth, useCollection, useFirestore } from "@/firebase"
 import { doc, collection, query, where, limit } from "firebase/firestore"
 import { signOut } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
@@ -91,14 +90,13 @@ export function AppSidebar() {
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isMonitoring = userProfile?.role === 'monitoring'
-  const isPetugas = userProfile?.role === 'petugas'
 
   const navigation = React.useMemo(() => [
     { 
       name: "Dashboard", 
       href: "/", 
       icon: LayoutDashboard, 
-      show: !!user && !isMonitoring 
+      show: !!user 
     },
     { 
       name: "Input Data", 
