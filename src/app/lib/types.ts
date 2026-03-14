@@ -20,6 +20,10 @@ export interface BusinessActor {
   bankNumber?: string;
   bankOwner?: string;
   bankName?: string;
+  ktpUri?: string;
+  kkUri?: string;
+  nibUri?: string;
+  photoUsahaUri?: string;
   status: BusinessActorStatus;
   createdAt: string;
   ownerId: string;

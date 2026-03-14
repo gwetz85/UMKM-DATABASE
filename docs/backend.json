@@ -29,6 +29,10 @@
           "enum": ["pending", "verified_actor", "bank_pending", "finish"],
           "description": "Status alur verifikasi data"
         },
+        "ktpUri": { "type": "string", "description": "Data URI KTP" },
+        "kkUri": { "type": "string", "description": "Data URI KK" },
+        "nibUri": { "type": "string", "description": "Data URI NIB" },
+        "photoUsahaUri": { "type": "string", "description": "Data URI Foto Usaha" },
         "createdAt": { "type": "string", "format": "date-time" },
         "ownerId": { "type": "string" }
       },
