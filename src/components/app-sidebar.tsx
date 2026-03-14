@@ -110,16 +110,16 @@ export function AppSidebar() {
       show: !!user 
     },
     { 
-      name: "Input Data", 
-      href: "/input", 
-      icon: UserPlus, 
-      show: !!user && !isMonitoring 
-    },
-    { 
       name: "Cek Data", 
       href: "/check-data", 
       icon: SearchCheck, 
       show: true 
+    },
+    { 
+      name: "Input Data", 
+      href: "/input", 
+      icon: UserPlus, 
+      show: !!user && !isMonitoring 
     },
     { 
       name: "Verifikasi Admin", 
@@ -209,7 +209,7 @@ export function AppSidebar() {
           </div>
         </div>
 
-        {/* Waktu Server - Redesigned Display */}
+        {/* Waktu Server */}
         <div className="w-full group-data-[collapsible=icon]:hidden px-2 mb-2">
           <div className="bg-black/40 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-1 relative overflow-hidden shadow-inner text-center">
             <div className="flex items-center justify-center gap-2 w-full mb-1">
