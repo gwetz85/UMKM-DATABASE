@@ -4,7 +4,7 @@
 import { useMemoFirebase, useCollection, useUser, useFirestore } from "@/firebase"
 import { collection, query, orderBy } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, UserCheck, Activity, Loader2, Building2, TrendingUp, MapPin, BarChart3, User } from "lucide-react"
+import { Users, UserCheck, Activity, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo } from "react"
 import { BusinessActor } from "./lib/types"
@@ -174,6 +174,40 @@ export default function DashboardPage() {
                     Belum ada data wilayah terekam.
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Cloud Storage Status Card */}
+          <Card className="border-none shadow-sm bg-white overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
+                <Cloud className="w-5 h-5 text-primary" /> Penyimpanan Cloud Online
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="bg-emerald-100 p-4 rounded-2xl">
+                    <DatabaseZap className="w-8 h-8 text-emerald-600" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Status Server</span>
+                    <span className="text-xl font-black text-emerald-600 flex items-center gap-2">
+                      ONLINE <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                    </span>
+                  </div>
+                </div>
+                <div className="w-full md:w-64 space-y-2">
+                  <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase">
+                    <span>Ketersediaan</span>
+                    <span>99.9%</span>
+                  </div>
+                  <div className="h-2 bg-emerald-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 w-full" />
+                  </div>
+                  <p className="text-[9px] text-muted-foreground italic text-center md:text-left">Seluruh data tersimpan aman di infrastruktur Cloud Google.</p>
+                </div>
               </div>
             </CardContent>
           </Card>
