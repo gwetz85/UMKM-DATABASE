@@ -69,7 +69,7 @@
 @media print {
   @page {
     margin: 1cm;
-    size: landscape;
+    size: portrait;
   }
   body {
     background: white !important;

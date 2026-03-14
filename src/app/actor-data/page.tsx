@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
@@ -56,10 +55,6 @@ function ActorDataContent() {
     )
     
     if (filterCoordinator) {
-      // Perhatikan: query Firestore ini case-sensitive. 
-      // Karena di Dashboard kita Uppercase, maka di sini kita asumsikan field 'coordinator' 
-      // disimpan atau dibandingkan dengan nilai yang sesuai.
-      // Jika data aslinya campuran, kita mungkin butuh filter client-side atau normalisasi data.
       q = query(q, where('coordinator', '==', filterCoordinator))
     }
     
@@ -111,9 +106,9 @@ function ActorDataContent() {
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
-        <h1 className="text-2xl font-black uppercase">LAPORAN DATA PELAKU USAHA UMKM</h1>
-        <p className="text-sm font-bold">Sistem Manajemen Terpadu Database UMKM</p>
-        <p className="text-xs italic">Dicetak pada: {printDate}</p>
+        <h1 className="text-xl font-black uppercase">LAPORAN DATA PELAKU USAHA UMKM</h1>
+        <p className="text-xs font-bold">Sistem Manajemen Terpadu Database UMKM</p>
+        <p className="text-[10px] italic">Dicetak pada: {printDate}</p>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
@@ -152,28 +147,28 @@ function ActorDataContent() {
           {isLoading ? (
             <div className="py-20 flex justify-center print:hidden"><Loader2 className="animate-spin text-primary" /></div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table className="print:text-[10px] print:w-full">
+            <div className="overflow-x-auto print:overflow-visible">
+              <Table className="print:text-[9px] print:w-full">
                 <TableHeader className="bg-muted/30 print:bg-gray-100">
                   <TableRow>
-                    <TableHead className="whitespace-nowrap font-bold">Nama Pelaku</TableHead>
-                    <TableHead className="whitespace-nowrap font-bold">NIK</TableHead>
-                    <TableHead className="whitespace-nowrap font-bold">Nama Usaha</TableHead>
-                    <TableHead className="whitespace-nowrap font-bold">Kategori</TableHead>
-                    <TableHead className="whitespace-nowrap font-bold">Bank</TableHead>
-                    <TableHead className="whitespace-nowrap font-bold">No. Rekening</TableHead>
+                    <TableHead className="whitespace-nowrap font-bold print:px-1">Nama Pelaku</TableHead>
+                    <TableHead className="whitespace-nowrap font-bold print:px-1">NIK</TableHead>
+                    <TableHead className="font-bold print:px-1">Nama Usaha</TableHead>
+                    <TableHead className="whitespace-nowrap font-bold print:px-1">Kategori</TableHead>
+                    <TableHead className="whitespace-nowrap font-bold print:px-1">Bank</TableHead>
+                    <TableHead className="whitespace-nowrap font-bold print:px-1">No. Rekening</TableHead>
                     <TableHead className="text-right whitespace-nowrap font-bold print:hidden">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {actors?.map((actor) => (
-                    <TableRow key={actor.id} className="hover:bg-muted/10 transition-colors print:border-b print:border-gray-300">
-                      <TableCell className="font-bold whitespace-nowrap">{actor.fullName}</TableCell>
-                      <TableCell className="font-mono">{actor.nik}</TableCell>
-                      <TableCell className="font-medium">{actor.businessName}</TableCell>
-                      <TableCell>{actor.businessCategory}</TableCell>
-                      <TableCell>{actor.bankName || "-"}</TableCell>
-                      <TableCell className="font-mono">{actor.bankNumber || "-"}</TableCell>
+                    <TableRow key={actor.id} className="hover:bg-muted/10 transition-colors print:border-b print:border-gray-200">
+                      <TableCell className="font-bold whitespace-nowrap print:px-1">{actor.fullName}</TableCell>
+                      <TableCell className="font-mono print:px-1">{actor.nik}</TableCell>
+                      <TableCell className="font-medium print:px-1 print:whitespace-normal">{actor.businessName}</TableCell>
+                      <TableCell className="print:px-1">{actor.businessCategory}</TableCell>
+                      <TableCell className="print:px-1">{actor.bankName || "-"}</TableCell>
+                      <TableCell className="font-mono print:px-1">{actor.bankNumber || "-"}</TableCell>
                       <TableCell className="text-right print:hidden">
                         <div className="flex justify-end gap-1.5 md:gap-2">
                           <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
@@ -342,10 +337,10 @@ function ActorDataContent() {
 
       <div className="hidden print:flex justify-end mt-12 pr-12">
         <div className="text-center space-y-16">
-          <p className="font-bold">Dicetak oleh Admin Database,</p>
+          <p className="font-bold text-[10px]">Dicetak oleh Admin Database,</p>
           <div className="space-y-1">
-            <p className="font-black underline uppercase">{user?.email?.split('@')[0]}</p>
-            <p className="text-[10px]">ID: {user?.uid}</p>
+            <p className="font-black underline uppercase text-[10px]">{user?.email?.split('@')[0]}</p>
+            <p className="text-[8px]">ID: {user?.uid}</p>
           </div>
         </div>
       </div>
