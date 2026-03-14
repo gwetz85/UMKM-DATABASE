@@ -42,7 +42,7 @@ export default function DashboardPage() {
         name: k,
         count: allData.filter(d => d.kelurahan === k).length
       }))
-      .filter(item => item.count > 0) // Hanya tampilkan yang ada datanya
+      .filter(item => item.count > 0)
       .sort((a, b) => b.count - a.count)
   }, [allData])
 
@@ -59,6 +59,10 @@ export default function DashboardPage() {
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
   }, [allData])
+
+  const handleCoordinatorClick = (name: string) => {
+    router.push(`/actor-data?coordinator=${encodeURIComponent(name)}`)
+  }
 
   if (isUserLoading) {
     return (
@@ -226,6 +230,7 @@ export default function DashboardPage() {
                 {coordinatorStats.map((item) => (
                   <div 
                     key={item.name} 
+                    onClick={() => handleCoordinatorClick(item.name)}
                     className="p-3 md:p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between hover:shadow-md hover:border-primary/30 hover:bg-primary/5 active:scale-95 transition-all duration-200 group cursor-pointer"
                   >
                     <div className="flex justify-between items-start mb-2">

@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useMemoFirebase, useCollection, useUser, useFirestore, updateDocumentNonBlocking, useDoc, deleteDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, doc, limit } from "firebase/firestore"
 import { Card, CardContent } from "@/components/ui/card"
@@ -10,14 +10,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard, History } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard, History, X } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
+import { useSearchParams, useRouter } from "next/navigation"
 
-export default function ActorDataPage() {
+function ActorDataContent() {
   const { user } = useUser()
   const firestore = useFirestore()
   const { toast } = useToast()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const filterCoordinator = searchParams.get('coordinator')
+  
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [printDate, setPrintDate] = useState<string>("")
@@ -45,8 +50,21 @@ export default function ActorDataPage() {
 
   const memoQuery = useMemoFirebase(() => {
     if (!firestore) return null
-    return query(collection(firestore, 'businessActors'), where('status', 'in', ['verified_actor', 'bank_pending', 'finish']))
-  }, [firestore])
+    let q = query(
+      collection(firestore, 'businessActors'), 
+      where('status', 'in', ['verified_actor', 'bank_pending', 'finish'])
+    )
+    
+    if (filterCoordinator) {
+      // Perhatikan: query Firestore ini case-sensitive. 
+      // Karena di Dashboard kita Uppercase, maka di sini kita asumsikan field 'coordinator' 
+      // disimpan atau dibandingkan dengan nilai yang sesuai.
+      // Jika data aslinya campuran, kita mungkin butuh filter client-side atau normalisasi data.
+      q = query(q, where('coordinator', '==', filterCoordinator))
+    }
+    
+    return q
+  }, [firestore, filterCoordinator])
 
   const { data: actors, isLoading } = useCollection<BusinessActor>(memoQuery)
 
@@ -86,6 +104,10 @@ export default function ActorDataPage() {
     window.print()
   }
 
+  const clearFilter = () => {
+    router.push('/actor-data')
+  }
+
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
@@ -98,6 +120,15 @@ export default function ActorDataPage() {
         <div className="space-y-1">
           <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Data Pelaku Usaha</h1>
           <p className="text-xs md:text-sm text-muted-foreground">Data yang telah lolos verifikasi awal.</p>
+          
+          {filterCoordinator && (
+            <div className="flex items-center gap-2 mt-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 w-fit">
+              <span className="text-[10px] font-black text-primary uppercase tracking-wider">Filter Koordinator: {filterCoordinator}</span>
+              <button onClick={clearFilter} className="text-primary hover:text-primary/70 transition-colors">
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={handlePrintAll} variant="default" className="bg-primary hover:bg-primary/90 font-bold shadow-md">
@@ -298,7 +329,7 @@ export default function ActorDataPage() {
                   {(!actors || actors.length === 0) && (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-20 text-muted-foreground font-medium italic print:hidden">
-                        Belum ada data pelaku usaha yang terverifikasi.
+                        Belum ada data pelaku usaha yang terhubung dengan kriteria ini.
                       </TableCell>
                     </TableRow>
                   )}
@@ -319,5 +350,13 @@ export default function ActorDataPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ActorDataPage() {
+  return (
+    <Suspense fallback={<div className="p-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>}>
+      <ActorDataContent />
+    </Suspense>
   )
 }
