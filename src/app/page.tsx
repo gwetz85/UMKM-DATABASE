@@ -37,10 +37,13 @@ export default function DashboardPage() {
 
   const kelurahanStats = useMemo(() => {
     if (!allData) return []
-    return kelurahanList.map(k => ({
-      name: k,
-      count: allData.filter(d => d.kelurahan === k).length
-    })).sort((a, b) => b.count - a.count)
+    return kelurahanList
+      .map(k => ({
+        name: k,
+        count: allData.filter(d => d.kelurahan === k).length
+      }))
+      .filter(item => item.count > 0) // Hanya tampilkan yang ada datanya
+      .sort((a, b) => b.count - a.count)
   }, [allData])
 
   const coordinatorStats = useMemo(() => {
@@ -162,6 +165,11 @@ export default function DashboardPage() {
                     <div className="text-lg md:text-2xl font-black text-primary">{item.count}</div>
                   </div>
                 ))}
+                {kelurahanStats.length === 0 && !isLoading && (
+                  <div className="col-span-full py-10 text-center text-muted-foreground italic text-xs">
+                    Belum ada data wilayah terekam.
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
