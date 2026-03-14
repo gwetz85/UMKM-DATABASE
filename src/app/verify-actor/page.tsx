@@ -17,6 +17,8 @@ import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import Image from "next/image"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 export default function VerifyActorPage() {
   const { user } = useUser()
@@ -150,7 +152,7 @@ export default function VerifyActorPage() {
       kkUri,
       nibUri,
       photoUsahaUri,
-      status: 'verified_actor' // Langsung verifikasi saat simpan di menu edit verifikasi
+      status: 'verified_actor'
     }
 
     updateDocumentNonBlocking(actorRef, updatedData)
@@ -244,7 +246,6 @@ export default function VerifyActorPage() {
                       <TableCell className="font-medium">{actor.businessName}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          {/* View Dialog */}
                           <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
                             <DialogTrigger asChild>
                               <Button size="sm" variant="outline" onClick={() => setViewingActor(actor)} className="h-9 border-primary/20 hover:bg-primary/5 text-primary font-bold">
@@ -339,7 +340,6 @@ export default function VerifyActorPage() {
                             </DialogContent>
                           </Dialog>
 
-                          {/* Edit & Verification Dialog */}
                           <Dialog open={!!editingActor && editingActor.id === actor.id} onOpenChange={(open) => !open && setEditingActor(null)}>
                             <DialogTrigger asChild>
                               <Button size="sm" variant="secondary" onClick={() => openEditDialog(actor)} className="h-9 font-bold">
