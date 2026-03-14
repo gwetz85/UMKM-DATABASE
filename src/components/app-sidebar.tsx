@@ -211,15 +211,15 @@ export function AppSidebar() {
 
         {/* Waktu Server - Redesigned Display */}
         <div className="w-full group-data-[collapsible=icon]:hidden px-2 mb-2">
-          <div className="bg-black/40 rounded-2xl p-4 border border-white/5 flex flex-col items-start gap-1 relative overflow-hidden shadow-inner">
-            <div className="flex items-center justify-between w-full mb-1">
+          <div className="bg-black/40 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-1 relative overflow-hidden shadow-inner text-center">
+            <div className="flex items-center justify-center gap-2 w-full mb-1">
               <span className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] leading-none">SERVER REAL-TIME</span>
-              <Clock className="w-3.5 h-3.5 text-primary/40" />
+              <Clock className="w-3.5 h-3.5 text-white/20" />
             </div>
-            <div className="text-2xl font-black text-primary tracking-tight leading-none mb-1 tabular-nums">
+            <div className="text-3xl font-black text-white tracking-tight leading-none mb-1 tabular-nums">
               {currentTime}
             </div>
-            <div className="text-[11px] font-medium text-white/70 whitespace-nowrap">
+            <div className="text-[11px] font-medium text-white/60 whitespace-nowrap">
               {currentDate}
             </div>
           </div>
