@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useMemoFirebase, useCollection, useUser, useFirestore } from "@/firebase"
@@ -7,7 +8,6 @@ import { Users, UserCheck, Activity, Loader2, Building2, TrendingUp, MapPin, Bar
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo } from "react"
 import { BusinessActor } from "./lib/types"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
@@ -123,49 +123,29 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-        <Card className="border-none shadow-sm bg-white lg:col-span-2 overflow-hidden">
+        <Card className="border-none shadow-sm bg-white lg:col-span-2">
           <CardHeader className="border-b border-muted/50 pb-4">
             <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
               <MapPin className="w-5 h-5 text-primary" /> Sebaran Data per Kelurahan
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
-            <div className="max-h-[400px] overflow-y-auto">
-              <Table>
-                <TableHeader className="bg-muted/20 sticky top-0 z-10">
-                  <TableRow>
-                    <TableHead className="text-[10px] font-black uppercase">Nama Kelurahan</TableHead>
-                    <TableHead className="text-right text-[10px] font-black uppercase">Jumlah Data</TableHead>
-                    <TableHead className="text-right text-[10px] font-black uppercase w-[100px]">Persentase</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {kelurahanStats.map((item) => {
-                    const percentage = allData?.length ? (item.count / allData.length) * 100 : 0
-                    return (
-                      <TableRow key={item.name} className="hover:bg-muted/5">
-                        <TableCell className="text-xs font-bold text-slate-700">{item.name}</TableCell>
-                        <TableCell className="text-right font-black text-primary text-sm">{item.count}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <span className="text-[10px] font-mono text-muted-foreground">{percentage.toFixed(1)}%</span>
-                            <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
-                              <div className="bg-primary h-full" style={{ width: `${percentage}%` }} />
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                  {(!kelurahanStats || kelurahanStats.length === 0) && (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center py-10 text-muted-foreground italic text-xs">
-                        Memuat data wilayah...
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+          <CardContent className="p-4 md:p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+              {kelurahanStats.map((item) => (
+                <div key={item.name} className="p-3 md:p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-200 group">
+                   <div className="flex justify-between items-start mb-2">
+                      <span className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase leading-tight group-hover:text-primary transition-colors">{item.name}</span>
+                      <MapPin className="w-3 h-3 text-primary/30 group-hover:text-primary transition-colors" />
+                   </div>
+                   <div className="text-lg md:text-2xl font-black text-primary">{item.count}</div>
+                </div>
+              ))}
+              {(!kelurahanStats || kelurahanStats.length === 0) && (
+                <div className="col-span-full py-20 flex flex-col items-center justify-center text-muted-foreground italic gap-2">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <p className="text-xs">Memuat data wilayah...</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
