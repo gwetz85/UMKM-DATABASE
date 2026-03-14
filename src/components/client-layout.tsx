@@ -21,7 +21,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               <SidebarTrigger className="text-white hover:bg-white/10" />
               <div className="flex flex-col">
                 <span className="text-xs font-black tracking-tight leading-none">UMKM DATABASE</span>
-                <span className="text-[8px] font-bold text-accent tracking-widest uppercase">Versi 3.1</span>
+                <span className="text-[8px] font-bold text-accent tracking-widest uppercase">Versi 4.5</span>
               </div>
             </div>
             <div className="flex items-center gap-3">

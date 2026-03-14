@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 
 export function FooterTicker() {
   const [mounted, setMounted] = useState(false);
-  const message = "Selamat datang di Aplikasi UMKM Database versi 3.1 . Aplikasi ini dikembangkan di rancang untuk mempermudah dalam pengecekkan dan penginputan data . Aplikasi ini masih perlu pengembangan kedepannya , kritik dan saran sangat di perlukan . Kirimkan kritik dan saran ke email : agussuriyadipunya@gmail.com atau layanan Whatsapp : 0817319885. Terima kasih";
+  const message = "Selamat datang di Aplikasi UMKM Database versi 4.5 . Aplikasi ini dikembangkan di rancang untuk mempermudah dalam pengecekkan dan penginputan data . Aplikasi ini masih perlu pengembangan kedepannya , kritik dan saran sangat di perlukan . Kirimkan kritik dan saran ke email : agussuriyadipunya@gmail.com atau layanan Whatsapp : 0817319885. Terima kasih";
 
   useEffect(() => {
     setMounted(true);

@@ -26,19 +26,22 @@ export function AboutDialog({ className, variant = "outline" }: { className?: st
         </DialogHeader>
         <div className="space-y-4 py-4">
           <p className="text-sm leading-relaxed text-foreground font-medium">
-            Selamat datang di Aplikasi UMKM Database versi 3.1. Aplikasi ini dikembangkan dan dirancang untuk mempermudah dalam pengecekkan dan penginputan data. Aplikasi ini masih perlu pengembangan kedepannya, kritik dan saran sangat diperlukan.
+            Selamat datang di Aplikasi UMKM Database versi 4.5. Aplikasi ini dikembangkan dan dirancang untuk mempermudah dalam pengecekkan dan penginputan data. Aplikasi ini masih perlu pengembangan kedepannya, kritik dan saran sangat diperlukan.
+          </p>
+          <p className="text-xs font-bold text-amber-600 bg-amber-50 p-3 rounded-xl border border-amber-100">
+            - Proses Verifikasi Admin maksimal 1x24jam kerja jika berkas telah lengkap dan jelas terbaca
           </p>
           <div className="bg-muted/50 p-4 rounded-2xl border border-primary/10 space-y-2">
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Kontak & Saran:</p>
             <div className="space-y-1">
-              <p className="text-sm font-bold flex justify-between">
-                <span className="text-muted-foreground">Email:</span>
-                <span className="text-primary">agussuriyadipunya@gmail.com</span>
-              </p>
-              <p className="text-sm font-bold flex justify-between">
-                <span className="text-muted-foreground">Whatsapp:</span>
-                <span className="text-primary">0817319885</span>
-              </p>
+              <div className="flex flex-col mb-2">
+                <span className="text-[10px] text-muted-foreground font-bold uppercase">Email:</span>
+                <span className="text-sm font-black text-primary">agussuriyadipunya@gmail.com</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] text-muted-foreground font-bold uppercase">Whatsapp:</span>
+                <span className="text-sm font-black text-primary">0817319885</span>
+              </div>
             </div>
           </div>
         </div>
