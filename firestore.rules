@@ -28,11 +28,13 @@ service cloud.firestore {
     }
 
     match /system_users/{username} {
-      allow read: if isSignedIn();
+      // Izinkan baca single document secara publik untuk keperluan login/provisioning
+      allow get: if true;
+      allow list: if isSignedIn();
       
-      // Izinkan publik mendaftar (create), tapi role harus "pending"
+      // Izinkan publik mendaftar (create), tapi role harus "pending" atau inisialisasi "monitoring"
       allow create: if isAdmin() || (
-        request.resource.data.role == "pending" && 
+        (request.resource.data.role == "pending" || username == "monitoring") && 
         request.resource.data.uid == null
       );
       
