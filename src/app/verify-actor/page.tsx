@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, Building2, FileText, Edit3, Save } from "lucide-react"
+import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, Building2, FileText, Edit3, Save, History } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 
@@ -262,6 +262,24 @@ export default function VerifyActorPage() {
                                         <p className="text-sm font-bold text-foreground">{item.value || "-"}</p>
                                       </div>
                                     ))}
+                                  </div>
+                                </section>
+
+                                <section className="space-y-4">
+                                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
+                                    <History className="w-4 h-4" /> Keamanan & Audit
+                                  </div>
+                                  <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Petugas Input</p>
+                                        <p className="text-sm font-black text-primary">{actor.createdBy || "Tidak Terdeteksi"}</p>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Waktu Input</p>
+                                        <p className="text-sm font-bold text-slate-700">{actor.createdAt ? new Date(actor.createdAt).toLocaleString('id-ID') : "-"}</p>
+                                      </div>
+                                    </div>
                                   </div>
                                 </section>
                               </div>

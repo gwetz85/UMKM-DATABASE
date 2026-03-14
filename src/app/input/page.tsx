@@ -2,8 +2,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, getDocs } from "firebase/firestore"
+import { useFirestore, useUser, addDocumentNonBlocking, useMemoFirebase, useCollection } from "@/firebase"
+import { collection, query, where, getDocs, limit } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,6 +30,14 @@ export default function InputDataPage() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [kelurahan, setKelurahan] = useState<string>("")
   const [kecamatan, setKecamatan] = useState<string>("")
+
+  // Get current user profile to record who created the entry
+  const userProfileQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null
+    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
+  }, [user, firestore])
+  const { data: userProfiles } = useCollection(userProfileQuery)
+  const currentUserProfile = userProfiles?.[0]
 
   useEffect(() => {
     if (!kelurahan) {
@@ -88,6 +96,7 @@ export default function InputDataPage() {
 
       const data = {
         ownerId: user.uid,
+        createdBy: currentUserProfile?.fullName || user.email?.split('@')[0] || "Unknown",
         fullName: formData.get("fullName"),
         nik: nik,
         noKK: noKK,

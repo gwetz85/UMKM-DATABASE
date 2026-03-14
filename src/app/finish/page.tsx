@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Eye, Loader2, BadgeCheck, Printer } from "lucide-react"
+import { Eye, Loader2, BadgeCheck, Printer, History } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 
 export default function FinishPage() {
@@ -102,7 +102,7 @@ export default function FinishPage() {
                               <Eye className="w-4 h-4 mr-2" /> VIEW
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
+                          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
                               <DialogTitle className="text-2xl font-black text-primary uppercase">Detail Lengkap Pelaku Usaha</DialogTitle>
                             </DialogHeader>
@@ -175,6 +175,16 @@ export default function FinishPage() {
                               <div className="col-span-2">
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase">Nama Pemilik Rekening</p>
                                 <p className="font-black uppercase text-primary">{actor.bankOwner}</p>
+                              </div>
+
+                              <div className="col-span-2 bg-blue-50/50 p-2 font-black rounded text-[10px] uppercase tracking-widest mt-4">AUDIT PENGINPUTAN</div>
+                              <div>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Petugas Input</p>
+                                <p className="font-black text-primary uppercase">{actor.createdBy || "System"}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Waktu Daftar</p>
+                                <p className="font-bold">{actor.createdAt ? new Date(actor.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "-"}</p>
                               </div>
                             </div>
                           </DialogContent>

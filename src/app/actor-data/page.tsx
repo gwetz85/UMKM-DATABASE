@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard, History } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 
@@ -220,6 +220,22 @@ export default function ActorDataPage() {
                                         <p className="text-sm font-black text-primary">{item.value || "BELUM TERISI"}</p>
                                       </div>
                                     ))}
+                                  </div>
+                                </section>
+
+                                <section className="space-y-4">
+                                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
+                                    <History className="w-4 h-4" /> Audit Sistem
+                                  </div>
+                                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Petugas Penginput</p>
+                                      <p className="text-sm font-black text-primary">{actor.createdBy || "Unknown"}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Tanggal Daftar</p>
+                                      <p className="text-sm font-bold text-slate-700">{actor.createdAt ? new Date(actor.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "-"}</p>
+                                    </div>
                                   </div>
                                 </section>
                               </div>

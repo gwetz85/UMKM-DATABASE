@@ -23,4 +23,5 @@ export interface BusinessActor {
   status: BusinessActorStatus;
   createdAt: string;
   ownerId: string;
+  createdBy?: string; // Nama user yang menginput data
 }
