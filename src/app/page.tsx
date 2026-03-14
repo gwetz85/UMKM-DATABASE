@@ -165,41 +165,6 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-
-          <Card className="border-none shadow-sm bg-white overflow-hidden">
-            <CardHeader className="border-b border-muted/50 pb-4">
-              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" /> Pencapaian per Koordinator
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 md:p-6">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
-                {coordinatorStats.map((item) => (
-                  <div 
-                    key={item.name} 
-                    className="p-3 md:p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between hover:shadow-md hover:border-primary/30 hover:bg-primary/5 active:scale-95 transition-all duration-200 group cursor-pointer"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                        <span className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase leading-tight group-hover:text-primary transition-colors truncate pr-2">{item.name}</span>
-                        <User className="w-3 h-3 text-primary/30 group-hover:text-primary transition-colors" />
-                    </div>
-                    <div className="text-lg md:text-2xl font-black text-primary">{item.count}</div>
-                  </div>
-                ))}
-                {(!coordinatorStats || coordinatorStats.length === 0) && !isLoading && (
-                  <div className="col-span-full py-10 text-center text-muted-foreground italic text-xs">
-                    Belum ada data koordinator terekam.
-                  </div>
-                )}
-                {isLoading && (
-                   <div className="col-span-full py-10 flex flex-col items-center justify-center text-muted-foreground italic gap-2">
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                    <p className="text-xs">Memuat data koordinator...</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <div className="space-y-6">
@@ -238,6 +203,41 @@ export default function DashboardPage() {
                 <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                   <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'finish').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm bg-white overflow-hidden">
+            <CardHeader className="border-b border-muted/50 pb-4">
+              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" /> Pencapaian per Koordinator
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 md:p-6">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                {coordinatorStats.map((item) => (
+                  <div 
+                    key={item.name} 
+                    className="p-3 md:p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between hover:shadow-md hover:border-primary/30 hover:bg-primary/5 active:scale-95 transition-all duration-200 group cursor-pointer"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                        <span className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase leading-tight group-hover:text-primary transition-colors truncate pr-2">{item.name}</span>
+                        <User className="w-3 h-3 text-primary/30 group-hover:text-primary transition-colors" />
+                    </div>
+                    <div className="text-lg md:text-2xl font-black text-primary">{item.count}</div>
+                  </div>
+                ))}
+                {(!coordinatorStats || coordinatorStats.length === 0) && !isLoading && (
+                  <div className="col-span-full py-10 text-center text-muted-foreground italic text-xs">
+                    Belum ada data koordinator terekam.
+                  </div>
+                )}
+                {isLoading && (
+                   <div className="col-span-full py-10 flex flex-col items-center justify-center text-muted-foreground italic gap-2">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <p className="text-xs">Memuat data koordinator...</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
