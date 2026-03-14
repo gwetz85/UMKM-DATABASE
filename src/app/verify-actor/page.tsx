@@ -3,7 +3,7 @@
 
 import { useState } from "react"
 import { useMemoFirebase, useCollection, useUser, useFirestore, updateDocumentNonBlocking, useDoc, deleteDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, doc } from "firebase/firestore"
+import { collection, query, where, doc, limit } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -24,9 +24,17 @@ export default function VerifyActorPage() {
     if (!user || !firestore) return null
     return doc(firestore, 'roles_admin', user.uid)
   }, [user, firestore])
-
   const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRef)
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
+
+  const userProfileQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null
+    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
+  }, [user, firestore])
+  const { data: userProfiles } = useCollection(userProfileQuery)
+  const userProfile = userProfiles?.[0]
+
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const isMonitoring = userProfile?.role === 'monitoring'
 
   const memoQuery = useMemoFirebase(() => {
     if (!firestore) return null
@@ -55,6 +63,16 @@ export default function VerifyActorPage() {
       deleteDocumentNonBlocking(actorRef)
       toast({ variant: "destructive", title: "Data Dibatalkan", description: "Data telah dihapus dari antrean verifikasi." })
     }
+  }
+
+  if (isMonitoring) {
+    return (
+      <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center">
+        <ShieldAlert className="w-16 h-16 text-emerald-600" />
+        <h1 className="text-2xl font-bold">Akses Terbatas</h1>
+        <p className="text-muted-foreground">Role Monitoring tidak memiliki izin untuk melakukan verifikasi data.</p>
+      </div>
+    )
   }
 
   if (!isAdmin && !isAdminLoading) {

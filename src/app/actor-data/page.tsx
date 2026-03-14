@@ -3,7 +3,7 @@
 
 import { useState } from "react"
 import { useMemoFirebase, useCollection, useUser, useFirestore, updateDocumentNonBlocking, useDoc, deleteDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, doc } from "firebase/firestore"
+import { collection, query, where, doc, limit } from "firebase/firestore"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -21,14 +21,22 @@ export default function ActorDataPage() {
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
 
-  // Admin Check
+  // Role Checks
   const adminRef = useMemoFirebase(() => {
     if (!user || !firestore) return null
     return doc(firestore, 'roles_admin', user.uid)
   }, [user, firestore])
-
   const { data: adminRole } = useDoc(adminRef)
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
+
+  const userProfileQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null
+    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
+  }, [user, firestore])
+  const { data: userProfiles } = useCollection(userProfileQuery)
+  const userProfile = userProfiles?.[0]
+
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const isMonitoring = userProfile?.role === 'monitoring'
 
   const memoQuery = useMemoFirebase(() => {
     if (!firestore) return null
@@ -39,7 +47,7 @@ export default function ActorDataPage() {
 
   const handleSaveBank = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!editingActor || !firestore) return
+    if (!editingActor || !firestore || isMonitoring) return
 
     const formData = new FormData(e.currentTarget)
     const actorRef = doc(firestore, 'businessActors', editingActor.id)
@@ -93,6 +101,11 @@ export default function ActorDataPage() {
           {isAdmin && (
             <div className="hidden md:flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-xl text-primary font-bold text-xs uppercase tracking-widest border border-primary/20">
               <ShieldCheck className="w-4 h-4" /> Akses Admin
+            </div>
+          )}
+          {isMonitoring && (
+            <div className="hidden md:flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl text-emerald-600 font-bold text-xs uppercase tracking-widest border border-emerald-200">
+              <Eye className="w-4 h-4" /> Akses Monitoring
             </div>
           )}
         </div>
@@ -213,37 +226,39 @@ export default function ActorDataPage() {
                             </DialogContent>
                           </Dialog>
                           
-                          <Dialog open={!!editingActor && editingActor.id === actor.id} onOpenChange={(open) => !open && setEditingActor(null)}>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="secondary" onClick={() => setEditingActor(actor)} className="h-8 px-2 md:h-9 md:px-3 font-bold">
-                                <Edit3 className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">EDIT BANK</span>
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[425px]">
-                              <form onSubmit={handleSaveBank}>
-                                <DialogHeader>
-                                  <DialogTitle className="text-xl font-black text-primary">INPUT REKENING</DialogTitle>
-                                </DialogHeader>
-                                <div className="grid gap-4 py-4">
-                                  <div className="space-y-2">
-                                    <Label className="font-bold">Nomor Rekening</Label>
-                                    <Input name="bankNumber" defaultValue={actor.bankNumber} className="font-mono" required />
+                          {!isMonitoring && (
+                            <Dialog open={!!editingActor && editingActor.id === actor.id} onOpenChange={(open) => !open && setEditingActor(null)}>
+                              <DialogTrigger asChild>
+                                <Button size="sm" variant="secondary" onClick={() => setEditingActor(actor)} className="h-8 px-2 md:h-9 md:px-3 font-bold">
+                                  <Edit3 className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">EDIT BANK</span>
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-[425px]">
+                                <form onSubmit={handleSaveBank}>
+                                  <DialogHeader>
+                                    <DialogTitle className="text-xl font-black text-primary">INPUT REKENING</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="grid gap-4 py-4">
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">Nomor Rekening</Label>
+                                      <Input name="bankNumber" defaultValue={actor.bankNumber} className="font-mono" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">Nama Pemilik Rekening</Label>
+                                      <Input name="bankOwner" defaultValue={actor.bankOwner} className="uppercase font-bold" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">Nama Bank</Label>
+                                      <Input name="bankName" defaultValue={actor.bankName} placeholder="Contoh: BANK NTB SYARIAH" required />
+                                    </div>
                                   </div>
-                                  <div className="space-y-2">
-                                    <Label className="font-bold">Nama Pemilik Rekening</Label>
-                                    <Input name="bankOwner" defaultValue={actor.bankOwner} className="uppercase font-bold" required />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="font-bold">Nama Bank</Label>
-                                    <Input name="bankName" defaultValue={actor.bankName} placeholder="Contoh: BANK NTB SYARIAH" required />
-                                  </div>
-                                </div>
-                                <DialogFooter>
-                                  <Button type="submit" className="w-full bg-primary font-bold text-white"><Save className="w-4 h-4 mr-2" /> Simpan Rekening</Button>
-                                </DialogFooter>
-                              </form>
-                            </DialogContent>
-                          </Dialog>
+                                  <DialogFooter>
+                                    <Button type="submit" className="w-full bg-primary font-bold text-white"><Save className="w-4 h-4 mr-2" /> Simpan Rekening</Button>
+                                  </DialogFooter>
+                                </form>
+                              </DialogContent>
+                            </Dialog>
+                          )}
 
                           {isAdmin && (
                             <Button 

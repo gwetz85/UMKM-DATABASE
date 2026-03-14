@@ -37,11 +37,11 @@
     "SystemUser": {
       "title": "SystemUser",
       "type": "object",
-      "description": "Data pengguna sistem (Admin atau Petugas).",
+      "description": "Data pengguna sistem (Admin, Petugas, atau Monitoring).",
       "properties": {
         "uid": { "type": "string" },
         "fullName": { "type": "string" },
-        "role": { "type": "string", "enum": ["admin", "petugas"] },
+        "role": { "type": "string", "enum": ["admin", "petugas", "monitoring"] },
         "password": { "type": "string", "description": "Password sementara untuk provisioning" },
         "addedAt": { "type": "string", "format": "date-time" }
       },

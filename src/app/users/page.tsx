@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { UserPlus, Trash2, Loader2, ShieldAlert, UserCheck, Shield, Key, RefreshCcw } from "lucide-react"
+import { UserPlus, Trash2, Loader2, ShieldAlert, UserCheck, Shield, Key, RefreshCcw, Eye } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function UserManagementPage() {
@@ -144,6 +145,7 @@ export default function UserManagementPage() {
                     <SelectContent>
                       <SelectItem value="petugas">Petugas Input</SelectItem>
                       <SelectItem value="admin">Administrator</SelectItem>
+                      <SelectItem value="monitoring">Monitoring</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -178,6 +180,10 @@ export default function UserManagementPage() {
                       {u.role === 'admin' ? (
                         <div className="flex items-center gap-1 text-primary font-black uppercase text-[10px] bg-primary/10 px-2 py-0.5 rounded w-fit">
                           <Shield className="w-3 h-3" /> Admin
+                        </div>
+                      ) : u.role === 'monitoring' ? (
+                        <div className="flex items-center gap-1 text-emerald-600 font-bold uppercase text-[10px] bg-emerald-50 px-2 py-0.5 rounded w-fit border border-emerald-100">
+                          <Eye className="w-3 h-3" /> Monitoring
                         </div>
                       ) : (
                         <div className="flex items-center gap-1 text-slate-600 font-bold uppercase text-[10px] bg-slate-100 px-2 py-0.5 rounded w-fit">

@@ -18,12 +18,13 @@ import {
   Settings,
   SearchCheck,
   Clock,
-  LogIn
+  LogIn,
+  Eye
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth } from "@/firebase"
-import { doc } from "firebase/firestore"
+import { useUser, useDoc, useFirestore, useMemoFirebase, useAuth, useCollection } from "@/firebase"
+import { doc, collection, query, where, limit } from "firebase/firestore"
 import { signOut } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -73,26 +74,81 @@ export function AppSidebar() {
     return () => clearInterval(interval)
   }, [])
 
+  // Admin Check
   const adminRef = useMemoFirebase(() => {
     if (!user || !firestore) return null
     return doc(firestore, 'roles_admin', user.uid)
   }, [user, firestore])
-
   const { data: adminRole } = useDoc(adminRef)
-  
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
+
+  // System User / Role Check
+  const userProfileQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null
+    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
+  }, [user, firestore])
+  const { data: userProfiles } = useCollection(userProfileQuery)
+  const userProfile = userProfiles?.[0]
+
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const isMonitoring = userProfile?.role === 'monitoring'
+  const isPetugas = userProfile?.role === 'petugas'
 
   const navigation = React.useMemo(() => [
-    { name: "Dashboard", href: "/", icon: LayoutDashboard, show: !!user },
-    { name: "Input Data", href: "/input", icon: UserPlus, show: !!user },
-    { name: "Cek Data", href: "/check-data", icon: SearchCheck, show: true }, // Selalu tampil (Publik)
-    { name: "Verifikasi Admin", href: "/verify-actor", icon: ShieldCheck, show: isAdmin },
-    { name: "Data Pelaku", href: "/actor-data", icon: Users, show: !!user },
-    { name: "Verifikasi Data", href: "/verify-bank", icon: CreditCard, show: !!user },
-    { name: "Finish", href: "/finish", icon: CheckCircle2, show: !!user },
-    { name: "Manajemen User", href: "/users", icon: UserCog, show: isAdmin },
-    { name: "Pengaturan", href: "/settings", icon: Settings, show: !!user },
-  ], [user, isAdmin])
+    { 
+      name: "Dashboard", 
+      href: "/", 
+      icon: LayoutDashboard, 
+      show: !!user && !isMonitoring 
+    },
+    { 
+      name: "Input Data", 
+      href: "/input", 
+      icon: UserPlus, 
+      show: !!user && !isMonitoring 
+    },
+    { 
+      name: "Cek Data", 
+      href: "/check-data", 
+      icon: SearchCheck, 
+      show: true 
+    },
+    { 
+      name: "Verifikasi Admin", 
+      href: "/verify-actor", 
+      icon: ShieldCheck, 
+      show: isAdmin 
+    },
+    { 
+      name: "Data Pelaku", 
+      href: "/actor-data", 
+      icon: Users, 
+      show: !!user 
+    },
+    { 
+      name: "Verifikasi Data", 
+      href: "/verify-bank", 
+      icon: CreditCard, 
+      show: !!user && !isMonitoring 
+    },
+    { 
+      name: "Finish", 
+      href: "/finish", 
+      icon: CheckCircle2, 
+      show: !!user 
+    },
+    { 
+      name: "Manajemen User", 
+      href: "/users", 
+      icon: UserCog, 
+      show: isAdmin 
+    },
+    { 
+      name: "Pengaturan", 
+      href: "/settings", 
+      icon: Settings, 
+      show: !!user 
+    },
+  ], [user, isAdmin, isMonitoring])
 
   const copyUid = () => {
     if (user?.uid) {
@@ -204,7 +260,7 @@ export function AppSidebar() {
                       {user.email?.split('@')[0].toUpperCase()}
                     </span>
                     <span className="text-[8px] text-white/60 font-black uppercase tracking-tighter">
-                      {isAdmin ? "🛡️ Admin" : "📝 Petugas"}
+                      {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : "📝 Petugas"}
                     </span>
                   </div>
                 </div>
