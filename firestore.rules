@@ -27,26 +27,26 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    match /system_users/{uid} {
-      // uid di sini adalah 'username' (ID dokumen)
+    match /system_users/{username} {
       allow read: if isSignedIn();
       
-      // Admin memiliki akses penuh untuk manajemen user
-      allow create, delete: if isAdmin();
+      // Izinkan publik mendaftar (create), tapi role harus "pending"
+      allow create: if isAdmin() || (
+        request.resource.data.role == "pending" && 
+        request.resource.data.uid == null
+      );
       
-      // Update diizinkan untuk Admin, atau User yang sedang melakukan provisioning (kunci UID)
+      allow delete: if isAdmin();
+      
       allow update: if isAdmin() || (
         isSignedIn() && (
-          // Jika dokumen belum punya UID, izinkan user tersebut mengunci dengan UID-nya
           (resource.data.uid == null && request.resource.data.uid == request.auth.uid) ||
-          // Atau jika UID dokumen sudah cocok dengan user yang sedang login
           (resource.data.uid == request.auth.uid)
         )
       );
     }
 
     match /master_data/{id} {
-      // Izinkan pengecekkan data oleh publik tanpa login
       allow read: if true;
       allow write: if isAdmin();
     }

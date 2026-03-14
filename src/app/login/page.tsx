@@ -10,15 +10,41 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Building2, Lock, Mail, Loader2, LogIn, MonitorOff, SearchCheck, DatabaseZap } from "lucide-react"
+import { 
+  Building2, 
+  Lock, 
+  Mail, 
+  Loader2, 
+  LogIn, 
+  MonitorOff, 
+  SearchCheck, 
+  DatabaseZap, 
+  UserPlus 
+} from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
+  const [registering, setRegistering] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
+  
+  // Register States
+  const [regName, setRegName] = useState("")
+  const [regPass, setRegPass] = useState("")
+  const [isRegOpen, setIsRegOpen] = useState(false)
+
   const auth = useAuth()
   const firestore = useFirestore()
   const router = useRouter()
@@ -46,12 +72,21 @@ export default function LoginPage() {
         if (userSnap.exists()) {
           const userData = userSnap.data()
           
+          if (userData.role === 'pending') {
+            await signOut(auth)
+            toast({ 
+              variant: "destructive", 
+              title: "Akses Belum Aktif", 
+              description: "Akun Anda sudah terdaftar. Silakan hubungi Admin untuk pemberian akses (Role)." 
+            })
+            setLoading(false)
+            return
+          }
+
           if (!userData.uid) {
-            // Jika UID belum terkunci (first login setelah reset), kunci ke UID sekarang
             await updateDoc(userRef, { uid: user.uid })
             toast({ title: "Perangkat Terkunci", description: "Akun Anda sekarang terikat pada perangkat ini." })
           } else if (userData.uid !== user.uid) {
-            // Jika UID berbeda, tolak akses
             await signOut(auth)
             toast({ 
               variant: "destructive", 
@@ -65,7 +100,7 @@ export default function LoginPage() {
         
         toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
       } catch (loginError: any) {
-        // 3. Jika Akun Auth belum ada, jalankan alur Provisioning dari Admin
+        // 3. Provisioning Alur
         if (loginError.code === 'auth/user-not-found' || loginError.code === 'auth/invalid-credential' || loginError.code === 'auth/invalid-email') {
           const tempUserRef = doc(firestore, 'system_users', username)
           const tempUserSnap = await getDoc(tempUserRef)
@@ -73,18 +108,25 @@ export default function LoginPage() {
           if (tempUserSnap.exists()) {
             const preRegisteredData = tempUserSnap.data()
             
+            if (preRegisteredData.role === 'pending') {
+              toast({ 
+                variant: "destructive", 
+                title: "Akun Belum Siap", 
+                description: "Menunggu Administrator memberikan akses/role untuk akun ini." 
+              })
+              setLoading(false)
+              return
+            }
+
             if (preRegisteredData.password === password) {
-              // Create Auth Account
               const newUserCred = await createUserWithEmailAndPassword(auth, email, password)
               user = newUserCred.user
 
-              // Simpan UID pertama kali & tetapkan Role
               await updateDoc(tempUserRef, {
                 uid: user.uid,
                 addedAt: new Date().toISOString()
               })
 
-              // Handle Admin Role jika perlu
               if (preRegisteredData.role === 'admin') {
                 const roleRef = doc(firestore, 'roles_admin', user.uid)
                 await setDoc(roleRef, { admin: true })
@@ -117,6 +159,45 @@ export default function LoginPage() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!regName || !regPass) return
+    
+    setRegistering(true)
+    const username = regName.toLowerCase().trim().replace(/\s+/g, '_')
+    const userRef = doc(firestore, 'system_users', username)
+
+    try {
+      const snap = await getDoc(userRef)
+      if (snap.exists()) {
+        toast({ variant: "destructive", title: "Username Sudah Ada", description: "Silakan gunakan nama lain atau hubungi Admin." })
+        setRegistering(false)
+        return
+      }
+
+      await setDoc(userRef, {
+        fullName: regName,
+        password: regPass,
+        role: "pending",
+        uid: null,
+        addedAt: new Date().toISOString()
+      })
+
+      toast({ 
+        title: "Pendaftaran Berhasil", 
+        description: "Akun telah dibuat dengan status 'Pending'. Segera lapor ke Admin untuk pemberian akses (Role)." 
+      })
+      setIsRegOpen(false)
+      setRegName("")
+      setRegPass("")
+      setIdentifier(username)
+    } catch (error) {
+      toast({ variant: "destructive", title: "Gagal Mendaftar", description: "Terjadi kesalahan koneksi." })
+    } finally {
+      setRegistering(false)
     }
   }
 
@@ -202,24 +283,68 @@ export default function LoginPage() {
               )}
             </Button>
             
-            <div className="w-full h-px bg-slate-100 my-2" />
-            
             <div className="grid grid-cols-2 gap-2 w-full">
+              <Dialog open={isRegOpen} onOpenChange={setIsRegOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="secondary" type="button" className="w-full h-11 font-bold">
+                    <UserPlus className="w-4 h-4 mr-2" /> Daftar Akun
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <form onSubmit={handleRegister}>
+                    <DialogHeader>
+                      <DialogTitle className="text-primary font-black uppercase">Pendaftaran User Baru</DialogTitle>
+                      <DialogDescription>
+                        Data Anda akan disimpan dengan status 'Pending'. Akun hanya dapat digunakan setelah Admin memberikan akses.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="space-y-2">
+                        <Label className="font-bold">Nama Lengkap (Username)</Label>
+                        <Input 
+                          placeholder="Nama Asli Anda" 
+                          value={regName}
+                          onChange={(e) => setRegName(e.target.value)}
+                          required 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="font-bold">Buat Kata Sandi</Label>
+                        <Input 
+                          type="password" 
+                          placeholder="••••••••" 
+                          value={regPass}
+                          onChange={(e) => setRegPass(e.target.value)}
+                          required 
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button type="submit" className="w-full font-bold" disabled={registering}>
+                        {registering ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserPlus className="w-4 h-4 mr-2" />}
+                        Daftar Sekarang
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+
               <Link href="/check-data" className="w-full">
-                <Button variant="outline" type="button" className="w-full h-11 border-primary/20 text-primary font-bold hover:bg-primary/5 text-[10px] md:text-xs">
-                  <SearchCheck className="w-3.5 h-3.5 mr-1.5" /> Cek Data
+                <Button variant="outline" type="button" className="w-full h-11 border-primary/20 text-primary font-bold hover:bg-primary/5">
+                  <SearchCheck className="w-4 h-4 mr-2" /> Cek Data
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                type="button" 
-                onClick={seedMonitoringUser} 
-                disabled={seeding}
-                className="w-full h-11 border-emerald-500/20 text-emerald-600 font-bold hover:bg-emerald-50 text-[10px] md:text-xs"
-              >
-                {seeding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <DatabaseZap className="w-3.5 h-3.5 mr-1.5" />} Seed Monitoring
-              </Button>
             </div>
+
+            <Button 
+              variant="ghost" 
+              type="button" 
+              onClick={seedMonitoringUser} 
+              disabled={seeding}
+              className="text-[10px] text-muted-foreground/50 hover:text-emerald-600 transition-colors"
+            >
+              {seeding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <DatabaseZap className="w-3 h-3 mr-1" />} Inisialisasi Monitoring
+            </Button>
 
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-medium justify-center mt-2">
               <MonitorOff className="w-3 h-3" /> Kebijakan 1 User 1 Perangkat Aktif
