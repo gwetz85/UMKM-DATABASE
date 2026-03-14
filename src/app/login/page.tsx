@@ -10,12 +10,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Building2, Lock, Mail, Loader2, LogIn, MonitorOff, SearchCheck } from "lucide-react"
+import { Building2, Lock, Mail, Loader2, LogIn, MonitorOff, SearchCheck, DatabaseZap } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
+  const [seeding, setSeeding] = useState(false)
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const auth = useAuth()
@@ -65,7 +66,7 @@ export default function LoginPage() {
         toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
       } catch (loginError: any) {
         // 3. Jika Akun Auth belum ada, jalankan alur Provisioning dari Admin
-        if (loginError.code === 'auth/user-not-found' || loginError.code === 'auth/invalid-credential') {
+        if (loginError.code === 'auth/user-not-found' || loginError.code === 'auth/invalid-credential' || loginError.code === 'auth/invalid-email') {
           const tempUserRef = doc(firestore, 'system_users', username)
           const tempUserSnap = await getDoc(tempUserRef)
 
@@ -119,6 +120,28 @@ export default function LoginPage() {
     }
   }
 
+  const seedMonitoringUser = async () => {
+    setSeeding(true)
+    try {
+      const userRef = doc(firestore, 'system_users', 'monitoring')
+      await setDoc(userRef, {
+        fullName: "Monitoring",
+        password: "monitoring",
+        role: "monitoring",
+        uid: null,
+        addedAt: new Date().toISOString()
+      }, { merge: true })
+      
+      toast({ title: "Inisialisasi Berhasil", description: "User 'monitoring' telah ditambahkan ke database. Silakan login." })
+      setIdentifier("monitoring")
+      setPassword("monitoring")
+    } catch (e) {
+      toast({ variant: "destructive", title: "Gagal Inisialisasi", description: "Pastikan Anda memiliki koneksi internet." })
+    } finally {
+      setSeeding(false)
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4">
       <Card className="w-full max-w-md border-none shadow-2xl overflow-hidden">
@@ -168,7 +191,7 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4 pb-10">
-            <Button className="w-full bg-primary hover:bg-primary/90 h-12 text-md font-bold shadow-lg" disabled={loading}>
+            <Button className="w-full bg-primary hover:bg-primary/90 h-12 text-md font-bold shadow-lg" disabled={loading || seeding}>
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -181,13 +204,24 @@ export default function LoginPage() {
             
             <div className="w-full h-px bg-slate-100 my-2" />
             
-            <Link href="/check-data" className="w-full">
-              <Button variant="outline" type="button" className="w-full h-11 border-primary/20 text-primary font-bold hover:bg-primary/5">
-                <SearchCheck className="w-4 h-4 mr-2" /> Cek Data Tanpa Login
+            <div className="grid grid-cols-2 gap-2 w-full">
+              <Link href="/check-data" className="w-full">
+                <Button variant="outline" type="button" className="w-full h-11 border-primary/20 text-primary font-bold hover:bg-primary/5 text-[10px] md:text-xs">
+                  <SearchCheck className="w-3.5 h-3.5 mr-1.5" /> Cek Data
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                type="button" 
+                onClick={seedMonitoringUser} 
+                disabled={seeding}
+                className="w-full h-11 border-emerald-500/20 text-emerald-600 font-bold hover:bg-emerald-50 text-[10px] md:text-xs"
+              >
+                {seeding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <DatabaseZap className="w-3.5 h-3.5 mr-1.5" />} Seed Monitoring
               </Button>
-            </Link>
+            </div>
 
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-medium justify-center">
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-medium justify-center mt-2">
               <MonitorOff className="w-3 h-3" /> Kebijakan 1 User 1 Perangkat Aktif
             </div>
           </CardFooter>
