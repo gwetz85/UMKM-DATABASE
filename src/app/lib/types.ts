@@ -16,6 +16,7 @@ export interface BusinessActor {
   businessCategory: 'Kuliner' | 'Bukan Kuliner';
   businessName: string;
   businessLocation: string;
+  coordinator: string;
   bankNumber?: string;
   bankOwner?: string;
   bankName?: string;

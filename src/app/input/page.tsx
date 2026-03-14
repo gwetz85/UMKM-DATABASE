@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -20,23 +21,15 @@ export default function InputDataPage() {
   const [kelurahan, setKelurahan] = useState<string>("")
   const [kecamatan, setKecamatan] = useState<string>("")
 
-  // Mapping Kelurahan ke Kecamatan sesuai instruksi revisi terbaru
   useEffect(() => {
     if (!kelurahan) {
       setKecamatan("")
       return
     }
 
-    // Kelompok 1 -> Tanjungpinang Kota
     const groupKota = ["Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat"]
-    
-    // Kelompok 2 -> Tanjungpinang Barat
     const groupBarat = ["Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru"]
-    
-    // Kelompok 3 -> Tanjungpinang Timur
     const groupTimur = ["Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana", "Air Raja"]
-    
-    // Kelompok 4 -> Bukit Bestari
     const groupBestari = ["Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"]
 
     if (groupKota.includes(kelurahan)) {
@@ -97,6 +90,7 @@ export default function InputDataPage() {
         businessCategory: formData.get("businessCategory"),
         businessName: formData.get("businessName"),
         businessLocation: formData.get("businessLocation"),
+        coordinator: formData.get("coordinator"),
         status: "pending",
         createdAt: new Date().toISOString(),
       }
@@ -228,6 +222,10 @@ export default function InputDataPage() {
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="businessLocation">Lokasi Usaha</Label>
               <Input id="businessLocation" name="businessLocation" required />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="coordinator">Koordinator</Label>
+              <Input id="coordinator" name="coordinator" placeholder="Nama Koordinator Lapangan" required />
             </div>
           </CardContent>
         </Card>

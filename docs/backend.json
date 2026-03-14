@@ -20,6 +20,7 @@
         "businessCategory": { "type": "string", "enum": ["Kuliner", "Bukan Kuliner"] },
         "businessName": { "type": "string" },
         "businessLocation": { "type": "string" },
+        "coordinator": { "type": "string", "description": "Nama Koordinator Lapangan" },
         "bankNumber": { "type": "string" },
         "bankOwner": { "type": "string" },
         "bankName": { "type": "string" },

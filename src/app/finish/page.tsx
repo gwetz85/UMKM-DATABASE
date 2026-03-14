@@ -111,9 +111,13 @@ export default function FinishPage() {
                               <p className="text-muted-foreground">Kategori</p>
                               <p className="font-medium">{actor.businessCategory}</p>
                             </div>
-                            <div className="col-span-2">
+                            <div>
                               <p className="text-muted-foreground">Lokasi Usaha</p>
                               <p className="font-medium">{actor.businessLocation}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Koordinator</p>
+                              <p className="font-medium">{actor.coordinator}</p>
                             </div>
 
                             <div className="col-span-2 bg-muted/50 p-2 font-bold rounded mt-4">DATA REKENING</div>

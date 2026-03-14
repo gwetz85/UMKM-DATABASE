@@ -177,6 +177,7 @@ export default function ActorDataPage() {
                                       { label: "Nama Usaha", value: actor.businessName },
                                       { label: "Kategori Usaha", value: actor.businessCategory },
                                       { label: "Lokasi Usaha", value: actor.businessLocation },
+                                      { label: "Koordinator", value: actor.coordinator },
                                     ].map((item, i) => (
                                       <div key={i} className="space-y-1">
                                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
