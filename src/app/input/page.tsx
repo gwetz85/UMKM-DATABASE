@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -21,28 +20,32 @@ export default function InputDataPage() {
   const [kelurahan, setKelurahan] = useState<string>("")
   const [kecamatan, setKecamatan] = useState<string>("")
 
-  // Mapping Kelurahan ke Kecamatan sesuai instruksi revisi
+  // Mapping Kelurahan ke Kecamatan sesuai instruksi revisi terbaru
   useEffect(() => {
     if (!kelurahan) {
       setKecamatan("")
       return
     }
 
-    // Kelompok 1 & 2 -> Tanjungpinang Kota
-    const group1And2 = [
-      "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat", 
-      "Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru"
-    ]
-    // Kelompok 3 -> Tanjungpinang Timur (Termasuk Air Raja)
-    const group3 = ["Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana", "Air Raja"]
+    // Kelompok 1 -> Tanjungpinang Kota
+    const groupKota = ["Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat"]
+    
+    // Kelompok 2 -> Tanjungpinang Barat
+    const groupBarat = ["Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru"]
+    
+    // Kelompok 3 -> Tanjungpinang Timur
+    const groupTimur = ["Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana", "Air Raja"]
+    
     // Kelompok 4 -> Bukit Bestari
-    const group4 = ["Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"]
+    const groupBestari = ["Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"]
 
-    if (group1And2.includes(kelurahan)) {
+    if (groupKota.includes(kelurahan)) {
       setKecamatan("Tanjungpinang Kota")
-    } else if (group3.includes(kelurahan)) {
+    } else if (groupBarat.includes(kelurahan)) {
+      setKecamatan("Tanjungpinang Barat")
+    } else if (groupTimur.includes(kelurahan)) {
       setKecamatan("Tanjungpinang Timur")
-    } else if (group4.includes(kelurahan)) {
+    } else if (groupBestari.includes(kelurahan)) {
       setKecamatan("Bukit Bestari")
     } else {
       setKecamatan("")
