@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard, History, X, RotateCcw } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, ShieldCheck, Eye, User, Building2, CreditCard, History, X, RotateCcw, Image as ImageIcon } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
+import Image from "next/image"
 
 function ActorDataContent() {
   const { user } = useUser()
@@ -190,7 +191,7 @@ function ActorDataContent() {
                                 <Eye className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden lg:inline ml-2">VIEW</span>
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                               <DialogHeader>
                                 <DialogTitle className="text-2xl font-black text-primary uppercase tracking-tight flex items-center gap-2">
                                   <Eye className="w-6 h-6" /> Detail Pelaku Usaha
@@ -201,7 +202,7 @@ function ActorDataContent() {
                                   <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
                                     <User className="w-4 h-4" /> Informasi Pribadi
                                   </div>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
                                     {[
                                       { label: "Nama Lengkap", value: actor.fullName },
                                       { label: "NIK", value: actor.nik },
@@ -218,7 +219,7 @@ function ActorDataContent() {
                                         <p className="text-sm font-bold text-foreground">{item.value || "-"}</p>
                                       </div>
                                     ))}
-                                    <div className="md:col-span-2 space-y-1">
+                                    <div className="md:col-span-3 space-y-1">
                                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Alamat Lengkap</p>
                                       <p className="text-sm font-bold text-foreground">{actor.address || "-"}</p>
                                     </div>
@@ -239,6 +240,40 @@ function ActorDataContent() {
                                       <div key={i} className="space-y-1">
                                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
                                         <p className="text-sm font-bold text-foreground">{item.value || "-"}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </section>
+
+                                <section className="space-y-4">
+                                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
+                                    <ImageIcon className="w-4 h-4" /> Lampiran Berkas
+                                  </div>
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                    {[
+                                      { label: "KTP", uri: actor.ktpUri },
+                                      { label: "KK", uri: actor.kkUri },
+                                      { label: "NIB", uri: actor.nibUri },
+                                      { label: "Foto Usaha", uri: actor.photoUsahaUri },
+                                    ].map((doc, idx) => (
+                                      <div key={idx} className="space-y-2">
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase text-center">{doc.label}</p>
+                                        <div className="aspect-[3/4] rounded-xl border-2 border-dashed border-muted bg-slate-50 relative overflow-hidden flex items-center justify-center">
+                                          {doc.uri ? (
+                                            <Image 
+                                              src={doc.uri} 
+                                              alt={doc.label} 
+                                              fill 
+                                              className="object-contain" 
+                                              unoptimized 
+                                            />
+                                          ) : (
+                                            <div className="flex flex-col items-center gap-1 opacity-20">
+                                              <ImageIcon className="w-8 h-8" />
+                                              <span className="text-[10px] font-bold">TIDAK ADA</span>
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
@@ -269,7 +304,7 @@ function ActorDataContent() {
                                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-1">
                                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Petugas Penginput</p>
-                                      <p className="text-sm font-black text-primary">{actor.createdBy || "Unknown"}</p>
+                                      <p className="text-sm font-black text-primary uppercase">{actor.createdBy || "Unknown"}</p>
                                     </div>
                                     <div className="space-y-1">
                                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Tanggal Daftar</p>
