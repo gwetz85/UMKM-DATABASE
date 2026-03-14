@@ -3,10 +3,11 @@
 import { useMemoFirebase, useCollection, useUser, useFirestore } from "@/firebase"
 import { collection, query, orderBy } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, UserCheck, Activity, Loader2, Building2, TrendingUp } from "lucide-react"
+import { Users, UserCheck, Activity, Loader2, Building2, TrendingUp, MapPin, BarChart3 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { BusinessActor } from "./lib/types"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
@@ -25,6 +26,21 @@ export default function DashboardPage() {
   }, [firestore, user])
 
   const { data: allData, isLoading } = useCollection<BusinessActor>(memoQuery)
+
+  const kelurahanList = [
+    "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
+    "Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru",
+    "Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana",
+    "Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"
+  ]
+
+  const kelurahanStats = useMemo(() => {
+    if (!allData) return []
+    return kelurahanList.map(k => ({
+      name: k,
+      count: allData.filter(d => d.kelurahan === k).length
+    })).sort((a, b) => b.count - a.count)
+  }, [allData])
 
   if (isUserLoading) {
     return (
@@ -71,7 +87,7 @@ export default function DashboardPage() {
     <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl md:text-4xl font-black tracking-tight font-headline text-primary">
+          <h1 className="text-2xl md:text-4xl font-black tracking-tight font-headline text-primary uppercase">
             Dashboard
           </h1>
           <p className="text-xs md:text-sm text-muted-foreground font-medium">
@@ -107,70 +123,121 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-        <Card className="border-none shadow-sm bg-white lg:col-span-2">
-          <CardHeader>
+        <Card className="border-none shadow-sm bg-white lg:col-span-2 overflow-hidden">
+          <CardHeader className="border-b border-muted/50 pb-4">
             <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
-              <Activity className="w-5 h-5 text-primary" /> Progres Verifikasi Berkas
+              <MapPin className="w-5 h-5 text-primary" /> Sebaran Data per Kelurahan
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-xs md:text-sm font-bold">
-                <span className="text-slate-600">Menunggu Verifikasi Admin</span>
-                <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] md:text-xs">{allData?.filter(d => d.status === 'pending').length} Data</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 md:h-3 rounded-full overflow-hidden">
-                 <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'pending').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-xs md:text-sm font-bold">
-                <span className="text-slate-600">Menunggu Verifikasi Rekening</span>
-                <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] md:text-xs">{allData?.filter(d => d.status === 'bank_pending').length} Data</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 md:h-3 rounded-full overflow-hidden">
-                 <div className="bg-amber-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'bank_pending').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-xs md:text-sm font-bold">
-                <span className="text-slate-600">Selesai / Terbit Sertifikat</span>
-                <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px] md:text-xs">{allData?.filter(d => d.status === 'finish').length} Data</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2 md:h-3 rounded-full overflow-hidden">
-                 <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'finish').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm bg-white overflow-hidden relative">
-          <CardHeader>
-            <CardTitle className="text-base md:text-lg font-bold">Kategori UMKM</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4 md:gap-6 justify-center pb-6 md:pb-10">
-            <div className="flex items-center justify-between p-3 md:p-4 rounded-2xl bg-slate-50 border border-slate-100">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">Kuliner</span>
-                <span className="text-xl md:text-2xl font-black text-primary">{allData?.filter(d => d.businessCategory === "Kuliner").length}</span>
-              </div>
-              <div className="p-2 md:p-3 bg-white rounded-xl shadow-sm">
-                <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-emerald-500" />
-              </div>
-            </div>
-            <div className="flex items-center justify-between p-3 md:p-4 rounded-2xl bg-slate-50 border border-slate-100">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">Bukan Kuliner</span>
-                <span className="text-xl md:text-2xl font-black text-slate-700">{allData?.filter(d => d.businessCategory === "Bukan Kuliner").length}</span>
-              </div>
-              <div className="p-2 md:p-3 bg-white rounded-xl shadow-sm">
-                <Building2 className="w-4 h-4 md:w-5 md:h-5 text-indigo-500" />
-              </div>
+          <CardContent className="p-0">
+            <div className="max-h-[400px] overflow-y-auto">
+              <Table>
+                <TableHeader className="bg-muted/20 sticky top-0 z-10">
+                  <TableRow>
+                    <TableHead className="text-[10px] font-black uppercase">Nama Kelurahan</TableHead>
+                    <TableHead className="text-right text-[10px] font-black uppercase">Jumlah Data</TableHead>
+                    <TableHead className="text-right text-[10px] font-black uppercase w-[100px]">Persentase</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {kelurahanStats.map((item) => {
+                    const percentage = allData?.length ? (item.count / allData.length) * 100 : 0
+                    return (
+                      <TableRow key={item.name} className="hover:bg-muted/5">
+                        <TableCell className="text-xs font-bold text-slate-700">{item.name}</TableCell>
+                        <TableCell className="text-right font-black text-primary text-sm">{item.count}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-[10px] font-mono text-muted-foreground">{percentage.toFixed(1)}%</span>
+                            <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
+                              <div className="bg-primary h-full" style={{ width: `${percentage}%` }} />
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                  {(!kelurahanStats || kelurahanStats.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center py-10 text-muted-foreground italic text-xs">
+                        Memuat data wilayah...
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
+
+        <div className="space-y-6">
+          <Card className="border-none shadow-sm bg-white">
+            <CardHeader>
+              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
+                <Activity className="w-5 h-5 text-primary" /> Progres Verifikasi
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-xs font-bold">
+                  <span className="text-slate-600">Pending Admin</span>
+                  <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px]">{allData?.filter(d => d.status === 'pending').length}</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'pending').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-xs font-bold">
+                  <span className="text-slate-600">Pending Rekening</span>
+                  <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px]">{allData?.filter(d => d.status === 'bank_pending').length}</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div className="bg-amber-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'bank_pending').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-xs font-bold">
+                  <span className="text-slate-600">Selesai (Finish)</span>
+                  <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px]">{allData?.filter(d => d.status === 'finish').length}</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'finish').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm bg-white overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary" /> Kategori Usaha
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Kuliner</span>
+                  <span className="text-xl font-black text-primary">{allData?.filter(d => d.businessCategory === "Kuliner").length}</span>
+                </div>
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <TrendingUp className="w-4 h-4 text-emerald-500" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Bukan Kuliner</span>
+                  <span className="text-xl font-black text-slate-700">{allData?.filter(d => d.businessCategory === "Bukan Kuliner").length}</span>
+                </div>
+                <div className="p-2 bg-white rounded-lg shadow-sm">
+                  <Building2 className="w-4 h-4 text-indigo-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )
