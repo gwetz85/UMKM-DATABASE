@@ -8,6 +8,7 @@ import { Users, UserCheck, Activity, Loader2, Building2, TrendingUp, MapPin, Bar
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo } from "react"
 import { BusinessActor } from "./lib/types"
+import { cn } from "@/lib/utils"
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
@@ -104,11 +105,14 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.name} className="border-none shadow-sm hover:shadow-xl transition-all duration-300 group overflow-hidden bg-white">
+          <Card 
+            key={stat.name} 
+            className="border-none shadow-sm hover:shadow-xl hover:ring-1 hover:ring-primary/20 transition-all duration-300 group overflow-hidden bg-white cursor-pointer active:scale-95"
+          >
             <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
               <CardTitle className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-wider truncate mr-2">{stat.name}</CardTitle>
-              <div className={`${stat.bg} p-1.5 md:p-2.5 rounded-lg md:rounded-xl group-hover:scale-110 transition-transform duration-300 shrink-0`}>
-                <stat.icon className={`w-4 h-4 md:w-5 md:h-5 ${stat.color}`} />
+              <div className={cn(stat.bg, "p-1.5 md:p-2.5 rounded-lg md:rounded-xl group-hover:scale-110 transition-transform duration-300 shrink-0")}>
+                <stat.icon className={cn("w-4 h-4 md:w-5 md:h-5", stat.color)} />
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-0">
@@ -123,7 +127,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-        <Card className="border-none shadow-sm bg-white lg:col-span-2">
+        <Card className="border-none shadow-sm bg-white lg:col-span-2 overflow-hidden">
           <CardHeader className="border-b border-muted/50 pb-4">
             <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
               <MapPin className="w-5 h-5 text-primary" /> Sebaran Data per Kelurahan
@@ -132,7 +136,10 @@ export default function DashboardPage() {
           <CardContent className="p-4 md:p-6">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
               {kelurahanStats.map((item) => (
-                <div key={item.name} className="p-3 md:p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between hover:shadow-md transition-all duration-200 group">
+                <div 
+                  key={item.name} 
+                  className="p-3 md:p-4 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between hover:shadow-md hover:border-primary/30 hover:bg-primary/5 active:scale-95 transition-all duration-200 group cursor-pointer"
+                >
                    <div className="flex justify-between items-start mb-2">
                       <span className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase leading-tight group-hover:text-primary transition-colors">{item.name}</span>
                       <MapPin className="w-3 h-3 text-primary/30 group-hover:text-primary transition-colors" />
@@ -158,9 +165,9 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
+              <div className="space-y-2 group cursor-pointer">
                 <div className="flex justify-between items-center text-xs font-bold">
-                  <span className="text-slate-600">Pending Admin</span>
+                  <span className="text-slate-600 group-hover:text-primary transition-colors">Pending Admin</span>
                   <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px]">{allData?.filter(d => d.status === 'pending').length}</span>
                 </div>
                 <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -168,9 +175,9 @@ export default function DashboardPage() {
                 </div>
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-2 group cursor-pointer">
                 <div className="flex justify-between items-center text-xs font-bold">
-                  <span className="text-slate-600">Pending Rekening</span>
+                  <span className="text-slate-600 group-hover:text-amber-600 transition-colors">Pending Rekening</span>
                   <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px]">{allData?.filter(d => d.status === 'bank_pending').length}</span>
                 </div>
                 <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -178,9 +185,9 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 group cursor-pointer">
                 <div className="flex justify-between items-center text-xs font-bold">
-                  <span className="text-slate-600">Selesai (Finish)</span>
+                  <span className="text-slate-600 group-hover:text-emerald-600 transition-colors">Selesai (Finish)</span>
                   <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px]">{allData?.filter(d => d.status === 'finish').length}</span>
                 </div>
                 <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -197,21 +204,21 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-primary/30 hover:bg-primary/5 active:scale-95 transition-all duration-200 cursor-pointer group">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Kuliner</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Kuliner</span>
                   <span className="text-xl font-black text-primary">{allData?.filter(d => d.businessCategory === "Kuliner").length}</span>
                 </div>
-                <div className="p-2 bg-white rounded-lg shadow-sm">
+                <div className="p-2 bg-white rounded-lg shadow-sm group-hover:bg-primary/10 transition-colors">
                   <TrendingUp className="w-4 h-4 text-emerald-500" />
                 </div>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-primary/30 hover:bg-primary/5 active:scale-95 transition-all duration-200 cursor-pointer group">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Bukan Kuliner</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Bukan Kuliner</span>
                   <span className="text-xl font-black text-slate-700">{allData?.filter(d => d.businessCategory === "Bukan Kuliner").length}</span>
                 </div>
-                <div className="p-2 bg-white rounded-lg shadow-sm">
+                <div className="p-2 bg-white rounded-lg shadow-sm group-hover:bg-primary/10 transition-colors">
                   <Building2 className="w-4 h-4 text-indigo-500" />
                 </div>
               </div>
