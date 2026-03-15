@@ -63,17 +63,12 @@
   }
   body {
     @apply text-foreground font-body antialiased;
-    background: linear-gradient(-45deg, #f1f5f9, #e2e8f0, #cbd5e1, #e7ecf0);
-    background-size: 400% 400%;
-    animation: gradient-bg 15s ease infinite;
+    background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
     min-height: 100vh;
   }
-}
-
-@keyframes gradient-bg {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }
 
 /* Elegant & Modern Scrollbar for Sidebar */
@@ -108,6 +103,7 @@
   }
   body {
     background: white !important;
+    background-image: none !important;
   }
   .print\:hidden {
     display: none !important;
