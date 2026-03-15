@@ -137,7 +137,7 @@ export function AppSidebar() {
       name: "Verifikasi Data", 
       href: "/verify-bank", 
       icon: CreditCard, 
-      show: !!user && !isMonitoring 
+      show: isAdmin 
     },
     { 
       name: "Finish", 

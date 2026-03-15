@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemoFirebase, useCollection, useUser, useFirestore, updateDocumentNonBlocking, useDoc, deleteDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, doc } from "firebase/firestore"
+import { collection, query, where, doc, limit } from "firebase/firestore"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -18,9 +18,17 @@ export default function VerifyBankPage() {
     if (!user || !firestore) return null
     return doc(firestore, 'roles_admin', user.uid)
   }, [user, firestore])
+  const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRef)
 
-  const { data: adminRole } = useDoc(adminRef)
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
+  const userProfileQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null
+    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
+  }, [user, firestore])
+  const { data: userProfiles } = useCollection(userProfileQuery)
+  const userProfile = userProfiles?.[0]
+
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const isMonitoring = userProfile?.role === 'monitoring'
 
   const memoQuery = useMemoFirebase(() => {
     if (!firestore) return null
@@ -30,10 +38,10 @@ export default function VerifyBankPage() {
   const { data: actors, isLoading } = useCollection<BusinessActor>(memoQuery)
 
   const handleFinalVerify = (actorId: string) => {
-    if (!isAdmin) return
+    if (!isAdmin || !firestore) return
     const actorRef = doc(firestore, 'businessActors', actorId)
     updateDocumentNonBlocking(actorRef, { status: 'finish' })
-    toast({ title: "Selesai", description: "Data telah diverifikasi penuh dan masuk tahap Finish." })
+    toast({ title: "Verifikasi Selesai", description: "Data telah diverifikasi penuh dan masuk tahap SELESAI." })
   }
 
   const handleRevert = (actorId: string, fullName: string) => {
@@ -46,7 +54,7 @@ export default function VerifyBankPage() {
   }
 
   const handleDelete = (actorId: string, fullName: string) => {
-    if (!isAdmin) return
+    if (!isAdmin || !firestore) return
     if (confirm(`Batalkan dan hapus data "${fullName}"? Data ini akan dihapus permanen dari sistem.`)) {
       const actorRef = doc(firestore, 'businessActors', actorId)
       deleteDocumentNonBlocking(actorRef)
@@ -54,14 +62,34 @@ export default function VerifyBankPage() {
     }
   }
 
+  if (isMonitoring) {
+    return (
+      <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center text-emerald-600">
+        <ShieldAlert className="w-16 h-16" />
+        <h1 className="text-2xl font-bold">Akses Terbatas</h1>
+        <p className="text-muted-foreground">Menu ini hanya untuk Administrator.</p>
+      </div>
+    )
+  }
+
+  if (!isAdmin && !isAdminLoading) {
+    return (
+      <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center text-destructive">
+        <ShieldAlert className="w-16 h-16" />
+        <h1 className="text-2xl font-bold">Akses Ditolak</h1>
+        <p className="text-muted-foreground font-medium">Anda tidak memiliki izin Administrator untuk mengakses menu Verifikasi Data.</p>
+      </div>
+    )
+  }
+
   return (
     <div className="p-8 space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold text-primary font-headline">Verifikasi Data (Rekening)</h1>
-        <p className="text-muted-foreground">Admin melakukan pengecekan nomor rekening sebelum dinyatakan selesai.</p>
+        <h1 className="text-3xl font-bold text-primary font-headline">Verifikasi Data (Final)</h1>
+        <p className="text-muted-foreground">Persetujuan akhir sebelum data dinyatakan SELESAI.</p>
       </div>
 
-      <Card className="border-none shadow-sm overflow-hidden">
+      <Card className="border-none shadow-sm overflow-hidden bg-card">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
@@ -69,48 +97,44 @@ export default function VerifyBankPage() {
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead>Nama Pelaku</TableHead>
-                  <TableHead>Bank</TableHead>
-                  <TableHead>Nomor Rekening</TableHead>
-                  <TableHead>Pemilik</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
+                  <TableHead className="font-bold">Nama Pelaku</TableHead>
+                  <TableHead className="font-bold">Bank</TableHead>
+                  <TableHead className="font-bold">Nomor Rekening</TableHead>
+                  <TableHead className="font-bold">Pemilik</TableHead>
+                  <TableHead className="text-right font-bold">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {actors?.map((actor) => (
                   <TableRow key={actor.id} className="hover:bg-muted/5">
-                    <TableCell className="font-medium text-slate-700">{actor.fullName}</TableCell>
+                    <TableCell className="font-bold text-slate-700 uppercase">{actor.fullName}</TableCell>
                     <TableCell>{actor.bankName}</TableCell>
                     <TableCell className="font-mono text-sm">{actor.bankNumber}</TableCell>
                     <TableCell className="uppercase text-xs font-bold">{actor.bankOwner}</TableCell>
                     <TableCell className="text-right">
-                      {isAdmin ? (
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleRevert(actor.id, actor.fullName)}
-                            className="border-amber-500 text-amber-600 hover:bg-amber-50"
-                          >
-                            <RotateCcw className="w-4 h-4 mr-2" /> BATAL
-                          </Button>
-                          <Button size="sm" onClick={() => handleFinalVerify(actor.id)} className="bg-primary hover:bg-primary/90">
-                            <CheckCircle className="w-4 h-4 mr-2" /> SESUAI
-                          </Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground italic bg-muted px-2 py-1 rounded">Menunggu Admin</span>
-                      )}
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleRevert(actor.id, actor.fullName)}
+                          className="border-amber-500 text-amber-600 hover:bg-amber-50 font-bold"
+                        >
+                          <RotateCcw className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">BATAL</span>
+                        </Button>
+                        <Button size="sm" onClick={() => handleFinalVerify(actor.id)} className="bg-primary hover:bg-primary/90 font-bold">
+                          <CheckCircle className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">SETUJU</span>
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)} className="font-bold h-9">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
                 {(!actors || actors.length === 0) && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-20 text-muted-foreground font-medium italic">
-                      Tidak ada data rekening yang menunggu verifikasi.
+                      Tidak ada data yang menunggu persetujuan final.
                     </TableCell>
                   </TableRow>
                 )}
