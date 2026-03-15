@@ -46,6 +46,17 @@ export default function CheckDataPage() {
     }
   }
 
+  const formatCurrency = (value: any) => {
+    if (!value) return "Rp 0";
+    const num = typeof value === "string" ? parseFloat(value.replace(/[^0-9.-]+/g, "")) : value;
+    if (isNaN(num)) return value;
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(num);
+  };
+
   return (
     <div className="p-8 max-w-[95rem] mx-auto space-y-8">
       <div className="text-center space-y-3">
@@ -139,7 +150,7 @@ export default function CheckDataPage() {
                     <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                     <AlertTitle className="text-xl font-black mb-1 uppercase">DATA DITEMUKAN</AlertTitle>
                     <AlertDescription className="font-medium">
-                      Ditemukan <strong>{results.length}</strong> record data. Klik nama untuk melihat detail lengkap.
+                      Ditemukan <strong>{results.length}</strong> record data. Klik kartu untuk melihat detail lengkap.
                     </AlertDescription>
                   </Alert>
 
@@ -155,7 +166,7 @@ export default function CheckDataPage() {
                             <User className="w-6 h-6" />
                           </div>
                           <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Nama Pelaku</span>
+                            <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">DATA PELAKU USAHA</span>
                             <span className="text-sm font-black text-slate-800 uppercase truncate">
                               {res.nama}
                             </span>
@@ -199,7 +210,7 @@ export default function CheckDataPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-none shadow-2xl rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
-              <UserSearch className="w-6 h-6" /> Detail Data Master
+              <UserSearch className="w-6 h-6" /> DATA PELAKU USAHA
             </DialogTitle>
             <DialogDescription className="font-bold text-muted-foreground">
               Informasi lengkap yang terdaftar dalam sistem database master.
@@ -215,7 +226,7 @@ export default function CheckDataPage() {
                   { label: "Usaha", value: selectedResult.usaha, icon: Database, full: true },
                   { label: "Kategori Status", value: selectedResult.status, icon: Info },
                   { label: "Status LPJ", value: selectedResult.statusLpj, icon: Info },
-                  { label: "Nominal", value: selectedResult.nominal, icon: SearchCheck },
+                  { label: "Nominal", value: formatCurrency(selectedResult.nominal), icon: SearchCheck },
                   { label: "Tahun Pengajuan", value: selectedResult.tahunPengajuan, icon: SearchCheck },
                   { label: "Kelurahan", value: selectedResult.kelurahan, icon: UserSearch },
                   { label: "Alamat", value: selectedResult.alamat, icon: UserSearch, full: true },
