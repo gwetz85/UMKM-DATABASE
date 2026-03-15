@@ -14,6 +14,7 @@ import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, 
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 function ActorDataContent() {
   const { user } = useUser()
@@ -151,100 +152,100 @@ function ActorDataContent() {
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                              <DialogHeader className={cn(!viewingActor && "sr-only")}>
+                                <DialogTitle className="text-2xl font-black text-primary uppercase">
+                                  {viewingActor ? "Detail Lengkap Pelaku Usaha" : "Memuat..."}
+                                </DialogTitle>
+                              </DialogHeader>
                               {viewingActor && (
-                                <>
-                                  <DialogHeader>
-                                    <DialogTitle className="text-2xl font-black text-primary uppercase">Detail Lengkap Pelaku Usaha</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="grid gap-6 py-4">
-                                    <section className="space-y-4">
-                                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
-                                        {[
-                                          { label: "Nama Lengkap", value: viewingActor.fullName },
-                                          { label: "NIK", value: viewingActor.nik },
-                                          { label: "Nomor KK", value: viewingActor.noKK },
-                                          { label: "Jenis Kelamin", value: viewingActor.gender },
-                                          { label: "Tempat/Tgl Lahir", value: viewingActor.pobDob },
-                                          { label: "Nomor HP", value: viewingActor.phone }
-                                        ].map((item, i) => (
-                                          <div key={i} className="space-y-1">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                            <p className="text-sm font-bold">{item.value || "-"}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </section>
-
-                                    <section className="space-y-4">
-                                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
-                                        {[
-                                          { label: "Kecamatan", value: viewingActor.kecamatan },
-                                          { label: "Kelurahan", value: viewingActor.kelurahan },
-                                          { label: "RT/RW", value: viewingActor.rtRw },
-                                          { label: "Alamat Lengkap", value: viewingActor.address, fullWidth: true }
-                                        ].map((item, i) => (
-                                          <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                            <p className="text-sm font-bold">{item.value || "-"}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </section>
-
-                                    <section className="space-y-4">
-                                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
-                                        {[
-                                          { label: "Nama Usaha", value: viewingActor.businessName },
-                                          { label: "Kategori Usaha", value: viewingActor.businessCategory },
-                                          { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                                          { label: "Koordinator Lapangan", value: viewingActor.coordinator }
-                                        ].map((item, i) => (
-                                          <div key={i} className="space-y-1">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                            <p className="text-sm font-bold">{item.value || "-"}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </section>
-
-                                    <section className="space-y-4">
-                                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan</div>
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
-                                        {[
-                                          { label: "Nama Bank", value: viewingActor.bankName },
-                                          { label: "Nomor Rekening", value: viewingActor.bankNumber },
-                                          { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner }
-                                        ].map((item, i) => (
-                                          <div key={i} className="space-y-1">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                            <p className="text-sm font-black text-primary">{item.value || "BELUM TERISI"}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </section>
-
-                                    <section className="space-y-4">
-                                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Informasi Sistem & Audit</div>
-                                      <div className="bg-slate-50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
-                                        <div className="space-y-1">
-                                          <p className="text-[9px] text-muted-foreground uppercase">Status Terakhir</p>
-                                          <p className="capitalize text-primary">{viewingActor.status.replace('_', ' ')}</p>
+                                <div className="grid gap-6 py-4">
+                                  <section className="space-y-4">
+                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
+                                      {[
+                                        { label: "Nama Lengkap", value: viewingActor.fullName },
+                                        { label: "NIK", value: viewingActor.nik },
+                                        { label: "Nomor KK", value: viewingActor.noKK },
+                                        { label: "Jenis Kelamin", value: viewingActor.gender },
+                                        { label: "Tempat/Tgl Lahir", value: viewingActor.pobDob },
+                                        { label: "Nomor HP", value: viewingActor.phone }
+                                      ].map((item, i) => (
+                                        <div key={i} className="space-y-1">
+                                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                          <p className="text-sm font-bold">{item.value || "-"}</p>
                                         </div>
-                                        <div className="space-y-1">
-                                          <p className="text-[9px] text-muted-foreground uppercase">Petugas Input</p>
-                                          <p>{viewingActor.createdBy || "System"}</p>
+                                      ))}
+                                    </div>
+                                  </section>
+
+                                  <section className="space-y-4">
+                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
+                                      {[
+                                        { label: "Kecamatan", value: viewingActor.kecamatan },
+                                        { label: "Kelurahan", value: viewingActor.kelurahan },
+                                        { label: "RT/RW", value: viewingActor.rtRw },
+                                        { label: "Alamat Lengkap", value: viewingActor.address, fullWidth: true }
+                                      ].map((item, i) => (
+                                        <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
+                                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                          <p className="text-sm font-bold">{item.value || "-"}</p>
                                         </div>
-                                        <div className="space-y-1">
-                                          <p className="text-[9px] text-muted-foreground uppercase">Waktu Pendaftaran</p>
-                                          <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
+                                      ))}
+                                    </div>
+                                  </section>
+
+                                  <section className="space-y-4">
+                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
+                                      {[
+                                        { label: "Nama Usaha", value: viewingActor.businessName },
+                                        { label: "Kategori Usaha", value: viewingActor.businessCategory },
+                                        { label: "Lokasi Usaha", value: viewingActor.businessLocation },
+                                        { label: "Koordinator Lapangan", value: viewingActor.coordinator }
+                                      ].map((item, i) => (
+                                        <div key={i} className="space-y-1">
+                                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                          <p className="text-sm font-bold">{item.value || "-"}</p>
                                         </div>
+                                      ))}
+                                    </div>
+                                  </section>
+
+                                  <section className="space-y-4">
+                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
+                                      {[
+                                        { label: "Nama Bank", value: viewingActor.bankName },
+                                        { label: "Nomor Rekening", value: viewingActor.bankNumber },
+                                        { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner }
+                                      ].map((item, i) => (
+                                        <div key={i} className="space-y-1">
+                                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                          <p className="text-sm font-black text-primary">{item.value || "BELUM TERISI"}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </section>
+
+                                  <section className="space-y-4">
+                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Informasi Sistem & Audit</div>
+                                    <div className="bg-slate-50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
+                                      <div className="space-y-1">
+                                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Terakhir</p>
+                                        <p className="capitalize text-primary">{viewingActor.status.replace('_', ' ')}</p>
                                       </div>
-                                    </section>
-                                  </div>
-                                </>
+                                      <div className="space-y-1">
+                                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Input</p>
+                                        <p>{viewingActor.createdBy || "System"}</p>
+                                      </div>
+                                      <div className="space-y-1">
+                                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Waktu Pendaftaran</p>
+                                        <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
+                                      </div>
+                                    </div>
+                                  </section>
+                                </div>
                               )}
                             </DialogContent>
                           </Dialog>
