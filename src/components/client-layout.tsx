@@ -3,8 +3,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/app-sidebar';
-import { Building2 } from 'lucide-react';
+import { AppSidebar, UmkmLogo } from '@/components/app-sidebar';
 import { AboutDialog } from '@/components/about-dialog';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
@@ -27,7 +26,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-3">
               <AboutDialog variant="ghost" className="text-white hover:bg-white/10 border-white/10" />
               <div className="bg-accent/20 p-1.5 rounded-lg">
-                <Building2 className="w-4 h-4 text-accent" />
+                <UmkmLogo className="w-4 h-4 text-accent" />
               </div>
             </div>
           </header>

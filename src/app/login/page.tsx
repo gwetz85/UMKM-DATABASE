@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { 
-  Building2, 
   Lock, 
   Mail, 
   Loader2, 
@@ -31,6 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { UmkmLogo } from "@/components/app-sidebar"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -59,12 +59,10 @@ export default function LoginPage() {
     try {
       let user;
 
-      // 1. Cek apakah ini login normal (Akun sudah ada di Auth)
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password)
         user = userCredential.user
 
-        // 2. VALIDASI LOCK UID (1 User 1 Perangkat)
         const userRef = doc(firestore, 'system_users', username)
         const userSnap = await getDoc(userRef)
 
@@ -99,7 +97,6 @@ export default function LoginPage() {
         
         toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
       } catch (loginError: any) {
-        // 3. Provisioning Alur
         if (loginError.code === 'auth/user-not-found' || loginError.code === 'auth/invalid-credential' || loginError.code === 'auth/invalid-email') {
           const tempUserRef = doc(firestore, 'system_users', username)
           const tempUserSnap = await getDoc(tempUserRef)
@@ -229,7 +226,7 @@ export default function LoginPage() {
         <CardHeader className="space-y-1 text-center pt-8">
           <div className="flex justify-center mb-6">
             <div className="bg-primary p-4 rounded-2xl shadow-xl shadow-primary/20 rotate-3 hover:rotate-0 transition-transform duration-300">
-              <Building2 className="w-10 h-10 text-white" />
+              <UmkmLogo className="w-10 h-10 text-white" />
             </div>
           </div>
           <CardTitle className="text-3xl font-black tracking-tighter text-primary">UMKM DATABASE</CardTitle>

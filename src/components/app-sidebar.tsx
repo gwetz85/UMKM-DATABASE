@@ -9,7 +9,6 @@ import {
   CreditCard,
   CheckCircle2,
   LogOut,
-  Building2,
   UserCog,
   Copy,
   Check,
@@ -42,6 +41,25 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "./ui/button"
 
+// Custom UMKM Logo SVG
+export const UmkmLogo = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M3 21h18" />
+    <path d="M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7H3l2-4h14l2 4" />
+    <path d="M5 21V10.85" />
+    <path d="M19 21V10.85" />
+    <path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4" />
+  </svg>
+)
+
 export function AppSidebar() {
   const pathname = usePathname()
   const router = useRouter()
@@ -60,7 +78,6 @@ export function AppSidebar() {
     const updateTime = () => {
       const now = new Date()
       
-      // Format Jam: 14:44:45
       const time = now.toLocaleTimeString('id-ID', { 
         hour: '2-digit', 
         minute: '2-digit', 
@@ -68,7 +85,6 @@ export function AppSidebar() {
         hour12: false 
       })
       
-      // Format Tanggal: Sabtu, 14 Maret 2026
       const date = now.toLocaleDateString('id-ID', { 
         weekday: 'long', 
         day: 'numeric', 
@@ -197,7 +213,7 @@ export function AppSidebar() {
       <SidebarHeader className="py-4 flex flex-col items-center justify-center border-b border-white/10 sticky top-0 bg-sidebar z-20">
         <div className="flex flex-col items-center gap-2 w-full mb-4">
           <div className="bg-white/20 rounded-xl p-2 shadow-lg flex items-center justify-center transition-transform duration-300 hover:scale-105">
-            <Building2 className="w-6 h-6 text-white" />
+            <UmkmLogo className="w-6 h-6 text-white" />
           </div>
           <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden">
             <span className="font-black text-lg tracking-tight text-white leading-none">
