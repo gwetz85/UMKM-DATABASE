@@ -40,12 +40,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           <main className="flex-1 overflow-auto bg-transparent print:bg-white">
             {/* Desktop Top Bar - Hidden on Login */}
             {!isLoginPage && (
-              <div className="hidden md:flex p-4 items-center justify-between print:hidden">
+              <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-0 bg-white/40 backdrop-blur-md z-10 border-b border-white/20">
                 <SidebarTrigger className="text-primary hover:bg-primary/10" />
                 <AboutDialog className="border-primary/20 text-primary hover:bg-primary/5" />
               </div>
             )}
-            <div className="w-full">
+            <div className="w-full relative z-0">
               {children}
             </div>
           </main>
