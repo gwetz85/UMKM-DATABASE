@@ -66,6 +66,31 @@
   }
 }
 
+/* Elegant & Modern Scrollbar for Sidebar */
+[data-sidebar="sidebar"] *::-webkit-scrollbar {
+  width: 5px;
+}
+
+[data-sidebar="sidebar"] *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-sidebar="sidebar"] *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+[data-sidebar="sidebar"] *::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* For Firefox */
+[data-sidebar="sidebar"] * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
 @media print {
   @page {
     margin: 1cm;
@@ -77,4 +102,14 @@
   .print\:hidden {
     display: none !important;
   }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  animation: marquee 30s linear infinite;
 }
