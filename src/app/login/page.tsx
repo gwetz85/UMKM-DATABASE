@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -224,8 +223,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4">
-      <Card className="w-full max-w-md border-none shadow-2xl overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <Card className="w-full max-w-md border-none shadow-2xl overflow-hidden bg-white/95 backdrop-blur-sm">
         <div className="h-2 bg-primary w-full" />
         <CardHeader className="space-y-1 text-center pt-8">
           <div className="flex justify-center mb-6">
