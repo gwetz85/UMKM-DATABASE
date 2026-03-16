@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -17,7 +18,8 @@ import {
   SearchCheck,
   Clock,
   LogIn,
-  Eye
+  Eye,
+  Ban
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -147,6 +149,12 @@ export function AppSidebar() {
       name: "Data Pelaku", 
       href: "/actor-data", 
       icon: Users, 
+      show: !!user 
+    },
+    { 
+      name: "Ditolak / Cancell", 
+      href: "/rejected", 
+      icon: Ban, 
       show: !!user 
     },
     { 

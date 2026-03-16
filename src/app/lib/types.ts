@@ -1,5 +1,5 @@
 
-export type BusinessActorStatus = 'pending' | 'verified_actor' | 'bank_pending' | 'finish';
+export type BusinessActorStatus = 'pending' | 'verified_actor' | 'bank_pending' | 'finish' | 'rejected';
 
 export interface BusinessActor {
   id: string;
@@ -25,6 +25,7 @@ export interface BusinessActor {
   nibUri?: string;
   photoUsahaUri?: string;
   status: BusinessActorStatus;
+  rejectionReason?: string;
   createdAt: string;
   ownerId: string;
   createdBy?: string; // Nama user yang menginput data

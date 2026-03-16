@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Building2, MapPin, History, Edit } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Building2, MapPin, History, Edit, XCircle } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 
@@ -23,6 +24,7 @@ export default function VerifyActorPage() {
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
   const [editingOnlyActor, setEditingOnlyActor] = useState<BusinessActor | null>(null)
+  const [rejectingActor, setRejectingActor] = useState<BusinessActor | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
   
   const [editKelurahan, setEditKelurahan] = useState<string>("")
@@ -138,6 +140,23 @@ export default function VerifyActorPage() {
     setIsVerifying(false)
   }
 
+  const handleReject = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!rejectingActor || !firestore || !isAdmin) return
+
+    const formData = new FormData(e.currentTarget)
+    const reason = formData.get("rejectionReason") as string
+    const actorRef = doc(firestore, 'businessActors', rejectingActor.id)
+    
+    updateDocumentNonBlocking(actorRef, {
+      status: 'rejected',
+      rejectionReason: reason || "Tanpa keterangan"
+    })
+    
+    toast({ variant: "destructive", title: "Data Ditolak", description: "Data telah dipindahkan ke menu Ditolak / Cancell." })
+    setRejectingActor(null)
+  }
+
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin) return
     if (confirm(`Hapus data pending milik "${fullName}"?`)) {
@@ -210,6 +229,7 @@ export default function VerifyActorPage() {
                                   <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
                                     <FileText className="w-6 h-6" /> Detail Pelaku Usaha
                                   </DialogTitle>
+                                  <DialogDescription className="sr-only">Rincian data pendaftaran pelaku usaha.</DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-6 py-4">
                                   <section className="space-y-4">
@@ -301,6 +321,7 @@ export default function VerifyActorPage() {
                                   <DialogTitle className="text-2xl font-black text-amber-600 uppercase flex items-center gap-2">
                                     <Edit className="w-6 h-6" /> Edit Data Pelaku (Tanpa Verifikasi)
                                   </DialogTitle>
+                                  <DialogDescription className="sr-only">Formulir pengeditan data pendaftaran pelaku usaha.</DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-6 py-6">
                                   <div className="grid gap-4 md:grid-cols-2">
@@ -409,6 +430,7 @@ export default function VerifyActorPage() {
                                   <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
                                     <ShieldAlert className="w-6 h-6" /> Verifikasi Admin
                                   </DialogTitle>
+                                  <DialogDescription className="sr-only">Formulir verifikasi dan finalisasi data pelaku usaha.</DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-6 py-6">
                                   <div className="grid gap-4 md:grid-cols-2">
@@ -503,6 +525,36 @@ export default function VerifyActorPage() {
                             )}
                           </DialogContent>
                         </Dialog>
+
+                        <Dialog open={!!rejectingActor && rejectingActor.id === actor.id} onOpenChange={(open) => !open && setRejectingActor(null)}>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" onClick={() => setRejectingActor(actor)} className="h-9 border-red-500 text-red-600 font-bold hover:bg-red-50">
+                              <XCircle className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">DITOLAK</span>
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <form onSubmit={handleReject}>
+                              <DialogHeader>
+                                <DialogTitle className="text-xl font-black text-red-600 uppercase">Konfirmasi Penolakan</DialogTitle>
+                                <DialogDescription>Berikan keterangan atau sebab mengapa data ini ditolak.</DialogDescription>
+                              </DialogHeader>
+                              <div className="py-4 space-y-4">
+                                <div className="p-3 bg-red-50 border border-red-100 rounded-xl">
+                                  <p className="text-[10px] font-bold text-red-600 uppercase mb-1">Nama Pelaku</p>
+                                  <p className="text-sm font-bold text-slate-800">{actor.fullName}</p>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label className="font-bold">Keterangan / Sebab Ditolak</Label>
+                                  <Textarea name="rejectionReason" placeholder="Contoh: Berkas tidak jelas, NIK tidak sesuai, dll..." className="min-h-[100px]" required />
+                                </div>
+                              </div>
+                              <DialogFooter>
+                                <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 font-bold">SIMPAN PENOLAKAN</Button>
+                              </DialogFooter>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+
                         <Button size="sm" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)} className="font-bold h-9"><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </TableCell>
