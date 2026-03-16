@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Building2, MapPin, History } from "lucide-react"
+import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Building2, MapPin, History, Edit } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 
@@ -22,6 +22,7 @@ export default function VerifyActorPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
+  const [editingOnlyActor, setEditingOnlyActor] = useState<BusinessActor | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
   
   const [editKelurahan, setEditKelurahan] = useState<string>("")
@@ -109,6 +110,34 @@ export default function VerifyActorPage() {
     setIsVerifying(false)
   }
 
+  const handleSaveOnly = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!editingOnlyActor || !firestore || !isAdmin) return
+    
+    setIsVerifying(true)
+    const formData = new FormData(e.currentTarget)
+    const actorRef = doc(firestore, 'businessActors', editingOnlyActor.id)
+    updateDocumentNonBlocking(actorRef, {
+      fullName: formData.get("fullName"),
+      nik: formData.get("nik"),
+      noKK: formData.get("noKK"),
+      gender: formData.get("gender"),
+      pobDob: formData.get("pobDob"),
+      phone: formData.get("phone"),
+      address: formData.get("address"),
+      rtRw: formData.get("rtRw"),
+      kelurahan: editKelurahan,
+      kecamatan: editKecamatan,
+      businessCategory: formData.get("businessCategory"),
+      businessName: formData.get("businessName"),
+      businessLocation: formData.get("businessLocation"),
+      coordinator: formData.get("coordinator")
+    })
+    toast({ title: "Data diperbarui", description: "Perubahan data berhasil disimpan (Status tetap Pending)." })
+    setEditingOnlyActor(null)
+    setIsVerifying(false)
+  }
+
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin) return
     if (confirm(`Hapus data pending milik "${fullName}"?`)) {
@@ -117,8 +146,10 @@ export default function VerifyActorPage() {
     }
   }
 
-  const openEditDialog = (actor: BusinessActor) => {
-    setEditingActor(actor)
+  const openEditDialog = (actor: BusinessActor, type: 'verify' | 'edit') => {
+    if (type === 'verify') setEditingActor(actor)
+    else setEditingOnlyActor(actor)
+    
     setEditKelurahan(actor.kelurahan || "")
     setEditKecamatan(actor.kecamatan || "")
   }
@@ -257,9 +288,117 @@ export default function VerifyActorPage() {
                           </DialogContent>
                         </Dialog>
 
+                        <Dialog open={!!editingOnlyActor && editingOnlyActor.id === actor.id} onOpenChange={(open) => !open && setEditingOnlyActor(null)}>
+                          <DialogTrigger asChild>
+                            <Button size="sm" variant="outline" onClick={() => openEditDialog(actor, 'edit')} className="h-9 border-amber-500 text-amber-600 font-bold">
+                              <Edit className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">EDIT</span>
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                            {editingOnlyActor && (
+                              <form onSubmit={handleSaveOnly}>
+                                <DialogHeader>
+                                  <DialogTitle className="text-2xl font-black text-amber-600 uppercase flex items-center gap-2">
+                                    <Edit className="w-6 h-6" /> Edit Data Pelaku (Tanpa Verifikasi)
+                                  </DialogTitle>
+                                </DialogHeader>
+                                <div className="grid gap-6 py-6">
+                                  <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">Nama Lengkap</Label>
+                                      <Input name="fullName" defaultValue={editingOnlyActor.fullName} required />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">NIK (16 Digit)</Label>
+                                      <Input name="nik" defaultValue={editingOnlyActor.nik} maxLength={16} required />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">No. KK (16 Digit)</Label>
+                                      <Input name="noKK" defaultValue={editingOnlyActor.noKK} maxLength={16} required />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">Jenis Kelamin</Label>
+                                      <Select name="gender" defaultValue={editingOnlyActor.gender}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Laki-laki">Laki-laki</SelectItem>
+                                          <SelectItem value="Perempuan">Perempuan</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">Tempat/Tgl Lahir</Label>
+                                      <Input name="pobDob" defaultValue={editingOnlyActor.pobDob} required />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">No. HP</Label>
+                                      <Input name="phone" defaultValue={editingOnlyActor.phone} required />
+                                    </div>
+                                  </div>
+
+                                  <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">Kelurahan</Label>
+                                      <Select value={editKelurahan} onValueChange={setEditKelurahan}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent className="max-h-[200px]">
+                                          {kelurahanList.map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold text-muted-foreground">Kecamatan (Otomatis)</Label>
+                                      <Input value={editKecamatan} readOnly className="bg-muted" />
+                                    </div>
+                                    <div className="space-y-2 md:col-span-2">
+                                      <Label className="font-bold">Alamat Lengkap</Label>
+                                      <Input name="address" defaultValue={editingOnlyActor.address} required />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">RT / RW</Label>
+                                      <Input name="rtRw" defaultValue={editingOnlyActor.rtRw} required />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">Koordinator</Label>
+                                      <Input name="coordinator" defaultValue={editingOnlyActor.coordinator} required />
+                                    </div>
+                                  </div>
+
+                                  <div className="grid gap-4 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">Jenis Usaha</Label>
+                                      <Select name="businessCategory" defaultValue={editingOnlyActor.businessCategory}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Kuliner">Kuliner</SelectItem>
+                                          <SelectItem value="Bukan Kuliner">Bukan Kuliner</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold">Nama Usaha</Label>
+                                      <Input name="businessName" defaultValue={editingOnlyActor.businessName} required />
+                                    </div>
+                                    <div className="space-y-2 md:col-span-2">
+                                      <Label className="font-bold">Lokasi Usaha</Label>
+                                      <Input name="businessLocation" defaultValue={editingOnlyActor.businessLocation} required />
+                                    </div>
+                                  </div>
+                                </div>
+                                <DialogFooter className="gap-2">
+                                  <Button type="button" variant="outline" onClick={() => setEditingOnlyActor(null)}>Batal</Button>
+                                  <Button type="submit" disabled={isVerifying} className="bg-amber-600 hover:bg-amber-700 text-white font-bold min-w-[150px]">
+                                    {isVerifying ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Edit className="w-4 h-4 mr-2" />} SIMPAN PERUBAHAN
+                                  </Button>
+                                </DialogFooter>
+                              </form>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+
                         <Dialog open={!!editingActor && editingActor.id === actor.id} onOpenChange={(open) => !open && setEditingActor(null)}>
                           <DialogTrigger asChild>
-                            <Button size="sm" variant="secondary" onClick={() => openEditDialog(actor)} className="h-9 font-bold">
+                            <Button size="sm" variant="secondary" onClick={() => openEditDialog(actor, 'verify')} className="h-9 font-bold">
                               <Check className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">VERIFIKASI</span>
                             </Button>
                           </DialogTrigger>
