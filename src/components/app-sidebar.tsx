@@ -206,9 +206,9 @@ export function AppSidebar() {
 
   if (!mounted) {
     return (
-      <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-sidebar">
+      <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-gradient-to-b from-primary to-blue-900">
         <SidebarHeader className="py-6 flex flex-col items-center justify-center border-b border-white/5">
-          <div className="bg-accent rounded-xl p-2 w-10 h-10" />
+          <div className="bg-accent rounded-xl p-2 w-10 h-10 shadow-inner" />
         </SidebarHeader>
         <SidebarContent />
         <SidebarFooter className="p-4 bg-black/10 mt-auto" />
@@ -217,8 +217,8 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-sidebar text-white">
-      <SidebarHeader className="py-4 flex flex-col items-center justify-center border-b border-white/10 sticky top-0 bg-sidebar z-20">
+    <Sidebar collapsible="icon" className="border-r-0 shadow-[4px_0_24px_rgba(0,0,0,0.1)] bg-gradient-to-b from-primary to-blue-900 text-white">
+      <SidebarHeader className="py-4 flex flex-col items-center justify-center border-b border-white/10 sticky top-0 bg-transparent backdrop-blur-md z-20">
         <div className="flex flex-col items-center gap-2 w-full mb-4">
           <div className="bg-white/20 rounded-xl p-2 shadow-lg flex items-center justify-center transition-transform duration-300 hover:scale-105">
             <UmkmLogo className="w-6 h-6 text-white" />

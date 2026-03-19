@@ -4,33 +4,33 @@
 
 @layer base {
   :root {
-    --background: 204 25% 93%; /* #E7ECF0 */
-    --foreground: 210 40% 15%;
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 210 40% 15%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 210 40% 15%;
-    --primary: 212 68% 42%; /* #2266B3 */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 20% 90%;
-    --secondary-foreground: 212 68% 42%;
-    --muted: 210 20% 90%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 151 81% 50%; /* #19E783 */
-    --accent-foreground: 210 40% 10%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 212 68% 42%;
-    --radius: 0.75rem;
-    --sidebar-background: 212 68% 42%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 151 81% 50%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221 83% 53%;
+    --radius: 1rem;
+    --sidebar-background: 221 83% 53%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 212 68% 42%;
+    --sidebar-primary-foreground: 221 83% 53%;
     --sidebar-accent: 151 81% 50%;
     --sidebar-accent-foreground: 210 40% 10%;
-    --sidebar-border: 212 60% 35%;
+    --sidebar-border: 221 60% 45%;
     --sidebar-ring: 151 81% 50%;
   }
 
@@ -63,12 +63,34 @@
   }
   body {
     @apply text-foreground font-body antialiased;
-    /* Gambar latar belakang abstrak biru dan kuning dengan overlay putih untuk keterbacaan teks */
-    background-image: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url('https://images.unsplash.com/photo-1528460033278-a6ba57020470?q=80&w=2070&auto=format&fit=crop');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background: linear-gradient(-45deg, #f8fafc, #f1f5f9, #e0f2fe, #f0fdf4);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
     min-height: 100vh;
+  }
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+  }
+  
+  .glass-dark {
+    @apply bg-slate-900/70 backdrop-blur-xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)];
+  }
+
+  .glass-panel {
+    @apply bg-white/85 backdrop-blur-lg border border-white/60 shadow-sm;
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-emerald-500;
   }
 }
 
