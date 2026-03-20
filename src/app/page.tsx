@@ -4,7 +4,7 @@
 import { useMemoFirebase, useCollection, useUser, useFirestore } from "@/firebase"
 import { collection, query, orderBy } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, UserCheck, Activity, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap } from "lucide-react"
+import { Users, UserCheck, UserX, Activity, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo } from "react"
 import { BusinessActor } from "./lib/types"
@@ -103,6 +103,13 @@ export default function DashboardPage() {
       color: "text-emerald-600", 
       bg: "bg-emerald-100/50" 
     },
+    { 
+      name: "Data Ditolak", 
+      value: allData?.filter(d => d.status === "rejected").length || 0, 
+      icon: UserX, 
+      color: "text-red-600", 
+      bg: "bg-red-100/50" 
+    },
   ]
 
   return (
@@ -124,7 +131,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         {stats.map((stat) => (
           <Card 
             key={stat.name} 
@@ -248,6 +255,16 @@ export default function DashboardPage() {
                 </div>
                 <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                   <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'finish').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
+                </div>
+              </div>
+
+              <div className="space-y-2 group cursor-pointer">
+                <div className="flex justify-between items-center text-xs font-bold">
+                  <span className="text-slate-600 group-hover:text-red-600 transition-colors">Ditolak / Batal</span>
+                  <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px]">{allData?.filter(d => d.status === 'rejected').length}</span>
+                </div>
+                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div className="bg-red-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'rejected').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
                 </div>
               </div>
             </CardContent>
