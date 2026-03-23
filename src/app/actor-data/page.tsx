@@ -50,7 +50,7 @@ function ActorDataContent() {
 
   const memoQuery = useMemoFirebase(() => {
     if (!firestore) return null
-    let q = query(collection(firestore, 'businessActors'), where('status', 'in', ['verified_actor', 'bank_pending', 'finish']))
+    let q = query(collection(firestore, 'businessActors'), where('status', '==', 'verified_actor'))
     if (filterCoordinator) q = query(q, where('coordinator', '==', filterCoordinator))
     return q
   }, [firestore, filterCoordinator])

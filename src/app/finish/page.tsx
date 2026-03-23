@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Eye, Loader2, BadgeCheck, Printer, History, RotateCcw, User, Building2, MapPin, CreditCard } from "lucide-react"
+import { Eye, Loader2, BadgeCheck, Printer, History, RotateCcw, User, Building2, MapPin, CreditCard, FileText } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
@@ -181,6 +181,24 @@ export default function FinishPage() {
                                     <div>
                                       <p className="text-[10px] font-bold text-muted-foreground uppercase">Nama Pemilik</p>
                                       <p className="font-black text-primary uppercase">{actor.bankOwner}</p>
+                                    </div>
+                                  </div>
+                                </section>
+
+                                <section className="space-y-4">
+                                  <div className="flex items-center gap-2 text-emerald-600 font-black text-sm uppercase border-b pb-1">
+                                    <FileText className="w-4 h-4" /> Laporan Pertanggung Jawaban (LPJ)
+                                  </div>
+                                  <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                                    <div>
+                                        <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest mb-1">Nominal Terlaporkan</p>
+                                        <p className="text-3xl font-black text-emerald-600 font-mono">
+                                            RP {actor.lpjNominal?.toLocaleString('id-ID') || "0"}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] font-bold text-emerald-800 uppercase">Status Verifikasi LPJ</p>
+                                        <Badge className="bg-emerald-600 font-black uppercase text-[10px] mt-1 px-4 py-1">TELAH TERVERIFIKASI</Badge>
                                     </div>
                                   </div>
                                 </section>

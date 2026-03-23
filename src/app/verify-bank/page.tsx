@@ -40,8 +40,11 @@ export default function VerifyBankPage() {
   const handleFinalVerify = (actorId: string) => {
     if (!isAdmin || !firestore) return
     const actorRef = doc(firestore, 'businessActors', actorId)
-    updateDocumentNonBlocking(actorRef, { status: 'finish' })
-    toast({ title: "Verifikasi Selesai", description: "Data telah diverifikasi penuh dan masuk tahap SELESAI." })
+    updateDocumentNonBlocking(actorRef, { 
+      status: 'lpj_pending',
+      lpjEntryDate: new Date().toISOString()
+    })
+    toast({ title: "Verifikasi Berhasil", description: "Data telah lolos verifikasi final dan masuk tahap LPJ." })
   }
 
   const handleRevert = (actorId: string, fullName: string) => {

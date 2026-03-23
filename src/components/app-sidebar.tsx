@@ -21,7 +21,8 @@ import {
   Eye,
   Ban,
   MessageSquare,
-  History
+  History,
+  FileText
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -164,6 +165,12 @@ export function AppSidebar() {
       href: "/verify-bank", 
       icon: CreditCard, 
       show: isAdmin 
+    },
+    { 
+      name: "LPJ", 
+      href: "/lpj", 
+      icon: FileText, 
+      show: isAdmin || userProfile?.role === 'petugas' 
     },
     { 
       name: "Finish", 
