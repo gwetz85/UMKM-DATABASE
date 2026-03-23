@@ -36,15 +36,12 @@ const formatTime = (timestamp: any) => {
   }
 }
 
-const formatTimeFull = (timestamp: any) => {
-  if (!timestamp) return ""
-  try {
-    const date = timestamp instanceof Timestamp ? timestamp.toDate() : new Date(timestamp)
-    return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + " " + 
-           date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-  } catch (e) {
-    return ""
-  }
+const getTimeValue = (val: any) => {
+  if (!val) return 0;
+  if (val instanceof Timestamp) return val.toMillis();
+  if (val.seconds) return val.seconds * 1000;
+  const d = new Date(val).getTime();
+  return isNaN(d) ? 0 : d;
 }
 
 function PesanContent() {
@@ -59,7 +56,13 @@ function PesanContent() {
   const [messageText, setMessageText] = useState("")
   const [userSearchText, setUserSearchText] = useState("")
   const [isMobileListOpen, setIsMobileListOpen] = useState(true)
+  const [isMounted, setIsMounted] = useState(false)
+  
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   // --- DATA FETCHING ---
 
@@ -72,7 +75,7 @@ function PesanContent() {
 
   // 2. My Conversations
   const myConversationsQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null
+    if (!firestore || !user?.uid) return null
     // We can't use 'orderBy' without an index, so we'll sort on client side
     return query(
       collection(firestore, 'conversations'), 
@@ -96,40 +99,38 @@ function PesanContent() {
 
   // Client-side sort conversations by updatedAt
   const conversations = useMemo(() => {
-    if (!rawConversations) return []
+    if (!rawConversations || !Array.isArray(rawConversations)) return []
     return [...rawConversations].sort((a, b) => {
-      const timeA = a.updatedAt instanceof Timestamp ? a.updatedAt.toMillis() : new Date(a.updatedAt).getTime()
-      const timeB = b.updatedAt instanceof Timestamp ? b.updatedAt.toMillis() : new Date(b.updatedAt).getTime()
-      return (timeB || 0) - (timeA || 0)
+      return getTimeValue(b.updatedAt) - getTimeValue(a.updatedAt)
     })
   }, [rawConversations])
 
   // Client-side sort messages by createdAt
   const activeMessages = useMemo(() => {
-    if (!rawMessages) return []
+    if (!rawMessages || !Array.isArray(rawMessages)) return []
     return [...rawMessages].sort((a, b) => {
-      const timeA = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : new Date(a.createdAt).getTime()
-      const timeB = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : new Date(b.createdAt).getTime()
-      return (timeA || 0) - (timeB || 0)
+      return getTimeValue(a.createdAt) - getTimeValue(b.createdAt)
     })
   }, [rawMessages])
 
   const filteredUsers = useMemo(() => {
-    if (!allUsers || !user) return []
-    return allUsers.filter((u: any) => 
-      u.uid !== user.uid && 
-      (u.fullName || "User").toLowerCase().includes(userSearchText.toLowerCase())
-    )
+    if (!allUsers || !Array.isArray(allUsers) || !user?.uid) return []
+    return allUsers.filter((u: any) => {
+      if (!u) return false;
+      const uid = u.id || u.uid;
+      return uid !== user.uid && 
+        (u.fullName || "User").toLowerCase().includes(userSearchText.toLowerCase())
+    })
   }, [allUsers, user, userSearchText])
 
   const activeChat = useMemo(() => 
-    conversations.find(c => c.id === activeChatId), 
+    conversations.find(c => c && c.id === activeChatId), 
   [conversations, activeChatId])
 
   const otherParticipantName = useMemo(() => {
-    if (!activeChat || !user) return "Percakapan"
+    if (!activeChat || !user?.uid) return "Percakapan"
     const otherId = activeChat.participants?.find((p: string) => p !== user.uid)
-    return activeChat.participantNames?.[otherId] || "User"
+    return activeChat.participantNames?.[otherId || ""] || "User"
   }, [activeChat, user])
 
   // --- ACTIONS ---
@@ -143,17 +144,17 @@ function PesanContent() {
 
   // Handle direct 'to' parameter
   useEffect(() => {
-    if (targetUserId && allUsers && user) {
+    if (targetUserId && allUsers && user?.uid) {
         startChat(targetUserId)
     }
   }, [targetUserId, allUsers, user])
 
   const startChat = async (otherUserId: string) => {
-    if (!user || !firestore) return
+    if (!user?.uid || !firestore) return
     
     // Check if conversation already exists
     const existingChat = conversations.find(c => 
-        c.participants.includes(user.uid) && c.participants.includes(otherUserId)
+        c && c.participants?.includes(user.uid) && c.participants?.includes(otherUserId)
     )
 
     if (existingChat) {
@@ -164,7 +165,7 @@ function PesanContent() {
     }
 
     // Create new conversation
-    const otherUser = allUsers?.find((u: any) => u.uid === otherUserId)
+    const otherUser = allUsers?.find((u: any) => (u.id || u.uid) === otherUserId)
     const chatData = {
         participants: [user.uid, otherUserId],
         participantNames: {
@@ -187,7 +188,7 @@ function PesanContent() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!messageText.trim() || !activeChatId || !user || !firestore) return
+    if (!messageText.trim() || !activeChatId || !user?.uid || !firestore) return
 
     const text = messageText.trim()
     setMessageText("")
@@ -202,10 +203,12 @@ function PesanContent() {
         })
 
         // Update conversation summary
-        updateDocumentNonBlocking(doc(firestore, 'conversations', activeChatId), {
-            lastMessage: text,
-            updatedAt: serverTimestamp()
-        })
+        if (activeChatId) {
+            updateDocumentNonBlocking(doc(firestore, 'conversations', activeChatId), {
+                lastMessage: text,
+                updatedAt: serverTimestamp()
+            })
+        }
     } catch (e) {
         toast({ variant: "destructive", title: "Gagal mengirim pesan" })
     }
@@ -241,24 +244,27 @@ function PesanContent() {
                     {userSearchText && (
                         <div className="space-y-1">
                             <p className="px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Temukan Pengguna</p>
-                            {filteredUsers.length > 0 ? filteredUsers.map((u: any) => (
+                            {filteredUsers.length > 0 ? filteredUsers.map((u: any) => {
+                                const uid = u.id || u.uid;
+                                const name = u.fullName || "User";
+                                return (
                                 <button 
-                                    key={u.uid}
-                                    onClick={() => startChat(u.uid)}
+                                    key={uid || Math.random().toString()}
+                                    onClick={() => uid && startChat(uid)}
                                     className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-primary/5 transition-all text-left group"
                                 >
                                     <Avatar className="w-10 h-10 border-2 border-white shadow-sm group-hover:scale-110 transition-transform">
                                         <AvatarFallback className="bg-primary/10 text-primary text-xs font-black">
-                                            {(u.fullName || "U")[0]}
+                                            {name[0] || "U"}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-black text-slate-700 uppercase truncate">{u.fullName || "User"}</p>
+                                        <p className="text-xs font-black text-slate-700 uppercase truncate">{name}</p>
                                         <p className="text-[10px] font-bold text-slate-400 uppercase">{u.role || "Member"}</p>
                                     </div>
                                     <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary transition-colors" />
                                 </button>
-                            )) : (
+                            )}) : (
                                 <p className="px-3 py-4 text-center text-[10px] font-bold text-slate-400 uppercase italic">Pengguna tidak ditemukan</p>
                             )}
                         </div>
@@ -272,15 +278,16 @@ function PesanContent() {
                                 <Loader2 className="w-6 h-6 animate-spin" />
                              </div>
                         ) : conversations.length > 0 ? conversations.map((chat: any) => {
+                            if (!chat || !chat.participants) return null;
                             const otherId = chat.participants.find((p: string) => p !== user?.uid)
-                            const name = chat.participantNames?.[otherId] || "User"
+                            const name = chat.participantNames?.[otherId || ""] || "User"
                             const isActive = activeChatId === chat.id
 
                             return (
                                 <button 
-                                    key={chat.id}
+                                    key={chat.id || Math.random().toString()}
                                     onClick={() => {
-                                        setActiveChatId(chat.id)
+                                        if(chat.id) setActiveChatId(chat.id)
                                         setIsMobileListOpen(false)
                                     }}
                                     className={cn(
@@ -293,7 +300,7 @@ function PesanContent() {
                                             "text-xs font-black",
                                             isActive ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
                                         )}>
-                                            {name[0]}
+                                            {name[0] || "U"}
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 min-w-0">
@@ -302,11 +309,11 @@ function PesanContent() {
                                                 {name}
                                             </p>
                                             <span className={cn("text-[8px] font-bold uppercase", isActive ? "text-white/60" : "text-slate-400")}>
-                                                {formatTime(chat.updatedAt)}
+                                                {isMounted ? formatTime(chat.updatedAt) : ""}
                                             </span>
                                         </div>
                                         <p className={cn("text-[10px] font-bold truncate mt-0.5", isActive ? "text-white/80" : "text-slate-400")}>
-                                            {chat.lastMessage}
+                                            {chat.lastMessage || ""}
                                         </p>
                                     </div>
                                 </button>
@@ -342,7 +349,7 @@ function PesanContent() {
                             </Button>
                             <Avatar className="w-10 h-10 border-2 border-primary/10">
                                 <AvatarFallback className="bg-primary/10 text-primary text-xs font-black uppercase">
-                                    {otherParticipantName[0]}
+                                    {otherParticipantName[0] || "U"}
                                 </AvatarFallback>
                             </Avatar>
                             <div>
@@ -370,10 +377,11 @@ function PesanContent() {
                             </div>
                             
                             {activeMessages.map((msg: any) => {
+                                if (!msg) return null;
                                 const isMe = msg.senderId === user?.uid
                                 return (
                                     <div 
-                                        key={msg.id}
+                                        key={msg.id || Math.random().toString()}
                                         className={cn(
                                             "flex flex-col max-w-[85%] md:max-w-[70%]",
                                             isMe ? "ml-auto items-end" : "mr-auto items-start"
@@ -385,10 +393,10 @@ function PesanContent() {
                                                 ? "bg-primary text-white rounded-tr-none shadow-primary/10" 
                                                 : "bg-white text-slate-700 rounded-tl-none border border-slate-100"
                                         )}>
-                                            {msg.text}
+                                            {msg.text || ""}
                                         </div>
                                         <span className="text-[9px] font-black text-slate-400 mt-1 uppercase mx-2">
-                                            {formatTime(msg.createdAt)}
+                                            {isMounted ? formatTime(msg.createdAt) : ""}
                                         </span>
                                     </div>
                                 )
