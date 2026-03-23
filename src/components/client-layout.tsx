@@ -16,6 +16,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <div className="flex flex-col min-h-screen w-full overflow-hidden">
+        {/* Global Components */}
+        <Toaster />
+
         {/* Mobile Header - Hidden on Login */}
         {!isLoginPage && (
           <>
@@ -34,7 +37,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
             </header>
-            <Toaster />
             <ProfileStatusDialog />
           </>
         )}
