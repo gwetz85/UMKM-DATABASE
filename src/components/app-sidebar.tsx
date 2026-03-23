@@ -126,8 +126,14 @@ export function AppSidebar() {
   const navigation = React.useMemo(() => [
     { 
       name: "Dashboard", 
-      href: "/", 
+      href: "/dashboard", 
       icon: LayoutDashboard, 
+      show: !!user 
+    },
+    { 
+      name: "Pesan", 
+      href: "/pesan", 
+      icon: MessageSquare, 
       show: !!user 
     },
     { 
