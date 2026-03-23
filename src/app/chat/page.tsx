@@ -71,11 +71,20 @@ function ChatContent() {
     if (!firestore || !user) return null
     return query(
       collection(firestore, 'chats'),
-      where('participants', 'array_contains', user.uid),
-      orderBy('updatedAt', 'desc')
+      where('participants', 'array_contains', user.uid)
     )
   }, [firestore, user])
-  const { data: myChats, isLoading: isChatsLoading } = useCollection<any>(chatsQuery)
+  const { data: rawChats, isLoading: isChatsLoading } = useCollection<any>(chatsQuery)
+
+  // Sort chats on the client to avoid missing index error
+  const myChats = useMemoFirebase(() => {
+    if (!rawChats) return []
+    return [...rawChats].sort((a: any, b: any) => {
+        const timeA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : 0
+        const timeB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : 0
+        return timeB - timeA
+    })
+  }, [rawChats])
 
   // Get messages for selected chat
   const messagesQuery = useMemoFirebase(() => {
@@ -154,8 +163,8 @@ function ChatContent() {
 
   const filteredUsers = allUsers?.filter((u: any) => 
     u.uid && u.uid !== user?.uid && 
-    (u.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-     u.id.toLowerCase().includes(searchTerm.toLowerCase()))
+    ((u.fullName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) || 
+     (u.id?.toLowerCase() || "").includes(searchTerm.toLowerCase()))
   )
 
   // Memoize active chat details for safety and performance
@@ -268,6 +277,7 @@ function ChatContent() {
                 isChatsLoading ? (
                     <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-primary/30" /></div>
                 ) : myChats?.map((chat: any) => {
+                  if (!chat || !chat.participants) return null
                   const otherUid = chat.participants.find((p: any) => p !== user.uid)
                   const otherName = chat.participantNames?.[otherUid] || "User"
                   return (

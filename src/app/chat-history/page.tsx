@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { useUser, useFirestore, useMemoFirebase, useCollection, deleteDocumentNonBlocking } from "@/firebase"
-import { collection, query, orderBy, doc, deleteDoc } from "firebase/firestore"
+import { collection, query, orderBy, doc, deleteDoc, where } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { 
   Trash2, 
@@ -46,16 +47,15 @@ export default function ChatHistoryPage() {
   const allChatsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null
     if (isAdminOrPetugas) {
-      return query(collection(firestore, 'chats'), orderBy('updatedAt', 'desc'))
+      return query(collection(firestore, 'chats'))
     } else {
       return query(
         collection(firestore, 'chats'),
-        where('participants', 'array_contains', user.uid),
-        orderBy('updatedAt', 'desc')
+        where('participants', 'array_contains', user.uid)
       )
     }
   }, [firestore, user, isAdminOrPetugas])
-  const { data: chats, isLoading: isChatsLoading } = useCollection<any>(allChatsQuery)
+  const { data: rawChats, isLoading: isChatsLoading } = useCollection<any>(allChatsQuery)
 
   const handleDeleteChat = async (id: string) => {
     if (!isAdminOrPetugas) return
@@ -65,10 +65,32 @@ export default function ChatHistoryPage() {
     }
   }
 
-  const filteredChats = chats?.filter((chat: any) => {
-    const names = Object.values(chat.participantNames || {}).join(' ').toLowerCase()
-    return names.includes(searchTerm.toLowerCase()) || chat.lastMessage?.toLowerCase().includes(searchTerm.toLowerCase())
-  })
+  // Client-side sort and filter
+  const filteredChats = useMemoFirebase(() => {
+    if (!rawChats) return []
+    
+    return [...rawChats]
+      .sort((a: any, b: any) => {
+        const timeA = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : 0
+        const timeB = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : 0
+        return timeB - timeA
+      })
+      .filter((chat: any) => {
+        if (!chat) return false
+        const names = Object.values(chat.participantNames || {}).join(' ').toLowerCase()
+        const message = (chat.lastMessage || "").toLowerCase()
+        const search = searchTerm.toLowerCase()
+        return names.includes(search) || message.includes(search)
+      })
+  }, [rawChats, searchTerm])
+
+  const formatTimeFull = (ts: any) => {
+    try {
+        if (!ts) return ""
+        const date = ts.toDate ? ts.toDate() : (ts instanceof Date ? ts : new Date(ts))
+        return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+    } catch (e) { return "" }
+  }
 
   if (!mounted || isUserLoading) {
     return (
@@ -142,7 +164,7 @@ export default function ChatHistoryPage() {
                                 "text-[10px] font-black text-white",
                                 i === 0 ? "bg-primary" : "bg-blue-400"
                             )}>
-                                {(chat.participantNames[p] || "U")[0]}
+                                {(chat.participantNames?.[p] || "U")[0]}
                             </AvatarFallback>
                         </Avatar>
                     ))}
@@ -151,10 +173,10 @@ export default function ChatHistoryPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-1">
                         <h4 className="font-black text-slate-700 uppercase text-xs md:text-sm truncate">
-                            {Object.values(chat.participantNames).join(' &bull; ')}
+                            {Object.values(chat.participantNames || {}).join(' &bull; ')}
                         </h4>
                         <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap ml-2">
-                            {chat.updatedAt?.toDate().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {formatTimeFull(chat.updatedAt)}
                         </span>
                     </div>
                     <p className="text-[11px] md:text-xs text-slate-500 font-medium line-clamp-1 italic">
