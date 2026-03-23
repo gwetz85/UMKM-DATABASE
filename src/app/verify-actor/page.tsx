@@ -180,8 +180,16 @@ export default function VerifyActorPage() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-bold text-primary font-headline">Verifikasi Admin</h1>
-          <p className="text-muted-foreground">Tinjau dan verifikasi data pelaku usaha yang masuk.</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-primary font-headline">Verifikasi Admin</h1>
+            {filteredActors && (
+              <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/20 shadow-sm flex items-center gap-2">
+                <span>Total Menunggu Verifikasi:</span>
+                <span className="bg-primary text-white px-2 py-0.5 rounded-full">{filteredActors.length}</span>
+              </div>
+            )}
+          </div>
+          <p className="text-muted-foreground mt-1">Tinjau dan verifikasi data pelaku usaha yang masuk untuk disetujui atau ditolak.</p>
         </div>
         <div className="relative w-full md:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -194,7 +202,7 @@ export default function VerifyActorPage() {
         </div>
       </div>
 
-      <Card className="border-none shadow-sm overflow-hidden bg-card">
+      <Card className="border border-slate-200/60 shadow-md overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl">
         <CardContent className="p-0">
           {isLoading ? <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div> : (
             <Table>
@@ -209,17 +217,21 @@ export default function VerifyActorPage() {
               </TableHeader>
               <TableBody>
                 {filteredActors?.map((actor) => (
-                  <TableRow key={actor.id} className="hover:bg-muted/5">
-                    <TableCell className="font-bold">{actor.fullName}</TableCell>
-                    <TableCell className="font-mono text-xs">{actor.nik}</TableCell>
-                    <TableCell>{actor.businessCategory}</TableCell>
-                    <TableCell className="font-medium">{actor.businessName}</TableCell>
+                  <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors border-b border-slate-100">
+                    <TableCell className="font-bold text-slate-800">{actor.fullName}</TableCell>
+                    <TableCell className="font-mono text-xs text-slate-500">{actor.nik}</TableCell>
+                    <TableCell>
+                      <span className="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider">
+                        {actor.businessCategory}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-medium text-slate-700">{actor.businessName}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1.5 opacity-90 hover:opacity-100 transition-opacity">
                         <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
                           <DialogTrigger asChild>
-                            <Button size="sm" variant="outline" onClick={() => setViewingActor(actor)} className="h-9 border-primary/20 text-primary font-bold">
-                              <Eye className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">VIEW</span>
+                            <Button size="icon" variant="outline" onClick={() => setViewingActor(actor)} className="h-8 w-8 border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg shadow-sm" title="Lihat Detail">
+                              <Eye className="w-4 h-4" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -310,8 +322,8 @@ export default function VerifyActorPage() {
 
                         <Dialog open={!!editingOnlyActor && editingOnlyActor.id === actor.id} onOpenChange={(open) => !open && setEditingOnlyActor(null)}>
                           <DialogTrigger asChild>
-                            <Button size="sm" variant="outline" onClick={() => openEditDialog(actor, 'edit')} className="h-9 border-amber-500 text-amber-600 font-bold">
-                              <Edit className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">EDIT</span>
+                            <Button size="icon" variant="outline" onClick={() => openEditDialog(actor, 'edit')} className="h-8 w-8 border-amber-200 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm" title="Edit Data">
+                              <Edit className="w-4 h-4" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -419,8 +431,8 @@ export default function VerifyActorPage() {
 
                         <Dialog open={!!editingActor && editingActor.id === actor.id} onOpenChange={(open) => !open && setEditingActor(null)}>
                           <DialogTrigger asChild>
-                            <Button size="sm" variant="secondary" onClick={() => openEditDialog(actor, 'verify')} className="h-9 font-bold">
-                              <Check className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">VERIFIKASI</span>
+                            <Button size="icon" variant="outline" onClick={() => openEditDialog(actor, 'verify')} className="h-8 w-8 border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg shadow-sm" title="Verifikasi">
+                              <Check className="w-4 h-4" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -528,8 +540,8 @@ export default function VerifyActorPage() {
 
                         <Dialog open={!!rejectingActor && rejectingActor.id === actor.id} onOpenChange={(open) => !open && setRejectingActor(null)}>
                           <DialogTrigger asChild>
-                            <Button size="sm" variant="outline" onClick={() => setRejectingActor(actor)} className="h-9 border-red-500 text-red-600 font-bold hover:bg-red-50">
-                              <XCircle className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">DITOLAK</span>
+                            <Button size="icon" variant="outline" onClick={() => setRejectingActor(actor)} className="h-8 w-8 border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg shadow-sm" title="Tolak Data">
+                              <XCircle className="w-4 h-4" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
@@ -555,7 +567,9 @@ export default function VerifyActorPage() {
                           </DialogContent>
                         </Dialog>
 
-                        <Button size="sm" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)} className="font-bold h-9"><Trash2 className="w-4 h-4" /></Button>
+                        <Button size="icon" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)} className="h-8 w-8 bg-slate-100 text-red-500 hover:bg-red-500 hover:text-white border-0 shadow-sm" title="Hapus Permanen">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
