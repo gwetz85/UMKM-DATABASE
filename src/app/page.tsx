@@ -76,7 +76,7 @@ export default function DashboardPage() {
 
   const stats = [
     { 
-      name: "Total Data UMKM", 
+      name: "Total Pelaku Usaha", 
       value: allData?.length || 0, 
       icon: Building2, 
       color: "text-blue-600", 

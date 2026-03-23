@@ -52,7 +52,7 @@ export function ProfileStatusDialog() {
             Selamat Datang Kembali!
           </DialogTitle>
           <DialogDescription className="text-center font-medium text-slate-500">
-            Berikut adalah ringkasan profil Anda di sistem UMKM DATABASE.
+            Berikut adalah ringkasan profil Anda di sistem SIMPU.
           </DialogDescription>
         </DialogHeader>
 

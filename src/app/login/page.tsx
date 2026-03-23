@@ -30,7 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { UmkmLogo } from "@/components/app-sidebar"
+import { SimpuLogo } from "@/components/app-sidebar"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -225,13 +225,13 @@ export default function LoginPage() {
         <div className="h-2 bg-primary w-full" />
         <CardHeader className="space-y-1 text-center pt-8">
           <div className="flex justify-center mb-6">
-            <div className="bg-primary p-4 rounded-2xl shadow-xl shadow-primary/20 rotate-3 hover:rotate-0 transition-transform duration-300">
-              <UmkmLogo className="w-10 h-10 text-white" />
+            <div className="bg-primary p-4 rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-transform duration-300">
+              <SimpuLogo className="w-12 h-12 text-white" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-black tracking-tighter text-primary">UMKM DATABASE</CardTitle>
-          <CardDescription className="font-medium text-muted-foreground">
-            Sistem Manajemen Terpadu Pelaku Usaha
+          <CardTitle className="text-4xl font-black tracking-widest text-primary">SIMPU</CardTitle>
+          <CardDescription className="font-medium text-muted-foreground uppercase tracking-widest text-[10px] mt-2">
+            Sistem Informasi Manajemen Pelaku Usaha
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleAuth}>

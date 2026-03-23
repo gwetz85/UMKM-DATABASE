@@ -3,7 +3,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar, UmkmLogo } from '@/components/app-sidebar';
+import { AppSidebar, SimpuLogo } from '@/components/app-sidebar';
 import { AboutDialog } from '@/components/about-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 
@@ -26,14 +26,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-2">
                 <SidebarTrigger className="text-white hover:bg-white/10 transition-colors" />
                 <div className="flex flex-col">
-                  <span className="text-xs font-black tracking-tight leading-none">UMKM DATABASE</span>
-                  <span className="text-[8px] font-bold text-accent tracking-widest uppercase">Versi 4.5</span>
+                  <span className="text-xl font-black tracking-widest leading-none">SIMPU</span>
+                  <span className="text-[8px] font-bold text-accent tracking-widest uppercase mt-0.5">Versi 5.0</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <AboutDialog variant="ghost" className="text-white hover:bg-white/10 border-white/10" />
                 <div className="bg-accent/20 p-1.5 rounded-lg">
-                  <UmkmLogo className="w-4 h-4 text-accent" />
+                  <SimpuLogo className="w-5 h-5 text-accent" />
                 </div>
               </div>
             </header>

@@ -46,8 +46,7 @@ import {
 } from "@/components/ui/sidebar"
 import { Button } from "./ui/button"
 
-// Custom UMKM Logo SVG
-export const UmkmLogo = ({ className }: { className?: string }) => (
+export const SimpuLogo = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 24 24"
     fill="none"
@@ -57,11 +56,9 @@ export const UmkmLogo = ({ className }: { className?: string }) => (
     strokeLinejoin="round"
     className={className}
   >
-    <path d="M3 21h18" />
-    <path d="M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7H3l2-4h14l2 4" />
-    <path d="M5 21V10.85" />
-    <path d="M19 21V10.85" />
-    <path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4" />
+    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+    <path d="M2 17l10 5 10-5" />
+    <path d="M2 12l10 5 10-5" />
   </svg>
 )
 
@@ -230,14 +227,14 @@ export function AppSidebar() {
       <SidebarHeader className="py-4 flex flex-col items-center justify-center border-b border-white/10 sticky top-0 bg-transparent backdrop-blur-md z-20">
         <div className="flex flex-col items-center gap-2 w-full mb-4">
           <div className="bg-white/20 rounded-xl p-2 shadow-lg flex items-center justify-center transition-transform duration-300 hover:scale-105">
-            <UmkmLogo className="w-6 h-6 text-white" />
+            <SimpuLogo className="w-6 h-6 text-white" />
           </div>
           <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden">
-            <span className="font-black text-lg tracking-tight text-white leading-none">
-              UMKM DATABASE
+            <span className="font-black text-2xl tracking-widest text-white leading-none">
+              SIMPU
             </span>
-            <span className="text-[9px] font-bold text-white/60 tracking-widest uppercase mt-1">
-              Sistem Terpadu
+            <span className="text-[7.5px] font-bold text-white/60 tracking-wider uppercase mt-1 text-center leading-tight">
+              Sistem Informasi Manajemen<br/>Pelaku Usaha
             </span>
           </div>
         </div>

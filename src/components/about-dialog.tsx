@@ -26,7 +26,7 @@ export function AboutDialog({ className, variant = "outline" }: { className?: st
         </DialogHeader>
         <div className="space-y-4 py-4">
           <p className="text-sm leading-relaxed text-foreground font-medium">
-            Selamat datang di Aplikasi UMKM Database versi 5.0. 
+            Selamat datang di Aplikasi SIMPU (Sistem Informasi Manajemen Pelaku Usaha) versi 5.0. 
           </p>
           <div className="space-y-2 bg-primary/5 p-4 rounded-2xl border border-primary/10">
             <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Pembaruan Aplikasi :</p>

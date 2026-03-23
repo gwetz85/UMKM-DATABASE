@@ -5,7 +5,7 @@ import {FirebaseClientProvider} from '@/firebase';
 import {ClientLayout} from '@/components/client-layout';
 
 export const metadata: Metadata = {
-  title: 'UMKM Database - Sistem Manajemen Terpadu',
+  title: 'SIMPU - Sistem Informasi Manajemen Pelaku Usaha',
   description: 'Pendataan dan verifikasi pelaku usaha UMKM yang modern dan efisien.',
 };
 
