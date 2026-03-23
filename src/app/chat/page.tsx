@@ -158,6 +158,34 @@ function ChatContent() {
      u.id.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
+  // Memoize active chat details for safety and performance
+  const selectedChat = useMemoFirebase(() => {
+    if (!selectedChatId || !myChats) return null
+    return myChats.find((c: any) => c.id === selectedChatId) || null
+  }, [selectedChatId, myChats])
+
+  const otherParticipant = useMemoFirebase(() => {
+    if (!selectedChat || !user) return null
+    const otherUid = selectedChat.participants.find((p: string) => p !== user.uid)
+    return {
+        uid: otherUid,
+        name: selectedChat.participantNames?.[otherUid] || "User"
+    }
+  }, [selectedChat, user])
+
+  // Helper for safe timestamp formatting
+  const formatTime = (ts: any) => {
+    try {
+      if (!ts) return ""
+      // Handle both Firestore Timestamp and JS Date
+      const date = ts.toDate ? ts.toDate() : (ts instanceof Date ? ts : new Date(ts))
+      if (isNaN(date.getTime())) return ""
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    } catch (e) {
+      return ""
+    }
+  }
+
   if (!mounted || isUserLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -241,7 +269,7 @@ function ChatContent() {
                     <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-primary/30" /></div>
                 ) : myChats?.map((chat: any) => {
                   const otherUid = chat.participants.find((p: any) => p !== user.uid)
-                  const otherName = chat.participantNames[otherUid] || "User"
+                  const otherName = chat.participantNames?.[otherUid] || "User"
                   return (
                     <button 
                       key={chat.id} 
@@ -253,14 +281,14 @@ function ChatContent() {
                     >
                       <Avatar>
                         <AvatarFallback className={cn("font-black uppercase text-xs", selectedChatId === chat.id ? "bg-white/20 text-white" : "bg-primary/10 text-primary")}>
-                          {otherName[0]}
+                          {otherName ? otherName[0] : 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline mb-0.5">
                           <p className={cn("font-black text-sm truncate uppercase", selectedChatId === chat.id ? "text-white" : "text-slate-700")}>{otherName}</p>
                           <span className={cn("text-[8px] font-bold uppercase ml-2", selectedChatId === chat.id ? "text-white/60" : "text-slate-400")}>
-                            {chat.updatedAt?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {formatTime(chat.updatedAt)}
                           </span>
                         </div>
                         <p className={cn("text-[11px] truncate font-medium", selectedChatId === chat.id ? "text-white/80" : "text-slate-500")}>
@@ -290,12 +318,12 @@ function ChatContent() {
                   </Button>
                   <Avatar className="w-10 h-10">
                     <AvatarFallback className="bg-primary text-white font-black uppercase text-xs">
-                        {myChats?.find((c: any) => c.id === selectedChatId)?.participantNames[myChats?.find((c: any) => c.id === selectedChatId)?.participants.find((p: any) => p !== user.uid)]?.[0] || 'U'}
+                        {otherParticipant?.name?.[0] || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <h3 className="font-black text-slate-800 uppercase tracking-tight">
-                        {myChats?.find((c: any) => c.id === selectedChatId)?.participantNames[myChats?.find((c: any) => c.id === selectedChatId)?.participants.find((p: any) => p !== user.uid)]}
+                        {otherParticipant?.name || 'User'}
                     </h3>
                     <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
@@ -334,7 +362,7 @@ function ChatContent() {
                           {msg.text}
                         </div>
                         <span className="text-[8px] font-black uppercase text-slate-400 mt-1 px-1">
-                          {msg.timestamp?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {formatTime(msg.timestamp)}
                         </span>
                       </div>
                     )
