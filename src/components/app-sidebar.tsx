@@ -185,18 +185,6 @@ export function AppSidebar() {
       show: isAdmin 
     },
     { 
-      name: "Chat", 
-      href: "/chat", 
-      icon: MessageSquare, 
-      show: !!user 
-    },
-    { 
-      name: "Riwayat Chat", 
-      href: "/chat-history", 
-      icon: History, 
-      show: isAdmin || userProfile?.role === 'petugas'
-    },
-    { 
       name: "Pengaturan", 
       href: "/settings", 
       icon: Settings, 

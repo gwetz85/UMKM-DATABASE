@@ -32,7 +32,6 @@ export function AboutDialog({ className, variant = "outline" }: { className?: st
             <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Pembaruan Aplikasi :</p>
             <ul className="text-xs font-bold text-slate-600 space-y-1 ml-1">
               <li className="flex items-center gap-2">&bull; Penambahan Database 2.985 data</li>
-              <li className="flex items-center gap-2">&bull; Penambahan Fitur Chat</li>
               <li className="flex items-center gap-2">&bull; Perbaikkan di beberapa fitur tampilan</li>
               <li className="flex items-center gap-2">&bull; Penambahan dan perbaikkan di beberapa file system di aplikasi</li>
             </ul>
