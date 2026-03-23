@@ -23,10 +23,14 @@ import {
   Eye, 
   Clock, 
   UserCog,
-  ShieldQuestion
+  ShieldQuestion,
+  Phone,
+  CreditCard,
+  MapPin
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
 
 export default function UserManagementPage() {
   const [mounted, setMounted] = useState(false)
@@ -88,9 +92,20 @@ export default function UserManagementPage() {
 
     const formData = new FormData(e.currentTarget)
     const role = formData.get("role") as string
+    const fullName = formData.get("fullName") as string
+    const phoneNumber = formData.get("phoneNumber") as string
+    const nik = formData.get("nik") as string
+    const address = formData.get("address") as string
+    
     const userRef = doc(firestore, 'system_users', editingUser.id)
 
-    updateDocumentNonBlocking(userRef, { role })
+    updateDocumentNonBlocking(userRef, { 
+      role,
+      fullName,
+      phoneNumber,
+      nik,
+      address
+    })
 
     // Jika diupdate jadi admin, pastikan masuk ke roles_admin kalau UID sudah ada
     if (role === 'admin' && editingUser.uid) {
@@ -260,15 +275,35 @@ export default function UserManagementPage() {
                                 <CardDescription>Berikan atau ubah akses aplikasi untuk user <strong>{u.fullName}</strong>.</CardDescription>
                               </DialogHeader>
                               <div className="py-6">
-                                <Label className="font-bold">Pilih Role Baru</Label>
-                                <Select name="role" defaultValue={u.role || "petugas"}>
-                                  <SelectTrigger className="mt-2"><SelectValue /></SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="petugas">Petugas Input</SelectItem>
-                                    <SelectItem value="admin">Administrator</SelectItem>
-                                    <SelectItem value="monitoring">Monitoring</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                <div className="grid gap-4 py-4">
+                                  <div className="space-y-2">
+                                    <Label className="font-bold">Nama Lengkap</Label>
+                                    <Input name="fullName" defaultValue={u.fullName} required />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="font-bold">Nomor Ponsel</Label>
+                                    <Input name="phoneNumber" defaultValue={u.phoneNumber} />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="font-bold">NIK</Label>
+                                    <Input name="nik" defaultValue={u.nik} maxLength={16} />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="font-bold">Alamat Lengkap</Label>
+                                    <Textarea name="address" defaultValue={u.address} />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="font-bold">Role / Akses</Label>
+                                    <Select name="role" defaultValue={u.role || "petugas"}>
+                                      <SelectTrigger><SelectValue /></SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="petugas">Petugas Input</SelectItem>
+                                        <SelectItem value="admin">Administrator</SelectItem>
+                                        <SelectItem value="monitoring">Monitoring</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
                               </div>
                               <DialogFooter>
                                 <Button type="submit" className="w-full font-bold">Simpan Akses</Button>

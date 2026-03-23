@@ -19,7 +19,9 @@ import {
   Clock,
   LogIn,
   Eye,
-  Ban
+  Ban,
+  MessageSquare,
+  History
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -176,12 +178,24 @@ export function AppSidebar() {
       show: isAdmin 
     },
     { 
+      name: "Chat", 
+      href: "/chat", 
+      icon: MessageSquare, 
+      show: !!user 
+    },
+    { 
+      name: "Riwayat Chat", 
+      href: "/chat-history", 
+      icon: History, 
+      show: isAdmin || userProfile?.role === 'petugas'
+    },
+    { 
       name: "Pengaturan", 
       href: "/settings", 
       icon: Settings, 
       show: !!user 
     },
-  ], [user, isAdmin, isMonitoring])
+  ], [user, isAdmin, isMonitoring, userProfile])
 
   const copyUid = () => {
     if (user?.uid) {
@@ -288,19 +302,19 @@ export function AppSidebar() {
           {user && (
             <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-2">
               <div className="bg-white/10 rounded-xl border border-white/10 p-2.5 space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+                <Link href="/profile" className="flex items-center gap-2 hover:bg-white/5 p-1 rounded-lg transition-colors cursor-pointer w-full group/profile">
+                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center group-hover/profile:bg-white/30 transition-colors">
                     <UserIcon className="w-3.5 h-3.5 text-white" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] font-black text-white truncate">
-                      {user.email?.split('@')[0].toUpperCase()}
+                    <span className="text-[10px] font-black text-white truncate group-hover/profile:text-accent transition-colors">
+                      {userProfile?.fullName?.toUpperCase() || user.email?.split('@')[0].toUpperCase()}
                     </span>
                     <span className="text-[8px] text-white/60 font-black uppercase tracking-tighter">
-                      {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : "📝 Petugas"}
+                      {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : userProfile?.role === 'petugas' ? "📝 Petugas" : "👤 User"}
                     </span>
                   </div>
-                </div>
+                </Link>
                 
                 <div className="flex items-center justify-between bg-black/20 p-1.5 rounded-lg gap-2">
                   <span className="text-[8px] text-white/40 font-mono truncate select-all">

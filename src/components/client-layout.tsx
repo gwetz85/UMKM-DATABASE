@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar, UmkmLogo } from '@/components/app-sidebar';
 import { AboutDialog } from '@/components/about-dialog';
+import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -30,6 +31,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           </header>
+          <Toaster />
+          <ProfileStatusDialog />
         )}
 
         <div className="flex flex-1 w-full overflow-hidden">
