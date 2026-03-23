@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
 import { useUser, useFirestore, useMemoFirebase, useCollection, useDoc, setDocumentNonBlocking, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase"
 import { collection, query, where, orderBy, doc, Timestamp, addDoc } from "firebase/firestore"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -26,7 +26,7 @@ import {
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
-export default function ChatPage() {
+function ChatContent() {
   const { user, isUserLoading } = useUser()
   const firestore = useFirestore()
   const { toast } = useToast()
@@ -105,7 +105,7 @@ export default function ChatPage() {
         // Create new chat
         const chatId = [user.uid, targetUser.uid].sort().join('_')
         const chatRef = doc(firestore, 'chats', chatId)
-        await setDocumentNonBlocking(chatRef, {
+        setDocumentNonBlocking(chatRef, {
             participants: [user.uid, targetUser.uid],
             participantNames: {
                 [user.uid]: myProfile?.fullName || user.email?.split('@')[0],
@@ -113,7 +113,7 @@ export default function ChatPage() {
             },
             updatedAt: Timestamp.now(),
             lastMessage: ""
-        })
+        }, { merge: true })
         setSelectedChatId(chatId)
     }
   }
@@ -228,7 +228,7 @@ export default function ChatPage() {
                     onClick={() => handleStartChat(u)}
                   >
                     <Avatar className="group-hover:scale-110 transition-transform">
-                      <AvatarFallback className="bg-primary/10 text-primary font-black uppercase text-xs">{u.fullName[0]}</AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary font-black uppercase text-xs">{u.fullName ? u.fullName[0] : 'U'}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="font-black text-slate-700 text-sm truncate uppercase">{u.fullName}</p>
@@ -248,7 +248,7 @@ export default function ChatPage() {
                       className={cn(
                         "w-full flex items-center gap-3 p-4 rounded-2xl transition-all text-left group",
                         selectedChatId === chat.id ? "bg-primary text-white shadow-lg" : "hover:bg-slate-50"
-                      )}
+                       )}
                       onClick={() => setSelectedChatId(chat.id)}
                     >
                       <Avatar>
@@ -290,7 +290,7 @@ export default function ChatPage() {
                   </Button>
                   <Avatar className="w-10 h-10">
                     <AvatarFallback className="bg-primary text-white font-black uppercase text-xs">
-                        {myChats?.find((c: any) => c.id === selectedChatId)?.participantNames[myChats?.find((c: any) => c.id === selectedChatId)?.participants.find((p: any) => p !== user.uid)][0]}
+                        {myChats?.find((c: any) => c.id === selectedChatId)?.participantNames[myChats?.find((c: any) => c.id === selectedChatId)?.participants.find((p: any) => p !== user.uid)]?.[0] || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
@@ -389,5 +389,17 @@ export default function ChatPage() {
 
       </div>
     </div>
+  )
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={
+        <div className="h-screen flex items-center justify-center">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        </div>
+    }>
+        <ChatContent />
+    </Suspense>
   )
 }
