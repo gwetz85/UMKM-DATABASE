@@ -234,19 +234,25 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r-0 shadow-[4px_0_24px_rgba(0,0,0,0.1)] bg-gradient-to-b from-primary to-blue-900 text-white">
-      <SidebarHeader className="py-4 flex flex-col items-center justify-center border-b border-white/10">
-        <div className="flex flex-col items-center gap-2 w-full mb-4">
-          <div className="bg-white/20 rounded-xl p-2 shadow-lg flex items-center justify-center transition-transform duration-300 hover:scale-105">
-            <SimpuLogo className="w-6 h-6 text-white" />
-          </div>
-          <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden">
-            <span className="font-black text-2xl tracking-tighter text-white leading-none">
-              SIMPU
-            </span>
-            <span className="text-[7.5px] font-bold text-white/60 tracking-wider uppercase mt-1 text-center leading-tight">
-              Sistem Informasi Manajemen<br/>Pelaku Usaha
-            </span>
-          </div>
+      <SidebarHeader className="py-6 flex flex-col items-center justify-center border-b border-white/10">
+        <div className="flex flex-col items-center justify-center w-full">
+          <Link href="/" className="flex flex-col items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95">
+            <div className="relative group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 w-24 h-24 overflow-hidden rounded-full border-2 border-white/20 shadow-2xl">
+              <img 
+                src="/logo.png" 
+                alt="SIMPU Logo" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden mt-2">
+              <span className="font-black text-2xl tracking-tighter text-white leading-none drop-shadow-md">
+                SIMPU
+              </span>
+              <span className="text-[7px] font-bold text-white/60 tracking-[0.15em] uppercase mt-1 text-center leading-tight whitespace-nowrap">
+                SIM Pelaku Usaha
+              </span>
+            </div>
+          </Link>
         </div>
 
         {/* Waktu Server */}
