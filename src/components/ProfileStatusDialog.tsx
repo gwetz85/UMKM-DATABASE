@@ -1,8 +1,8 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { useUser, useFirestore, useMemoFirebase, useCollection } from "@/firebase"
-import { collection, query, where, limit } from "firebase/firestore"
+import { useUser, useDatabase, useMemoFirebase, useList } from "@/firebase"
+import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import {
   Dialog,
   DialogContent,
@@ -17,16 +17,16 @@ import Link from "next/link"
 
 export function ProfileStatusDialog() {
   const { user, isUserLoading } = useUser()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const [isOpen, setIsOpen] = useState(false)
   const [hasShown, setHasShown] = useState(false)
 
   const userProfileQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
-  }, [user, firestore])
+    if (!user || !database) return null
+    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+  }, [user, database])
 
-  const { data: userProfiles, isLoading: isProfileLoading } = useCollection(userProfileQuery)
+  const { data: userProfiles, isLoading: isProfileLoading } = useList(userProfileQuery)
   const profile = userProfiles?.[0]
 
   useEffect(() => {

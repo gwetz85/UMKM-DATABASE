@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Search, User as UserIcon } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, orderBy, onSnapshot, serverTimestamp, doc } from 'firebase/firestore';
+import { useUser, useDatabase, useList, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { ref, query, orderByChild, equalTo, onValue, serverTimestamp } from 'firebase/database';
 
 export function ChatBubble() {
   const { user } = useUser();
-  const firestore = useFirestore();
+  const database = useDatabase();
   
   const [isOpen, setIsOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -19,18 +19,18 @@ export function ChatBubble() {
 
   // Get current user profile
   const userProfileQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid));
-  }, [user, firestore]);
-  const { data: userProfiles } = useCollection(userProfileQuery);
+    if (!user || !database) return null;
+    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid));
+  }, [user, database]);
+  const { data: userProfiles } = useList(userProfileQuery);
   const currentUserProfile = userProfiles?.[0];
 
   // Get all users
   const allUsersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'system_users'));
-  }, [firestore]);
-  const { data: allUsers } = useCollection(allUsersQuery);
+    if (!database) return null;
+    return query(ref(database, 'system_users'));
+  }, [database]);
+  const { data: allUsers } = useList(allUsersQuery);
 
   // Filter users to exclude current user
   const otherUsers = (allUsers || []).filter((u: any) => u.uid && u.uid !== user?.uid);
@@ -41,37 +41,40 @@ export function ChatBubble() {
 
   // Unread messages listener
   useEffect(() => {
-    if (!user || !firestore) return;
-    const unreadQuery = query(collection(firestore, 'chat_unread'), where('userId', '==', user.uid));
-    const unsubscribe = onSnapshot(unreadQuery, (snapshot) => {
-      setHasUnread(!snapshot.empty);
+    if (!user || !database) return;
+    const unreadQuery = query(ref(database, 'chat_unread'), orderByChild('userId'), equalTo(user.uid));
+    const unsubscribe = onValue(unreadQuery, (snapshot) => {
+      setHasUnread(snapshot.exists());
     });
     return () => unsubscribe();
-  }, [user, firestore]);
+  }, [user, database]);
 
   // Real-time messages listener
   useEffect(() => {
-    if (!selectedUser || !user || !firestore) return;
+    if (!selectedUser || !user || !database) return;
 
     const chatId = [user.uid, selectedUser.uid].sort().join('_');
-    const messagesQuery = query(collection(firestore, 'chat_messages'), where('chatId', '==', chatId), orderBy('timestamp', 'asc'));
+    const messagesQuery = query(ref(database, 'chat_messages'), orderByChild('chatId'), equalTo(chatId));
     
     // Mark as read when opening
     if (isOpen) {
-      deleteDocumentNonBlocking(doc(firestore, 'chat_unread', `${user.uid}_${chatId}`));
+      deleteDocumentNonBlocking(ref(database, `chat_unread/${user.uid}_${chatId}`));
     }
 
-    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-      const msgList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        timestamp: doc.data().timestamp?.toMillis() || Date.now()
-      }));
+    const unsubscribe = onValue(messagesQuery, (snapshot) => {
+      const msgList: any[] = [];
+      snapshot.forEach(child => {
+        msgList.push({
+          id: child.key,
+          ...child.val()
+        });
+      });
+      msgList.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
       setMessages(msgList);
     });
 
     return () => unsubscribe();
-  }, [selectedUser, user, firestore, isOpen]);
+  }, [selectedUser, user, database, isOpen]);
 
   // Auto scroll to bottom
   useEffect(() => {
@@ -84,7 +87,7 @@ export function ChatBubble() {
 
     const chatId = [user.uid, selectedUser.uid].sort().join('_');
     
-    const messagesRef = collection(firestore, 'chat_messages');
+    const messagesRef = ref(database, 'chat_messages');
     addDocumentNonBlocking(messagesRef, {
       chatId,
       senderId: user.uid,
@@ -94,12 +97,12 @@ export function ChatBubble() {
       timestamp: serverTimestamp()
     });
 
-    const unreadRef = doc(firestore, 'chat_unread', `${selectedUser.uid}_${chatId}`);
+    const unreadRef = ref(database, `chat_unread/${selectedUser.uid}_${chatId}`);
     setDocumentNonBlocking(unreadRef, {
       userId: selectedUser.uid,
       chatId: chatId,
       hasUnread: true
-    }, { merge: true });
+    });
 
     setInputText('');
   };

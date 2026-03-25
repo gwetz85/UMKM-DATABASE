@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemoFirebase, useCollection, useUser, useFirestore, updateDocumentNonBlocking, useDoc } from "@/firebase"
-import { collection, query, where, doc, limit, Timestamp } from "firebase/firestore"
+import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
+import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -19,14 +19,14 @@ import {
 } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
 export default function LPJPage() {
   const { user } = useUser()
   const { toast } = useToast()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -34,33 +34,44 @@ export default function LPJPage() {
   }, [])
 
   const userProfileQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
-  }, [user, firestore])
-  const { data: userProfiles } = useCollection(userProfileQuery)
+    if (!user || !database) return null
+    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+  }, [user, database])
+  const { data: userProfiles } = useList(userProfileQuery)
   const userProfile = userProfiles?.[0]
 
   const isAdmin = userProfile?.role === 'admin'
   const isPetugas = userProfile?.role === 'petugas'
   const canAccess = isAdmin || isPetugas
 
-  const memoQuery = useMemoFirebase(() => {
-    if (!firestore) return null
-    // Show both pending LPJ and blacklisted (so admin can fix)
-    return query(collection(firestore, 'businessActors'), where('status', 'in', ['lpj_pending', 'blacklist']))
-  }, [firestore])
+  const pendingQuery = useMemoFirebase(() => {
+    if (!database) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('lpj_pending'))
+  }, [database])
+  
+  const blacklistQuery = useMemoFirebase(() => {
+    if (!database) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('blacklist'))
+  }, [database])
 
-  const { data: actors, isLoading } = useCollection<BusinessActor>(memoQuery)
+  const { data: pendingActors, isLoading: isP } = useList<BusinessActor>(pendingQuery)
+  const { data: blacklistActors, isLoading: isB } = useList<BusinessActor>(blacklistQuery)
+  
+  const actors = useMemo(() => {
+      return [...(pendingActors || []), ...(blacklistActors || [])]
+  }, [pendingActors, blacklistActors])
+  
+  const isLoading = isP || isB
 
   const handleSaveLPJ = async (actorId: string, nominal: string) => {
-    if (!canAccess || !firestore || !nominal) return
+    if (!canAccess || !database || !nominal) return
     const numNominal = parseFloat(nominal.replace(/[^0-9]/g, ''))
     if (isNaN(numNominal)) {
         toast({ variant: "destructive", title: "Input Tidak Valid", description: "Silahkan masukkan angka nominal yang benar." })
         return
     }
 
-    const actorRef = doc(firestore, 'businessActors', actorId)
+    const actorRef = ref(database, `businessActors/${actorId}`)
     await updateDocumentNonBlocking(actorRef, { 
       status: 'finish',
       lpjNominal: numNominal,
@@ -70,9 +81,9 @@ export default function LPJPage() {
   }
 
   const handleUnblacklist = async (actorId: string) => {
-    if (!isAdmin || !firestore) return
+    if (!isAdmin || !database) return
     if (confirm("Kembalikan status data ini ke Antrean LPJ?")) {
-        const actorRef = doc(firestore, 'businessActors', actorId)
+        const actorRef = ref(database, `businessActors/${actorId}`)
         await updateDocumentNonBlocking(actorRef, { 
             status: 'lpj_pending',
             lpjEntryDate: new Date().toISOString() // Reset entry date to give another 14 days

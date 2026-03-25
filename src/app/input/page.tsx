@@ -2,8 +2,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useFirestore, useUser, addDocumentNonBlocking, useMemoFirebase, useCollection } from "@/firebase"
-import { collection, query, where, getDocs, limit } from "firebase/firestore"
+import { useDatabase, useUser, addDocumentNonBlocking, useMemoFirebase, useList } from "@/firebase"
+import { ref, query, orderByChild, equalTo, get, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,7 +25,7 @@ import {
 export default function InputDataPage() {
   const { toast } = useToast()
   const { user } = useUser()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const [loading, setLoading] = useState(false)
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [kelurahan, setKelurahan] = useState<string>("")
@@ -33,10 +33,10 @@ export default function InputDataPage() {
 
   // Get current user profile to record who created the entry
   const userProfileQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
-  }, [user, firestore])
-  const { data: userProfiles } = useCollection(userProfileQuery)
+    if (!user || !database) return null
+    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+  }, [user, database])
+  const { data: userProfiles } = useList(userProfileQuery)
   const currentUserProfile = userProfiles?.[0]
 
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function InputDataPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!user || !firestore) return
+    if (!user || !database) return
 
     setLoading(true)
     const formElement = e.currentTarget
@@ -74,17 +74,17 @@ export default function InputDataPage() {
     const noKK = formData.get("noKK") as string
 
     try {
-      const actorsRef = collection(firestore, 'businessActors')
+      const actorsRef = ref(database, 'businessActors')
       
-      const qNik = query(actorsRef, where('nik', '==', nik))
-      const qKK = query(actorsRef, where('noKK', '==', noKK))
+      const qNik = query(actorsRef, orderByChild('nik'), equalTo(nik))
+      const qKK = query(actorsRef, orderByChild('noKK'), equalTo(noKK))
 
       const [snapNik, snapKK] = await Promise.all([
-        getDocs(qNik),
-        getDocs(qKK)
+        get(qNik),
+        get(qKK)
       ])
 
-      if (!snapNik.empty || !snapKK.empty) {
+      if (snapNik.exists() || snapKK.exists()) {
         toast({ 
           variant: "destructive", 
           title: "DATA TELAH DI INPUT", 

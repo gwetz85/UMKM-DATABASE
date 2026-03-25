@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth, useFirestore } from "@/firebase"
+import { useAuth, useDatabase } from "@/firebase"
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth"
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"
+import { ref, get, set, update } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -45,7 +45,7 @@ export default function LoginPage() {
   const [isRegOpen, setIsRegOpen] = useState(false)
 
   const auth = useAuth()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const router = useRouter()
   const { toast } = useToast()
 
@@ -63,11 +63,11 @@ export default function LoginPage() {
         const userCredential = await signInWithEmailAndPassword(auth, email, password)
         user = userCredential.user
 
-        const userRef = doc(firestore, 'system_users', username)
-        const userSnap = await getDoc(userRef)
+        const userRef = ref(database, `system_users/${username}`)
+        const userSnap = await get(userRef)
 
         if (userSnap.exists()) {
-          const userData = userSnap.data()
+          const userData = userSnap.val()
           
           if (userData.role === 'pending') {
             await signOut(auth)
@@ -81,7 +81,7 @@ export default function LoginPage() {
           }
 
           if (!userData.uid) {
-            await updateDoc(userRef, { uid: user.uid })
+            await update(userRef, { uid: user.uid })
             toast({ title: "Perangkat Terkunci", description: "Akun Anda sekarang terikat pada perangkat ini." })
           } else if (userData.uid !== user.uid) {
             await signOut(auth)
@@ -98,11 +98,11 @@ export default function LoginPage() {
         toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
       } catch (loginError: any) {
         if (loginError.code === 'auth/user-not-found' || loginError.code === 'auth/invalid-credential' || loginError.code === 'auth/invalid-email') {
-          const tempUserRef = doc(firestore, 'system_users', username)
-          const tempUserSnap = await getDoc(tempUserRef)
+          const tempUserRef = ref(database, `system_users/${username}`)
+          const tempUserSnap = await get(tempUserRef)
 
           if (tempUserSnap.exists()) {
-            const preRegisteredData = tempUserSnap.data()
+            const preRegisteredData = tempUserSnap.val()
             
             if (preRegisteredData.role === 'pending') {
               toast({ 
@@ -118,14 +118,14 @@ export default function LoginPage() {
               const newUserCred = await createUserWithEmailAndPassword(auth, email, password)
               user = newUserCred.user
 
-              await updateDoc(tempUserRef, {
+              await update(tempUserRef, {
                 uid: user.uid,
                 addedAt: new Date().toISOString()
               })
 
               if (preRegisteredData.role === 'admin') {
-                const roleRef = doc(firestore, 'roles_admin', user.uid)
-                await setDoc(roleRef, { admin: true })
+                const roleRef = ref(database, `roles_admin/${user.uid}`)
+                await set(roleRef, { admin: true })
               }
 
               toast({ 
@@ -164,17 +164,17 @@ export default function LoginPage() {
     
     setRegistering(true)
     const username = regName.toLowerCase().trim().replace(/\s+/g, '_')
-    const userRef = doc(firestore, 'system_users', username)
+    const userRef = ref(database, `system_users/${username}`)
 
     try {
-      const snap = await getDoc(userRef)
+      const snap = await get(userRef)
       if (snap.exists()) {
         toast({ variant: "destructive", title: "Username Sudah Ada", description: "Silakan gunakan nama lain atau hubungi Admin." })
         setRegistering(false)
         return
       }
 
-      await setDoc(userRef, {
+      await set(userRef, {
         fullName: regName,
         password: regPass,
         role: "pending",
@@ -200,14 +200,14 @@ export default function LoginPage() {
   const seedMonitoringUser = async () => {
     setSeeding(true)
     try {
-      const userRef = doc(firestore, 'system_users', 'monitoring')
-      await setDoc(userRef, {
+      const userRef = ref(database, `system_users/monitoring`)
+      await update(userRef, {
         fullName: "Monitoring",
         password: "monitoring",
         role: "monitoring",
         uid: null,
         addedAt: new Date().toISOString()
-      }, { merge: true })
+      })
       
       toast({ title: "Inisialisasi Berhasil", description: "User 'monitoring' telah ditambahkan ke database. Silakan login." })
       setIdentifier("monitoring")

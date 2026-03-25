@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useFirestore, useUser, useDoc, useMemoFirebase } from "@/firebase"
-import { collection, doc, getDocs, writeBatch } from "firebase/firestore"
+import { useDatabase, useUser, useObject, useMemoFirebase } from "@/firebase"
+import { ref, get, update, remove, push } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -28,17 +28,17 @@ import * as XLSX from 'xlsx'
 export default function SettingsPage() {
   const { user } = useUser()
   const { toast } = useToast()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const [loading, setLoading] = useState(false)
   const [uploadingExcel, setUploadingExcel] = useState(false)
   const [theme, setTheme] = useState<"light" | "dark">("light")
 
   const adminRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return doc(firestore, 'roles_admin', user.uid)
-  }, [user, firestore])
+    if (!user || !database) return null
+    return ref(database, `roles_admin/${user.uid}`)
+  }, [user, database])
 
-  const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRef)
+  const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
   useEffect(() => {
@@ -71,9 +71,11 @@ export default function SettingsPage() {
   const handleBackup = async () => {
     setLoading(true)
     try {
-      const colRef = collection(firestore, "businessActors")
-      const snapshot = await getDocs(colRef)
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+      const data: any[] = []
+      const snapshot = await get(ref(database, "businessActors"))
+      snapshot.forEach(child => {
+        data.push({ id: child.key, ...child.val() })
+      })
       
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
       const url = URL.createObjectURL(blob)
@@ -103,14 +105,13 @@ export default function SettingsPage() {
 
         const batchSize = 500
         for (let i = 0; i < data.length; i += batchSize) {
-          const batch = writeBatch(firestore)
           const chunk = data.slice(i, i + batchSize)
+          const updates: any = {}
           chunk.forEach((item) => {
             const { id, ...rest } = item
-            const docRef = doc(firestore, "businessActors", id)
-            batch.set(docRef, rest, { merge: true })
+            updates[`businessActors/${id}`] = item
           })
-          await batch.commit()
+          await update(ref(database), updates)
         }
         
         toast({ title: "Restore Berhasil", description: `${data.length} data telah dipulihkan.` })
@@ -165,16 +166,14 @@ export default function SettingsPage() {
         if (masterData.length === 0) throw new Error("Tidak ada data valid ditemukan. Pastikan kolom KK dan NIK terisi.")
 
         const batchSize = 500
-        const colRef = collection(firestore, "master_data")
-        
         for (let i = 0; i < masterData.length; i += batchSize) {
-          const batch = writeBatch(firestore)
           const chunk = masterData.slice(i, i + batchSize)
+          const updates: any = {}
           chunk.forEach((item) => {
-            const newDocRef = doc(colRef)
-            batch.set(newDocRef, item)
+            const newId = push(ref(database, "master_data")).key
+            updates[`master_data/${newId}`] = item
           })
-          await batch.commit()
+          await update(ref(database), updates)
         }
 
         toast({ title: "Upload Excel Berhasil", description: `${masterData.length} data master telah disimpan ke sistem.` })
@@ -193,11 +192,7 @@ export default function SettingsPage() {
 
     setLoading(true)
     try {
-      const colRef = collection(firestore, "businessActors")
-      const snapshot = await getDocs(colRef)
-      const batch = writeBatch(firestore)
-      snapshot.docs.forEach((doc) => batch.delete(doc.ref))
-      await batch.commit()
+      await remove(ref(database, "businessActors"))
       
       toast({ title: "Reset Berhasil", description: "Seluruh data pelaku usaha telah dihapus." })
     } catch (error) {
@@ -212,18 +207,7 @@ export default function SettingsPage() {
 
     setLoading(true)
     try {
-      const colRef = collection(firestore, "master_data")
-      const snapshot = await getDocs(colRef)
-      
-      const batchSize = 500
-      const docs = snapshot.docs
-      
-      for (let i = 0; i < docs.length; i += batchSize) {
-        const batch = writeBatch(firestore)
-        const chunk = docs.slice(i, i + batchSize)
-        chunk.forEach((doc) => batch.delete(doc.ref))
-        await batch.commit()
-      }
+      await remove(ref(database, "master_data"))
       
       toast({ title: "Hapus Berhasil", description: "Seluruh data master pembanding telah dihapus." })
     } catch (error) {

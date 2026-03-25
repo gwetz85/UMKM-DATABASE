@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useUser, useFirestore, useMemoFirebase, useCollection, updateDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, limit, doc } from "firebase/firestore"
+import { useUser, useDatabase, useMemoFirebase, useList, updateDocumentNonBlocking } from "@/firebase"
+import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,7 +22,7 @@ import {
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const { toast } = useToast()
   const [isSaving, setIsSaving] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -32,16 +32,16 @@ export default function ProfilePage() {
   }, [])
 
   const userProfileQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
-  }, [user, firestore])
+    if (!user || !database) return null
+    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+  }, [user, database])
 
-  const { data: userProfiles, isLoading: isProfileLoading } = useCollection(userProfileQuery)
+  const { data: userProfiles, isLoading: isProfileLoading } = useList(userProfileQuery)
   const profile = userProfiles?.[0]
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!profile || !firestore) return
+    if (!profile || !database) return
 
     setIsSaving(true)
     const formData = new FormData(e.currentTarget)
@@ -54,7 +54,7 @@ export default function ProfilePage() {
     }
 
     try {
-      const userRef = doc(firestore, 'system_users', profile.id)
+      const userRef = ref(database, `system_users/${profile.id}`)
       updateDocumentNonBlocking(userRef, updates)
       toast({
         title: "Profil Diperbarui",

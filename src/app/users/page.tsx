@@ -2,8 +2,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useMemoFirebase, useCollection, useUser, useFirestore, setDocumentNonBlocking, deleteDocumentNonBlocking, useDoc, updateDocumentNonBlocking } from "@/firebase"
-import { collection, query, doc, orderBy } from "firebase/firestore"
+import { useMemoFirebase, useList, useUser, useDatabase, setDocumentNonBlocking, deleteDocumentNonBlocking, useObject, updateDocumentNonBlocking } from "@/firebase"
+import { ref, query, orderByChild } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -36,7 +36,7 @@ export default function UserManagementPage() {
   const [mounted, setMounted] = useState(false)
   const { user } = useUser()
   const { toast } = useToast()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<any>(null)
 
@@ -45,19 +45,19 @@ export default function UserManagementPage() {
   }, [])
 
   const adminRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return doc(firestore, 'roles_admin', user.uid)
-  }, [user, firestore])
+    if (!user || !database) return null
+    return ref(database, `roles_admin/${user.uid}`)
+  }, [user, database])
 
-  const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRef)
+  const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
   const memoQuery = useMemoFirebase(() => {
-    if (!firestore) return null
-    return query(collection(firestore, 'system_users'), orderBy('addedAt', 'desc'))
-  }, [firestore])
+    if (!database) return null
+    return query(ref(database, 'system_users'), orderByChild('addedAt'))
+  }, [database])
 
-  const { data: systemUsers, isLoading } = useCollection(memoQuery)
+  const { data: systemUsers, isLoading } = useList(memoQuery)
 
   const handleAddUser = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -69,7 +69,7 @@ export default function UserManagementPage() {
     if (!fullName || !password || !role) return
 
     const username = fullName.toLowerCase().trim().replace(/\s+/g, '_')
-    const userRef = doc(firestore, 'system_users', username)
+    const userRef = ref(database, `system_users/${username}`)
     
     setDocumentNonBlocking(userRef, {
       fullName,
@@ -77,7 +77,7 @@ export default function UserManagementPage() {
       role,
       uid: null,
       addedAt: new Date().toISOString()
-    }, { merge: true })
+    })
 
     toast({ 
       title: "User Didaftarkan", 
@@ -97,7 +97,7 @@ export default function UserManagementPage() {
     const nik = formData.get("nik") as string
     const address = formData.get("address") as string
     
-    const userRef = doc(firestore, 'system_users', editingUser.id)
+    const userRef = ref(database, `system_users/${editingUser.id}`)
 
     updateDocumentNonBlocking(userRef, { 
       role,
@@ -109,8 +109,8 @@ export default function UserManagementPage() {
 
     // Jika diupdate jadi admin, pastikan masuk ke roles_admin kalau UID sudah ada
     if (role === 'admin' && editingUser.uid) {
-      const roleRef = doc(firestore, 'roles_admin', editingUser.uid)
-      setDocumentNonBlocking(roleRef, { admin: true }, { merge: true })
+      const roleRef = ref(database, `roles_admin/${editingUser.uid}`)
+      setDocumentNonBlocking(roleRef, { admin: true })
     }
 
     toast({ title: "Role Diperbarui", description: `Akses untuk ${editingUser.fullName} telah diubah.` })
@@ -118,9 +118,9 @@ export default function UserManagementPage() {
   }
 
   const handleResetUID = (id: string, fullName: string) => {
-    if (!firestore) return
+    if (!database) return
     if (confirm(`Reset penguncian perangkat untuk ${fullName}? User akan bisa login kembali di perangkat baru.`)) {
-      const userRef = doc(firestore, 'system_users', id)
+      const userRef = ref(database, `system_users/${id}`)
       updateDocumentNonBlocking(userRef, { uid: null })
       toast({ title: "Perangkat Direset", description: `UID untuk ${fullName} telah dihapus.` })
     }
@@ -133,9 +133,9 @@ export default function UserManagementPage() {
     }
 
     if (confirm(`Hapus akses untuk ${fullName} secara permanen?`)) {
-      deleteDocumentNonBlocking(doc(firestore, 'system_users', id))
+      deleteDocumentNonBlocking(ref(database, `system_users/${id}`))
       if (userUid) {
-        deleteDocumentNonBlocking(doc(firestore, 'roles_admin', userUid))
+        deleteDocumentNonBlocking(ref(database, `roles_admin/${userUid}`))
       }
       toast({ title: "Terhapus", description: "Akses user telah dicabut." })
     }
@@ -223,7 +223,7 @@ export default function UserManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {systemUsers?.map((u: any) => (
+                {(systemUsers ? [...systemUsers].reverse() : []).map((u: any) => (
                   <TableRow key={u.id} className="hover:bg-muted/10">
                     <TableCell className="font-bold text-slate-700">
                       <div className="flex flex-col">

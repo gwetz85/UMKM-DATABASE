@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemoFirebase, useCollection, useUser, useFirestore, updateDocumentNonBlocking, useDoc, deleteDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, doc, limit } from "firebase/firestore"
+import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
+import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -12,34 +12,34 @@ import { useToast } from "@/hooks/use-toast"
 export default function VerifyBankPage() {
   const { user } = useUser()
   const { toast } = useToast()
-  const firestore = useFirestore()
+  const database = useDatabase()
 
   const adminRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return doc(firestore, 'roles_admin', user.uid)
-  }, [user, firestore])
-  const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRef)
+    if (!user || !database) return null
+    return ref(database, `roles_admin/${user.uid}`)
+  }, [user, database])
+  const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
 
   const userProfileQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
-  }, [user, firestore])
-  const { data: userProfiles } = useCollection(userProfileQuery)
+    if (!user || !database) return null
+    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+  }, [user, database])
+  const { data: userProfiles } = useList(userProfileQuery)
   const userProfile = userProfiles?.[0]
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isMonitoring = userProfile?.role === 'monitoring'
 
   const memoQuery = useMemoFirebase(() => {
-    if (!firestore) return null
-    return query(collection(firestore, 'businessActors'), where('status', '==', 'bank_pending'))
-  }, [firestore])
+    if (!database) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('bank_pending'))
+  }, [database])
 
-  const { data: actors, isLoading } = useCollection<BusinessActor>(memoQuery)
+  const { data: actors, isLoading } = useList<BusinessActor>(memoQuery)
 
   const handleFinalVerify = (actorId: string) => {
-    if (!isAdmin || !firestore) return
-    const actorRef = doc(firestore, 'businessActors', actorId)
+    if (!isAdmin || !database) return
+    const actorRef = ref(database, `businessActors/${actorId}`)
     updateDocumentNonBlocking(actorRef, { 
       status: 'lpj_pending',
       lpjEntryDate: new Date().toISOString()
@@ -48,18 +48,18 @@ export default function VerifyBankPage() {
   }
 
   const handleRevert = (actorId: string, fullName: string) => {
-    if (!isAdmin || !firestore) return
+    if (!isAdmin || !database) return
     if (confirm(`Kembalikan data pelaku "${fullName}" ke antrean verifikasi Admin awal?`)) {
-      const actorRef = doc(firestore, 'businessActors', actorId)
+      const actorRef = ref(database, `businessActors/${actorId}`)
       updateDocumentNonBlocking(actorRef, { status: 'pending' })
       toast({ title: "Verifikasi Dibatalkan", description: "Data dikembalikan ke antrean verifikasi awal." })
     }
   }
 
   const handleDelete = (actorId: string, fullName: string) => {
-    if (!isAdmin || !firestore) return
+    if (!isAdmin || !database) return
     if (confirm(`Batalkan dan hapus data "${fullName}"? Data ini akan dihapus permanen dari sistem.`)) {
-      const actorRef = doc(firestore, 'businessActors', actorId)
+      const actorRef = ref(database, `businessActors/${actorId}`)
       deleteDocumentNonBlocking(actorRef)
       toast({ variant: "destructive", title: "Terhapus", description: "Data telah dihapus." })
     }

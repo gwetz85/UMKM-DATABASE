@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemoFirebase, useCollection, useUser, useFirestore } from "@/firebase"
-import { collection, query, orderBy } from "firebase/firestore"
+import { useMemoFirebase, useList, useUser, useDatabase } from "@/firebase"
+import { ref, query, orderByChild } from "firebase/database"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
@@ -26,14 +26,15 @@ import { Badge } from "@/components/ui/badge"
 
 export default function BusinessListPage() {
   const { user } = useUser()
-  const firestore = useFirestore()
+  const database = useDatabase()
 
   const memoQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return query(collection(firestore, 'users', user.uid, 'businessActors'), orderBy('createdAt', 'desc'))
-  }, [user, firestore])
+    if (!user || !database) return null
+    return query(ref(database, `users/${user.uid}/businessActors`), orderByChild('createdAt'))
+  }, [user, database])
 
-  const { data: businesses, isLoading } = useCollection(memoQuery)
+  const { data: rawBusinesses, isLoading } = useList(memoQuery)
+  const businesses = rawBusinesses ? [...rawBusinesses].reverse() : []
 
   return (
     <div className="p-8 space-y-6">

@@ -1,52 +1,52 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { useFirestore, useUser, useDoc, useMemoFirebase, deleteDocumentNonBlocking, useCollection } from '@/firebase';
-import { collection, query, onSnapshot, orderBy, doc, deleteDoc, getDocs, where } from 'firebase/firestore';
+import { useDatabase, useUser, useObject, useMemoFirebase, deleteDocumentNonBlocking, useList } from '@/firebase';
+import { ref, query, onValue, orderByChild, equalTo, get } from 'firebase/database';
 import { MessageSquare, ShieldAlert, Trash2 } from 'lucide-react';
 
 export default function ChatMonitoring() {
   const { user } = useUser();
-  const firestore = useFirestore();
+  const database = useDatabase();
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   // Admin Check
   const adminRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return doc(firestore, 'roles_admin', user.uid);
-  }, [user, firestore]);
-  const { data: adminRole } = useDoc(adminRef);
+    if (!user || !database) return null;
+    return ref(database, `roles_admin/${user.uid}`);
+  }, [user, database]);
+  const { data: adminRole } = useObject(adminRef);
 
   // Get users for name lookup
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'system_users'));
-  }, [firestore]);
-  const { data: allUsers } = useCollection(usersQuery);
+    if (!database) return null;
+    return query(ref(database, 'system_users'));
+  }, [database]);
+  const { data: allUsers } = useList(usersQuery);
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id');
 
   const handleDeleteSession = async (chatId: string) => {
     if (!window.confirm('Apakah Anda yakin ingin menghapus seluruh riwayat percakapan ini secara permanen?')) return;
     
-    if (!firestore) return;
+    if (!database) return;
 
     try {
       // Get all messages in chat
-      const messagesQuery = query(collection(firestore, 'chat_messages'), where('chatId', '==', chatId));
-      const snapshot = await getDocs(messagesQuery);
+      const messagesQuery = query(ref(database, 'chat_messages'), orderByChild('chatId'), equalTo(chatId));
+      const snapshot = await get(messagesQuery);
       
       // Delete each message
-      snapshot.forEach(doc => {
-        deleteDocumentNonBlocking(doc.ref);
+      snapshot.forEach(child => {
+        deleteDocumentNonBlocking(child.ref);
       });
 
       // Clear related unread triggers just in case
       const parts = chatId.split('_');
       parts.forEach(uid => {
-        deleteDocumentNonBlocking(doc(firestore, 'chat_unread', `${uid}_${chatId}`));
+        deleteDocumentNonBlocking(ref(database, `chat_unread/${uid}_${chatId}`));
       });
 
       setSelectedSessionId(null);
@@ -58,14 +58,15 @@ export default function ChatMonitoring() {
   };
 
   useEffect(() => {
-    if (!firestore || !isAdmin) return;
+    if (!database || !isAdmin) return;
 
-    const messagesQuery = query(collection(firestore, 'chat_messages'), orderBy('timestamp', 'asc'));
-    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+    const messagesQuery = query(ref(database, 'chat_messages'), orderByChild('timestamp'));
+    const unsubscribe = onValue(messagesQuery, (snapshot) => {
       const messagesByChatId: Record<string, any[]> = {};
       
-      snapshot.docs.forEach(doc => {
-        const data = { id: doc.id, ...doc.data(), timestamp: doc.data().timestamp?.toMillis() || Date.now() };
+      snapshot.forEach(child => {
+        const data = { id: child.key, ...child.val() };
+        if (!data.timestamp) data.timestamp = Date.now();
         if (!messagesByChatId[data.chatId]) {
           messagesByChatId[data.chatId] = [];
         }
@@ -99,7 +100,7 @@ export default function ChatMonitoring() {
     });
 
     return () => unsubscribe();
-  }, [firestore, isAdmin, allUsers]);
+  }, [database, isAdmin, allUsers]);
 
   if (!isAdmin) {
     return (

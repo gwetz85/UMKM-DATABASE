@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useMemoFirebase, useCollection, useFirestore, useUser, useDoc, updateDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, doc } from "firebase/firestore"
+import { useMemoFirebase, useList, useDatabase, useUser, useObject, updateDocumentNonBlocking } from "@/firebase"
+import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge"
 
 export default function FinishPage() {
   const { user } = useUser()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const { toast } = useToast()
   const [printDate, setPrintDate] = useState<string>("")
 
@@ -23,23 +23,23 @@ export default function FinishPage() {
   }, [])
 
   const adminRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return doc(firestore, 'roles_admin', user.uid)
-  }, [user, firestore])
-  const { data: adminRole } = useDoc(adminRef)
+    if (!user || !database) return null
+    return ref(database, `roles_admin/${user.uid}`)
+  }, [user, database])
+  const { data: adminRole } = useObject(adminRef)
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
   const memoQuery = useMemoFirebase(() => {
-    if (!firestore) return null
-    return query(collection(firestore, 'businessActors'), where('status', '==', 'finish'))
-  }, [firestore])
+    if (!database) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('finish'))
+  }, [database])
 
-  const { data: actors, isLoading } = useCollection<BusinessActor>(memoQuery)
+  const { data: actors, isLoading } = useList<BusinessActor>(memoQuery)
 
   const handleRevert = (actorId: string, fullName: string) => {
-    if (!isAdmin || !firestore) return
+    if (!isAdmin || !database) return
     if (confirm(`Kembalikan ${fullName} ke antrean awal?`)) {
-      updateDocumentNonBlocking(doc(firestore, 'businessActors', actorId), { status: 'pending' })
+      updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
       toast({ title: "Berhasil", description: "Data dikembalikan ke antrean awal." })
     }
   }

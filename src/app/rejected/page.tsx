@@ -2,8 +2,8 @@
 "use client"
 
 import { useState, Suspense } from "react"
-import { useMemoFirebase, useCollection, useUser, useFirestore, useDoc, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, doc, limit } from "firebase/firestore"
+import { useMemoFirebase, useList, useUser, useDatabase, useObject, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase"
+import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -14,45 +14,45 @@ import { useToast } from "@/hooks/use-toast"
 
 function RejectedContent() {
   const { user } = useUser()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const { toast } = useToast()
   
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
 
   const adminRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return doc(firestore, 'roles_admin', user.uid)
-  }, [user, firestore])
-  const { data: adminRole } = useDoc(adminRef)
+    if (!user || !database) return null
+    return ref(database, `roles_admin/${user.uid}`)
+  }, [user, database])
+  const { data: adminRole } = useObject(adminRef)
 
   const userProfileQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
-  }, [user, firestore])
-  const { data: userProfiles } = useCollection(userProfileQuery)
+    if (!user || !database) return null
+    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+  }, [user, database])
+  const { data: userProfiles } = useList(userProfileQuery)
   const userProfile = userProfiles?.[0]
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
 
   const memoQuery = useMemoFirebase(() => {
-    if (!firestore) return null
-    return query(collection(firestore, 'businessActors'), where('status', '==', 'rejected'))
-  }, [firestore])
+    if (!database) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('rejected'))
+  }, [database])
 
-  const { data: actors, isLoading } = useCollection<BusinessActor>(memoQuery)
+  const { data: actors, isLoading } = useList<BusinessActor>(memoQuery)
 
   const handleRevert = (actorId: string, fullName: string) => {
-    if (!isAdmin || !firestore) return
+    if (!isAdmin || !database) return
     if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
-      updateDocumentNonBlocking(doc(firestore, 'businessActors', actorId), { status: 'pending' })
+      updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
       toast({ title: "Berhasil", description: "Data dikembalikan ke antrean awal." })
     }
   }
 
   const handleDelete = (actorId: string, fullName: string) => {
-    if (!isAdmin || !firestore) return
+    if (!isAdmin || !database) return
     if (confirm(`Hapus permanen data "${fullName}"? Tindakan ini tidak dapat dibatalkan.`)) {
-      deleteDocumentNonBlocking(doc(firestore, 'businessActors', actorId))
+      deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
       toast({ variant: "destructive", title: "Terhapus", description: "Data telah dihapus permanen." })
     }
   }

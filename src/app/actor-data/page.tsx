@@ -2,8 +2,8 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useMemoFirebase, useCollection, useUser, useFirestore, updateDocumentNonBlocking, useDoc, deleteDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, doc, limit } from "firebase/firestore"
+import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
+import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils"
 
 function ActorDataContent() {
   const { user } = useUser()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -33,35 +33,34 @@ function ActorDataContent() {
   }, [])
 
   const adminRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return doc(firestore, 'roles_admin', user.uid)
-  }, [user, firestore])
-  const { data: adminRole } = useDoc(adminRef)
+    if (!user || !database) return null
+    return ref(database, `roles_admin/${user.uid}`)
+  }, [user, database])
+  const { data: adminRole } = useObject(adminRef)
 
   const userProfileQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
-  }, [user, firestore])
-  const { data: userProfiles } = useCollection(userProfileQuery)
+    if (!user || !database) return null
+    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+  }, [user, database])
+  const { data: userProfiles } = useList(userProfileQuery)
   const userProfile = userProfiles?.[0]
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isMonitoring = userProfile?.role === 'monitoring'
 
   const memoQuery = useMemoFirebase(() => {
-    if (!firestore) return null
-    let q = query(collection(firestore, 'businessActors'), where('status', '==', 'verified_actor'))
-    if (filterCoordinator) q = query(q, where('coordinator', '==', filterCoordinator))
-    return q
-  }, [firestore, filterCoordinator])
+    if (!database) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_actor'))
+  }, [database])
 
-  const { data: actors, isLoading } = useCollection<BusinessActor>(memoQuery)
+  const { data: allActors, isLoading } = useList<BusinessActor>(memoQuery)
+  const actors = allActors ? (filterCoordinator ? allActors.filter(a => a.coordinator === filterCoordinator) : allActors) : undefined
 
   const handleSaveBank = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!editingActor || !firestore || isMonitoring) return
+    if (!editingActor || !database || isMonitoring) return
     const formData = new FormData(e.currentTarget)
-    updateDocumentNonBlocking(doc(firestore, 'businessActors', editingActor.id), {
+    updateDocumentNonBlocking(ref(database, `businessActors/${editingActor.id}`), {
       bankNumber: formData.get('bankNumber'),
       bankOwner: formData.get('bankOwner'),
       bankName: formData.get('bankName'),
@@ -72,17 +71,17 @@ function ActorDataContent() {
   }
 
   const handleRevert = (actorId: string, fullName: string) => {
-    if (!isAdmin || !firestore) return
+    if (!isAdmin || !database) return
     if (confirm(`Revert ${fullName}?`)) {
-      updateDocumentNonBlocking(doc(firestore, 'businessActors', actorId), { status: 'pending' })
+      updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
       toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
     }
   }
 
   const handleDelete = (actorId: string, fullName: string) => {
-    if (!isAdmin || !firestore) return
+    if (!isAdmin || !database) return
     if (confirm(`Hapus permanen ${fullName}?`)) {
-      deleteDocumentNonBlocking(doc(firestore, 'businessActors', actorId))
+      deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
       toast({ variant: "destructive", title: "Terhapus", description: "Data dihapus permanen." })
     }
   }

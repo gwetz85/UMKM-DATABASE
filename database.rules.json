@@ -1,0 +1,43 @@
+{
+  "rules": {
+    "roles_admin": {
+      ".read": "auth != null",
+      "$adminId": {
+        ".write": "(auth != null && auth.uid == $adminId && auth.token.email == 'agus@umkm.id') || (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')"
+      }
+    },
+    "businessActors": {
+      ".read": "auth != null",
+      ".indexOn": ["ownerId", "status", "createdAt"],
+      "$actorId": {
+         ".write": "auth != null && (newData.exists() || root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')"
+      }
+    },
+    "system_users": {
+      ".read": "true",
+      ".indexOn": ["uid", "role"],
+      "$username": {
+        ".write": "auth != null || newData.child('role').val() == 'pending' || $username == 'monitoring'"
+      }
+    },
+    "master_data": {
+      ".read": "true",
+      ".write": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
+      ".indexOn": ["nik", "kk", "nama", "koperasi"]
+    },
+    "users": {
+       "$uid": {
+          "businessActors": {
+             ".read": "auth != null && auth.uid == $uid",
+             ".write": "auth != null && auth.uid == $uid",
+             ".indexOn": ["createdAt"]
+          }
+       }
+    },
+    "chats": {
+      ".read": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
+      ".write": "auth != null",
+      ".indexOn": ["timestamp", "senderId"]
+    }
+  }
+}

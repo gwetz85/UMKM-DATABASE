@@ -1,8 +1,8 @@
 
 "use client"
 
-import { useMemoFirebase, useCollection, useUser, useFirestore } from "@/firebase"
-import { collection, query, orderBy } from "firebase/firestore"
+import { useMemoFirebase, useList, useUser, useDatabase } from "@/firebase"
+import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, UserCheck, UserX, Activity, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const router = useRouter()
 
   useEffect(() => {
@@ -22,11 +22,11 @@ export default function DashboardPage() {
   }, [user, isUserLoading, router])
   
   const memoQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null
-    return query(collection(firestore, 'businessActors'), orderBy('createdAt', 'desc'))
-  }, [firestore, user])
+    if (!database || !user) return null
+    return query(ref(database, 'businessActors'))
+  }, [database, user])
 
-  const { data: allData, isLoading } = useCollection<BusinessActor>(memoQuery)
+  const { data: allData, isLoading } = useList<BusinessActor>(memoQuery)
 
   const kelurahanList = [
     "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",

@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useFirestore } from "@/firebase"
-import { collection, query, where, getDocs } from "firebase/firestore"
+import { useDatabase } from "@/firebase"
+import { ref, query, orderByChild, equalTo, get } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,7 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 export default function CheckDataPage() {
-  const firestore = useFirestore()
+  const database = useDatabase()
   const [loading, setLoading] = useState(false)
   const [searchDone, setSearchDone] = useState(false)
   const [results, setResults] = useState<any[]>([])
@@ -31,12 +31,16 @@ export default function CheckDataPage() {
 
     try {
       const q = query(
-        collection(firestore, 'master_data'),
-        where(searchType, '==', inputValue.trim())
+        ref(database, 'master_data'),
+        orderByChild(searchType),
+        equalTo(inputValue.trim())
       )
       
-      const snapshot = await getDocs(q)
-      const data = snapshot.docs.map(doc => doc.data())
+      const snapshot = await get(q)
+      const data: any[] = []
+      snapshot.forEach(child => {
+        data.push(child.val())
+      })
       setResults(data)
       setSearchDone(true)
     } catch (error) {

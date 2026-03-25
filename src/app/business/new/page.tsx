@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useFirestore, useUser, addDocumentNonBlocking } from "@/firebase"
-import { collection } from "firebase/firestore"
+import { useDatabase, useUser, addDocumentNonBlocking } from "@/firebase"
+import { ref } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -26,7 +26,7 @@ export default function NewBusinessPage() {
   const router = useRouter()
   const { toast } = useToast()
   const { user } = useUser()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -52,7 +52,7 @@ export default function NewBusinessPage() {
     }
 
     try {
-      const colRef = collection(firestore, 'users', user.uid, 'businessActors')
+      const colRef = ref(database, `users/${user.uid}/businessActors`)
       addDocumentNonBlocking(colRef, data)
       
       toast({

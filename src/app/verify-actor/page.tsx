@@ -2,8 +2,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useMemoFirebase, useCollection, useUser, useFirestore, updateDocumentNonBlocking, useDoc, deleteDocumentNonBlocking } from "@/firebase"
-import { collection, query, where, doc, limit } from "firebase/firestore"
+import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
+import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast"
 export default function VerifyActorPage() {
   const { user } = useUser()
   const { toast } = useToast()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
@@ -31,27 +31,27 @@ export default function VerifyActorPage() {
   const [editKecamatan, setEditKecamatan] = useState<string>("")
 
   const adminRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return doc(firestore, 'roles_admin', user.uid)
-  }, [user, firestore])
-  const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRef)
+    if (!user || !database) return null
+    return ref(database, `roles_admin/${user.uid}`)
+  }, [user, database])
+  const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
 
   const userProfileQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
-  }, [user, firestore])
-  const { data: userProfiles } = useCollection(userProfileQuery)
+    if (!user || !database) return null
+    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+  }, [user, database])
+  const { data: userProfiles } = useList(userProfileQuery)
   const userProfile = userProfiles?.[0]
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isMonitoring = userProfile?.role === 'monitoring'
 
   const memoQuery = useMemoFirebase(() => {
-    if (!firestore) return null
-    return query(collection(firestore, 'businessActors'), where('status', '==', 'pending'))
-  }, [firestore])
+    if (!database) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('pending'))
+  }, [database])
 
-  const { data: actors, isLoading } = useCollection<BusinessActor>(memoQuery)
+  const { data: actors, isLoading } = useList<BusinessActor>(memoQuery)
 
   const filteredActors = actors?.filter(actor =>
     actor.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -85,11 +85,11 @@ export default function VerifyActorPage() {
 
   const handleSaveAndVerify = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!editingActor || !firestore || !isAdmin) return
+    if (!editingActor || !database || !isAdmin) return
 
     setIsVerifying(true)
     const formData = new FormData(e.currentTarget)
-    const actorRef = doc(firestore, 'businessActors', editingActor.id)
+    const actorRef = ref(database, `businessActors/${editingActor.id}`)
     updateDocumentNonBlocking(actorRef, {
       fullName: formData.get("fullName"),
       nik: formData.get("nik"),
@@ -114,11 +114,11 @@ export default function VerifyActorPage() {
 
   const handleSaveOnly = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!editingOnlyActor || !firestore || !isAdmin) return
+    if (!editingOnlyActor || !database || !isAdmin) return
 
     setIsVerifying(true)
     const formData = new FormData(e.currentTarget)
-    const actorRef = doc(firestore, 'businessActors', editingOnlyActor.id)
+    const actorRef = ref(database, `businessActors/${editingOnlyActor.id}`)
     updateDocumentNonBlocking(actorRef, {
       fullName: formData.get("fullName"),
       nik: formData.get("nik"),
@@ -142,11 +142,11 @@ export default function VerifyActorPage() {
 
   const handleReject = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!rejectingActor || !firestore || !isAdmin) return
+    if (!rejectingActor || !database || !isAdmin) return
 
     const formData = new FormData(e.currentTarget)
     const reason = formData.get("rejectionReason") as string
-    const actorRef = doc(firestore, 'businessActors', rejectingActor.id)
+    const actorRef = ref(database, `businessActors/${rejectingActor.id}`)
 
     updateDocumentNonBlocking(actorRef, {
       status: 'rejected',
@@ -160,7 +160,7 @@ export default function VerifyActorPage() {
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin) return
     if (confirm(`Hapus data pending milik "${fullName}"?`)) {
-      deleteDocumentNonBlocking(doc(firestore, 'businessActors', actorId))
+      deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
       toast({ variant: "destructive", title: "Data Dibatalkan", description: "Data telah dihapus." })
     }
   }

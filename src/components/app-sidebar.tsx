@@ -26,8 +26,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useUser, useDoc, useMemoFirebase, useAuth, useCollection, useFirestore } from "@/firebase"
-import { doc, collection, query, where, limit } from "firebase/firestore"
+import { useUser, useObject, useMemoFirebase, useAuth, useList, useDatabase } from "@/firebase"
+import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import { signOut } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -68,7 +68,7 @@ export function AppSidebar() {
   const { user } = useUser()
   const auth = useAuth()
   const { toast } = useToast()
-  const firestore = useFirestore()
+  const database = useDatabase()
   const [copied, setCopied] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
   const [currentTime, setCurrentTime] = React.useState<string>("")
@@ -104,17 +104,17 @@ export function AppSidebar() {
 
   // Admin Check
   const adminRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return doc(firestore, 'roles_admin', user.uid)
-  }, [user, firestore])
-  const { data: adminRole } = useDoc(adminRef)
+    if (!user || !database) return null
+    return ref(database, `roles_admin/${user.uid}`)
+  }, [user, database])
+  const { data: adminRole } = useObject(adminRef)
 
   // System User / Role Check
   const userProfileQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null
-    return query(collection(firestore, 'system_users'), where('uid', '==', user.uid), limit(1))
-  }, [user, firestore])
-  const { data: userProfiles } = useCollection(userProfileQuery)
+    if (!user || !database) return null
+    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+  }, [user, database])
+  const { data: userProfiles } = useList(userProfileQuery)
   const userProfile = userProfiles?.[0]
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
