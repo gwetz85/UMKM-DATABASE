@@ -224,7 +224,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md border-none shadow-2xl overflow-hidden bg-white/95 backdrop-blur-sm">
         <div className="h-2 bg-primary w-full" />
-        <CardHeader className="space-y-1 text-center pt-8 cursor-pointer" onClick={() => setShowForm(true)}>
+        <CardHeader className="space-y-1 text-center pt-8 cursor-pointer select-none" onClick={() => setShowForm(!showForm)}>
           <div className="flex justify-center mb-0">
             <div className={`w-28 h-28 overflow-hidden rounded-full border-4 border-white shadow-2xl relative z-10 bg-white transition-all duration-500 ${!showForm ? 'scale-110 hover:scale-125' : 'scale-100'}`}>
               <img 
