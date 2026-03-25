@@ -10,12 +10,15 @@ export function useObject<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(!!memoizedRef);
   const [error, setError] = useState<Error | null>(null);
 
+  const refKey = memoizedRef?.toString() || '';
+
   useEffect(() => {
     if (!memoizedRef) {
       setData(null);
       setIsLoading(false);
       return;
     }
+    
     setIsLoading(true);
     
     const unsubscribe = onValue(memoizedRef, (snapshot) => {
@@ -31,7 +34,7 @@ export function useObject<T = any>(
     });
 
     return () => unsubscribe();
-  }, [memoizedRef]);
+  }, [refKey]); // Use refKey string to ensure stability
 
   return { data, isLoading, error };
 }

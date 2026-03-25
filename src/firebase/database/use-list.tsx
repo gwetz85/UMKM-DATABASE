@@ -10,12 +10,15 @@ export function useList<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(!!memoizedRefOrQuery);
   const [error, setError] = useState<Error | null>(null);
 
+  const refKey = memoizedRefOrQuery?.toString() || '';
+
   useEffect(() => {
     if (!memoizedRefOrQuery) {
       setData(null);
       setIsLoading(false);
       return;
     }
+    
     setIsLoading(true);
     
     // Typecast to any to avoid generic union issues across RTDB versions in onValue
@@ -32,7 +35,7 @@ export function useList<T = any>(
     });
 
     return () => unsubscribe();
-  }, [memoizedRefOrQuery]);
+  }, [refKey]); // Use refKey string to ensure stability
 
   return { data, isLoading, error };
 }

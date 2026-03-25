@@ -85,7 +85,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
             )}
-            <div className="w-full relative z-0">
+            <div key={pathname} className="w-full relative z-0 animate-in fade-in-up">
               {children}
             </div>
             

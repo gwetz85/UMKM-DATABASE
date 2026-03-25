@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Printer, Edit3, Loader2, Save, RotateCcw, Eye, User, CreditCard, History, X, Building2, MapPin, BadgeCheck, FileText, Search } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -178,7 +179,20 @@ function FinishContent() {
 
       <div className="bg-card print:bg-transparent">
         {isLoading ? (
-          <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary w-8 h-8" /></div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
+            {[...Array(12)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-4 flex flex-col items-center gap-3">
+                  <Skeleton className="w-12 h-12 rounded-full" />
+                  <div className="space-y-2 w-full">
+                    <Skeleton className="h-4 w-3/4 mx-auto" />
+                    <Skeleton className="h-3 w-1/2 mx-auto" />
+                  </div>
+                  <Skeleton className="h-5 w-full rounded-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 print:flex print:flex-col print:gap-1">
             {actors?.map((actor) => (

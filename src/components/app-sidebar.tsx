@@ -277,9 +277,10 @@ export function AppSidebar() {
                     isActive={pathname === item.href}
                     tooltip={item.name}
                     className={cn(
-                      "h-10 px-3 rounded-xl transition-all duration-200 hover:bg-white/10 text-white/80",
+                      "h-10 px-3 rounded-xl transition-all duration-300 hover:bg-white/10 text-white/80",
                       "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-lg",
-                      "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center"
+                      "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
+                      "active:scale-95 animate-in fade-in-up"
                     )}
                   >
                     <a 
