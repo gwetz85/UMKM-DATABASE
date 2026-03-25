@@ -222,27 +222,36 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-none shadow-2xl overflow-hidden bg-white/95 backdrop-blur-sm">
-        <div className="h-2 bg-primary w-full" />
-        <CardHeader className="space-y-1 text-center pt-8 cursor-pointer select-none" onClick={() => setShowForm(!showForm)}>
-          <div className="flex justify-center mb-0">
-            <div className={`w-28 h-28 overflow-hidden rounded-full border-4 border-white shadow-2xl relative z-10 bg-white transition-all duration-500 ${!showForm ? 'scale-110 hover:scale-125' : 'scale-100'}`}>
-              <img 
-                src="/logo.png" 
-                alt="SIMPU Logo" 
-                className="w-full h-full object-cover"
-              />
-            </div>
+      {!showForm ? (
+        <div 
+          className="flex flex-col items-center cursor-pointer animate-pulse transition-transform hover:scale-105" 
+          onClick={() => setShowForm(true)}
+        >
+          <div className="w-48 h-48 overflow-hidden rounded-full border-8 border-white shadow-[0_20px_50px_rgba(0,0,0,0.2)] bg-white">
+            <img 
+              src="/logo.png" 
+              alt="SIMPU Logo" 
+              className="w-full h-full object-cover"
+            />
           </div>
-          {!showForm && (
-            <div className="mt-6 text-sm font-medium text-slate-500 animate-pulse uppercase tracking-widest">
-              Klik Logo Untuk Masuk
+        </div>
+      ) : (
+        <Card className="w-full max-w-md border-none shadow-2xl overflow-hidden bg-white/95 backdrop-blur-sm scale-in-center">
+          <div className="h-2 bg-primary w-full" />
+          <CardHeader className="space-y-1 text-center pt-8 cursor-pointer select-none" onClick={() => setShowForm(false)}>
+            <div className="flex justify-center mb-2">
+              <div className="w-24 h-24 overflow-hidden rounded-full border-4 border-white shadow-lg relative z-10 bg-white">
+                <img 
+                  src="/logo.png" 
+                  alt="SIMPU Logo" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
-          )}
-        </CardHeader>
-        {showForm && (
+            <CardTitle className="text-xl font-bold text-slate-800">Masuk ke SIMPU</CardTitle>
+          </CardHeader>
           <form onSubmit={handleAuth}>
-            <CardContent className="grid gap-5 py-6 scale-in-center overflow-hidden">
+            <CardContent className="grid gap-5 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="identifier" className="font-bold text-slate-700">Username</Label>
                 <div className="relative">
@@ -251,7 +260,7 @@ export default function LoginPage() {
                     id="identifier"
                     type="text"
                     placeholder="Masukkan Nama Anda"
-                    className="pl-10 h-11 border-slate-200"
+                    className="pl-10 h-11 border-slate-200 focus:ring-primary"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     required
@@ -266,7 +275,7 @@ export default function LoginPage() {
                     id="password"
                     type="password"
                     placeholder="••••••••"
-                    className="pl-10 h-11 border-slate-200"
+                    className="pl-10 h-11 border-slate-200 focus:ring-primary"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -277,45 +286,42 @@ export default function LoginPage() {
             <CardFooter className="flex flex-col gap-4 pb-10">
               <div className="flex gap-2 w-full">
                 <Button 
-                  className="flex-1 bg-primary hover:bg-primary/90 h-12 text-md font-bold shadow-lg" 
+                  className="flex-1 bg-primary hover:bg-primary/90 h-12 text-md font-bold shadow-lg transition-all" 
                   disabled={loading || seeding}
                 >
                   {loading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Memproses...
-                    </>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    <><LogIn className="w-5 h-5 mr-2" /> Masuk ke Sistem</>
+                    <><LogIn className="w-5 h-5 mr-2" /> Masuk</>
                   )}
                 </Button>
 
                 <Dialog open={isRegOpen} onOpenChange={setIsRegOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="secondary" type="button" className="px-4 h-12 font-bold whitespace-nowrap">
-                      <UserPlus className="w-5 h-5 mr-2" /> Daftar Akun
+                    <Button variant="secondary" type="button" className="px-4 h-12 font-bold whitespace-nowrap shadow-sm">
+                      <UserPlus className="w-5 h-5 mr-2" /> Daftar
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-[400px]">
                     <form onSubmit={handleRegister}>
                       <DialogHeader>
-                        <DialogTitle className="text-primary font-black uppercase">Pendaftaran User Baru</DialogTitle>
-                        <DialogDescription>
-                          Data Anda akan disimpan dengan status 'Pending'. Akun hanya dapat digunakan setelah Admin memberikan akses.
+                        <DialogTitle className="text-primary font-black uppercase tracking-tight">Pendaftaran User</DialogTitle>
+                        <DialogDescription className="text-xs">
+                          Akun akan aktif setelah disetujui Administrator.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                          <Label className="font-bold">Nama Lengkap (Username)</Label>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-bold">Username</Label>
                           <Input 
-                            placeholder="Nama Asli Anda" 
+                            placeholder="Nama Lengkap Anda" 
                             value={regName}
                             onChange={(e) => setRegName(e.target.value)}
                             required 
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label className="font-bold">Buat Kata Sandi</Label>
+                        <div className="space-y-1.5">
+                          <Label className="text-sm font-bold">Kata Sandi</Label>
                           <Input 
                             type="password" 
                             placeholder="••••••••" 
@@ -326,9 +332,9 @@ export default function LoginPage() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button type="submit" className="w-full font-bold" disabled={registering}>
+                        <Button type="submit" className="w-full font-bold h-11" disabled={registering}>
                           {registering ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserPlus className="w-4 h-4 mr-2" />}
-                          Daftar Sekarang
+                          Simpan Pendaftaran
                         </Button>
                       </DialogFooter>
                     </form>
@@ -337,28 +343,30 @@ export default function LoginPage() {
               </div>
               
               <Link href="/check-data" className="w-full">
-                <Button variant="outline" type="button" className="w-full h-11 border-primary/20 text-primary font-bold hover:bg-primary/5">
-                  <SearchCheck className="w-4 h-4 mr-2" /> Cek Data
+                <Button variant="outline" type="button" className="w-full h-11 border-primary/20 text-primary font-bold hover:bg-primary/5 transition-colors">
+                  <SearchCheck className="w-4 h-4 mr-2" /> Cek Data Pengajuan
                 </Button>
               </Link>
 
-              <Button 
-                variant="ghost" 
-                type="button" 
-                onClick={seedMonitoringUser} 
-                disabled={seeding}
-                className="text-[10px] text-muted-foreground/50 hover:text-emerald-600 transition-colors"
-              >
-                {seeding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <DatabaseZap className="w-3 h-3 mr-1" />} Inisialisasi Monitoring
-              </Button>
+              <div className="pt-2 flex flex-col items-center gap-3">
+                <Button 
+                  variant="ghost" 
+                  type="button" 
+                  onClick={seedMonitoringUser} 
+                  disabled={seeding}
+                  className="text-[10px] text-muted-foreground/40 hover:text-emerald-600 transition-colors h-auto p-0"
+                >
+                  {seeding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <DatabaseZap className="w-3 h-3 mr-1" />} Inisialisasi Monitoring
+                </Button>
 
-              <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-medium justify-center mt-2">
-                <MonitorOff className="w-3 h-3" /> Kebijakan 1 User 1 Perangkat Aktif
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60 font-medium tracking-tight">
+                  <MonitorOff className="w-3 h-3" /> Kebijakan 1 User 1 Perangkat Aktif
+                </div>
               </div>
             </CardFooter>
           </form>
-        )}
-      </Card>
+        </Card>
+      )}
     </div>
   )
 }
