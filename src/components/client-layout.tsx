@@ -41,20 +41,23 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         {/* Mobile Header - Hidden on Login */}
         {!isLoginPage && (
           <>
-            <header className="sticky top-0 flex md:hidden items-center justify-between px-4 h-14 bg-gradient-to-r from-primary to-blue-800 text-white shrink-0 z-50 shadow-md print:hidden">
+            <header className="sticky top-0 flex md:hidden items-center justify-between px-4 h-16 bg-gradient-to-r from-primary to-blue-800 text-white shrink-0 z-50 shadow-md print:hidden">
               <div className="flex items-center gap-2">
                 <SidebarTrigger className="text-white hover:bg-white/10 transition-colors" />
                 <div className="flex flex-col">
                   <span className="text-2xl font-black tracking-tighter leading-none flex items-center gap-1">
                     SIMPU
                   </span>
-                  <span className="text-[8px] font-bold text-accent tracking-widest uppercase mt-0.5">Versi 5.2</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <AboutDialog variant="ghost" className="text-white hover:bg-white/10 border-white/10" />
-                <div className="bg-accent/20 p-1.5 rounded-lg">
-                  <SimpuLogo className="w-5 h-5 text-accent" />
+                <div className="w-10 h-10 overflow-hidden rounded-full border border-white/20 shadow-lg">
+                  <img 
+                    src="/logo.png" 
+                    alt="SIMPU" 
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               </div>
             </header>

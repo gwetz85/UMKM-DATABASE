@@ -244,11 +244,6 @@ export function AppSidebar() {
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden mt-2">
-              <span className="text-[11px] font-black text-white/50 tracking-[0.25em] uppercase leading-none italic">
-                Sistem Informasi Manajemen
-              </span>
-            </div>
           </Link>
         </div>
 
