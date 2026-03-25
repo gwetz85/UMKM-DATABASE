@@ -1,8 +1,7 @@
 
 "use client"
 
-import React, { useState, useEffect, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useState, useEffect } from "react"
 import { useDatabase, useUser, addDocumentNonBlocking, useMemoFirebase, useList } from "@/firebase"
 import { ref, query, equalTo, get, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,8 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Save, CheckCircle2, Scan, Camera } from "lucide-react"
-import { ktpOCR } from "@/ai/flows/ktp-ocr"
+import { Loader2, Save, CheckCircle2 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-function InputDataForm() {
+export default function InputDataPage() {
   const { toast } = useToast()
   const { user } = useUser()
   const database = useDatabase()
@@ -32,23 +30,6 @@ function InputDataForm() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [kelurahan, setKelurahan] = useState<string>("")
   const [kecamatan, setKecamatan] = useState<string>("")
-  const searchParams = useSearchParams()
-  const scanTriggered = searchParams.get("scan") === "true"
-  
-  // States for auto-fill
-  const [formDataState, setFormDataState] = useState({
-    fullName: "",
-    nik: "",
-    pobDob: "",
-    address: "",
-    rtRw: "",
-    gender: "",
-  })
-  const [ocrLoading, setOcrLoading] = useState(false)
-
-  const handleOcrChange = (field: string, value: string) => {
-    setFormDataState((prev: typeof formDataState) => ({ ...prev, [field]: value }))
-  }
 
   // Get current user profile to record who created the entry
   const userProfileRef = useMemoFirebase(() => {
@@ -58,32 +39,6 @@ function InputDataForm() {
 
   const { data: allUsersForProfile } = useList(userProfileRef)
   const currentUserProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
-
-  const [currentTime, setCurrentTime] = useState<string>("")
-  const [currentDate, setCurrentDate] = useState<string>("")
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date()
-      setCurrentTime(now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }))
-      setCurrentDate(now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
-    }
-    updateTime()
-    const interval = setInterval(updateTime, 1000)
-
-    // Handle auto-scan from URL
-    if (scanTriggered) {
-      const timer = setTimeout(() => {
-        document.getElementById('ktp-upload-top')?.click()
-      }, 800)
-      return () => {
-        clearInterval(interval)
-        clearTimeout(timer)
-      }
-    }
-
-    return () => clearInterval(interval)
-  }, [scanTriggered])
 
   useEffect(() => {
     if (!kelurahan) {
@@ -127,7 +82,7 @@ function InputDataForm() {
       let duplicateFound = false
       
       if (actorsSnapshot.exists()) {
-        actorsSnapshot.forEach((child: any) => {
+        actorsSnapshot.forEach((child) => {
           const val = child.val()
           if (val.nik === nik || val.noKK === noKK) {
             duplicateFound = true
@@ -187,57 +142,6 @@ function InputDataForm() {
     }
   }
 
-  const handleScanKTP = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setOcrLoading(true)
-    try {
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        const base64 = reader.result as string
-        const result = await ktpOCR(base64)
-        
-        if (result) {
-          setFormDataState({
-            fullName: result.fullName || "",
-            nik: result.nik || "",
-            pobDob: result.pobDob || "",
-            address: result.address || "",
-            rtRw: result.rtRw || "",
-            gender: result.gender || "",
-          })
-          
-          if (result.kelurahan) {
-            // Find best match in kelurahanList
-            const match = kelurahanList.find(k => 
-              k.toLowerCase().includes(result.kelurahan.toLowerCase()) || 
-              result.kelurahan.toLowerCase().includes(k.toLowerCase())
-            )
-            if (match) setKelurahan(match)
-          }
-          
-          toast({
-            title: "KTP Berhasil Dipindai",
-            description: "Data telah diisi otomatis ke formulir.",
-          })
-        }
-      }
-      reader.readAsDataURL(file)
-    } catch (error) {
-      console.error(error)
-      toast({
-        variant: "destructive",
-        title: "Gagal Pindai KTP",
-        description: "Terjadi kesalahan saat mengekstrak data dari gambar.",
-      })
-    } finally {
-      setOcrLoading(false)
-      // Reset input value so it can be used again
-      e.target.value = ""
-    }
-  }
-
   const kelurahanList = [
     "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
     "Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru",
@@ -247,61 +151,24 @@ function InputDataForm() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold text-primary font-headline">Input Data Baru</h1>
-          <p className="text-muted-foreground">Lengkapi formulir untuk mendaftarkan pelaku usaha baru.</p>
-        </div>
-        <div>
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            id="ktp-upload-top"
-            onChange={handleScanKTP}
-          />
-          <Button 
-            type="button" 
-            variant="default" 
-            size="lg" 
-            disabled={ocrLoading}
-            onClick={() => document.getElementById('ktp-upload-top')?.click()}
-            className="w-full md:w-auto bg-primary text-primary-foreground font-black shadow-xl hover:scale-105 transition-transform"
-          >
-            {ocrLoading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Camera className="w-12 h-12 mr-3" />
-            )}
-            EKSEKUSI SCAN KTP (AI)
-          </Button>
-        </div>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold text-primary font-headline">Input Data Baru</h1>
+        <p className="text-muted-foreground">Lengkapi formulir untuk mendaftarkan pelaku usaha baru.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="border-none shadow-sm bg-card text-card-foreground">
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
             <CardTitle className="text-lg">Biodata Pribadi</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="fullName">Nama Lengkap</Label>
-              <Input 
-                id="fullName" 
-                name="fullName" 
-                value={formDataState.fullName} 
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOcrChange("fullName", e.target.value)}
-                required 
-              />
+              <Input id="fullName" name="fullName" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="gender">Jenis Kelamin</Label>
-              <Select 
-                name="gender" 
-                value={formDataState.gender} 
-                onValueChange={(v: string) => handleOcrChange("gender", v)}
-                required
-              >
+              <Select name="gender" required>
                 <SelectTrigger><SelectValue placeholder="Pilih" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Laki-laki">Laki-laki</SelectItem>
@@ -311,15 +178,7 @@ function InputDataForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="nik">NIK</Label>
-              <Input 
-                id="nik" 
-                name="nik" 
-                maxLength={16} 
-                placeholder="16 Digit NIK" 
-                value={formDataState.nik}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOcrChange("nik", e.target.value)}
-                required 
-              />
+              <Input id="nik" name="nik" maxLength={16} placeholder="16 Digit NIK" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="noKK">Nomor KK</Label>
@@ -327,14 +186,7 @@ function InputDataForm() {
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="pobDob">Tempat / Tanggal Lahir</Label>
-              <Input 
-                id="pobDob" 
-                name="pobDob" 
-                placeholder="Contoh: Jakarta, 01-01-1990" 
-                value={formDataState.pobDob}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOcrChange("pobDob", e.target.value)}
-                required 
-              />
+              <Input id="pobDob" name="pobDob" placeholder="Contoh: Jakarta, 01-01-1990" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Nomor Ponsel</Label>
@@ -350,24 +202,11 @@ function InputDataForm() {
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="address">Alamat Lengkap</Label>
-              <Textarea 
-                id="address" 
-                name="address" 
-                value={formDataState.address}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleOcrChange("address", e.target.value)}
-                required 
-              />
+              <Textarea id="address" name="address" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="rtRw">RT / RW</Label>
-              <Input 
-                id="rtRw" 
-                name="rtRw" 
-                placeholder="001 / 002" 
-                value={formDataState.rtRw}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleOcrChange("rtRw", e.target.value)}
-                required 
-              />
+              <Input id="rtRw" name="rtRw" placeholder="001 / 002" required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="kelurahan">Kelurahan</Label>
@@ -447,17 +286,5 @@ function InputDataForm() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
-}
-
-export default function InputDataPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    }>
-      <InputDataForm />
-    </Suspense>
   )
 }
