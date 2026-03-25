@@ -49,10 +49,18 @@ export function ChatBubble() {
         }).catch(err => console.error("onDisconnect error:", err));
 
         // When I am connected, update my status
-        update(userPresenceRef, { 
-          isOnline: true,
-          lastActive: serverTimestamp() 
-        });
+        if (currentUserProfile?.id) {
+          update(userPresenceRef, { 
+            isOnline: true,
+            lastActive: serverTimestamp() 
+          }).catch(err => {
+            if (err.code === 'PERMISSION_DENIED') {
+              console.warn("Presence update permission denied - usually harmless if not admin.");
+            } else {
+              console.error("Presence update error:", err);
+            }
+          });
+        }
       }
     });
 
