@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
-import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
+import { ref, query, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -39,24 +39,27 @@ function FinishContent() {
   }, [user, database])
   const { data: adminRole } = useObject(adminRef)
 
-  const userProfileQuery = useMemoFirebase(() => {
+  const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
-    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+    return ref(database, 'system_users')
   }, [user, database])
-  const { data: userProfiles } = useList(userProfileQuery)
-  const userProfile = userProfiles?.[0]
+  const { data: allUsersForProfile } = useList(userProfileRef)
+  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isKoordinator = userProfile?.role === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('finish'))
+    return ref(database, 'businessActors')
   }, [database])
 
-  const { data: allActors, isLoading } = useList<BusinessActor>(memoQuery)
+  const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
-  const actors = allActors ? allActors.filter(a => {
+  const actors = allActorsRaw ? allActorsRaw.filter(a => {
+    // Status filter - equivalent to previous orderByChild('status').equalTo('finish')
+    if (a.status !== 'finish') return false;
+
     const matchesSearch = 
       a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||

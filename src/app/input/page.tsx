@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import { useDatabase, useUser, addDocumentNonBlocking, useMemoFirebase, useList } from "@/firebase"
-import { ref, query, orderByChild, equalTo, get, limitToFirst } from "firebase/database"
+import { ref, query, equalTo, get, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,12 +32,13 @@ export default function InputDataPage() {
   const [kecamatan, setKecamatan] = useState<string>("")
 
   // Get current user profile to record who created the entry
-  const userProfileQuery = useMemoFirebase(() => {
+  const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
-    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+    return ref(database, 'system_users')
   }, [user, database])
-  const { data: userProfiles } = useList(userProfileQuery)
-  const currentUserProfile = userProfiles?.[0]
+
+  const { data: allUsersForProfile } = useList(userProfileRef)
+  const currentUserProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   useEffect(() => {
     if (!kelurahan) {
@@ -76,15 +77,20 @@ export default function InputDataPage() {
     try {
       const actorsRef = ref(database, 'businessActors')
       
-      const qNik = query(actorsRef, orderByChild('nik'), equalTo(nik))
-      const qKK = query(actorsRef, orderByChild('noKK'), equalTo(noKK))
+      // In-memory duplicate check to avoid orderByChild ReferenceError
+      const actorsSnapshot = await get(actorsRef)
+      let duplicateFound = false
+      
+      if (actorsSnapshot.exists()) {
+        actorsSnapshot.forEach((child) => {
+          const val = child.val()
+          if (val.nik === nik || val.noKK === noKK) {
+            duplicateFound = true
+          }
+        })
+      }
 
-      const [snapNik, snapKK] = await Promise.all([
-        get(qNik),
-        get(qKK)
-      ])
-
-      if (snapNik.exists() || snapKK.exists()) {
+      if (duplicateFound) {
         toast({ 
           variant: "destructive", 
           title: "DATA TELAH DI INPUT", 

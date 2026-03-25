@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { useUser, useDatabase, useMemoFirebase, useList } from "@/firebase"
-import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
+import { ref, query, equalTo, limitToFirst } from "firebase/database"
 import {
   Dialog,
   DialogContent,
@@ -21,13 +21,13 @@ export function ProfileStatusDialog() {
   const [isOpen, setIsOpen] = useState(false)
   const [hasShown, setHasShown] = useState(false)
 
-  const userProfileQuery = useMemoFirebase(() => {
+  const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
-    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+    return ref(database, 'system_users')
   }, [user, database])
 
-  const { data: userProfiles, isLoading: isProfileLoading } = useList(userProfileQuery)
-  const profile = userProfiles?.[0]
+  const { data: allUsersForProfile, isLoading: isProfileLoading } = useList(userProfileRef)
+  const profile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   useEffect(() => {
     // Show dialog once per session after login and profile is loaded

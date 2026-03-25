@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
-import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
+import { ref, query, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -33,35 +33,27 @@ export default function LPJPage() {
     setMounted(true)
   }, [])
 
-  const userProfileQuery = useMemoFirebase(() => {
+  const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
-    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+    return ref(database, 'system_users')
   }, [user, database])
-  const { data: userProfiles } = useList(userProfileQuery)
-  const userProfile = userProfiles?.[0]
+  const { data: allUsersForProfile } = useList(userProfileRef)
+  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const isAdmin = userProfile?.role === 'admin'
   const isPetugas = userProfile?.role === 'petugas'
   const canAccess = isAdmin || isPetugas
 
-  const pendingQuery = useMemoFirebase(() => {
+  const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('lpj_pending'))
+    return ref(database, 'businessActors')
   }, [database])
   
-  const blacklistQuery = useMemoFirebase(() => {
-    if (!database) return null
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('blacklist'))
-  }, [database])
-
-  const { data: pendingActors, isLoading: isP } = useList<BusinessActor>(pendingQuery)
-  const { data: blacklistActors, isLoading: isB } = useList<BusinessActor>(blacklistQuery)
+  const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
   const actors = useMemo(() => {
-      return [...(pendingActors || []), ...(blacklistActors || [])]
-  }, [pendingActors, blacklistActors])
-  
-  const isLoading = isP || isB
+      return allActorsRaw?.filter(a => a.status === 'lpj_pending' || a.status === 'blacklist') || []
+  }, [allActorsRaw])
 
   const handleSaveLPJ = async (actorId: string, nominal: string) => {
     if (!canAccess || !database || !nominal) return

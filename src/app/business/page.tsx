@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemoFirebase, useList, useUser, useDatabase } from "@/firebase"
-import { ref, query, orderByChild } from "firebase/database"
+import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
@@ -30,11 +30,11 @@ export default function BusinessListPage() {
 
   const memoQuery = useMemoFirebase(() => {
     if (!user || !database) return null
-    return query(ref(database, `users/${user.uid}/businessActors`), orderByChild('createdAt'))
+    return ref(database, `users/${user.uid}/businessActors`)
   }, [user, database])
 
   const { data: rawBusinesses, isLoading } = useList(memoQuery)
-  const businesses = rawBusinesses ? [...rawBusinesses].reverse() : []
+  const businesses = rawBusinesses ? [...rawBusinesses].sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0)) : []
 
   return (
     <div className="p-8 space-y-6">

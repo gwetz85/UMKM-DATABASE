@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Search, User as UserIcon } from 'lucide-react';
 import { useUser, useDatabase, useList, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { ref, query, orderByChild, equalTo, onValue, serverTimestamp, onDisconnect, update } from 'firebase/database';
+import { ref, query, equalTo, onValue, serverTimestamp, onDisconnect, update } from 'firebase/database';
 
 export function ChatBubble() {
   const { user } = useUser();
@@ -17,30 +17,20 @@ export function ChatBubble() {
   const [hasUnread, setHasUnread] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get current user profile
-  const userProfileQuery = useMemoFirebase(() => {
-    if (!user || !database) return null;
-    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid));
-  }, [user, database]);
-  const { data: userProfiles } = useList(userProfileQuery);
-  const currentUserProfile = userProfiles?.[0] || {
+  const { data: allUsers } = useList(ref(database, 'system_users'));
+
+  // Get current user profile - find in allUsers to avoid orderByChild
+  const currentUserProfile = (allUsers || []).find((u: any) => u.uid === user?.uid) || {
     uid: user?.uid,
     fullName: user?.displayName || user?.email?.split('@')[0] || 'User',
     role: 'Pengguna'
   };
 
-  // Get all users
-  const allUsersQuery = useMemoFirebase(() => {
-    if (!database) return null;
-    return query(ref(database, 'system_users'));
-  }, [database]);
-  const { data: allUsers } = useList(allUsersQuery);
-
-  // Filter users to exclude current user and only show online fans
-  const otherUsers = (allUsers || []).filter((u: any) => u.uid && u.uid !== user?.uid && u.isOnline === true);
-  const filteredUsers = otherUsers.filter((u: any) => 
-    (u.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (u.role || '').toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = (allUsers || []).filter((u: any) => 
+    u.uid !== user?.uid && 
+    u.isOnline === true &&
+    (u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+     u.role?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Presence logic
@@ -73,35 +63,42 @@ export function ChatBubble() {
     };
   }, [user, database, currentUserProfile?.id]);
 
-  // Unread messages listener
+  // Unread messages listener - manual filter
   useEffect(() => {
     if (!user || !database) return;
-    const unreadQuery = query(ref(database, 'chat_unread'), orderByChild('userId'), equalTo(user.uid));
-    const unsubscribe = onValue(unreadQuery, (snapshot) => {
-      setHasUnread(snapshot.exists());
+    const unreadRef = ref(database, 'chat_unread');
+    const unsubscribe = onValue(unreadRef, (snapshot) => {
+      let found = false;
+      snapshot.forEach(child => {
+        if (child.val().userId === user.uid) found = true;
+      });
+      setHasUnread(found);
     });
     return () => unsubscribe();
   }, [user, database]);
 
-  // Real-time messages listener
+  // Real-time messages listener - manual filter
   useEffect(() => {
     if (!selectedUser || !user || !database) return;
 
     const chatId = [user.uid, selectedUser.uid].sort().join('_');
-    const messagesQuery = query(ref(database, 'chat_messages'), orderByChild('chatId'), equalTo(chatId));
+    const messagesRef = ref(database, 'chat_messages');
     
     // Mark as read when opening
     if (isOpen) {
       deleteDocumentNonBlocking(ref(database, `chat_unread/${user.uid}_${chatId}`));
     }
 
-    const unsubscribe = onValue(messagesQuery, (snapshot) => {
+    const unsubscribe = onValue(messagesRef, (snapshot) => {
       const msgList: any[] = [];
       snapshot.forEach(child => {
-        msgList.push({
-          id: child.key,
-          ...child.val()
-        });
+        const data = child.val();
+        if (data.chatId === chatId) {
+          msgList.push({
+            id: child.key,
+            ...data
+          });
+        }
       });
       msgList.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
       setMessages(msgList);

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useDatabase } from "@/firebase"
-import { ref, query, orderByChild, equalTo, get } from "firebase/database"
+import { ref, query, equalTo, get } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,17 +30,18 @@ export default function CheckDataPage() {
     setResults([])
 
     try {
-      const q = query(
-        ref(database, 'master_data'),
-        orderByChild(searchType),
-        equalTo(inputValue.trim())
-      )
+      const masterDataRef = ref(database, 'master_data')
+      const snapshot = await get(masterDataRef)
       
-      const snapshot = await get(q)
       const data: any[] = []
-      snapshot.forEach(child => {
-        data.push(child.val())
-      })
+      if (snapshot.exists()) {
+        snapshot.forEach(child => {
+          const val = child.val()
+          if (val[searchType] === inputValue.trim()) {
+            data.push(val)
+          }
+        })
+      }
       setResults(data)
       setSearchDone(true)
     } catch (error) {

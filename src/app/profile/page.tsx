@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useUser, useDatabase, useMemoFirebase, useList, updateDocumentNonBlocking } from "@/firebase"
-import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
+import { ref, query, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,13 +31,13 @@ export default function ProfilePage() {
     setMounted(true)
   }, [])
 
-  const userProfileQuery = useMemoFirebase(() => {
+  const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
-    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+    return ref(database, 'system_users')
   }, [user, database])
 
-  const { data: userProfiles, isLoading: isProfileLoading } = useList(userProfileQuery)
-  const profile = userProfiles?.[0]
+  const { data: allUsersForProfile, isLoading: isProfileLoading } = useList(userProfileRef)
+  const profile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

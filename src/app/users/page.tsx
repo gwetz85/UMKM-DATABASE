@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, setDocumentNonBlocking, deleteDocumentNonBlocking, useObject, updateDocumentNonBlocking } from "@/firebase"
-import { ref, query, orderByChild } from "firebase/database"
+import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -54,7 +54,7 @@ export default function UserManagementPage() {
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    return query(ref(database, 'system_users'), orderByChild('addedAt'))
+    return ref(database, 'system_users')
   }, [database])
 
   const { data: systemUsers, isLoading } = useList(memoQuery)

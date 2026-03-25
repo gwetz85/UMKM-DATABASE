@@ -8,11 +8,6 @@ import { MessageSquare, ShieldAlert, Trash2 } from 'lucide-react';
 export default function ChatMonitoring() {
   const { user } = useUser();
   const database = useDatabase();
-  
-  if (typeof window !== 'undefined') {
-    console.log('Diagnostic - orderByChild:', typeof orderByChild);
-    console.log('Diagnostic - query:', typeof query);
-  }
 
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

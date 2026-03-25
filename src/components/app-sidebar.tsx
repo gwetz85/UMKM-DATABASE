@@ -27,7 +27,7 @@ import {
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useUser, useObject, useMemoFirebase, useAuth, useList, useDatabase } from "@/firebase"
-import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
+import { ref, query, equalTo, limitToFirst } from "firebase/database"
 import { signOut } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -110,12 +110,12 @@ export function AppSidebar() {
   const { data: adminRole } = useObject(adminRef)
 
   // System User / Role Check
-  const userProfileQuery = useMemoFirebase(() => {
+  const usersRef = useMemoFirebase(() => {
     if (!user || !database) return null
-    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+    return ref(database, 'system_users')
   }, [user, database])
-  const { data: userProfiles } = useList(userProfileQuery)
-  const userProfile = userProfiles?.[0]
+  const { data: allUsersForProfile } = useList(usersRef)
+  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isMonitoring = userProfile?.role === 'monitoring'
