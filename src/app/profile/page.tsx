@@ -168,7 +168,7 @@ export default function ProfilePage() {
       </Card>
       
       <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] py-4">
-        &copy; UMKM DATABASE &bull; SISTEM TERPADU
+        &copy; 2026 - SIMPU - Sistem Informasi Manajemen Pelaku Usaha
       </p>
     </div>
   )
