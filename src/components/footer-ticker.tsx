@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 
 export function FooterTicker() {
   const [mounted, setMounted] = useState(false);
-  const message = "Selamat datang di Aplikasi SIMPU (Sistem Informasi Manajemen Pelaku Usaha) versi 5.0. Aplikasi ini dirancang untuk mempermudah dalam pengecekkan dan penginputan data. Kritik dan saran sangat diperlukan. Kirimkan pesan ke email: agussuriyadipunya@gmail.com atau Whatsapp: 0817319885. Terima kasih.";
+  const message = "Selamat datang di Aplikasi SIMPU (Sistem Informasi Manajemen Pelaku Usaha) versi 5.2. Aplikasi ini dirancang untuk mempermudah dalam pengecekkan dan penginputan data. Kritik dan saran sangat diperlukan. Kirimkan pesan ke email: agussuriyadipunya@gmail.com atau Whatsapp: 0817319885. Terima kasih.";
 
   useEffect(() => {
     setMounted(true);
