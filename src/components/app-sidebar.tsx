@@ -285,7 +285,6 @@ export function AppSidebar() {
                       href={item.href} 
                       className="flex items-center gap-3 w-full"
                       onClick={() => {
-                        console.log("Native link clicked:", item.href);
                         if (isMobile) {
                           setOpenMobile(false);
                         }
