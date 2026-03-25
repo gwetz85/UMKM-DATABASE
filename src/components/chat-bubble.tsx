@@ -122,7 +122,7 @@ export function ChatBubble() {
             onClick={() => setIsOpen(true)}
             className="chat-bubble-active transition-transform hover:scale-105"
             style={{
-              width: '60px', height: '60px', borderRadius: '30px', background: 'var(--primary, #2563eb)',
+              width: '60px', height: '60px', borderRadius: '30px', background: 'hsl(var(--primary))',
               color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.5)', border: 'none', cursor: 'pointer'
             }}
@@ -148,7 +148,7 @@ export function ChatBubble() {
         }}>
           {/* Header */}
           <div style={{ 
-            padding: '1.25rem 1.5rem', background: 'var(--primary, #2563eb)', color: 'white',
+            padding: '1.25rem 1.5rem', background: 'hsl(var(--primary))', color: 'white',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -197,7 +197,7 @@ export function ChatBubble() {
                   >
                     <div style={{ 
                       width: '44px', height: '44px', borderRadius: '14px', background: 'rgba(37, 99, 235, 0.1)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary, #2563eb)'
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'hsl(var(--primary))'
                     }}>
                       <UserIcon size={22} />
                     </div>
@@ -234,7 +234,7 @@ export function ChatBubble() {
                       padding: '0.75rem 1.1rem', borderRadius: '18px',
                       borderBottomLeftRadius: msg.senderId === user.uid ? '18px' : '4px',
                       borderBottomRightRadius: msg.senderId === user.uid ? '4px' : '18px',
-                      background: msg.senderId === user.uid ? 'var(--primary, #2563eb)' : '#f3f4f6',
+                      background: msg.senderId === user.uid ? 'hsl(var(--primary))' : '#f3f4f6',
                       color: msg.senderId === user.uid ? 'white' : '#1f2937', 
                       fontSize: '0.95rem', lineHeight: '1.5', fontWeight: 500,
                       boxShadow: msg.senderId === user.uid ? '0 4px 12px rgba(37, 99, 235, 0.2)' : 'none'
@@ -262,7 +262,7 @@ export function ChatBubble() {
                     color: '#1a1a1a', outline: 'none', transition: 'all 0.2s',
                     fontSize: '0.95rem'
                   }}
-                  onFocus={(e) => e.currentTarget.style.borderColor = 'var(--primary, #2563eb)'}
+                  onFocus={(e) => e.currentTarget.style.borderColor = 'hsl(var(--primary))'}
                   onBlur={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
                 />
                 <button
@@ -270,7 +270,7 @@ export function ChatBubble() {
                   disabled={!inputText.trim()}
                   className="hover:scale-105 transition-transform"
                   style={{
-                    width: '50px', height: '50px', borderRadius: '14px', background: 'var(--primary, #2563eb)',
+                    width: '50px', height: '50px', borderRadius: '14px', background: 'hsl(var(--primary))',
                     color: 'white', border: 'none', cursor: 'pointer', display: 'flex',
                     alignItems: 'center', justifyContent: 'center'
                   }}
