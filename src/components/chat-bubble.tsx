@@ -87,7 +87,7 @@ export function ChatBubble() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || !selectedUser || !user || !firestore) return;
+    if (!inputText.trim() || !selectedUser || !user || !database) return;
 
     const chatId = [user.uid, selectedUser.uid].sort().join('_');
     
