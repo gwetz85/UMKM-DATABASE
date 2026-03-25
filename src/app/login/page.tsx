@@ -145,7 +145,7 @@ export default function LoginPage() {
 
       router.push("/")
     } catch (error: any) {
-      let message = "Terjadi kesalahan. Silakan coba lagi."
+      let message = `Terjadi kesalahan: ${error.message || String(error)}`
       if (error.code === 'auth/invalid-credential' || error.message === 'auth/wrong-password') message = "Username atau kata sandi salah."
       
       toast({
@@ -160,6 +160,7 @@ export default function LoginPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     if (!regName || !regPass) return
     
     setRegistering(true)
