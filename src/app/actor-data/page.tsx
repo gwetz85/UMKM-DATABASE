@@ -139,8 +139,8 @@ function ActorDataContent() {
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
-        <h1 className="text-xl font-black uppercase">LAPORAN DATA PELAKU USAHA UMKM</h1>
-        <p className="text-xs font-bold">Sistem Manajemen Terpadu Database UMKM</p>
+        <h1 className="text-xl font-black uppercase">LAPORAN DATA PELAKU USAHA (2026 - SIMPU)</h1>
+        <p className="text-xs font-bold uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha</p>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">

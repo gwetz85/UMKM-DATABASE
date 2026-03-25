@@ -230,8 +230,10 @@ export default function LoginPage() {
               <SimpuLogo className="w-12 h-12 text-white" />
             </div>
           </div>
-          <CardTitle className="text-4xl font-black tracking-widest text-primary">SIMPU</CardTitle>
-          <CardDescription className="font-medium text-muted-foreground uppercase tracking-widest text-[10px] mt-2">
+          <CardTitle className="text-4xl font-black tracking-tighter text-primary flex items-center justify-center gap-2">
+            <span className="text-blue-500/50">2026</span> SIMPU
+          </CardTitle>
+          <CardDescription className="font-bold text-muted-foreground uppercase tracking-widest text-[9px] mt-2">
             Sistem Informasi Manajemen Pelaku Usaha
           </CardDescription>
         </CardHeader>

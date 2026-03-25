@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, RotateCcw, Trash2, Eye, User, CreditCard, History, X, Building2, MapPin, Ban, AlertCircle } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, RotateCcw, Trash2, Eye, User, CreditCard, History, X, Building2, MapPin, Ban, AlertCircle, Search } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -24,6 +24,8 @@ function RejectedContent() {
   const filterCoordinator = searchParams.get('coordinator')
   
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [category, setCategory] = useState<string>("")
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [printDate, setPrintDate] = useState<string>("")
 
@@ -55,14 +57,22 @@ function RejectedContent() {
   const { data: allActors, isLoading } = useList<BusinessActor>(memoQuery)
   
   const actors = allActors ? allActors.filter(a => {
+    const matchesSearch = 
+      a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.nik?.includes(searchQuery)
+    const matchesCategory = !category || a.businessCategory === category
+
     if (isKoordinator) {
       if (!a.coordinator || !userProfile?.fullName) return false;
-      return a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase();
+      const matchesKoor = a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase();
+      return matchesSearch && matchesCategory && matchesKoor;
     }
     if (filterCoordinator) {
-      return a.coordinator === filterCoordinator;
+      const matchesKoor = a.coordinator === filterCoordinator;
+      return matchesSearch && matchesCategory && matchesKoor;
     }
-    return true;
+    return matchesSearch && matchesCategory;
   }) : undefined
 
   const [isEditMode, setIsEditMode] = useState(false)
@@ -120,15 +130,14 @@ function RejectedContent() {
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
-        <h1 className="text-xl font-black uppercase">LAPORAN DATA DITOLAK (REJECTED)</h1>
-        <p className="text-xs font-bold">Sistem Manajemen Terpadu Database UMKM</p>
+        <h1 className="text-xl font-black uppercase">LAPORAN DATA DITOLAK / CANCEL (2026 - SIMPU)</h1>
+        <p className="text-xs font-bold uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha</p>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div className="flex items-center gap-3">
-          <Ban className="w-8 h-8 text-red-600" />
           <div className="flex flex-col">
-            <h1 className="text-2xl md:text-3xl font-bold text-red-700 font-headline">Data Ditolak / Cancel</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-red-700 font-headline">Data Ditolak / Batal</h1>
             <p className="text-xs md:text-sm text-muted-foreground">Arsip data yang ditolak oleh Administrator.</p>
             {filterCoordinator && (
               <div className="flex items-center gap-2 mt-2 bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 w-fit">
@@ -141,6 +150,29 @@ function RejectedContent() {
         <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto">
           <Printer className="w-4 h-4 mr-2" /> CETAK
         </Button>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4 mb-4 print:hidden">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input 
+            placeholder="Cari Nama / Usaha / NIK..." 
+            className="pl-10 h-10 md:h-12 bg-card border-red-200 focus-visible:ring-red-500 rounded-xl md:rounded-2xl"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2">
+          <select 
+            className="h-10 md:h-12 px-4 rounded-xl md:rounded-2xl border border-red-200 bg-card text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-500"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="">Semua Kategori</option>
+            <option value="Kuliner">Kuliner</option>
+            <option value="Bukan Kuliner">Bukan Kuliner</option>
+          </select>
+        </div>
       </div>
 
       <div className="bg-card print:bg-transparent">
@@ -199,7 +231,7 @@ function RejectedContent() {
             <div className="flex flex-col gap-2 relative">
               <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b gap-4">
                 <DialogTitle className="text-xl md:text-2xl font-black text-red-700 uppercase">
-                  {isEditMode ? "Edit Data Ditolak" : "Detail Lengkap Data Ditolak"}
+                  {isEditMode ? "Edit Data Ditolak" : "Detail Lengkap Data Ditolak/Batal"}
                 </DialogTitle>
                 <div className="flex flex-wrap gap-2">
                   {isAdmin && (
@@ -350,7 +382,7 @@ function RejectedContent() {
                     <div className="bg-slate-50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
                       <div className="space-y-1">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Terakhir</p>
-                        <p className="capitalize text-red-600">Ditolak / Cancel</p>
+                        <p className="capitalize text-red-600">Ditolak / Batal</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Input</p>

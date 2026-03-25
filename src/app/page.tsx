@@ -15,11 +15,23 @@ export default function DashboardPage() {
   const database = useDatabase()
   const router = useRouter()
 
+  const userProfileQuery = useMemoFirebase(() => {
+    if (!user || !database) return null
+    return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid), limitToFirst(1))
+  }, [user, database])
+  const { data: userProfiles } = useList(userProfileQuery)
+  const userProfile = userProfiles?.[0]
+  const isKoordinator = userProfile?.role === 'koordinator'
+
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push("/login")
+      return
     }
-  }, [user, isUserLoading, router])
+    if (user && isKoordinator) {
+      router.push("/actor-data")
+    }
+  }, [user, isUserLoading, isKoordinator, router])
   
   const memoQuery = useMemoFirebase(() => {
     if (!database || !user) return null

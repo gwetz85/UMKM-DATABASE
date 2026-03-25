@@ -119,25 +119,27 @@ export function AppSidebar() {
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isMonitoring = userProfile?.role === 'monitoring'
+  const isKoordinator = userProfile?.role === 'koordinator'
+  const isPetugas = userProfile?.role === 'petugas'
 
   const navigation = React.useMemo(() => [
     { 
       name: "Dashboard", 
       href: "/", 
       icon: LayoutDashboard, 
-      show: !!user 
+      show: !!user && !isKoordinator
     },
     { 
       name: "Cek Data", 
       href: "/check-data", 
       icon: SearchCheck, 
-      show: true 
+      show: !isKoordinator
     },
     { 
       name: "Input Data", 
       href: "/input", 
       icon: UserPlus, 
-      show: !!user && !isMonitoring 
+      show: !!user && !isMonitoring && !isKoordinator
     },
     { 
       name: "Verifikasi Admin", 
@@ -167,7 +169,7 @@ export function AppSidebar() {
       name: "LPJ", 
       href: "/lpj", 
       icon: FileText, 
-      show: isAdmin || userProfile?.role === 'petugas' 
+      show: (isAdmin || isPetugas) && !isKoordinator
     },
     { 
       name: "Finish", 
@@ -185,7 +187,7 @@ export function AppSidebar() {
       name: "Pengaturan", 
       href: "/settings", 
       icon: Settings, 
-      show: !!user 
+      show: !!user && !isKoordinator
     },
     { 
       name: "Monitoring Chat", 
@@ -236,8 +238,8 @@ export function AppSidebar() {
             <SimpuLogo className="w-6 h-6 text-white" />
           </div>
           <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden">
-            <span className="font-black text-2xl tracking-widest text-white leading-none">
-              SIMPU
+            <span className="font-black text-2xl tracking-tighter text-white leading-none flex items-center gap-1">
+              <span className="text-secondary">2026</span> SIMPU
             </span>
             <span className="text-[7.5px] font-bold text-white/60 tracking-wider uppercase mt-1 text-center leading-tight">
               Sistem Informasi Manajemen<br/>Pelaku Usaha
@@ -305,7 +307,7 @@ export function AppSidebar() {
                       {userProfile?.fullName?.toUpperCase() || user.email?.split('@')[0].toUpperCase()}
                     </span>
                     <span className="text-[8px] text-white/60 font-black uppercase tracking-tighter">
-                      {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : userProfile?.role === 'petugas' ? "📝 Petugas" : "👤 User"}
+                      {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 Koordinator" : isPetugas ? "📝 Petugas" : "👤 User"}
                     </span>
                   </div>
                 </Link>

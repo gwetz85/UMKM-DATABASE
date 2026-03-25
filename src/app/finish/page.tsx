@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, RotateCcw, Eye, User, CreditCard, History, X, Building2, MapPin, BadgeCheck, FileText } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, RotateCcw, Eye, User, CreditCard, History, X, Building2, MapPin, BadgeCheck, FileText, Search } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -24,6 +24,8 @@ function FinishContent() {
   const filterCoordinator = searchParams.get('coordinator')
   
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [category, setCategory] = useState<string>("")
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [printDate, setPrintDate] = useState<string>("")
 
@@ -55,14 +57,22 @@ function FinishContent() {
   const { data: allActors, isLoading } = useList<BusinessActor>(memoQuery)
   
   const actors = allActors ? allActors.filter(a => {
+    const matchesSearch = 
+      a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.nik?.includes(searchQuery)
+    const matchesCategory = !category || a.businessCategory === category
+
     if (isKoordinator) {
       if (!a.coordinator || !userProfile?.fullName) return false;
-      return a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase();
+      const matchesKoor = a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase();
+      return matchesSearch && matchesCategory && matchesKoor;
     }
     if (filterCoordinator) {
-      return a.coordinator === filterCoordinator;
+      const matchesKoor = a.coordinator === filterCoordinator;
+      return matchesSearch && matchesCategory && matchesKoor;
     }
-    return true;
+    return matchesSearch && matchesCategory;
   }) : undefined
 
   const [isEditMode, setIsEditMode] = useState(false)
@@ -114,8 +124,8 @@ function FinishContent() {
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
-        <h1 className="text-xl font-black uppercase">LAPORAN PENYELESAIAN DATA (FINISH)</h1>
-        <p className="text-xs font-bold">Sistem Manajemen Terpadu Database UMKM</p>
+        <h1 className="text-xl font-black uppercase">LAPORAN DATA PELAKU USAHA (2026 - SIMPU)</h1>
+        <p className="text-xs font-bold uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha</p>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
@@ -135,6 +145,29 @@ function FinishContent() {
         <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto">
           <Printer className="w-4 h-4 mr-2" /> CETAK
         </Button>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4 mb-4 print:hidden">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input 
+            placeholder="Cari Nama / Usaha / NIK..." 
+            className="pl-10 h-10 md:h-12 bg-card border-primary/20 focus-visible:ring-primary rounded-xl md:rounded-2xl"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2">
+          <select 
+            className="h-10 md:h-12 px-4 rounded-xl md:rounded-2xl border border-primary/20 bg-card text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="">Semua Kategori</option>
+            <option value="Kuliner">Kuliner</option>
+            <option value="Bukan Kuliner">Bukan Kuliner</option>
+          </select>
+        </div>
       </div>
 
       <div className="bg-card print:bg-transparent">
