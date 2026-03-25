@@ -252,11 +252,11 @@ export function AppSidebar() {
 
         {/* Waktu Server */}
         <div className="w-full group-data-[collapsible=icon]:hidden px-2 mb-2">
-          <div className="bg-black/40 rounded-2xl p-6 border border-white/5 flex flex-col items-center gap-2 relative overflow-hidden shadow-inner text-center">
-            <div className="text-5xl font-black text-white tracking-tighter leading-none mb-1 tabular-nums mt-1">
+          <div className="bg-black/40 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-1 relative overflow-hidden shadow-inner text-center">
+            <div className="text-4xl font-black text-white tracking-tighter leading-none mb-1 tabular-nums mt-1">
               {currentTime}
             </div>
-            <div className="text-[13px] font-bold text-white/50 whitespace-nowrap uppercase tracking-widest">
+            <div className="text-[12px] font-bold text-white/40 whitespace-nowrap uppercase tracking-widest">
               {currentDate}
             </div>
           </div>
