@@ -114,7 +114,7 @@ export function ChatBubble() {
   if (!user || !currentUserProfile) return null;
 
   return (
-    <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 1000 }} className="print:hidden">
+    <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-[1000] print:hidden flex flex-col items-end">
       {/* Chat Bubble Button */}
       {!isOpen && (
         <div style={{ position: 'relative' }}>
@@ -141,10 +141,12 @@ export function ChatBubble() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="animate-in slide-in-from-bottom-5 fade-in duration-300" style={{
-          width: '380px', height: '550px', display: 'flex', flexDirection: 'column',
-          overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.1)',
-          background: 'white', borderRadius: '24px'
+        <div className="animate-in slide-in-from-bottom-5 fade-in duration-300 bg-white" style={{
+          width: 'calc(100vw - 2rem)', maxWidth: '380px', height: '75vh', maxHeight: '550px',
+          display: 'flex', flexDirection: 'column', overflow: 'hidden', 
+          boxShadow: '0 20px 50px rgba(0,0,0,0.15)', border: '1px solid rgba(0,0,0,0.1)',
+          borderRadius: '24px',
+          position: 'absolute', bottom: 'calc(100% + 1rem)', right: '0'
         }}>
           {/* Header */}
           <div style={{ 
