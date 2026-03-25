@@ -14,6 +14,24 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isLoginPage = pathname === '/login';
 
+  const routeTitles: Record<string, string> = {
+    "/": "Dashboard",
+    "/check-data": "Cek Data",
+    "/input": "Input Data",
+    "/verify-actor": "Verifikasi Admin",
+    "/actor-data": "Data Pelaku",
+    "/rejected": "Ditolak / Cancell",
+    "/verify-bank": "Verifikasi Data",
+    "/lpj": "LPJ",
+    "/finish": "Finish",
+    "/users": "Manajemen User",
+    "/settings": "Pengaturan",
+    "/chat-monitoring": "Monitoring Chat",
+    "/profile": "Profil Pengguna",
+  };
+
+  const currentTitle = routeTitles[pathname] || "";
+
   return (
     <SidebarProvider>
       <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-background">
@@ -50,7 +68,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             {/* Desktop Top Bar - Hidden on Login */}
             {!isLoginPage && (
               <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border border-white/20 shadow-sm mx-4 mb-4 mt-4 rounded-2xl backdrop-blur-xl">
-                <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors p-2 rounded-lg" />
+                <div className="flex items-center gap-4">
+                  <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors p-2 rounded-lg" />
+                  {currentTitle && (
+                    <h1 className="text-lg font-bold text-primary tracking-tight">
+                      {currentTitle}
+                    </h1>
+                  )}
+                </div>
                 <AboutDialog className="border-primary/20 text-primary hover:bg-primary/5 transition-colors" />
               </div>
             )}
