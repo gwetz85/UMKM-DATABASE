@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Search, User as UserIcon } from 'lucide-react';
 import { useUser, useDatabase, useList, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
-import { ref, query, orderByChild, equalTo, onValue, serverTimestamp } from 'firebase/database';
+import { ref, query, orderByChild, equalTo, onValue, serverTimestamp, onDisconnect, update } from 'firebase/database';
 
 export function ChatBubble() {
   const { user } = useUser();
@@ -36,12 +36,42 @@ export function ChatBubble() {
   }, [database]);
   const { data: allUsers } = useList(allUsersQuery);
 
-  // Filter users to exclude current user
-  const otherUsers = (allUsers || []).filter((u: any) => u.uid && u.uid !== user?.uid);
+  // Filter users to exclude current user and only show online fans
+  const otherUsers = (allUsers || []).filter((u: any) => u.uid && u.uid !== user?.uid && u.isOnline === true);
   const filteredUsers = otherUsers.filter((u: any) => 
     (u.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
     (u.role || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Presence logic
+  useEffect(() => {
+    if (!user || !database || !currentUserProfile?.id) return;
+
+    const userPresenceRef = ref(database, `system_users/${currentUserProfile.id}`);
+    const connectedRef = ref(database, ".info/connected");
+
+    const unsubscribe = onValue(connectedRef, (snap) => {
+      if (snap.val() === true) {
+        // When I disconnect, remove this device
+        onDisconnect(userPresenceRef).update({ 
+          isOnline: false,
+          lastActive: serverTimestamp() 
+        }).catch(err => console.error("onDisconnect error:", err));
+
+        // When I am connected, update my status
+        update(userPresenceRef, { 
+          isOnline: true,
+          lastActive: serverTimestamp() 
+        });
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      // Optionally set offline on unmount
+      update(userPresenceRef, { isOnline: false });
+    };
+  }, [user, database, currentUserProfile?.id]);
 
   // Unread messages listener
   useEffect(() => {
@@ -210,7 +240,13 @@ export function ChatBubble() {
                   </div>
                 ))}
                 {filteredUsers.length === 0 && (
-                  <div className="text-center p-4 text-sm text-gray-500">Tidak ada pengguna ditemukan.</div>
+                  <div className="text-center p-8 text-sm text-gray-500 flex flex-col items-center gap-3">
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300">
+                       <Search size={24} />
+                    </div>
+                    <p className="font-medium">Tidak ada pengguna yang sedang online.</p>
+                    <p className="text-[10px] uppercase tracking-wider opacity-60">Coba lagi beberapa saat lagi</p>
+                  </div>
                 )}
               </div>
             </div>
