@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { User, Phone, CreditCard, MapPin, ShieldCheck, Loader2 } from "lucide-react"
-import Link from "next/link"
+
 
 export function ProfileStatusDialog() {
   const { user, isUserLoading } = useUser()
@@ -112,7 +112,7 @@ export function ProfileStatusDialog() {
         <DialogFooter className="flex flex-col sm:flex-row gap-2">
           {!isProfileComplete ? (
             <Button asChild className="w-full font-bold shadow-lg shadow-primary/20">
-              <Link href="/profile" onClick={() => setIsOpen(false)}>Lengkapi Profil Sekarang</Link>
+              <a href="/profile" onClick={() => setIsOpen(false)}>Lengkapi Profil Sekarang</a>
             </Button>
           ) : (
             <Button onClick={() => setIsOpen(false)} className="w-full font-bold">

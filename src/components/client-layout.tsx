@@ -12,42 +12,32 @@ import { Toaster } from '@/components/ui/toaster';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [isNavigating, setIsNavigating] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsNavigating(true);
-    const timer = setTimeout(() => setIsNavigating(false), 800);
-    return () => clearTimeout(timer);
-  }, [pathname]);
-
   const isLoginPage = pathname === '/login';
 
-  const routeTitles: Record<string, string> = {
-    "/": "Dashboard",
-    "/check-data": "Cek Data",
-    "/input": "Input Data",
-    "/verify-actor": "Verifikasi Admin",
-    "/actor-data": "Data Pelaku",
-    "/rejected": "Ditolak / Cancell",
-    "/verify-bank": "Verifikasi Data",
-    "/lpj": "LPJ",
-    "/finish": "Finish",
-    "/users": "Manajemen User",
-    "/settings": "Pengaturan",
-    "/chat-monitoring": "Monitoring Chat",
-    "/profile": "Profil Pengguna",
+  const getPageTitle = (path: string) => {
+    switch (path) {
+      case '/': return 'Dashboard';
+      case '/actor-data': return 'Data Pelaku Usaha';
+      case '/finish': return 'Data Selesai';
+      case '/rejected': return 'Data Ditolak';
+      case '/verify-actor': return 'Verifikasi Admin';
+      case '/verify-bank': return 'Verifikasi Data';
+      case '/input': return 'Input Data';
+      case '/check-data': return 'Cek Data';
+      case '/profile': return 'Profil Saya';
+      case '/settings': return 'Pengaturan';
+      case '/users': return 'Manajemen User';
+      case '/chat-monitoring': return 'Monitoring Chat';
+      case '/lpj': return 'LPJ';
+      default: return '';
+    }
   };
 
-  const currentTitle = routeTitles[pathname] || "";
+  const currentTitle = getPageTitle(pathname);
 
   return (
     <SidebarProvider>
       <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-background">
-        {/* Navigation Loading Bar */}
-        {isNavigating && (
-          <div className="fixed top-0 left-0 w-full h-1 bg-accent z-[9999] animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
-        )}
-
         {/* Global Components */}
         <Toaster />
 

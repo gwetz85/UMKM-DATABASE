@@ -15,7 +15,7 @@ import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, 
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
-import Link from "next/link"
+
 import { cn } from "@/lib/utils"
 
 function ActorDataContent() {
@@ -154,9 +154,9 @@ function ActorDataContent() {
           {filterCoordinator && (
             <div className="flex items-center gap-2 mt-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 w-fit">
               <span className="text-[10px] font-black text-primary uppercase">Filter Koordinator: {filterCoordinator}</span>
-              <Link href="/actor-data" className="text-primary hover:text-primary/70 transition-transform active:scale-90">
+              <a href="/actor-data" className="text-primary hover:text-primary/70 transition-transform active:scale-90">
                 <X className="w-3.5 h-3.5" />
-              </Link>
+              </a>
             </div>
           )}
         </div>

@@ -25,7 +25,7 @@ import {
   History,
   FileText
 } from "lucide-react"
-import Link from "next/link"
+
 import { usePathname, useRouter } from "next/navigation"
 import { useUser, useObject, useMemoFirebase, useAuth, useList, useDatabase } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
@@ -282,20 +282,15 @@ export function AppSidebar() {
                       "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center"
                     )}
                   >
-                    <Link 
+                    <a 
                       href={item.href} 
                       className="flex items-center gap-3 w-full"
-                      onClick={() => {
-                        if (isMobile) {
-                          setOpenMobile(false);
-                        }
-                      }}
                     >
                       <item.icon className="w-4.5 h-4.5 shrink-0" />
                       <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
                         {item.name}
                       </span>
-                    </Link>
+                    </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -309,12 +304,9 @@ export function AppSidebar() {
           {user && (
             <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-2">
               <div className="bg-white/10 rounded-xl border border-white/10 p-2.5 space-y-2">
-                <Link 
-                  href="/profile" 
+                <a 
+                  href="/profile"
                   className="flex items-center gap-2 hover:bg-white/5 p-1 rounded-lg transition-colors cursor-pointer w-full group/profile"
-                  onClick={() => {
-                    if (isMobile) setOpenMobile(false);
-                  }}
                 >
                   <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center group-hover/profile:bg-white/30 transition-colors">
                     <UserIcon className="w-3.5 h-3.5 text-white" />
@@ -327,7 +319,7 @@ export function AppSidebar() {
                       {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 Koordinator" : isPetugas ? "📝 Petugas" : "👤 User"}
                     </span>
                   </div>
-                </Link>
+                </a>
                 
                 <div className="flex items-center justify-between bg-black/20 p-1.5 rounded-lg gap-2">
                   <span className="text-[8px] text-white/40 font-mono truncate select-all">

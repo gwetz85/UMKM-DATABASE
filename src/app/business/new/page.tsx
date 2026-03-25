@@ -19,7 +19,7 @@ import {
   ChevronLeft,
   Loader2
 } from "lucide-react"
-import Link from "next/link"
+
 import { useToast } from "@/hooks/use-toast"
 
 export default function NewBusinessPage() {
@@ -73,9 +73,9 @@ export default function NewBusinessPage() {
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
-      <Link href="/business" className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+      <a href="/business" className="flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
         <ChevronLeft className="w-4 h-4 mr-1" /> Kembali ke Daftar
-      </Link>
+      </a>
 
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold text-primary font-headline">Input Data Pelaku Usaha</h1>

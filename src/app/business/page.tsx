@@ -14,7 +14,7 @@ import {
   Trash2, 
   Loader2
 } from "lucide-react"
-import Link from "next/link"
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,12 +43,12 @@ export default function BusinessListPage() {
           <h1 className="text-3xl font-bold text-primary font-headline">Pelaku Usaha</h1>
           <p className="text-muted-foreground">Kelola basis data pelaku usaha Anda melalui Firebase Firestore.</p>
         </div>
-        <Link href="/business/new">
+        <a href="/business/new">
           <Button className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-2" />
             Tambah Baru
           </Button>
-        </Link>
+        </a>
       </div>
 
       <Card className="border-none shadow-sm overflow-hidden">

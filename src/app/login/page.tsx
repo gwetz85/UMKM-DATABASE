@@ -20,7 +20,7 @@ import {
   UserPlus 
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import Link from "next/link"
+
 import {
   Dialog,
   DialogContent,
@@ -351,11 +351,11 @@ export default function LoginPage() {
                 </Dialog>
               </div>
               
-              <Link href="/check-data" className="w-full">
+              <a href="/check-data" className="w-full">
                 <Button variant="outline" type="button" className="w-full h-11 border-primary/20 text-primary font-bold hover:bg-primary/5 transition-colors">
                   <SearchCheck className="w-4 h-4 mr-2" /> Cek Data Pengajuan
                 </Button>
-              </Link>
+              </a>
 
               <div className="pt-2 flex flex-col items-center gap-3">
                 <Button 

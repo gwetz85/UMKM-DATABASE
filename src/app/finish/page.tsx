@@ -13,7 +13,7 @@ import { Printer, Edit3, Loader2, Save, RotateCcw, Eye, User, CreditCard, Histor
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
-import Link from "next/link"
+
 import { cn } from "@/lib/utils"
 
 function FinishContent() {
@@ -141,9 +141,9 @@ function FinishContent() {
             {filterCoordinator && (
               <div className="flex items-center gap-2 mt-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 w-fit">
                 <span className="text-[10px] font-black text-primary uppercase">Filter Koordinator: {filterCoordinator}</span>
-                <Link href="/finish" className="text-primary hover:text-primary/70 transition-transform active:scale-90">
+                <a href="/finish" className="text-primary hover:text-primary/70 transition-transform active:scale-90">
                   <X className="w-3.5 h-3.5" />
-                </Link>
+                </a>
               </div>
             )}
           </div>
