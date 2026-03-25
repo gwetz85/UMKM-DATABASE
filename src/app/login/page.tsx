@@ -224,8 +224,8 @@ export default function LoginPage() {
       <Card className="w-full max-w-md border-none shadow-2xl overflow-hidden bg-white/95 backdrop-blur-sm">
         <div className="h-2 bg-primary w-full" />
         <CardHeader className="space-y-1 text-center pt-8">
-          <div className="flex justify-center mb-6">
-            <div className="w-24 h-24 overflow-hidden rounded-full border-4 border-white shadow-2xl relative z-10 bg-white">
+          <div className="flex justify-center mb-0">
+            <div className="w-28 h-28 overflow-hidden rounded-full border-4 border-white shadow-2xl relative z-10 bg-white">
               <img 
                 src="/logo.png" 
                 alt="SIMPU Logo" 
@@ -233,9 +233,6 @@ export default function LoginPage() {
               />
             </div>
           </div>
-          <CardTitle className="text-5xl font-black tracking-tighter text-primary italic">
-            SIMPU
-          </CardTitle>
         </CardHeader>
         <form onSubmit={handleAuth}>
           <CardContent className="grid gap-5 py-6">
