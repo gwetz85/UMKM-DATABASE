@@ -16,14 +16,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="flex flex-col min-h-screen w-full overflow-hidden">
+      <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-background">
         {/* Global Components */}
         <Toaster />
 
         {/* Mobile Header - Hidden on Login */}
         {!isLoginPage && (
           <>
-            <header className="flex md:hidden items-center justify-between px-4 h-14 bg-gradient-to-r from-primary to-blue-800 text-white shrink-0 z-30 shadow-md print:hidden">
+            <header className="sticky top-0 flex md:hidden items-center justify-between px-4 h-14 bg-gradient-to-r from-primary to-blue-800 text-white shrink-0 z-50 shadow-md print:hidden">
               <div className="flex items-center gap-2">
                 <SidebarTrigger className="text-white hover:bg-white/10 transition-colors" />
                 <div className="flex flex-col">
@@ -42,14 +42,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           </>
         )}
 
-        <div className="flex flex-1 w-full overflow-hidden">
+        <div className="flex flex-1 min-h-0 w-full overflow-hidden">
           <div className="print:hidden">
             <AppSidebar />
           </div>
-          <main className="flex-1 overflow-auto bg-transparent print:bg-white">
+          <main className="flex-1 overflow-auto bg-transparent print:bg-white relative">
             {/* Desktop Top Bar - Hidden on Login */}
             {!isLoginPage && (
-              <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-0 glass-panel z-10 border-b border-white/20 shadow-sm mx-4 mt-4 rounded-2xl">
+              <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border border-white/20 shadow-sm mx-4 mb-4 mt-4 rounded-2xl backdrop-blur-xl">
                 <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors p-2 rounded-lg" />
                 <AboutDialog className="border-primary/20 text-primary hover:bg-primary/5 transition-colors" />
               </div>
