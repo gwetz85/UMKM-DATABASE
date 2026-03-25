@@ -1,5 +1,17 @@
-# Firebase Studio
+# SIMPU - Sistem Informasi Manajemen Pelaku Usaha
 
-This is a NextJS starter in Firebase Studio.
+SIMPU adalah aplikasi pendataan dan verifikasi pelaku usaha UMKM yang modern dan efisien.
 
-To get started, take a look at src/app/page.tsx.
+## Fitur Utama
+
+- **Pendaftaran Mandiri**: Pelaku usaha dapat mendaftar dengan formulir yang mudah digunakan.
+- **Verifikasi Bertingkat**: Proses verifikasi data oleh Admin dan Verifikator.
+- **Manajemen User**: Pengaturan hak akses berdasarkan peran (Admin, Verifikator, Petugas).
+- **Dashboard Real-time**: Monitoring pendaftaran dan status verifikasi secara langsung.
+
+## Teknologi
+
+- **Framework**: Next.js 15
+- **Database**: Firebase Realtime Database
+- **AI**: Google Gemini via Genkit (untuk analisis data)
+- **UI**: Tailwind CSS & Shadcn/UI

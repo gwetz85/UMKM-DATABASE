@@ -245,11 +245,8 @@ export function AppSidebar() {
               />
             </div>
             <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden mt-2">
-              <span className="font-black text-2xl tracking-tighter text-white leading-none drop-shadow-md">
-                SIMPU
-              </span>
-              <span className="text-[7px] font-bold text-white/60 tracking-[0.15em] uppercase mt-1 text-center leading-tight whitespace-nowrap">
-                SIM Pelaku Usaha
+              <span className="text-[11px] font-black text-white/50 tracking-[0.25em] uppercase leading-none italic">
+                Sistem Informasi Manajemen
               </span>
             </div>
           </Link>
