@@ -4,7 +4,6 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar, SimpuLogo } from '@/components/app-sidebar';
-import { AboutDialog } from '@/components/about-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { ChatBubble } from '@/components/chat-bubble';
 
@@ -51,7 +50,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <AboutDialog variant="ghost" className="text-white hover:bg-white/10 border-white/10" />
                 <div className="w-10 h-10 overflow-hidden rounded-full border border-white/20 shadow-lg">
                   <img 
                     src="/logo.png" 
@@ -79,7 +77,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     </h1>
                   )}
                 </div>
-                <AboutDialog className="border-primary/20 text-primary hover:bg-primary/5 transition-colors" />
               </div>
             )}
             <div className="w-full relative z-0">
