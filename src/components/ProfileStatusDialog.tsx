@@ -19,7 +19,6 @@ export function ProfileStatusDialog() {
   const { user, isUserLoading } = useUser()
   const database = useDatabase()
   const [isOpen, setIsOpen] = useState(false)
-  const [hasShown, setHasShown] = useState(false)
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -31,11 +30,12 @@ export function ProfileStatusDialog() {
 
   useEffect(() => {
     // Show dialog once per session after login and profile is loaded
-    if (user && profile && !hasShown && !isUserLoading && !isProfileLoading) {
+    const sessionShown = sessionStorage.getItem('welcome_dialog_shown')
+    if (user && profile && !sessionShown && !isUserLoading && !isProfileLoading) {
       setIsOpen(true)
-      setHasShown(true)
+      sessionStorage.setItem('welcome_dialog_shown', 'true')
     }
-  }, [user, profile, hasShown, isUserLoading, isProfileLoading])
+  }, [user, profile, isUserLoading, isProfileLoading])
 
   if (!user || !profile) return null
 
