@@ -63,9 +63,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         )}
 
         <div className="flex flex-1 min-h-0 w-full overflow-hidden">
-          <div className="print:hidden">
-            <AppSidebar />
-          </div>
+          <AppSidebar />
           <main className="flex-1 overflow-auto bg-transparent print:bg-white relative">
             {/* Desktop Top Bar - Hidden on Login */}
             {!isLoginPage && (

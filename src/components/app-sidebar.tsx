@@ -232,7 +232,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r-0 shadow-[4px_0_24px_rgba(0,0,0,0.1)] bg-gradient-to-b from-primary to-blue-900 text-white">
-      <SidebarHeader className="py-4 flex flex-col items-center justify-center border-b border-white/10 sticky top-0 bg-transparent backdrop-blur-md z-20">
+      <SidebarHeader className="py-4 flex flex-col items-center justify-center border-b border-white/10 bg-transparent backdrop-blur-md">
         <div className="flex flex-col items-center gap-2 w-full mb-4">
           <div className="bg-white/20 rounded-xl p-2 shadow-lg flex items-center justify-center transition-transform duration-300 hover:scale-105">
             <SimpuLogo className="w-6 h-6 text-white" />
