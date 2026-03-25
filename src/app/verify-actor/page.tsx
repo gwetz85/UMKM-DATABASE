@@ -26,7 +26,7 @@ export default function VerifyActorPage() {
   const [editingOnlyActor, setEditingOnlyActor] = useState<BusinessActor | null>(null)
   const [rejectingActor, setRejectingActor] = useState<BusinessActor | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
-  
+
   const [editKelurahan, setEditKelurahan] = useState<string>("")
   const [editKecamatan, setEditKecamatan] = useState<string>("")
 
@@ -53,7 +53,7 @@ export default function VerifyActorPage() {
 
   const { data: actors, isLoading } = useCollection<BusinessActor>(memoQuery)
 
-  const filteredActors = actors?.filter(actor => 
+  const filteredActors = actors?.filter(actor =>
     actor.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     actor.nik.includes(searchQuery) ||
     actor.businessName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -86,7 +86,7 @@ export default function VerifyActorPage() {
   const handleSaveAndVerify = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!editingActor || !firestore || !isAdmin) return
-    
+
     setIsVerifying(true)
     const formData = new FormData(e.currentTarget)
     const actorRef = doc(firestore, 'businessActors', editingActor.id)
@@ -115,7 +115,7 @@ export default function VerifyActorPage() {
   const handleSaveOnly = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!editingOnlyActor || !firestore || !isAdmin) return
-    
+
     setIsVerifying(true)
     const formData = new FormData(e.currentTarget)
     const actorRef = doc(firestore, 'businessActors', editingOnlyActor.id)
@@ -147,12 +147,12 @@ export default function VerifyActorPage() {
     const formData = new FormData(e.currentTarget)
     const reason = formData.get("rejectionReason") as string
     const actorRef = doc(firestore, 'businessActors', rejectingActor.id)
-    
+
     updateDocumentNonBlocking(actorRef, {
       status: 'rejected',
       rejectionReason: reason || "Tanpa keterangan"
     })
-    
+
     toast({ variant: "destructive", title: "Data Ditolak", description: "Data telah dipindahkan ke menu Ditolak / Cancell." })
     setRejectingActor(null)
   }
@@ -168,7 +168,7 @@ export default function VerifyActorPage() {
   const openEditDialog = (actor: BusinessActor, type: 'verify' | 'edit') => {
     if (type === 'verify') setEditingActor(actor)
     else setEditingOnlyActor(actor)
-    
+
     setEditKelurahan(actor.kelurahan || "")
     setEditKecamatan(actor.kecamatan || "")
   }
@@ -193,11 +193,11 @@ export default function VerifyActorPage() {
         </div>
         <div className="relative w-full md:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input 
-            placeholder="Cari Nama, NIK, atau Usaha..." 
-            className="flex h-11 w-full rounded-md border border-primary/20 bg-card px-3 py-2 pl-9 text-sm text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
-            value={searchQuery} 
-            onChange={(e) => setSearchQuery(e.target.value)} 
+          <input
+            placeholder="Cari Nama, NIK, atau Usaha..."
+            className="flex h-11 w-full rounded-md border border-primary/20 bg-card px-3 py-2 pl-9 text-sm text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>

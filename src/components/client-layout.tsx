@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar, SimpuLogo } from '@/components/app-sidebar';
 import { AboutDialog } from '@/components/about-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
+import { ChatBubble } from '@/components/chat-bubble';
 
 import { Toaster } from '@/components/ui/toaster';
 
@@ -56,6 +57,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             <div className="w-full relative z-0">
               {children}
             </div>
+            
+            {!isLoginPage && <ChatBubble />}
           </main>
         </div>
       </div>

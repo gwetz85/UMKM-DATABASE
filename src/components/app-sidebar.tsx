@@ -187,6 +187,12 @@ export function AppSidebar() {
       icon: Settings, 
       show: !!user 
     },
+    { 
+      name: "Monitoring Chat", 
+      href: "/chat-monitoring", 
+      icon: MessageSquare, 
+      show: isAdmin 
+    },
   ], [user, isAdmin, isMonitoring, userProfile])
 
   const copyUid = () => {
