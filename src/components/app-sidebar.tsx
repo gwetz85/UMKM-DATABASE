@@ -22,7 +22,8 @@ import {
   Ban,
   MessageSquare,
   History,
-  FileText
+  FileText,
+  Camera
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
@@ -141,6 +142,12 @@ export function AppSidebar() {
       name: "Input Data", 
       href: "/input", 
       icon: UserPlus, 
+      show: !!user && !isMonitoring && !isKoordinator
+    },
+    { 
+      name: "Scan KTP", 
+      href: "/input?scan=true", 
+      icon: Camera, 
       show: !!user && !isMonitoring && !isKoordinator
     },
     { 
