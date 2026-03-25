@@ -238,8 +238,8 @@ export function AppSidebar() {
             <SimpuLogo className="w-6 h-6 text-white" />
           </div>
           <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden">
-            <span className="font-black text-2xl tracking-tighter text-white leading-none flex items-center gap-1">
-              <span className="text-secondary">2026</span> SIMPU
+            <span className="font-black text-2xl tracking-tighter text-white leading-none">
+              SIMPU
             </span>
             <span className="text-[7.5px] font-bold text-white/60 tracking-wider uppercase mt-1 text-center leading-tight">
               Sistem Informasi Manajemen<br/>Pelaku Usaha

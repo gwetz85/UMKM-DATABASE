@@ -46,7 +46,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 <SidebarTrigger className="text-white hover:bg-white/10 transition-colors" />
                 <div className="flex flex-col">
                   <span className="text-2xl font-black tracking-tighter leading-none flex items-center gap-1">
-                    <span className="text-accent underline decoration-white/20">2026</span> SIMPU
+                    SIMPU
                   </span>
                   <span className="text-[8px] font-bold text-accent tracking-widest uppercase mt-0.5">Versi 5.2</span>
                 </div>
@@ -73,7 +73,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-4">
                   <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors p-2 rounded-lg" />
                   {currentTitle && (
-                    <h1 className="text-2xl font-black text-primary tracking-tight uppercase">
+                    <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight uppercase">
                       {currentTitle}
                     </h1>
                   )}
