@@ -221,11 +221,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 cursor-default"
+      onClick={() => setShowForm(false)}
+    >
       {!showForm ? (
         <div 
           className="flex flex-col items-center cursor-pointer animate-pulse transition-transform hover:scale-105" 
-          onClick={() => setShowForm(true)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowForm(true);
+          }}
         >
           <div className="w-48 h-48 overflow-hidden rounded-full border-8 border-white shadow-[0_20px_50px_rgba(0,0,0,0.2)] bg-white">
             <img 
@@ -236,7 +242,10 @@ export default function LoginPage() {
           </div>
         </div>
       ) : (
-        <Card className="w-full max-w-md border-none shadow-2xl overflow-hidden bg-white/95 backdrop-blur-sm scale-in-center">
+        <Card 
+          className="w-full max-w-md border-none shadow-2xl overflow-hidden bg-white/95 backdrop-blur-sm scale-in-center"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="h-2 bg-primary w-full" />
           <CardHeader className="space-y-1 text-center pt-8 cursor-pointer select-none" onClick={() => setShowForm(false)}>
             <div className="flex justify-center mb-2">
