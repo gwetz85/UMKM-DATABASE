@@ -238,10 +238,10 @@ export function AppSidebar() {
             <SimpuLogo className="w-6 h-6 text-white" />
           </div>
           <div className="flex flex-col items-center group-data-[collapsible=icon]:hidden">
-            <span className="font-black text-2xl tracking-tighter text-white leading-none">
+            <span className="font-black text-2xl tracking-tighter text-white leading-none text-outline">
               SIMPU
             </span>
-            <span className="text-[7.5px] font-bold text-white/60 tracking-wider uppercase mt-1 text-center leading-tight">
+            <span className="text-[7.5px] font-bold text-white/60 tracking-wider uppercase mt-1 text-center leading-tight text-outline">
               Sistem Informasi Manajemen<br/>Pelaku Usaha
             </span>
           </div>
@@ -250,10 +250,10 @@ export function AppSidebar() {
         {/* Waktu Server */}
         <div className="w-full group-data-[collapsible=icon]:hidden px-2 mb-2">
           <div className="bg-black/40 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-1 relative overflow-hidden shadow-inner text-center">
-            <div className="text-3xl font-black text-white tracking-tight leading-none mb-1 tabular-nums mt-1">
+            <div className="text-3xl font-black text-white tracking-tight leading-none mb-1 tabular-nums mt-1 text-outline">
               {currentTime}
             </div>
-            <div className="text-[11px] font-medium text-white/60 whitespace-nowrap">
+            <div className="text-[11px] font-medium text-white/60 whitespace-nowrap text-outline">
               {currentDate}
             </div>
           </div>
@@ -281,7 +281,7 @@ export function AppSidebar() {
                   >
                     <Link href={item.href} className="flex items-center gap-3">
                       <item.icon className="w-4.5 h-4.5 shrink-0" />
-                      <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
+                      <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden text-outline">
                         {item.name}
                       </span>
                     </Link>
@@ -303,10 +303,10 @@ export function AppSidebar() {
                     <UserIcon className="w-3.5 h-3.5 text-white" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] font-black text-white truncate group-hover/profile:text-accent transition-colors">
+                    <span className="text-[10px] font-black text-white truncate group-hover/profile:text-accent transition-colors text-outline">
                       {userProfile?.fullName?.toUpperCase() || user.email?.split('@')[0].toUpperCase()}
                     </span>
-                    <span className="text-[8px] text-white/60 font-black uppercase tracking-tighter">
+                    <span className="text-[8px] text-white/60 font-black uppercase tracking-tighter text-outline">
                       {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 Koordinator" : isPetugas ? "📝 Petugas" : "👤 User"}
                     </span>
                   </div>
@@ -338,14 +338,14 @@ export function AppSidebar() {
                 {user ? (
                   <>
                     <LogOut className="w-4.5 h-4.5 shrink-0" />
-                    <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">
+                    <span className="text-xs font-bold group-data-[collapsible=icon]:hidden text-outline">
                       Keluar Sistem
                     </span>
                   </>
                 ) : (
                   <>
                     <LogIn className="w-4.5 h-4.5 shrink-0" />
-                    <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">
+                    <span className="text-xs font-bold group-data-[collapsible=icon]:hidden text-outline">
                       Masuk (Login)
                     </span>
                   </>

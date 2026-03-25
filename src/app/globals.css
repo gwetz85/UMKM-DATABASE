@@ -92,6 +92,14 @@
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-emerald-500;
   }
+
+  .text-outline {
+    text-shadow: 
+      -1px -1px 0 rgba(0,0,0,0.5),  
+       1px -1px 0 rgba(0,0,0,0.5),
+      -1px  1px 0 rgba(0,0,0,0.5),
+       1px  1px 0 rgba(0,0,0,0.5);
+  }
 }
 
 /* Elegant & Modern Scrollbar for Sidebar */
