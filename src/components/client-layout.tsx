@@ -4,6 +4,7 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar, SimpuLogo } from '@/components/app-sidebar';
+import { InfoDialog } from '@/components/info-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { ChatBubble } from '@/components/chat-bubble';
 
@@ -50,13 +51,15 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 overflow-hidden rounded-full border border-white/20 shadow-lg">
-                  <img 
-                    src="/logo.png" 
-                    alt="SIMPU" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <InfoDialog>
+                  <button className="w-10 h-10 overflow-hidden rounded-full border border-white/20 shadow-lg outline-none">
+                    <img 
+                      src="/logo.png" 
+                      alt="SIMPU" 
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                </InfoDialog>
               </div>
             </header>
             <ProfileStatusDialog />

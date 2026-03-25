@@ -2,6 +2,7 @@
 "use client"
 
 import * as React from "react"
+import { InfoDialog } from "./info-dialog"
 import {
   LayoutDashboard,
   UserPlus,
@@ -236,15 +237,17 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r-0 shadow-[4px_0_24px_rgba(0,0,0,0.1)] bg-gradient-to-b from-primary to-blue-900 text-white">
       <SidebarHeader className="py-6 flex flex-col items-center justify-center border-b border-white/10">
         <div className="flex flex-col items-center justify-center w-full">
-          <Link href="/" className="flex flex-col items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95">
-            <div className="relative group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 w-24 h-24 overflow-hidden rounded-full border-2 border-white/20 shadow-2xl">
-              <img 
-                src="/logo.png" 
-                alt="SIMPU Logo" 
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </Link>
+          <InfoDialog>
+            <button className="flex flex-col items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 outline-none">
+              <div className="relative group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 w-24 h-24 overflow-hidden rounded-full border-2 border-white/20 shadow-2xl">
+                <img 
+                  src="/logo.png" 
+                  alt="SIMPU Logo" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </button>
+          </InfoDialog>
         </div>
 
         {/* Waktu Server */}
