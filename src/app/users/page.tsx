@@ -194,6 +194,7 @@ export default function UserManagementPage() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="petugas">Petugas Input</SelectItem>
+                      <SelectItem value="koordinator">Koordinator Lapangan</SelectItem>
                       <SelectItem value="admin">Administrator</SelectItem>
                       <SelectItem value="monitoring">Monitoring</SelectItem>
                     </SelectContent>
@@ -239,6 +240,10 @@ export default function UserManagementPage() {
                       ) : u.role === 'monitoring' ? (
                         <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 font-black uppercase text-[9px] gap-1">
                           <Eye className="w-3 h-3" /> Monitoring
+                        </Badge>
+                      ) : u.role === 'koordinator' ? (
+                        <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 font-black uppercase text-[9px] gap-1">
+                          <UserCheck className="w-3 h-3" /> Koordinator
                         </Badge>
                       ) : u.role === 'petugas' ? (
                         <Badge variant="secondary" className="text-slate-600 bg-slate-100 font-black uppercase text-[9px] gap-1">
@@ -298,6 +303,7 @@ export default function UserManagementPage() {
                                       <SelectTrigger><SelectValue /></SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="petugas">Petugas Input</SelectItem>
+                                        <SelectItem value="koordinator">Koordinator Lapangan</SelectItem>
                                         <SelectItem value="admin">Administrator</SelectItem>
                                         <SelectItem value="monitoring">Monitoring</SelectItem>
                                       </SelectContent>

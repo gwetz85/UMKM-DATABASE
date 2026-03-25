@@ -1,23 +1,35 @@
-
 "use client"
 
-import { useState, Suspense } from "react"
-import { useMemoFirebase, useList, useUser, useDatabase, useObject, updateDocumentNonBlocking, deleteDocumentNonBlocking } from "@/firebase"
+import { useState, useEffect, Suspense } from "react"
+import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, deleteDocumentNonBlocking, useObject } from "@/firebase"
 import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog"
-import { Eye, Loader2, Ban, RotateCcw, Trash2, User, Building2, MapPin, AlertCircle } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
+import { Printer, Edit3, Loader2, Save, RotateCcw, Trash2, Eye, User, CreditCard, History, X, Building2, MapPin, Ban, AlertCircle } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
+import { useSearchParams, useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 function RejectedContent() {
   const { user } = useUser()
   const database = useDatabase()
   const { toast } = useToast()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const filterCoordinator = searchParams.get('coordinator')
   
+  const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
+  const [printDate, setPrintDate] = useState<string>("")
+
+  useEffect(() => {
+    setPrintDate(new Date().toLocaleString('id-ID'))
+  }, [])
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -33,156 +45,329 @@ function RejectedContent() {
   const userProfile = userProfiles?.[0]
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const isKoordinator = userProfile?.role === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
     return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('rejected'))
   }, [database])
 
-  const { data: actors, isLoading } = useList<BusinessActor>(memoQuery)
+  const { data: allActors, isLoading } = useList<BusinessActor>(memoQuery)
+  
+  const actors = allActors ? allActors.filter(a => {
+    if (isKoordinator) {
+      if (!a.coordinator || !userProfile?.fullName) return false;
+      return a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase();
+    }
+    if (filterCoordinator) {
+      return a.coordinator === filterCoordinator;
+    }
+    return true;
+  }) : undefined
+
+  const [isEditMode, setIsEditMode] = useState(false)
+
+  const handleSaveFullEdit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!isAdmin || !database || !viewingActor) return
+    const formData = new FormData(e.currentTarget)
+    
+    const updates: Partial<BusinessActor> = {
+      fullName: formData.get('fullName') as string,
+      nik: formData.get('nik') as string,
+      noKK: formData.get('noKK') as string,
+      gender: formData.get('gender') as string,
+      pobDob: formData.get('pobDob') as string,
+      phone: formData.get('phone') as string,
+      kecamatan: formData.get('kecamatan') as string,
+      kelurahan: formData.get('kelurahan') as string,
+      rtRw: formData.get('rtRw') as string,
+      address: formData.get('address') as string,
+      businessName: formData.get('businessName') as string,
+      businessCategory: formData.get('businessCategory') as string,
+      businessLocation: formData.get('businessLocation') as string,
+      coordinator: formData.get('coordinator') as string,
+      bankName: formData.get('bankName') as string,
+      bankNumber: formData.get('bankNumber') as string,
+      bankOwner: formData.get('bankOwner') as string,
+      rejectionReason: formData.get('rejectionReason') as string,
+    }
+
+    updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
+    toast({ title: "Tersimpan", description: "Data pelaku usaha berhasil diperbarui." })
+    setIsEditMode(false)
+    setViewingActor({ ...viewingActor, ...updates } as BusinessActor)
+  }
 
   const handleRevert = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
       updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
-      toast({ title: "Berhasil", description: "Data dikembalikan ke antrean awal." })
+      toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
+      setViewingActor(null)
     }
   }
 
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm(`Hapus permanen data "${fullName}"? Tindakan ini tidak dapat dibatalkan.`)) {
+    if (confirm(`Hapus permanen ${fullName}? Semua data terkait akan hilang.`)) {
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
-      toast({ variant: "destructive", title: "Terhapus", description: "Data telah dihapus permanen." })
+      toast({ variant: "destructive", title: "Terhapus", description: "Data dihapus permanen." })
+      setViewingActor(null)
     }
   }
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
+        <h1 className="text-xl font-black uppercase">LAPORAN DATA DITOLAK (REJECTED)</h1>
+        <p className="text-xs font-bold">Sistem Manajemen Terpadu Database UMKM</p>
+      </div>
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div className="flex items-center gap-3">
           <Ban className="w-8 h-8 text-red-600" />
           <div className="flex flex-col">
-            <h1 className="text-3xl font-bold text-primary font-headline">Ditolak / Cancell</h1>
-            <p className="text-muted-foreground text-sm">Daftar pendaftaran yang ditolak oleh Administrator.</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-red-700 font-headline">Data Ditolak / Cancel</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">Arsip data yang ditolak oleh Administrator.</p>
+            {filterCoordinator && (
+              <div className="flex items-center gap-2 mt-2 bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 w-fit">
+                <span className="text-[10px] font-black text-red-700 uppercase">Filter Koordinator: {filterCoordinator}</span>
+                <button onClick={() => router.push('/rejected')} className="text-red-700 hover:text-red-900"><X className="w-3.5 h-3.5" /></button>
+              </div>
+            )}
           </div>
         </div>
+        <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto">
+          <Printer className="w-4 h-4 mr-2" /> CETAK
+        </Button>
       </div>
 
-      <Card className="border-none shadow-sm bg-card">
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-red-50/50">
-                  <TableRow>
-                    <TableHead className="font-bold">Nama Pelaku</TableHead>
-                    <TableHead className="font-bold">Usaha</TableHead>
-                    <TableHead className="font-bold">Keterangan Penolakan</TableHead>
-                    <TableHead className="text-right font-bold">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {actors?.map((actor) => (
-                    <TableRow key={actor.id} className="hover:bg-red-50/20">
-                      <TableCell className="font-bold uppercase text-slate-700">{actor.fullName}</TableCell>
-                      <TableCell className="font-medium">{actor.businessName}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-red-600 font-bold text-xs bg-red-50 px-3 py-1 rounded-full border border-red-100 w-fit">
-                          <AlertCircle className="w-3 h-3" /> {actor.rejectionReason || "Tanpa keterangan"}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="ghost" onClick={() => setViewingActor(actor)} className="text-primary font-bold">
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                              {viewingActor && (
-                                <>
-                                  <DialogHeader>
-                                    <DialogTitle className="text-2xl font-black text-red-600 uppercase flex items-center gap-2">
-                                      <Ban className="w-6 h-6" /> Data Ditolak
-                                    </DialogTitle>
-                                    <DialogDescription className="sr-only">Rincian data pelaku usaha yang ditolak.</DialogDescription>
-                                  </DialogHeader>
-                                  <div className="grid gap-6 py-4">
-                                    <section className="p-4 bg-red-50 border border-red-200 rounded-2xl">
-                                      <p className="text-[10px] font-black text-red-600 uppercase mb-2 tracking-widest">Alasan Penolakan:</p>
-                                      <p className="text-sm font-black text-red-700 leading-relaxed italic">
-                                        "{viewingActor.rejectionReason || "Administrator tidak memberikan alasan spesifik."}"
-                                      </p>
-                                    </section>
-                                    
-                                    <div className="grid md:grid-cols-2 gap-6">
-                                      <div className="space-y-4">
-                                        <div className="flex items-center gap-2 text-primary font-black text-xs uppercase border-b pb-1">
-                                          <User className="w-3 h-3" /> Informasi Pribadi
-                                        </div>
-                                        <div className="space-y-2 text-sm">
-                                          <div className="grid grid-cols-2">
-                                            <span className="text-muted-foreground font-bold text-[10px] uppercase">Nama</span>
-                                            <span className="font-bold">{viewingActor.fullName}</span>
-                                          </div>
-                                          <div className="grid grid-cols-2">
-                                            <span className="text-muted-foreground font-bold text-[10px] uppercase">NIK</span>
-                                            <span className="font-mono">{viewingActor.nik}</span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                      <div className="space-y-4">
-                                        <div className="flex items-center gap-2 text-primary font-black text-xs uppercase border-b pb-1">
-                                          <Building2 className="w-3 h-3" /> Informasi Usaha
-                                        </div>
-                                        <div className="space-y-2 text-sm">
-                                          <div className="grid grid-cols-2">
-                                            <span className="text-muted-foreground font-bold text-[10px] uppercase">Nama Usaha</span>
-                                            <span className="font-bold">{viewingActor.businessName}</span>
-                                          </div>
-                                          <div className="grid grid-cols-2">
-                                            <span className="text-muted-foreground font-bold text-[10px] uppercase">Lokasi</span>
-                                            <span className="font-bold">{viewingActor.businessLocation}</span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </>
-                              )}
-                            </DialogContent>
-                          </Dialog>
-                          {isAdmin && (
-                            <>
-                              <Button size="sm" variant="ghost" onClick={() => handleRevert(actor.id, actor.fullName)} className="text-amber-600 font-bold">
-                                <RotateCcw className="w-4 h-4" />
-                              </Button>
-                              <Button size="sm" variant="ghost" onClick={() => handleDelete(actor.id, actor.fullName)} className="text-red-600 font-bold">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {(!actors || actors.length === 0) && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic font-medium">
-                        Tidak ada data yang ditolak.
-                      </TableCell>
-                    </TableRow>
+      <div className="bg-card print:bg-transparent">
+        {isLoading ? (
+          <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary w-8 h-8" /></div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 print:flex print:flex-col print:gap-1">
+            {actors?.map((actor) => (
+              <Card 
+                key={actor.id} 
+                className="cursor-pointer hover:border-red-500/50 transition-all hover:shadow-md group relative overflow-hidden print:shadow-none print:border-b print:rounded-none"
+                onClick={() => {
+                  setViewingActor(actor)
+                  setIsEditMode(false)
+                }}
+              >
+                <CardContent className="p-4 flex flex-col items-center text-center gap-3 print:flex-row print:justify-between print:text-left print:p-2">
+                  <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform print:hidden shrink-0">
+                    <Ban className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1 w-full justify-center">
+                    <p className="font-bold text-[13px] md:text-sm line-clamp-2 uppercase leading-tight print:line-clamp-none text-red-800" title={actor.businessName}>
+                      {actor.businessName || "NAMA USAHA KOSONG"}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground uppercase line-clamp-1 print:line-clamp-none font-bold flex items-center justify-center print:justify-start gap-1" title={actor.fullName}>
+                      <User className="w-3 h-3 print:hidden" /> {actor.fullName}
+                    </p>
+                    <p className="text-[9px] text-muted-foreground font-mono hidden print:block">
+                      NIK: {actor.nik} | Koor: {actor.coordinator} | Alasan: {actor.rejectionReason}
+                    </p>
+                  </div>
+                  <div className="text-[9px] font-black uppercase bg-red-500 text-white w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
+                    DITOLAK
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {(!actors || actors.length === 0) && (
+              <div className="col-span-full py-20 text-center text-muted-foreground grid place-items-center">
+                <Ban className="w-12 h-12 mb-4 text-slate-300" />
+                <p>Tidak ada data ditolak yang ditemukan.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <Dialog open={!!viewingActor} onOpenChange={(open) => {
+        if (!open) {
+          setViewingActor(null)
+          setIsEditMode(false)
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {viewingActor && (
+            <div className="flex flex-col gap-2 relative">
+              <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b gap-4">
+                <DialogTitle className="text-xl md:text-2xl font-black text-red-700 uppercase">
+                  {isEditMode ? "Edit Data Ditolak" : "Detail Lengkap Data Ditolak"}
+                </DialogTitle>
+                <div className="flex flex-wrap gap-2">
+                  {isAdmin && (
+                    <Button 
+                      variant={isEditMode ? "outline" : "default"} 
+                      size="sm" 
+                      onClick={() => setIsEditMode(!isEditMode)}
+                      className={cn("font-bold", isEditMode ? "border-amber-500 text-amber-600" : "bg-primary")}
+                    >
+                      {isEditMode ? "Batal Edit" : <><Edit3 className="w-4 h-4 mr-2"/> Edit Semua Data</>}
+                    </Button>
                   )}
-                </TableBody>
-              </Table>
+                  {isAdmin && !isEditMode && (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 font-bold" title="Kembalikan ke antrean awal (Pending)">
+                        <RotateCcw className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Revert</span>
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="font-bold" title="Hapus Permanen">
+                        <Trash2 className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Delete</span>
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {isEditMode ? (
+                <form onSubmit={handleSaveFullEdit} className="grid gap-6 py-4">
+                  <section className="p-4 bg-red-50 border border-red-200 rounded-2xl relative">
+                    <p className="text-[10px] font-black text-red-600 uppercase mb-2 tracking-widest flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Alasan Penolakan (Edit)</p>
+                    <Input name="rejectionReason" defaultValue={viewingActor.rejectionReason} className="font-bold text-red-700 bg-white" placeholder="Masukkan alasan penolakan" required />
+                  </section>
+                  
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi (Edit)</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Lengkap</Label><Input name="fullName" defaultValue={viewingActor.fullName} required /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">NIK</Label><Input name="nik" defaultValue={viewingActor.nik} required /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor KK</Label><Input name="noKK" defaultValue={viewingActor.noKK} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Jenis Kelamin</Label>
+                        <select name="gender" defaultValue={viewingActor.gender || ""} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                          <option value="L">Laki-Laki</option>
+                          <option value="P">Perempuan</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Tempat/Tgl Lahir</Label><Input name="pobDob" defaultValue={viewingActor.pobDob} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor HP</Label><Input name="phone" defaultValue={viewingActor.phone} /></div>
+                    </div>
+                  </section>
+
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili (Edit)</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">RT/RW</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} /></div>
+                      <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase">Alamat Lengkap</Label><Input name="address" defaultValue={viewingActor.address} /></div>
+                    </div>
+                  </section>
+
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha (Edit)</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} required /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kategori</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Koordinator</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
+                    </div>
+                  </section>
+
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan (Edit)</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Bank</Label><Input name="bankName" defaultValue={viewingActor.bankName} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor Rekening</Label><Input name="bankNumber" defaultValue={viewingActor.bankNumber} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Pemilik Rekening</Label><Input name="bankOwner" defaultValue={viewingActor.bankOwner} className="uppercase" /></div>
+                    </div>
+                  </section>
+
+                  <div className="sticky bottom-0 bg-white dark:bg-zinc-950 p-4 border-t flex justify-end gap-2 mt-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] rounded-b-lg z-10">
+                    <Button type="button" variant="outline" onClick={() => setIsEditMode(false)} className="font-bold">Batal</Button>
+                    <Button type="submit" className="bg-primary font-bold"><Save className="w-4 h-4 mr-2" /> Simpan Perubahan</Button>
+                  </div>
+                </form>
+              ) : (
+                <div className="grid gap-6 py-4">
+                  <section className="p-4 bg-red-50 border border-red-200 rounded-2xl">
+                    <p className="text-[10px] font-black text-red-600 uppercase mb-2 tracking-widest flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Alasan Penolakan:</p>
+                    <p className="text-sm font-black text-red-700 leading-relaxed italic">
+                      "{viewingActor.rejectionReason || "Administrator tidak memberikan alasan spesifik."}"
+                    </p>
+                  </section>
+                  
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
+                      {[
+                        { label: "Nama Lengkap", value: viewingActor.fullName },
+                        { label: "NIK", value: viewingActor.nik },
+                        { label: "Nomor KK", value: viewingActor.noKK },
+                        { label: "Jenis Kelamin", value: viewingActor.gender },
+                        { label: "Tempat/Tgl Lahir", value: viewingActor.pobDob },
+                        { label: "Nomor HP", value: viewingActor.phone }
+                      ].map((item, i) => (
+                         <div key={i} className="space-y-1">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                          <p className="text-sm font-bold">{item.value || "-"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
+                      {[
+                        { label: "Kecamatan", value: viewingActor.kecamatan },
+                        { label: "Kelurahan", value: viewingActor.kelurahan },
+                        { label: "RT/RW", value: viewingActor.rtRw },
+                        { label: "Alamat Lengkap", value: viewingActor.address, fullWidth: true }
+                      ].map((item, i) => (
+                        <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                          <p className="text-sm font-bold">{item.value || "-"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
+                      {[
+                        { label: "Nama Usaha", value: viewingActor.businessName },
+                        { label: "Kategori Usaha", value: viewingActor.businessCategory },
+                        { label: "Lokasi Usaha", value: viewingActor.businessLocation },
+                        { label: "Koordinator Lapangan", value: viewingActor.coordinator }
+                      ].map((item, i) => (
+                        <div key={i} className="space-y-1">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                          <p className="text-sm font-bold">{item.value || "-"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Informasi Sistem & Audit</div>
+                    <div className="bg-slate-50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Terakhir</p>
+                        <p className="capitalize text-red-600">Ditolak / Cancel</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Input</p>
+                        <p>{viewingActor.createdBy || "System"}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Waktu Pendaftaran</p>
+                        <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              )}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
