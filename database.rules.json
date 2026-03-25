@@ -15,10 +15,15 @@
     },
     "system_users": {
       ".read": "true",
-      ".indexOn": ["uid", "role"],
+      ".indexOn": ["uid", "role", "fullName"],
       "$username": {
         ".write": "auth != null || newData.child('role').val() == 'pending' || $username == 'monitoring'"
       }
+    },
+    "chat_messages": {
+      ".read": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
+      ".write": "auth != null",
+      ".indexOn": ["chatId", "timestamp", "senderId"]
     },
     "master_data": {
       ".read": "true",

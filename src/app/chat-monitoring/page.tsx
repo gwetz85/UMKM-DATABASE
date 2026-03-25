@@ -2,12 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useDatabase, useUser, useObject, useMemoFirebase, deleteDocumentNonBlocking, useList } from '@/firebase';
-import { ref, query, onValue, orderByChild, equalTo, get } from 'firebase/database';
+import { ref, query, onValue, get } from 'firebase/database';
 import { MessageSquare, ShieldAlert, Trash2 } from 'lucide-react';
 
 export default function ChatMonitoring() {
   const { user } = useUser();
   const database = useDatabase();
+  
+  if (typeof window !== 'undefined') {
+    console.log('Diagnostic - orderByChild:', typeof orderByChild);
+    console.log('Diagnostic - query:', typeof query);
+  }
+
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
@@ -34,13 +40,15 @@ export default function ChatMonitoring() {
     if (!database) return;
 
     try {
-      // Get all messages in chat
-      const messagesQuery = query(ref(database, 'chat_messages'), orderByChild('chatId'), equalTo(chatId));
-      const snapshot = await get(messagesQuery);
+      // Get all messages in chat - fallback to manual filter if query fails
+      const messagesRef = ref(database, 'chat_messages');
+      const snapshot = await get(messagesRef);
       
-      // Delete each message
+      // Delete each message matching chatId
       snapshot.forEach(child => {
-        deleteDocumentNonBlocking(child.ref);
+        if (child.val().chatId === chatId) {
+          deleteDocumentNonBlocking(child.ref);
+        }
       });
 
       // Clear related unread triggers just in case
@@ -60,8 +68,9 @@ export default function ChatMonitoring() {
   useEffect(() => {
     if (!database || !isAdmin) return;
 
-    const messagesQuery = query(ref(database, 'chat_messages'), orderByChild('timestamp'));
-    const unsubscribe = onValue(messagesQuery, (snapshot) => {
+    // Use a simple ref and sort in-memory to avoid ReferenceError: orderByChild is not defined
+    const messagesRef = ref(database, 'chat_messages');
+    const unsubscribe = onValue(messagesRef, (snapshot) => {
       const messagesByChatId: Record<string, any[]> = {};
       
       snapshot.forEach(child => {
