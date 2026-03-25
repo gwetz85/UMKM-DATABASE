@@ -12,6 +12,14 @@ import { Toaster } from '@/components/ui/toaster';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [isNavigating, setIsNavigating] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsNavigating(true);
+    const timer = setTimeout(() => setIsNavigating(false), 800);
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
   const isLoginPage = pathname === '/login';
 
   const routeTitles: Record<string, string> = {
@@ -35,6 +43,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-background">
+        {/* Navigation Loading Bar */}
+        {isNavigating && (
+          <div className="fixed top-0 left-0 w-full h-1 bg-accent z-[9999] animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
+        )}
+
         {/* Global Components */}
         <Toaster />
 
