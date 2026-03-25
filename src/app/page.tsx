@@ -6,6 +6,7 @@ import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, UserCheck, UserX, Activity, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useEffect, useMemo } from "react"
 import { BusinessActor } from "./lib/types"
 import { cn } from "@/lib/utils"
@@ -291,9 +292,9 @@ export default function DashboardPage() {
             <CardContent className="p-4 md:p-6">
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 {coordinatorStats.map((item) => (
-                  <div 
+                  <Link 
                     key={item.name} 
-                    onClick={() => handleCoordinatorClick(item.name)}
+                    href={`/actor-data?coordinator=${encodeURIComponent(item.name)}`}
                     className="p-3 md:p-4 rounded-xl glass-panel flex flex-col justify-between hover:shadow-lg hover:border-white/80 hover:bg-white/90 active:scale-95 transition-all duration-300 group cursor-pointer"
                   >
                     <div className="flex justify-between items-start mb-2">
@@ -301,7 +302,7 @@ export default function DashboardPage() {
                         <User className="w-3 h-3 text-primary/30 group-hover:text-primary transition-colors" />
                     </div>
                     <div className="text-lg md:text-2xl font-black text-primary">{item.count}</div>
-                  </div>
+                  </Link>
                 ))}
                 {(!coordinatorStats || coordinatorStats.length === 0) && !isLoading && (
                   <div className="col-span-full py-10 text-center text-muted-foreground italic text-xs">
