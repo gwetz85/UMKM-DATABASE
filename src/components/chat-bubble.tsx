@@ -34,6 +34,8 @@ export function ChatBubble() {
   );
 
   // Presence logic
+  const presenceUpdatedRef = useRef(false);
+
   useEffect(() => {
     if (!user || !database || !currentUserProfile?.id) return;
 
@@ -42,6 +44,10 @@ export function ChatBubble() {
 
     const unsubscribe = onValue(connectedRef, (snap) => {
       if (snap.val() === true) {
+        // Only update once per connection
+        if (presenceUpdatedRef.current) return;
+        presenceUpdatedRef.current = true;
+
         // When I disconnect, remove this device
         onDisconnect(userPresenceRef).update({ 
           isOnline: false,
@@ -49,27 +55,25 @@ export function ChatBubble() {
         }).catch(err => console.error("onDisconnect error:", err));
 
         // When I am connected, update my status
-        if (currentUserProfile?.id) {
-          update(userPresenceRef, { 
-            isOnline: true,
-            lastActive: serverTimestamp() 
-          }).catch(err => {
-            if (err.code === 'PERMISSION_DENIED') {
-              console.warn("Presence update permission denied - usually harmless if not admin.");
-            } else {
-              console.error("Presence update error:", err);
-            }
-          });
-        }
+        update(userPresenceRef, { 
+          isOnline: true,
+          lastActive: serverTimestamp() 
+        }).catch(err => {
+          if (err.code === 'PERMISSION_DENIED') {
+            console.warn("Presence update permission denied.");
+          }
+        });
+      } else {
+        presenceUpdatedRef.current = false;
       }
     });
 
     return () => {
       unsubscribe();
-      // Optionally set offline on unmount
-      update(userPresenceRef, { isOnline: false });
+      // Reset ref for potential re-mount
+      presenceUpdatedRef.current = false;
     };
-  }, [user, database, currentUserProfile?.id]);
+  }, [user?.uid, database, currentUserProfile?.id]);
 
   // Unread messages listener - manual filter
   useEffect(() => {
