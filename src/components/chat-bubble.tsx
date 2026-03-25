@@ -23,7 +23,11 @@ export function ChatBubble() {
     return query(ref(database, 'system_users'), orderByChild('uid'), equalTo(user.uid));
   }, [user, database]);
   const { data: userProfiles } = useList(userProfileQuery);
-  const currentUserProfile = userProfiles?.[0];
+  const currentUserProfile = userProfiles?.[0] || {
+    uid: user?.uid,
+    fullName: user?.displayName || user?.email?.split('@')[0] || 'User',
+    role: 'Pengguna'
+  };
 
   // Get all users
   const allUsersQuery = useMemoFirebase(() => {
