@@ -3,7 +3,7 @@
 import React from 'react';
 import { usePathname } from 'next/navigation';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar, SimpuLogo } from '@/components/app-sidebar';
+import { AppSidebar } from '@/components/app-sidebar';
 import { InfoDialog } from '@/components/info-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { ChatBubble } from '@/components/chat-bubble';

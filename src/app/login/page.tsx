@@ -30,7 +30,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { SimpuLogo } from "@/components/app-sidebar"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -226,16 +225,17 @@ export default function LoginPage() {
         <div className="h-2 bg-primary w-full" />
         <CardHeader className="space-y-1 text-center pt-8">
           <div className="flex justify-center mb-6">
-            <div className="bg-primary p-4 rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-transform duration-300">
-              <SimpuLogo className="w-12 h-12 text-white" />
+            <div className="w-24 h-24 overflow-hidden rounded-full border-4 border-white shadow-2xl relative z-10 bg-white">
+              <img 
+                src="/logo.png" 
+                alt="SIMPU Logo" 
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
-          <CardTitle className="text-4xl font-black tracking-tighter text-primary">
+          <CardTitle className="text-5xl font-black tracking-tighter text-primary italic">
             SIMPU
           </CardTitle>
-          <CardDescription className="font-bold text-muted-foreground uppercase tracking-widest text-[9px] mt-2">
-            Sistem Informasi Manajemen Pelaku Usaha
-          </CardDescription>
         </CardHeader>
         <form onSubmit={handleAuth}>
           <CardContent className="grid gap-5 py-6">
