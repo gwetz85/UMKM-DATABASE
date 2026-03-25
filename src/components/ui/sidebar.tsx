@@ -572,13 +572,19 @@ const SidebarMenuButton = React.forwardRef<
       }
     }
 
+    // Only wrap in Tooltip if the sidebar is collapsed and not on mobile. 
+    // This prevents TooltipTrigger from intercepting or swallowing clicks on desktop.
+    if (state !== "collapsed" || isMobile) {
+      return button
+    }
+
     return (
       <Tooltip>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent
           side="right"
           align="center"
-          hidden={state !== "collapsed" || isMobile}
+          hidden={false}
           {...tooltip}
         />
       </Tooltip>
