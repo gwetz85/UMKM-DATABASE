@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Info, Mail, Phone, ShieldCheck, Zap, Database, Monitor } from "lucide-react"
+import { Info, Mail, Phone, ShieldCheck, Zap, Database, Monitor, CreditCard } from "lucide-react"
 
 interface InfoDialogProps {
   children: React.ReactNode
@@ -31,15 +31,17 @@ export function InfoDialog({ children }: InfoDialogProps) {
               <DialogTitle className="text-2xl font-black tracking-tight text-white mb-1">
                 Informasi Aplikasi
               </DialogTitle>
-              <p className="text-white/70 text-sm font-medium uppercase tracking-widest px-0.5">SIMPU Versi 5.6</p>
+              <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] px-0.5">SIMPU Versi 6.0</p>
             </div>
           </div>
         </div>
         
         <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
           <div className="space-y-3">
-            <p className="text-gray-700 leading-relaxed font-medium">
-              Selamat datang di Aplikasi **SIMPU** (Sistem Informasi Manajemen Pelaku Usaha) versi **5.6**.
+            <p className="text-gray-700 leading-relaxed font-bold text-sm uppercase tracking-tight">
+              Selamat datang di Aplikasi **SIMPU** <br/>
+              <span className="text-[10px] text-muted-foreground font-black tracking-widest">- SISTEM INFORMASI MANAJEMEN PELAKU USAHA -</span> <br/>
+              <span className="text-primary mt-1 block">Versi 6.0 Update tanggal 260320261330</span>
             </p>
             <div className="bg-blue-50 border-l-4 border-primary p-4 rounded-r-xl">
               <p className="text-sm text-blue-900 leading-relaxed italic">
@@ -55,6 +57,7 @@ export function InfoDialog({ children }: InfoDialogProps) {
             <div className="grid grid-cols-1 gap-2">
               {[
                 { icon: Monitor, text: "Penambahan Fitur Chat" },
+                { icon: CreditCard, text: "Penambahan Halaman Bank" },
                 { icon: Database, text: "Penambahan Database 2.965 data" },
                 { icon: ShieldCheck, text: "Perbaikan di beberapa fitur tampilan" },
                 { icon: Zap, text: "Penambahan & perbaikan file system" }
