@@ -169,6 +169,12 @@ export function AppSidebar() {
       show: isAdmin 
     },
     { 
+      name: "Rekening Bank", 
+      href: "/rekening-bank", 
+      icon: CreditCard, 
+      show: !!user 
+    },
+    { 
       name: "LPJ", 
       href: "/lpj", 
       icon: FileText, 
