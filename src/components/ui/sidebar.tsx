@@ -467,7 +467,7 @@ SidebarGroupAction.displayName = "SidebarGroupAction"
 
 const SidebarGroupContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div text-sidebar-foreground">
+  React.ComponentProps<"div">
 >(({ className, ...props }, ref: React.Ref<HTMLDivElement>) => (
   <div
     ref={ref}

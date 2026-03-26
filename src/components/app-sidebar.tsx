@@ -23,7 +23,8 @@ import {
   Ban,
   MessageSquare,
   History,
-  FileText
+  FileText,
+  ChevronRight
 } from "lucide-react"
 
 import { usePathname, useRouter } from "next/navigation"
@@ -45,8 +46,12 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
   useSidebar,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar"
 import { Button } from "./ui/button"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible"
 
 export const SimpuLogo = ({ className }: { className?: string }) => (
   <svg
@@ -170,9 +175,11 @@ export function AppSidebar() {
     },
     { 
       name: "Rekening Bank", 
-      href: "/rekening-bank", 
       icon: CreditCard, 
-      show: !!user 
+      show: !!user,
+      items: [
+        { name: "LIST BANK", href: "/rekening-bank" }
+      ]
     },
     { 
       name: "LPJ", 
@@ -278,27 +285,73 @@ export function AppSidebar() {
             <SidebarMenu className="gap-1">
               {navigation.filter((i: any) => i.show).map((item: any) => (
                 <SidebarMenuItem key={item.name}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    tooltip={item.name}
-                    className={cn(
-                      "h-10 px-3 rounded-xl transition-all duration-300 hover:bg-white/10 text-white/80",
-                      "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-lg",
-                      "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
-                      "active:scale-95 animate-in fade-in-up"
-                    )}
-                  >
-                    <a 
-                      href={item.href} 
-                      className="flex items-center gap-3 w-full"
+                  {item.items ? (
+                    <Collapsible defaultOpen className="group/collapsible">
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={item.name}
+                        className={cn(
+                          "h-10 px-3 rounded-xl transition-all duration-300 hover:bg-white/10 text-white/80",
+                          item.items.some((sub: any) => pathname === sub.href) && "bg-white/5",
+                          "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
+                          "active:scale-95 animate-in fade-in-up"
+                        )}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <div className="flex items-center gap-3 w-full cursor-pointer">
+                            <item.icon className="w-4.5 h-4.5 shrink-0" />
+                            <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
+                              {item.name}
+                            </span>
+                            <ChevronRight className="ml-auto w-3 h-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden opacity-40" />
+                          </div>
+                        </CollapsibleTrigger>
+                      </SidebarMenuButton>
+                      <CollapsibleContent className="animate-in slide-in-from-top-1 duration-200">
+                        <SidebarMenuSub className="border-white/10 ml-6 mr-2 mt-1 gap-1">
+                          {item.items.map((subItem: any) => (
+                            <SidebarMenuSubItem key={subItem.name}>
+                              <SidebarMenuSubButton 
+                                asChild 
+                                isActive={pathname === subItem.href}
+                                className={cn(
+                                  "rounded-lg transition-all text-white/60 hover:text-white hover:bg-white/5 h-8",
+                                  "data-[active=true]:bg-white data-[active=true]:text-primary font-bold shadow-sm"
+                                )}
+                              >
+                                <a href={subItem.href} className="flex items-center gap-2">
+                                  <div className="w-1 h-1 rounded-full bg-current opacity-40" />
+                                  <span className="text-[11px] uppercase tracking-wider">{subItem.name}</span>
+                                </a>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ) : (
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === item.href}
+                      tooltip={item.name}
+                      className={cn(
+                        "h-10 px-3 rounded-xl transition-all duration-300 hover:bg-white/10 text-white/80",
+                        "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-lg",
+                        "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
+                        "active:scale-95 animate-in fade-in-up"
+                      )}
                     >
-                      <item.icon className="w-4.5 h-4.5 shrink-0" />
-                      <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
-                        {item.name}
-                      </span>
-                    </a>
-                  </SidebarMenuButton>
+                      <a 
+                        href={item.href} 
+                        className="flex items-center gap-3 w-full"
+                      >
+                        <item.icon className="w-4.5 h-4.5 shrink-0" />
+                        <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
+                          {item.name}
+                        </span>
+                      </a>
+                    </SidebarMenuButton>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

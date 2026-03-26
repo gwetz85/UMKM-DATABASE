@@ -6,7 +6,7 @@ import { ref } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Loader2, Search, CreditCard, Building2, User, MapPin, ChevronRight } from "lucide-react"
+import { Loader2, Search, CreditCard, Building2, User, MapPin, ChevronRight, Printer } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { cn } from "@/lib/utils"
 
@@ -82,18 +82,35 @@ export default function RekeningBankPage() {
           </p>
         </div>
         
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input 
-            placeholder="Cari Nama / Rekening..." 
-            className="pl-10 h-11 bg-white/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary rounded-xl shadow-inner font-medium"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-3.5 h-3.5" />
+            <Input 
+              placeholder="Cari..." 
+              className="pl-9 h-10 bg-white/50 backdrop-blur-sm border-primary/20 focus-visible:ring-primary rounded-xl"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <button 
+            onClick={() => window.print()}
+            className="h-10 px-6 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+          >
+            <Printer className="w-4 h-4" /> CETAK DATA
+          </button>
         </div>
       </div>
 
       <div className="space-y-8">
+        {/* Print Only Header */}
+        <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
+          <h1 className="text-xl font-black uppercase">LAPORAN REKENING BANK PELAKU USAHA (SIMPU)</h1>
+          <p className="text-xs font-bold uppercase tracking-widest leading-relaxed">
+            Dinas Koperasi, Usaha Kecil dan Menengah Kota Tanjungpinang<br/>
+            Dicetak pada: {new Date().toLocaleString('id-ID')}
+          </p>
+        </div>
+
         {isLoading ? (
           <div className="py-20 flex flex-col items-center justify-center gap-4 text-muted-foreground">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -105,26 +122,26 @@ export default function RekeningBankPage() {
             if (!actors || actors.length === 0) return null
 
             return (
-              <div key={bankName} className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-                <div className="flex items-center gap-3 px-2">
-                  <div className="bg-primary text-white p-2 rounded-xl shadow-lg shadow-primary/20">
+              <div key={bankName} className="space-y-4 animate-in slide-in-from-bottom-4 duration-500 break-inside-avoid">
+                <div className="flex items-center gap-3 px-2 print:px-0">
+                  <div className="bg-primary text-white p-2 rounded-xl shadow-lg shadow-primary/20 print:hidden">
                     <Building2 className="w-5 h-5" />
                   </div>
                   <div>
                     <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">{bankName}</h2>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{actors.length} Pelaku Usaha</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest print:hidden">{actors.length} Pelaku Usaha</p>
                   </div>
                 </div>
 
-                <Card className="glass border-none shadow-xl overflow-hidden rounded-3xl">
+                <Card className="glass border-none shadow-xl overflow-hidden rounded-3xl print:shadow-none print:border print:rounded-none">
                   <CardContent className="p-0">
                     <Table>
-                      <TableHeader className="bg-slate-50/50">
+                      <TableHeader className="bg-slate-50/50 print:bg-slate-100">
                         <TableRow className="hover:bg-transparent border-b-slate-100">
-                          <TableHead className="w-[200px] font-black uppercase text-[10px] tracking-widest py-4 pl-6">Nomor Rekening</TableHead>
+                          <TableHead className="w-[180px] font-black uppercase text-[10px] tracking-widest py-4 pl-6">Nomor Rekening</TableHead>
+                          <TableHead className="w-[120px] font-black uppercase text-[10px] tracking-widest py-4">Bank</TableHead>
                           <TableHead className="font-black uppercase text-[10px] tracking-widest py-4">Nama Pelaku Usaha</TableHead>
-                          <TableHead className="font-black uppercase text-[10px] tracking-widest py-4">Alamat Lengkap</TableHead>
-                          <TableHead className="w-[50px]"></TableHead>
+                          <TableHead className="w-[150px] font-black uppercase text-[10px] tracking-widest py-4 pr-6 text-right">Nominal</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -133,27 +150,19 @@ export default function RekeningBankPage() {
                             <TableCell className="font-mono text-base font-black text-primary py-4 pl-6">
                               {actor.bankNumber || "-"}
                             </TableCell>
+                            <TableCell className="font-bold text-xs uppercase text-slate-600">
+                              {actor.bankName || bankName}
+                            </TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-0.5">
-                                <span className="font-bold text-slate-800 uppercase text-sm leading-tight flex items-center gap-2">
+                                <span className="font-bold text-slate-800 uppercase text-sm leading-tight">
                                   {actor.fullName}
-                                  {actor.status === 'finish' && (
-                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full" title="Selesai" />
-                                  )}
                                 </span>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase">{actor.businessName}</span>
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase print:hidden">{actor.businessName}</span>
                               </div>
                             </TableCell>
-                            <TableCell className="max-w-[300px]">
-                              <div className="flex items-start gap-2 py-1">
-                                <MapPin className="w-3.5 h-3.5 text-slate-300 shrink-0 mt-0.5" />
-                                <span className="text-xs font-semibold text-slate-600 leading-relaxed line-clamp-2">
-                                  {actor.address}, {actor.kelurahan}, {actor.kecamatan}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-right pr-6">
-                              <ChevronRight className="w-5 h-5 text-slate-200 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                            <TableCell className="text-right pr-6 font-mono font-black text-sm text-emerald-600">
+                              RP 1.000.000
                             </TableCell>
                           </TableRow>
                         ))}
