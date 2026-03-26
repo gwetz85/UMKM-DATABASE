@@ -9,15 +9,31 @@ import { Input } from "@/components/ui/input"
 import { Loader2, Search, CreditCard, Building2, User, MapPin, ChevronRight, Printer } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { cn } from "@/lib/utils"
+import { useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 
 const BANK_LIST = [
   "BCA", "BNI", "BRI", "BRK", "MANDIRI", "PANIN", "OCBC", "DANAMON", "BUKOPIN", "BTN"
 ]
 
 export default function RekeningBankPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    }>
+      <RekeningBankContent />
+    </Suspense>
+  )
+}
+
+function RekeningBankContent() {
   const { user, isUserLoading } = useUser()
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
+  const searchParams = useSearchParams()
+  const selectedBank = searchParams.get('bank')
 
   const memoQuery = useMemoFirebase(() => {
     if (!database || !user) return null
@@ -51,6 +67,9 @@ export default function RekeningBankPage() {
       // Find matching bank from our official list
       const officialBank = BANK_LIST.find(b => bank.includes(b)) || "LAINNYA"
       
+      // If a bank is selected in URL, only include that bank
+      if (selectedBank && officialBank !== selectedBank.toUpperCase()) return
+
       if (!groups[officialBank]) {
         groups[officialBank] = []
       }
@@ -58,7 +77,7 @@ export default function RekeningBankPage() {
     })
 
     return groups
-  }, [allData, searchQuery])
+  }, [allData, searchQuery, selectedBank])
 
   if (isUserLoading) {
     return (
@@ -75,10 +94,10 @@ export default function RekeningBankPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 print:hidden">
         <div className="space-y-1 relative">
           <h1 className="text-3xl md:text-5xl font-black tracking-tight font-headline text-gradient uppercase drop-shadow-sm flex items-center gap-3">
-            <CreditCard className="w-8 h-8 md:w-12 md:h-12 text-primary" /> Rekening Bank
+            <CreditCard className="w-8 h-8 md:w-12 md:h-12 text-primary" /> {selectedBank ? `Bank ${selectedBank}` : 'Rekening Bank'}
           </h1>
           <p className="text-xs md:text-sm text-slate-600 font-semibold">
-            Daftar rekening pelaku usaha yang telah terverifikasi, dikelompokkan per Bank.
+            {selectedBank ? `Daftar rekening untuk bank ${selectedBank} yang telah terverifikasi.` : 'Daftar rekening pelaku usaha yang telah terverifikasi, dikelompokkan per Bank.'}
           </p>
         </div>
         
@@ -104,7 +123,7 @@ export default function RekeningBankPage() {
       <div className="space-y-8">
         {/* Print Only Header */}
         <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
-          <h1 className="text-xl font-black uppercase">LAPORAN REKENING BANK PELAKU USAHA (SIMPU)</h1>
+          <h1 className="text-xl font-black uppercase">LAPORAN REKENING BANK {selectedBank ? `BANK ${selectedBank}` : ''} PELAKU USAHA (SIMPU)</h1>
           <p className="text-xs font-bold uppercase tracking-widest leading-relaxed">
             Dinas Koperasi, Usaha Kecil dan Menengah Kota Tanjungpinang<br/>
             Dicetak pada: {new Date().toLocaleString('id-ID')}

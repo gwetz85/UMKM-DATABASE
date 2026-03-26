@@ -178,7 +178,16 @@ export function AppSidebar() {
       icon: CreditCard, 
       show: !!user,
       items: [
-        { name: "LIST BANK", href: "/rekening-bank" }
+        { name: "BCA", href: "/rekening-bank?bank=BCA" },
+        { name: "BNI", href: "/rekening-bank?bank=BNI" },
+        { name: "BRI", href: "/rekening-bank?bank=BRI" },
+        { name: "BRK", href: "/rekening-bank?bank=BRK" },
+        { name: "MANDIRI", href: "/rekening-bank?bank=MANDIRI" },
+        { name: "PANIN", href: "/rekening-bank?bank=PANIN" },
+        { name: "OCBC", href: "/rekening-bank?bank=OCBC" },
+        { name: "DANAMON", href: "/rekening-bank?bank=DANAMON" },
+        { name: "BUKOPIN", href: "/rekening-bank?bank=BUKOPIN" },
+        { name: "BTN", href: "/rekening-bank?bank=BTN" }
       ]
     },
     { 
