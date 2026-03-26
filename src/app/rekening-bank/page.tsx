@@ -122,11 +122,14 @@ function RekeningBankContent() {
 
       <div className="space-y-8">
         {/* Print Only Header */}
-        <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
-          <h1 className="text-xl font-black uppercase">LAPORAN REKENING BANK {selectedBank ? `BANK ${selectedBank}` : ''} PELAKU USAHA (SIMPU)</h1>
-          <p className="text-xs font-bold uppercase tracking-widest leading-relaxed">
-            Dinas Koperasi, Usaha Kecil dan Menengah Kota Tanjungpinang<br/>
-            Dicetak pada: {new Date().toLocaleString('id-ID')}
+        <div className="hidden print:block text-center space-y-1 mb-8">
+          <h1 className="text-2xl font-black uppercase tracking-tight">DAFTAR PELAKU USAHA</h1>
+          <h2 className="text-lg font-bold uppercase tracking-widest text-slate-800">
+            BANK {selectedBank || 'SEMUA BANK'}
+          </h2>
+          <div className="w-full h-1 bg-black my-2" />
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            Dicetak pada: {new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
           </p>
         </div>
 
@@ -152,36 +155,40 @@ function RekeningBankContent() {
                   </div>
                 </div>
 
-                <Card className="glass border-none shadow-xl overflow-hidden rounded-3xl print:shadow-none print:border print:rounded-none">
+                <Card className="glass border-none shadow-xl overflow-hidden rounded-3xl print:shadow-none print:border-2 print:border-black print:rounded-none">
                   <CardContent className="p-0">
-                    <Table>
+                    <Table className="print:border-collapse">
                       <TableHeader className="bg-slate-50/50 print:bg-slate-100">
-                        <TableRow className="hover:bg-transparent border-b-slate-100">
-                          <TableHead className="w-[180px] font-black uppercase text-[10px] tracking-widest py-4 pl-6">Nomor Rekening</TableHead>
-                          <TableHead className="w-[120px] font-black uppercase text-[10px] tracking-widest py-4">Bank</TableHead>
-                          <TableHead className="font-black uppercase text-[10px] tracking-widest py-4">Nama Pelaku Usaha</TableHead>
-                          <TableHead className="w-[150px] font-black uppercase text-[10px] tracking-widest py-4 pr-6 text-right">Nominal</TableHead>
+                        <TableRow className="hover:bg-transparent border-b-slate-100 print:border-b-2 print:border-black">
+                          <TableHead className="w-[50px] font-black uppercase text-[10px] tracking-widest py-4 pl-6 print:text-black print:border-r-2 print:border-black">NO</TableHead>
+                          <TableHead className="w-[180px] font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">Nomor Rekening</TableHead>
+                          <TableHead className="w-[120px] font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">Nama Bank</TableHead>
+                          <TableHead className="font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">Nama Pelaku Usaha</TableHead>
+                          <TableHead className="w-[150px] font-black uppercase text-[10px] tracking-widest py-4 pr-6 text-right print:text-black text-center">Nominal</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {actors.map((actor) => (
-                          <TableRow key={actor.id} className="group hover:bg-primary/5 transition-colors border-b-slate-50">
-                            <TableCell className="font-mono text-base font-black text-primary py-4 pl-6">
+                        {actors.map((actor, index) => (
+                          <TableRow key={actor.id} className="group hover:bg-primary/5 transition-colors border-b-slate-50 print:border-b-2 print:border-black">
+                            <TableCell className="py-4 pl-6 font-bold text-xs print:text-black print:border-r-2 print:border-black text-center">
+                              {index + 1}
+                            </TableCell>
+                            <TableCell className="font-mono text-base font-black text-primary py-4 print:text-black print:border-r-2 print:border-black text-center">
                               {actor.bankNumber || "-"}
                             </TableCell>
-                            <TableCell className="font-bold text-xs uppercase text-slate-600">
+                            <TableCell className="font-bold text-xs uppercase text-slate-600 print:text-black print:border-r-2 print:border-black text-center">
                               {actor.bankName || bankName}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="print:border-r-2 print:border-black pl-4">
                               <div className="flex flex-col gap-0.5">
-                                <span className="font-bold text-slate-800 uppercase text-sm leading-tight">
+                                <span className="font-bold text-slate-800 uppercase text-sm leading-tight print:text-black">
                                   {actor.fullName}
                                 </span>
                                 <span className="text-[10px] font-bold text-muted-foreground uppercase print:hidden">{actor.businessName}</span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-right pr-6 font-mono font-black text-sm text-emerald-600">
-                              RP 1.000.000
+                            <TableCell className="text-right pr-6 font-mono font-black text-sm text-emerald-600 print:text-black text-center whitespace-nowrap">
+                              Rp. 1.000.000
                             </TableCell>
                           </TableRow>
                         ))}
