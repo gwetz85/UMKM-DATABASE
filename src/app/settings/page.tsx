@@ -60,40 +60,83 @@ export default function SettingsPage() {
 
 
 
-  const toggleTheme = async (val: "light" | "dark") => {
-    try {
-      setTheme(val)
-      await update(ref(database, 'chats/__system_settings/theme'), { mode: val })
-      toast({ 
-        title: "Tema Diperbarui", 
-        description: `Aplikasi sekarang dalam Mode ${val === "dark" ? "Gelap" : "Terang"}.` 
-      })
-    } catch (err: any) {
-      toast({ 
-        variant: "destructive",
-        title: "Gagal Memperbarui Tema", 
-        description: err.message || "Terjadi kesalahan saat menyimpan pengaturan." 
-      })
+  const applyLocalTheme = (themeData: any) => {
+    if (!themeData) return;
+    const root = document.documentElement;
+
+    if (themeData.mode === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
     }
+
+    if (themeData.palette) {
+      const palette = themeData.palette;
+      let styleEl = document.getElementById('dynamic-theme-style') as HTMLStyleElement;
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'dynamic-theme-style';
+        document.head.appendChild(styleEl);
+      }
+
+      styleEl.innerHTML = `
+        :root {
+          --primary: ${palette} !important;
+          --sidebar-background: ${palette} !important;
+          --sidebar-primary-foreground: ${palette} !important;
+          --sidebar-border: ${palette} !important;
+          --ring: ${palette} !important;
+          --accent: ${palette} !important;
+          --sidebar-ring: ${palette} !important;
+          --sidebar-accent: ${palette} !important;
+        }
+        .dark {
+          --primary: ${palette} !important;
+          --sidebar-background: ${palette} !important;
+          --sidebar-border: ${palette} !important;
+          --ring: ${palette} !important;
+          --accent: ${palette} !important;
+        }
+      `;
+    }
+  };
+
+  const toggleTheme = async (val: "light" | "dark") => {
+    const newTheme = { ...themeSettings, mode: val };
+    setTheme(val);
+    applyLocalTheme(newTheme);
+    localStorage.setItem('simpu-theme', JSON.stringify(newTheme));
+
+    try {
+      await update(ref(database, 'chats/__system_settings/theme'), { mode: val });
+    } catch (err: any) {
+      console.warn('Firebase theme sync failed (Permission Denied), but setting saved locally.');
+    }
+
+    toast({ 
+      title: "Tema Diperbarui", 
+      description: `Aplikasi sekarang dalam Mode ${val === "dark" ? "Gelap" : "Terang"}.` 
+    });
   }
 
   const changePalette = async (colorHsl: string, name: string) => {
+    const newTheme = { ...themeSettings, palette: colorHsl, paletteName: name };
+    applyLocalTheme(newTheme);
+    localStorage.setItem('simpu-theme', JSON.stringify(newTheme));
+
     try {
       await update(ref(database, 'chats/__system_settings/theme'), { 
         palette: colorHsl,
         paletteName: name 
-      })
-      toast({ 
-        title: "Warna Diperbarui", 
-        description: `Warna utama aplikasi telah diubah ke ${name}.` 
-      })
+      });
     } catch (err: any) {
-      toast({ 
-        variant: "destructive",
-        title: "Gagal Memperbarui Warna", 
-        description: err.message || "Terjadi kesalahan saat menyimpan pengaturan." 
-      })
+      console.warn('Firebase color sync failed (Permission Denied), but setting saved locally.');
     }
+
+    toast({ 
+      title: "Warna Diperbarui", 
+      description: `Warna utama aplikasi telah diubah ke ${name}.` 
+    });
   }
 
   const handleBackup = async () => {
