@@ -79,8 +79,7 @@ export function AppSidebar() {
   const database = useDatabase()
   const [copied, setCopied] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
-  const [timeMain, setTimeMain] = React.useState<string>("")
-  const [timeSeconds, setTimeSeconds] = React.useState<string>("")
+  const [currentTime, setCurrentTime] = React.useState<string>("")
 
   // Clock Update Effect
   React.useEffect(() => {
@@ -88,17 +87,14 @@ export function AppSidebar() {
     const updateTime = () => {
       const now = new Date()
       
-      const main = now.toLocaleTimeString('id-ID', { 
+      const time = now.toLocaleTimeString('en-GB', { 
         hour: '2-digit', 
         minute: '2-digit', 
+        second: '2-digit', 
         hour12: false 
       })
-      const seconds = now.toLocaleTimeString('id-ID', { 
-        second: '2-digit'
-      })
       
-      setTimeMain(main)
-      setTimeSeconds(seconds)
+      setCurrentTime(time)
     }
     updateTime()
     const interval = setInterval(updateTime, 1000)
@@ -269,12 +265,9 @@ export function AppSidebar() {
 
         {/* Waktu Server Digital Style */}
         <div className="w-full group-data-[collapsible=icon]:hidden px-3 mb-6">
-          <div className="bg-black/60 rounded-3xl p-6 border border-white/10 flex items-baseline justify-center gap-1 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05)_0%,transparent_100%)]">
-            <div className="text-5xl font-black text-white tabular-nums leading-none tracking-tighter" style={{ fontFamily: "'Tahoma', sans-serif" }}>
-              {timeMain}
-            </div>
-            <div className="text-xl font-bold text-primary tabular-nums leading-none mb-0.5" style={{ fontFamily: "'Tahoma', sans-serif" }}>
-              {timeSeconds}
+          <div className="bg-black/60 rounded-3xl p-6 border border-white/10 flex items-center justify-center shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05)_0%,transparent_100%)]">
+            <div className="text-4xl font-black text-white tabular-nums leading-none tracking-tight" style={{ fontFamily: "'Tahoma', sans-serif" }}>
+              {currentTime}
             </div>
           </div>
         </div>
