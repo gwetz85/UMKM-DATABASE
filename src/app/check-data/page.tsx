@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useDatabase } from "@/firebase"
-import { ref, query, equalTo, get } from "firebase/database"
+import { useDatabase, useList, useMemoFirebase } from "@/firebase"
+import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,35 +20,29 @@ export default function CheckDataPage() {
   const [searchType, setSearchType] = useState<"nik" | "noKK">("nik")
   const [inputValue, setInputValue] = useState("")
   const [selectedResult, setSelectedResult] = useState<any | null>(null)
+  const [searchCriteria, setSearchCriteria] = useState<{ type: string, value: string } | null>(null)
 
-  const handleCheck = async (e: React.FormEvent) => {
+  const memoQuery = useMemoFirebase(() => {
+    if (!database || !searchCriteria || !searchCriteria.value) return null
+    return query(
+      ref(database, 'master_data'),
+      orderByChild(searchCriteria.type),
+      equalTo(searchCriteria.value)
+    )
+  }, [database, searchCriteria])
+
+  const { data: realTimeResults, isLoading: isSearchLoading } = useList(memoQuery)
+
+  const handleCheck = (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputValue.trim()) return
-
-    setLoading(true)
+    
     setSearchDone(false)
-    setResults([])
-
-    try {
-      const masterDataRef = ref(database, 'master_data')
-      const snapshot = await get(masterDataRef)
-      
-      const data: any[] = []
-      if (snapshot.exists()) {
-        snapshot.forEach(child => {
-          const val = child.val()
-          if (val[searchType] === inputValue.trim()) {
-            data.push(val)
-          }
-        })
-      }
-      setResults(data)
-      setSearchDone(true)
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setLoading(false)
-    }
+    setSearchCriteria({ 
+      type: searchType, 
+      value: inputValue.trim() 
+    })
+    setSearchDone(true)
   }
 
   const formatCurrency = (value: any) => {
@@ -140,27 +134,27 @@ export default function CheckDataPage() {
             </div>
           )}
 
-          {loading && (
+          {isSearchLoading && (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border p-8 text-center">
               <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
               <p className="text-primary font-bold animate-pulse">Menghubungkan ke Database Master...</p>
             </div>
           )}
 
-          {searchDone && (
+          {searchDone && !isSearchLoading && (
             <div className="animate-in fade-in duration-500 space-y-6">
-              {results.length > 0 ? (
+              {realTimeResults && realTimeResults.length > 0 ? (
                 <div className="space-y-6">
                   <Alert className="bg-emerald-50/90 backdrop-blur-sm border-emerald-200 text-emerald-900 rounded-2xl p-6">
                     <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                     <AlertTitle className="text-xl font-black mb-1 uppercase">DATA DITEMUKAN</AlertTitle>
                     <AlertDescription className="font-medium">
-                      Ditemukan <strong>{results.length}</strong> record data. Klik kartu untuk melihat detail lengkap.
+                      Ditemukan <strong>{realTimeResults.length}</strong> record data. Klik kartu untuk melihat detail lengkap.
                     </AlertDescription>
                   </Alert>
 
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {results.map((res, idx) => (
+                    {realTimeResults.map((res, idx) => (
                       <Card 
                         key={idx} 
                         className="border-none shadow-md hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm cursor-pointer group active:scale-95"
@@ -200,7 +194,7 @@ export default function CheckDataPage() {
                 onClick={() => {
                   setSearchDone(false);
                   setInputValue("");
-                  setResults([]);
+                  setSearchCriteria(null);
                 }}
               >
                 Ulangi Pencarian
