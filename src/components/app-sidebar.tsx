@@ -270,10 +270,10 @@ export function AppSidebar() {
         {/* Waktu Server Digital Style */}
         <div className="w-full group-data-[collapsible=icon]:hidden px-3 mb-6">
           <div className="bg-black/60 rounded-3xl p-6 border border-white/10 flex items-baseline justify-center gap-1 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05)_0%,transparent_100%)]">
-            <div className="text-5xl font-black text-white tabular-nums leading-none tracking-tighter" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+            <div className="text-5xl font-black text-white tabular-nums leading-none tracking-tighter" style={{ fontFamily: "'Tahoma', sans-serif" }}>
               {timeMain}
             </div>
-            <div className="text-xl font-bold text-primary tabular-nums leading-none mb-0.5" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+            <div className="text-xl font-bold text-primary tabular-nums leading-none mb-0.5" style={{ fontFamily: "'Tahoma', sans-serif" }}>
               {timeSeconds}
             </div>
           </div>
