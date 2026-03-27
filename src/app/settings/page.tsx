@@ -18,9 +18,11 @@ import {
   RefreshCcw,
   Info,
   FileSpreadsheet,
-  DatabaseZap
+  DatabaseZap,
+  Check
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import * as XLSX from 'xlsx'
@@ -41,8 +43,14 @@ export default function SettingsPage() {
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
-  const themeSettingsRef = ref(database, 'settings/theme')
-  const { data: themeSettings } = useObject(themeSettingsRef)
+  const themeSettingsRef = database ? ref(database, 'settings/theme') : null
+  const { data: themeSettings, error: themeError } = useObject(themeSettingsRef)
+
+  useEffect(() => {
+    if (themeError) {
+      console.error('Theme Settings Error:', themeError)
+    }
+  }, [themeError])
 
   useEffect(() => {
     if (themeSettings?.mode) {
@@ -52,24 +60,40 @@ export default function SettingsPage() {
 
 
 
-  const toggleTheme = (val: "light" | "dark") => {
-    setTheme(val)
-    update(ref(database, 'settings/theme'), { mode: val })
-    toast({ 
-      title: "Tema Diperbarui", 
-      description: `Aplikasi sekarang dalam Mode ${val === "dark" ? "Gelap" : "Terang"}.` 
-    })
+  const toggleTheme = async (val: "light" | "dark") => {
+    try {
+      setTheme(val)
+      await update(ref(database, 'settings/theme'), { mode: val })
+      toast({ 
+        title: "Tema Diperbarui", 
+        description: `Aplikasi sekarang dalam Mode ${val === "dark" ? "Gelap" : "Terang"}.` 
+      })
+    } catch (err: any) {
+      toast({ 
+        variant: "destructive",
+        title: "Gagal Memperbarui Tema", 
+        description: err.message || "Terjadi kesalahan saat menyimpan pengaturan." 
+      })
+    }
   }
 
-  const changePalette = (colorHsl: string, name: string) => {
-    update(ref(database, 'settings/theme'), { 
-      palette: colorHsl,
-      paletteName: name 
-    })
-    toast({ 
-      title: "Warna Diperbarui", 
-      description: `Warna utama aplikasi telah diubah ke ${name}.` 
-    })
+  const changePalette = async (colorHsl: string, name: string) => {
+    try {
+      await update(ref(database, 'settings/theme'), { 
+        palette: colorHsl,
+        paletteName: name 
+      })
+      toast({ 
+        title: "Warna Diperbarui", 
+        description: `Warna utama aplikasi telah diubah ke ${name}.` 
+      })
+    } catch (err: any) {
+      toast({ 
+        variant: "destructive",
+        title: "Gagal Memperbarui Warna", 
+        description: err.message || "Terjadi kesalahan saat menyimpan pengaturan." 
+      })
+    }
   }
 
   const handleBackup = async () => {
@@ -283,12 +307,24 @@ export default function SettingsPage() {
                   <button 
                     key={color.name}
                     onClick={() => changePalette(color.hsl, color.name)} 
-                    className="w-12 h-12 rounded-2xl border-4 border-white dark:border-slate-800 shadow-lg hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center group"
+                    className={cn(
+                      "w-12 h-12 rounded-2xl border-4 shadow-lg hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center group",
+                      themeSettings?.paletteName === color.name 
+                        ? "border-primary scale-110" 
+                        : "border-white dark:border-slate-800"
+                    )}
                     style={{ backgroundColor: color.hex }}
                     title={color.name}
                   >
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Palette className="w-4 h-4 text-white" />
+                    <div className={cn(
+                      "transition-opacity",
+                      themeSettings?.paletteName === color.name ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    )}>
+                      {themeSettings?.paletteName === color.name ? (
+                        <Check className="w-5 h-5 text-white drop-shadow-md" />
+                      ) : (
+                        <Palette className="w-4 h-4 text-white" />
+                      )}
                     </div>
                   </button>
                 ))}
