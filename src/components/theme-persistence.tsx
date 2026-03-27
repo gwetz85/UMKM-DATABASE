@@ -12,17 +12,30 @@ export function ThemePersistence() {
   useEffect(() => {
     if (!themeData) return;
 
+    const root = document.documentElement;
+
     // Apply Mode (Light/Dark)
     if (themeData.mode === 'dark') {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
     }
 
     // Apply Palette
     if (themeData.palette) {
-      document.documentElement.style.setProperty('--primary', themeData.palette);
-      document.documentElement.style.setProperty('--sidebar-background', themeData.palette);
+      const palette = themeData.palette;
+      
+      // Update all relevant variables for thorough theme application
+      root.style.setProperty('--primary', palette);
+      root.style.setProperty('--sidebar-background', palette);
+      root.style.setProperty('--sidebar-primary-foreground', palette);
+      root.style.setProperty('--sidebar-border', palette);
+      root.style.setProperty('--ring', palette);
+      root.style.setProperty('--accent', palette);
+      root.style.setProperty('--sidebar-ring', palette);
+      
+      // Optionally update sidebar accent if you want it to match the palette
+      root.style.setProperty('--sidebar-accent', palette);
     }
   }, [themeData]);
 

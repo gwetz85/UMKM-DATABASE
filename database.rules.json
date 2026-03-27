@@ -43,6 +43,10 @@
       ".read": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
       ".write": "auth != null",
       ".indexOn": ["timestamp", "senderId"]
+    },
+    "settings": {
+      ".read": "true",
+      ".write": "auth != null"
     }
   }
 }
