@@ -4,7 +4,7 @@
 import { useMemoFirebase, useList, useUser, useDatabase } from "@/firebase"
 import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, UserCheck, UserX, Activity, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap } from "lucide-react"
+import { Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap, Calendar } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo } from "react"
 import { BusinessActor } from "./lib/types"
@@ -233,52 +233,27 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-6">
-          <Card className="glass transition-all hover:shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
-                <Activity className="w-5 h-5 text-primary" /> Progres Verifikasi
+          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
+            <CardHeader className="bg-primary/10 pb-4">
+              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
+                <Calendar className="w-5 h-5" /> Kalender Hari Ini
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2 group cursor-pointer">
-                <div className="flex justify-between items-center text-xs font-bold">
-                  <span className="text-slate-600 group-hover:text-primary transition-colors">Pending Admin</span>
-                  <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px]">{allData?.filter(d => d.status === 'pending').length}</span>
-                </div>
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'pending').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
-                </div>
-              </div>
-              
-              <div className="space-y-2 group cursor-pointer">
-                <div className="flex justify-between items-center text-xs font-bold">
-                  <span className="text-slate-600 group-hover:text-amber-600 transition-colors">Pending Rekening</span>
-                  <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px]">{allData?.filter(d => d.status === 'bank_pending').length}</span>
-                </div>
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-amber-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'bank_pending').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
-                </div>
-              </div>
-
-              <div className="space-y-2 group cursor-pointer">
-                <div className="flex justify-between items-center text-xs font-bold">
-                  <span className="text-slate-600 group-hover:text-emerald-600 transition-colors">Selesai (Finish)</span>
-                  <span className="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded text-[10px]">{allData?.filter(d => d.status === 'finish').length}</span>
-                </div>
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'finish').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
-                </div>
-              </div>
-
-              <div className="space-y-2 group cursor-pointer">
-                <div className="flex justify-between items-center text-xs font-bold">
-                  <span className="text-slate-600 group-hover:text-red-600 transition-colors">Ditolak / Batal</span>
-                  <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px]">{allData?.filter(d => d.status === 'rejected').length}</span>
-                </div>
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div className="bg-red-500 h-full transition-all duration-500" style={{ width: `${((allData?.filter(d => d.status === 'rejected').length || 0) / Math.max(allData?.length || 1, 1)) * 100}%` }}></div>
-                </div>
-              </div>
+            <CardContent className="p-0">
+               <div className="flex flex-col items-center justify-center py-10 bg-gradient-to-b from-white to-slate-50">
+                  <span className="text-[14px] font-black text-primary uppercase tracking-[0.3em] mb-1">
+                    {new Date().toLocaleDateString('id-ID', { weekday: 'long' })}
+                  </span>
+                  <span className="text-8xl font-black text-slate-800 tracking-tighter leading-none mb-2 tabular-nums">
+                    {new Date().getDate()}
+                  </span>
+                  <span className="text-lg font-bold text-slate-500 uppercase tracking-widest leading-none">
+                    {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
+                  </span>
+               </div>
+               <div className="p-4 bg-primary text-white text-center text-[10px] font-black uppercase tracking-widest">
+                  Sistem Informasi Pelaku Usaha
+               </div>
             </CardContent>
           </Card>
 
