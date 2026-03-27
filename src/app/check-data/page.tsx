@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database, UserSearch, User, Eye, FileText } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
 
 export default function CheckDataPage() {
   const database = useDatabase()
@@ -164,10 +165,23 @@ export default function CheckDataPage() {
                           <div className="bg-primary/10 p-3 rounded-xl group-hover:bg-primary group-hover:text-white transition-colors duration-300">
                             <User className="w-6 h-6" />
                           </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">DATA PELAKU USAHA</span>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-[10px] font-black text-primary uppercase tracking-widest">DATA PELAKU USAHA</span>
+                              <span className={cn(
+                                "text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter border",
+                                res.status?.toLowerCase().includes("terdaftar") || res.status?.toLowerCase().includes("finish") 
+                                  ? "bg-emerald-50 text-emerald-600 border-emerald-200" 
+                                  : "bg-amber-50 text-amber-600 border-amber-200"
+                              )}>
+                                {res.status || "PENDING"}
+                              </span>
+                            </div>
                             <span className="text-sm font-black text-slate-800 uppercase truncate">
                               {res.nama}
+                            </span>
+                            <span className="text-[10px] font-mono font-bold text-muted-foreground mt-0.5">
+                              NIK: {res.nik}
                             </span>
                           </div>
                           <Eye className="w-4 h-4 ml-auto text-muted-foreground group-hover:text-primary transition-colors" />
@@ -219,16 +233,17 @@ export default function CheckDataPage() {
             <div className="py-4 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                  { label: "Nomor KK", value: selectedResult.noKK, icon: FileText },
-                  { label: "NIK", value: selectedResult.nik, icon: FileText },
-                  { label: "Nama Lengkap", value: selectedResult.nama, icon: User, full: true },
-                  { label: "Usaha", value: selectedResult.usaha, icon: Database, full: true },
-                  { label: "Kategori Status", value: selectedResult.status, icon: Info },
-                  { label: "Status LPJ", value: selectedResult.statusLpj, icon: Info },
-                  { label: "Nominal", value: formatCurrency(selectedResult.nominal), icon: SearchCheck },
-                  { label: "Tahun Pengajuan", value: selectedResult.tahunPengajuan, icon: SearchCheck },
-                  { label: "Kelurahan", value: selectedResult.kelurahan, icon: UserSearch },
-                  { label: "Alamat", value: selectedResult.alamat, icon: UserSearch, full: true },
+                   { label: "Nomor", value: selectedResult.nomor, icon: FileText },
+                   { label: "Nomor KK", value: selectedResult.noKK, icon: FileText },
+                   { label: "NIK", value: selectedResult.nik, icon: FileText },
+                   { label: "Nama Lengkap", value: selectedResult.nama, icon: User, full: true },
+                   { label: "Usaha", value: selectedResult.usaha, icon: Database, full: true },
+                   { label: "Kategori Status", value: selectedResult.status, icon: Info },
+                   { label: "Status LPJ", value: selectedResult.statusLpj, icon: Info },
+                   { label: "Nominal", value: formatCurrency(selectedResult.nominal), icon: SearchCheck },
+                   { label: "Tahun Pengajuan", value: selectedResult.tahunPengajuan, icon: SearchCheck },
+                   { label: "Kelurahan", value: selectedResult.kelurahan, icon: UserSearch },
+                   { label: "Alamat", value: selectedResult.alamat, icon: UserSearch, full: true },
                 ].map((item, i) => (
                   <div key={i} className={item.full ? "md:col-span-2 space-y-1" : "space-y-1"}>
                     <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
