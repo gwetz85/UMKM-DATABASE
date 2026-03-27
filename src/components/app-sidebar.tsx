@@ -79,7 +79,8 @@ export function AppSidebar() {
   const database = useDatabase()
   const [copied, setCopied] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
-  const [currentTime, setCurrentTime] = React.useState<string>("")
+  const [timeMain, setTimeMain] = React.useState<string>("")
+  const [timeSeconds, setTimeSeconds] = React.useState<string>("")
 
   // Clock Update Effect
   React.useEffect(() => {
@@ -87,15 +88,17 @@ export function AppSidebar() {
     const updateTime = () => {
       const now = new Date()
       
-      const time = now.toLocaleTimeString('id-ID', { 
+      const main = now.toLocaleTimeString('id-ID', { 
         hour: '2-digit', 
         minute: '2-digit', 
-        second: '2-digit', 
         hour12: false 
       })
+      const seconds = now.toLocaleTimeString('id-ID', { 
+        second: '2-digit'
+      })
       
-      
-      setCurrentTime(time)
+      setTimeMain(main)
+      setTimeSeconds(seconds)
     }
     updateTime()
     const interval = setInterval(updateTime, 1000)
@@ -264,11 +267,14 @@ export function AppSidebar() {
           </InfoDialog>
         </div>
 
-        {/* Waktu Server */}
-        <div className="w-full group-data-[collapsible=icon]:hidden px-2 mb-2">
-          <div className="bg-black/40 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-1 relative overflow-hidden shadow-inner text-center">
-            <div className="text-4xl font-black text-white tracking-tighter leading-none mb-1 tabular-nums mt-1">
-              {currentTime}
+        {/* Waktu Server Digital Style */}
+        <div className="w-full group-data-[collapsible=icon]:hidden px-3 mb-6">
+          <div className="bg-black/60 rounded-3xl p-6 border border-white/10 flex items-baseline justify-center gap-1 shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05)_0%,transparent_100%)]">
+            <div className="text-5xl font-black text-white tabular-nums leading-none tracking-tighter" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+              {timeMain}
+            </div>
+            <div className="text-xl font-bold text-primary tabular-nums leading-none mb-0.5" style={{ fontFamily: "'Orbitron', sans-serif" }}>
+              {timeSeconds}
             </div>
           </div>
         </div>
