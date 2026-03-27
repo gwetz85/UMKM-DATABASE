@@ -265,8 +265,8 @@ export function AppSidebar() {
 
         {/* Waktu Server Digital Style */}
         <div className="w-full group-data-[collapsible=icon]:hidden px-3 mb-6">
-          <div className="bg-black/60 rounded-3xl p-6 border border-white/10 flex items-center justify-center shadow-[inset_0_2px_10px_rgba(0,0,0,0.5)] bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05)_0%,transparent_100%)]">
-            <div className="text-4xl font-black text-white tabular-nums leading-none tracking-tight" style={{ fontFamily: "'Tahoma', sans-serif" }}>
+          <div className="flex items-center justify-center py-2">
+            <div className="text-5xl font-black text-white tabular-nums leading-none tracking-tight drop-shadow-md" style={{ fontFamily: "'Tahoma', sans-serif" }}>
               {currentTime}
             </div>
           </div>
