@@ -17,19 +17,13 @@ import {
   MonitorOff, 
   SearchCheck, 
   DatabaseZap, 
-  UserPlus 
+  UserPlus,
+  ArrowLeft,
+  CheckCircle2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
+
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -41,7 +35,8 @@ export default function LoginPage() {
   // Register States
   const [regName, setRegName] = useState("")
   const [regPass, setRegPass] = useState("")
-  const [isRegOpen, setIsRegOpen] = useState(false)
+  const [isRegisteringView, setIsRegisteringView] = useState(false)
+  const [isRegistered, setIsRegistered] = useState(false)
   const [showForm, setShowForm] = useState(false)
 
   const auth = useAuth()
@@ -183,14 +178,9 @@ export default function LoginPage() {
         addedAt: new Date().toISOString()
       })
 
-      toast({ 
-        title: "Pendaftaran Berhasil", 
-        description: "Akun telah dibuat dengan status 'Pending'. Segera lapor ke Admin untuk pemberian akses (Role)." 
-      })
-      setIsRegOpen(false)
+      setIsRegistered(true)
       setRegName("")
       setRegPass("")
-      setIdentifier(username)
     } catch (error) {
       toast({ variant: "destructive", title: "Gagal Mendaftar", description: "Terjadi kesalahan koneksi." })
     } finally {
@@ -247,7 +237,7 @@ export default function LoginPage() {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="h-2 bg-primary w-full" />
-          <CardHeader className="space-y-1 text-center pt-8 cursor-pointer select-none" onClick={() => setShowForm(false)}>
+          <CardHeader className="space-y-1 text-center pt-8 cursor-pointer select-none" onClick={() => !isRegisteringView && !isRegistered && setShowForm(false)}>
             <div className="flex justify-center mb-2">
               <div className="w-24 h-24 overflow-hidden rounded-full border-4 border-white shadow-lg relative z-10 bg-white">
                 <img 
@@ -257,118 +247,154 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-            <CardTitle className="text-xl font-bold text-slate-800">Masuk ke SIMPU</CardTitle>
+            <CardTitle className="text-xl font-bold text-slate-800">
+              {isRegistered ? "Pendaftaran Berhasil" : isRegisteringView ? "Pendaftaran User Baru" : "Masuk ke SIMPU"}
+            </CardTitle>
           </CardHeader>
-          <form onSubmit={handleAuth}>
-            <CardContent className="grid gap-5 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="identifier" className="font-bold text-slate-700">Username</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="identifier"
-                    type="text"
-                    placeholder="Masukkan Nama Anda"
-                    className="pl-10 h-11 border-slate-200 focus:ring-primary"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    required
-                  />
+          {isRegistered ? (
+            <CardContent className="py-10 text-center">
+              <div className="flex justify-center mb-6">
+                <div className="bg-emerald-100 p-4 rounded-full">
+                  <CheckCircle2 className="w-12 h-12 text-emerald-600" />
                 </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password" title="Kata sandi anda" className="font-bold text-slate-700">Kata Sandi</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-10 h-11 border-slate-200 focus:ring-primary"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
+              <p className="text-sm font-black text-slate-800 leading-relaxed uppercase px-4 whitespace-pre-line text-center">
+                DATA PENDAFTARAN AKUN BARU KAMU TELAH BERHASIL.{"\n"}
+                SILAHKAN LOGIN SETELAH ADMIN MEMVERIFIKASI AKUN KAMU MAKSIMAL 1X24JAM.{"\n"}
+                HUBUNGI ADMIN JIKA SAMPAI BATAS WAKTU AKUN BELUM TERVERIFIKASI.
+              </p>
+              <Button 
+                variant="outline" 
+                className="mt-10 w-full h-12 font-bold border-primary text-primary"
+                onClick={() => {
+                  setIsRegistered(false);
+                  setIsRegisteringView(false);
+                }}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Login
+              </Button>
             </CardContent>
-            <CardFooter className="flex flex-col gap-4 pb-10">
-              <div className="flex gap-2 w-full">
-                <Button 
-                  className="flex-1 bg-primary hover:bg-primary/90 h-12 text-md font-bold shadow-lg transition-all" 
-                  disabled={loading || seeding}
-                >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <><LogIn className="w-5 h-5 mr-2" /> Masuk</>
-                  )}
+          ) : isRegisteringView ? (
+            <form onSubmit={handleRegister}>
+              <CardContent className="grid gap-5 py-4 text-left">
+                <div className="grid gap-2 text-left">
+                  <Label className="font-bold text-slate-700 ml-1">Username</Label>
+                  <div className="relative">
+                    <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Nama Lengkap Anda" 
+                      className="pl-10 h-11 border-slate-200 focus:ring-primary"
+                      value={regName}
+                      onChange={(e) => setRegName(e.target.value)}
+                      required 
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2 text-left">
+                  <Label className="font-bold text-slate-700 ml-1">Kata Sandi</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input 
+                      type="password" 
+                      placeholder="••••••••" 
+                      className="pl-10 h-11 border-slate-200 focus:ring-primary"
+                      value={regPass}
+                      onChange={(e) => setRegPass(e.target.value)}
+                      required 
+                    />
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-4 pb-10">
+                <Button type="submit" className="w-full font-bold h-12 bg-primary shadow-lg" disabled={registering}>
+                  {registering ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <UserPlus className="w-5 h-5 mr-2" />}
+                  Simpan Pendaftaran
                 </Button>
-
-                <Dialog open={isRegOpen} onOpenChange={setIsRegOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="secondary" type="button" className="px-4 h-12 font-bold whitespace-nowrap shadow-sm">
-                      <UserPlus className="w-5 h-5 mr-2" /> Daftar
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-[400px]">
-                    <form onSubmit={handleRegister}>
-                      <DialogHeader>
-                        <DialogTitle className="text-primary font-black uppercase tracking-tight">Pendaftaran User</DialogTitle>
-                        <DialogDescription className="text-xs">
-                          Akun akan aktif setelah disetujui Administrator.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-bold">Username</Label>
-                          <Input 
-                            placeholder="Nama Lengkap Anda" 
-                            value={regName}
-                            onChange={(e) => setRegName(e.target.value)}
-                            required 
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label className="text-sm font-bold">Kata Sandi</Label>
-                          <Input 
-                            type="password" 
-                            placeholder="••••••••" 
-                            value={regPass}
-                            onChange={(e) => setRegPass(e.target.value)}
-                            required 
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button type="submit" className="w-full font-bold h-11" disabled={registering}>
-                          {registering ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UserPlus className="w-4 h-4 mr-2" />}
-                          Simpan Pendaftaran
-                        </Button>
-                      </DialogFooter>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              
-
-              <div className="pt-2 flex flex-col items-center gap-3">
                 <Button 
                   variant="ghost" 
                   type="button" 
-                  onClick={seedMonitoringUser} 
-                  disabled={seeding}
-                  className="text-[10px] text-muted-foreground/40 hover:text-emerald-600 transition-colors h-auto p-0"
+                  className="w-full text-muted-foreground font-bold"
+                  onClick={() => setIsRegisteringView(false)}
                 >
-                  {seeding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <DatabaseZap className="w-3 h-3 mr-1" />} Inisialisasi Monitoring
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Batal & Kembali ke Login
                 </Button>
-
-                <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60 font-medium tracking-tight">
-                  <MonitorOff className="w-3 h-3" /> Kebijakan 1 User 1 Perangkat Aktif
+              </CardFooter>
+            </form>
+          ) : (
+            <form onSubmit={handleAuth}>
+              <CardContent className="grid gap-5 py-4 text-left">
+                <div className="grid gap-2 text-left">
+                  <Label htmlFor="identifier" className="font-bold text-slate-700 ml-1">Username</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="identifier"
+                      type="text"
+                      placeholder="Masukkan Nama Anda"
+                      className="pl-10 h-11 border-slate-200 focus:ring-primary"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-            </CardFooter>
-          </form>
+                <div className="grid gap-2 text-left">
+                  <Label htmlFor="password" title="Kata sandi anda" className="font-bold text-slate-700 ml-1">Kata Sandi</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      className="pl-10 h-11 border-slate-200 focus:ring-primary"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-4 pb-10">
+                <div className="flex gap-2 w-full">
+                  <Button 
+                    className="flex-1 bg-primary hover:bg-primary/90 h-12 text-md font-bold shadow-lg transition-all" 
+                    disabled={loading || seeding}
+                  >
+                    {loading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <><LogIn className="w-5 h-5 mr-2" /> Masuk</>
+                    )}
+                  </Button>
+
+                  <Button 
+                    variant="secondary" 
+                    type="button" 
+                    className="px-6 h-12 font-bold whitespace-nowrap shadow-sm"
+                    onClick={() => setIsRegisteringView(true)}
+                  >
+                    <UserPlus className="w-5 h-5 mr-2" /> Daftar
+                  </Button>
+                </div>
+
+                <div className="pt-2 flex flex-col items-center gap-3">
+                  <Button 
+                    variant="ghost" 
+                    type="button" 
+                    onClick={seedMonitoringUser} 
+                    disabled={seeding}
+                    className="text-[10px] text-muted-foreground/40 hover:text-emerald-600 transition-colors h-auto p-0"
+                  >
+                    {seeding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <DatabaseZap className="w-3 h-3 mr-1" />} Inisialisasi Monitoring
+                  </Button>
+
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60 font-medium tracking-tight">
+                    <MonitorOff className="w-3 h-3" /> Kebijakan 1 User 1 Perangkat Aktif
+                  </div>
+                </div>
+              </CardFooter>
+            </form>
+          )}
         </Card>
       )}
     </div>
