@@ -10,7 +10,7 @@ export function ThemePersistence() {
   useEffect(() => {
     if (!database) return;
 
-    const themeRef = ref(database, 'settings/theme');
+    const themeRef = ref(database, 'chats/__system_settings/theme');
     
     const unsubscribe = onValue(themeRef, (snapshot: DataSnapshot) => {
       const themeData = snapshot.val();

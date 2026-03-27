@@ -43,7 +43,7 @@ export default function SettingsPage() {
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
-  const themeSettingsRef = database ? ref(database, 'settings/theme') : null
+  const themeSettingsRef = database ? ref(database, 'chats/__system_settings/theme') : null
   const { data: themeSettings, error: themeError } = useObject(themeSettingsRef)
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function SettingsPage() {
   const toggleTheme = async (val: "light" | "dark") => {
     try {
       setTheme(val)
-      await update(ref(database, 'settings/theme'), { mode: val })
+      await update(ref(database, 'chats/__system_settings/theme'), { mode: val })
       toast({ 
         title: "Tema Diperbarui", 
         description: `Aplikasi sekarang dalam Mode ${val === "dark" ? "Gelap" : "Terang"}.` 
@@ -79,7 +79,7 @@ export default function SettingsPage() {
 
   const changePalette = async (colorHsl: string, name: string) => {
     try {
-      await update(ref(database, 'settings/theme'), { 
+      await update(ref(database, 'chats/__system_settings/theme'), { 
         palette: colorHsl,
         paletteName: name 
       })
