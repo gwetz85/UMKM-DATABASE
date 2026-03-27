@@ -80,7 +80,6 @@ export function AppSidebar() {
   const [copied, setCopied] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
   const [currentTime, setCurrentTime] = React.useState<string>("")
-  const [currentDate, setCurrentDate] = React.useState<string>("")
 
   // Clock Update Effect
   React.useEffect(() => {
@@ -95,15 +94,8 @@ export function AppSidebar() {
         hour12: false 
       })
       
-      const date = now.toLocaleDateString('id-ID', { 
-        weekday: 'long', 
-        day: 'numeric', 
-        month: 'long', 
-        year: 'numeric' 
-      })
       
       setCurrentTime(time)
-      setCurrentDate(date)
     }
     updateTime()
     const interval = setInterval(updateTime, 1000)
@@ -277,9 +269,6 @@ export function AppSidebar() {
           <div className="bg-black/40 rounded-2xl p-4 border border-white/5 flex flex-col items-center gap-1 relative overflow-hidden shadow-inner text-center">
             <div className="text-4xl font-black text-white tracking-tighter leading-none mb-1 tabular-nums mt-1">
               {currentTime}
-            </div>
-            <div className="text-[12px] font-bold text-white/40 whitespace-nowrap uppercase tracking-widest">
-              {currentDate}
             </div>
           </div>
         </div>
