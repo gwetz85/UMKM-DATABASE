@@ -41,18 +41,20 @@ export default function SettingsPage() {
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
+  const themeSettingsRef = ref(database, 'settings/theme')
+  const { data: themeSettings } = useObject(themeSettingsRef)
+
   useEffect(() => {
-    const isDark = document.documentElement.classList.contains("dark")
-    setTheme(isDark ? "dark" : "light")
-  }, [])
+    if (themeSettings?.mode) {
+      setTheme(themeSettings.mode)
+    }
+  }, [themeSettings])
+
+
 
   const toggleTheme = (val: "light" | "dark") => {
     setTheme(val)
-    if (val === "dark") {
-      document.documentElement.classList.add("dark")
-    } else {
-      document.documentElement.classList.remove("dark")
-    }
+    update(ref(database, 'settings/theme'), { mode: val })
     toast({ 
       title: "Tema Diperbarui", 
       description: `Aplikasi sekarang dalam Mode ${val === "dark" ? "Gelap" : "Terang"}.` 
@@ -60,8 +62,10 @@ export default function SettingsPage() {
   }
 
   const changePalette = (colorHsl: string, name: string) => {
-    document.documentElement.style.setProperty('--primary', colorHsl)
-    document.documentElement.style.setProperty('--sidebar-background', colorHsl)
+    update(ref(database, 'settings/theme'), { 
+      palette: colorHsl,
+      paletteName: name 
+    })
     toast({ 
       title: "Warna Diperbarui", 
       description: `Warna utama aplikasi telah diubah ke ${name}.` 

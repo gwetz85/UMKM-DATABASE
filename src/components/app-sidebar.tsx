@@ -236,7 +236,7 @@ export function AppSidebar() {
 
   if (!mounted) {
     return (
-      <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-gradient-to-b from-primary to-blue-900">
+      <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-primary">
         <SidebarHeader className="py-6 flex flex-col items-center justify-center border-b border-white/5">
           <div className="bg-accent rounded-xl p-2 w-10 h-10 shadow-inner" />
         </SidebarHeader>
@@ -247,7 +247,7 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0 shadow-[4px_0_24px_rgba(0,0,0,0.1)] bg-gradient-to-b from-primary to-blue-900 text-white">
+    <Sidebar collapsible="icon" className="border-r-0 shadow-[4px_0_24px_rgba(0,0,0,0.1)] bg-primary text-white">
       <SidebarHeader className="py-6 flex flex-col items-center justify-center border-b border-white/10">
         <div className="flex flex-col items-center justify-center w-full">
           <InfoDialog>

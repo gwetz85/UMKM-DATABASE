@@ -9,6 +9,7 @@ import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { ChatBubble } from '@/components/chat-bubble';
 
 import { Toaster } from '@/components/ui/toaster';
+import { ThemePersistence } from '@/components/theme-persistence';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -37,6 +38,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
+      <ThemePersistence />
       <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-background">
         {/* Global Components */}
         <Toaster />
@@ -44,7 +46,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         {/* Mobile Header - Hidden on Login */}
         {!isLoginPage && (
           <>
-            <header className="sticky top-0 flex md:hidden items-center justify-between px-4 h-16 bg-gradient-to-r from-primary to-blue-800 text-white shrink-0 z-50 shadow-md print:hidden">
+            <header className="sticky top-0 flex md:hidden items-center justify-between px-4 h-16 bg-primary text-white shrink-0 z-50 shadow-md print:hidden">
               <div className="flex items-center gap-2">
                 <SidebarTrigger className="text-white hover:bg-white/10 transition-colors" />
                 <div className="flex flex-col">
