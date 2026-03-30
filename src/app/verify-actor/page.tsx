@@ -214,6 +214,7 @@ export default function VerifyActorPage() {
                   <TableHead className="font-bold">NIK</TableHead>
                   <TableHead className="font-bold">Kategori</TableHead>
                   <TableHead className="font-bold">Usaha</TableHead>
+                  <TableHead className="font-bold">Koordinator</TableHead>
                   <TableHead className="text-right font-bold">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -228,6 +229,11 @@ export default function VerifyActorPage() {
                       </span>
                     </TableCell>
                     <TableCell className="font-medium text-slate-700">{actor.businessName}</TableCell>
+                    <TableCell>
+                      <span className="text-xs font-bold text-slate-600 uppercase">
+                        {actor.coordinator || "-"}
+                      </span>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1.5 opacity-90 hover:opacity-100 transition-opacity">
                         <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
