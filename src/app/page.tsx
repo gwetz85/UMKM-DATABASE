@@ -62,6 +62,9 @@ export default function DashboardPage() {
     if (!allData) return []
     const counts: Record<string, number> = {}
     allData.forEach(d => {
+      // Abaikan data jika sudah berstatus Cancell / Ditolak (status: 'rejected')
+      if (d.status === 'rejected') return;
+      
       if (d.coordinator) {
         const name = d.coordinator.toUpperCase().trim()
         counts[name] = (counts[name] || 0) + 1
