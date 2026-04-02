@@ -254,8 +254,10 @@ export default function DashboardPage() {
                     {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
                   </span>
                </div>
-               <div className="p-4 bg-primary text-white text-center text-[10px] font-black uppercase tracking-widest">
-                  Sistem Informasi Pelaku Usaha
+               <div className="py-3 bg-primary text-white overflow-hidden whitespace-nowrap relative">
+                  <div className="animate-marquee inline-block text-[9px] font-black uppercase tracking-widest px-4" style={{ animationDuration: '40s' }}>
+                    Selamat Datang di Sistem Informasi Pelaku Usaha , layanan ini berbasis Web dan Database terintegrasi dengan database kami . Layanan ini masih dalam pengembangan dan perbaikkan , kritik dan saran sangat diharapkan.
+                  </div>
                </div>
             </CardContent>
           </Card>
