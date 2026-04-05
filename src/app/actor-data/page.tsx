@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search } from "lucide-react"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
@@ -32,6 +33,8 @@ function ActorDataContent() {
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [printDate, setPrintDate] = useState<string>("")
+  const [searchQuery, setSearchQuery] = useState("")
+
 
   useEffect(() => {
     setPrintDate(new Date().toLocaleString('id-ID'))
@@ -74,6 +77,14 @@ function ActorDataContent() {
     }
     return true;
   }) : undefined
+
+  const filteredActors = actors ? actors.filter(a => 
+    a.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    a.nik.includes(searchQuery) ||
+    a.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    a.address?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) : undefined
+
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingBankMode, setEditingBankMode] = useState(false)
@@ -163,78 +174,114 @@ function ActorDataContent() {
             </div>
           )}
         </div>
-        <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto">
-          <Printer className="w-4 h-4 mr-2" /> CETAK
-        </Button>
+        <div className="flex flex-wrap gap-2 w-full md:w-auto print:hidden">
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Cari Nama, NIK, Usaha..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-10 border-primary/20 bg-white"
+            />
+          </div>
+          <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto h-10">
+            <Printer className="w-4 h-4 mr-2" /> CETAK
+          </Button>
+        </div>
       </div>
+
 
       <div className="bg-card print:bg-transparent">
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-            {[...Array(12)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-4 flex flex-col items-center gap-3">
-                  <Skeleton className="w-12 h-12 rounded-full" />
-                  <div className="space-y-2 w-full">
-                    <Skeleton className="h-4 w-3/4 mx-auto" />
-                    <Skeleton className="h-3 w-1/2 mx-auto" />
-                  </div>
-                  <Skeleton className="h-5 w-full rounded-full" />
-                </CardContent>
-              </Card>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 print:flex print:flex-col print:gap-1">
-            {actors?.map((actor) => (
-              <Card 
-                key={actor.id} 
-                className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group relative overflow-hidden print:shadow-none print:border-b print:rounded-none"
-                onClick={() => {
-                  setViewingActor(actor)
-                  setIsEditMode(false)
-                  setEditingBankMode(false)
-                }}
-              >
-                <CardContent className="p-4 flex flex-col items-center text-center gap-3 print:flex-row print:justify-between print:text-left print:p-2">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform print:hidden shrink-0">
-                    <Building2 className="w-5 h-5" />
-                  </div>
-                  <div className="space-y-1 w-full justify-center">
-                    <p className="font-bold text-[13px] md:text-sm line-clamp-2 uppercase leading-tight print:line-clamp-none text-primary" title={actor.businessName}>
-                      {actor.businessName || "NAMA USAHA KOSONG"}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground uppercase line-clamp-1 print:line-clamp-none font-bold flex items-center justify-center print:justify-start gap-1" title={actor.fullName}>
-                      <User className="w-3 h-3 print:hidden" /> {actor.fullName}
-                    </p>
-                    <p className="text-[9px] text-muted-foreground font-mono hidden print:block">
-                      NIK: {actor.nik} | Koor: {actor.coordinator} | Bank: {actor.bankName} - {actor.bankNumber}
-                    </p>
-                  </div>
-                    <div className="text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-200 w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
-                    VERIFIED
-                  </div>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="h-7 w-full mt-2 text-[10px] font-bold border border-primary/20 hover:bg-primary hover:text-white transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      generateRegistrationForm(actor);
-                    }}
-                  >
-                    <Printer className="w-3 h-3 mr-1" /> CETAK FORMULIR
-                  </Button>
-                </CardContent>
-
-              </Card>
-            ))}
-            {(!actors || actors.length === 0) && (
-              <div className="col-span-full py-20 text-center text-muted-foreground grid place-items-center">
-                <Store className="w-12 h-12 mb-4 opacity-20" />
-                <p>Tidak ada data pelaku usaha yang ditemukan.</p>
-              </div>
-            )}
+          <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow>
+                  <TableHead className="font-bold text-primary py-4 pl-6">NAMA</TableHead>
+                  <TableHead className="font-bold text-primary py-4">NIK / NO. KK</TableHead>
+                  <TableHead className="font-bold text-primary py-4">ALAMAT</TableHead>
+                  <TableHead className="font-bold text-primary py-4">USAHA</TableHead>
+                  <TableHead className="font-bold text-primary py-4 pr-6 text-right">AKSI</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredActors?.map((actor) => (
+                  <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group">
+                    <TableCell className="py-4 pl-6">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-800 uppercase text-[13px]">{actor.fullName}</span>
+                        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">{actor.coordinator || "Tanpa Koordinator"}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="outline" className="text-[9px] h-4 font-bold border-emerald-100 bg-emerald-50/50 text-emerald-700">NIK</Badge>
+                          <span className="font-mono text-[11px] text-slate-600">{actor.nik}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Badge variant="outline" className="text-[9px] h-4 font-bold border-amber-100 bg-amber-50/50 text-amber-700">KK</Badge>
+                          <span className="font-mono text-[11px] text-slate-600">{actor.noKK}</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4 max-w-[200px]">
+                      <span className="text-xs font-medium text-slate-600 line-clamp-2 uppercase" title={actor.address}>
+                        {actor.address}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="flex flex-col">
+                        <span className="font-black text-primary uppercase text-[12px]">{actor.businessName}</span>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase">{actor.businessCategory}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4 pr-6 text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200"
+                          onClick={() => {
+                            setViewingActor(actor)
+                            setIsEditMode(false)
+                            setEditingBankMode(false)
+                          }}
+                          title="Detail"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-200"
+                          onClick={() => generateRegistrationForm(actor)}
+                          title="Cetak Formulir"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {(!filteredActors || filteredActors.length === 0) && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-40 text-center text-muted-foreground bg-slate-50/50">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Search className="w-8 h-8 opacity-20" />
+                        <p className="font-bold">Tidak ada data pelaku usaha ditemukan.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>
