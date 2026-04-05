@@ -161,7 +161,9 @@ export async function POST(req: NextRequest) {
               reply += `▫️ Wilayah: ${kel}${kel && kec ? ', ' : ''}${kec || "-"}\n\n`;
               
               reply += `🏢 *Usaha & Lapangan*\n`;
-              reply += `▫️ Kategori: ${r.businessCategory || "-"}\n\n`;
+              reply += `▫️ Kategori: ${r.businessCategory || "-"}\n`;
+              reply += `▫️ Lokasi Usaha: ${r.businessLocation || "-"}\n`;
+              reply += `▫️ Koordinator: ${r.coordinator || "-"}\n\n`;
               
               reply += `💳 *Bank*\n`;
               reply += `▫️ Bank: ${r.bankName || "-"}\n\n`;
