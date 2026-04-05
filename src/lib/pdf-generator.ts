@@ -12,29 +12,12 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
 
-  // --- HEADER ---
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text('PEMERINTAH KOTA TANJUNGPINANG', pageWidth / 2, 15, { align: 'center' });
-  doc.setFontSize(16);
-  doc.text('DINAS KOPERASI DAN USAHA MENDENGAH KECIL', pageWidth / 2, 22, { align: 'center' });
-  
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Gedung Perpustakaan & Arsip Daerah Lt. 1, Jl. Agus Salim No. 1, Tanjungpinang', pageWidth / 2, 28, { align: 'center' });
-  
-  // Line Separator
-  doc.setLineWidth(0.5);
-  doc.line(margin, 32, pageWidth - margin, 32);
-  doc.setLineWidth(0.2);
-  doc.line(margin, 33, pageWidth - margin, 33);
-
   // --- TITLE ---
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
-  doc.text('FORMULIR PENDAFTARAN', pageWidth / 2, 45, { align: 'center' });
+  doc.text('FORMULIR PENDAFTARAN', pageWidth / 2, 20, { align: 'center' });
   doc.setFontSize(11);
-  doc.text('SISTEM INFORMASI MANAJEMEN PELAKU USAHA (SIMPU)', pageWidth / 2, 51, { align: 'center' });
+  doc.text('SISTEM INFORMASI MANAJEMEN PELAKU USAHA (SIMPU)', pageWidth / 2, 26, { align: 'center' });
 
   // --- ACTOR DATA TABLE ---
   const tableData = [
@@ -57,7 +40,7 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
   ];
 
   autoTable(doc, {
-    startY: 60,
+    startY: 35,
     body: tableData,
     theme: 'plain',
     styles: {
