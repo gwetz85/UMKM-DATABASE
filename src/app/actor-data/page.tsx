@@ -18,6 +18,8 @@ import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
 
 import { cn } from "@/lib/utils"
+import { generateRegistrationForm } from "@/lib/pdf-generator"
+
 
 function ActorDataContent() {
   const { user } = useUser()
@@ -85,7 +87,7 @@ function ActorDataContent() {
       fullName: formData.get('fullName') as string,
       nik: formData.get('nik') as string,
       noKK: formData.get('noKK') as string,
-      gender: formData.get('gender') as string,
+      gender: formData.get('gender') as "Laki-laki" | "Perempuan",
       pobDob: formData.get('pobDob') as string,
       phone: formData.get('phone') as string,
       kecamatan: formData.get('kecamatan') as string,
@@ -93,7 +95,7 @@ function ActorDataContent() {
       rtRw: formData.get('rtRw') as string,
       address: formData.get('address') as string,
       businessName: formData.get('businessName') as string,
-      businessCategory: formData.get('businessCategory') as string,
+      businessCategory: formData.get('businessCategory') as "Kuliner" | "Bukan Kuliner",
       businessLocation: formData.get('businessLocation') as string,
       coordinator: formData.get('coordinator') as string,
       bankName: formData.get('bankName') as string,
@@ -209,10 +211,22 @@ function ActorDataContent() {
                       NIK: {actor.nik} | Koor: {actor.coordinator} | Bank: {actor.bankName} - {actor.bankNumber}
                     </p>
                   </div>
-                  <div className="text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-200 w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
+                    <div className="text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-200 w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
                     VERIFIED
                   </div>
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="h-7 w-full mt-2 text-[10px] font-bold border border-primary/20 hover:bg-primary hover:text-white transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      generateRegistrationForm(actor);
+                    }}
+                  >
+                    <Printer className="w-3 h-3 mr-1" /> CETAK FORMULIR
+                  </Button>
                 </CardContent>
+
               </Card>
             ))}
             {(!actors || actors.length === 0) && (
@@ -240,7 +254,17 @@ function ActorDataContent() {
                   {isEditMode ? "Edit Data Pelaku Usaha" : "Detail Pelaku Usaha"}
                 </DialogTitle>
                 <div className="flex flex-wrap gap-2">
+                  {!isEditMode && viewingActor && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => generateRegistrationForm(viewingActor)}
+                      className="font-bold bg-primary hover:bg-primary/90 text-white"
+                    >
+                      <Printer className="w-4 h-4 mr-2" /> Cetak Formulir
+                    </Button>
+                  )}
                   {!isAdmin && !isMonitoring && !isEditMode && viewingActor.status === 'verified_actor' && (
+
                     <Button 
                       size="sm" 
                       onClick={() => setEditingBankMode(true)}
