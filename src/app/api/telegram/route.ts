@@ -58,7 +58,27 @@ export async function POST(req: NextRequest) {
                       `📌 /nik [nomor] - Cari berdasar NIK\n` +
                       `👤 /nama [nama] - Cari berdasar Nama\n` +
                       `📱 /hp [nomor] - Cari berdasar No. HP\n` +
-                      `🏢 /koor [nama] - Cari berdasar Koordinator\n`;
+                      `🏢 /koor [nama] - Cari berdasar Koordinator\n` +
+                      `ℹ️ /about - Informasi Aplikasi\n`;
+        await sendMessage(chatId, reply);
+      } 
+      else if (text.startsWith('/about')) {
+        const reply = `Selamat datang di Aplikasi *SIMPU*\n` +
+                      `\\- SISTEM INFORMASI MANAJEMEN PELAKU USAHA \\-\n` +
+                      `*Versi 7.0* Update tanggal 05042026 2250\n\n` +
+                      `_"Aplikasi ini dikembangkan dan dibuat secara Mandiri dan Independent oleh Tim Admin yang bekerja. Hak Cipta Sepenuhnya dimiliki oleh Pencipta aplikasi."_\n\n` +
+                      `⚡ *Pembaruan Aplikasi*\n` +
+                      `▫️ Penambahan Fitur Bot Telegram\n` +
+                      `▫️ Penambahan Fitur Chat\n` +
+                      `▫️ Penambahan Halaman Bank\n` +
+                      `▫️ Penambahan Database 2.965 data\n` +
+                      `▫️ Perbaikan di beberapa fitur tampilan\n` +
+                      `▫️ Penambahan & perbaikan file system\n\n` +
+                      `✉️ *Kontak & Saran*\n` +
+                      `Pengembang: *AGUS SURIYADI*\n` +
+                      `Email: agussuriyadipunya@gmail\\.com\n` +
+                      `Whatsapp: 0817319885\n\n` +
+                      `© 2026 SIMPU \\- All Rights Reserved`;
         await sendMessage(chatId, reply);
       } 
       else if (text.startsWith('/stats')) {
@@ -129,36 +149,27 @@ export async function POST(req: NextRequest) {
             let reply = `🔍 *Hasil Pencarian [${type.toUpperCase()}]:*\n\n`;
             results.forEach((r, i) => {
               reply += `*${i+1}. ${r.businessName || "TANPA NAMA USAHA"}*\n`;
+              
               reply += `👤 *Data Pribadi*\n`;
               reply += `▫️ Nama: ${r.fullName}\n`;
               reply += `▫️ NIK: \`${r.nik}\`\n`;
-              if (r.noKK) reply += `▫️ KK: \`${r.noKK}\`\n`;
-              if (r.gender) reply += `▫️ L/P: ${r.gender === 'L' ? 'Laki-laki' : 'Perempuan'}\n`;
-              if (r.pobDob) reply += `▫️ TTL: ${r.pobDob}\n`;
               reply += `▫️ HP: \`${r.phone || "-"}\`\n\n`;
               
               reply += `🏠 *Alamat*\n`;
-              if (r.kecamatan || r.kelurahan) reply += `▫️ Wilayah: Kel. ${r.kelurahan || "-"}, Kec. ${r.kecamatan || "-"}\n`;
-              if (r.rtRw) reply += `▫️ RT/RW: ${r.rtRw}\n`;
-              if (r.address) reply += `▫️ Detail: ${r.address}\n\n`;
+              let kel = r.kelurahan ? `Kel. ${r.kelurahan}` : "";
+              let kec = r.kecamatan ? `Kec. ${r.kecamatan}` : "";
+              reply += `▫️ Wilayah: ${kel}${kel && kec ? ', ' : ''}${kec || "-"}\n\n`;
               
               reply += `🏢 *Usaha & Lapangan*\n`;
-              if (r.businessCategory) reply += `▫️ Kategori: ${r.businessCategory}\n`;
-              if (r.businessLocation) reply += `▫️ Lokasi Usaha: ${r.businessLocation}\n`;
-              reply += `▫️ Koordinator: ${r.coordinator || "-"}\n\n`;
+              reply += `▫️ Kategori: ${r.businessCategory || "-"}\n\n`;
               
-              if (r.bankNumber) {
-                reply += `💳 *Bank*\n`;
-                reply += `▫️ Bank: ${r.bankName || "-"}\n`;
-                reply += `▫️ Rek: \`${r.bankNumber}\`\n`;
-                reply += `▫️ A/n: ${r.bankOwner || "-"}\n\n`;
-              }
+              reply += `💳 *Bank*\n`;
+              reply += `▫️ Bank: ${r.bankName || "-"}\n\n`;
               
               let statusLabel = r.status?.toUpperCase().replace('_', ' ') || "UNKNOWN";
-              reply += `📍 *Status:* ${statusLabel === 'VERIFIED ACTOR' ? '✅ VERIFIED ACTOR' : statusLabel}\n`;
+              reply += `📍 Status: ${statusLabel === 'VERIFIED ACTOR' ? '✅ VERIFIED ACTOR' : statusLabel}\n`;
               let timestamp = r.createdAt ? new Date(r.createdAt).toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}) : "-";
-              reply += `📅 *Input:* ${timestamp} (${r.createdBy || "-"})\n`;
-              reply += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+              reply += `📅 Input: ${timestamp}\n\n`;
             });
             if (results.length === 5) {
               reply += `_Hanya menampilkan 5 data pertama._`;
