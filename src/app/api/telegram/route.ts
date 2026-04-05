@@ -154,8 +154,7 @@ export async function POST(req: NextRequest) {
               reply += `▫️ Nama: ${r.fullName}\n`;
               reply += `▫️ NIK: \`${r.nik}\`\n`;
               reply += `▫️ KK: \`${r.noKK || "-"}\`\n`;
-              let genderStr = r.gender === 'L' ? 'Laki-laki' : (r.gender === 'P' ? 'Perempuan' : '-');
-              reply += `▫️ Kelamin: ${genderStr}\n`;
+              reply += `▫️ Kelamin: ${r.gender || "-"}\n`;
               reply += `▫️ TTL: ${r.pobDob || "-"}\n`;
               reply += `▫️ HP: \`${r.phone || "-"}\`\n\n`;
               
