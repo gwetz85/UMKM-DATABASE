@@ -93,18 +93,6 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
     margin: { left: margin + 5 },
   });
 
-  // --- SIGNATURE AREA ---
-  const signatureY = (doc as any).lastAutoTable.finalY + 20;
-  const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text(`Tanjungpinang, ${today}`, pageWidth - margin - 60, signatureY);
-  doc.text('Petugas Verifikasi,', pageWidth - margin - 60, signatureY + 7);
-  
-  doc.text('( ......................................... )', pageWidth - margin - 60, signatureY + 30);
-  doc.text('NIP.', pageWidth - margin - 60, signatureY + 35);
-
   // --- FOOTER ---
   doc.setFontSize(8);
   doc.setTextColor(150);
