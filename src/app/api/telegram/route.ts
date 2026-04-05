@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       
       console.log(`Received message from ${chatId}: ${text}`);
 
-      if (text.startsWith('/start')) {
+      if (text.startsWith('/start') || text.startsWith('/help')) {
         const reply = `Selamat datang di *Bot UMKM Database* 🏬\n\n` +
                       `Bot ini hanya melayani pemantauan data (Read-Only).\n` +
                       `✅ *Menu Perintah:*\n` +
@@ -153,9 +153,15 @@ export async function POST(req: NextRequest) {
               reply += `👤 *Data Pribadi*\n`;
               reply += `▫️ Nama: ${r.fullName}\n`;
               reply += `▫️ NIK: \`${r.nik}\`\n`;
+              reply += `▫️ KK: \`${r.noKK || "-"}\`\n`;
+              let genderStr = r.gender === 'L' ? 'Laki-laki' : (r.gender === 'P' ? 'Perempuan' : '-');
+              reply += `▫️ Kelamin: ${genderStr}\n`;
+              reply += `▫️ TTL: ${r.pobDob || "-"}\n`;
               reply += `▫️ HP: \`${r.phone || "-"}\`\n\n`;
               
               reply += `🏠 *Alamat*\n`;
+              reply += `▫️ Detail: ${r.address || "-"}\n`;
+              reply += `▫️ RT/RW: ${r.rtRw || "-"}\n`;
               let kel = r.kelurahan ? `Kel. ${r.kelurahan}` : "";
               let kec = r.kecamatan ? `Kec. ${r.kecamatan}` : "";
               reply += `▫️ Wilayah: ${kel}${kel && kec ? ', ' : ''}${kec || "-"}\n\n`;
