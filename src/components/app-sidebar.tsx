@@ -144,7 +144,7 @@ export function AppSidebar() {
       name: "Verifikasi Admin", 
       href: "/verify-actor", 
       icon: ShieldCheck, 
-      show: isAdmin 
+      show: isAdmin || isPetugas 
     },
     { 
       name: "Data Pelaku", 
