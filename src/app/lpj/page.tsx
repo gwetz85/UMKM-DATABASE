@@ -42,7 +42,9 @@ export default function LPJPage() {
 
   const isAdmin = userProfile?.role === 'admin'
   const isPetugas = userProfile?.role === 'petugas'
-  const canAccess = isAdmin || isPetugas
+  const isMonitoring = userProfile?.role === 'monitoring'
+  const canAccess = isAdmin || isPetugas || isMonitoring
+  const canModify = isAdmin || isPetugas
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
@@ -91,7 +93,7 @@ export default function LPJPage() {
       <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center text-destructive">
         <ShieldAlert className="w-16 h-16" />
         <h1 className="text-2xl font-bold uppercase tracking-tighter">Akses Ditolak</h1>
-        <p className="text-muted-foreground font-medium">Hanya Petugas dan Administrator yang dapat mengelola LPJ.</p>
+        <p className="text-muted-foreground font-medium">Hanya Petugas, Monitoring dan Administrator yang dapat melihat LPJ.</p>
       </div>
     )
   }
@@ -179,6 +181,7 @@ export default function LPJPage() {
                                <Input 
                                  id={`lpj-${actor.id}`}
                                  placeholder="0" 
+                                 disabled={isMonitoring}
                                  className="pl-9 h-9 rounded-xl font-black text-sm border-slate-200 focus:ring-primary shadow-inner" 
                                />
                              </div>
@@ -195,16 +198,18 @@ export default function LPJPage() {
                                 <span className="text-[9px] font-black text-red-400 uppercase bg-red-50 px-3 py-2 rounded-lg py-1">Hubungi Admin</span>
                               )
                             ) : (
-                              <Button 
-                                size="sm" 
-                                className="bg-primary hover:bg-primary/90 font-black text-[10px] rounded-xl px-4 h-9 shadow-lg shadow-primary/20"
-                                onClick={() => {
-                                    const input = document.getElementById(`lpj-${actor.id}`) as HTMLInputElement
-                                    handleSaveLPJ(actor.id, input.value)
-                                }}
-                              >
-                                <Save className="w-3.5 h-3.5 mr-2" /> SIMPAN LPJ
-                              </Button>
+                              !isMonitoring && (
+                                <Button 
+                                  size="sm" 
+                                  className="bg-primary hover:bg-primary/90 font-black text-[10px] rounded-xl px-4 h-9 shadow-lg shadow-primary/20"
+                                  onClick={() => {
+                                      const input = document.getElementById(`lpj-${actor.id}`) as HTMLInputElement
+                                      handleSaveLPJ(actor.id, input.value)
+                                  }}
+                                >
+                                  <Save className="w-3.5 h-3.5 mr-2" /> SIMPAN LPJ
+                                </Button>
+                              )
                             )}
                           </div>
                         </TableCell>

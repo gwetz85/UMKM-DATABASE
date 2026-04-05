@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Save, CheckCircle2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +40,7 @@ export default function InputDataPage() {
 
   const { data: allUsersForProfile } = useList(userProfileRef)
   const currentUserProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
+  const isMonitoring = currentUserProfile?.role === 'monitoring'
 
   useEffect(() => {
     if (!kelurahan) {
@@ -154,6 +156,12 @@ export default function InputDataPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold text-primary font-headline">Input Data Baru</h1>
         <p className="text-muted-foreground">Lengkapi formulir untuk mendaftarkan pelaku usaha baru.</p>
+        {isMonitoring && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl flex items-center gap-3 font-bold text-sm shadow-sm animate-pulse">
+            <span className="text-xl">👁️</span>
+            MODE MONITORING: Anda hanya dapat melihat formulir ini tanpa izin menyimpan data.
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -257,9 +265,16 @@ export default function InputDataPage() {
         </Card>
 
         <div className="flex justify-end pb-8">
-          <Button type="submit" disabled={loading} className="w-full md:w-auto min-w-[200px] bg-primary text-primary-foreground font-bold shadow-lg">
+          <Button 
+            type="submit" 
+            disabled={loading || isMonitoring} 
+            className={cn(
+              "w-full md:w-auto min-w-[200px] font-bold shadow-lg",
+              isMonitoring ? "bg-slate-400 cursor-not-allowed" : "bg-primary text-primary-foreground"
+            )}
+          >
             {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            Simpan Data Input
+            {isMonitoring ? "AKSES TERBATAS" : "Simpan Data Input"}
           </Button>
         </div>
       </form>

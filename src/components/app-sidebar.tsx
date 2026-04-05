@@ -138,13 +138,13 @@ export function AppSidebar() {
       name: "Input Data", 
       href: "/input", 
       icon: UserPlus, 
-      show: !!user && !isMonitoring && !isKoordinator
+      show: !!user && !isKoordinator
     },
     { 
       name: "Verifikasi Admin", 
       href: "/verify-actor", 
       icon: ShieldCheck, 
-      show: isAdmin || isPetugas 
+      show: isAdmin || isPetugas || isMonitoring
     },
     { 
       name: "Data Pelaku", 
@@ -162,7 +162,7 @@ export function AppSidebar() {
       name: "Verifikasi Data", 
       href: "/verify-bank", 
       icon: CreditCard, 
-      show: isAdmin 
+      show: isAdmin || isMonitoring
     },
     { 
       name: "Rekening Bank", 
@@ -185,7 +185,7 @@ export function AppSidebar() {
       name: "LPJ", 
       href: "/lpj", 
       icon: FileText, 
-      show: (isAdmin || isPetugas) && !isKoordinator
+      show: (isAdmin || isPetugas || isMonitoring) && !isKoordinator
     },
     { 
       name: "Finish", 
@@ -209,7 +209,7 @@ export function AppSidebar() {
       name: "Monitoring Chat", 
       href: "/chat-monitoring", 
       icon: MessageSquare, 
-      show: isAdmin 
+      show: isAdmin || isMonitoring
     },
   ], [user, isAdmin, isMonitoring, userProfile])
 

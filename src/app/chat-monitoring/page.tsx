@@ -27,7 +27,8 @@ export default function ChatMonitoring() {
   }, [database]);
   const { data: allUsers } = useList(usersQuery);
 
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id');
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || allUsers?.find((u: any) => u.uid === user?.uid)?.role === 'admin';
+  const isMonitoring = allUsers?.find((u: any) => u.uid === user?.uid)?.role === 'monitoring';
 
   const handleDeleteSession = async (chatId: string) => {
     if (!window.confirm('Apakah Anda yakin ingin menghapus seluruh riwayat percakapan ini secara permanen?')) return;
@@ -61,7 +62,7 @@ export default function ChatMonitoring() {
   };
 
   useEffect(() => {
-    if (!database || !isAdmin) return;
+    if (!database || (!isAdmin && !isMonitoring)) return;
 
     // Use a simple ref and sort in-memory to avoid ReferenceError: orderByChild is not defined
     const messagesRef = ref(database, 'chat_messages');
@@ -106,12 +107,12 @@ export default function ChatMonitoring() {
     return () => unsubscribe();
   }, [database, isAdmin, allUsers]);
 
-  if (!isAdmin) {
+  if (!isAdmin && !isMonitoring) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] text-center p-8">
         <ShieldAlert size={64} className="text-destructive mb-4" />
         <h2 className="text-3xl font-black mb-2">Akses Ditolak</h2>
-        <p className="text-muted-foreground">Hanya Administrator yang dapat mengakses halaman monitoring chat.</p>
+        <p className="text-muted-foreground">Hanya Administrator dan Monitoring yang dapat mengakses halaman monitoring chat.</p>
       </div>
     );
   }
@@ -165,12 +166,14 @@ export default function ChatMonitoring() {
                   <h3 className="font-bold text-slate-800 text-lg">Detail Percakapan</h3>
                   <span className="text-xs text-muted-foreground font-mono">ID: {selectedSessionId}</span>
                 </div>
-                <button 
-                  onClick={() => handleDeleteSession(selectedSessionId)}
-                  className="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-4 py-2 rounded-xl flex items-center gap-2 font-bold text-xs transition-colors"
-                >
-                  <Trash2 size={16} /> Hapus History
-                </button>
+                {isAdmin && !isMonitoring && (
+                  <button 
+                    onClick={() => handleDeleteSession(selectedSessionId)}
+                    className="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-4 py-2 rounded-xl flex items-center gap-2 font-bold text-xs transition-colors"
+                  >
+                    <Trash2 size={16} /> Hapus History
+                  </button>
+                )}
               </div>
               <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
                 {sessions.find(s => s.id === selectedSessionId)?.messages.map((msg: any, idx: number) => (

@@ -177,8 +177,7 @@ export default function VerifyActorPage() {
     setEditKecamatan(actor.kecamatan || "")
   }
 
-  if (isMonitoring) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-emerald-600" /><h1 className="text-2xl font-bold">Akses Terbatas</h1></div>
-  if (!isAdmin && !isPetugas && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
+  if (!isAdmin && !isPetugas && !isMonitoring && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
 
 
   return (
@@ -331,7 +330,7 @@ export default function VerifyActorPage() {
                           </DialogContent>
                         </Dialog>
 
-                        {isAdmin && (
+                        {isAdmin && !isMonitoring && (
                           <Dialog open={!!editingOnlyActor && editingOnlyActor.id === actor.id} onOpenChange={(open) => !open && setEditingOnlyActor(null)}>
                             <DialogTrigger asChild>
                               <Button size="icon" variant="outline" onClick={() => openEditDialog(actor, 'edit')} className="h-8 w-8 border-amber-200 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm" title="Edit Data">
@@ -442,7 +441,7 @@ export default function VerifyActorPage() {
                           </Dialog>
                         )}
 
-                        {isAdmin && (
+                        {isAdmin && !isMonitoring && (
                           <Dialog open={!!editingActor && editingActor.id === actor.id} onOpenChange={(open) => !open && setEditingActor(null)}>
                             <DialogTrigger asChild>
                               <Button size="icon" variant="outline" onClick={() => openEditDialog(actor, 'verify')} className="h-8 w-8 border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg shadow-sm" title="Verifikasi">
@@ -553,7 +552,7 @@ export default function VerifyActorPage() {
                           </Dialog>
                         )}
 
-                        {isAdmin && (
+                        {isAdmin && !isMonitoring && (
                           <Dialog open={!!rejectingActor && rejectingActor.id === actor.id} onOpenChange={(open) => !open && setRejectingActor(null)}>
                             <DialogTrigger asChild>
                               <Button size="icon" variant="outline" onClick={() => setRejectingActor(actor)} className="h-8 w-8 border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg shadow-sm" title="Tolak Data">
@@ -584,7 +583,7 @@ export default function VerifyActorPage() {
                           </Dialog>
                         )}
 
-                        {isAdmin && (
+                        {isAdmin && !isMonitoring && (
                           <Button size="icon" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)} className="h-8 w-8 bg-slate-100 text-red-500 hover:bg-red-500 hover:text-white border-0 shadow-sm" title="Hapus Permanen">
                             <Trash2 className="w-4 h-4" />
                           </Button>

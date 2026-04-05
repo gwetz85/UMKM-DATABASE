@@ -66,17 +66,7 @@ export default function VerifyBankPage() {
     }
   }
 
-  if (isMonitoring) {
-    return (
-      <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center text-emerald-600">
-        <ShieldAlert className="w-16 h-16" />
-        <h1 className="text-2xl font-bold">Akses Terbatas</h1>
-        <p className="text-muted-foreground">Menu ini hanya untuk Administrator.</p>
-      </div>
-    )
-  }
-
-  if (!isAdmin && !isAdminLoading) {
+  if (!isAdmin && !isMonitoring && !isAdminLoading) {
     return (
       <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center text-destructive">
         <ShieldAlert className="w-16 h-16" />
@@ -116,22 +106,24 @@ export default function VerifyBankPage() {
                     <TableCell className="font-mono text-sm">{actor.bankNumber}</TableCell>
                     <TableCell className="uppercase text-xs font-bold">{actor.bankOwner}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => handleRevert(actor.id, actor.fullName)}
-                          className="border-amber-500 text-amber-600 hover:bg-amber-50 font-bold"
-                        >
-                          <RotateCcw className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">BATAL</span>
-                        </Button>
-                        <Button size="sm" onClick={() => handleFinalVerify(actor.id)} className="bg-primary hover:bg-primary/90 font-bold">
-                          <CheckCircle className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">SETUJU</span>
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)} className="font-bold h-9">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                      {!isMonitoring && (
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleRevert(actor.id, actor.fullName)}
+                            className="border-amber-500 text-amber-600 hover:bg-amber-50 font-bold"
+                          >
+                            <RotateCcw className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">BATAL</span>
+                          </Button>
+                          <Button size="sm" onClick={() => handleFinalVerify(actor.id)} className="bg-primary hover:bg-primary/90 font-bold">
+                            <CheckCircle className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">SETUJU</span>
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)} className="font-bold h-9">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
