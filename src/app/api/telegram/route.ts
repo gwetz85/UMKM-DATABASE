@@ -52,9 +52,13 @@ export async function POST(req: NextRequest) {
       if (text.startsWith('/start')) {
         const reply = `Selamat datang di *Bot UMKM Database* 🏬\n\n` +
                       `Bot ini hanya melayani pemantauan data (Read-Only).\n` +
-                      `Berikut perintah yang bisa digunakan:\n` +
-                      `📊 /stats - Melihat ringkasan data UMKM\n` +
-                      `🔍 /search [kata_kunci] - Mencari data UMKM (Contoh: \`/search kuliner\`)\n`;
+                      `✅ *Menu Perintah:*\n` +
+                      `📊 /stats - Ringkasan data\n` +
+                      `🔍 /search [kata] - Cari umum\n` +
+                      `📌 /nik [nomor] - Cari berdasar NIK\n` +
+                      `👤 /nama [nama] - Cari berdasar Nama\n` +
+                      `📱 /hp [nomor] - Cari berdasar No. HP\n` +
+                      `🏢 /koor [nama] - Cari berdasar Koordinator\n`;
         await sendMessage(chatId, reply);
       } 
       else if (text.startsWith('/stats')) {
@@ -82,11 +86,19 @@ export async function POST(req: NextRequest) {
           await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
         }
       }
-      else if (text.startsWith('/search')) {
-        const keyword = text.replace('/search', '').trim().toLowerCase();
+      else if (text.startsWith('/search') || text.startsWith('/nik') || text.startsWith('/nama') || text.startsWith('/hp') || text.startsWith('/koor')) {
         
+        let keyword = '';
+        let type = '';
+        if (text.startsWith('/search')) { keyword = text.replace('/search', '').trim().toLowerCase(); type = 'search'; }
+        else if (text.startsWith('/nik')) { keyword = text.replace('/nik', '').trim().toLowerCase(); type = 'nik'; }
+        else if (text.startsWith('/nama')) { keyword = text.replace('/nama', '').trim().toLowerCase(); type = 'nama'; }
+        else if (text.startsWith('/hp')) { keyword = text.replace('/hp', '').trim().toLowerCase(); type = 'hp'; }
+        else if (text.startsWith('/koor')) { keyword = text.replace('/koor', '').trim().toLowerCase(); type = 'koor'; }
+
         if (!keyword) {
-          await sendMessage(chatId, "Ketikkan kata kunci pencarian. Contoh: `/search warung`");
+          let example = type === 'search' ? 'bengkel' : (type === 'nik' || type === 'hp') ? '08123' : 'agus';
+          await sendMessage(chatId, `Ketikkan kata kunci di sebelah perintah. Contoh: \`/${type} ${example}\``);
           return NextResponse.json({ ok: true });
         }
         
@@ -99,19 +111,54 @@ export async function POST(req: NextRequest) {
           const data = snapshot.val();
           const actors = Object.values(data) as any[];
           
-          const results = actors.filter(a => 
-            (a.fullName && a.fullName.toLowerCase().includes(keyword)) ||
-            (a.nik && a.nik.includes(keyword)) ||
-            (a.businessName && a.businessName.toLowerCase().includes(keyword))
-          ).slice(0, 5); // Limit 5 results to avoid too long messages
+          const results = actors.filter(a => {
+            if (type === 'nik') return a.nik && a.nik.includes(keyword);
+            if (type === 'nama') return a.fullName && a.fullName.toLowerCase().includes(keyword);
+            if (type === 'hp') return a.phone && a.phone.includes(keyword);
+            if (type === 'koor') return a.coordinator && a.coordinator.toLowerCase().includes(keyword);
+            
+            // Default 'search' (Cari ke semua kolom)
+            return (a.fullName && a.fullName.toLowerCase().includes(keyword)) ||
+                   (a.nik && a.nik.includes(keyword)) ||
+                   (a.businessName && a.businessName.toLowerCase().includes(keyword)) ||
+                   (a.phone && a.phone.includes(keyword)) ||
+                   (a.coordinator && a.coordinator.toLowerCase().includes(keyword));
+          }).slice(0, 5); // Limit 5 results
           
           if (results.length > 0) {
-            let reply = `🔍 *Hasil Pencarian:*\n\n`;
+            let reply = `🔍 *Hasil Pencarian [${type.toUpperCase()}]:*\n\n`;
             results.forEach((r, i) => {
-              reply += `${i+1}. *${r.businessName || "Tanpa Nama Usaha"}*\n`;
-              reply += `👤 Pemilik: ${r.fullName}\n`;
-              reply += `💳 NIK: \`${r.nik}\`\n`;
-              reply += `📍 Status: ${r.status?.toUpperCase()}\n\n`;
+              reply += `*${i+1}. ${r.businessName || "TANPA NAMA USAHA"}*\n`;
+              reply += `👤 *Data Pribadi*\n`;
+              reply += `▫️ Nama: ${r.fullName}\n`;
+              reply += `▫️ NIK: \`${r.nik}\`\n`;
+              if (r.noKK) reply += `▫️ KK: \`${r.noKK}\`\n`;
+              if (r.gender) reply += `▫️ L/P: ${r.gender === 'L' ? 'Laki-laki' : 'Perempuan'}\n`;
+              if (r.pobDob) reply += `▫️ TTL: ${r.pobDob}\n`;
+              reply += `▫️ HP: \`${r.phone || "-"}\`\n\n`;
+              
+              reply += `🏠 *Alamat*\n`;
+              if (r.kecamatan || r.kelurahan) reply += `▫️ Wilayah: Kel. ${r.kelurahan || "-"}, Kec. ${r.kecamatan || "-"}\n`;
+              if (r.rtRw) reply += `▫️ RT/RW: ${r.rtRw}\n`;
+              if (r.address) reply += `▫️ Detail: ${r.address}\n\n`;
+              
+              reply += `🏢 *Usaha & Lapangan*\n`;
+              if (r.businessCategory) reply += `▫️ Kategori: ${r.businessCategory}\n`;
+              if (r.businessLocation) reply += `▫️ Lokasi Usaha: ${r.businessLocation}\n`;
+              reply += `▫️ Koordinator: ${r.coordinator || "-"}\n\n`;
+              
+              if (r.bankNumber) {
+                reply += `💳 *Bank*\n`;
+                reply += `▫️ Bank: ${r.bankName || "-"}\n`;
+                reply += `▫️ Rek: \`${r.bankNumber}\`\n`;
+                reply += `▫️ A/n: ${r.bankOwner || "-"}\n\n`;
+              }
+              
+              let statusLabel = r.status?.toUpperCase().replace('_', ' ') || "UNKNOWN";
+              reply += `📍 *Status:* ${statusLabel === 'VERIFIED ACTOR' ? '✅ VERIFIED ACTOR' : statusLabel}\n`;
+              let timestamp = r.createdAt ? new Date(r.createdAt).toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}) : "-";
+              reply += `📅 *Input:* ${timestamp} (${r.createdBy || "-"})\n`;
+              reply += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
             });
             if (results.length === 5) {
               reply += `_Hanya menampilkan 5 data pertama._`;
