@@ -199,21 +199,26 @@ export async function POST(req: NextRequest) {
         await sendMessage(chatId, `⏳ _Mengecek data "${keyword}" di Database Master..._`);
         
         let foundResults: any[] = [];
-        
-        // 1. Cek berdasarkan NIK
         const nikQuery = query(ref(database, 'master_data'), orderByChild('nik'), equalTo(keyword));
-        const nikSnap = await get(nikQuery);
-        if (nikSnap.exists()) {
-          foundResults = [...foundResults, ...Object.values(nikSnap.val())];
-        }
+        const kkQuery = query(ref(database, 'master_data'), orderByChild('noKK'), equalTo(keyword));
         
-        // 2. Cek berdasarkan Nomor KK jika kosong (karena query db real-time gak support OR)
-        if (foundResults.length === 0) {
-          const kkQuery = query(ref(database, 'master_data'), orderByChild('noKK'), equalTo(keyword));
-          const kkSnap = await get(kkQuery);
-          if (kkSnap.exists()) {
-            foundResults = [...foundResults, ...Object.values(kkSnap.val())];
+        try {
+          const [nikSnap, kkSnap] = await Promise.all([get(nikQuery), get(kkQuery)]);
+          
+          if (nikSnap.exists()) {
+            foundResults = [...foundResults, ...Object.values(nikSnap.val())];
           }
+          if (kkSnap.exists()) {
+            // Filter duplicates if any
+            const existingNiks = new Set(foundResults.map((r: any) => r.nik));
+            Object.values(kkSnap.val()).forEach((r: any) => {
+              if (!existingNiks.has(r.nik)) foundResults.push(r);
+            });
+          }
+        } catch (error) {
+          console.error("Master data query error:", error);
+          await sendMessage(chatId, `❌ Terjadi kesalahan atau batas waktu server terlampaui saat memuat data dari database. Pastikan NIK/KK valid.`);
+          return NextResponse.json({ ok: true });
         }
         
         if (foundResults.length > 0) {
