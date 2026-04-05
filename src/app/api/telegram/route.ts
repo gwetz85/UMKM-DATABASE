@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
-import { getDatabase, ref, get } from 'firebase/database';
+import { getDatabase, ref, get, query, orderByChild, equalTo } from 'firebase/database';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 
@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
                       `👤 /nama [nama] - Cari berdasar Nama\n` +
                       `📱 /hp [nomor] - Cari berdasar No. HP\n` +
                       `🏢 /koor [nama] - Cari berdasar Koordinator\n` +
+                      `✅ /cekdata [nomor] - Cek NIK/KK dengan Master Data\n` +
                       `ℹ️ /about - Informasi Aplikasi\n`;
         await sendMessage(chatId, reply);
       } 
@@ -187,6 +188,59 @@ export async function POST(req: NextRequest) {
           }
         } else {
            await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
+        }
+      } else if (text.startsWith('/cekdata')) {
+        const keyword = text.replace('/cekdata', '').trim();
+        if (!keyword) {
+          await sendMessage(chatId, "Ketikkan nomor NIK atau KK setelah perintah. Contoh: `/cekdata 1234567890123456`");
+          return NextResponse.json({ ok: true });
+        }
+        
+        await sendMessage(chatId, `⏳ _Mengecek data "${keyword}" di Database Master..._`);
+        
+        let foundResults: any[] = [];
+        
+        // 1. Cek berdasarkan NIK
+        const nikQuery = query(ref(database, 'master_data'), orderByChild('nik'), equalTo(keyword));
+        const nikSnap = await get(nikQuery);
+        if (nikSnap.exists()) {
+          foundResults = [...foundResults, ...Object.values(nikSnap.val())];
+        }
+        
+        // 2. Cek berdasarkan Nomor KK jika kosong (karena query db real-time gak support OR)
+        if (foundResults.length === 0) {
+          const kkQuery = query(ref(database, 'master_data'), orderByChild('noKK'), equalTo(keyword));
+          const kkSnap = await get(kkQuery);
+          if (kkSnap.exists()) {
+            foundResults = [...foundResults, ...Object.values(kkSnap.val())];
+          }
+        }
+        
+        if (foundResults.length > 0) {
+          let reply = `✅ *DATA DITEMUKAN* (${foundResults.length} record)\n\n`;
+          const formatCurrency = (val: any) => {
+            if (!val) return "Rp 0";
+            const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.-]+/g, "")) : val;
+            return isNaN(num) ? val : new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(num);
+          };
+          
+          foundResults.slice(0, 5).forEach((r, i) => {
+            reply += `*${i+1}. ${r.nama || "-"}*\n`;
+            reply += `▫️ Nomor: ${r.nomor || "-"}\n`;
+            reply += `▫️ NIK: \`${r.nik || "-"}\`\n`;
+            reply += `▫️ Nomor KK: \`${r.noKK || "-"}\`\n`;
+            reply += `▫️ Usaha: ${r.usaha || "-"}\n`;
+            reply += `▫️ Kategori Status: ${r.status || "-"}\n`;
+            reply += `▫️ Status LPJ: ${r.statusLpj || "-"}\n`;
+            reply += `▫️ Nominal: ${formatCurrency(r.nominal)}\n`;
+            reply += `▫️ Tahun: ${r.tahunPengajuan || "-"}\n`;
+            reply += `▫️ Kelurahan: ${r.kelurahan || "-"}\n`;
+            reply += `▫️ Alamat: ${r.alamat || "-"}\n\n`;
+          });
+          if (foundResults.length > 5) reply += `_Hanya menampilkan 5 data pertama._`;
+          await sendMessage(chatId, reply);
+        } else {
+          await sendMessage(chatId, `❌ *DATA TIDAK TERDAFTAR*\n\nMohon maaf, nomor \`${keyword}\` tidak ditemukan dalam database master.`);
         }
       } else {
         await sendMessage(chatId, "Perintah tidak dikenali. Gunakan /start untuk melihat menu.");
