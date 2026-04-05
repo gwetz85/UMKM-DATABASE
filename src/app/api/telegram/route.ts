@@ -199,25 +199,18 @@ export async function POST(req: NextRequest) {
         await sendMessage(chatId, `⏳ _Mengecek data "${keyword}" di Database Master..._`);
         
         let foundResults: any[] = [];
-        const nikQuery = query(ref(database, 'master_data'), orderByChild('nik'), equalTo(keyword));
-        const kkQuery = query(ref(database, 'master_data'), orderByChild('noKK'), equalTo(keyword));
         
         try {
-          const [nikSnap, kkSnap] = await Promise.all([get(nikQuery), get(kkQuery)]);
+          // Fetch once without unindexed queries to prevent Firebase SDK hanging on Vercel
+          const masterSnap = await get(ref(database, 'master_data'));
           
-          if (nikSnap.exists()) {
-            foundResults = [...foundResults, ...Object.values(nikSnap.val())];
-          }
-          if (kkSnap.exists()) {
-            // Filter duplicates if any
-            const existingNiks = new Set(foundResults.map((r: any) => r.nik));
-            Object.values(kkSnap.val()).forEach((r: any) => {
-              if (!existingNiks.has(r.nik)) foundResults.push(r);
-            });
+          if (masterSnap.exists()) {
+            const allData = Object.values(masterSnap.val()) as any[];
+            foundResults = allData.filter(r => r.nik === keyword || r.noKK === keyword);
           }
         } catch (error) {
           console.error("Master data query error:", error);
-          await sendMessage(chatId, `❌ Terjadi kesalahan atau batas waktu server terlampaui saat memuat data dari database. Pastikan NIK/KK valid.`);
+          await sendMessage(chatId, `❌ Terjadi kesalahan koneksi saat membaca data. Pastikan format instruksi sudah benar.`);
           return NextResponse.json({ ok: true });
         }
         
