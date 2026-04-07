@@ -111,13 +111,25 @@ export default function DashboardPage() {
 
 
   const kelurahanStats = useMemo(() => {
-    return kelurahanList
-      .map(k => ({
-        name: k,
-        count: activeData.filter(d => d.kelurahan === k).length
-      }))
-      .filter(item => item.count > 0)
-      .sort((a, b) => b.count - a.count)
+    const listMap = new Set(kelurahanList.map(k => k.toLowerCase()));
+    
+    // Official list matching (Case-insensitive)
+    const knownStats = kelurahanList.map(k => ({
+      name: k,
+      count: activeData.filter(d => d.kelurahan?.toLowerCase() === k.toLowerCase()).length
+    })).filter(item => item.count > 0);
+    
+    // Catch unmatched entries under "Lainnya"
+    const otherCount = activeData.filter(d => {
+      const k = d.kelurahan?.toLowerCase() || "";
+      return k !== "" && !listMap.has(k);
+    }).length;
+    
+    if (otherCount > 0) {
+      knownStats.push({ name: "Lainnya", count: otherCount });
+    }
+    
+    return knownStats.sort((a, b) => b.count - a.count);
   }, [activeData])
 
 
@@ -373,7 +385,7 @@ export default function DashboardPage() {
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Kuliner</span>
                   <span className="text-xl font-black text-primary">
-                    {activeData.filter(d => d.businessCategory?.toLowerCase().includes("kuliner")).length}
+                    {activeData.filter(d => d.businessCategory?.toLowerCase() === "kuliner").length}
                   </span>
                 </div>
                 <div className="p-2 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm group-hover:bg-primary/10 transition-colors">
@@ -384,7 +396,7 @@ export default function DashboardPage() {
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Bukan Kuliner</span>
                   <span className="text-xl font-black text-slate-700">
-                    {activeData.filter(d => d.businessCategory?.toLowerCase().includes("bukan kuliner")).length}
+                    {activeData.filter(d => d.businessCategory?.toLowerCase() === "bukan kuliner").length}
                   </span>
                 </div>
                 <div className="p-2 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm group-hover:bg-primary/10 transition-colors">
