@@ -50,7 +50,10 @@ export default function DashboardPage() {
   const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery)
 
   const activeData = useMemo(() => {
-    return allData?.filter(d => d.status !== 'rejected' && d.status !== 'blacklist') || []
+    return allData?.filter(d => {
+      const status = d.status?.toLowerCase().trim() || "";
+      return status !== 'rejected' && status !== 'blacklist';
+    }) || []
   }, [allData])
 
   const coordinatorStats = useMemo(() => {
@@ -111,18 +114,18 @@ export default function DashboardPage() {
 
 
   const kelurahanStats = useMemo(() => {
-    const listMap = new Set(kelurahanList.map(k => k.toLowerCase()));
+    const listMap = new Set(kelurahanList.map(k => k.toLowerCase().trim()));
     const knownStats = kelurahanList.map(k => ({
       name: k,
-      count: activeData.filter(d => d.kelurahan?.toLowerCase() === k.toLowerCase()).length
+      count: activeData.filter(d => d.kelurahan?.toLowerCase().trim() === k.toLowerCase().trim()).length
     })).filter(item => item.count > 0);
     
     const otherCount = activeData.filter(d => {
-      const k = d.kelurahan?.toLowerCase() || "";
+      const k = d.kelurahan?.toLowerCase().trim() || "";
       return k !== "" && !listMap.has(k);
     }).length;
 
-    const emptyCount = activeData.filter(d => !d.kelurahan).length;
+    const emptyCount = activeData.filter(d => !d.kelurahan?.trim()).length;
     
     if (otherCount + emptyCount > 0) {
       knownStats.push({ name: "Lainnya / Kosong", count: otherCount + emptyCount });
@@ -132,15 +135,15 @@ export default function DashboardPage() {
   }, [activeData])
 
   const genderStats = useMemo(() => {
-    const laki = activeData.filter(d => d.gender?.toLowerCase() === "laki-laki").length;
-    const perempuan = activeData.filter(d => d.gender?.toLowerCase() === "perempuan").length;
+    const laki = activeData.filter(d => d.gender?.toLowerCase().trim() === "laki-laki").length;
+    const perempuan = activeData.filter(d => d.gender?.toLowerCase().trim() === "perempuan").length;
     const unknown = activeData.length - (laki + perempuan);
     return { laki, perempuan, unknown };
   }, [activeData])
 
   const categoryStats = useMemo(() => {
-    const kuliner = activeData.filter(d => d.businessCategory?.toLowerCase() === "kuliner").length;
-    const bukanKuliner = activeData.filter(d => d.businessCategory?.toLowerCase() === "bukan kuliner").length;
+    const kuliner = activeData.filter(d => d.businessCategory?.toLowerCase().trim() === "kuliner").length;
+    const bukanKuliner = activeData.filter(d => d.businessCategory?.toLowerCase().trim() === "bukan kuliner").length;
     const unknown = activeData.length - (kuliner + bukanKuliner);
     return { kuliner, bukanKuliner, unknown };
   }, [activeData])
@@ -199,7 +202,7 @@ export default function DashboardPage() {
     },
     { 
       name: "Data Ditolak", 
-      value: allData?.filter(d => d.status === "rejected").length || 0, 
+      value: allData?.filter(d => d.status?.toLowerCase().trim() === "rejected").length || 0, 
       icon: UserX, 
       color: "text-red-600", 
       bg: "bg-red-100/50" 
