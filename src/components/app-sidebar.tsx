@@ -25,7 +25,9 @@ import {
   History,
   FileText,
   ChevronRight,
-  BarChart3
+  BarChart3,
+  ClipboardCheck,
+  ListChecks
 } from "lucide-react"
 
 import { usePathname, useRouter } from "next/navigation"
@@ -146,6 +148,18 @@ export function AppSidebar() {
       href: "/verify-actor", 
       icon: ShieldCheck, 
       show: isAdmin || isPetugas || isMonitoring
+    },
+    { 
+      name: "Verifikasi & Validasi Dinas", 
+      href: "/verifikasi-dinas", 
+      icon: ClipboardCheck, 
+      show: isAdmin 
+    },
+    { 
+      name: "HASIL VERIFIKASI", 
+      href: "/hasil-verifikasi", 
+      icon: ListChecks, 
+      show: isAdmin || isPetugas 
     },
     { 
       name: "Data Pelaku", 

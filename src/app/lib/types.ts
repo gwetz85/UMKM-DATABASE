@@ -1,5 +1,5 @@
 
-export type BusinessActorStatus = 'pending' | 'verified_actor' | 'bank_pending' | 'lpj_pending' | 'finish' | 'rejected' | 'blacklist';
+export type BusinessActorStatus = 'pending' | 'verified_actor' | 'verified_dinas' | 'bank_pending' | 'lpj_pending' | 'finish' | 'rejected' | 'blacklist';
 
 export interface BusinessActor {
   id: string;
@@ -31,4 +31,6 @@ export interface BusinessActor {
   createdBy?: string; // Nama user yang menginput data
   lpjNominal?: number;
   lpjEntryDate?: string;
+  hasilVerifikasiDinas?: string;
+  keteranganDinas?: string;
 }
