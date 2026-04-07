@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, deleteDocumentNonBlocking, useObject, updateDocumentNonBlocking } from "@/firebase"
-import { ref, push, set } from "firebase/database"
+import { ref, push, set, query } from "firebase/database"
+import { cn } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -54,6 +55,41 @@ export default function KuotaKoordinatorPage() {
   }, [database])
 
   const { data: kuotaData, isLoading } = useList(memoQuery)
+
+  const memoQueryActor = useMemoFirebase(() => {
+    if (!database) return null
+    return query(ref(database, 'businessActors'))
+  }, [database])
+  
+  const { data: allData } = useList(memoQueryActor)
+
+  const combinedKuotaData = useMemo(() => {
+    if (!kuotaData) return []
+    
+    const counts: Record<string, number> = {}
+    if (allData) {
+      allData.forEach((d: any) => {
+        if (d.status === 'rejected') return;
+        if (d.coordinator) {
+          const name = d.coordinator.toUpperCase().trim()
+          counts[name] = (counts[name] || 0) + 1
+        }
+      })
+    }
+
+    return kuotaData.map((item: any) => {
+      const quota = item.quota || 0
+      const nameUpper = item.name ? item.name.toUpperCase().trim() : ''
+      const achieved = counts[nameUpper] || 0
+      const remaining = quota - achieved
+      return {
+        ...item,
+        quota,
+        achieved,
+        remaining
+      }
+    })
+  }, [kuotaData, allData])
 
   const handleAddData = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -111,9 +147,12 @@ export default function KuotaKoordinatorPage() {
   }
 
   const totalQuota = useMemo(() => {
-    if (!kuotaData) return 0
-    return kuotaData.reduce((acc: number, curr: any) => acc + (curr.quota || 0), 0)
-  }, [kuotaData])
+    return combinedKuotaData.reduce((acc: number, curr: any) => acc + curr.quota, 0)
+  }, [combinedKuotaData])
+
+  const totalAchieved = useMemo(() => {
+    return combinedKuotaData.reduce((acc: number, curr: any) => acc + curr.achieved, 0)
+  }, [combinedKuotaData])
 
   if (!mounted) return null
 
@@ -181,12 +220,14 @@ export default function KuotaKoordinatorPage() {
                 <TableRow>
                   <TableHead className="font-bold uppercase text-[10px] w-[50px] text-center">No</TableHead>
                   <TableHead className="font-bold uppercase text-[10px]">Nama Koordinator</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] text-center">Jumlah Kuota</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px] text-center">Kuota Koordinator</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px] text-center">Kuota Tercapai</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px] text-center">Sisa Kuota</TableHead>
                   <TableHead className="text-right font-bold uppercase text-[10px]">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {kuotaData && kuotaData.map((item: any, index: number) => (
+                {combinedKuotaData.map((item: any, index: number) => (
                   <TableRow key={item.id} className="hover:bg-muted/10">
                     <TableCell className="font-bold text-slate-700 text-center">
                       {index + 1}
@@ -195,7 +236,22 @@ export default function KuotaKoordinatorPage() {
                       {item.name}
                     </TableCell>
                     <TableCell className="text-center font-black text-slate-800">
-                      {item.quota}
+                       <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
+                          {item.quota}
+                       </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                       <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
+                          {item.achieved}
+                       </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                       <span className={cn(
+                          "inline-flex items-center justify-center font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border",
+                          item.remaining <= 0 ? "bg-red-100 text-red-700 border-red-200" : "bg-primary text-white border-primary/20"
+                        )}>
+                          {item.remaining}
+                       </span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -241,9 +297,9 @@ export default function KuotaKoordinatorPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {(!kuotaData || kuotaData.length === 0) && (
+                {combinedKuotaData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic font-medium">
+                    <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic font-medium">
                       Belum ada data target kuota yang didaftarkan.
                     </TableCell>
                   </TableRow>
@@ -254,10 +310,13 @@ export default function KuotaKoordinatorPage() {
                   <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs">
                     Total Keseluruhan Kuota Data
                   </TableCell>
-                  <TableCell className="text-center font-black text-primary text-base">
+                  <TableCell className="text-center font-black text-slate-600 text-base">
                     {totalQuota}
                   </TableCell>
-                  <TableCell></TableCell>
+                  <TableCell className="text-center font-black text-emerald-600 text-base">
+                    {totalAchieved}
+                  </TableCell>
+                  <TableCell colSpan={2}></TableCell>
                 </TableRow>
               </TableFooter>
             </Table>

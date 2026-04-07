@@ -49,10 +49,50 @@ export default function DashboardPage() {
 
   const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery)
 
+  const coordinatorStats = useMemo(() => {
+    if (!allData) return []
+    const counts: Record<string, number> = {}
+    allData.forEach(d => {
+      if (d.status === 'rejected') return;
+      if (d.coordinator) {
+        const name = d.coordinator.toUpperCase().trim()
+        counts[name] = (counts[name] || 0) + 1
+      }
+    })
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+  }, [allData])
+
+  const combinedKuotaData = useMemo(() => {
+    if (!kuotaData) return []
+    
+    const achievedMap: Record<string, number> = {}
+    coordinatorStats.forEach(stat => {
+      achievedMap[stat.name] = stat.count
+    })
+
+    return kuotaData.map((item: any) => {
+      const quota = item.quota || 0
+      const nameUpper = item.name ? item.name.toUpperCase().trim() : ''
+      const achieved = achievedMap[nameUpper] || 0
+      const remaining = quota - achieved
+      return {
+        ...item,
+        quota,
+        achieved,
+        remaining
+      }
+    })
+  }, [kuotaData, coordinatorStats])
+
   const totalKuotaDashboard = useMemo(() => {
-    if (!kuotaData) return 0
-    return kuotaData.reduce((acc: number, curr: any) => acc + (curr.quota || 0), 0)
-  }, [kuotaData])
+    return combinedKuotaData.reduce((acc, curr) => acc + curr.quota, 0)
+  }, [combinedKuotaData])
+
+  const totalAchievedDashboard = useMemo(() => {
+    return combinedKuotaData.reduce((acc, curr) => acc + curr.achieved, 0)
+  }, [combinedKuotaData])
 
   const kelurahanList = [
     "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
@@ -72,22 +112,7 @@ export default function DashboardPage() {
       .sort((a, b) => b.count - a.count)
   }, [allData])
 
-  const coordinatorStats = useMemo(() => {
-    if (!allData) return []
-    const counts: Record<string, number> = {}
-    allData.forEach(d => {
-      // Abaikan data jika sudah berstatus Cancell / Ditolak (status: 'rejected')
-      if (d.status === 'rejected') return;
-      
-      if (d.coordinator) {
-        const name = d.coordinator.toUpperCase().trim()
-        counts[name] = (counts[name] || 0) + 1
-      }
-    })
-    return Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-  }, [allData])
+
 
   const handleCoordinatorClick = (name: string) => {
     window.location.href = `/actor-data?coordinator=${encodeURIComponent(name)}`;
@@ -185,34 +210,87 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="glass overflow-hidden transition-all hover:shadow-xl">
-            <CardHeader className="border-b border-slate-200/50 pb-4">
-              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-primary" /> Sebaran Data per Kelurahan
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 md:p-6">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
-                {kelurahanStats.map((item) => (
-                  <div 
-                    key={item.name} 
-                    className="p-3 md:p-4 rounded-xl glass-panel flex flex-col justify-between hover:shadow-lg hover:border-white/80 hover:bg-white/90 active:scale-95 transition-all duration-300 group cursor-pointer"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                        <span className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase leading-tight group-hover:text-primary transition-colors">{item.name}</span>
-                        <MapPin className="w-3 h-3 text-primary/30 group-hover:text-primary transition-colors" />
-                    </div>
-                    <div className="text-lg md:text-2xl font-black text-primary">{item.count}</div>
-                  </div>
-                ))}
-                {kelurahanStats.length === 0 && !isLoading && (
-                  <div className="col-span-full py-10 text-center text-muted-foreground italic text-xs">
-                    Belum ada data wilayah terekam.
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {isAdmin && (
+            <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
+              <CardHeader className="bg-primary/10 pb-4">
+                <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
+                  <BarChart3 className="w-5 h-5" /> KUOTA KOORDINATOR
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-[350px] overflow-auto">
+                  <Table>
+                    <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="w-[40px] text-center font-black text-slate-800 text-[10px] md:text-xs">No</TableHead>
+                        <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">Nama Koordinator</TableHead>
+                        <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Koordinator</TableHead>
+                        <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Tercapai</TableHead>
+                        <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Sisa Kuota</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {combinedKuotaData.map((item: any, index: number) => (
+                        <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                          <TableCell className="text-center font-bold text-slate-600 text-xs">{index + 1}</TableCell>
+                          <TableCell className="font-black text-primary text-xs tracking-tight">{item.name}</TableCell>
+                          <TableCell className="text-center">
+                            <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
+                              {item.quota}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
+                              {item.achieved}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                           <span className={cn(
+                              "inline-flex items-center justify-center font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border",
+                              item.remaining <= 0 ? "bg-red-100 text-red-700 border-red-200" : "bg-primary text-white border-primary/20"
+                            )}>
+                              {item.remaining}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {combinedKuotaData.length === 0 && !isKuotaLoading && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-10 text-muted-foreground font-bold italic text-xs">
+                            Belum ada data koordinator terekam.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      {isKuotaLoading && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-10">
+                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                              <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                              <span className="text-xs font-bold italic">Memuat data koordinator...</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                    <TableFooter>
+                      <TableRow className="bg-primary/5 border-t-2 border-primary/20">
+                        <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs py-3">
+                          Total Kuota Data
+                        </TableCell>
+                        <TableCell className="text-center font-black text-slate-600 text-sm">
+                          {totalKuotaDashboard}
+                        </TableCell>
+                        <TableCell className="text-center font-black text-emerald-600 text-sm">
+                          {totalAchievedDashboard}
+                        </TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Cloud Storage Status Card */}
           <Card className="glass overflow-hidden transition-all hover:shadow-xl">
@@ -250,68 +328,34 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-6">
-          {isAdmin && (
-            <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
-              <CardHeader className="bg-primary/10 pb-4">
-                <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
-                  <BarChart3 className="w-5 h-5" /> KUOTA KOORDINATOR
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="max-h-[350px] overflow-auto">
-                  <Table>
-                    <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="w-[50px] text-center font-black text-slate-800 text-[11px] md:text-xs">No</TableHead>
-                        <TableHead className="font-black text-slate-800 text-[11px] md:text-xs">Nama Koordinator</TableHead>
-                        <TableHead className="text-center font-black text-slate-800 text-[11px] md:text-xs">Jumlah Kuota</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {kuotaData && kuotaData.map((item: any, index: number) => (
-                        <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                          <TableCell className="text-center font-bold text-slate-600 text-xs">{index + 1}</TableCell>
-                          <TableCell className="font-black text-primary text-xs tracking-tight">{item.name}</TableCell>
-                          <TableCell className="text-center">
-                            <span className="inline-flex items-center justify-center bg-primary text-white font-black px-4 py-1.5 rounded-full min-w-[3.5rem] shadow-sm text-xs">
-                              {item.quota}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {(!kuotaData || kuotaData.length === 0) && !isKuotaLoading && (
-                        <TableRow>
-                          <TableCell colSpan={3} className="text-center py-10 text-muted-foreground font-bold italic text-xs">
-                            Belum ada data koordinator terekam.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                      {isKuotaLoading && (
-                        <TableRow>
-                          <TableCell colSpan={3} className="text-center py-10">
-                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                              <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
-                              <span className="text-xs font-bold italic">Memuat data koordinator...</span>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                    <TableFooter>
-                      <TableRow className="bg-primary/5 border-t-2 border-primary/20">
-                        <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs">
-                          Total Keseluruhan Kuota
-                        </TableCell>
-                        <TableCell className="text-center font-black text-primary text-base">
-                          {totalKuotaDashboard}
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none">
+            <CardHeader className="border-b border-slate-200/50 pb-4">
+              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary" /> Sebaran per Kelurahan
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 md:p-6">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
+                {kelurahanStats.map((item) => (
+                  <div 
+                    key={item.name} 
+                    className="p-3 rounded-xl glass-panel flex flex-col justify-between hover:shadow-lg hover:border-white/80 hover:bg-white/90 active:scale-95 transition-all duration-300 group cursor-pointer"
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase leading-tight group-hover:text-primary transition-colors pr-1">{item.name}</span>
+                        <MapPin className="w-3 h-3 text-primary/30 group-hover:text-primary transition-colors shrink-0" />
+                    </div>
+                    <div className="text-lg font-black text-primary">{item.count}</div>
+                  </div>
+                ))}
+                {kelurahanStats.length === 0 && !isLoading && (
+                  <div className="col-span-full py-10 text-center text-muted-foreground italic text-xs">
+                    Belum ada data wilayah terekam.
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           <Card className="glass overflow-hidden transition-all hover:shadow-xl">
             <CardHeader className="border-b border-slate-200/50 pb-4">
