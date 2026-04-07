@@ -16,7 +16,6 @@ import {
   LogIn, 
   MonitorOff, 
   SearchCheck, 
-  DatabaseZap, 
   UserPlus,
   ArrowLeft,
   CheckCircle2
@@ -28,7 +27,6 @@ import { useToast } from "@/hooks/use-toast"
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [registering, setRegistering] = useState(false)
-  const [seeding, setSeeding] = useState(false)
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   
@@ -188,27 +186,7 @@ export default function LoginPage() {
     }
   }
 
-  const seedMonitoringUser = async () => {
-    setSeeding(true)
-    try {
-      const userRef = ref(database, `system_users/monitoring`)
-      await update(userRef, {
-        fullName: "Monitoring",
-        password: "monitoring",
-        role: "monitoring",
-        uid: null,
-        addedAt: new Date().toISOString()
-      })
-      
-      toast({ title: "Inisialisasi Berhasil", description: "User 'monitoring' telah ditambahkan ke database. Silakan login." })
-      setIdentifier("monitoring")
-      setPassword("monitoring")
-    } catch (e) {
-      toast({ variant: "destructive", title: "Gagal Inisialisasi", description: "Pastikan Anda memiliki koneksi internet." })
-    } finally {
-      setSeeding(false)
-    }
-  }
+
 
   return (
     <div 
@@ -358,7 +336,7 @@ export default function LoginPage() {
                 <div className="flex gap-2 w-full">
                   <Button 
                     className="flex-1 bg-primary hover:bg-primary/90 h-12 text-md font-bold shadow-lg transition-all" 
-                    disabled={loading || seeding}
+                    disabled={loading}
                   >
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -378,15 +356,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="pt-2 flex flex-col items-center gap-3">
-                  <Button 
-                    variant="ghost" 
-                    type="button" 
-                    onClick={seedMonitoringUser} 
-                    disabled={seeding}
-                    className="text-[10px] text-muted-foreground/40 hover:text-emerald-600 transition-colors h-auto p-0"
-                  >
-                    {seeding ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <DatabaseZap className="w-3 h-3 mr-1" />} Inisialisasi Monitoring
-                  </Button>
+
 
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60 font-medium tracking-tight">
                     <MonitorOff className="w-3 h-3" /> Kebijakan 1 User 1 Perangkat Aktif
