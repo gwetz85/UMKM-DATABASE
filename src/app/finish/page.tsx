@@ -60,7 +60,7 @@ function FinishContent() {
   
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     // Status filter - equivalent to previous orderByChild('status').equalTo('finish')
-    if (a.status !== 'finish') return false;
+    if (a.status !== 'finish' || !a.lpjNominal) return false;
 
     const matchesSearch = 
       a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,7 +94,7 @@ function FinishContent() {
       fullName: formData.get('fullName') as string,
       nik: formData.get('nik') as string,
       noKK: formData.get('noKK') as string,
-      gender: formData.get('gender') as string,
+      gender: formData.get('gender') as "Laki-laki" | "Perempuan",
       pobDob: formData.get('pobDob') as string,
       phone: formData.get('phone') as string,
       kecamatan: formData.get('kecamatan') as string,
@@ -102,7 +102,7 @@ function FinishContent() {
       rtRw: formData.get('rtRw') as string,
       address: formData.get('address') as string,
       businessName: formData.get('businessName') as string,
-      businessCategory: formData.get('businessCategory') as string,
+      businessCategory: formData.get('businessCategory') as "Kuliner" | "Bukan Kuliner",
       businessLocation: formData.get('businessLocation') as string,
       coordinator: formData.get('coordinator') as string,
       bankName: formData.get('bankName') as string,

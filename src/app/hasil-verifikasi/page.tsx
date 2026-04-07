@@ -74,7 +74,8 @@ export default function HasilVerifikasiPage() {
       status: 'finish',
       bankName: bankName,
       bankNumber: bankNumber,
-      bankOwner: bankOwner
+      bankOwner: bankOwner,
+      lpjEntryDate: new Date().toISOString()
     })
 
     toast({ title: "Data Diselesaikan", description: "Data telah dipindahkan ke menu Rekening Bank dan Finish." })

@@ -54,7 +54,7 @@ export default function LPJPage() {
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
   const actors = useMemo(() => {
-      return allActorsRaw?.filter(a => a.status === 'lpj_pending' || a.status === 'blacklist') || []
+      return allActorsRaw?.filter(a => (a.status === 'finish' && !a.lpjNominal) || a.status === 'blacklist') || []
   }, [allActorsRaw])
 
   const handleSaveLPJ = async (actorId: string, nominal: string) => {
@@ -79,7 +79,7 @@ export default function LPJPage() {
     if (confirm("Kembalikan status data ini ke Antrean LPJ?")) {
         const actorRef = ref(database, `businessActors/${actorId}`)
         await updateDocumentNonBlocking(actorRef, { 
-            status: 'lpj_pending',
+            status: 'finish',
             lpjEntryDate: new Date().toISOString() // Reset entry date to give another 14 days
         })
         toast({ title: "Status Dipulihkan", description: "Data kembali ke daftar tunggu LPJ." })
@@ -130,7 +130,7 @@ export default function LPJPage() {
                     const deadlineDate = new Date(entryDate.getTime() + (14 * 24 * 60 * 60 * 1000))
                     const daysInLPJ = Math.floor((new Date().getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24))
                     const isOverdue = daysInLPJ >= 14
-                    const isBlacklisted = actor.status === 'blacklist' || (isOverdue && actor.status === 'lpj_pending')
+                    const isBlacklisted = actor.status === 'blacklist' || (isOverdue && actor.status === 'finish')
                     
                     // Auto-blacklist logic (visual cue, in a real app this would be a trigger)
                     const statusLabel = isBlacklisted ? "BLACKLIST" : "PENDING LPJ"
