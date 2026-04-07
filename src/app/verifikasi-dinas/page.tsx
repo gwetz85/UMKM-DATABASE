@@ -44,7 +44,7 @@ export default function VerifikasiDinasPage() {
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
 
-  const actors = allActorsRaw?.filter(a => a.status === 'verified_actor')
+  const actors = allActorsRaw?.filter(a => a.status === 'lpj_pending')
 
   const filteredActors = actors?.filter(actor =>
     actor.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||

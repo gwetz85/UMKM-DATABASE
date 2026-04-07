@@ -71,13 +71,13 @@ export default function HasilVerifikasiPage() {
 
     const actorRef = ref(database, `businessActors/${inputtingBankActor.id}`)
     updateDocumentNonBlocking(actorRef, {
-      status: 'bank_pending',
+      status: 'finish',
       bankName: bankName,
       bankNumber: bankNumber,
       bankOwner: bankOwner
     })
 
-    toast({ title: "Berhasil dilanjutkan", description: "Data dikirim ke menu Verifikasi Data untuk divalidasi rekeningnya." })
+    toast({ title: "Data Diselesaikan", description: "Data telah dipindahkan ke menu Rekening Bank dan Finish." })
     setInputtingBankActor(null)
     setIsSubmittingBank(false)
   }
