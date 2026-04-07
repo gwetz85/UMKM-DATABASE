@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
@@ -20,6 +20,11 @@ import { useSearchParams, useRouter } from "next/navigation"
 
 import { cn } from "@/lib/utils"
 import { generateRegistrationForm } from "@/lib/pdf-generator"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
+const BANK_LIST = [
+  "BCA", "BNI", "BRI", "BRK", "MANDIRI", "PANIN", "OCBC", "DANAMON", "BUKOPIN", "BTN"
+]
 
 
 function ActorDataContent() {
@@ -266,6 +271,19 @@ function ActorDataContent() {
                         >
                           <Printer className="w-4 h-4" />
                         </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-8 w-8 p-0 text-purple-600 hover:bg-purple-50 border border-transparent hover:border-purple-200"
+                          onClick={() => {
+                            setViewingActor(actor)
+                            setIsEditMode(false)
+                            setEditingBankMode(true)
+                          }}
+                          title="Teruskan ke Verifikasi Data (Input Rekening)"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -509,7 +527,16 @@ function ActorDataContent() {
                   </div>
                   <div className="space-y-2">
                     <Label className="font-bold">Nama Bank</Label>
-                    <Input name="bankName" defaultValue={viewingActor.bankName} placeholder="Contoh: BPD BALI" required />
+                    <Select name="bankName" defaultValue={viewingActor.bankName}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih Bank..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BANK_LIST.map(bank => (
+                          <SelectItem key={bank} value={bank}>{bank}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
