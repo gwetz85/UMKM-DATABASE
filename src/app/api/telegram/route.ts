@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
-import { getDatabase, ref, get, query, orderByChild, equalTo } from 'firebase/database';
+import { getDatabase, ref, get, query, orderByChild, equalTo, push, set } from 'firebase/database';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
       if (text.startsWith('/start') || text.startsWith('/help')) {
         const reply = `Selamat datang di *Bot UMKM Database* 🏬\n\n` +
-                      `Bot ini hanya melayani pemantauan data (Read-Only).\n` +
+                      `Bot ini melayani pemantauan & input data.\n` +
                       `✅ *Menu Perintah:*\n` +
                       `📊 /stats - Ringkasan data\n` +
                       `🔍 /search [kata] - Cari umum\n` +
@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
                       `📱 /hp [nomor] - Cari berdasar No. HP\n` +
                       `🏢 /koor [nama] - Cari berdasar Koordinator\n` +
                       `✅ /cekdata [nomor] - Cek NIK/KK dengan Master Data\n` +
+                      `📝 /inputdata - Input data baru via Bot\n` +
                       `ℹ️ /about - Informasi Aplikasi\n`;
         await sendMessage(chatId, reply);
       } 
@@ -239,6 +240,111 @@ export async function POST(req: NextRequest) {
           await sendMessage(chatId, reply);
         } else {
           await sendMessage(chatId, `❌ *DATA TIDAK TERDAFTAR*\n\nMohon maaf, nomor \`${keyword}\` tidak ditemukan dalam database master.`);
+        }
+      } else if (text.startsWith('/inputdata')) {
+        const reply = `Silakan *COPY* template di bawah ini, isi data dengan lengkap, lalu kirim kembali ke bot:\n\n` +
+                      `\`/simpandata\n` +
+                      `Nama Lengkap:\n` +
+                      `Jenis Kelamin:\n` +
+                      `NIK:\n` +
+                      `Nomor KK:\n` +
+                      `TTL:\n` +
+                      `Nomor HP:\n` +
+                      `Alamat:\n` +
+                      `RT/RW:\n` +
+                      `Kelurahan:\n` +
+                      `Kecamatan:\n` +
+                      `Jenis Usaha:\n` +
+                      `Nama Usaha:\n` +
+                      `Lokasi Usaha:\n` +
+                      `Koordinator:\`\n\n` +
+                      `_Catatan:_\n` +
+                      `_▪️ Biarkan /simpandata di baris paling atas_\n` +
+                      `_▪️ Isi data SETELAH tanda titik dua ( : )_\n` +
+                      `_▪️ Jenis Kelamin: Laki-laki atau Perempuan_\n` +
+                      `_▪️ Jenis Usaha: Kuliner atau Bukan Kuliner_`;
+        await sendMessage(chatId, reply);
+      } else if (text.startsWith('/simpandata')) {
+        const lines = text.split('\\n');
+        let parsedData: any = {};
+        
+        lines.forEach((line: string) => {
+          if (line.includes(':')) {
+            const parts = line.split(':');
+            const key = parts[0].trim().toLowerCase();
+            const value = parts.slice(1).join(':').trim(); // in case value has colon
+            if (key.includes('nama lengkap')) parsedData.fullName = value;
+            else if (key.includes('jenis kelamin')) parsedData.gender = value;
+            else if (key.includes('nik')) parsedData.nik = value;
+            else if (key.includes('nomor kk')) parsedData.noKK = value;
+            else if (key.includes('ttl')) parsedData.pobDob = value;
+            else if (key.includes('nomor hp')) parsedData.phone = value;
+            else if (key === 'alamat') parsedData.address = value;
+            else if (key.includes('rt/rw')) parsedData.rtRw = value;
+            else if (key.includes('kelurahan')) parsedData.kelurahan = value;
+            else if (key.includes('kecamatan')) parsedData.kecamatan = value;
+            else if (key.includes('jenis usaha')) parsedData.businessCategory = value;
+            else if (key.includes('nama usaha')) parsedData.businessName = value;
+            else if (key.includes('lokasi usaha')) parsedData.businessLocation = value;
+            else if (key.includes('koordinator')) parsedData.coordinator = value;
+          }
+        });
+
+        if (!parsedData.fullName || !parsedData.nik) {
+          await sendMessage(chatId, `❌ Gagal menyimpan. Pastikan format /simpandata tidak rusak dan isian NIK serta Nama Lengkap tidak kosong.`);
+          return NextResponse.json({ ok: true });
+        }
+        
+        await sendMessage(chatId, `⏳ _Memproses input data untuk NIK: ${parsedData.nik}..._`);
+
+        // Check if NIK already exists in businessActors
+        const actorsRef = ref(database, 'businessActors');
+        const snapshot = await get(actorsRef);
+        let duplicate = false;
+        
+        if (snapshot.exists()) {
+          snapshot.forEach((child) => {
+            const val = child.val();
+            if (val.nik === parsedData.nik || val.noKK === parsedData.nik) { // Just a quick sanity check
+              duplicate = true;
+            }
+          });
+        }
+        
+        if (duplicate) {
+          await sendMessage(chatId, `❌ *Input Ditolak*\n\nNIK \`${parsedData.nik}\` sudah terdaftar dalam sistem (sedang pending atau sudah terverifikasi).`);
+          return NextResponse.json({ ok: true });
+        }
+
+        try {
+          const newData = {
+            ownerId: auth.currentUser?.uid || "telegram_bot",
+            createdBy: `Telegram Bot (${chatId})`,
+            fullName: parsedData.fullName || "",
+            nik: parsedData.nik || "",
+            noKK: parsedData.noKK || "",
+            pobDob: parsedData.pobDob || "",
+            gender: parsedData.gender || "",
+            phone: parsedData.phone || "",
+            address: parsedData.address || "",
+            rtRw: parsedData.rtRw || "",
+            kelurahan: parsedData.kelurahan || "",
+            kecamatan: parsedData.kecamatan || "",
+            businessCategory: parsedData.businessCategory || "",
+            businessName: parsedData.businessName || "",
+            businessLocation: parsedData.businessLocation || "",
+            coordinator: parsedData.coordinator || "",
+            status: "pending",
+            createdAt: new Date().toISOString(),
+          };
+          
+          const newActorRef = push(actorsRef);
+          await set(newActorRef, newData);
+          
+          await sendMessage(chatId, `✅ *DATA BERHASIL DI-INPUT*\n\nData *${parsedData.fullName}* berhasil masuk ke menu *Verifikasi Admin*.\n\nMohon menunggu tim Admin melakukan verifikasi data ini.`);
+        } catch (error) {
+           console.error("Error saving data from bot:", error);
+           await sendMessage(chatId, `❌ Terjadi kesalahan saat menyimpan data. Silakan coba lagi.`);
         }
       } else {
         await sendMessage(chatId, "Perintah tidak dikenali. Gunakan /start untuk melihat menu.");
