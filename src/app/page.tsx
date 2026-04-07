@@ -83,6 +83,10 @@ export default function DashboardPage() {
         achieved,
         remaining
       }
+    }).sort((a: any, b: any) => {
+      const nameA = (a.name || "").toLowerCase()
+      const nameB = (b.name || "").toLowerCase()
+      return nameA.localeCompare(nameB)
     })
   }, [kuotaData, coordinatorStats])
 
