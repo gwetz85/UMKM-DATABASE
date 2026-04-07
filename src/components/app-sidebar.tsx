@@ -306,14 +306,14 @@ export function AppSidebar() {
                   <span className="text-5xl font-black text-white tabular-nums tracking-tighter drop-shadow-md leading-none">
                     {currentTime.split(':')[0] || '00'}
                   </span>
-                  <span className="text-4xl font-black text-white/30 animate-blink px-1 leading-none mb-1">:</span>
+                  <span className="text-4xl font-black text-white/30 animate-blink px-1 leading-none">:</span>
                   <span className="text-5xl font-black text-white tabular-nums tracking-tighter drop-shadow-md leading-none">
                     {currentTime.split(':')[1] || '00'}
                   </span>
                 </div>
                 
-                <div className="flex flex-col items-start mb-0.5">
-                  <span className="text-[10px] font-black text-accent drop-shadow-[0_0_8px_rgba(34,197,94,0.4)] leading-none mb-1 uppercase tracking-widest">
+                <div className="flex flex-col items-start">
+                  <span className="text-[11px] font-black text-white drop-shadow-[0_0_10px_rgba(34,197,94,0.8)] leading-none mb-1.5 uppercase tracking-[0.2em]">
                     DETIK
                   </span>
                   <span className="text-2xl font-black text-white/60 tabular-nums leading-none drop-shadow-sm">

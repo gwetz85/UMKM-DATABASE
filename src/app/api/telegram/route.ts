@@ -277,23 +277,54 @@ export async function POST(req: NextRequest) {
           if (line.includes(':')) {
             const parts = line.split(':');
             const key = parts[0].trim().toLowerCase();
-            const value = parts.slice(1).join(':').trim(); // in case value has colon
+            const value = parts.slice(1).join(':').trim();
             if (key.includes('nama lengkap')) parsedData.fullName = value;
-            else if (key.includes('jenis kelamin')) parsedData.gender = value;
+            else if (key.includes('jenis kelamin') || key === 'kelamin') {
+              if (value.toLowerCase().includes('perempuan')) parsedData.gender = "Perempuan";
+              else if (value.toLowerCase().includes('laki')) parsedData.gender = "Laki-laki";
+              else parsedData.gender = value;
+            }
             else if (key.includes('nik')) parsedData.nik = value;
             else if (key.includes('nomor kk')) parsedData.noKK = value;
             else if (key.includes('ttl')) parsedData.pobDob = value;
             else if (key.includes('nomor hp')) parsedData.phone = value;
             else if (key === 'alamat') parsedData.address = value;
             else if (key.includes('rt/rw')) parsedData.rtRw = value;
-            else if (key.includes('kelurahan')) parsedData.kelurahan = value;
+            else if (key.includes('kelurahan')) {
+              // Normalize Kelurahan if it matches predefined list
+              const kelList = [
+                "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
+                "Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru",
+                "Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana",
+                "Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"
+              ];
+              const matched = kelList.find(k => k.toLowerCase() === value.toLowerCase());
+              parsedData.kelurahan = matched || value;
+            }
             else if (key.includes('kecamatan')) parsedData.kecamatan = value;
-            else if (key.includes('jenis usaha')) parsedData.businessCategory = value;
+            else if (key.includes('jenis usaha') || key === 'usaha') {
+              if (value.toLowerCase().includes('bukan kuliner')) parsedData.businessCategory = "Bukan Kuliner";
+              else if (value.toLowerCase().includes('kuliner')) parsedData.businessCategory = "Kuliner";
+              else parsedData.businessCategory = value;
+            }
             else if (key.includes('nama usaha')) parsedData.businessName = value;
             else if (key.includes('lokasi usaha')) parsedData.businessLocation = value;
             else if (key.includes('koordinator')) parsedData.coordinator = value;
           }
         });
+
+        // Auto-detect Kecamatan from Kelurahan if empty or missing
+        if (parsedData.kelurahan && !parsedData.kecamatan) {
+          const groupKota = ["Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat"];
+          const groupBarat = ["Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru"];
+          const groupTimur = ["Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana", "Air Raja"];
+          const groupBestari = ["Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"];
+
+          if (groupKota.includes(parsedData.kelurahan)) parsedData.kecamatan = "Tanjungpinang Kota";
+          else if (groupBarat.includes(parsedData.kelurahan)) parsedData.kecamatan = "Tanjungpinang Barat";
+          else if (groupTimur.includes(parsedData.kelurahan)) parsedData.kecamatan = "Tanjungpinang Timur";
+          else if (groupBestari.includes(parsedData.kelurahan)) parsedData.kecamatan = "Bukit Bestari";
+        }
 
         if (!parsedData.fullName || !parsedData.nik) {
           await sendMessage(chatId, `❌ Gagal menyimpan. Pastikan format /simpandata tidak rusak dan isian NIK serta Nama Lengkap tidak kosong.`);
