@@ -107,13 +107,20 @@ export default function KuotaKoordinatorPage() {
       name,
       quota,
       addedAt: new Date().toISOString()
+    }).then(() => {
+      toast({ 
+        title: "Kuota Ditambahkan", 
+        description: `Data untuk ${name} berhasil disimpan.` 
+      })
+      setIsDialogOpen(false)
+    }).catch((error) => {
+      console.error("Firebase Error (Add):", error)
+      toast({
+        variant: "destructive",
+        title: "Gagal Menambah Data",
+        description: error.message || "Terjadi kesalahan saat menyimpan ke database."
+      })
     })
-
-    toast({ 
-      title: "Kuota Ditambahkan", 
-      description: `Data untuk ${name} berhasil disimpan.` 
-    })
-    setIsDialogOpen(false)
   }
 
   const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
@@ -129,13 +136,21 @@ export default function KuotaKoordinatorPage() {
 
     const dataRef = ref(database, `koordinator_kuotas/${editingData.id}`)
 
-    updateDocumentNonBlocking(dataRef, { 
+    set(dataRef, { 
       name,
-      quota
+      quota,
+      addedAt: editingData.addedAt || new Date().toISOString()
+    }).then(() => {
+      toast({ title: "Data Diperbarui", description: `Data kuota untuk ${name} telah diubah.` })
+      setEditingData(null)
+    }).catch((error) => {
+      console.error("Firebase Error (Update):", error)
+      toast({
+        variant: "destructive",
+        title: "Gagal Update Data",
+        description: error.message || "Terjadi kesalahan saat memperbarui database."
+      })
     })
-
-    toast({ title: "Data Diperbarui", description: `Data kuota untuk ${name} telah diubah.` })
-    setEditingData(null)
   }
 
   const handleDelete = (id: string, name: string) => {
