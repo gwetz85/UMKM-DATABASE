@@ -169,6 +169,11 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
-.scale-in-center {
-  animation: scale-in-center 0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
+
+.animate-blink {
+  animation: blink 1s step-start infinite;
+}

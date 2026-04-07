@@ -83,6 +83,7 @@ export function AppSidebar() {
   const [copied, setCopied] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
   const [currentTime, setCurrentTime] = React.useState<string>("")
+  const [currentDate, setCurrentDate] = React.useState<string>("")
 
   // Clock Update Effect
   React.useEffect(() => {
@@ -96,8 +97,16 @@ export function AppSidebar() {
         second: '2-digit', 
         hour12: false 
       })
+
+      const date = now.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      })
       
       setCurrentTime(time)
+      setCurrentDate(date)
     }
     updateTime()
     const interval = setInterval(updateTime, 1000)
@@ -284,11 +293,40 @@ export function AppSidebar() {
           </InfoDialog>
         </div>
 
-        {/* Waktu Server Digital Style */}
-        <div className="w-full group-data-[collapsible=icon]:hidden px-3 mb-6">
-          <div className="flex items-center justify-center py-2">
-            <div className="text-5xl font-black text-white tabular-nums leading-none tracking-tight drop-shadow-md" style={{ fontFamily: "'Tahoma', sans-serif" }}>
-              {currentTime}
+        {/* Waktu Server - Modern Redesign */}
+        <div className="w-full group-data-[collapsible=icon]:hidden px-4 mb-6">
+          <div className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 p-4 shadow-xl group/clock hover:bg-white/15 transition-all duration-500">
+            {/* Subtle Decorative Elements */}
+            <div className="absolute -right-4 -top-4 w-12 h-12 bg-white/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-all duration-500" />
+            <div className="absolute -left-4 -bottom-4 w-12 h-12 bg-accent/10 rounded-full blur-2xl group-hover:bg-white/10 transition-all duration-500" />
+            
+            <div className="flex flex-col items-center justify-center gap-1 relative z-10">
+              <div className="flex items-baseline justify-center w-full">
+                <div className="flex items-center">
+                  <span className="text-4xl font-black text-white tabular-nums tracking-tighter drop-shadow-md">
+                    {currentTime.split(':')[0] || '00'}
+                  </span>
+                  <span className="text-3xl font-black text-white/40 animate-blink px-1">:</span>
+                  <span className="text-4xl font-black text-white tabular-nums tracking-tighter drop-shadow-md">
+                    {currentTime.split(':')[1] || '00'}
+                  </span>
+                </div>
+                <div className="ml-2 flex flex-col justify-center">
+                  <span className="text-xs font-black text-accent drop-shadow-sm leading-none mb-0.5">DETIK</span>
+                  <span className="text-lg font-black text-white/50 tabular-nums leading-none">
+                    {currentTime.split(':')[2] || '00'}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10 w-full justify-center">
+                <div className="flex items-center justify-center w-5 h-5 rounded-lg bg-white/10">
+                  <Clock className="w-3 h-3 text-accent" />
+                </div>
+                <span className="text-[10px] font-bold text-white/70 uppercase tracking-wider">
+                  {currentDate}
+                </span>
+              </div>
             </div>
           </div>
         </div>
