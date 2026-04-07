@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useDatabase, useList, useMemoFirebase } from "@/firebase"
-import { ref, query, orderByChild, equalTo } from "firebase/database"
+import { ref, query, orderByChild, equalTo, startAt, endAt } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -18,13 +18,21 @@ export default function CheckDataPage() {
   const [loading, setLoading] = useState(false)
   const [searchDone, setSearchDone] = useState(false)
   const [results, setResults] = useState<any[]>([])
-  const [searchType, setSearchType] = useState<"nik" | "noKK">("nik")
+  const [searchType, setSearchType] = useState<"nik" | "noKK" | "nama">("nik")
   const [inputValue, setInputValue] = useState("")
   const [selectedResult, setSelectedResult] = useState<any | null>(null)
   const [searchCriteria, setSearchCriteria] = useState<{ type: string, value: string } | null>(null)
 
   const memoQuery = useMemoFirebase(() => {
     if (!database || !searchCriteria || !searchCriteria.value) return null
+    if (searchCriteria.type === 'nama') {
+      return query(
+        ref(database, 'master_data'),
+        orderByChild('nama'),
+        startAt(searchCriteria.value),
+        endAt(searchCriteria.value + "\uf8ff")
+      )
+    }
     return query(
       ref(database, 'master_data'),
       orderByChild(searchCriteria.type),
@@ -39,9 +47,14 @@ export default function CheckDataPage() {
     if (!inputValue.trim()) return
     
     setSearchDone(false)
+    let processedValue = inputValue.trim()
+    if (searchType === 'nama') {
+      processedValue = processedValue.toUpperCase()
+    }
+    
     setSearchCriteria({ 
       type: searchType, 
-      value: inputValue.trim() 
+      value: processedValue 
     })
     setSearchDone(true)
   }
@@ -96,17 +109,21 @@ export default function CheckDataPage() {
                     <RadioGroupItem value="noKK" id="r-kk" />
                     <Label htmlFor="r-kk" className="flex-1 cursor-pointer font-bold">Berdasarkan Nomor KK</Label>
                   </div>
+                  <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted hover:bg-muted/50 cursor-pointer transition-colors">
+                    <RadioGroupItem value="nama" id="r-nama" />
+                    <Label htmlFor="r-nama" className="flex-1 cursor-pointer font-bold">Berdasarkan Nama</Label>
+                  </div>
                 </RadioGroup>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="inputValue" className="font-bold text-foreground">
-                  {searchType === "nik" ? "NIK (16 Digit)" : "Nomor KK (16 Digit)"}
+                  {searchType === "nik" ? "NIK (16 Digit)" : searchType === "noKK" ? "Nomor KK (16 Digit)" : "Nama Lengkap"}
                 </Label>
                 <Input 
                   id="inputValue" 
-                  placeholder={searchType === "nik" ? "Input NIK" : "Input No KK"} 
-                  maxLength={16}
+                  placeholder={searchType === "nik" ? "Input NIK" : searchType === "noKK" ? "Input No KK" : "Input Nama"} 
+                  maxLength={searchType === "nama" ? 100 : 16}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   className="flex h-12 w-full text-lg font-mono tracking-widest bg-white"

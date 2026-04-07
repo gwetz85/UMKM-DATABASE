@@ -193,11 +193,11 @@ export async function POST(req: NextRequest) {
       } else if (text.startsWith('/cekdata')) {
         const keyword = text.replace('/cekdata', '').trim();
         if (!keyword) {
-          await sendMessage(chatId, "Ketikkan nomor NIK atau KK setelah perintah. Contoh: `/cekdata 1234567890123456`");
+          await sendMessage(chatId, "Ketikkan NIK, Nomor KK, atau NAMA setelah perintah. Contoh: `/cekdata 12345` atau `/cekdata AGUS` ");
           return NextResponse.json({ ok: true });
         }
         
-        await sendMessage(chatId, `⏳ _Mengecek data "${keyword}" di Database Master..._`);
+        await sendMessage(chatId, `⏳ _Mengecek "${keyword}" di Database Master..._`);
         
         let foundResults: any[] = [];
         
@@ -207,7 +207,12 @@ export async function POST(req: NextRequest) {
           
           if (masterSnap.exists()) {
             const allData = Object.values(masterSnap.val()) as any[];
-            foundResults = allData.filter(r => r.nik === keyword || r.noKK === keyword);
+            const kw = keyword.toLowerCase();
+            foundResults = allData.filter(r => 
+              r.nik === keyword || 
+              r.noKK === keyword || 
+              (r.nama && r.nama.toLowerCase().includes(kw))
+            );
           }
         } catch (error) {
           console.error("Master data query error:", error);
