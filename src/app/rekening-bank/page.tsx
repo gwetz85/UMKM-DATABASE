@@ -102,7 +102,9 @@ function RekeningBankContent() {
         const actorRef = ref(database, `businessActors/${actor.id}`)
         updateDocumentNonBlocking(actorRef, {
           readyForLPJ: true,
-          lpjEntryDate: now
+          lpjEntryDate: now,
+          lpjNominal: null,
+          lpjDoneAt: null
         })
       })
 

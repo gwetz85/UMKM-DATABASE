@@ -54,7 +54,15 @@ export default function LPJPage() {
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
   const actors = useMemo(() => {
-      return allActorsRaw?.filter(a => (a.status === 'finish' && a.readyForLPJ === true && !a.lpjNominal) || a.status === 'blacklist') || []
+      const filtered = allActorsRaw?.filter(a => {
+        const isFinish = a.status === 'finish';
+        const isReady = !!a.readyForLPJ;
+        const noLpj = !a.lpjNominal;
+        const isBlacklist = a.status === 'blacklist';
+        
+        return (isFinish && isReady && noLpj) || isBlacklist;
+      }) || [];
+      return filtered;
   }, [allActorsRaw])
 
   const handleSaveLPJ = async (actorId: string, nominal: string) => {
