@@ -112,24 +112,37 @@ export default function DashboardPage() {
 
   const kelurahanStats = useMemo(() => {
     const listMap = new Set(kelurahanList.map(k => k.toLowerCase()));
-    
-    // Official list matching (Case-insensitive)
     const knownStats = kelurahanList.map(k => ({
       name: k,
       count: activeData.filter(d => d.kelurahan?.toLowerCase() === k.toLowerCase()).length
     })).filter(item => item.count > 0);
     
-    // Catch unmatched entries under "Lainnya"
     const otherCount = activeData.filter(d => {
       const k = d.kelurahan?.toLowerCase() || "";
       return k !== "" && !listMap.has(k);
     }).length;
+
+    const emptyCount = activeData.filter(d => !d.kelurahan).length;
     
-    if (otherCount > 0) {
-      knownStats.push({ name: "Lainnya", count: otherCount });
+    if (otherCount + emptyCount > 0) {
+      knownStats.push({ name: "Lainnya / Kosong", count: otherCount + emptyCount });
     }
     
     return knownStats.sort((a, b) => b.count - a.count);
+  }, [activeData])
+
+  const genderStats = useMemo(() => {
+    const laki = activeData.filter(d => d.gender?.toLowerCase() === "laki-laki").length;
+    const perempuan = activeData.filter(d => d.gender?.toLowerCase() === "perempuan").length;
+    const unknown = activeData.length - (laki + perempuan);
+    return { laki, perempuan, unknown };
+  }, [activeData])
+
+  const categoryStats = useMemo(() => {
+    const kuliner = activeData.filter(d => d.businessCategory?.toLowerCase() === "kuliner").length;
+    const bukanKuliner = activeData.filter(d => d.businessCategory?.toLowerCase() === "bukan kuliner").length;
+    const unknown = activeData.length - (kuliner + bukanKuliner);
+    return { kuliner, bukanKuliner, unknown };
   }, [activeData])
 
 
@@ -158,17 +171,24 @@ export default function DashboardPage() {
     },
     { 
       name: "Pelaku Laki-laki", 
-      value: activeData.filter(d => d.gender?.toLowerCase().includes("laki")).length, 
+      value: genderStats.laki, 
       icon: Users, 
       color: "text-indigo-600", 
       bg: "bg-indigo-100/50" 
     },
     { 
       name: "Pelaku Perempuan", 
-      value: activeData.filter(d => d.gender?.toLowerCase().includes("perempuan")).length, 
+      value: genderStats.perempuan, 
       icon: Users, 
       color: "text-pink-600", 
       bg: "bg-pink-100/50" 
+    },
+    { 
+      name: "Gender Lainnya/Kosong", 
+      value: genderStats.unknown, 
+      icon: User, 
+      color: "text-slate-600", 
+      bg: "bg-slate-100/50" 
     },
     { 
       name: "Data Terverifikasi", 
@@ -385,7 +405,7 @@ export default function DashboardPage() {
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Kuliner</span>
                   <span className="text-xl font-black text-primary">
-                    {activeData.filter(d => d.businessCategory?.toLowerCase() === "kuliner").length}
+                    {categoryStats.kuliner}
                   </span>
                 </div>
                 <div className="p-2 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm group-hover:bg-primary/10 transition-colors">
@@ -396,13 +416,26 @@ export default function DashboardPage() {
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Bukan Kuliner</span>
                   <span className="text-xl font-black text-slate-700">
-                    {activeData.filter(d => d.businessCategory?.toLowerCase() === "bukan kuliner").length}
+                    {categoryStats.bukanKuliner}
                   </span>
                 </div>
                 <div className="p-2 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm group-hover:bg-primary/10 transition-colors">
                   <Building2 className="w-4 h-4 text-indigo-500" />
                 </div>
               </div>
+              {categoryStats.unknown > 0 && (
+                <div className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md border-dashed border-2">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Lainnya / Kosong</span>
+                    <span className="text-xl font-black text-slate-500">
+                      {categoryStats.unknown}
+                    </span>
+                  </div>
+                  <div className="p-2 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm">
+                    <DatabaseZap className="w-4 h-4 text-slate-400" />
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
