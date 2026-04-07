@@ -368,7 +368,12 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Kuliner</span>
-                  <span className="text-xl font-black text-primary">{allData?.filter(d => d.businessCategory === "Kuliner").length}</span>
+                  <span className="text-xl font-black text-primary">
+                    {allData?.filter(d => 
+                      d.status !== 'rejected' && 
+                      d.businessCategory?.toLowerCase() === "kuliner"
+                    ).length}
+                  </span>
                 </div>
                 <div className="p-2 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm group-hover:bg-primary/10 transition-colors">
                   <TrendingUp className="w-4 h-4 text-emerald-500" />
@@ -377,7 +382,12 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Bukan Kuliner</span>
-                  <span className="text-xl font-black text-slate-700">{allData?.filter(d => d.businessCategory === "Bukan Kuliner").length}</span>
+                  <span className="text-xl font-black text-slate-700">
+                    {allData?.filter(d => 
+                      d.status !== 'rejected' && 
+                      d.businessCategory?.toLowerCase() === "bukan kuliner"
+                    ).length}
+                  </span>
                 </div>
                 <div className="p-2 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm group-hover:bg-primary/10 transition-colors">
                   <Building2 className="w-4 h-4 text-indigo-500" />
