@@ -49,11 +49,14 @@ export default function DashboardPage() {
 
   const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery)
 
+  const activeData = useMemo(() => {
+    return allData?.filter(d => d.status !== 'rejected' && d.status !== 'blacklist') || []
+  }, [allData])
+
   const coordinatorStats = useMemo(() => {
-    if (!allData) return []
+    if (!activeData) return []
     const counts: Record<string, number> = {}
-    allData.forEach(d => {
-      if (d.status === 'rejected') return;
+    activeData.forEach(d => {
       if (d.coordinator) {
         const name = d.coordinator.toUpperCase().trim()
         counts[name] = (counts[name] || 0) + 1
@@ -62,7 +65,7 @@ export default function DashboardPage() {
     return Object.entries(counts)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
-  }, [allData])
+  }, [activeData])
 
   const combinedKuotaData = useMemo(() => {
     if (!kuotaData) return []
@@ -105,9 +108,7 @@ export default function DashboardPage() {
     "Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"
   ]
 
-  const activeData = useMemo(() => {
-    return allData?.filter(d => d.status !== 'rejected' && d.status !== 'blacklist') || []
-  }, [allData])
+
 
   const kelurahanStats = useMemo(() => {
     return kelurahanList
