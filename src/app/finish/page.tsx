@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
+import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, RotateCcw, Eye, User, CreditCard, History, X, Building2, MapPin, BadgeCheck, FileText, Search } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, RotateCcw, Eye, User, CreditCard, History, X, Building2, MapPin, BadgeCheck, FileText, Search, Trash2 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
@@ -122,6 +122,15 @@ function FinishContent() {
     if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
       updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
       toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
+      setViewingActor(null)
+    }
+  }
+  
+  const handleDelete = (actorId: string, fullName: string) => {
+    if (!isAdmin || !database) return
+    if (confirm(`HAPUS PERMANEN data ${fullName}? Tindakan ini tidak dapat dibatalkan.`)) {
+      deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
+      toast({ title: "Data Dihapus", description: `Data ${fullName} telah dihapus dari sistem.` })
       setViewingActor(null)
     }
   }
@@ -262,6 +271,11 @@ function FinishContent() {
                   {isAdmin && !isEditMode && (
                     <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 font-bold" title="Kembalikan ke antrean awal (Pending)">
                       <RotateCcw className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Revert</span>
+                    </Button>
+                  )}
+                  {isAdmin && !isEditMode && (
+                    <Button size="sm" variant="outline" onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="border-red-500 text-red-600 font-bold hover:bg-red-50" title="Hapus Data">
+                      <Trash2 className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Hapus</span>
                     </Button>
                   )}
                 </div>
