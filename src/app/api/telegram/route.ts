@@ -366,6 +366,37 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ ok: true });
         }
 
+        // Coordinator Quota Check
+        const selectedCoordinator = (parsedData.coordinator || "")?.toUpperCase().trim();
+        if (selectedCoordinator) {
+          const quotaRef = ref(database, 'koordinator_kuotas');
+          const quotaSnapshot = await get(quotaRef);
+          
+          if (quotaSnapshot.exists()) {
+            const quotaData = Object.values(quotaSnapshot.val()) as any[];
+            const coordQuota = quotaData.find(q => (q.name || "").toUpperCase().trim() === selectedCoordinator);
+            
+            if (coordQuota) {
+              const limit = coordQuota.quota || 0;
+              let achieved = 0;
+              
+              if (snapshot.exists()) {
+                snapshot.forEach((child) => {
+                  const val = child.val();
+                  if (val.status !== 'rejected' && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
+                    achieved++;
+                  }
+                });
+              }
+              
+              if (achieved >= limit) {
+                await sendMessage(chatId, `❌ *AKSES DITOLAK*\n\nDATA TIDAK BISA DIINPUT , DIKARENAKAN KUOTA KOORDINATOR TELAH HABIS`);
+                return NextResponse.json({ ok: true });
+              }
+            }
+          }
+        }
+
         try {
           const newData = {
             ownerId: auth.currentUser?.uid || "telegram_bot",

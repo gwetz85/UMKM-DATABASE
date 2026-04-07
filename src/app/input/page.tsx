@@ -102,6 +102,43 @@ export default function InputDataPage() {
         return
       }
 
+      // Coordinator Quota Check
+      const selectedCoordinator = (formData.get("coordinator") as string)?.toUpperCase().trim()
+      if (selectedCoordinator) {
+        const quotaRef = ref(database, 'koordinator_kuotas')
+        const quotaSnapshot = await get(quotaRef)
+        
+        if (quotaSnapshot.exists()) {
+          const quotaData = Object.values(quotaSnapshot.val()) as any[]
+          const coordQuota = quotaData.find(q => (q.name || "").toUpperCase().trim() === selectedCoordinator)
+          
+          if (coordQuota) {
+            const limit = coordQuota.quota || 0
+            let achieved = 0
+            
+            // Count from the actorsSnapshot we already have
+            if (actorsSnapshot.exists()) {
+              actorsSnapshot.forEach((child) => {
+                const val = child.val()
+                if (val.status !== 'rejected' && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
+                  achieved++
+                }
+              })
+            }
+            
+            if (achieved >= limit) {
+              toast({
+                variant: "destructive",
+                title: "KUOTA HABIS",
+                description: "DATA TIDAK BISA DIINPUT , DIKARENAKAN KUOTA KOORDINATOR TELAH HABIS"
+              })
+              setLoading(false)
+              return
+            }
+          }
+        }
+      }
+
       const data = {
         ownerId: user.uid,
         createdBy: currentUserProfile?.fullName || user.email?.split('@')[0] || "Unknown",
