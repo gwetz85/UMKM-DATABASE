@@ -306,7 +306,7 @@ export function AppSidebar() {
                   <span className="text-5xl font-black text-white tabular-nums tracking-tighter drop-shadow-md leading-none">
                     {currentTime.split(':')[0] || '00'}
                   </span>
-                  <span className="text-4xl font-black text-white/30 animate-blink px-1 leading-none">:</span>
+                  <span className="text-5xl font-black text-white/30 animate-blink px-1 leading-none">:</span>
                   <span className="text-5xl font-black text-white tabular-nums tracking-tighter drop-shadow-md leading-none">
                     {currentTime.split(':')[1] || '00'}
                   </span>
