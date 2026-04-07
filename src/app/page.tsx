@@ -214,87 +214,82 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          {isAdmin && (
-            <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
-              <CardHeader className="bg-primary/10 pb-4">
-                <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
-                  <BarChart3 className="w-5 h-5" /> KUOTA KOORDINATOR
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="max-h-[350px] overflow-auto">
-                  <Table>
-                    <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="w-[40px] text-center font-black text-slate-800 text-[10px] md:text-xs">No</TableHead>
-                        <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">Nama Koordinator</TableHead>
-                        <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Koordinator</TableHead>
-                        <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Tercapai</TableHead>
-                        <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Sisa Kuota</TableHead>
+          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
+            <CardHeader className="bg-primary/10 pb-4">
+              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
+                <BarChart3 className="w-5 h-5" /> KUOTA KOORDINATOR
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="max-h-[350px] overflow-auto">
+                <Table>
+                  <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[40px] text-center font-black text-slate-800 text-[10px] md:text-xs">No</TableHead>
+                      <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">Nama Koordinator</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Koordinator</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Tercapai</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Sisa Kuota</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {combinedKuotaData.map((item: any, index: number) => (
+                      <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                        <TableCell className="text-center font-bold text-slate-600 text-xs">{index + 1}</TableCell>
+                        <TableCell className="font-black text-primary text-xs tracking-tight">{item.name}</TableCell>
+                        <TableCell className="text-center">
+                          <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
+                            {item.quota}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
+                            {item.achieved}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className={cn(
+                            "inline-flex items-center justify-center font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border",
+                            item.remaining <= 0 
+                              ? "bg-rose-100 text-rose-700 border-rose-200" 
+                              : "bg-blue-100 text-blue-700 border-blue-200"
+                          )}>
+                            {item.remaining}
+                          </span>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {combinedKuotaData.map((item: any, index: number) => (
-                        <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                          <TableCell className="text-center font-bold text-slate-600 text-xs">{index + 1}</TableCell>
-                          <TableCell className="font-black text-primary text-xs tracking-tight">{item.name}</TableCell>
-                          <TableCell className="text-center">
-                            <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
-                              {item.quota}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
-                              {item.achieved}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-center">
-                           <span className={cn(
-                              "inline-flex items-center justify-center font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border",
-                              item.remaining <= 0 ? "bg-red-100 text-red-700 border-red-200" : "bg-primary text-white border-primary/20"
-                            )}>
-                              {item.remaining}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {combinedKuotaData.length === 0 && !isKuotaLoading && (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-10 text-muted-foreground font-bold italic text-xs">
-                            Belum ada data koordinator terekam.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                      {isKuotaLoading && (
-                        <TableRow>
-                          <TableCell colSpan={5} className="text-center py-10">
-                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                              <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
-                              <span className="text-xs font-bold italic">Memuat data koordinator...</span>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                    <TableFooter>
-                      <TableRow className="bg-primary/5 border-t-2 border-primary/20">
-                        <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs py-3">
-                          Total Kuota Data
+                    ))}
+                    {combinedKuotaData.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-12">
+                          <div className="flex flex-col items-center gap-3">
+                            <BarChart3 className="w-10 h-10 text-slate-300 animate-pulse" />
+                            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">
+                              Data kuota koordinator belum dimasukkan.
+                            </p>
+                          </div>
                         </TableCell>
-                        <TableCell className="text-center font-black text-slate-600 text-sm">
-                          {totalKuotaDashboard}
-                        </TableCell>
-                        <TableCell className="text-center font-black text-emerald-600 text-sm">
-                          {totalAchievedDashboard}
-                        </TableCell>
-                        <TableCell></TableCell>
                       </TableRow>
-                    </TableFooter>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                    )}
+                  </TableBody>
+                  <TableFooter>
+                    <TableRow className="bg-primary/5 border-t-2 border-primary/20">
+                      <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs py-3">
+                        Total Kuota Data
+                      </TableCell>
+                      <TableCell className="text-center font-black text-slate-600 text-sm">
+                        {totalKuotaDashboard}
+                      </TableCell>
+                      <TableCell className="text-center font-black text-emerald-600 text-sm">
+                        {totalAchievedDashboard}
+                      </TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Cloud Storage Status Card */}
           <Card className="glass overflow-hidden transition-all hover:shadow-xl">
