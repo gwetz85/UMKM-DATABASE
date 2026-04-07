@@ -150,18 +150,6 @@ export function AppSidebar() {
       show: isAdmin || isPetugas || isMonitoring
     },
     { 
-      name: "Verifikasi & Validasi Dinas", 
-      href: "/verifikasi-dinas", 
-      icon: ClipboardCheck, 
-      show: isAdmin 
-    },
-    { 
-      name: "HASIL VERIFIKASI", 
-      href: "/hasil-verifikasi", 
-      icon: ListChecks, 
-      show: isAdmin || isPetugas 
-    },
-    { 
       name: "Data Pelaku", 
       href: "/actor-data", 
       icon: Users, 
@@ -178,6 +166,18 @@ export function AppSidebar() {
       href: "/verify-bank", 
       icon: CreditCard, 
       show: isAdmin || isMonitoring
+    },
+    { 
+      name: "Verifikasi & Validasi Dinas", 
+      href: "/verifikasi-dinas", 
+      icon: ClipboardCheck, 
+      show: isAdmin 
+    },
+    { 
+      name: "HASIL VERIFIKASI", 
+      href: "/hasil-verifikasi", 
+      icon: ListChecks, 
+      show: isAdmin || isPetugas 
     },
     { 
       name: "Rekening Bank", 
