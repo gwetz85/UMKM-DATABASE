@@ -105,16 +105,19 @@ export default function DashboardPage() {
     "Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"
   ]
 
+  const activeData = useMemo(() => {
+    return allData?.filter(d => d.status !== 'rejected' && d.status !== 'blacklist') || []
+  }, [allData])
+
   const kelurahanStats = useMemo(() => {
-    if (!allData) return []
     return kelurahanList
       .map(k => ({
         name: k,
-        count: allData.filter(d => d.kelurahan === k).length
+        count: activeData.filter(d => d.kelurahan === k).length
       }))
       .filter(item => item.count > 0)
       .sort((a, b) => b.count - a.count)
-  }, [allData])
+  }, [activeData])
 
 
 
@@ -135,28 +138,28 @@ export default function DashboardPage() {
   const stats = [
     { 
       name: "Total Pelaku Usaha", 
-      value: allData?.length || 0, 
+      value: activeData.length, 
       icon: Building2, 
       color: "text-blue-600", 
       bg: "bg-blue-100/50" 
     },
     { 
       name: "Pelaku Laki-laki", 
-      value: allData?.filter(d => d.gender === "Laki-laki").length || 0, 
+      value: activeData.filter(d => d.gender?.toLowerCase().includes("laki")).length, 
       icon: Users, 
       color: "text-indigo-600", 
       bg: "bg-indigo-100/50" 
     },
     { 
       name: "Pelaku Perempuan", 
-      value: allData?.filter(d => d.gender === "Perempuan").length || 0, 
+      value: activeData.filter(d => d.gender?.toLowerCase().includes("perempuan")).length, 
       icon: Users, 
       color: "text-pink-600", 
       bg: "bg-pink-100/50" 
     },
     { 
       name: "Data Terverifikasi", 
-      value: allData?.filter(d => d.status === "finish").length || 0, 
+      value: activeData.filter(d => d.status === "finish").length, 
       icon: UserCheck, 
       color: "text-emerald-600", 
       bg: "bg-emerald-100/50" 
@@ -369,10 +372,7 @@ export default function DashboardPage() {
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Kuliner</span>
                   <span className="text-xl font-black text-primary">
-                    {allData?.filter(d => 
-                      d.status !== 'rejected' && 
-                      d.businessCategory?.toLowerCase() === "kuliner"
-                    ).length}
+                    {activeData.filter(d => d.businessCategory?.toLowerCase().includes("kuliner")).length}
                   </span>
                 </div>
                 <div className="p-2 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm group-hover:bg-primary/10 transition-colors">
@@ -383,10 +383,7 @@ export default function DashboardPage() {
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Bukan Kuliner</span>
                   <span className="text-xl font-black text-slate-700">
-                    {allData?.filter(d => 
-                      d.status !== 'rejected' && 
-                      d.businessCategory?.toLowerCase() === "bukan kuliner"
-                    ).length}
+                    {activeData.filter(d => d.businessCategory?.toLowerCase().includes("bukan kuliner")).length}
                   </span>
                 </div>
                 <div className="p-2 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm group-hover:bg-primary/10 transition-colors">
