@@ -265,7 +265,7 @@ export async function POST(req: NextRequest) {
                       `_▪️ Jenis Usaha: Kuliner atau Bukan Kuliner_`;
         await sendMessage(chatId, reply);
       } else if (text.startsWith('/simpandata')) {
-        const lines = text.split('\\n');
+        const lines = text.split('\n');
         let parsedData: any = {};
         
         lines.forEach((line: string) => {
