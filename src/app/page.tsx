@@ -4,6 +4,7 @@
 import { useMemoFirebase, useList, useUser, useDatabase } from "@/firebase"
 import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap, Calendar } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo } from "react"
@@ -22,6 +23,7 @@ export default function DashboardPage() {
   const { data: allUsersForDashboard } = useList(userProfileRef)
   const userProfile = allUsersForDashboard?.find((u: any) => u.uid === user?.uid)
   const isKoordinator = userProfile?.role === 'koordinator'
+  const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'superadmin'
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -236,31 +238,58 @@ export default function DashboardPage() {
         </div>
 
         <div className="space-y-6">
-          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
-            <CardHeader className="bg-primary/10 pb-4">
-              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
-                <Calendar className="w-5 h-5" /> Kalender Hari Ini
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-               <div className="flex flex-col items-center justify-center py-10 bg-gradient-to-b from-white to-slate-50">
-                  <span className="text-[14px] font-black text-primary uppercase tracking-[0.3em] mb-1">
-                    {new Date().toLocaleDateString('id-ID', { weekday: 'long' })}
-                  </span>
-                  <span className="text-8xl font-black text-slate-800 tracking-tighter leading-none mb-2 tabular-nums">
-                    {new Date().getDate()}
-                  </span>
-                  <span className="text-lg font-bold text-slate-500 uppercase tracking-widest leading-none">
-                    {new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}
-                  </span>
-               </div>
-               <div className="py-3 bg-primary text-white overflow-hidden whitespace-nowrap relative">
-                  <div className="animate-marquee inline-block text-[13px] font-black uppercase tracking-wider px-4" style={{ animationDuration: '40s' }}>
-                    Selamat Datang di Sistem Informasi Pelaku Usaha , layanan ini berbasis Web dan Database terintegrasi dengan database kami . Layanan ini masih dalam pengembangan dan perbaikkan , kritik dan saran sangat diharapkan.
-                  </div>
-               </div>
-            </CardContent>
-          </Card>
+          {isAdmin && (
+            <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
+              <CardHeader className="bg-primary/10 pb-4">
+                <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
+                  <BarChart3 className="w-5 h-5" /> KUOTA KOORDINATOR
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-[350px] overflow-auto">
+                  <Table>
+                    <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="w-[50px] text-center font-black text-slate-800 text-[11px] md:text-xs">No</TableHead>
+                        <TableHead className="font-black text-slate-800 text-[11px] md:text-xs">Nama Koordinator</TableHead>
+                        <TableHead className="text-center font-black text-slate-800 text-[11px] md:text-xs">Jumlah Kuota</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {coordinatorStats.map((item, index) => (
+                        <TableRow key={item.name} className="hover:bg-slate-50/80 transition-colors">
+                          <TableCell className="text-center font-bold text-slate-600 text-xs">{index + 1}</TableCell>
+                          <TableCell className="font-black text-primary text-xs tracking-tight">{item.name}</TableCell>
+                          <TableCell className="text-center">
+                            <span className="inline-flex items-center justify-center bg-primary text-white font-black px-4 py-1.5 rounded-full min-w-[3.5rem] shadow-sm text-xs">
+                              {item.count}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {(!coordinatorStats || coordinatorStats.length === 0) && !isLoading && (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center py-10 text-muted-foreground font-bold italic text-xs">
+                            Belum ada data koordinator terekam.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      {isLoading && (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center py-10">
+                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                              <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
+                              <span className="text-xs font-bold italic">Memuat data koordinator...</span>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="glass overflow-hidden transition-all hover:shadow-xl">
             <CardHeader className="border-b border-slate-200/50 pb-4">
