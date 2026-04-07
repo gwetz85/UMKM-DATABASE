@@ -1,16 +1,19 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useMemoFirebase, useList, useUser, useDatabase } from "@/firebase"
+import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking } from "@/firebase"
 import { ref } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Loader2, Search, CreditCard, Building2, User, MapPin, ChevronRight, Printer } from "lucide-react"
+import { Loader2, Search, CreditCard, Building2, User, MapPin, ChevronRight, Printer, Send, CheckCircle2 } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { cn } from "@/lib/utils"
 import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
+import { Badge } from "@/components/ui/badge"
 
 const BANK_LIST = [
   "BCA", "BNI", "BRI", "BRK", "MANDIRI", "PANIN", "OCBC", "DANAMON", "BUKOPIN", "BTN"
@@ -30,8 +33,10 @@ export default function RekeningBankPage() {
 
 function RekeningBankContent() {
   const { user, isUserLoading } = useUser()
+  const { toast } = useToast()
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
+  const [isForwarding, setIsForwarding] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const selectedBank = searchParams.get('bank')
 
@@ -78,6 +83,33 @@ function RekeningBankContent() {
 
     return groups
   }, [allData, searchQuery, selectedBank])
+
+  const handleForwardToLPJ = (bankName: string, actors: BusinessActor[]) => {
+    if (!database) return
+    
+    // Only forward those who are not ready yet
+    const targetActors = actors.filter(a => !a.readyForLPJ)
+    if (targetActors.length === 0) {
+      toast({ title: "Informasi", description: "Semua data di bank ini sudah diteruskan ke LPJ." })
+      return
+    }
+
+    if (confirm(`Teruskan ${targetActors.length} data dari ${bankName} ke menu LPJ?`)) {
+      setIsForwarding(bankName)
+      
+      const now = new Date().toISOString()
+      targetActors.forEach(actor => {
+        const actorRef = ref(database, `businessActors/${actor.id}`)
+        updateDocumentNonBlocking(actorRef, {
+          readyForLPJ: true,
+          lpjEntryDate: now
+        })
+      })
+
+      toast({ title: "Berhasil Diteruskan", description: `${targetActors.length} data dikirim ke antrean LPJ.` })
+      setTimeout(() => setIsForwarding(null), 1000)
+    }
+  }
 
   if (isUserLoading) {
     return (
@@ -149,10 +181,20 @@ function RekeningBankContent() {
                   <div className="bg-primary text-white p-2 rounded-xl shadow-lg shadow-primary/20 print:hidden">
                     <Building2 className="w-5 h-5" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">{bankName}</h2>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest print:hidden">{actors.length} Pelaku Usaha</p>
                   </div>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    disabled={isForwarding === bankName || actors.every(a => a.readyForLPJ)}
+                    onClick={() => handleForwardToLPJ(bankName, actors)}
+                    className="h-8 rounded-lg border-primary/20 text-primary hover:bg-primary hover:text-white font-bold text-[10px] px-3 gap-2 print:hidden"
+                  >
+                    {isForwarding === bankName ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                    TERUSKAN KE LPJ
+                  </Button>
                 </div>
 
                 <Card className="glass border-none shadow-xl overflow-hidden rounded-3xl print:shadow-none print:border-2 print:border-black print:rounded-none">
@@ -180,11 +222,18 @@ function RekeningBankContent() {
                               {actor.bankName || bankName}
                             </TableCell>
                             <TableCell className="print:border-r-2 print:border-black pl-4">
-                              <div className="flex flex-col gap-0.5">
-                                <span className="font-bold text-slate-800 uppercase text-sm leading-tight print:text-black">
-                                  {actor.fullName}
-                                </span>
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase print:hidden">{actor.businessName}</span>
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="font-bold text-slate-800 uppercase text-sm leading-tight print:text-black">
+                                    {actor.fullName}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-muted-foreground uppercase print:hidden">{actor.businessName}</span>
+                                </div>
+                                {actor.readyForLPJ && (
+                                  <Badge variant="outline" className="h-5 text-[8px] font-black uppercase text-emerald-600 bg-emerald-50 border-emerald-200 gap-1 print:hidden">
+                                     <CheckCircle2 className="w-2.5 h-2.5" /> LPJ READY
+                                  </Badge>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell className="text-right pr-6 font-mono font-black text-sm text-emerald-600 print:text-black text-center whitespace-nowrap">

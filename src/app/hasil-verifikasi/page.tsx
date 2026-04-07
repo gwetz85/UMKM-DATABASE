@@ -64,21 +64,13 @@ export default function HasilVerifikasiPage() {
     if (!inputtingBankActor || !database) return
 
     setIsSubmittingBank(true)
-    const formData = new FormData(e.currentTarget)
-    const bankName = formData.get("bankName") as string
-    const bankNumber = formData.get("bankNumber") as string
-    const bankOwner = formData.get("bankOwner") as string
-
     const actorRef = ref(database, `businessActors/${inputtingBankActor.id}`)
     updateDocumentNonBlocking(actorRef, {
       status: 'finish',
-      bankName: bankName,
-      bankNumber: bankNumber,
-      bankOwner: bankOwner,
-      lpjEntryDate: new Date().toISOString()
+      readyForLPJ: false
     })
 
-    toast({ title: "Data Diselesaikan", description: "Data telah dipindahkan ke menu Rekening Bank dan Finish." })
+    toast({ title: "Data Diselesaikan", description: "Data telah dipindahkan ke menu Rekening Bank." })
     setInputtingBankActor(null)
     setIsSubmittingBank(false)
   }
@@ -266,47 +258,33 @@ export default function HasilVerifikasiPage() {
                             <form onSubmit={handleInputBank}>
                               <DialogHeader>
                                 <DialogTitle className="text-xl font-black text-purple-600 uppercase flex items-center gap-2">
-                                  <CreditCard className="w-5 h-5" /> Input Rekening Pencairan
+                                  <CreditCard className="w-5 h-5" /> Konfirmasi Penyaluran
                                 </DialogTitle>
-                                <DialogDescription>Silakan input data rekening bank untuk pelaku usaha {actor.fullName}. Data akan diteruskan ke menu Verifikasi Data.</DialogDescription>
+                                <DialogDescription>Apakah Anda yakin data rekening pelaku usaha {actor.fullName} sudah benar? Data akan diteruskan ke menu Rekening Bank.</DialogDescription>
                               </DialogHeader>
                               <div className="py-6 space-y-4">
-                                <div className="space-y-2">
-                                  <Label className="font-bold">Pilih Bank</Label>
-                                  <Select name="bankName" required>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Pilih Bank..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {BANK_LIST.map(bank => (
-                                        <SelectItem key={bank} value={bank}>{bank}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-3">
+                                  <div className="flex justify-between items-center border-b border-purple-200 pb-2">
+                                    <span className="text-[10px] font-bold text-purple-400 uppercase">Nama Bank</span>
+                                    <span className="text-sm font-black text-purple-700">{actor.bankName || "-"}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center border-b border-purple-200 pb-2">
+                                    <span className="text-[10px] font-bold text-purple-400 uppercase">Nomor Rekening</span>
+                                    <span className="text-sm font-black text-purple-700 font-mono tracking-wider">{actor.bankNumber || "-"}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-[10px] font-bold text-purple-400 uppercase">Nama Pemilik</span>
+                                    <span className="text-sm font-black text-purple-700 uppercase">{actor.bankOwner || "-"}</span>
+                                  </div>
                                 </div>
-                                <div className="space-y-2">
-                                  <Label className="font-bold">Nomor Rekening</Label>
-                                  <Input 
-                                    name="bankNumber" 
-                                    placeholder="Masukkan nomor rekening..." 
-                                    required 
-                                    className="font-mono"
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label className="font-bold">Nama Pemilik Rekening</Label>
-                                  <Input 
-                                    name="bankOwner" 
-                                    placeholder="Contoh: Budi Santoso" 
-                                    required 
-                                    defaultValue={actor.fullName}
-                                  />
+                                <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-700 font-bold leading-relaxed">
+                                  PENTING: Pastikan data di atas sudah valid. Setelah dikonfirmasi, data akan masuk ke daftar tunggu penyaluran (Rekening Bank).
                                 </div>
                               </div>
                               <DialogFooter>
                                 <Button type="button" variant="ghost" onClick={() => setInputtingBankActor(null)}>Batal</Button>
                                 <Button type="submit" disabled={isSubmittingBank} className="min-w-[150px] bg-purple-600 hover:bg-purple-700 text-white font-bold">
-                                  {isSubmittingBank ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "PROSES LANJUT"}
+                                  {isSubmittingBank ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "KONFIRMASI SELESAI"}
                                 </Button>
                               </DialogFooter>
                             </form>

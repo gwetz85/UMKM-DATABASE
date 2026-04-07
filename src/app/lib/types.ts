@@ -33,4 +33,5 @@ export interface BusinessActor {
   lpjEntryDate?: string;
   hasilVerifikasiDinas?: string;
   keteranganDinas?: string;
+  readyForLPJ?: boolean;
 }

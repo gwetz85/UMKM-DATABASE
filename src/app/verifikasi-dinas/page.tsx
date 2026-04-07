@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { ShieldAlert, Loader2, Eye, Search, User, FileText, Building2, MapPin, History, ClipboardCheck } from "lucide-react"
+import { ShieldAlert, Loader2, Eye, Search, User, FileText, Building2, MapPin, History, ClipboardCheck, CreditCard } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 
@@ -203,6 +203,22 @@ export default function VerifikasiDinasPage() {
                                       </div>
                                     </section>
   
+                                    <section className="space-y-4">
+                                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Informasi Perbankan</div>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-primary/5 p-4 rounded-xl border border-primary/10">
+                                        {[
+                                          { label: "Nama Bank", value: viewingActor.bankName },
+                                          { label: "Nomor Rekening", value: viewingActor.bankNumber },
+                                          { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner }
+                                        ].map((item, i) => (
+                                          <div key={i} className="space-y-1">
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                            <p className="text-xs font-black text-primary">{item.value || "BELUM TERISI"}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </section>
+
                                     <section className="space-y-4">
                                       <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem</div>
                                       <div className="bg-slate-50 p-4 rounded-xl text-[10px] font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
