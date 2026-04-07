@@ -187,13 +187,6 @@ export default function DashboardPage() {
       bg: "bg-pink-100/50" 
     },
     { 
-      name: "Gender Lainnya/Kosong", 
-      value: genderStats.unknown, 
-      icon: User, 
-      color: "text-slate-600", 
-      bg: "bg-slate-100/50" 
-    },
-    { 
       name: "Data Terverifikasi", 
       value: activeData.filter(d => d.status === "finish").length, 
       icon: UserCheck, 
