@@ -301,19 +301,22 @@ export function AppSidebar() {
             <div className="absolute -left-4 -bottom-4 w-12 h-12 bg-accent/10 rounded-full blur-2xl group-hover:bg-white/10 transition-all duration-500" />
             
             <div className="flex flex-col items-center justify-center gap-1 relative z-10">
-              <div className="flex items-baseline justify-center w-full">
-                <div className="flex items-center">
-                  <span className="text-4xl font-black text-white tabular-nums tracking-tighter drop-shadow-md">
+              <div className="flex items-end justify-center w-full gap-2">
+                <div className="flex items-end">
+                  <span className="text-5xl font-black text-white tabular-nums tracking-tighter drop-shadow-md leading-none">
                     {currentTime.split(':')[0] || '00'}
                   </span>
-                  <span className="text-3xl font-black text-white/40 animate-blink px-1">:</span>
-                  <span className="text-4xl font-black text-white tabular-nums tracking-tighter drop-shadow-md">
+                  <span className="text-4xl font-black text-white/30 animate-blink px-1 leading-none mb-1">:</span>
+                  <span className="text-5xl font-black text-white tabular-nums tracking-tighter drop-shadow-md leading-none">
                     {currentTime.split(':')[1] || '00'}
                   </span>
                 </div>
-                <div className="ml-2 flex flex-col justify-center">
-                  <span className="text-xs font-black text-accent drop-shadow-sm leading-none mb-0.5">DETIK</span>
-                  <span className="text-lg font-black text-white/50 tabular-nums leading-none">
+                
+                <div className="flex flex-col items-start mb-0.5">
+                  <span className="text-[10px] font-black text-accent drop-shadow-[0_0_8px_rgba(34,197,94,0.4)] leading-none mb-1 uppercase tracking-widest">
+                    DETIK
+                  </span>
+                  <span className="text-2xl font-black text-white/60 tabular-nums leading-none drop-shadow-sm">
                     {currentTime.split(':')[2] || '00'}
                   </span>
                 </div>
