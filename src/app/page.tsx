@@ -4,7 +4,7 @@
 import { useMemoFirebase, useList, useUser, useDatabase } from "@/firebase"
 import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap, Calendar } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo } from "react"
@@ -41,6 +41,18 @@ export default function DashboardPage() {
   }, [database, user])
 
   const { data: allData, isLoading } = useList<BusinessActor>(memoQuery)
+
+  const kuotaQuery = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'koordinator_kuotas')
+  }, [database])
+
+  const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery)
+
+  const totalKuotaDashboard = useMemo(() => {
+    if (!kuotaData) return 0
+    return kuotaData.reduce((acc: number, curr: any) => acc + (curr.quota || 0), 0)
+  }, [kuotaData])
 
   const kelurahanList = [
     "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
@@ -256,25 +268,25 @@ export default function DashboardPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {coordinatorStats.map((item, index) => (
-                        <TableRow key={item.name} className="hover:bg-slate-50/80 transition-colors">
+                      {kuotaData && kuotaData.map((item: any, index: number) => (
+                        <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
                           <TableCell className="text-center font-bold text-slate-600 text-xs">{index + 1}</TableCell>
                           <TableCell className="font-black text-primary text-xs tracking-tight">{item.name}</TableCell>
                           <TableCell className="text-center">
                             <span className="inline-flex items-center justify-center bg-primary text-white font-black px-4 py-1.5 rounded-full min-w-[3.5rem] shadow-sm text-xs">
-                              {item.count}
+                              {item.quota}
                             </span>
                           </TableCell>
                         </TableRow>
                       ))}
-                      {(!coordinatorStats || coordinatorStats.length === 0) && !isLoading && (
+                      {(!kuotaData || kuotaData.length === 0) && !isKuotaLoading && (
                         <TableRow>
                           <TableCell colSpan={3} className="text-center py-10 text-muted-foreground font-bold italic text-xs">
                             Belum ada data koordinator terekam.
                           </TableCell>
                         </TableRow>
                       )}
-                      {isLoading && (
+                      {isKuotaLoading && (
                         <TableRow>
                           <TableCell colSpan={3} className="text-center py-10">
                             <div className="flex flex-col items-center gap-2 text-muted-foreground">
@@ -285,6 +297,16 @@ export default function DashboardPage() {
                         </TableRow>
                       )}
                     </TableBody>
+                    <TableFooter>
+                      <TableRow className="bg-primary/5 border-t-2 border-primary/20">
+                        <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs">
+                          Total Keseluruhan Kuota
+                        </TableCell>
+                        <TableCell className="text-center font-black text-primary text-base">
+                          {totalKuotaDashboard}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
                   </Table>
                 </div>
               </CardContent>

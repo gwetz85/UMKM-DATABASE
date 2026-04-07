@@ -24,7 +24,8 @@ import {
   MessageSquare,
   History,
   FileText,
-  ChevronRight
+  ChevronRight,
+  BarChart3
 } from "lucide-react"
 
 import { usePathname, useRouter } from "next/navigation"
@@ -204,6 +205,12 @@ export function AppSidebar() {
       href: "/settings", 
       icon: Settings, 
       show: !!user && !isKoordinator
+    },
+    { 
+      name: "Kuota Koordinator", 
+      href: "/kuota-koordinator", 
+      icon: BarChart3, 
+      show: isAdmin 
     },
     { 
       name: "Monitoring Chat", 
