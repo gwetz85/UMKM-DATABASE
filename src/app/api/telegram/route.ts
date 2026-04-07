@@ -178,7 +178,21 @@ export async function POST(req: NextRequest) {
               let statusLabel = r.status?.toUpperCase().replace('_', ' ') || "UNKNOWN";
               reply += `📍 Status: ${statusLabel === 'VERIFIED ACTOR' ? '✅ VERIFIED ACTOR' : statusLabel}\n`;
               let timestamp = r.createdAt ? new Date(r.createdAt).toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}) : "-";
-              reply += `📅 Input: ${timestamp}\n\n`;
+              reply += `📅 Input: ${timestamp}\n`;
+              
+              let menuSource = "";
+              if (r.status === 'pending') menuSource = "📥 Verifikasi Admin";
+              else if (r.status === 'verified_actor') menuSource = "👥 Data Pelaku / 💳 Rekening Bank";
+              else if (r.status === 'verified_dinas') menuSource = "📋 Verifikasi & Validasi Dinas";
+              else if (r.status === 'bank_pending') menuSource = "🏦 Verifikasi Bank";
+              else if (r.status === 'lpj_pending') menuSource = "📝 LPJ";
+              else if (r.status === 'finish') menuSource = "🏁 Finish";
+              else if (r.status === 'rejected') menuSource = "❌ Ditolak / Cancell";
+              else if (r.status === 'blacklist') menuSource = "🚫 Blacklist";
+              else menuSource = "❓ Lainnya";
+
+              reply += `📂 Menu: ${menuSource}\n`;
+              reply += `👤 Oleh: ${r.createdBy || "System"}\n\n`;
             });
             if (results.length === 5) {
               reply += `_Hanya menampilkan 5 data pertama._`;
