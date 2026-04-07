@@ -50,7 +50,7 @@
     },
     "koordinator_kuotas": {
       ".read": "true",
-      ".write": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id' || root.child('system_users').child(auth.uid).child('role').val() == 'admin' || root.child('system_users').child(auth.uid).child('role').val() == 'superadmin')"
+      ".write": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')"
     }
   }
 }
