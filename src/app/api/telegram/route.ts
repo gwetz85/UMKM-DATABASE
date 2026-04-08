@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
-import { getKuotaData } from '@/lib/telegramQuotaService';
+
 import { getDatabase, ref, get, query, orderByChild, equalTo, push, set } from 'firebase/database';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
                       `🏢 /koor [nama] - Cari berdasar Koordinator\n` +
                       `✅ /cekdata [nomor] - Cek NIK/KK dengan Master Data\n` +
                       `📝 /inputdata - Input data baru via Bot\n` +
+                      `📊 /kuota - Lihat kuota koordinator\n` +
                       `ℹ️ /about - Informasi Aplikasi\n`;
         await sendMessage(chatId, reply);
       } 
@@ -384,7 +385,7 @@ export async function POST(req: NextRequest) {
               if (snapshot.exists()) {
                 snapshot.forEach((child) => {
                   const val = child.val();
-                  if (val.status !== 'rejected' && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
+                  if (val.status !== 'rejected' && val.status !== 'blacklist' && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
                     achieved++;
                   }
                 });
@@ -430,16 +431,36 @@ export async function POST(req: NextRequest) {
         }
       } else if (text.startsWith('/kuota')) {
         await sendMessage(chatId, `⏳ _Mengambil data kuota koordinator..._`);
+        
         const quotaRef = ref(database, 'koordinator_kuotas');
         const quotaSnap = await get(quotaRef);
+        
         if (quotaSnap.exists()) {
           const quotaData = Object.values(quotaSnap.val()) as any[];
+          
+          // Get businessActors to calculate 'achieved'
+          const actorsRef = ref(database, 'businessActors');
+          const actorsSnap = await get(actorsRef);
+          const actors = actorsSnap.exists() ? Object.values(actorsSnap.val()) as any[] : [];
+          
           let reply = `*📊 Kuota Koordinator*\n\n`;
           quotaData.forEach((q: any) => {
             const name = q.name || "Unnamed";
-            const quota = q.quota ?? 0;
-            reply += `▫️ ${name}: ${quota}\n`;
+            const limit = q.quota ?? 0;
+            
+            // Calculate achieved
+            const achieved = actors.filter(a => 
+              a.status !== 'rejected' && 
+              a.status !== 'blacklist' &&
+              (a.coordinator || "").toUpperCase().trim() === name.toUpperCase().trim()
+            ).length;
+            
+            const sisa = limit - achieved;
+            
+            reply += `▫️ *${name}*\n`;
+            reply += `   Limit: ${limit} | Terpakai: ${achieved} | Sisa: ${sisa}\n\n`;
           });
+          
           await sendMessage(chatId, reply);
         } else {
           await sendMessage(chatId, "Tidak ada data kuota koordinator.");
