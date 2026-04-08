@@ -1,17 +1,8 @@
-<<<<<<< HEAD
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
-
-import { getDatabase, ref, get, query, orderByChild, equalTo, push, set } from 'firebase/database';
+import { getDatabase, ref, get, push, set } from 'firebase/database';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
-=======
-import { NextRequest, NextResponse } from \'next/server\';
-import { initializeApp, getApps } from \'firebase/app\';
-import { getDatabase, ref, get, push, set } from \'firebase/database\';
-import { getAuth, signInAnonymously } from \'firebase/auth\';
-import { firebaseConfig } from \'@/firebase/config\';
->>>>>>> dbc154a12edd1226520f325dc068ef15d6aaabd2
 
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
@@ -56,12 +47,12 @@ export async function POST(req: NextRequest) {
       
       console.log(`Received message from ${chatId}: ${text}`);
 
-<<<<<<< HEAD
       if (text.startsWith('/start') || text.startsWith('/help')) {
         const reply = `Selamat datang di *Bot UMKM Database* 🏬\n\n` +
                       `Bot ini melayani pemantauan & input data.\n` +
                       `✅ *Menu Perintah:*\n` +
                       `📊 /stats - Ringkasan data\n` +
+                      `📊 /kuota - Cek kuota koordinator\n` +
                       `🔍 /search [kata] - Cari umum\n` +
                       `📌 /nik [nomor] - Cari berdasar NIK\n` +
                       `👤 /nama [nama] - Cari berdasar Nama\n` +
@@ -69,24 +60,7 @@ export async function POST(req: NextRequest) {
                       `🏢 /koor [nama] - Cari berdasar Koordinator\n` +
                       `✅ /cekdata [nomor] - Cek NIK/KK dengan Master Data\n` +
                       `📝 /inputdata - Input data baru via Bot\n` +
-                      `📊 /kuota - Lihat kuota koordinator\n` +
                       `ℹ️ /about - Informasi Aplikasi\n`;
-=======
-      if (text.startsWith(\'/start\') || text.startsWith(\'/help\')) {
-        const reply = `Selamat datang di *Bot UMKM Database* 🏬\\n\\n` +
-                      `Bot ini melayani pemantauan & input data.\\n` +
-                      `✅ *Menu Perintah:*\\n` +
-                      `📊 /stats - Ringkasan data\\n` +
-                      `📊 /kuota - Cek kuota koordinator\\n` +
-                      `🔍 /search [kata] - Cari umum\\n` +
-                      `📌 /nik [nomor] - Cari berdasar NIK\\n` +
-                      `👤 /nama [nama] - Cari berdasar Nama\\n` +
-                      `📱 /hp [nomor] - Cari berdasar No. HP\\n` +
-                      `🏢 /koor [nama] - Cari berdasar Koordinator\\n` +
-                      `✅ /cekdata [nomor] - Cek NIK/KK dengan Master Data\\n` +
-                      `📝 /inputdata - Input data baru via Bot\\n` +
-                      `ℹ️ /about - Informasi Aplikasi\\n`;
->>>>>>> dbc154a12edd1226520f325dc068ef15d6aaabd2
         await sendMessage(chatId, reply);
       } 
       else if (text.startsWith(\'/about\')) {
@@ -381,11 +355,7 @@ export async function POST(req: NextRequest) {
               if (snapshot.exists()) {
                 snapshot.forEach((child) => {
                   const val = child.val();
-<<<<<<< HEAD
                   if (val.status !== 'rejected' && val.status !== 'blacklist' && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
-=======
-                  if (val.status !== \'rejected\' && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
->>>>>>> dbc154a12edd1226520f325dc068ef15d6aaabd2
                     achieved++;
                   }
                 });
@@ -429,54 +399,25 @@ export async function POST(req: NextRequest) {
       else if (text.startsWith(\'/kuota\')) {
         await sendMessage(chatId, `⏳ _Mengambil data kuota koordinator..._`);
         
-<<<<<<< HEAD
-        const quotaRef = ref(database, 'koordinator_kuotas');
-        const quotaSnap = await get(quotaRef);
-        
-        if (quotaSnap.exists()) {
-          const quotaData = Object.values(quotaSnap.val()) as any[];
-          
-          // Get businessActors to calculate 'achieved'
-          const actorsRef = ref(database, 'businessActors');
-          const actorsSnap = await get(actorsRef);
-          const actors = actorsSnap.exists() ? Object.values(actorsSnap.val()) as any[] : [];
-          
-          let reply = `*📊 Kuota Koordinator*\n\n`;
-          quotaData.forEach((q: any) => {
-            const name = q.name || "Unnamed";
-            const limit = q.quota ?? 0;
-            
-            // Calculate achieved
-            const achieved = actors.filter(a => 
-              a.status !== 'rejected' && 
-              a.status !== 'blacklist' &&
-              (a.coordinator || "").toUpperCase().trim() === name.toUpperCase().trim()
-            ).length;
-            
-            const sisa = limit - achieved;
-            
-            reply += `▫️ *${name}*\n`;
-            reply += `   Limit: ${limit} | Terpakai: ${achieved} | Sisa: ${sisa}\n\n`;
-=======
-        const actorsRef = ref(database, \'businessActors\');
+        const actorsRef = ref(database, 'businessActors');
         const actorsSnap = await get(actorsRef);
         const actors = actorsSnap.exists() ? Object.values(actorsSnap.val()) as any[] : [];
 
         const usageMap = new Map<string, number>();
         actors.forEach(actor => {
-            if (actor.coordinator && actor.status !== \'rejected\') {
+            if (actor.coordinator && actor.status !== 'rejected' && actor.status !== 'blacklist') {
                 const coordinatorName = (actor.coordinator || "").toUpperCase().trim();
                 usageMap.set(coordinatorName, (usageMap.get(coordinatorName) || 0) + 1);
             }
         });
 
-        const quotaRef = ref(database, \'koordinator_kuotas\');
+        const quotaRef = ref(database, 'koordinator_kuotas');
         const quotaSnap = await get(quotaRef);
 
         if (quotaSnap.exists()) {
           const quotaData = Object.values(quotaSnap.val()) as any[];
-          let reply = `*📊 Kuota Koordinator & Penggunaan*\\n\\n`;
-          reply += `*Format:* _Nama (Terpakai / Total Kuota)_\\n\\n`;
+          let reply = `*📊 Kuota Koordinator & Penggunaan*\n\n`;
+          reply += `*Format:* _Nama (Terpakai / Total Kuota)_\n\n`;
           
           quotaData.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
@@ -485,9 +426,8 @@ export async function POST(req: NextRequest) {
             const nameUpper = name.toUpperCase().trim();
             const limit = q.quota ?? 0;
             const used = usageMap.get(nameUpper) || 0;
-            const emoji = used >= limit ? \'❌\' : \'✅\';
-            reply += `${emoji} *${name}:* ${used} / ${limit}\\n`;
->>>>>>> dbc154a12edd1226520f325dc068ef15d6aaabd2
+            const emoji = used >= limit ? '❌' : '✅';
+            reply += `${emoji} *${name}:* ${used} / ${limit}\n`;
           });
           
           await sendMessage(chatId, reply);
