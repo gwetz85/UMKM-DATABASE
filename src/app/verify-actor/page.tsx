@@ -22,6 +22,7 @@ export default function VerifyActorPage() {
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
+  const [viewingMasterData, setViewingMasterData] = useState<any | null>(null)
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
   const [editingOnlyActor, setEditingOnlyActor] = useState<BusinessActor | null>(null)
   const [rejectingActor, setRejectingActor] = useState<BusinessActor | null>(null)
@@ -54,6 +55,12 @@ export default function VerifyActorPage() {
   }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
+
+  const masterDataRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'master_data')
+  }, [database])
+  const { data: allMasterDataRaw } = useList<any>(masterDataRef)
 
   const actors = allActorsRaw?.filter(a => a.status === 'pending')
 
@@ -221,10 +228,27 @@ export default function VerifyActorPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredActors?.map((actor) => (
+                {filteredActors?.map((actor) => {
+                  const matchingMasterData = allMasterDataRaw?.find((m: any) => 
+                    (m.noKK && m.noKK === actor.noKK) || 
+                    (m.nik && m.nik === actor.nik)
+                  );
+                  return (
                   <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors border-b border-slate-100">
                     <TableCell className="font-bold text-slate-800">{actor.fullName}</TableCell>
-                    <TableCell className="font-mono text-xs text-slate-500">{actor.nik}</TableCell>
+                    <TableCell className="font-mono text-xs text-slate-500">
+                      <div>{actor.nik}</div>
+                      {matchingMasterData && (
+                        <div 
+                          onClick={() => setViewingMasterData(matchingMasterData)}
+                          className="mt-1.5 inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 border border-yellow-300 px-2 py-0.5 rounded cursor-pointer hover:bg-yellow-200 transition-colors shadow-sm w-max"
+                        >
+                          <ShieldAlert className="w-3 h-3 text-yellow-600" />
+                          <span className="text-[10px] font-bold uppercase tracking-wider">CheckData</span>
+                          <Eye className="w-3 h-3 ml-1 opacity-70" />
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <span className="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider">
                         {actor.businessCategory}
@@ -591,12 +615,71 @@ export default function VerifyActorPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                )})}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!viewingMasterData} onOpenChange={(open) => !open && setViewingMasterData(null)}>
+        <DialogContent className="max-w-2xl bg-amber-50/50">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-amber-600 uppercase flex items-center gap-2">
+              <ShieldAlert className="w-6 h-6 border-amber-200" /> Data Master Ditemukan
+            </DialogTitle>
+            <DialogDescription className="text-amber-800/80 font-medium">
+              Sistem mendeteksi bahwa Nomor KK atau NIK pengaju ini sudah memiliki riwayat pada Master Data Pembanding:
+            </DialogDescription>
+          </DialogHeader>
+          {viewingMasterData && (
+            <div className="grid gap-4 py-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-4 rounded-xl shadow-sm border border-amber-200">
+                <div className="space-y-1 border-b pb-2 md:border-b-0 md:pb-0">
+                  <p className="text-[10px] font-bold text-amber-600/70 uppercase">Nama Lengkap (Master)</p>
+                  <p className="text-sm font-bold text-slate-800">{viewingMasterData.nama || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-amber-600/70 uppercase">No. KK / NIK</p>
+                  <p className="text-sm font-bold text-slate-800">{viewingMasterData.noKK || "-"} <span className="opacity-40">/</span> {viewingMasterData.nik || "-"}</p>
+                </div>
+                <div className="space-y-1 border-b pb-2 md:border-b-0 md:pb-0">
+                  <p className="text-[10px] font-bold text-amber-600/70 uppercase">Nomor (ID Program)</p>
+                  <p className="text-sm font-bold text-slate-800">{viewingMasterData.nomor || "-"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-amber-600/70 uppercase">Sektor Usaha</p>
+                  <p className="text-sm font-bold text-slate-800">{viewingMasterData.usaha || "-"}</p>
+                </div>
+                <div className="space-y-1 md:col-span-2 pt-2 border-t mt-2 md:mt-0 md:border-t-0 md:pt-0">
+                  <p className="text-[10px] font-bold text-amber-600/70 uppercase">Kelurahan — Alamat</p>
+                  <p className="text-sm font-bold text-slate-800">{viewingMasterData.kelurahan || "-"} — {viewingMasterData.alamat || "-"}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-xl shadow-sm border border-amber-200">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-amber-600/70 uppercase">Status Pembanding</p>
+                  <p className="text-sm font-black text-rose-600 uppercase">{viewingMasterData.status || "-"} <span className="text-xs font-bold opacity-50">({viewingMasterData.tahunPengajuan || "-"})</span></p>
+                </div>
+                <div className="space-y-1 border-l pl-4 border-amber-100">
+                  <p className="text-[10px] font-bold text-amber-600/70 uppercase">Nominal</p>
+                  <p className="text-sm font-black text-emerald-600">{viewingMasterData.nominal || "-"}</p>
+                </div>
+                <div className="space-y-1 border-l pl-4 border-amber-100">
+                  <p className="text-[10px] font-bold text-amber-600/70 uppercase">Status LPJ</p>
+                  <p className="text-sm font-bold text-slate-800">{viewingMasterData.statusLpj || "-"}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingMasterData(null)} className="border-amber-300 text-amber-700 hover:bg-amber-100 bg-white">
+              Tutup Rincian
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
