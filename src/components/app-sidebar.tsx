@@ -82,35 +82,8 @@ export function AppSidebar() {
   const database = useDatabase()
   const [copied, setCopied] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
-  const [currentTime, setCurrentTime] = React.useState<string>("")
-  const [currentDate, setCurrentDate] = React.useState<string>("")
-
-  // Clock Update Effect
   React.useEffect(() => {
     setMounted(true)
-    const updateTime = () => {
-      const now = new Date()
-      
-      const time = now.toLocaleTimeString('en-GB', { 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit', 
-        hour12: false 
-      })
-
-      const date = now.toLocaleDateString('id-ID', {
-        weekday: 'long',
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric'
-      })
-      
-      setCurrentTime(time)
-      setCurrentDate(date)
-    }
-    updateTime()
-    const interval = setInterval(updateTime, 1000)
-    return () => clearInterval(interval)
   }, [])
 
   // Admin Check
@@ -293,46 +266,7 @@ export function AppSidebar() {
           </InfoDialog>
         </div>
 
-        {/* Waktu Server - Modern Redesign */}
-        <div className="w-full group-data-[collapsible=icon]:hidden px-4 mb-6">
-          <div className="relative overflow-hidden rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 p-4 shadow-xl group/clock hover:bg-white/15 transition-all duration-500">
-            {/* Subtle Decorative Elements */}
-            <div className="absolute -right-4 -top-4 w-12 h-12 bg-white/10 rounded-full blur-2xl group-hover:bg-accent/20 transition-all duration-500" />
-            <div className="absolute -left-4 -bottom-4 w-12 h-12 bg-accent/10 rounded-full blur-2xl group-hover:bg-white/10 transition-all duration-500" />
-            
-            <div className="flex flex-col items-center justify-center gap-1 relative z-10">
-              <div className="flex items-end justify-center w-full gap-2">
-                <div className="flex items-end">
-                  <span className="text-5xl font-black text-white tabular-nums tracking-tighter drop-shadow-md leading-none">
-                    {currentTime.split(':')[0] || '00'}
-                  </span>
-                  <span className="text-5xl font-black text-white/30 animate-blink px-1 leading-none">:</span>
-                  <span className="text-5xl font-black text-white tabular-nums tracking-tighter drop-shadow-md leading-none">
-                    {currentTime.split(':')[1] || '00'}
-                  </span>
-                </div>
-                
-                <div className="flex flex-col items-start">
-                  <span className="text-[11px] font-black text-white drop-shadow-[0_0_10px_rgba(34,197,94,0.8)] leading-none mb-1.5 uppercase tracking-[0.2em]">
-                    DETIK
-                  </span>
-                  <span className="text-2xl font-black text-white/60 tabular-nums leading-none drop-shadow-sm">
-                    {currentTime.split(':')[2] || '00'}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10 w-full justify-center">
-                <div className="flex items-center justify-center w-5 h-5 rounded-lg bg-white/10">
-                  <Clock className="w-3 h-3 text-accent" />
-                </div>
-                <span className="text-[10px] font-bold text-white/70 uppercase tracking-wider">
-                  {currentDate}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+
       </SidebarHeader>
 
       <SidebarContent className="px-3 py-2">
