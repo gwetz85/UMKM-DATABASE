@@ -20,12 +20,12 @@ async function sendMessage(chatId: number, text: string) {
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
   try {
     await fetch(url, {
-      method: \'POST\',
-      headers: { \'Content-Type\': \'application/json\' },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: chatId,
         text: text,
-        parse_mode: \'Markdown\'
+        parse_mode: 'Markdown'
       })
     });
   } catch (error) {
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
                       `ℹ️ /about - Informasi Aplikasi\n`;
         await sendMessage(chatId, reply);
       } 
-      else if (text.startsWith(\'/about\')) {
+      else if (text.startsWith('/about')) {
         const reply = `Selamat datang di Aplikasi *SIMPU*\\n` +
                       `\\- SISTEM INFORMASI MANAJEMEN PELAKU USAHA \\-\\n` +
                       `*Versi 7.0* Update tanggal 05042026 2250\\n\\n` +
@@ -82,10 +82,10 @@ export async function POST(req: NextRequest) {
                       `© 2026 SIMPU \\- All Rights Reserved`;
         await sendMessage(chatId, reply);
       } 
-      else if (text.startsWith(\'/stats\')) {
+      else if (text.startsWith('/stats')) {
         await sendMessage(chatId, "⏳ _Sedang mengambil data dari server..._");
         
-        const actorsRef = ref(database, \'businessActors\');
+        const actorsRef = ref(database, 'businessActors');
         const snapshot = await get(actorsRef);
         
         if (snapshot.exists()) {
@@ -93,9 +93,9 @@ export async function POST(req: NextRequest) {
           const actors = Object.values(data) as any[];
           
           let total = actors.length;
-          let verified = actors.filter(a => a.status === \'verified_actor\').length;
-          let pending = actors.filter(a => a.status === \'pending\').length;
-          let rejected = actors.filter(a => a.status === \'rejected\').length;
+          let verified = actors.filter(a => a.status === 'verified_actor').length;
+          let pending = actors.filter(a => a.status === 'pending').length;
+          let rejected = actors.filter(a => a.status === 'rejected').length;
           
           const reply = `📈 *STATISTIK PELAKU USAHA*\\n\\n` +
                         `Total Data: *${total}*\\n` +
@@ -107,25 +107,25 @@ export async function POST(req: NextRequest) {
           await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
         }
       }
-      else if (text.startsWith(\'/search\') || text.startsWith(\'/nik\') || text.startsWith(\'/nama\') || text.startsWith(\'/hp\') || text.startsWith(\'/koor\')) {
+      else if (text.startsWith('/search') || text.startsWith('/nik') || text.startsWith('/nama') || text.startsWith('/hp') || text.startsWith('/koor')) {
         
-        let keyword = \'\';
-        let type = \'\';
-        if (text.startsWith(\'/search\')) { keyword = text.replace(\'/search\', \'\').trim().toLowerCase(); type = \'search\'; }
-        else if (text.startsWith(\'/nik\')) { keyword = text.replace(\'/nik\', \'\').trim().toLowerCase(); type = \'nik\'; }
-        else if (text.startsWith(\'/nama\')) { keyword = text.replace(\'/nama\', \'\').trim().toLowerCase(); type = \'nama\'; }
-        else if (text.startsWith(\'/hp\')) { keyword = text.replace(\'/hp\', \'\').trim().toLowerCase(); type = \'hp\'; }
-        else if (text.startsWith(\'/koor\')) { keyword = text.replace(\'/koor\', \'\').trim().toLowerCase(); type = \'koor\'; }
+        let keyword = '';
+        let type = '';
+        if (text.startsWith('/search')) { keyword = text.replace('/search', '').trim().toLowerCase(); type = 'search'; }
+        else if (text.startsWith('/nik')) { keyword = text.replace('/nik', '').trim().toLowerCase(); type = 'nik'; }
+        else if (text.startsWith('/nama')) { keyword = text.replace('/nama', '').trim().toLowerCase(); type = 'nama'; }
+        else if (text.startsWith('/hp')) { keyword = text.replace('/hp', '').trim().toLowerCase(); type = 'hp'; }
+        else if (text.startsWith('/koor')) { keyword = text.replace('/koor', '').trim().toLowerCase(); type = 'koor'; }
 
         if (!keyword) {
-          let example = type === \'search\' ? \'bengkel\' : (type === \'nik\' || type === \'hp\') ? \'08123\' : \'agus\';
+          let example = type === 'search' ? 'bengkel' : (type === 'nik' || type === 'hp') ? '08123' : 'agus';
           await sendMessage(chatId, `Ketikkan kata kunci di sebelah perintah. Contoh: \\\`/${type} ${example}\\\``);
           return NextResponse.json({ ok: true });
         }
         
         await sendMessage(chatId, `⏳ _Mencari data dengan kata kunci "${keyword}"..._`);
         
-        const actorsRef = ref(database, \'businessActors\');
+        const actorsRef = ref(database, 'businessActors');
         const snapshot = await get(actorsRef);
         
         if (snapshot.exists()) {
@@ -133,10 +133,10 @@ export async function POST(req: NextRequest) {
           const actors = Object.values(data) as any[];
           
           const results = actors.filter(a => {
-            if (type === \'nik\') return a.nik && a.nik.includes(keyword);
-            if (type === \'nama\') return a.fullName && a.fullName.toLowerCase().includes(keyword);
-            if (type === \'hp\') return a.phone && a.phone.includes(keyword);
-            if (type === \'koor\') return a.coordinator && a.coordinator.toLowerCase().includes(keyword);
+            if (type === 'nik') return a.nik && a.nik.includes(keyword);
+            if (type === 'nama') return a.fullName && a.fullName.toLowerCase().includes(keyword);
+            if (type === 'hp') return a.phone && a.phone.includes(keyword);
+            if (type === 'koor') return a.coordinator && a.coordinator.toLowerCase().includes(keyword);
             
             return (a.fullName && a.fullName.toLowerCase().includes(keyword)) ||
                    (a.nik && a.nik.includes(keyword)) ||
@@ -161,26 +161,26 @@ export async function POST(req: NextRequest) {
               reply += `▫️ RT/RW: ${r.rtRw || "-"}\\n`;
               let kel = r.kelurahan ? `Kel. ${r.kelurahan}` : "";
               let kec = r.kecamatan ? `Kec. ${r.kecamatan}` : "";
-              reply += `▫️ Wilayah: ${kel}${kel && kec ? \', \' : \'\'}${kec || "-"}\\n\\n`;
+              reply += `▫️ Wilayah: ${kel}${kel && kec ? ', ' : ''}${kec || "-"}\\n\\n`;
               reply += `🏢 *Usaha & Lapangan*\\n`;
               reply += `▫️ Kategori: ${r.businessCategory || "-"}\\n`;
               reply += `▫️ Lokasi Usaha: ${r.businessLocation || "-"}\\n`;
               reply += `▫️ Koordinator: ${r.coordinator || "-"}\\n\\n`;
               reply += `💳 *Bank*\\n`;
               reply += `▫️ Bank: ${r.bankName || "-"}\\n\\n`;
-              let statusLabel = r.status?.toUpperCase().replace(\'_\', \' \') || "UNKNOWN";
-              reply += `📍 Status: ${statusLabel === \'VERIFIED ACTOR\' ? \'✅ VERIFIED ACTOR\' : statusLabel}\\n`;
-              let timestamp = r.createdAt ? new Date(r.createdAt).toLocaleString(\'id-ID\', {timeZone: \'Asia/Jakarta\'}) : "-";
+              let statusLabel = r.status?.toUpperCase().replace('_', ' ') || "UNKNOWN";
+              reply += `📍 Status: ${statusLabel === 'VERIFIED ACTOR' ? '✅ VERIFIED ACTOR' : statusLabel}\\n`;
+              let timestamp = r.createdAt ? new Date(r.createdAt).toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}) : "-";
               reply += `📅 Input: ${timestamp}\\n`;
               let menuSource = "";
-              if (r.status === \'pending\') menuSource = "📥 Verifikasi Admin";
-              else if (r.status === \'verified_actor\') menuSource = "👥 Data Pelaku / 💳 Rekening Bank";
-              else if (r.status === \'verified_dinas\') menuSource = "📋 Verifikasi & Validasi Dinas";
-              else if (r.status === \'bank_pending\') menuSource = "🏦 Verifikasi Bank";
-              else if (r.status === \'lpj_pending\') menuSource = "📝 LPJ";
-              else if (r.status === \'finish\') menuSource = "🏁 Finish";
-              else if (r.status === \'rejected\') menuSource = "❌ Ditolak / Cancell";
-              else if (r.status === \'blacklist\') menuSource = "🚫 Blacklist";
+              if (r.status === 'pending') menuSource = "📥 Verifikasi Admin";
+              else if (r.status === 'verified_actor') menuSource = "👥 Data Pelaku / 💳 Rekening Bank";
+              else if (r.status === 'verified_dinas') menuSource = "📋 Verifikasi & Validasi Dinas";
+              else if (r.status === 'bank_pending') menuSource = "🏦 Verifikasi Bank";
+              else if (r.status === 'lpj_pending') menuSource = "📝 LPJ";
+              else if (r.status === 'finish') menuSource = "🏁 Finish";
+              else if (r.status === 'rejected') menuSource = "❌ Ditolak / Cancell";
+              else if (r.status === 'blacklist') menuSource = "🚫 Blacklist";
               else menuSource = "❓ Lainnya";
               reply += `📂 Menu: ${menuSource}\\n`;
               reply += `👤 Oleh: ${r.createdBy || "System"}\\n\\n`;
@@ -195,8 +195,8 @@ export async function POST(req: NextRequest) {
         } else {
            await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
         }
-      } else if (text.startsWith(\'/cekdata\')) {
-        const keyword = text.replace(\'/cekdata\', \'\').trim();
+      } else if (text.startsWith('/cekdata')) {
+        const keyword = text.replace('/cekdata', '').trim();
         if (!keyword) {
           await sendMessage(chatId, "Ketikkan NIK, Nomor KK, atau NAMA setelah perintah. Contoh: `/cekdata 12345` atau `/cekdata AGUS` ");
           return NextResponse.json({ ok: true });
@@ -204,7 +204,7 @@ export async function POST(req: NextRequest) {
         await sendMessage(chatId, `⏳ _Mengecek "${keyword}" di Database Master..._`);
         let foundResults: any[] = [];
         try {
-          const masterSnap = await get(ref(database, \'master_data\'));
+          const masterSnap = await get(ref(database, 'master_data'));
           if (masterSnap.exists()) {
             const allData = Object.values(masterSnap.val()) as any[];
             const kw = keyword.toLowerCase();
@@ -244,7 +244,7 @@ export async function POST(req: NextRequest) {
         } else {
           await sendMessage(chatId, `❌ *DATA TIDAK TERDAFTAR*\\n\\nMohon maaf, nomor \\\`${keyword}\\\` tidak ditemukan dalam database master.`);
         }
-      } else if (text.startsWith(\'/inputdata\')) {
+      } else if (text.startsWith('/inputdata')) {
         const reply = `Silakan *COPY* template di bawah ini, isi data dengan lengkap, lalu kirim kembali ke bot:\\n\\n` +
                       `\\\`/simpandata\\n` +
                       `Nama Lengkap:\\n` +
@@ -267,27 +267,27 @@ export async function POST(req: NextRequest) {
                       `_▪️ Jenis Kelamin: Laki-laki atau Perempuan_\\n` +
                       `_▪️ Jenis Usaha: Kuliner atau Bukan Kuliner_`;
         await sendMessage(chatId, reply);
-      } else if (text.startsWith(\'/simpandata\')) {
-        const lines = text.split(\'\\n\');
+      } else if (text.startsWith('/simpandata')) {
+        const lines = text.split('\\n');
         let parsedData: any = {};
         lines.forEach((line: string) => {
-          if (line.includes(\':\')) {
-            const parts = line.split(\':\');
+          if (line.includes(':')) {
+            const parts = line.split(':');
             const key = parts[0].trim().toLowerCase();
-            const value = parts.slice(1).join(\':\').trim();
-            if (key.includes(\'nama lengkap\')) parsedData.fullName = value;
-            else if (key.includes(\'jenis kelamin\') || key === \'kelamin\') {
-              if (value.toLowerCase().includes(\'perempuan\')) parsedData.gender = "Perempuan";
-              else if (value.toLowerCase().includes(\'laki\')) parsedData.gender = "Laki-laki";
+            const value = parts.slice(1).join(':').trim();
+            if (key.includes('nama lengkap')) parsedData.fullName = value;
+            else if (key.includes('jenis kelamin') || key === 'kelamin') {
+              if (value.toLowerCase().includes('perempuan')) parsedData.gender = "Perempuan";
+              else if (value.toLowerCase().includes('laki')) parsedData.gender = "Laki-laki";
               else parsedData.gender = value;
             }
-            else if (key.includes(\'nik\')) parsedData.nik = value;
-            else if (key.includes(\'nomor kk\')) parsedData.noKK = value;
-            else if (key.includes(\'ttl\')) parsedData.pobDob = value;
-            else if (key.includes(\'nomor hp\')) parsedData.phone = value;
-            else if (key === \'alamat\') parsedData.address = value;
-            else if (key.includes(\'rt/rw\')) parsedData.rtRw = value;
-            else if (key.includes(\'kelurahan\')) {
+            else if (key.includes('nik')) parsedData.nik = value;
+            else if (key.includes('nomor kk')) parsedData.noKK = value;
+            else if (key.includes('ttl')) parsedData.pobDob = value;
+            else if (key.includes('nomor hp')) parsedData.phone = value;
+            else if (key === 'alamat') parsedData.address = value;
+            else if (key.includes('rt/rw')) parsedData.rtRw = value;
+            else if (key.includes('kelurahan')) {
               const kelList = [
                 "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
                 "Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru",
@@ -297,15 +297,15 @@ export async function POST(req: NextRequest) {
               const matched = kelList.find(k => k.toLowerCase() === value.toLowerCase());
               parsedData.kelurahan = matched || value;
             }
-            else if (key.includes(\'kecamatan\')) parsedData.kecamatan = value;
-            else if (key.includes(\'jenis usaha\') || key === \'usaha\') {
-              if (value.toLowerCase().includes(\'bukan kuliner\')) parsedData.businessCategory = "Bukan Kuliner";
-              else if (value.toLowerCase().includes(\'kuliner\')) parsedData.businessCategory = "Kuliner";
+            else if (key.includes('kecamatan')) parsedData.kecamatan = value;
+            else if (key.includes('jenis usaha') || key === 'usaha') {
+              if (value.toLowerCase().includes('bukan kuliner')) parsedData.businessCategory = "Bukan Kuliner";
+              else if (value.toLowerCase().includes('kuliner')) parsedData.businessCategory = "Kuliner";
               else parsedData.businessCategory = value;
             }
-            else if (key.includes(\'nama usaha\')) parsedData.businessName = value;
-            else if (key.includes(\'lokasi usaha\')) parsedData.businessLocation = value;
-            else if (key.includes(\'koordinator\')) parsedData.coordinator = value;
+            else if (key.includes('nama usaha')) parsedData.businessName = value;
+            else if (key.includes('lokasi usaha')) parsedData.businessLocation = value;
+            else if (key.includes('koordinator')) parsedData.coordinator = value;
           }
         });
 
@@ -326,7 +326,7 @@ export async function POST(req: NextRequest) {
         }
         await sendMessage(chatId, `⏳ _Memproses input data untuk NIK: ${parsedData.nik}..._`);
 
-        const actorsRef = ref(database, \'businessActors\');
+        const actorsRef = ref(database, 'businessActors');
         const snapshot = await get(actorsRef);
         let duplicate = false;
         if (snapshot.exists()) {
@@ -344,7 +344,7 @@ export async function POST(req: NextRequest) {
 
         const selectedCoordinator = (parsedData.coordinator || "")?.toUpperCase().trim();
         if (selectedCoordinator) {
-          const quotaRef = ref(database, \'koordinator_kuotas\');
+          const quotaRef = ref(database, 'koordinator_kuotas');
           const quotaSnapshot = await get(quotaRef);
           if (quotaSnapshot.exists()) {
             const quotaData = Object.values(quotaSnapshot.val()) as any[];
@@ -396,7 +396,7 @@ export async function POST(req: NextRequest) {
            await sendMessage(chatId, `❌ Terjadi kesalahan saat menyimpan data. Silakan coba lagi.`);
         }
       } 
-      else if (text.startsWith(\'/kuota\')) {
+      else if (text.startsWith('/kuota')) {
         await sendMessage(chatId, `⏳ _Mengambil data kuota koordinator..._`);
         
         const actorsRef = ref(database, 'businessActors');
