@@ -428,10 +428,28 @@ export async function POST(req: NextRequest) {
            console.error("Error saving data from bot:", error);
            await sendMessage(chatId, `❌ Terjadi kesalahan saat menyimpan data. Silakan coba lagi.`);
         }
+      } else if (text.startsWith('/kuota')) {
+        await sendMessage(chatId, `⏳ _Mengambil data kuota koordinator..._`);
+        const quotaRef = ref(database, 'koordinator_kuotas');
+        const quotaSnap = await get(quotaRef);
+        if (quotaSnap.exists()) {
+          const quotaData = Object.values(quotaSnap.val()) as any[];
+          let reply = `*📊 Kuota Koordinator*\n\n`;
+          quotaData.forEach((q: any) => {
+            const name = q.name || "Unnamed";
+            const quota = q.quota ?? 0;
+            reply += `▫️ ${name}: ${quota}\n`;
+          });
+          await sendMessage(chatId, reply);
+        } else {
+          await sendMessage(chatId, "Tidak ada data kuota koordinator.");
+        }
       } else {
         await sendMessage(chatId, "Perintah tidak dikenali. Gunakan /start untuk melihat menu.");
+        }
       }
     }
+
     
     // Always return 200 OK so Telegram doesn't retry
     return NextResponse.json({ ok: true });
