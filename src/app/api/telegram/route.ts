@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps } from 'firebase/app';
+import { getKuotaData } from '@/lib/telegramQuotaService';
 import { getDatabase, ref, get, query, orderByChild, equalTo, push, set } from 'firebase/database';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
