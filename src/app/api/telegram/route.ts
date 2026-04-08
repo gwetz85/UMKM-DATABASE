@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
                       `Bot ini melayani pemantauan & input data.\n` +
                       `✅ *Menu Perintah:*\n` +
                       `📊 /stats - Ringkasan data\n` +
+                      ` quotas /kuota - Check koordinator kuota\n` +
                       `🔍 /search [kata] - Cari umum\n` +
                       `📌 /nik [nomor] - Cari berdasar NIK\n` +
                       `👤 /nama [nama] - Cari berdasar Nama\n` +
