@@ -81,12 +81,13 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
 
   if (!isDataComplete) {
     return (
-      <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[9px] uppercase bg-slate-100/50 border border-slate-200 px-2 py-1.5 rounded shadow-sm">
-        <ShieldAlert className="w-3 h-3 opacity-50" />
-        <span>DATA BELUM LENGKAP</span>
+      <div className="flex items-center gap-1.5 text-amber-600 font-black text-[9px] uppercase bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-lg shadow-sm animate-pulse">
+        <ShieldAlert className="w-3.5 h-3.5" />
+        <span>LENGKAPI DATA</span>
       </div>
     )
   }
+
 
   if (timeLeft === null) return <Loader2 className="w-3 h-3 animate-spin opacity-20" />
 
