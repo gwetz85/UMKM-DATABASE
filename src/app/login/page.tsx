@@ -205,7 +205,7 @@ export default function LoginPage() {
             <img 
               src="/logo.png" 
               alt="SIMPU Logo" 
-              className="w-full h-full object-contain p-2"
+              className="w-full h-full object-cover"
             />
           </div>
         </div>
@@ -221,7 +221,7 @@ export default function LoginPage() {
                 <img 
                   src="/logo.png" 
                   alt="SIMPU Logo" 
-                  className="w-full h-full object-contain p-1"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </div>

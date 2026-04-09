@@ -255,11 +255,11 @@ export function AppSidebar() {
         <div className="flex flex-col items-center justify-center w-full">
           <InfoDialog>
             <button className="flex flex-col items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 outline-none">
-              <div className="relative group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 w-24 h-24 overflow-hidden rounded-full border-2 border-white/20 shadow-2xl bg-white">
+              <div className="relative group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 w-24 h-24 overflow-hidden rounded-full border-2 border-white/20 shadow-2xl">
                 <img 
                   src="/logo.png" 
                   alt="SIMPU Logo" 
-                  className="w-full h-full object-contain p-1"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </button>
