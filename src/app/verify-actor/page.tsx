@@ -12,9 +12,122 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Building2, MapPin, History, Edit, XCircle } from "lucide-react"
+import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Building2, MapPin, History, Edit, XCircle, Clock } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
+
+function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, actor }: { 
+  actorId: string, 
+  createdAt: string, 
+  matchCount: number, 
+  database: any,
+  isAdmin: boolean,
+  actor: BusinessActor
+}) {
+  const [timeLeft, setTimeLeft] = useState<number | null>(null)
+  
+  // Logic: 0 matches = 60 min, 1 match = 120 min, 2+ matches = Manual
+  const targetMins = matchCount === 0 ? 60 : 120
+  const isAutoEligible = matchCount < 2
+
+  // Validation: Check if all mandatory fields are present
+  const isDataComplete = !!(
+    actor.fullName && 
+    actor.nik && 
+    actor.noKK && 
+    actor.gender && 
+    actor.pobDob && 
+    actor.phone && 
+    actor.address && 
+    actor.rtRw && 
+    actor.kelurahan && 
+    actor.kecamatan && 
+    actor.businessCategory && 
+    actor.businessName && 
+    actor.businessLocation && 
+    actor.coordinator
+  );
+
+  useEffect(() => {
+    if (!isDataComplete) return;
+
+    const targetTime = new Date(createdAt).getTime() + (targetMins * 60000)
+    
+    // Initial check
+    const initialDiff = targetTime - Date.now()
+    setTimeLeft(initialDiff > 0 ? initialDiff : 0)
+
+    const interval = setInterval(() => {
+      const now = Date.now()
+      const diff = targetTime - now
+      
+      if (diff <= 0) {
+        setTimeLeft(0)
+        clearInterval(interval)
+        
+        // Trigger auto-verify if eligible and admin
+        if (isAutoEligible && isAdmin && database) {
+          updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
+            status: 'verified_actor'
+          })
+        }
+      } else {
+        setTimeLeft(diff)
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [createdAt, targetMins, isAutoEligible, isAdmin, database, actorId, isDataComplete])
+
+  if (!isDataComplete) {
+    return (
+      <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[9px] uppercase bg-slate-100/50 border border-slate-200 px-2 py-1.5 rounded shadow-sm">
+        <ShieldAlert className="w-3 h-3 opacity-50" />
+        <span>DATA BELUM LENGKAP</span>
+      </div>
+    )
+  }
+
+  if (timeLeft === null) return <Loader2 className="w-3 h-3 animate-spin opacity-20" />
+
+
+  if (timeLeft === 0) {
+    if (isAutoEligible) {
+      return (
+        <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-[10px] animate-pulse">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          <span>PROSES VERIFIKASI...</span>
+        </div>
+      )
+    } else {
+      return (
+        <div className="flex items-center gap-1.5 text-rose-600 font-black text-[9px] uppercase bg-rose-50 border border-rose-200 px-2 py-1 rounded shadow-sm">
+          <ShieldAlert className="w-3 h-3" />
+          <span>VERIFIKASI MANUAL</span>
+        </div>
+      )
+    }
+  }
+
+  const hours = Math.floor(timeLeft / 3600000)
+  const minutes = Math.floor((timeLeft % 3600000) / 60000)
+  const seconds = Math.floor((timeLeft % 60000) / 1000)
+
+  // Color logic
+  const timerColor = timeLeft < 300000 ? "text-rose-600 border-rose-200 bg-rose-50" : 
+                     timeLeft < 900000 ? "text-amber-600 border-amber-200 bg-amber-50" : 
+                     "text-primary border-primary/20 bg-slate-50"
+
+  return (
+    <div className={`flex items-center gap-2 font-mono text-[10px] font-black ${timerColor} border px-2.5 py-1.5 rounded-lg shadow-sm transition-all`}>
+      <Clock className="w-3 h-3 animate-pulse" />
+      <span className="tracking-widest">
+        {hours > 0 ? `${hours}:` : ""}{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
+      </span>
+    </div>
+  )
+}
+
 
 export default function VerifyActorPage() {
   const { user } = useUser()
@@ -222,9 +335,11 @@ export default function VerifyActorPage() {
                   <TableHead className="font-bold">Nama Lengkap</TableHead>
                   <TableHead className="font-bold">NIK</TableHead>
                   <TableHead className="font-bold">Kategori</TableHead>
-                  <TableHead className="font-bold">Usaha</TableHead>
-                  <TableHead className="font-bold">Koordinator</TableHead>
-                  <TableHead className="text-right font-bold">Aksi</TableHead>
+                   <TableHead className="font-bold">Usaha</TableHead>
+                   <TableHead className="font-bold">Koordinator</TableHead>
+                   <TableHead className="font-bold text-center">Countdown</TableHead>
+                   <TableHead className="text-right font-bold">Aksi</TableHead>
+
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -262,7 +377,21 @@ export default function VerifyActorPage() {
                         {actor.coordinator || "-"}
                       </span>
                     </TableCell>
+                     <TableCell>
+                      <div className="flex justify-center">
+                         <VerificationTimer 
+                          actorId={actor.id} 
+                          createdAt={actor.createdAt} 
+                          matchCount={matchingMasterData?.length || 0} 
+                          database={database}
+                          isAdmin={isAdmin}
+                          actor={actor}
+                        />
+
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
+
                       <div className="flex justify-end gap-1.5 opacity-90 hover:opacity-100 transition-opacity">
                         <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
                           <DialogTrigger asChild>
