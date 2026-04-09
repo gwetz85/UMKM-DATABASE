@@ -161,14 +161,16 @@ export async function POST(req: NextRequest) {
               reply += `▫️ KK: \`${r.noKK || "-"}\`\n`;
               reply += `▫️ HP: \`${r.phone || "-"}\`\n\n`;
               
-              reply += `🏠 *ALAMAT*\n`;
-              reply += `▫️ ${r.address || "-"}\n`;
+              reply += `🏠 *ALAMAT RUMAH*\n`;
+              reply += `▫️ Detail: ${r.address || "-"}\n`;
+              reply += `▫️ RT/RW: ${r.rtRw || "-"}\n`;
               let kel = r.kelurahan ? `Kel. ${r.kelurahan}` : "";
               let kec = r.kecamatan ? `Kec. ${r.kecamatan}` : "";
-              reply += `▫️ ${kel}${kel && kec ? ', ' : ''}${kec || "-"}\n\n`;
+              reply += `▫️ Wilayah: ${kel}${kel && kec ? ', ' : ''}${kec || "-"}\n\n`;
               
               reply += `🏢 *USAHA*\n`;
               reply += `▫️ Kategori: ${r.businessCategory || "-"}\n`;
+              reply += `▫️ Alamat Usaha: ${r.businessLocation || "-"}\n`;
               reply += `▫️ Koordinator: ${r.coordinator || "-"}\n\n`;
               
               let statusLabel = r.status?.toUpperCase().replace('_', ' ') || "UNKNOWN";
@@ -191,8 +193,7 @@ export async function POST(req: NextRequest) {
               else menuSource = "📂 Menu Lainnya";
               
               reply += `📂 Menu: ${menuSource}\n`;
-              reply += `👤 Oleh: ${r.createdBy || "System"}\n`;
-              reply += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+              reply += `👤 Oleh: ${r.createdBy || "System"}\n\n`;
             });
             if (results.length === 5) {
               reply += `_Hanya menampilkan 5 data pertama._`;
