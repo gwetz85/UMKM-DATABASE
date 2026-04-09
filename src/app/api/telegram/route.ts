@@ -19,7 +19,7 @@ async function sendMessage(chatId: number, text: string) {
 
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
   try {
-    await fetch(url, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -28,6 +28,11 @@ async function sendMessage(chatId: number, text: string) {
         parse_mode: 'Markdown'
       })
     });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Telegram API Error:", errorData);
+    }
   } catch (error) {
     console.error("Error sending message to Telegram:", error);
   }
@@ -49,7 +54,7 @@ export async function POST(req: NextRequest) {
 
       if (text.startsWith('/start') || text.startsWith('/help')) {
         const reply = `Selamat datang di *Bot UMKM Database* 🏬\n\n` +
-                      `Bot ini melayani pemantauan & input data.\n` +
+                      `Bot ini melayani pemantauan & input data.\n\n` +
                       `✅ *Menu Perintah:*\n` +
                       `📊 /stats - Ringkasan data\n` +
                       `📊 /kuota - Cek kuota koordinator\n` +
@@ -58,28 +63,27 @@ export async function POST(req: NextRequest) {
                       `👤 /nama [nama] - Cari berdasar Nama\n` +
                       `📱 /hp [nomor] - Cari berdasar No. HP\n` +
                       `🏢 /koor [nama] - Cari berdasar Koordinator\n` +
-                      `✅ /cekdata [nomor] - Cek NIK/KK dengan Master Data\n` +
+                      `✅ /cekdata [nomor] - Cek NIK/KK dengan Master\n` +
                       `📝 /inputdata - Input data baru via Bot\n` +
-                      `ℹ️ /about - Informasi Aplikasi\n`;
+                      `ℹ️ /about - Informasi Aplikasi`;
         await sendMessage(chatId, reply);
       } 
       else if (text.startsWith('/about')) {
-        const reply = `Selamat datang di Aplikasi *SIMPU*\\n` +
-                      `\\- SISTEM INFORMASI MANAJEMEN PELAKU USAHA \\-\\n` +
-                      `*Versi 7.0* Update tanggal 05042026 2250\\n\\n` +
-                      `_"Aplikasi ini dikembangkan dan dibuat secara Mandiri dan Independent oleh Tim Admin yang bekerja. Hak Cipta Sepenuhnya dimiliki oleh Pencipta aplikasi."_\\n\\n` +
-                      `⚡ *Pembaruan Aplikasi*\\n` +
-                      `▫️ Penambahan Fitur Bot Telegram\\n` +
-                      `▫️ Penambahan Fitur Chat\\n` +
-                      `▫️ Penambahan Halaman Bank\\n` +
-                      `▫️ Penambahan Database 2.965 data\\n` +
-                      `▫️ Perbaikan di beberapa fitur tampilan\\n` +
-                      `▫️ Penambahan & perbaikan file system\\n\\n` +
-                      `✉️ *Kontak & Saran*\\n` +
-                      `Pengembang: *AGUS SURIYADI*\\n` +
-                      `Email: agussuriyadipunya@gmail\\.com\\n` +
-                      `Whatsapp: 0817319885\\n\\n` +
-                      `© 2026 SIMPU \\- All Rights Reserved`;
+        const reply = `🏛️ *SIMPU v7.0*\n` +
+                      `_Sistem Informasi Manajemen Pelaku Usaha_\n` +
+                      `━━━━━━━━━━━━━━━━━━━━\n` +
+                      `Update: 05/04/2026 22:50\n\n` +
+                      `"Aplikasi ini dikembangkan secara mandiri dan independen oleh Tim Admin. Hak Cipta sepenuhnya dimiliki oleh pencipta aplikasi."\n\n` +
+                      `🚀 *Pembaruan Terbaru:*\n` +
+                      `▫️ Fitur Bot Telegram & Chat\n` +
+                      `▫️ Modul Rekening Bank\n` +
+                      `▫️ Sinkronisasi 2.965 data baru\n` +
+                      `▫️ Optimalisasi UI/UX\n\n` +
+                      `✉️ *Kontak Pengembang:*\n` +
+                      `👤 *AGUS SURIYADI*\n` +
+                      `📧 agussuriyadipunya@gmail.com\n` +
+                      `📱 [0817319885](https://wa.me/62817319885)\n\n` +
+                      `© 2026 SIMPU - All Rights Reserved`;
         await sendMessage(chatId, reply);
       } 
       else if (text.startsWith('/stats')) {
@@ -97,11 +101,13 @@ export async function POST(req: NextRequest) {
           let pending = actors.filter(a => a.status === 'pending').length;
           let rejected = actors.filter(a => a.status === 'rejected').length;
           
-          const reply = `📈 *STATISTIK PELAKU USAHA*\\n\\n` +
-                        `Total Data: *${total}*\\n` +
-                        `✅ Terverifikasi: ${verified}\\n` +
-                        `⏳ Menunggu Verifikasi: ${pending}\\n` +
-                        `❌ Ditolak: ${rejected}`;
+          const reply = `📈 *STATISTIK DATA UMKM*\n` +
+                        `━━━━━━━━━━━━━━━━━━━━\n` +
+                        `📊 Total Data: *${total}*\n\n` +
+                        `✅ Terverifikasi: *${verified}*\n` +
+                        `⏳ Menunggu: *${pending}*\n` +
+                        `❌ Ditolak/Batal: *${rejected}*\n` +
+                        `━━━━━━━━━━━━━━━━━━━━`;
           await sendMessage(chatId, reply);
         } else {
           await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
@@ -146,44 +152,47 @@ export async function POST(req: NextRequest) {
           }).slice(0, 5);
           
           if (results.length > 0) {
-            let reply = `🔍 *Hasil Pencarian [${type.toUpperCase()}]:*\\n\\n`;
+            let reply = `🔍 *Hasil Pencarian [${type.toUpperCase()}]:*\n\n`;
             results.forEach((r, i) => {
-              reply += `*${i+1}. ${r.businessName || "TANPA NAMA USAHA"}*\\n`;
-              reply += `👤 *Data Pribadi*\\n`;
-              reply += `▫️ Nama: ${r.fullName}\\n`;
-              reply += `▫️ NIK: \\\`${r.nik}\\\`\\n`;
-              reply += `▫️ KK: \\\`${r.noKK || "-"}\\\`\\n`;
-              reply += `▫️ Kelamin: ${r.gender || "-"}\\n`;
-              reply += `▫️ TTL: ${r.pobDob || "-"}\\n`;
-              reply += `▫️ HP: \\\`${r.phone || "-"}\\\`\\n\\n`;
-              reply += `🏠 *Alamat*\\n`;
-              reply += `▫️ Detail: ${r.address || "-"}\\n`;
-              reply += `▫️ RT/RW: ${r.rtRw || "-"}\\n`;
+              reply += `*${i+1}. ${r.businessName || "TANPA NAMA USAHA"}*\n`;
+              reply += `👤 *DATA PRIBADI*\n`;
+              reply += `▫️ Nama: ${r.fullName}\n`;
+              reply += `▫️ NIK: \`${r.nik || "-"}\`\n`;
+              reply += `▫️ KK: \`${r.noKK || "-"}\`\n`;
+              reply += `▫️ HP: \`${r.phone || "-"}\`\n\n`;
+              
+              reply += `🏠 *ALAMAT*\n`;
+              reply += `▫️ ${r.address || "-"}\n`;
               let kel = r.kelurahan ? `Kel. ${r.kelurahan}` : "";
               let kec = r.kecamatan ? `Kec. ${r.kecamatan}` : "";
-              reply += `▫️ Wilayah: ${kel}${kel && kec ? ', ' : ''}${kec || "-"}\\n\\n`;
-              reply += `🏢 *Usaha & Lapangan*\\n`;
-              reply += `▫️ Kategori: ${r.businessCategory || "-"}\\n`;
-              reply += `▫️ Lokasi Usaha: ${r.businessLocation || "-"}\\n`;
-              reply += `▫️ Koordinator: ${r.coordinator || "-"}\\n\\n`;
-              reply += `💳 *Bank*\\n`;
-              reply += `▫️ Bank: ${r.bankName || "-"}\\n\\n`;
+              reply += `▫️ ${kel}${kel && kec ? ', ' : ''}${kec || "-"}\n\n`;
+              
+              reply += `🏢 *USAHA*\n`;
+              reply += `▫️ Kategori: ${r.businessCategory || "-"}\n`;
+              reply += `▫️ Koordinator: ${r.coordinator || "-"}\n\n`;
+              
               let statusLabel = r.status?.toUpperCase().replace('_', ' ') || "UNKNOWN";
-              reply += `📍 Status: ${statusLabel === 'VERIFIED ACTOR' ? '✅ VERIFIED ACTOR' : statusLabel}\\n`;
+              let statusEmoji = "⚪";
+              if (statusLabel.includes('VERIFIED')) statusEmoji = "✅";
+              else if (statusLabel.includes('PENDING')) statusEmoji = "⏳";
+              else if (statusLabel.includes('REJECTED')) statusEmoji = "❌";
+              else if (statusLabel.includes('BLACKLIST')) statusEmoji = "🚫";
+              
+              reply += `📍 Status: ${statusEmoji} *${statusLabel}*\n`;
               let timestamp = r.createdAt ? new Date(r.createdAt).toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}) : "-";
-              reply += `📅 Input: ${timestamp}\\n`;
+              reply += `📅 Input: ${timestamp}\n`;
+              
               let menuSource = "";
               if (r.status === 'pending') menuSource = "📥 Verifikasi Admin";
-              else if (r.status === 'verified_actor') menuSource = "👥 Data Pelaku / 💳 Rekening Bank";
-              else if (r.status === 'verified_dinas') menuSource = "📋 Verifikasi & Validasi Dinas";
+              else if (r.status === 'verified_actor') menuSource = "👥 Data Pelaku";
+              else if (r.status === 'verified_dinas') menuSource = "📋 Verifikasi Dinas";
               else if (r.status === 'bank_pending') menuSource = "🏦 Verifikasi Bank";
-              else if (r.status === 'lpj_pending') menuSource = "📝 LPJ";
-              else if (r.status === 'finish') menuSource = "🏁 Finish";
-              else if (r.status === 'rejected') menuSource = "❌ Ditolak / Cancell";
-              else if (r.status === 'blacklist') menuSource = "🚫 Blacklist";
-              else menuSource = "❓ Lainnya";
-              reply += `📂 Menu: ${menuSource}\\n`;
-              reply += `👤 Oleh: ${r.createdBy || "System"}\\n\\n`;
+              else if (r.status === 'rejected') menuSource = "❌ Ditolak/Cancell";
+              else menuSource = "📂 Menu Lainnya";
+              
+              reply += `📂 Menu: ${menuSource}\n`;
+              reply += `👤 Oleh: ${r.createdBy || "System"}\n`;
+              reply += `━━━━━━━━━━━━━━━━━━━━\n\n`;
             });
             if (results.length === 5) {
               reply += `_Hanya menampilkan 5 data pertama._`;
@@ -198,7 +207,7 @@ export async function POST(req: NextRequest) {
       } else if (text.startsWith('/cekdata')) {
         const keyword = text.replace('/cekdata', '').trim();
         if (!keyword) {
-          await sendMessage(chatId, "Ketikkan NIK, Nomor KK, atau NAMA setelah perintah. Contoh: `/cekdata 12345` atau `/cekdata AGUS` ");
+          await sendMessage(chatId, "📌 *Cara Cek Data:*\nKetikkan NIK, No. KK, atau Nama setelah perintah.\nContoh: `/cekdata 12345` atau `/cekdata AGUS` ");
           return NextResponse.json({ ok: true });
         }
         await sendMessage(chatId, `⏳ _Mengecek "${keyword}" di Database Master..._`);
@@ -216,59 +225,62 @@ export async function POST(req: NextRequest) {
           }
         } catch (error) {
           console.error("Master data query error:", error);
-          await sendMessage(chatId, `❌ Terjadi kesalahan koneksi saat membaca data. Pastikan format instruksi sudah benar.`);
+          await sendMessage(chatId, `❌ *Error:* Terjadi kesalahan koneksi database.`);
           return NextResponse.json({ ok: true });
         }
         if (foundResults.length > 0) {
-          let reply = `✅ *DATA DITEMUKAN* (${foundResults.length} record)\\n\\n`;
+          let reply = `✅ *DATA DITEMUKAN* (${foundResults.length} record)\n`;
+          reply += `━━━━━━━━━━━━━━━━━━━━\n\n`;
           const formatCurrency = (val: any) => {
             if (!val) return "Rp 0";
             const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.-]+/g, "")) : val;
             return isNaN(num) ? val : new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(num);
           };
           foundResults.slice(0, 5).forEach((r, i) => {
-            reply += `*${i+1}. ${r.nama || "-"}*\\n`;
-            reply += `▫️ Nomor: ${r.nomor || "-"}\\n`;
-            reply += `▫️ NIK: \\\`${r.nik || "-"}\\\`\\n`;
-            reply += `▫️ Nomor KK: \\\`${r.noKK || "-"}\\\`\\n`;
-            reply += `▫️ Usaha: ${r.usaha || "-"}\\n`;
-            reply += `▫️ Kategori Status: ${r.status || "-"}\\n`;
-            reply += `▫️ Status LPJ: ${r.statusLpj || "-"}\\n`;
-            reply += `▫️ Nominal: ${formatCurrency(r.nominal)}\\n`;
-            reply += `▫️ Tahun: ${r.tahunPengajuan || "-"}\\n`;
-            reply += `▫️ Kelurahan: ${r.kelurahan || "-"}\\n`;
-            reply += `▫️ Alamat: ${r.alamat || "-"}\\n\\n`;
+            reply += `*${i+1}. ${r.nama || "-"}*\n`;
+            reply += `▫️ No: ${r.nomor || "-"}\n`;
+            reply += `▫️ NIK: \`${r.nik || "-"}\`\n`;
+            reply += `▫️ KK: \`${r.noKK || "-"}\`\n`;
+            reply += `▫️ Usaha: ${r.usaha || "-"}\n`;
+            reply += `▫️ Status: ${r.status || "-"}\n`;
+            reply += `▫️ LPJ: ${r.statusLpj || "-"}\n`;
+            reply += `▫️ Nominal: *${formatCurrency(r.nominal)}*\n`;
+            reply += `▫️ Tahun: ${r.tahunPengajuan || "-"}\n`;
+            reply += `▫️ Alamat: ${r.alamat || "-"}\n`;
+            reply += `━━━━━━━━━━━━━━━━━━━━\n\n`;
           });
           if (foundResults.length > 5) reply += `_Hanya menampilkan 5 data pertama._`;
           await sendMessage(chatId, reply);
         } else {
-          await sendMessage(chatId, `❌ *DATA TIDAK TERDAFTAR*\\n\\nMohon maaf, nomor \\\`${keyword}\\\` tidak ditemukan dalam database master.`);
+          await sendMessage(chatId, `❌ *DATA TIDAK DITEMUKAN*\n\nKata kunci \`${keyword}\` tidak terdaftar dalam database master.`);
         }
       } else if (text.startsWith('/inputdata')) {
-        const reply = `Silakan *COPY* template di bawah ini, isi data dengan lengkap, lalu kirim kembali ke bot:\\n\\n` +
-                      `\\\`/simpandata\\n` +
-                      `Nama Lengkap:\\n` +
-                      `Jenis Kelamin:\\n` +
-                      `NIK:\\n` +
-                      `Nomor KK:\\n` +
-                      `TTL:\\n` +
-                      `Nomor HP:\\n` +
-                      `Alamat:\\n` +
-                      `RT/RW:\\n` +
-                      `Kelurahan:\\n` +
-                      `Kecamatan:\\n` +
-                      `Jenis Usaha:\\n` +
-                      `Nama Usaha:\\n` +
-                      `Lokasi Usaha:\\n` +
-                      `Koordinator:\\\`\\n\\n` +
-                      `_Catatan:_\\n` +
-                      `_▪️ Biarkan /simpandata di baris paling atas_\\n` +
-                      `_▪️ Isi data SETELAH tanda titik dua ( : )_\\n` +
-                      `_▪️ Jenis Kelamin: Laki-laki atau Perempuan_\\n` +
-                      `_▪️ Jenis Usaha: Kuliner atau Bukan Kuliner_`;
+        const reply = `📝 *FORM INPUT DATA BARU*\n\n` +
+                      `Silakan *Salin (Copy)* template di bawah ini, isi data dengan lengkap, lalu kirim kembali ke bot:\n\n` +
+                      `\`/simpandata\n` +
+                      `Nama Lengkap: \n` +
+                      `Jenis Kelamin: \n` +
+                      `NIK: \n` +
+                      `Nomor KK: \n` +
+                      `TTL: \n` +
+                      `Nomor HP: \n` +
+                      `Alamat: \n` +
+                      `RT/RW: \n` +
+                      `Kelurahan: \n` +
+                      `Kecamatan: \n` +
+                      `Jenis Usaha: \n` +
+                      `Nama Usaha: \n` +
+                      `Lokasi Usaha: \n` +
+                      `Koordinator: \`\n\n` +
+                      `⚠️ *CatatanPentimg:*\n` +
+                      `▫️ Biarkan \`/simpandata\` di baris pertama.\n` +
+                      `▫️ Isi data tepat setelah tanda titik dua ( : ).\n` +
+                      `▫️ Jenis Kelamin: Laki-laki / Perempuan.\n` +
+                      `▫️ Jenis Usaha: Kuliner / Bukan Kuliner.`;
         await sendMessage(chatId, reply);
       } else if (text.startsWith('/simpandata')) {
-        const lines = text.split('\\n');
+        // Handle both actual newlines and literal \n characters
+        const lines = text.split(/\n|\\n/);
         let parsedData: any = {};
         lines.forEach((line: string) => {
           if (line.includes(':')) {
@@ -281,8 +293,8 @@ export async function POST(req: NextRequest) {
               else if (value.toLowerCase().includes('laki')) parsedData.gender = "Laki-laki";
               else parsedData.gender = value;
             }
-            else if (key.includes('nik')) parsedData.nik = value;
-            else if (key.includes('nomor kk')) parsedData.noKK = value;
+            else if (key.includes('nik')) parsedData.nik = value.replace(/[^0-9]/g, ''); // Clean NIK
+            else if (key.includes('nomor kk')) parsedData.noKK = value.replace(/[^0-9]/g, ''); // Clean KK
             else if (key.includes('ttl')) parsedData.pobDob = value;
             else if (key.includes('nomor hp')) parsedData.phone = value;
             else if (key === 'alamat') parsedData.address = value;
@@ -338,7 +350,7 @@ export async function POST(req: NextRequest) {
           });
         }
         if (duplicate) {
-          await sendMessage(chatId, `❌ *Input Ditolak*\\n\\nNIK \\\`${parsedData.nik}\\\` sudah terdaftar dalam sistem (sedang pending atau sudah terverifikasi).`);
+          await sendMessage(chatId, `❌ *Input Ditolak*\n\nNIK \`${parsedData.nik}\` sudah terdaftar dalam sistem (sedang pending atau sudah terverifikasi).`);
           return NextResponse.json({ ok: true });
         }
 
@@ -361,7 +373,7 @@ export async function POST(req: NextRequest) {
                 });
               }
               if (achieved >= limit) {
-                await sendMessage(chatId, `❌ *AKSES DITOLAK*\\n\\nDATA TIDAK BISA DIINPUT , DIKARENAKAN KUOTA KOORDINATOR TELAH HABIS`);
+                await sendMessage(chatId, `❌ *AKSES DITOLAK*\n\nMaaf, kuota untuk koordinator *${selectedCoordinator}* telah habis (${achieved}/${limit}).`);
                 return NextResponse.json({ ok: true });
               }
             }
@@ -390,10 +402,10 @@ export async function POST(req: NextRequest) {
           };
           const newActorRef = push(actorsRef);
           await set(newActorRef, newData);
-          await sendMessage(chatId, `✅ *DATA BERHASIL DI-INPUT*\\n\\nData *${parsedData.fullName}* berhasil masuk ke menu *Verifikasi Admin*.\\n\\nMohon menunggu tim Admin melakukan verifikasi data ini.`);
+          await sendMessage(chatId, `✅ *DATA BERHASIL DIINPUT*\n\nAtas Nama: *${parsedData.fullName}*\nNIK: \`${parsedData.nik}\`\n\nData telah masuk ke sistem dan sedang menunggu verifikasi oleh tim Admin.`);
         } catch (error) {
            console.error("Error saving data from bot:", error);
-           await sendMessage(chatId, `❌ Terjadi kesalahan saat menyimpan data. Silakan coba lagi.`);
+           await sendMessage(chatId, `❌ *Error:* Gagal menyimpan data ke database.`);
         }
       } 
       else if (text.startsWith('/kuota')) {
@@ -416,8 +428,9 @@ export async function POST(req: NextRequest) {
 
         if (quotaSnap.exists()) {
           const quotaData = Object.values(quotaSnap.val()) as any[];
-          let reply = `*📊 Kuota Koordinator & Penggunaan*\n\n`;
-          reply += `*Format:* _Nama (Terpakai / Total Kuota)_\n\n`;
+          let reply = `📊 *KUOTA & PENGGUNAAN*\n`;
+          reply += `━━━━━━━━━━━━━━━━━━━━\n`;
+          reply += `_Format: Nama (Terpakai / Total)_\n\n`;
           
           quotaData.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
@@ -426,17 +439,18 @@ export async function POST(req: NextRequest) {
             const nameUpper = name.toUpperCase().trim();
             const limit = q.quota ?? 0;
             const used = usageMap.get(nameUpper) || 0;
-            const emoji = used >= limit ? '❌' : '✅';
+            const emoji = used >= limit ? '🔴' : '🟢';
             reply += `${emoji} *${name}:* ${used} / ${limit}\n`;
           });
           
+          reply += `━━━━━━━━━━━━━━━━━━━━`;
           await sendMessage(chatId, reply);
         } else {
-          await sendMessage(chatId, "Tidak ada data kuota koordinator yang terdaftar.");
+          await sendMessage(chatId, "⚠️ Tidak ada data kuota yang terdaftar.");
         }
       }
        else {
-        await sendMessage(chatId, "Perintah tidak dikenali. Gunakan /start untuk melihat menu.");
+        await sendMessage(chatId, "❌ *Perintah tidak dikenali.*\nGunakan /start untuk melihat menu.");
       }
     }
 
