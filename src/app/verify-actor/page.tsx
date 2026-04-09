@@ -130,7 +130,15 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
 }
 
 
+const normalizeGender = (g: string) => {
+  const val = (g || "").toLowerCase().trim();
+  if (val === "l" || val === "laki-laki") return "Laki-laki";
+  if (val === "p" || val === "perempuan") return "Perempuan";
+  return "";
+};
+
 export default function VerifyActorPage() {
+
   const { user } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
@@ -519,7 +527,8 @@ export default function VerifyActorPage() {
                                       </div>
                                       <div className="space-y-2">
                                         <Label className="font-bold">Jenis Kelamin</Label>
-                                        <Select name="gender" defaultValue={editingOnlyActor.gender}>
+                                        <Select name="gender" defaultValue={normalizeGender(editingOnlyActor.gender)}>
+
                                           <SelectTrigger><SelectValue /></SelectTrigger>
                                           <SelectContent>
                                             <SelectItem value="Laki-laki">Laki-laki</SelectItem>
@@ -630,7 +639,8 @@ export default function VerifyActorPage() {
                                       </div>
                                       <div className="space-y-2">
                                         <Label className="font-bold">Jenis Kelamin</Label>
-                                        <Select name="gender" defaultValue={editingActor.gender}>
+                                        <Select name="gender" defaultValue={normalizeGender(editingActor.gender)}>
+
                                           <SelectTrigger><SelectValue /></SelectTrigger>
                                           <SelectContent>
                                             <SelectItem value="Laki-laki">Laki-laki</SelectItem>

@@ -135,18 +135,29 @@ export default function DashboardPage() {
   }, [activeData])
 
   const genderStats = useMemo(() => {
-    const laki = activeData.filter(d => d.gender?.toLowerCase().trim() === "laki-laki").length;
-    const perempuan = activeData.filter(d => d.gender?.toLowerCase().trim() === "perempuan").length;
-    const unknown = activeData.length - (laki + perempuan);
+    // Check all data to match the "Total" card's base
+    const laki = (allData || []).filter(d => {
+      const g = (d.gender || "").toLowerCase().trim();
+      return g === "laki-laki" || g === "l";
+    }).length;
+    
+    const perempuan = (allData || []).filter(d => {
+      const g = (d.gender || "").toLowerCase().trim();
+      return g === "perempuan" || g === "p";
+    }).length;
+
+    const unknown = (allData?.length ?? 0) - (laki + perempuan);
     return { laki, perempuan, unknown };
-  }, [activeData])
+  }, [allData])
+
 
   const categoryStats = useMemo(() => {
-    const kuliner = activeData.filter(d => d.businessCategory?.toLowerCase().trim() === "kuliner").length;
-    const bukanKuliner = activeData.filter(d => d.businessCategory?.toLowerCase().trim() === "bukan kuliner").length;
-    const unknown = activeData.length - (kuliner + bukanKuliner);
+    const kuliner = (allData || []).filter(d => (d.businessCategory || "").toLowerCase().trim() === "kuliner").length;
+    const bukanKuliner = (allData || []).filter(d => (d.businessCategory || "").toLowerCase().trim() === "bukan kuliner").length;
+    const unknown = (allData?.length ?? 0) - (kuliner + bukanKuliner);
     return { kuliner, bukanKuliner, unknown };
-  }, [activeData])
+  }, [allData])
+
 
 
 
@@ -188,11 +199,15 @@ export default function DashboardPage() {
     },
     { 
       name: "Data Terverifikasi", 
-      value: activeData.filter(d => d.status === "finish").length, 
+      value: (allData || []).filter(d => {
+        const s = d.status || "";
+        return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
+      }).length, 
       icon: UserCheck, 
       color: "text-emerald-600", 
       bg: "bg-emerald-100/50" 
     },
+
     { 
       name: "Data Ditolak", 
       value: allData?.filter(d => d.status?.toLowerCase().trim() === "rejected").length || 0, 

@@ -18,6 +18,14 @@ import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
 
+const normalizeGender = (g: string) => {
+  const val = (g || "").toLowerCase().trim();
+  if (val === "l" || val === "laki-laki") return "Laki-laki";
+  if (val === "p" || val === "perempuan") return "Perempuan";
+  return "";
+};
+
+
 import { cn } from "@/lib/utils"
 import { generateRegistrationForm } from "@/lib/pdf-generator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -394,9 +402,9 @@ function ActorDataContent() {
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">NIK</Label><Input name="nik" defaultValue={viewingActor.nik} required /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor KK</Label><Input name="noKK" defaultValue={viewingActor.noKK} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Jenis Kelamin</Label>
-                        <select name="gender" defaultValue={viewingActor.gender || ""} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                          <option value="L">Laki-Laki</option>
-                          <option value="P">Perempuan</option>
+                        <select name="gender" defaultValue={normalizeGender(viewingActor.gender || "")} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                          <option value="Laki-laki">Laki-laki</option>
+                          <option value="Perempuan">Perempuan</option>
                         </select>
                       </div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Tempat/Tgl Lahir</Label><Input name="pobDob" defaultValue={viewingActor.pobDob} /></div>

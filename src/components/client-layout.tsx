@@ -7,6 +7,8 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { InfoDialog } from '@/components/info-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { ChatBubble } from '@/components/chat-bubble';
+import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
+
 
 import { Toaster } from '@/components/ui/toaster';
 import { ThemePersistence } from '@/components/theme-persistence';
@@ -66,7 +68,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       />
                     </button>
                   </InfoDialog>
+                  <OfficeHoursTimer />
                 </div>
+
               </header>
               <ProfileStatusDialog />
             </>
@@ -86,7 +90,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       </h1>
                     )}
                   </div>
+                  <OfficeHoursTimer />
                 </div>
+
               )}
               <div key={pathname} className="w-full relative z-0 animate-in fade-in-up">
                 {children}
