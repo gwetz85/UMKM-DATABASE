@@ -37,10 +37,10 @@ export interface FirebaseContextState {
 
 // Return type for useFirebase()
 export interface FirebaseServicesAndUser {
-  firebaseApp: FirebaseApp | null;
-  database: Database | null;
-  auth: Auth | null;
-  storage: FirebaseStorage | null;
+  firebaseApp: FirebaseApp;
+  database: Database;
+  auth: Auth;
+  storage: FirebaseStorage;
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
@@ -97,17 +97,29 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && database && auth && storage);
+    
+    // During build time (SSR/Prerendering), we provide "stubs" to prevent Firebase SDK from crashing.
+    // This is safer than returning null because many components pass these services to ref(), etc.
+    const createStub = (name: string) => ({
+      _checkNotDeleted: () => {},
+      _getActualRepo: () => ({ repoInfo_: { host: 'localhost' } }),
+      _repo: { repoInfo_: { host: 'localhost' } },
+      app: { name: '[DEFAULT]' },
+      INTERNAL: {},
+      toString: () => `[Firebase Stub ${name}]`
+    } as any);
+
     return {
       areServicesAvailable: servicesAvailable,
-      firebaseApp: servicesAvailable ? firebaseApp : null,
-      database: servicesAvailable ? database : null,
-      auth: servicesAvailable ? auth : null,
-      storage: servicesAvailable ? storage : null,
+      firebaseApp: firebaseApp || createStub('App'),
+      database: database || createStub('Database'),
+      auth: auth || createStub('Auth'),
+      storage: storage || createStub('Storage'),
       user: userAuthState.user,
       isUserLoading: userAuthState.isUserLoading,
       userError: userAuthState.userError,
     };
-  }, [firebaseApp, database, auth, userAuthState.user, userAuthState.isUserLoading, userAuthState.userError]);
+  }, [firebaseApp, database, auth, storage, userAuthState.user, userAuthState.isUserLoading, userAuthState.userError]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -128,30 +140,30 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
 
-  // Cast context directly as it has all the fields (some may be null during build/SSR)
+  // Cast context directly as it HAS the fields (either real services or build-time stubs)
   return context as unknown as FirebaseServicesAndUser;
 };
 
 /** Hook to access Firebase Auth instance. */
-export const useAuth = (): Auth | null => {
+export const useAuth = (): Auth => {
   const { auth } = useFirebase();
   return auth;
 };
 
 /** Hook to access Database instance. */
-export const useDatabase = (): Database | null => {
+export const useDatabase = (): Database => {
   const { database } = useFirebase();
   return database;
 };
 
 /** Hook to access Storage instance. */
-export const useStorage = (): FirebaseStorage | null => {
+export const useStorage = (): FirebaseStorage => {
   const { storage } = useFirebase();
   return storage;
 };
 
 /** Hook to access Firebase App instance. */
-export const useFirebaseApp = (): FirebaseApp | null => {
+export const useFirebaseApp = (): FirebaseApp => {
   const { firebaseApp } = useFirebase();
   return firebaseApp;
 };
