@@ -164,11 +164,16 @@ function ActorDataContent() {
   const handleRevert = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     if (confirm(`Kembalikan status ${fullName} ke Pending?`)) {
-      updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
-      toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
+      // Reset status and creation time to ensure fresh auto-verification countdown
+      updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { 
+        status: 'pending',
+        createdAt: new Date().toISOString() 
+      })
+      toast({ title: "Berhasil", description: "Status dikembalikan ke antrean Verifikasi Admin." })
       setViewingActor(null)
     }
   }
+
 
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
