@@ -1,9 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useUser, useDatabase, useMemoFirebase, useList, updateDocumentNonBlocking, useStorage } from "@/firebase"
+import { useUser, useDatabase, useMemoFirebase, useList, updateDocumentNonBlocking } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
-import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,45 +42,69 @@ export default function ProfilePage() {
   const { data: allUsersForProfile, isLoading: isProfileLoading } = useList(userProfileRef)
   const profile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
   
-  const storage = useStorage()
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !user || !storage || !database || !profile) return
-
-    // Limit to 2MB
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        variant: "destructive",
-        title: "File Terlalu Besar",
-        description: "Maksimal ukuran foto adalah 2MB.",
-      })
-      return
-    }
-
+    if (!file || !user || !database || !profile) return
+    
     setIsUploading(true)
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `avatar_${user.uid}_${Date.now()}.${fileExt}`
-      const path = `profile_photos/${user.uid}/${fileName}`
-      const fRef = storageRef(storage, path)
+      // Helper function to compress and convert to Base64
+      const compressAndConvert = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.readAsDataURL(file)
+          reader.onload = (event) => {
+            const img = new Image()
+            img.src = event.target?.result as string
+            img.onload = () => {
+              const canvas = document.createElement('canvas')
+              const MAX_SIZE = 150 // Keep it small for database performance
+              let width = img.width
+              let height = img.height
 
-      await uploadBytes(fRef, file)
-      const downloadURL = await getDownloadURL(fRef)
+              if (width > height) {
+                if (width > MAX_SIZE) {
+                  height *= MAX_SIZE / width
+                  width = MAX_SIZE
+                }
+              } else {
+                if (height > MAX_SIZE) {
+                  width *= MAX_SIZE / height
+                  height = MAX_SIZE
+                }
+              }
 
+              canvas.width = width
+              canvas.height = height
+              const ctx = canvas.getContext('2d')
+              ctx?.drawImage(img, 0, 0, width, height)
+              
+              // Low quality and small size to stay free & fast in RTDB
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.6)
+              resolve(dataUrl)
+            }
+            img.onerror = (err) => reject(new Error("Gagal membaca gambar"))
+          }
+          reader.onerror = (err) => reject(new Error("Gagal membaca file"))
+        })
+      }
+
+      const base64Photo = await compressAndConvert(file)
+      
       const userRef = ref(database, `system_users/${profile.id}`)
-      updateDocumentNonBlocking(userRef, { photoURL: downloadURL })
+      updateDocumentNonBlocking(userRef, { photoURL: base64Photo })
 
       toast({
-        title: "Foto Berhasil Diunggah",
-        description: "Foto profil Anda telah diperbarui.",
+        title: "Foto Berhasil Diperbarui",
+        description: "Foto profil Anda telah disimpan ke sistem.",
       })
     } catch (error: any) {
       console.error("Upload error details:", error)
       toast({
         variant: "destructive",
         title: "Gagal Mengunggah",
-        description: `Error: ${error.message || "Terjadi kesalahan saat mengunggah foto."}`,
+        description: `Error: ${error.message || "Terjadi kesalahan saat memproses foto."}`,
       })
     } finally {
       setIsUploading(false)
