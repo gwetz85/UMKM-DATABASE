@@ -40,7 +40,23 @@ export default function ProfilePage() {
   }, [user, database])
 
   const { data: allUsersForProfile, isLoading: isProfileLoading } = useList(userProfileRef)
-  const profile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
+  
+  // 1. Primary match by UID
+  let profile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
+  
+  // 2. Fallback match by Username (if UID match fails)
+  const username = user?.email?.split('@')[0]
+  if (!profile && allUsersForProfile && username) {
+    profile = allUsersForProfile.find((u: any) => u.id === username)
+  }
+
+  // Effect to auto-link UID if found via fallback
+  useEffect(() => {
+    if (mounted && user && allUsersForProfile && profile && !profile.uid && database) {
+       const userRef = ref(database, `system_users/${profile.id}`)
+       updateDocumentNonBlocking(userRef, { uid: user.uid })
+    }
+  }, [user, profile, allUsersForProfile, mounted, database])
   
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,10 +167,37 @@ export default function ProfilePage() {
     )
   }
 
-  if (!user || !profile) {
+  if (!user) {
     return (
-      <div className="p-20 text-center">
-        <h1 className="text-2xl font-bold">Silahkan Login Terlebih Dahulu</h1>
+      <div className="p-20 text-center animate-in fade-in duration-500">
+        <div className="mx-auto w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6">
+          <UserCircle className="w-12 h-12 text-slate-300" />
+        </div>
+        <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">Login Terlebih Dahulu</h1>
+        <p className="text-slate-500 font-medium mb-8">Anda harus masuk ke sistem untuk mengakses halaman ini.</p>
+        <Button asChild className="font-bold px-8 h-12">
+          <a href="/login">MASUK KE SISTEM</a>
+        </Button>
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="p-20 text-center animate-in fade-in duration-500">
+         <div className="mx-auto w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-6">
+          <ShieldCheck className="w-12 h-12 text-amber-500" />
+        </div>
+        <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">Data Belum Sinkron</h1>
+        <p className="text-slate-500 font-medium max-w-sm mx-auto">
+          Akun Anda ({user.email}) sudah aktif, namun data profil Anda belum tersedia atau belum ditautkan oleh Admin.
+        </p>
+        <div className="mt-8 flex flex-col items-center gap-4">
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Atau coba reload halaman</p>
+           <Button onClick={() => window.location.reload()} variant="outline" className="font-bold border-slate-200">
+              RELOAD HALAMAN
+           </Button>
+        </div>
       </div>
     )
   }
