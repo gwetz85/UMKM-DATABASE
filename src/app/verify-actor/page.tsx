@@ -627,10 +627,10 @@ export default function VerifyActorPage() {
       <Dialog open={!!viewingMasterData && viewingMasterData.length > 0} onOpenChange={(open) => !open && setViewingMasterData(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto bg-amber-50/50">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-amber-600 uppercase flex items-center gap-2">
-              <ShieldAlert className="w-6 h-6 border-amber-200" /> Data Master Ditemukan
+            <DialogTitle className="text-xl font-black text-slate-900 uppercase flex items-center gap-2">
+              <ShieldAlert className="w-6 h-6 text-amber-600" /> Data Master Ditemukan
             </DialogTitle>
-            <DialogDescription className="text-amber-800/80 font-medium">
+            <DialogDescription className="text-slate-800 font-medium">
               Sistem mendeteksi bahwa Nomor KK atau NIK pengaju ini sekurang-kurangnya memiliki {viewingMasterData?.length} riwayat pada Master Data Pembanding:
             </DialogDescription>
           </DialogHeader>
@@ -643,38 +643,38 @@ export default function VerifyActorPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
                   <div className="space-y-1 border-b pb-2 md:border-b-0 md:pb-0">
-                    <p className="text-[10px] font-bold text-amber-600/70 uppercase">Nama Lengkap (Master)</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase">Nama Lengkap (Master)</p>
                     <p className="text-sm font-bold text-slate-800">{data.nama || "-"}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-amber-600/70 uppercase">No. KK / NIK</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase">No. KK / NIK</p>
                     <p className="text-sm font-bold text-slate-800">{data.noKK || "-"} <span className="opacity-40">/</span> {data.nik || "-"}</p>
                   </div>
                   <div className="space-y-1 border-b pb-2 md:border-b-0 md:pb-0">
-                    <p className="text-[10px] font-bold text-amber-600/70 uppercase">Nomor (ID Program)</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase">Nomor (ID Program)</p>
                     <p className="text-sm font-bold text-slate-800">{data.nomor || "-"}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-amber-600/70 uppercase">Sektor Usaha</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase">Sektor Usaha</p>
                     <p className="text-sm font-bold text-slate-800">{data.usaha || "-"}</p>
                   </div>
                   <div className="space-y-1 md:col-span-2 pt-2 border-t mt-2 md:mt-0 md:border-t-0 md:pt-0">
-                    <p className="text-[10px] font-bold text-amber-600/70 uppercase">Kelurahan — Alamat</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase">Kelurahan — Alamat</p>
                     <p className="text-sm font-bold text-slate-800">{data.kelurahan || "-"} — {data.alamat || "-"}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-amber-50/50 p-4 rounded-xl border border-amber-100">
                   <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-amber-600/70 uppercase">Status Pembanding</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase">Status Pembanding</p>
                     <p className="text-sm font-black text-rose-600 uppercase">{data.status || "-"} <span className="text-xs font-bold opacity-50">({data.tahunPengajuan || "-"})</span></p>
                   </div>
                   <div className="space-y-1 border-l pl-4 border-amber-200/60">
-                    <p className="text-[10px] font-bold text-amber-600/70 uppercase">Nominal</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase">Nominal</p>
                     <p className="text-sm font-black text-emerald-600">{data.nominal || "-"}</p>
                   </div>
                   <div className="space-y-1 border-l pl-4 border-amber-200/60">
-                    <p className="text-[10px] font-bold text-amber-600/70 uppercase">Status LPJ</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase">Status LPJ</p>
                     <p className="text-sm font-bold text-slate-800">{data.statusLpj || "-"}</p>
                   </div>
                 </div>
