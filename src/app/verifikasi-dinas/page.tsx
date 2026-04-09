@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { ShieldAlert, Loader2, Eye, Search, User, FileText, Building2, MapPin, History, ClipboardCheck, CreditCard } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
+import { CheckDataIndicator } from "@/components/check-data-indicator"
 
 export default function VerifikasiDinasPage() {
   const { user } = useUser()
@@ -43,6 +44,12 @@ export default function VerifikasiDinasPage() {
   }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
+  
+  const masterDataRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'master_data')
+  }, [database])
+  const { data: allMasterDataRaw } = useList<any>(masterDataRef)
 
   const actors = allActorsRaw?.filter(a => a.status === 'lpj_pending')
 
@@ -123,7 +130,12 @@ export default function VerifikasiDinasPage() {
                   filteredActors?.map((actor) => (
                     <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors border-b border-slate-100">
                       <TableCell className="font-bold text-slate-800">{actor.fullName}</TableCell>
-                      <TableCell className="font-mono text-xs text-slate-500">{actor.nik}</TableCell>
+                      <TableCell className="font-mono text-xs text-slate-500">
+                        {actor.nik}
+                        <div className="print:hidden">
+                          <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} />
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <span className="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider">
                           {actor.businessCategory}
@@ -166,6 +178,9 @@ export default function VerifikasiDinasPage() {
                                             <p className="text-xs font-bold">{item.value || "-"}</p>
                                           </div>
                                         ))}
+                                        <div className="md:col-span-3 pt-2 border-t">
+                                          <CheckDataIndicator actor={viewingActor} allMasterData={allMasterDataRaw} />
+                                        </div>
                                       </div>
                                     </section>
   

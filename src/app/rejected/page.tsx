@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
+import { CheckDataIndicator } from "@/components/check-data-indicator"
 
 import { cn } from "@/lib/utils"
 
@@ -57,6 +58,12 @@ function RejectedContent() {
   }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
+  
+  const masterDataRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'master_data')
+  }, [database])
+  const { data: allMasterDataRaw } = useList<any>(masterDataRef)
   
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     // Status filter - equivalent to previous orderByChild('status').equalTo('rejected')
@@ -223,6 +230,9 @@ function RejectedContent() {
                     <p className="text-[9px] text-muted-foreground font-mono hidden print:block">
                       NIK: {actor.nik} | Koor: {actor.coordinator} | Alasan: {actor.rejectionReason}
                     </p>
+                    <div className="flex justify-center print:hidden">
+                      <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} showText={false} />
+                    </div>
                   </div>
                   <div className="text-[9px] font-black uppercase bg-red-500 text-white w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
                     DITOLAK
@@ -360,6 +370,9 @@ function RejectedContent() {
                           <p className="text-sm font-bold">{item.value || "-"}</p>
                         </div>
                       ))}
+                      <div className="md:col-span-3 pt-2 border-t">
+                        <CheckDataIndicator actor={viewingActor} allMasterData={allMasterDataRaw} />
+                      </div>
                     </div>
                   </section>
 

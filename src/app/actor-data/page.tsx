@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
+import { CheckDataIndicator } from "@/components/check-data-indicator"
 
 const normalizeGender = (g: string) => {
   const val = (g || "").toLowerCase().trim();
@@ -76,6 +77,12 @@ function ActorDataContent() {
   }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
+  
+  const masterDataRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'master_data')
+  }, [database])
+  const { data: allMasterDataRaw } = useList<any>(masterDataRef)
   
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     if (!a) return false;
@@ -266,6 +273,9 @@ function ActorDataContent() {
                           </TableCell>
                           <TableCell className="py-4">
                             <span className="font-mono text-[11px] text-slate-600 print:text-black">{actor.nik}</span>
+                            <div className="print:hidden">
+                              <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} />
+                            </div>
                           </TableCell>
                           <TableCell className="py-4">
                             <span className="font-mono text-[11px] text-slate-600 print:text-black">{actor.noKK}</span>
@@ -464,6 +474,9 @@ function ActorDataContent() {
                           <p className="text-sm font-bold">{item.value || "-"}</p>
                         </div>
                       ))}
+                      <div className="md:col-span-3 pt-2 border-t">
+                         <CheckDataIndicator actor={viewingActor} allMasterData={allMasterDataRaw} />
+                      </div>
                     </div>
                   </section>
 

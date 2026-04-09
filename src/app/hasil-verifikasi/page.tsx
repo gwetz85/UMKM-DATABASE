@@ -14,6 +14,7 @@ import { updateDocumentNonBlocking } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { CheckDataIndicator } from "@/components/check-data-indicator"
 
 const BANK_LIST = [
   "BCA", "BNI", "BRI", "BRK", "MANDIRI", "PANIN", "OCBC", "DANAMON", "BUKOPIN", "BTN"
@@ -50,6 +51,12 @@ export default function HasilVerifikasiPage() {
   }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
+  
+  const masterDataRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'master_data')
+  }, [database])
+  const { data: allMasterDataRaw } = useList<any>(masterDataRef)
 
   const actors = allActorsRaw?.filter(a => a.status === 'verified_dinas')
 
@@ -125,7 +132,12 @@ export default function HasilVerifikasiPage() {
                   filteredActors?.map((actor) => (
                     <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors border-b border-slate-100">
                       <TableCell className="font-bold text-slate-800">{actor.fullName}</TableCell>
-                      <TableCell className="font-mono text-xs text-slate-500">{actor.nik}</TableCell>
+                      <TableCell className="font-mono text-xs text-slate-500">
+                        {actor.nik}
+                        <div className="print:hidden">
+                          <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} />
+                        </div>
+                      </TableCell>
                       <TableCell className="font-medium text-slate-700">{actor.businessName}</TableCell>
                       <TableCell>
                         {actor.hasilVerifikasiDinas === 'Lolos' ? (
@@ -187,6 +199,9 @@ export default function HasilVerifikasiPage() {
                                           <p className="text-xs font-bold">{item.value || "-"}</p>
                                         </div>
                                       ))}
+                                      <div className="md:col-span-3 pt-2 border-t">
+                                        <CheckDataIndicator actor={viewingActor} allMasterData={allMasterDataRaw} />
+                                      </div>
                                     </div>
                                   </section>
 
