@@ -84,11 +84,12 @@ function ActorDataContent() {
   }) : undefined
 
   const filteredActors = actors ? actors.filter(a => 
-    a.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.nik.includes(searchQuery) ||
-    a.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.address?.toLowerCase().includes(searchQuery.toLowerCase())
+    (a.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (a.nik || "").includes(searchQuery) ||
+    (a.businessName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (a.address || "").toLowerCase().includes(searchQuery.toLowerCase())
   ) : undefined
+
 
   const groupedActors = useMemo(() => {
     if (!filteredActors) return {}

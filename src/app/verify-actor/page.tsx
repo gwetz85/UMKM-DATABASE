@@ -178,10 +178,11 @@ export default function VerifyActorPage() {
   const actors = allActorsRaw?.filter(a => a.status === 'pending')
 
   const filteredActors = actors?.filter(actor =>
-    actor.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    actor.nik.includes(searchQuery) ||
-    actor.businessName.toLowerCase().includes(searchQuery.toLowerCase())
+    (actor.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (actor.nik || "").includes(searchQuery) ||
+    (actor.businessName || "").toLowerCase().includes(searchQuery.toLowerCase())
   )
+
 
   const kelurahanList = [
     "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
