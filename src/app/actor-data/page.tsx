@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
@@ -70,18 +70,20 @@ function ActorDataContent() {
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
+    if (!a) return false;
     // Status filter - equivalent to previous orderByChild('status').equalTo('verified_actor')
-    if (a.status !== 'verified_actor') return false;
+    if ((a.status || "") !== 'verified_actor') return false;
 
     if (isKoordinator) {
       if (!a.coordinator || !userProfile?.fullName) return false;
-      return a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase();
+      return String(a.coordinator).toLowerCase() === String(userProfile.fullName).toLowerCase();
     }
     if (filterCoordinator) {
-      return a.coordinator === filterCoordinator;
+      return (a.coordinator || "") === filterCoordinator;
     }
     return true;
   }) : undefined
+
 
   const filteredActors = actors ? actors.filter(a => 
     (a.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -94,17 +96,18 @@ function ActorDataContent() {
   const groupedActors = useMemo(() => {
     if (!filteredActors) return {}
     const sorted = [...filteredActors].sort((a, b) => 
-      (a.coordinator || "Tanpa Koordinator").localeCompare(b.coordinator || "Tanpa Koordinator")
+      String(a.coordinator || "Tanpa Koordinator").localeCompare(String(b.coordinator || "Tanpa Koordinator"))
     )
     
     const groups: Record<string, BusinessActor[]> = {}
     sorted.forEach(actor => {
-      const key = actor.coordinator || "Tanpa Koordinator"
+      const key = String(actor.coordinator || "Tanpa Koordinator")
       if (!groups[key]) groups[key] = []
       groups[key].push(actor)
     })
     return groups
   }, [filteredActors])
+
 
 
 
@@ -506,7 +509,7 @@ function ActorDataContent() {
                     <div className="bg-slate-50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
                       <div className="space-y-1">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Terakhir</p>
-                        <p className="capitalize text-primary">{viewingActor.status.replace('_', ' ')}</p>
+                        <p className="capitalize text-primary">{(viewingActor.status || "").replace('_', ' ')}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Input</p>

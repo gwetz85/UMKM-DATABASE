@@ -468,7 +468,7 @@ export default function VerifyActorPage() {
                                     <div className="bg-slate-50 p-4 rounded-xl text-[10px] font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
                                       <div className="space-y-1">
                                         <p className="text-muted-foreground uppercase">Status</p>
-                                        <p className="text-primary">{viewingActor.status.toUpperCase()}</p>
+                                        <p className="text-primary">{(viewingActor.status || "").toUpperCase()}</p>
                                       </div>
                                       <div className="space-y-1">
                                         <p className="text-muted-foreground uppercase">Diinput Oleh</p>
