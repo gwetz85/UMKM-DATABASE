@@ -144,6 +144,7 @@ export default function VerifyActorPage() {
   const { toast } = useToast()
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
+  const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
   const [editingOnlyActor, setEditingOnlyActor] = useState<BusinessActor | null>(null)
   const [rejectingActor, setRejectingActor] = useState<BusinessActor | null>(null)
@@ -377,7 +378,7 @@ export default function VerifyActorPage() {
                          <VerificationTimer 
                           actorId={actor.id} 
                           createdAt={actor.createdAt} 
-                          matchCount={allMasterDataRaw?.filter((m: any) => (m.noKK && m.noKK === actor.noKK) || (m.nik && m.nik === actor.nik)).length || 0} 
+                          matchCount={allMasterDataRaw?.filter((m: any) => (m.noKK && m.noKK === actor.noKK) || (m.nik && m.nik === actor.nik))?.length || 0} 
                           database={database}
                           isAdmin={isAdmin}
                           actor={actor}
