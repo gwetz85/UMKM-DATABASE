@@ -377,7 +377,7 @@ export default function VerifyActorPage() {
                          <VerificationTimer 
                           actorId={actor.id} 
                           createdAt={actor.createdAt} 
-                          matchCount={matchingMasterData?.length || 0} 
+                          matchCount={allMasterDataRaw?.filter((m: any) => (m.noKK && m.noKK === actor.noKK) || (m.nik && m.nik === actor.nik)).length || 0} 
                           database={database}
                           isAdmin={isAdmin}
                           actor={actor}
