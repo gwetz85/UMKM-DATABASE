@@ -259,7 +259,7 @@ export function AppSidebar() {
                 <img 
                   src="/logo.png" 
                   alt="SIMPU Logo" 
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain p-2"
                 />
               </div>
             </button>

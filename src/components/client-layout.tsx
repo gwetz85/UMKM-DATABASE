@@ -64,7 +64,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       <img 
                         src="/logo.png" 
                         alt="SIMPU" 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain p-1.5"
                       />
                     </button>
                   </InfoDialog>
