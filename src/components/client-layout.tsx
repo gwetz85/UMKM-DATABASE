@@ -60,11 +60,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 </div>
                 <div className="flex items-center gap-3">
                   <InfoDialog>
-                    <button className="w-10 h-10 overflow-hidden rounded-full border border-white/20 shadow-lg outline-none">
+                    <button className="w-10 h-10 overflow-hidden rounded-full border border-white/20 shadow-lg outline-none bg-white">
                       <img 
                         src="/logo.png" 
                         alt="SIMPU" 
-                        className="w-full h-full object-contain p-1.5"
+                        className="w-full h-full object-contain p-1"
                       />
                     </button>
                   </InfoDialog>
