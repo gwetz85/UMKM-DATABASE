@@ -102,7 +102,12 @@
   .fade-in-up {
     animation-name: fade-in-up;
   }
+
+  .break-after-page {
+    break-after: page;
+  }
 }
+
 
 @keyframes fade-in-up {
   from {

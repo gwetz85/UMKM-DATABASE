@@ -90,6 +90,22 @@ function ActorDataContent() {
     a.address?.toLowerCase().includes(searchQuery.toLowerCase())
   ) : undefined
 
+  const groupedActors = useMemo(() => {
+    if (!filteredActors) return {}
+    const sorted = [...filteredActors].sort((a, b) => 
+      (a.coordinator || "Tanpa Koordinator").localeCompare(b.coordinator || "Tanpa Koordinator")
+    )
+    
+    const groups: Record<string, BusinessActor[]> = {}
+    sorted.forEach(actor => {
+      const key = actor.coordinator || "Tanpa Koordinator"
+      if (!groups[key]) groups[key] = []
+      groups[key].push(actor)
+    })
+    return groups
+  }, [filteredActors])
+
+
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingBankMode, setEditingBankMode] = useState(false)
@@ -204,103 +220,102 @@ function ActorDataContent() {
             ))}
           </div>
         ) : (
-          <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead className="font-bold text-primary py-4 pl-6">NAMA</TableHead>
-                  <TableHead className="font-bold text-primary py-4">NIK / NO. KK</TableHead>
-                  <TableHead className="font-bold text-primary py-4">ALAMAT</TableHead>
-                  <TableHead className="font-bold text-primary py-4">USAHA</TableHead>
-                  <TableHead className="font-bold text-primary py-4 pr-6 text-right">AKSI</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredActors?.map((actor) => (
-                  <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group">
-                    <TableCell className="py-4 pl-6">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-800 uppercase text-[13px]">{actor.fullName}</span>
-                        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tight">{actor.coordinator || "Tanpa Koordinator"}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1.5">
-                          <Badge variant="outline" className="text-[9px] h-4 font-bold border-emerald-100 bg-emerald-50/50 text-emerald-700">NIK</Badge>
-                          <span className="font-mono text-[11px] text-slate-600">{actor.nik}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Badge variant="outline" className="text-[9px] h-4 font-bold border-amber-100 bg-amber-50/50 text-amber-700">KK</Badge>
-                          <span className="font-mono text-[11px] text-slate-600">{actor.noKK}</span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4 max-w-[200px]">
-                      <span className="text-xs font-medium text-slate-600 line-clamp-2 uppercase" title={actor.address}>
-                        {actor.address}
-                      </span>
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <div className="flex flex-col">
-                        <span className="font-black text-primary uppercase text-[12px]">{actor.businessName}</span>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase">{actor.businessCategory}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4 pr-6 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200"
-                          onClick={() => {
-                            setViewingActor(actor)
-                            setIsEditMode(false)
-                            setEditingBankMode(false)
-                          }}
-                          title="Detail"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-200"
-                          onClick={() => generateRegistrationForm(actor)}
-                          title="Cetak Formulir"
-                        >
-                          <Printer className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-8 w-8 p-0 text-purple-600 hover:bg-purple-50 border border-transparent hover:border-purple-200"
-                          onClick={() => {
-                            setViewingActor(actor)
-                            setIsEditMode(false)
-                            setEditingBankMode(true)
-                          }}
-                          title="Teruskan ke Verifikasi Data (Input Rekening)"
-                        >
-                          <ChevronRight className="w-5 h-5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {(!filteredActors || filteredActors.length === 0) && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-40 text-center text-muted-foreground bg-slate-50/50">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <Search className="w-8 h-8 opacity-20" />
-                        <p className="font-bold">Tidak ada data pelaku usaha ditemukan.</p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+          <div className="space-y-12">
+            {Object.entries(groupedActors).map(([coordinator, actors]) => (
+              <div key={coordinator} className="space-y-4 break-after-page">
+                <div className="flex items-center gap-3 border-l-4 border-primary pl-4 py-1 print:border-black">
+                  <h2 className="text-xl font-black text-primary uppercase tracking-tight print:text-black">{coordinator}</h2>
+                  <Badge variant="secondary" className="font-bold print:hidden">{actors.length} DATA</Badge>
+                </div>
+                <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
+                  <Table>
+                    <TableHeader className="bg-muted/50 print:bg-slate-100">
+                      <TableRow>
+                        <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
+                        <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
+                        <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
+                        <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR KK</TableHead>
+                        <TableHead className="font-bold text-primary py-4 print:text-black">PONSEL</TableHead>
+                        <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
+                        <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {actors.map((actor, index) => (
+                        <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
+                          <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
+                          <TableCell className="py-4">
+                            <span className="font-bold text-slate-800 uppercase text-[13px] print:text-black">{actor.fullName}</span>
+                          </TableCell>
+                          <TableCell className="py-4">
+                            <span className="font-mono text-[11px] text-slate-600 print:text-black">{actor.nik}</span>
+                          </TableCell>
+                          <TableCell className="py-4">
+                            <span className="font-mono text-[11px] text-slate-600 print:text-black">{actor.noKK}</span>
+                          </TableCell>
+                          <TableCell className="py-4">
+                            <span className="font-medium text-[11px] text-slate-600 print:text-black">{actor.phone || "-"}</span>
+                          </TableCell>
+                          <TableCell className="py-4">
+                            <div className="flex flex-col">
+                              <span className="font-black text-primary uppercase text-[12px] print:text-black">{actor.businessName}</span>
+                              <span className="text-[10px] text-slate-500 font-bold uppercase print:hidden">{actor.businessCategory}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-4 pr-6 text-right print:hidden">
+                            <div className="flex justify-end gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200"
+                                onClick={() => {
+                                  setViewingActor(actor)
+                                  setIsEditMode(false)
+                                  setEditingBankMode(false)
+                                }}
+                                title="Detail"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-200"
+                                onClick={() => generateRegistrationForm(actor)}
+                                title="Cetak Formulir"
+                              >
+                                <Printer className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost" 
+                                className="h-8 w-8 p-0 text-purple-600 hover:bg-purple-50 border border-transparent hover:border-purple-200"
+                                onClick={() => {
+                                  setViewingActor(actor)
+                                  setIsEditMode(false)
+                                  setEditingBankMode(true)
+                                }}
+                                title="Teruskan ke Verifikasi Data (Input Rekening)"
+                              >
+                                <ChevronRight className="w-5 h-5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            ))}
+            {Object.keys(groupedActors).length === 0 && (
+              <div className="rounded-xl border bg-white shadow-sm p-20 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
+                <Search className="w-8 h-8 opacity-20" />
+                <p className="font-bold">Tidak ada data pelaku usaha ditemukan.</p>
+              </div>
+            )}
           </div>
+
         )}
       </div>
 
