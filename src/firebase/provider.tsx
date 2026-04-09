@@ -37,10 +37,10 @@ export interface FirebaseContextState {
 
 // Return type for useFirebase()
 export interface FirebaseServicesAndUser {
-  firebaseApp: FirebaseApp;
-  database: Database;
-  auth: Auth;
-  storage: FirebaseStorage;
+  firebaseApp: FirebaseApp | null;
+  database: Database | null;
+  auth: Auth | null;
+  storage: FirebaseStorage | null;
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
@@ -128,34 +128,30 @@ export const useFirebase = (): FirebaseServicesAndUser => {
     throw new Error('useFirebase must be used within a FirebaseProvider.');
   }
 
-  if (!context.areServicesAvailable || !context.firebaseApp || !context.database || !context.auth) {
-    throw new Error('Firebase core services not available. Check FirebaseProvider props.');
-  }
-
-  // Cast context directly as it has all the required fields and is already memoized in FirebaseProvider
+  // Cast context directly as it has all the fields (some may be null during build/SSR)
   return context as unknown as FirebaseServicesAndUser;
 };
 
 /** Hook to access Firebase Auth instance. */
-export const useAuth = (): Auth => {
+export const useAuth = (): Auth | null => {
   const { auth } = useFirebase();
   return auth;
 };
 
 /** Hook to access Database instance. */
-export const useDatabase = (): Database => {
+export const useDatabase = (): Database | null => {
   const { database } = useFirebase();
   return database;
 };
 
 /** Hook to access Storage instance. */
-export const useStorage = (): FirebaseStorage => {
+export const useStorage = (): FirebaseStorage | null => {
   const { storage } = useFirebase();
   return storage;
 };
 
 /** Hook to access Firebase App instance. */
-export const useFirebaseApp = (): FirebaseApp => {
+export const useFirebaseApp = (): FirebaseApp | null => {
   const { firebaseApp } = useFirebase();
   return firebaseApp;
 };
