@@ -76,12 +76,12 @@ export default function ProfilePage() {
         title: "Foto Berhasil Diunggah",
         description: "Foto profil Anda telah diperbarui.",
       })
-    } catch (error) {
-      console.error("Upload error:", error)
+    } catch (error: any) {
+      console.error("Upload error details:", error)
       toast({
         variant: "destructive",
         title: "Gagal Mengunggah",
-        description: "Terjadi kesalahan saat mengunggah foto.",
+        description: `Error: ${error.message || "Terjadi kesalahan saat mengunggah foto."}`,
       })
     } finally {
       setIsUploading(false)
