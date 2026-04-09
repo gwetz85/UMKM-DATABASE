@@ -194,25 +194,31 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center p-4 cursor-default relative overflow-hidden"
       onClick={() => setShowForm(false)}
     >
-      {/* Office Hours Countdown */}
-      <div className="absolute top-6 right-6 z-50 animate-in fade-in slide-in-from-top-4 duration-1000">
-        <OfficeHoursTimer large />
-      </div>
+      {/* Office Hours Countdown - Top Right (visible when form is shown) */}
+      {showForm && (
+        <div className="absolute top-6 right-6 z-50">
+          <OfficeHoursTimer large />
+        </div>
+      )}
 
       {!showForm ? (
         <div 
-          className="flex flex-col items-center cursor-pointer animate-pulse transition-transform hover:scale-105" 
+          className="flex flex-col items-center gap-8 cursor-pointer group" 
           onClick={(e) => {
             e.stopPropagation();
             setShowForm(true);
           }}
         >
-          <div className="w-48 h-48 overflow-hidden rounded-full border-8 border-white shadow-[0_20px_50px_rgba(0,0,0,0.2)] bg-white">
+          <div className="w-48 h-48 overflow-hidden rounded-full border-8 border-white shadow-[0_20px_50px_rgba(0,0,0,0.2)] bg-white animate-pulse transition-transform group-hover:scale-105">
             <img 
               src="/logo.png" 
               alt="SIMPU Logo" 
               className="w-full h-full object-contain p-2"
             />
+          </div>
+          
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
+            <OfficeHoursTimer large />
           </div>
         </div>
       ) : (
