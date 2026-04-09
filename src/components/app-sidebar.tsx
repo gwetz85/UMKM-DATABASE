@@ -361,8 +361,12 @@ export function AppSidebar() {
                   href="/profile"
                   className="flex items-center gap-2 hover:bg-white/5 p-1 rounded-lg transition-colors cursor-pointer w-full group/profile"
                 >
-                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center group-hover/profile:bg-white/30 transition-colors">
-                    <UserIcon className="w-3.5 h-3.5 text-white" />
+                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center group-hover/profile:bg-white/30 transition-colors overflow-hidden border border-white/10">
+                    {userProfile?.photoURL ? (
+                      <img src={userProfile.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <UserIcon className="w-3.5 h-3.5 text-white" />
+                    )}
                   </div>
                   <div className="flex flex-col min-w-0">
                     <span className="text-[10px] font-black text-white truncate group-hover/profile:text-accent transition-colors">

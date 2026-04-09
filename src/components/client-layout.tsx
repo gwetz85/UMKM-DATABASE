@@ -8,6 +8,10 @@ import { InfoDialog } from '@/components/info-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { ChatBubble } from '@/components/chat-bubble';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
+import { useUser, useDatabase, useList, useMemoFirebase } from '@/firebase'
+import { ref } from 'firebase/database'
+import { User as UserIcon } from 'lucide-react'
+import Link from 'next/link'
 
 
 import { Toaster } from '@/components/ui/toaster';
@@ -15,7 +19,17 @@ import { ThemePersistence } from '@/components/theme-persistence';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLoginPage = pathname === '/login';
+  const { user } = useUser();
+  const database = useDatabase();
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user || !database) return null
+    return ref(database, 'system_users')
+  }, [user, database])
+  const { data: allUsers } = useList(userProfileRef)
+  const profile = allUsers?.find((u: any) => u.uid === user?.uid)
+
+  const isLoginPage = pathname === '/login'
 
   const getPageTitle = (path: string) => {
     switch (path) {
@@ -59,7 +73,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <InfoDialog>
+                   <InfoDialog>
                     <button className="w-10 h-10 overflow-hidden rounded-full border border-white/20 shadow-lg outline-none bg-white flex items-center justify-center">
                       <img 
                         src="/logo.png" 
@@ -68,6 +82,13 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       />
                     </button>
                   </InfoDialog>
+                  <Link href="/profile" className="w-9 h-9 rounded-xl overflow-hidden border border-white/20 shadow-inner bg-white/10 flex items-center justify-center transition-transform active:scale-95">
+                    {profile?.photoURL ? (
+                      <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <UserIcon className="w-5 h-5 text-white" />
+                    )}
+                  </Link>
                   <OfficeHoursTimer />
                 </div>
 
@@ -90,7 +111,25 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       </h1>
                     )}
                   </div>
-                  <OfficeHoursTimer />
+                  <div className="flex items-center gap-4">
+                    <OfficeHoursTimer />
+                    <Link 
+                      href="/profile" 
+                      className="flex items-center gap-3 pl-4 border-l border-slate-200 group"
+                    >
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Lihat Profil</span>
+                      </div>
+                      <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-50 flex items-center justify-center">
+                        {profile?.photoURL ? (
+                          <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <UserIcon className="w-5 h-5 text-primary/30" />
+                        )}
+                      </div>
+                    </Link>
+                  </div>
                 </div>
 
               )}

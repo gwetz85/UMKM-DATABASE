@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useUser, useDatabase, useMemoFirebase, useList, updateDocumentNonBlocking } from "@/firebase"
+import { useUser, useDatabase, useMemoFirebase, useList, updateDocumentNonBlocking, useStorage } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,7 +18,9 @@ import {
   Save, 
   Loader2,
   ShieldCheck,
-  UserCircle
+  UserCircle,
+  Camera,
+  Image as ImageIcon
 } from "lucide-react"
 
 export default function ProfilePage() {
@@ -25,6 +28,7 @@ export default function ProfilePage() {
   const database = useDatabase()
   const { toast } = useToast()
   const [isSaving, setIsSaving] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -38,6 +42,51 @@ export default function ProfilePage() {
 
   const { data: allUsersForProfile, isLoading: isProfileLoading } = useList(userProfileRef)
   const profile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
+  
+  const storage = useStorage()
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !user || !storage || !database || !profile) return
+
+    // Limit to 2MB
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "File Terlalu Besar",
+        description: "Maksimal ukuran foto adalah 2MB.",
+      })
+      return
+    }
+
+    setIsUploading(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `avatar_${user.uid}_${Date.now()}.${fileExt}`
+      const path = `profile_photos/${user.uid}/${fileName}`
+      const fRef = storageRef(storage, path)
+
+      await uploadBytes(fRef, file)
+      const downloadURL = await getDownloadURL(fRef)
+
+      const userRef = ref(database, `system_users/${profile.id}`)
+      updateDocumentNonBlocking(userRef, { photoURL: downloadURL })
+
+      toast({
+        title: "Foto Berhasil Diunggah",
+        description: "Foto profil Anda telah diperbarui.",
+      })
+    } catch (error) {
+      console.error("Upload error:", error)
+      toast({
+        variant: "destructive",
+        title: "Gagal Mengunggah",
+        description: "Terjadi kesalahan saat mengunggah foto.",
+      })
+    } finally {
+      setIsUploading(false)
+    }
+  }
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -89,11 +138,29 @@ export default function ProfilePage() {
 
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner">
-          <UserCircle className="w-10 h-10 text-primary" />
+      <div className="flex flex-col md:flex-row items-center gap-6 mb-8 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+        <div className="relative group">
+          <div className="w-24 h-24 bg-primary/5 rounded-3xl flex items-center justify-center shadow-inner overflow-hidden border-2 border-white ring-4 ring-primary/10">
+            {profile.photoURL ? (
+              <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <UserCircle className="w-14 h-14 text-primary/40" />
+            )}
+            
+            {isUploading && (
+              <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            )}
+          </div>
+          
+          <label className="absolute -bottom-2 -right-2 bg-primary text-white p-2 rounded-xl shadow-lg border-2 border-white cursor-pointer hover:scale-110 active:scale-95 transition-all">
+            <Camera className="w-4 h-4" />
+            <input type="file" className="hidden" accept="image/*" onChange={handlePhotoUpload} disabled={isUploading} />
+          </label>
         </div>
-        <div>
+        
+        <div className="text-center md:text-left">
           <h1 className="text-3xl font-black text-slate-800 tracking-tight uppercase">Update Profil</h1>
           <p className="text-slate-500 font-medium">Lengkapi data diri Anda untuk memudahkan koordinasi.</p>
         </div>

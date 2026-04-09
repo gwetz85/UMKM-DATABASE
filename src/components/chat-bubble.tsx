@@ -1,9 +1,11 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, Send, X, Search, User as UserIcon } from 'lucide-react';
-import { useUser, useDatabase, useList, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { MessageSquare, Send, X, Search, User as UserIcon, Paperclip, FileText, Image as ImageIcon, Download, Loader2 } from 'lucide-react';
+import { useUser, useDatabase, useList, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking, useStorage } from '@/firebase';
 import { ref, query, equalTo, onValue, serverTimestamp, onDisconnect, update } from 'firebase/database';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useOfficeStatus } from '@/hooks/useOfficeStatus';
 
 export function ChatBubble() {
   const { user } = useUser();
@@ -15,7 +17,15 @@ export function ChatBubble() {
   const [inputText, setInputText] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [hasUnread, setHasUnread] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [offlineForm, setOfflineForm] = useState({ name: '', phone: '', message: '' });
+  const [isSubmittingOffline, setIsSubmittingOffline] = useState(false);
+  const [offlineSubmitted, setOfflineSubmitted] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const storage = useStorage();
+  const officeStatus = useOfficeStatus();
 
   const { data: allUsers } = useList(ref(database, 'system_users'));
 
@@ -26,11 +36,13 @@ export function ChatBubble() {
     role: 'Pengguna'
   };
 
-  const filteredUsers = (allUsers || []).filter((u: any) => 
-    u.uid !== user?.uid && 
-    u.isOnline === true &&
-    (u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-     u.role?.toLowerCase().includes(searchTerm.toLowerCase()))
+  // Show all users but sort online ones to top
+  const sortedUsers = (allUsers || []).filter((u: any) => u.uid !== user?.uid).sort((a, b) => {
+    if (a.isOnline === b.isOnline) return (a.fullName || '').localeCompare(b.fullName || '');
+    return a.isOnline ? -1 : 1;
+  }).filter((u: any) => 
+    u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    u.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Presence logic
@@ -150,6 +162,93 @@ export function ChatBubble() {
     setInputText('');
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedUser || !user || !storage || !database) return;
+
+    // Check size limit (e.g., 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File terlalu besar. Maksimal 5MB.");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const chatId = [user.uid, selectedUser.uid].sort().join('_');
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const path = `chat_files/${chatId}/${fileName}`;
+      const fRef = storageRef(storage, path);
+
+      await uploadBytes(fRef, file);
+      const downloadURL = await getDownloadURL(fRef);
+
+      const messagesRef = ref(database, 'chat_messages');
+      addDocumentNonBlocking(messagesRef, {
+        chatId,
+        senderId: user.uid,
+        senderName: currentUserProfile?.fullName || 'User',
+        receiverId: selectedUser.uid,
+        text: `Mengirim file: ${file.name}`,
+        fileUrl: downloadURL,
+        fileName: file.name,
+        fileType: file.type.startsWith('image/') ? 'image' : 'pdf',
+        timestamp: serverTimestamp()
+      });
+
+      const unreadRef = ref(database, `chat_unread/${selectedUser.uid}_${chatId}`);
+      setDocumentNonBlocking(unreadRef, {
+        userId: selectedUser.uid,
+        chatId: chatId,
+        hasUnread: true
+      });
+      
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Gagal mengunggah file.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleOfflineSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!offlineForm.name || !offlineForm.phone || !offlineForm.message) return;
+
+    setIsSubmittingOffline(true);
+    try {
+      const offlineRef = ref(database, 'offline_messages');
+      addDocumentNonBlocking(offlineRef, {
+        ...offlineForm,
+        timestamp: serverTimestamp(),
+        userId: user.uid,
+        userName: currentUserProfile?.fullName || 'Anonymous'
+      });
+
+      setOfflineSubmitted(true);
+      toast({
+        title: "Pesan Terkirim",
+        description: "Pesan Anda telah disimpan di sistem kami.",
+      });
+    } catch (error) {
+      console.error("Offline submit error:", error);
+      alert("Gagal mengirim pesan. Silakan coba lagi nanti.");
+    } finally {
+      setIsSubmittingOffline(false);
+    }
+  };
+
+  const triggerDownload = (url: string, fileName: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.target = "_blank";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (!user || !currentUserProfile) return null;
 
   return (
@@ -198,7 +297,7 @@ export function ChatBubble() {
                   ←
                 </button>
               ) : <MessageSquare size={20} />}
-              <span style={{ fontWeight: 800, fontSize: '1rem' }}>{selectedUser ? selectedUser.fullName : 'Pusat Diskusi'}</span>
+              <span style={{ fontWeight: 800, fontSize: '1rem' }}>{selectedUser ? selectedUser.fullName : !officeStatus?.isOpen ? 'Kirim Pesan Offline' : 'Pusat Diskusi'}</span>
             </div>
             <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', opacity: 0.8 }}>
               <X size={20} />
@@ -206,59 +305,146 @@ export function ChatBubble() {
           </div>
 
           {!selectedUser ? (
-            /* Contact List View */
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#f9fafb' }}>
-              <div style={{ padding: '1rem' }}>
-                <div style={{ position: 'relative' }}>
-                  <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, color: '#000' }} />
-                  <input
-                    type="text"
-                    placeholder="Cari pengguna..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{
-                      width: '100%', padding: '0.75rem 1rem 0.75rem 2.75rem', borderRadius: '14px',
-                      background: 'white', border: '1px solid #e5e7eb',
-                      color: '#1a1a1a', outline: 'none', fontSize: '0.9rem', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                    }}
-                  />
-                </div>
-              </div>
-              <div style={{ flex: 1, overflowY: 'auto', padding: '0 0.75rem 1rem 0.75rem' }}>
-                {filteredUsers.map((u: any) => (
-                  <div
-                    key={u.id}
-                    onClick={() => setSelectedUser(u)}
-                    className="hover:bg-gray-100 transition-colors"
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
-                      borderRadius: '16px', cursor: 'pointer',
-                      marginBottom: '0.5rem', background: 'white', border: '1px solid transparent'
-                    }}
-                  >
-                    <div style={{ 
-                      width: '44px', height: '44px', borderRadius: '14px', background: 'rgba(37, 99, 235, 0.1)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'hsl(var(--primary))'
-                    }}>
-                      <UserIcon size={22} />
+            /* Contact List View or Offline Form */
+            !officeStatus?.isOpen ? (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#f9fafb', padding: '1.5rem', overflowY: 'auto' }}>
+                {offlineSubmitted ? (
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: '1rem' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '32px', background: '#ecfdf5', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}>
+                      <Send size={32} />
                     </div>
-                    <div>
-                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1a1a1a' }}>{u.fullName}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 500, textTransform: 'uppercase' }}>{u.role}</div>
-                    </div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1a1a1a' }}>Pesan Terkirim!</h3>
+                    <p style={{ color: '#4b5563', fontSize: '0.9rem' }}>Terima kasih. Pesan Anda telah kami terima dan akan dibalas melalui email/nomor ponsel segera setelah kantor kembali beroperasi.</p>
+                    <button 
+                      onClick={() => setOfflineSubmitted(false)}
+                      style={{ background: 'none', border: 'none', color: 'hsl(var(--primary))', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer', marginTop: '1rem' }}
+                    >
+                      Kirim pesan lain
+                    </button>
                   </div>
-                ))}
-                {filteredUsers.length === 0 && (
-                  <div className="text-center p-8 text-sm text-gray-500 flex flex-col items-center gap-3">
-                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300">
-                       <Search size={24} />
+                ) : (
+                  <form onSubmit={handleOfflineSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+                      <p style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 500 }}>Kantor sedang tutup. Silakan tinggalkan pesan di bawah ini.</p>
                     </div>
-                    <p className="font-medium">Tidak ada pengguna yang sedang online.</p>
-                    <p className="text-[10px] uppercase tracking-wider opacity-60">Coba lagi beberapa saat lagi</p>
-                  </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4b5563' }}>Nama Lengkap</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={offlineForm.name}
+                        onChange={(e) => setOfflineForm({...offlineForm, name: e.target.value})}
+                        placeholder="Contoh: Budi Santoso"
+                        style={{ padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontSize: '0.9rem' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4b5563' }}>Nomor Ponsel (WhatsApp)</label>
+                      <input 
+                        type="tel" 
+                        required
+                        value={offlineForm.phone}
+                        onChange={(e) => setOfflineForm({...offlineForm, phone: e.target.value})}
+                        placeholder="Contoh: 08123456789"
+                        style={{ padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontSize: '0.9rem' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4b5563' }}>Isi Pesan</label>
+                      <textarea 
+                        required
+                        rows={4}
+                        value={offlineForm.message}
+                        onChange={(e) => setOfflineForm({...offlineForm, message: e.target.value})}
+                        placeholder="Tuliskan keluhan atau pertanyaan Anda..."
+                        style={{ padding: '0.75rem 1rem', borderRadius: '12px', border: '1px solid #e5e7eb', outline: 'none', fontSize: '0.9rem', resize: 'none' }}
+                      />
+                    </div>
+                    <button 
+                      type="submit" 
+                      disabled={isSubmittingOffline}
+                      style={{ 
+                        padding: '1rem', borderRadius: '14px', background: 'hsl(var(--primary))', color: 'white', 
+                        fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', 
+                        justifyContent: 'center', gap: '0.5rem', marginTop: '0.5rem',
+                        opacity: isSubmittingOffline ? 0.7 : 1
+                      }}
+                    >
+                      {isSubmittingOffline ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
+                      Kirim Pesan
+                     </button>
+                  </form>
                 )}
               </div>
-            </div>
+            ) : (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#f9fafb' }}>
+                <div style={{ padding: '1rem' }}>
+                  <div style={{ position: 'relative' }}>
+                    <Search size={16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, color: '#000' }} />
+                    <input
+                      type="text"
+                      placeholder="Cari pengguna..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      style={{
+                        width: '100%', padding: '0.75rem 1rem 0.75rem 2.75rem', borderRadius: '14px',
+                        background: 'white', border: '1px solid #e5e7eb',
+                        color: '#1a1a1a', outline: 'none', fontSize: '0.9rem', boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ flex: 1, overflowY: 'auto', padding: '0 0.75rem 1rem 0.75rem' }}>
+                  {sortedUsers.map((u: any) => (
+                    <div
+                      key={u.id}
+                      onClick={() => setSelectedUser(u)}
+                      className="hover:bg-gray-100 transition-colors"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
+                        borderRadius: '16px', cursor: 'pointer',
+                        marginBottom: '0.5rem', background: 'white', border: '1px solid transparent'
+                      }}
+                    >
+                      <div style={{ position: 'relative' }}>
+                        <div style={{ 
+                          width: '44px', height: '44px', borderRadius: '14px', background: 'rgba(37, 99, 235, 0.1)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'hsl(var(--primary))',
+                          overflow: 'hidden'
+                        }}>
+                          {u.photoURL ? (
+                            <img src={u.photoURL} alt={u.fullName} className="w-full h-full object-cover" />
+                          ) : (
+                            <UserIcon size={22} />
+                          )}
+                        </div>
+                        {u.isOnline && (
+                          <div style={{
+                            position: 'absolute', bottom: '-2px', right: '-2px', width: '12px', height: '12px',
+                            background: '#10b981', borderRadius: '50%', border: '2px solid white'
+                          }} />
+                        )}
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1a1a1a' }}>{u.fullName}</span>
+                          {u.isOnline && <span style={{ fontSize: '0.65rem', color: '#10b981', fontWeight: 800, textTransform: 'uppercase' }}>Online</span>}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 500, textTransform: 'uppercase' }}>{u.role}</div>
+                      </div>
+                    </div>
+                  ))}
+                  {sortedUsers.length === 0 && (
+                    <div className="text-center p-8 text-sm text-gray-500 flex flex-col items-center gap-3">
+                      <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center text-gray-300">
+                         <Search size={24} />
+                      </div>
+                      <p className="font-medium">Tidak ada pengguna yang ditemukan.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
           ) : (
             /* Conversation View */
             <>
@@ -273,10 +459,26 @@ export function ChatBubble() {
                     key={msg.id}
                     style={{
                       alignSelf: msg.senderId === user.uid ? 'flex-end' : 'flex-start',
-                      maxWidth: '85%', display: 'flex', flexDirection: 'column',
-                      alignItems: msg.senderId === user.uid ? 'flex-end' : 'flex-start'
+                      maxWidth: '85%', display: 'flex', gap: '0.6rem',
+                      flexDirection: msg.senderId === user.uid ? 'row-reverse' : 'row',
+                      alignItems: 'flex-end'
                     }}
                   >
+                    {/* message avatar */}
+                    <div style={{ 
+                      width: '26px', height: '26px', borderRadius: '10px', overflow: 'hidden', 
+                      background: 'rgba(37, 99, 235, 0.1)', flexShrink: 0,
+                      border: '1px solid rgba(0,0,0,0.05)', marginBottom: '1.2rem'
+                    }}>
+                       {(allUsers || []).find((u: any) => u.uid === msg.senderId)?.photoURL ? (
+                         <img src={(allUsers || []).find((u: any) => u.uid === msg.senderId)?.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                       ) : (
+                         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'hsl(var(--primary))', fontSize: '10px' }}>
+                           <UserIcon size={12} />
+                         </div>
+                       )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: msg.senderId === user.uid ? 'flex-end' : 'flex-start' }}>
                     <div style={{
                       padding: '0.75rem 1.1rem', borderRadius: '18px',
                       borderBottomLeftRadius: msg.senderId === user.uid ? '18px' : '4px',
@@ -284,20 +486,67 @@ export function ChatBubble() {
                       background: msg.senderId === user.uid ? 'hsl(var(--primary))' : '#f3f4f6',
                       color: msg.senderId === user.uid ? 'white' : '#1f2937', 
                       fontSize: '0.95rem', lineHeight: '1.5', fontWeight: 500,
-                      boxShadow: msg.senderId === user.uid ? '0 4px 12px rgba(37, 99, 235, 0.2)' : 'none'
+                      boxShadow: msg.senderId === user.uid ? '0 4px 12px rgba(37, 99, 235, 0.2)' : 'none',
+                      display: 'flex', flexDirection: 'column', gap: '0.5rem'
                     }}>
-                      {msg.text}
+                      {msg.fileUrl ? (
+                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                           {msg.fileType === 'image' ? (
+                             <img 
+                               src={msg.fileUrl} 
+                               alt={msg.fileName} 
+                               style={{ maxWidth: '100%', borderRadius: '12px', cursor: 'zoom-in' }} 
+                               onClick={() => window.open(msg.fileUrl, '_blank')}
+                             />
+                           ) : (
+                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(0,0,0,0.05)', padding: '0.75rem', borderRadius: '12px' }}>
+                               <FileText size={24} />
+                               <span style={{ fontSize: '0.85rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '150px' }}>{msg.fileName}</span>
+                             </div>
+                           )}
+                           <button 
+                             onClick={() => triggerDownload(msg.fileUrl, msg.fileName)}
+                             style={{ 
+                               display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', 
+                               background: 'rgba(0,0,0,0.1)', border: 'none', borderRadius: '8px', 
+                               color: 'inherit', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' 
+                             }}
+                           >
+                             <Download size={14} /> Simpan ke Perangkat
+                           </button>
+                         </div>
+                       ) : msg.text}
                     </div>
                     <span style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '0.4rem', fontWeight: 500 }}>
                       {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                     </span>
+                    </div>
                   </div>
                 ))}
                 <div ref={messagesEndRef} />
               </div>
 
               {/* Input Area */}
-              <form onSubmit={handleSendMessage} style={{ padding: '1.25rem', background: 'white', borderTop: '1px solid #f3f4f6', display: 'flex', gap: '0.75rem' }}>
+              <form onSubmit={handleSendMessage} style={{ padding: '1.25rem', background: 'white', borderTop: '1px solid #f3f4f6', display: 'flex', gap: '0.75rem', position: 'relative' }}>
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*,application/pdf"
+                  style={{ display: 'none' }}
+                />
+                <button
+                  type="button"
+                  disabled={isUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    width: '50px', height: '50px', borderRadius: '14px', background: '#f3f4f6',
+                    color: '#4b5563', border: 'none', cursor: 'pointer', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center'
+                  }}
+                >
+                  {isUploading ? <Loader2 size={20} className="animate-spin" /> : <Paperclip size={20} />}
+                </button>
                 <input
                   type="text"
                   placeholder="Tulis pesan..."
