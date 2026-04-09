@@ -21,6 +21,7 @@ import {
   CheckCircle2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { OfficeHoursTimer } from "@/components/OfficeHoursTimer"
 
 
 
@@ -190,9 +191,14 @@ export default function LoginPage() {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4 cursor-default"
+      className="min-h-screen flex items-center justify-center p-4 cursor-default relative overflow-hidden"
       onClick={() => setShowForm(false)}
     >
+      {/* Office Hours Countdown */}
+      <div className="absolute top-6 right-6 z-50 animate-in fade-in slide-in-from-top-4 duration-1000">
+        <OfficeHoursTimer large />
+      </div>
+
       {!showForm ? (
         <div 
           className="flex flex-col items-center cursor-pointer animate-pulse transition-transform hover:scale-105" 

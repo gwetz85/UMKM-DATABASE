@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { Clock, DoorOpen, DoorClosed } from "lucide-react"
 
-export function OfficeHoursTimer() {
+export function OfficeHoursTimer({ large = false }: { large?: boolean }) {
   const [status, setStatus] = useState<{
     isOpen: boolean
     label: string
@@ -83,18 +83,18 @@ export function OfficeHoursTimer() {
   if (!status) return null
 
   return (
-    <div className={`flex items-center gap-3 px-3 py-1.5 md:px-4 md:py-2 rounded-2xl border transition-all duration-500 shadow-sm ${status.colorClass}`}>
-      <div className="flex flex-col items-start md:items-end">
+    <div className={`flex items-center gap-3 ${large ? "px-6 py-4 rounded-3xl" : "px-3 py-1.5 md:px-4 md:py-2 rounded-2xl"} border transition-all duration-500 shadow-sm ${status.colorClass}`}>
+      <div className={`flex flex-col ${large ? "items-center" : "items-start md:items-end"}`}>
         <div className="flex items-center gap-1.5 shrink-0">
-          {status.isOpen ? <DoorOpen className="w-3 h-3 md:w-3.5 md:h-3.5 animate-bounce" /> : <DoorClosed className="w-3 h-3 md:w-3.5 md:h-3.5" />}
-          <span className="text-[9px] md:text-[10px] font-black tracking-widest uppercase">{status.label}</span>
+          {status.isOpen ? <DoorOpen className={`${large ? "w-5 h-5" : "w-3 h-3 md:w-3.5 md:h-3.5"} animate-bounce`} /> : <DoorClosed className={`${large ? "w-5 h-5" : "w-3 h-3 md:w-3.5 md:h-3.5"}`} />}
+          <span className={`${large ? "text-xs" : "text-[9px] md:text-[10px]"} font-black tracking-widest uppercase`}>{status.label}</span>
         </div>
         <div className="flex items-center gap-1.5 mt-0.5 md:mt-0">
-          <Clock className="w-3 h-3 md:w-3.5 md:h-3.5 opacity-70" />
-          <span className="text-[10px] md:text-sm font-mono font-black tracking-tighter">
+          <Clock className={`${large ? "w-5 h-5" : "w-3 h-3 md:w-3.5 md:h-3.5"} opacity-70`} />
+          <span className={`${large ? "text-2xl" : "text-[10px] md:text-sm"} font-mono font-black tracking-tighter`}>
             {status.timeLeft}
           </span>
-          <span className="text-[8px] md:text-[9px] font-bold opacity-60 uppercase ml-1 hidden lg:inline">
+          <span className={`${large ? "text-xs" : "text-[8px] md:text-[9px]"} font-bold opacity-60 uppercase ml-1 ${large ? "inline" : "hidden lg:inline"}`}>
             {status.isOpen ? "Menuju Tutup" : "Menuju Buka"}
           </span>
         </div>
