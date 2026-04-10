@@ -9,6 +9,7 @@ import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { ChatBubble } from '@/components/chat-bubble';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
+import { BackgroundMusic } from '@/components/BackgroundMusic';
 import { useUser, useDatabase, useList, useMemoFirebase } from '@/firebase'
 import { ref } from 'firebase/database'
 import { User as UserIcon } from 'lucide-react'
@@ -140,6 +141,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               </div>
               
               {!isLoginPage && <ChatBubble />}
+              <BackgroundMusic />
             </main>
           </div>
         </div>
