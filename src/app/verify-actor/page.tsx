@@ -17,19 +17,22 @@ import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 
-function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, actor }: { 
+function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, actor, isIsolir, hasCancell }: { 
   actorId: string, 
   createdAt: string, 
   matchCount: number, 
   database: any,
   isAdmin: boolean,
-  actor: BusinessActor
+  actor: BusinessActor,
+  isIsolir?: boolean,
+  hasCancell?: boolean
 }) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   
   // Logic Baru: 0 matches = 5 min, 1 match = 1 min, 2+ matches = Manual Info
-  const targetMins = matchCount === 0 ? 5 : 1
-  const isAutoEligible = matchCount < 2
+  // Rule Khusus: Isolir & Cancell diproses dalam 1 menit
+  const targetMins = (isIsolir || hasCancell) ? 1 : (matchCount === 0 ? 5 : 1)
+  const isAutoEligible = matchCount < 2 || isIsolir || hasCancell
 
   // Validation: Check if all mandatory fields are present
   const isDataComplete = !!(
@@ -55,18 +58,33 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
     const targetTime = new Date(createdAt).getTime() + (targetMins * 60000)
     
     const triggerVerify = () => {
-      if (!isAutoEligible) return;
-      
       if (isAdmin && database) {
-        // Double check for Cancell status before finalizing auto-verify
-        // This is a safety check in case data changed during the countdown
+        if (hasCancell) {
+          updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
+            status: 'rejected',
+            rejectionReason: 'Ditolak Otomatis: Terdeteksi status Cancell pada Data Master Pembanding.'
+          })
+          return;
+        }
+
+        if (isIsolir) {
+          updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
+            status: 'isolir_data',
+            rejectionReason: 'Pengajuan Diblok dikarenakan indikasi usaha yang sama'
+          })
+          return;
+        }
+
+        if (!isAutoEligible) return;
+        
+        // Finalize auto-verify
         updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
           status: 'verified_actor'
         })
       }
     }
 
-    // Initial check: if time's up, trigger immediately and don't start interval
+    // Initial check
     const initialDiff = targetTime - Date.now()
     if (initialDiff <= 0) {
       setTimeLeft(0)
@@ -90,7 +108,7 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [createdAt, targetMins, isAutoEligible, isAdmin, database, actorId, isDataComplete])
+  }, [createdAt, targetMins, isAutoEligible, isAdmin, database, actorId, isDataComplete, hasCancell, isIsolir])
 
   if (!isDataComplete) {
     return (
@@ -101,9 +119,7 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
     )
   }
 
-
   if (timeLeft === null) return <Loader2 className="w-3 h-3 animate-spin opacity-20" />
-
 
   if (timeLeft === 0) {
     if (isAutoEligible) {
@@ -127,7 +143,6 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
   const minutes = Math.floor((timeLeft % 3600000) / 60000)
   const seconds = Math.floor((timeLeft % 60000) / 1000)
 
-  // Color logic
   const timerColor = timeLeft < 300000 ? "text-rose-600 border-rose-200 bg-rose-50" : 
                      timeLeft < 900000 ? "text-amber-600 border-amber-200 bg-amber-50" : 
                      "text-primary border-primary/20 bg-slate-50"
@@ -142,7 +157,6 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
   )
 }
 
-
 const normalizeGender = (g: string) => {
   const val = (g || "").toLowerCase().trim();
   if (val === "l" || val === "laki-laki") return "Laki-laki";
@@ -151,7 +165,6 @@ const normalizeGender = (g: string) => {
 };
 
 export default function VerifyActorPage() {
-
   const { user } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
@@ -182,7 +195,6 @@ export default function VerifyActorPage() {
   const isMonitoring = userProfile?.role === 'monitoring'
   const isPetugas = userProfile?.role === 'petugas'
 
-
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
     return ref(database, 'businessActors')
@@ -203,21 +215,6 @@ export default function VerifyActorPage() {
     (actor.nik || "").includes(searchQuery) ||
     (actor.businessName || "").toLowerCase().includes(searchQuery.toLowerCase())
   )
-
-  // Optimization: Group master data by NIK and KK first for O(1) lookup
-  const masterDataStats = useMemo(() => {
-    if (!allMasterDataRaw) return { nikMap: new Map(), kkMap: new Map() };
-    const nikMap = new Map<string, number>();
-    const kkMap = new Map<string, number>();
-    
-    allMasterDataRaw.forEach(m => {
-      if (m.nik) nikMap.set(m.nik, (nikMap.get(m.nik) || 0) + 1);
-      if (m.noKK) kkMap.set(m.noKK, (kkMap.get(m.noKK) || 0) + 1);
-    });
-    
-    return { nikMap, kkMap };
-  }, [allMasterDataRaw]);
-
 
   const kelurahanList = [
     "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
@@ -335,7 +332,6 @@ export default function VerifyActorPage() {
 
   if (!isAdmin && !isPetugas && !isMonitoring && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
 
-
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -375,7 +371,6 @@ export default function VerifyActorPage() {
                    <TableHead className="font-bold">Koordinator</TableHead>
                    <TableHead className="font-bold text-center">Countdown</TableHead>
                    <TableHead className="text-right font-bold">Aksi</TableHead>
-
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -404,51 +399,31 @@ export default function VerifyActorPage() {
                          <VerificationTimer 
                           actorId={actor.id} 
                           createdAt={actor.createdAt} 
-                          matchCount={(() => {
+                          {...(() => {
                             const nikMatches = allMasterDataRaw?.filter((m: any) => m.nik && m.nik === actor.nik) || [];
                             const kkMatches = allMasterDataRaw?.filter((m: any) => m.noKK && m.noKK === actor.noKK) || [];
-                            
-                            // Combine unique matches by id or some persistent field if available, 
-                            // but here we just need the count and check for cancellation
                             const combinedMatches = [...nikMatches, ...kkMatches];
+                            const uniqueIds = new Set(combinedMatches.map(m => m.id || `${m.nik}-${m.nama}`));
                             
-                            // Rule 4: Check if any match has "Cancell" in Column F (status)
                             const hasCancell = combinedMatches.some(m => (m.status || "").toLowerCase().includes('cancell'));
-                            
-                            if (hasCancell && isAdmin && database) {
-                              updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), {
-                                status: 'rejected',
-                                rejectionReason: 'Ditolak Otomatis: Terdeteksi status Cancell pada Data Master Pembanding.'
-                              });
-                            }
-
-                            // New Rule: Check for same business name in KK for Year 2025 (Isolir)
                             const isIsolir = kkMatches.some((m: any) => 
                               String(m.tahunPengajuan) === "2025" && 
                               (m.usaha || "").toLowerCase().trim() === (actor.businessName || "").toLowerCase().trim()
                             );
 
-                            if (isIsolir && isAdmin && database) {
-                              updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), {
-                                status: 'isolir_data',
-                                rejectionReason: 'Pengajuan Diblok dikarenakan indikasi usaha yang sama'
-                              });
+                            return {
+                              matchCount: uniqueIds.size,
+                              hasCancell,
+                              isIsolir
                             }
-
-                            // Return total unique matches count (approximate but sufficient for logic)
-                            // We use a Set of some unique key if possible, or just the filtered length
-                            const uniqueIds = new Set(combinedMatches.map(m => m.id || `${m.nik}-${m.nama}`));
-                            return uniqueIds.size;
-                          })()} 
+                          })()}
                           database={database}
                           isAdmin={isAdmin}
                           actor={actor}
                         />
-
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-
                       <div className="flex justify-end gap-1.5 opacity-90 hover:opacity-100 transition-opacity">
                         <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
                           <DialogTrigger asChild>
@@ -463,7 +438,6 @@ export default function VerifyActorPage() {
                                   <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
                                     <FileText className="w-6 h-6" /> Detail Pelaku Usaha
                                   </DialogTitle>
-                                  <DialogDescription className="sr-only">Rincian data pendaftaran pelaku usaha.</DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-6 py-4">
                                   <section className="space-y-4">
@@ -556,7 +530,6 @@ export default function VerifyActorPage() {
                                     <DialogTitle className="text-2xl font-black text-amber-600 uppercase flex items-center gap-2">
                                       <Edit className="w-6 h-6" /> Edit Data Pelaku (Tanpa Verifikasi)
                                     </DialogTitle>
-                                    <DialogDescription className="sr-only">Formulir pengeditan data pendaftaran pelaku usaha.</DialogDescription>
                                   </DialogHeader>
                                   <div className="grid gap-6 py-6">
                                     <div className="grid gap-4 md:grid-cols-2">
@@ -575,7 +548,6 @@ export default function VerifyActorPage() {
                                       <div className="space-y-2">
                                         <Label className="font-bold">Jenis Kelamin</Label>
                                         <Select name="gender" defaultValue={normalizeGender(editingOnlyActor.gender)}>
-
                                           <SelectTrigger><SelectValue /></SelectTrigger>
                                           <SelectContent>
                                             <SelectItem value="Laki-laki">Laki-laki</SelectItem>
@@ -592,7 +564,6 @@ export default function VerifyActorPage() {
                                         <Input name="phone" defaultValue={editingOnlyActor.phone} required />
                                       </div>
                                     </div>
-
                                     <div className="grid gap-4 md:grid-cols-2">
                                       <div className="space-y-2">
                                         <Label className="font-bold">Kelurahan</Label>
@@ -620,7 +591,6 @@ export default function VerifyActorPage() {
                                         <Input name="coordinator" defaultValue={editingOnlyActor.coordinator} required />
                                       </div>
                                     </div>
-
                                     <div className="grid gap-4 md:grid-cols-2">
                                       <div className="space-y-2">
                                         <Label className="font-bold">Jenis Usaha</Label>
@@ -668,7 +638,6 @@ export default function VerifyActorPage() {
                                     <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
                                       <ShieldAlert className="w-6 h-6" /> Verifikasi Admin
                                     </DialogTitle>
-                                    <DialogDescription className="sr-only">Formulir verifikasi dan finalisasi data pelaku usaha.</DialogDescription>
                                   </DialogHeader>
                                   <div className="grid gap-6 py-6">
                                     <div className="grid gap-4 md:grid-cols-2">
@@ -687,7 +656,6 @@ export default function VerifyActorPage() {
                                       <div className="space-y-2">
                                         <Label className="font-bold">Jenis Kelamin</Label>
                                         <Select name="gender" defaultValue={normalizeGender(editingActor.gender)}>
-
                                           <SelectTrigger><SelectValue /></SelectTrigger>
                                           <SelectContent>
                                             <SelectItem value="Laki-laki">Laki-laki</SelectItem>
@@ -704,7 +672,6 @@ export default function VerifyActorPage() {
                                         <Input name="phone" defaultValue={editingActor.phone} required />
                                       </div>
                                     </div>
-
                                     <div className="grid gap-4 md:grid-cols-2">
                                       <div className="space-y-2">
                                         <Label className="font-bold">Kelurahan</Label>
@@ -732,7 +699,6 @@ export default function VerifyActorPage() {
                                         <Input name="coordinator" defaultValue={editingActor.coordinator} required />
                                       </div>
                                     </div>
-
                                     <div className="grid gap-4 md:grid-cols-2">
                                       <div className="space-y-2">
                                         <Label className="font-bold">Jenis Usaha</Label>
@@ -811,8 +777,6 @@ export default function VerifyActorPage() {
           )}
         </CardContent>
       </Card>
-
-
     </div>
   )
 }

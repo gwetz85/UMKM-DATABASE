@@ -261,83 +261,18 @@ function IsolirDataContent() {
             <div className="flex flex-col gap-2 relative">
               <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b gap-4">
                 <DialogTitle className="text-xl md:text-2xl font-black text-amber-700 uppercase">
-                  {isEditMode ? "Edit Data Isolir" : "Detail Lengkap Data Isolir"}
+                  Detail Lengkap Data Isolir
                 </DialogTitle>
                 <div className="flex flex-wrap gap-2">
                   {isAdmin && (
-                    <Button 
-                      variant={isEditMode ? "outline" : "default"} 
-                      size="sm" 
-                      onClick={() => setIsEditMode(!isEditMode)}
-                      className={cn("font-bold", isEditMode ? "border-amber-500 text-amber-600" : "bg-primary")}
-                    >
-                      {isEditMode ? "Batal Edit" : <><Edit3 className="w-4 h-4 mr-2"/> Edit Semua Data</>}
+                    <Button size="sm" variant="destructive" onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="font-bold" title="Hapus Permanen">
+                      <Trash2 className="w-4 h-4 mr-1" /> Hapus Permanen
                     </Button>
-                  )}
-                  {isAdmin && !isEditMode && (
-                    <>
-                      <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 font-bold" title="Kembalikan ke antrean awal (Pending)">
-                        <RotateCcw className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Revert (Pending)</span>
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="font-bold" title="Hapus Permanen">
-                        <Trash2 className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Delete</span>
-                      </Button>
-                    </>
                   )}
                 </div>
               </div>
 
-              {isEditMode ? (
-                <form onSubmit={handleSaveFullEdit} className="grid gap-6 py-4">
-                  <section className="p-4 bg-amber-50 border border-amber-200 rounded-2xl relative">
-                    <p className="text-[10px] font-black text-amber-600 uppercase mb-2 tracking-widest flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Alasan Isolir (Edit)</p>
-                    <Input name="rejectionReason" defaultValue={viewingActor.rejectionReason} className="font-bold text-amber-700 bg-white" placeholder="Masukkan alasan isolir" required />
-                  </section>
-                  
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi (Edit)</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Lengkap</Label><Input name="fullName" defaultValue={viewingActor.fullName} required /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">NIK</Label><Input name="nik" defaultValue={viewingActor.nik} required /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor KK</Label><Input name="noKK" defaultValue={viewingActor.noKK} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Jenis Kelamin</Label>
-                        <select name="gender" defaultValue={viewingActor.gender || ""} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                          <option value="L">Laki-Laki</option>
-                          <option value="P">Perempuan</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Tempat/Tgl Lahir</Label><Input name="pobDob" defaultValue={viewingActor.pobDob} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor HP</Label><Input name="phone" defaultValue={viewingActor.phone} /></div>
-                    </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili (Edit)</div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">RT/RW</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} /></div>
-                      <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase">Alamat Lengkap</Label><Input name="address" defaultValue={viewingActor.address} /></div>
-                    </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha (Edit)</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} required /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kategori</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Koordinator</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
-                    </div>
-                  </section>
-
-                  <div className="sticky bottom-0 bg-white dark:bg-zinc-950 p-4 border-t flex justify-end gap-2 mt-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] rounded-b-lg z-10">
-                    <Button type="button" variant="outline" onClick={() => setIsEditMode(false)} className="font-bold">Batal</Button>
-                    <Button type="submit" className="bg-primary font-bold"><Save className="w-4 h-4 mr-2" /> Simpan Perubahan</Button>
-                  </div>
-                </form>
-              ) : (
-                <div className="grid gap-6 py-4">
+              <div className="grid gap-6 py-4">
                   <section className="p-4 bg-amber-50 border border-amber-200 rounded-2xl">
                     <p className="text-[10px] font-black text-amber-600 uppercase mb-2 tracking-widest flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Alasan Isolir:</p>
                     <p className="text-sm font-black text-amber-700 leading-relaxed italic">

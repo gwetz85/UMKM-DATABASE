@@ -107,10 +107,24 @@ export async function GET(req: NextRequest) {
         (m.usaha || "").toLowerCase().trim() === (actor.businessName || "").toLowerCase().trim()
       );
       
+      const createdAt = new Date(actor.createdAt).getTime();
+
       if (isIsolir) {
-        updates[`businessActors/${actor.id}/status`] = 'isolir_data';
-        updates[`businessActors/${actor.id}/rejectionReason`] = 'Pengajuan Diblok dikarenakan indikasi usaha yang sama';
-        isolirCount++;
+        // Enforce 1 minute wait time for Isolir Data
+        const targetTimeIsolir = createdAt + 60000;
+        if (now >= targetTimeIsolir) {
+          updates[`businessActors/${actor.id}/status`] = 'isolir_data';
+          updates[`businessActors/${actor.id}/rejectionReason`] = 'Pengajuan Diblok dikarenakan indikasi usaha yang sama';
+          isolirCount++;
+          return;
+        }
+        // If not yet 1 minute, skip this actor for now (it will stay pending)
+        skipped.push({
+          id: actor.id,
+          name: actor.fullName,
+          reason: "Menunggu timer Isolir (1m)",
+          details: "Terdeteksi indikasi usaha sama, menunggu masa sanggah/cek sistem 1 menit."
+        });
         return;
       }
 
@@ -119,7 +133,6 @@ export async function GET(req: NextRequest) {
       const isAutoEligible = matchCount < 2;
 
       if (isAutoEligible) {
-        const createdAt = new Date(actor.createdAt).getTime();
         const targetTime = createdAt + (targetMins * 60000);
         
         if (now >= targetTime) {
