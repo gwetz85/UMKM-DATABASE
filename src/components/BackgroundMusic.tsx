@@ -21,8 +21,10 @@ export function BackgroundMusic() {
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const playerRef = useRef<any>(null);
 
-  // Video ID provided by user: Glimpse of Us - Piano
-  const videoId = "-AOkDoAiaD0";
+  // Configuration: YouTube Playlist
+  // Playlist ID: PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7
+  const playlistId = "PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7";
+  const useShuffle = false;
 
   useEffect(() => {
     // 1. Load the YouTube IFrame API script manually
@@ -54,11 +56,12 @@ export function BackgroundMusic() {
       playerRef.current = new window.YT.Player('youtube-player-container', {
         height: '0',
         width: '0',
-        videoId: videoId,
         playerVars: {
+          listType: 'playlist',
+          list: playlistId,
           autoplay: 0,
           loop: 1,
-          playlist: videoId, // Required for loop to work with a single video
+          playlist: playlistId, // Helper for some players to loop
           controls: 0,
           showinfo: 0,
           modestbranding: 1,
@@ -69,12 +72,10 @@ export function BackgroundMusic() {
           onReady: (event: any) => {
             setIsPlayerReady(true);
             if (isMuted) event.target.mute();
+            if (useShuffle) event.target.setShuffle(true);
           },
           onStateChange: (event: any) => {
-            // Loop fallback: if video ends, play again
-            if (event.data === (window.YT?.PlayerState?.ENDED || 0)) {
-              playerRef.current.playVideo();
-            }
+            // Optional: Handle any state changes if needed
           }
         },
       });
@@ -85,7 +86,7 @@ export function BackgroundMusic() {
     return () => {
       // We keep the player alive across navigation as it's in the global layout
     };
-  }, [videoId]); // Re-run if videoId changes
+  }, [playlistId]); // Re-run if playlistId changes
 
   useEffect(() => {
     // 2. Handle first interaction to start playback (Browser requirement)
@@ -165,7 +166,7 @@ export function BackgroundMusic() {
 
         {/* Floating Tooltip */}
         <span className="absolute bottom-full right-0 mb-3 px-2 py-1 bg-slate-900/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap pointer-events-none shadow-xl border border-white/10 translate-y-2 group-hover:translate-y-0">
-          {!isPlayerReady ? "Sedang Menyiapkan..." : isMuted ? "Musik Mati" : "Memutar Glimpse of Us"}
+          {!isPlayerReady ? "Sedang Menyiapkan..." : isMuted ? "Musik Mati" : "Memutar Playlist YouTube"}
         </span>
       </button>
     </div>
