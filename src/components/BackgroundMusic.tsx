@@ -50,8 +50,9 @@ export function BackgroundMusic() {
     };
 
     const initPlayer = () => {
-      // Ensure we don't init multiple times
       if (playerRef.current) return;
+
+      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
 
       playerRef.current = new window.YT.Player('youtube-player-container', {
         height: '0',
@@ -59,23 +60,40 @@ export function BackgroundMusic() {
         playerVars: {
           listType: 'playlist',
           list: playlistId,
-          autoplay: 0,
+          autoplay: 1, // Attempt autoplay (browser may still block until interaction)
           loop: 1,
-          playlist: playlistId, // Helper for some players to loop
+          playlist: playlistId,
           controls: 0,
           showinfo: 0,
           modestbranding: 1,
           disablekb: 1,
           rel: 0,
+          origin: currentOrigin,
         },
         events: {
           onReady: (event: any) => {
             setIsPlayerReady(true);
-            if (isMuted) event.target.mute();
-            if (useShuffle) event.target.setShuffle(true);
+            // Specifically load the playlist once ready to ensure it's registered
+            event.target.cuePlaylist({
+              listType: 'playlist',
+              list: playlistId,
+            });
+            
+            if (isMuted) {
+              event.target.mute();
+            } else {
+              event.target.unMute();
+              event.target.setVolume(50);
+            }
           },
           onStateChange: (event: any) => {
-            // Optional: Handle any state changes if needed
+            // If the player starts playing, we consider it "interacted" or successful
+            if (event.data === window.YT.PlayerState.PLAYING) {
+              setHasInteracted(true);
+            }
+          },
+          onError: (event: any) => {
+            console.error("YouTube Player Error:", event.data);
           }
         },
       });
@@ -84,32 +102,32 @@ export function BackgroundMusic() {
     loadYoutubeApi();
 
     return () => {
-      // We keep the player alive across navigation as it's in the global layout
+      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
     };
-  }, [playlistId]); // Re-run if playlistId changes
+  }, [playlistId]);
 
   useEffect(() => {
-    // 2. Handle first interaction to start playback (Browser requirement)
-    const handleFirstInteraction = () => {
-      if (playerRef.current && isPlayerReady && !hasInteracted && !isMuted) {
+    // 2. Start playback on interaction to satisfy browser policies
+    const tryPlay = () => {
+      if (playerRef.current && isPlayerReady && !hasInteracted) {
+        // Use loadPlaylist if cuePlaylist was used to force start
         playerRef.current.playVideo();
         setHasInteracted(true);
-        console.log("YouTube Background Music Started");
       }
     };
 
-    if (!hasInteracted) {
-      window.addEventListener('click', handleFirstInteraction, { once: true });
-      window.addEventListener('keydown', handleFirstInteraction, { once: true });
-      window.addEventListener('scroll', handleFirstInteraction, { once: true });
+    if (!hasInteracted && isPlayerReady) {
+      const events = ['click', 'keydown', 'scroll', 'touchstart'];
+      events.forEach(e => window.addEventListener(e, tryPlay, { once: true }));
+      
+      return () => {
+        events.forEach(e => window.removeEventListener(e, tryPlay));
+      };
     }
-
-    return () => {
-      window.removeEventListener('click', handleFirstInteraction);
-      window.removeEventListener('keydown', handleFirstInteraction);
-      window.removeEventListener('scroll', handleFirstInteraction);
-    };
-  }, [hasInteracted, isPlayerReady, isMuted]);
+  }, [hasInteracted, isPlayerReady]);
 
   const toggleMute = () => {
     if (playerRef.current && isPlayerReady) {
