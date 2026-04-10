@@ -422,6 +422,19 @@ export default function VerifyActorPage() {
                               });
                             }
 
+                            // New Rule: Check for same business name in KK for Year 2025 (Isolir)
+                            const isIsolir = kkMatches.some((m: any) => 
+                              String(m.tahunPengajuan) === "2025" && 
+                              (m.usaha || "").toLowerCase().trim() === (actor.businessName || "").toLowerCase().trim()
+                            );
+
+                            if (isIsolir && isAdmin && database) {
+                              updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), {
+                                status: 'isolir_data',
+                                rejectionReason: 'Pengajuan Diblok dikarenakan indikasi usaha yang sama'
+                              });
+                            }
+
                             // Return total unique matches count (approximate but sufficient for logic)
                             // We use a Set of some unique key if possible, or just the filtered length
                             const uniqueIds = new Set(combinedMatches.map(m => m.id || `${m.nik}-${m.nama}`));
