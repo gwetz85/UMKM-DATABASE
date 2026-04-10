@@ -70,8 +70,7 @@ export async function POST(req: NextRequest) {
       } 
       else if (text.startsWith('/about')) {
         const reply = `🏛️ *SIMPU v7.0*\n` +
-                      `_Sistem Informasi Manajemen Pelaku Usaha_\n` +
-                      `━━━━━━━━━━━━━━━━━━━━\n` +
+                      `_Sistem Informasi Manajemen Pelaku Usaha_\n\n` +
                       `Update: 05/04/2026 22:50\n\n` +
                       `"Aplikasi ini dikembangkan secara mandiri dan independen oleh Tim Admin. Hak Cipta sepenuhnya dimiliki oleh pencipta aplikasi."\n\n` +
                       `🚀 *Pembaruan Terbaru:*\n` +
@@ -101,13 +100,11 @@ export async function POST(req: NextRequest) {
           let pending = actors.filter(a => a.status === 'pending').length;
           let rejected = actors.filter(a => a.status === 'rejected').length;
           
-          const reply = `📈 *STATISTIK DATA UMKM*\n` +
-                        `━━━━━━━━━━━━━━━━━━━━\n` +
+          const reply = `📈 *STATISTIK DATA UMKM*\n\n` +
                         `📊 Total Data: *${total}*\n\n` +
                         `✅ Terverifikasi: *${verified}*\n` +
                         `⏳ Menunggu: *${pending}*\n` +
-                        `❌ Ditolak/Batal: *${rejected}*\n` +
-                        `━━━━━━━━━━━━━━━━━━━━`;
+                        `❌ Ditolak/Batal: *${rejected}*\n`;
           await sendMessage(chatId, reply);
         } else {
           await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
@@ -155,23 +152,19 @@ export async function POST(req: NextRequest) {
             let reply = `🔍 *Hasil Pencarian [${type.toUpperCase()}]:*\n\n`;
             results.forEach((r, i) => {
               reply += `*${i+1}. ${r.businessName || "TANPA NAMA USAHA"}*\n`;
-              reply += `👤 *DATA PRIBADI*\n`;
-              reply += `▫️ Nama: ${r.fullName}\n`;
-              reply += `▫️ NIK: \`${r.nik || "-"}\`\n`;
-              reply += `▫️ KK: \`${r.noKK || "-"}\`\n`;
-              reply += `▫️ HP: \`${r.phone || "-"}\`\n\n`;
+              reply += `■ Nama: ${r.fullName}\n`;
+              reply += `■ NIK: \`${r.nik || "-"}\`\n`;
+              reply += `■ KK: \`${r.noKK || "-"}\`\n`;
+              reply += `■ HP: \`${r.phone || "-"}\`\n`;
+              reply += `■ Alamat: ${r.address || "-"}\n`;
+              reply += `■ RT/RW: ${r.rtRw || "-"}\n`;
               
-              reply += `🏠 *ALAMAT RUMAH*\n`;
-              reply += `▫️ Detail: ${r.address || "-"}\n`;
-              reply += `▫️ RT/RW: ${r.rtRw || "-"}\n`;
               let kel = r.kelurahan ? `Kel. ${r.kelurahan}` : "";
               let kec = r.kecamatan ? `Kec. ${r.kecamatan}` : "";
-              reply += `▫️ Wilayah: ${kel}${kel && kec ? ', ' : ''}${kec || "-"}\n\n`;
-              
-              reply += `🏢 *USAHA*\n`;
-              reply += `▫️ Kategori: ${r.businessCategory || "-"}\n`;
-              reply += `▫️ Alamat Usaha: ${r.businessLocation || "-"}\n`;
-              reply += `▫️ Koordinator: ${r.coordinator || "-"}\n\n`;
+              reply += `■ Wilayah: ${kel}${kel && kec ? ', ' : ''}${kec || "-"}\n`;
+              reply += `■ Kategori: ${r.businessCategory || "-"}\n`;
+              reply += `■ Lokasi Usaha: ${r.businessLocation || "-"}\n`;
+              reply += `■ Koordinator: ${r.coordinator || "-"}\n`;
               
               let statusLabel = r.status?.toUpperCase().replace('_', ' ') || "UNKNOWN";
               let statusEmoji = "⚪";
@@ -180,9 +173,9 @@ export async function POST(req: NextRequest) {
               else if (statusLabel.includes('REJECTED')) statusEmoji = "❌";
               else if (statusLabel.includes('BLACKLIST')) statusEmoji = "🚫";
               
-              reply += `📍 Status: ${statusEmoji} *${statusLabel}*\n`;
+              reply += `■ Status: ${statusEmoji} *${statusLabel}*\n`;
               let timestamp = r.createdAt ? new Date(r.createdAt).toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}) : "-";
-              reply += `📅 Input: ${timestamp}\n`;
+              reply += `■ Input: ${timestamp}\n`;
               
               let menuSource = "";
               if (r.status === 'pending') menuSource = "📥 Verifikasi Admin";
@@ -192,8 +185,8 @@ export async function POST(req: NextRequest) {
               else if (r.status === 'rejected') menuSource = "❌ Ditolak/Cancell";
               else menuSource = "📂 Menu Lainnya";
               
-              reply += `📂 Menu: ${menuSource}\n`;
-              reply += `👤 Oleh: ${r.createdBy || "System"}\n\n`;
+              reply += `■ Menu: ${menuSource}\n`;
+              reply += `■ Oleh: ${r.createdBy || "System"}\n\n`;
             });
             if (results.length === 5) {
               reply += `_Hanya menampilkan 5 data pertama._`;
@@ -230,8 +223,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ ok: true });
         }
         if (foundResults.length > 0) {
-          let reply = `✅ *DATA DITEMUKAN* (${foundResults.length} record)\n`;
-          reply += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+          let reply = `✅ *DATA DITEMUKAN* (${foundResults.length} record)\n\n`;
           const formatCurrency = (val: any) => {
             if (!val) return "Rp 0";
             const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.-]+/g, "")) : val;
@@ -239,16 +231,15 @@ export async function POST(req: NextRequest) {
           };
           foundResults.slice(0, 5).forEach((r, i) => {
             reply += `*${i+1}. ${r.nama || "-"}*\n`;
-            reply += `▫️ No: ${r.nomor || "-"}\n`;
-            reply += `▫️ NIK: \`${r.nik || "-"}\`\n`;
-            reply += `▫️ KK: \`${r.noKK || "-"}\`\n`;
-            reply += `▫️ Usaha: ${r.usaha || "-"}\n`;
-            reply += `▫️ Status: ${r.status || "-"}\n`;
-            reply += `▫️ LPJ: ${r.statusLpj || "-"}\n`;
-            reply += `▫️ Nominal: *${formatCurrency(r.nominal)}*\n`;
-            reply += `▫️ Tahun: ${r.tahunPengajuan || "-"}\n`;
-            reply += `▫️ Alamat: ${r.alamat || "-"}\n`;
-            reply += `━━━━━━━━━━━━━━━━━━━━\n\n`;
+            reply += `■ No: ${r.nomor || "-"}\n`;
+            reply += `■ NIK: ${r.nik || "-"}\n`;
+            reply += `■ KK: ${r.noKK || "-"}\n`;
+            reply += `■ Usaha: ${r.usaha || "-"}\n`;
+            reply += `■ Status: ${r.status || "-"}\n`;
+            reply += `■ LPJ: ${r.statusLpj || "-"}\n`;
+            reply += `■ Nominal: *${formatCurrency(r.nominal)}*\n`;
+            reply += `■ Tahun: ${r.tahunPengajuan || "-"}\n`;
+            reply += `■ Alamat: ${r.alamat || "-"}\n\n`;
           });
           if (foundResults.length > 5) reply += `_Hanya menampilkan 5 data pertama._`;
           await sendMessage(chatId, reply);
@@ -429,8 +420,7 @@ export async function POST(req: NextRequest) {
 
         if (quotaSnap.exists()) {
           const quotaData = Object.values(quotaSnap.val()) as any[];
-          let reply = `📊 *KUOTA & PENGGUNAAN*\n`;
-          reply += `━━━━━━━━━━━━━━━━━━━━\n`;
+          let reply = `📊 *KUOTA & PENGGUNAAN*\n\n`;
           reply += `_Format: Nama (Terpakai / Total)_\n\n`;
           
           quotaData.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
@@ -444,7 +434,6 @@ export async function POST(req: NextRequest) {
             reply += `${emoji} *${name}:* ${used} / ${limit}\n`;
           });
           
-          reply += `━━━━━━━━━━━━━━━━━━━━`;
           await sendMessage(chatId, reply);
         } else {
           await sendMessage(chatId, "⚠️ Tidak ada data kuota yang terdaftar.");
