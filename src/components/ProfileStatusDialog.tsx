@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react"
 import { useUser, useDatabase, useMemoFirebase, useList } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import Link from "next/link"
 import {
   Dialog,
   DialogContent,
@@ -141,7 +142,7 @@ export function ProfileStatusDialog() {
             <DialogFooter className="flex flex-col sm:flex-row gap-2">
               {!isProfileComplete ? (
                 <Button asChild className="w-full font-bold shadow-lg shadow-primary/20">
-                  <a href="/profile" onClick={() => setIsOpen(false)}>Lengkapi Profil Sekarang</a>
+                  <Link href="/profile" onClick={() => setIsOpen(false)}>Lengkapi Profil Sekarang</Link>
                 </Button>
               ) : (
                 <Button onClick={handleNextStep} className="w-full font-bold group">

@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
+import Link from "next/link"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 
 import { cn } from "@/lib/utils"
@@ -154,9 +155,9 @@ function RejectedContent() {
             {filterCoordinator && (
               <div className="flex items-center gap-2 mt-2 bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 w-fit">
                 <span className="text-[10px] font-black text-red-700 uppercase">Filter Koordinator: {filterCoordinator}</span>
-                <a href="/rejected" className="text-red-700 hover:text-red-900 transition-transform active:scale-90">
+                <Link href="/rejected" className="text-red-700 hover:text-red-900 transition-transform active:scale-90">
                   <X className="w-3.5 h-3.5" />
-                </a>
+                </Link>
               </div>
             )}
           </div>

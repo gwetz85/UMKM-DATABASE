@@ -162,7 +162,7 @@ export default function DashboardPage() {
 
 
   const handleCoordinatorClick = (name: string) => {
-    window.location.href = `/actor-data?coordinator=${encodeURIComponent(name)}`;
+    router.push(`/actor-data?coordinator=${encodeURIComponent(name)}`);
   }
 
   if (isUserLoading) {

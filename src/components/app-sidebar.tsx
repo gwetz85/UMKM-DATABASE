@@ -32,6 +32,7 @@ import {
 } from "lucide-react"
 
 import { usePathname, useRouter } from "next/navigation"
+import Link from "next/link"
 import { useUser, useObject, useMemoFirebase, useAuth, useList, useDatabase } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
 import { signOut } from "firebase/auth"
@@ -313,10 +314,10 @@ export function AppSidebar() {
                                   "data-[active=true]:bg-white data-[active=true]:text-primary font-bold shadow-sm"
                                 )}
                               >
-                                <a href={subItem.href} className="flex items-center gap-2">
+                                <Link href={subItem.href} className="flex items-center gap-2 w-full">
                                   <div className="w-1 h-1 rounded-full bg-current opacity-40" />
                                   <span className="text-[11px] uppercase tracking-wider">{subItem.name}</span>
-                                </a>
+                                </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
                           ))}
@@ -335,7 +336,7 @@ export function AppSidebar() {
                         "active:scale-95 animate-in fade-in-up"
                       )}
                     >
-                      <a 
+                      <Link 
                         href={item.href} 
                         className="flex items-center gap-3 w-full"
                       >
@@ -343,7 +344,7 @@ export function AppSidebar() {
                         <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
                           {item.name}
                         </span>
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   )}
                 </SidebarMenuItem>
@@ -358,7 +359,7 @@ export function AppSidebar() {
           {user && (
             <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-2">
               <div className="bg-white/10 rounded-xl border border-white/10 p-2.5 space-y-2">
-                <a 
+                <Link 
                   href="/profile"
                   className="flex items-center gap-2 hover:bg-white/5 p-1 rounded-lg transition-colors cursor-pointer w-full group/profile"
                 >
@@ -377,7 +378,7 @@ export function AppSidebar() {
                       {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 Koordinator" : isPetugas ? "📝 Petugas" : "👤 User"}
                     </span>
                   </div>
-                </a>
+                </Link>
                 
                 <div className="flex items-center justify-between bg-black/20 p-1.5 rounded-lg gap-2">
                   <span className="text-[8px] text-white/40 font-mono truncate select-all">
