@@ -354,9 +354,8 @@ function IsolirDataContent() {
                     </div>
                   </section>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
         </DialogContent>
       </Dialog>
     </div>
