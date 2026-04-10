@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
                    (a.businessName && a.businessName.toLowerCase().includes(keyword)) ||
                    (a.phone && a.phone.includes(keyword)) ||
                    (a.coordinator && a.coordinator.toLowerCase().includes(keyword));
-          }).slice(0, 5);
+          }).slice(0, 50); // Increased limit to 50 instead of 5 for safety while respecting "semua" as much as possible within Telegram limits
           
           if (results.length > 0) {
             let reply = `🔍 *Hasil Pencarian [${type.toUpperCase()}]:*\n\n`;
@@ -188,8 +188,8 @@ export async function POST(req: NextRequest) {
               reply += `■ Menu: ${menuSource}\n`;
               reply += `■ Oleh: ${r.createdBy || "System"}\n\n`;
             });
-            if (results.length === 5) {
-              reply += `_Hanya menampilkan 5 data pertama._`;
+            if (results.length === 50) {
+              reply += `_Hanya menampilkan 50 data pertama (Batas Keamanan Telegram)._`;
             }
             await sendMessage(chatId, reply);
           } else {
@@ -229,7 +229,7 @@ export async function POST(req: NextRequest) {
             const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.-]+/g, "")) : val;
             return isNaN(num) ? val : new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(num);
           };
-          foundResults.slice(0, 5).forEach((r, i) => {
+          foundResults.slice(0, 50).forEach((r, i) => {
             reply += `*${i+1}. ${r.nama || "-"}*\n`;
             reply += `■ No: ${r.nomor || "-"}\n`;
             reply += `■ NIK: ${r.nik || "-"}\n`;
@@ -241,7 +241,7 @@ export async function POST(req: NextRequest) {
             reply += `■ Tahun: ${r.tahunPengajuan || "-"}\n`;
             reply += `■ Alamat: ${r.alamat || "-"}\n\n`;
           });
-          if (foundResults.length > 5) reply += `_Hanya menampilkan 5 data pertama._`;
+          if (foundResults.length > 50) reply += `_Hanya menampilkan 50 data pertama._`;
           await sendMessage(chatId, reply);
         } else {
           await sendMessage(chatId, `❌ *DATA TIDAK DITEMUKAN*\n\nKata kunci \`${keyword}\` tidak terdaftar dalam database master.`);
