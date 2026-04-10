@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, SkipBack, SkipForward, Play, Pause } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -19,6 +19,7 @@ export function BackgroundMusic() {
   const [isMuted, setIsMuted] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const playerRef = useRef<any>(null);
 
   // Configuration: YouTube Playlist
@@ -90,6 +91,12 @@ export function BackgroundMusic() {
             // If the player starts playing, we consider it "interacted" or successful
             if (event.data === window.YT.PlayerState.PLAYING) {
               setHasInteracted(true);
+              setIsPlaying(true);
+            } else if (event.data === window.YT.PlayerState.PAUSED) {
+              setIsPlaying(false);
+            } else if (event.data === window.YT.PlayerState.ENDED) {
+              // Automatically move to next if needed (though YouTube does this usually)
+              // setIsPlaying(false);
             }
           },
           onError: (event: any) => {
@@ -146,47 +153,123 @@ export function BackgroundMusic() {
     }
   };
 
+  const handleNext = () => {
+    if (playerRef.current && isPlayerReady) {
+      playerRef.current.nextVideo();
+      setIsPlaying(true);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (playerRef.current && isPlayerReady) {
+      playerRef.current.previousVideo();
+      setIsPlaying(true);
+    }
+  };
+
+  const togglePlayPause = () => {
+    if (playerRef.current && isPlayerReady) {
+      if (isPlaying) {
+        playerRef.current.pauseVideo();
+        setIsPlaying(false);
+      } else {
+        playerRef.current.playVideo();
+        setIsPlaying(true);
+        setHasInteracted(true);
+      }
+    }
+  };
+
   return (
-    <div className="fixed bottom-[18px] right-[85px] md:bottom-[38px] md:right-[105px] z-[1000] print:hidden">
+    <div className="fixed bottom-[18px] right-[20px] md:bottom-[38px] md:right-[30px] z-[1000] print:hidden flex items-center gap-2">
       {/* Invisible YouTube Player Container */}
       <div 
         id="youtube-player-container" 
         className="absolute w-0 h-0 opacity-0 pointer-events-none overflow-hidden"
       ></div>
       
-      <button
-        onClick={toggleMute}
-        disabled={!isPlayerReady}
-        className={`
-          group relative flex items-center justify-center
-          w-10 h-10 md:w-11 md:h-11 rounded-full 
-          transition-all duration-500 ease-out
-          ${!isPlayerReady 
-            ? 'bg-slate-50 text-slate-200 cursor-not-allowed border border-slate-100' 
-            : isMuted 
-              ? 'bg-slate-100 text-slate-400 border border-slate-200 shadow-sm' 
-              : 'bg-primary text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)]'
-          }
-          hover:scale-110 active:scale-95
-        `}
-        title={!isPlayerReady ? "Memuat..." : isMuted ? "Nyalakan Musik" : "Matikan Musik"}
-      >
-        {/* Pulsing ring effect when playing */}
-        {!isMuted && isPlayerReady && (
-          <span className="absolute inset-0 rounded-full animate-ping bg-primary opacity-20 pointer-events-none" />
-        )}
-        
-        {isMuted || !isPlayerReady ? (
-          <VolumeX size={18} />
-        ) : (
-          <Volume2 size={18} className={hasInteracted ? "animate-[pulse_2s_infinite]" : ""} />
-        )}
+      {/* Music Control Panel */}
+      <div className={`
+        flex items-center gap-1.5 p-1.5 rounded-full 
+        transition-all duration-700 ease-in-out
+        ${isPlayerReady 
+          ? 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800/50 shadow-2xl' 
+          : 'bg-slate-100/50 dark:bg-slate-800/20 backdrop-blur-sm opacity-50'
+        }
+      `}>
+        {/* Previous Button */}
+        <button
+          onClick={handlePrevious}
+          disabled={!isPlayerReady}
+          className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Sebelumnya"
+        >
+          <SkipBack size={16} fill="currentColor" />
+        </button>
 
-        {/* Floating Tooltip */}
-        <span className="absolute bottom-full right-0 mb-3 px-2 py-1 bg-slate-900/90 backdrop-blur-sm text-white text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap pointer-events-none shadow-xl border border-white/10 translate-y-2 group-hover:translate-y-0">
-          {!isPlayerReady ? "Sedang Menyiapkan..." : isMuted ? "Musik Mati" : "Memutar Playlist YouTube"}
-        </span>
-      </button>
+        {/* Play/Pause Button */}
+        <button
+          onClick={togglePlayPause}
+          disabled={!isPlayerReady}
+          className={`
+            relative flex items-center justify-center
+            w-10 h-10 md:w-11 md:h-11 rounded-full 
+            transition-all duration-500 ease-out
+            ${!isPlayerReady 
+              ? 'bg-slate-50 text-slate-200 cursor-not-allowed' 
+              : isPlaying 
+                ? 'bg-primary text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-110 active:scale-95' 
+                : 'bg-primary/90 text-white shadow-lg hover:scale-110 active:scale-95'
+            }
+          `}
+          title={isPlaying ? "Jeda" : "Putar"}
+        >
+          {isPlaying && (
+            <span className="absolute inset-0 rounded-full animate-ping bg-primary opacity-20" />
+          )}
+          {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
+        </button>
+
+        {/* Next Button */}
+        <button
+          onClick={handleNext}
+          disabled={!isPlayerReady}
+          className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Selanjutnya"
+        >
+          <SkipForward size={16} fill="currentColor" />
+        </button>
+
+        {/* Divider */}
+        <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-0.5" />
+
+        {/* Mute Toggle */}
+        <button
+          onClick={toggleMute}
+          disabled={!isPlayerReady}
+          className={`
+            p-2 rounded-full transition-all duration-300
+            ${isMuted 
+              ? 'text-red-500 bg-red-50 dark:bg-red-900/20' 
+              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+            }
+            disabled:opacity-30 disabled:cursor-not-allowed
+          `}
+          title={isMuted ? "Aktifkan Musik" : "Senyap"}
+        >
+          {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+        </button>
+      </div>
+
+      {/* Status Tooltip (Optional, floating above) */}
+      {!hasInteracted && isPlayerReady && (
+        <div className="absolute bottom-full right-0 mb-4 animate-bounce">
+          <div className="px-3 py-1.5 bg-primary text-white text-[11px] font-bold rounded-xl shadow-xl whitespace-nowrap">
+            Klik untuk Memulai Musik 🎵
+            <div className="absolute -bottom-1 right-5 w-2 h-2 bg-primary rotate-45" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
