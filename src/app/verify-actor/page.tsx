@@ -54,9 +54,23 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
 
     const targetTime = new Date(createdAt).getTime() + (targetMins * 60000)
     
-    // Initial check
+    const triggerVerify = () => {
+      if (isAutoEligible && isAdmin && database) {
+        updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
+          status: 'verified_actor'
+        })
+      }
+    }
+
+    // Initial check: if time's up, trigger immediately and don't start interval
     const initialDiff = targetTime - Date.now()
-    setTimeLeft(initialDiff > 0 ? initialDiff : 0)
+    if (initialDiff <= 0) {
+      setTimeLeft(0)
+      triggerVerify()
+      return
+    }
+
+    setTimeLeft(initialDiff)
 
     const interval = setInterval(() => {
       const now = Date.now()
@@ -65,13 +79,7 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
       if (diff <= 0) {
         setTimeLeft(0)
         clearInterval(interval)
-        
-        // Trigger auto-verify if eligible and admin
-        if (isAutoEligible && isAdmin && database) {
-          updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
-            status: 'verified_actor'
-          })
-        }
+        triggerVerify()
       } else {
         setTimeLeft(diff)
       }
@@ -191,6 +199,20 @@ export default function VerifyActorPage() {
     (actor.nik || "").includes(searchQuery) ||
     (actor.businessName || "").toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // Optimization: Group master data by NIK and KK first for O(1) lookup
+  const masterDataStats = useMemo(() => {
+    if (!allMasterDataRaw) return { nikMap: new Map(), kkMap: new Map() };
+    const nikMap = new Map<string, number>();
+    const kkMap = new Map<string, number>();
+    
+    allMasterDataRaw.forEach(m => {
+      if (m.nik) nikMap.set(m.nik, (nikMap.get(m.nik) || 0) + 1);
+      if (m.noKK) kkMap.set(m.noKK, (kkMap.get(m.noKK) || 0) + 1);
+    });
+    
+    return { nikMap, kkMap };
+  }, [allMasterDataRaw]);
 
 
   const kelurahanList = [
@@ -378,7 +400,13 @@ export default function VerifyActorPage() {
                          <VerificationTimer 
                           actorId={actor.id} 
                           createdAt={actor.createdAt} 
-                          matchCount={allMasterDataRaw?.filter((m: any) => (m.noKK && m.noKK === actor.noKK) || (m.nik && m.nik === actor.nik))?.length || 0} 
+                          matchCount={(() => {
+                            const nikMatches = masterDataStats.nikMap.get(actor.nik) || 0;
+                            const kkMatches = masterDataStats.kkMap.get(actor.noKK) || 0;
+                            if (nikMatches === 0 && kkMatches === 0) return 0;
+                            // Fallback to accurate count only if there are potential matches
+                            return allMasterDataRaw?.filter((m: any) => (m.noKK && m.noKK === actor.noKK) || (m.nik && m.nik === actor.nik))?.length || 0;
+                          })()} 
                           database={database}
                           isAdmin={isAdmin}
                           actor={actor}
