@@ -27,7 +27,8 @@ import {
   ChevronRight,
   BarChart3,
   ClipboardCheck,
-  ListChecks
+  ListChecks,
+  ShieldAlert
 } from "lucide-react"
 
 import { usePathname, useRouter } from "next/navigation"
@@ -138,15 +139,15 @@ export function AppSidebar() {
       show: !!user 
     },
     { 
-      name: "Ditolak / Cancell", 
-      href: "/rejected", 
-      icon: Ban, 
-      show: !!user 
-    },
-    { 
       name: "ISOLIR DATA", 
       href: "/isolir-data", 
       icon: ShieldAlert, 
+      show: !!user 
+    },
+    { 
+      name: "Ditolak / Cancell", 
+      href: "/rejected", 
+      icon: Ban, 
       show: !!user 
     },
     { 
