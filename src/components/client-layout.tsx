@@ -8,6 +8,7 @@ import { InfoDialog } from '@/components/info-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { ChatBubble } from '@/components/chat-bubble';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
+import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
 import { useUser, useDatabase, useList, useMemoFirebase } from '@/firebase'
 import { ref } from 'firebase/database'
 import { User as UserIcon } from 'lucide-react'
@@ -58,6 +59,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       <SidebarProvider>
         <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-background">
           {/* Global Components */}
+          <GlobalAutoVerifier />
           <Toaster />
 
           {/* Mobile Header - Hidden on Login */}
