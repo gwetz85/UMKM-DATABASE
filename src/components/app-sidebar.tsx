@@ -139,12 +139,6 @@ export function AppSidebar() {
       show: !!user 
     },
     { 
-      name: "ISOLIR DATA", 
-      href: "/isolir-data", 
-      icon: ShieldAlert, 
-      show: !!user 
-    },
-    { 
       name: "Ditolak / Cancell", 
       href: "/rejected", 
       icon: Ban, 

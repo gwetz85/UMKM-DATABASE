@@ -51,9 +51,15 @@ export async function GET(req: NextRequest) {
     
     let verifiedCount = 0;
     let rejectedCount = 0;
-    let isolirCount = 0;
     const now = Date.now();
     const updates: Record<string, any> = {};
+
+    // ONE-TIME CLEANUP (Restoration): Revert all 'isolir_data' to 'pending'
+    actorsList.filter(a => a.status === 'isolir_data').forEach(a => {
+      updates[`businessActors/${a.id}/status`] = 'pending';
+      updates[`businessActors/${a.id}/rejectionReason`] = null;
+    });
+
     const skipped: any[] = [];
 
     // 4. Processing Logic
@@ -101,33 +107,8 @@ export async function GET(req: NextRequest) {
         return;
       }
 
-      // New Rule: Check for same business name in KK for Year 2025 (Isolir)
-      const isIsolir = kkMatches.some((m: any) => 
-        String(m.tahunPengajuan) === "2025" && 
-        (m.usaha || "").toLowerCase().trim() === (actor.businessName || "").toLowerCase().trim()
-      );
-      
+
       const createdAt = new Date(actor.createdAt).getTime();
-
-      if (isIsolir) {
-        // Enforce 1 minute wait time for Isolir Data
-        const targetTimeIsolir = createdAt + 60000;
-        if (now >= targetTimeIsolir) {
-          updates[`businessActors/${actor.id}/status`] = 'isolir_data';
-          updates[`businessActors/${actor.id}/rejectionReason`] = 'Pengajuan Diblok dikarenakan indikasi usaha yang sama';
-          isolirCount++;
-          return;
-        }
-        // If not yet 1 minute, skip this actor for now (it will stay pending)
-        skipped.push({
-          id: actor.id,
-          name: actor.fullName,
-          reason: "Menunggu timer Isolir (1m)",
-          details: "Terdeteksi indikasi usaha sama, menunggu masa sanggah/cek sistem 1 menit."
-        });
-        return;
-      }
-
       // Rule 1 & 2: Verification Timeline (REVISED: 1 min for match, 5 mins for new)
       const targetMins = matchCount === 0 ? 5 : 1;
       const isAutoEligible = matchCount < 2;
@@ -168,7 +149,6 @@ export async function GET(req: NextRequest) {
         totalPending: pendingActors.length,
         verified: verifiedCount,
         rejected: rejectedCount,
-        isolir: isolirCount,
         skippedCount: skipped.length,
         processedAt: new Date().toISOString()
       },

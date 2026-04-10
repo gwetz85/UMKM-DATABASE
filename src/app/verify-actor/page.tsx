@@ -17,22 +17,20 @@ import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 
-function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, actor, isIsolir, hasCancell }: { 
+function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, actor }: { 
   actorId: string, 
   createdAt: string, 
   matchCount: number, 
   database: any,
   isAdmin: boolean,
-  actor: BusinessActor,
-  isIsolir?: boolean,
-  hasCancell?: boolean
+  actor: BusinessActor
 }) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   
   // Logic Baru: 0 matches = 5 min, 1 match = 1 min, 2+ matches = Manual Info
   // Rule Khusus: Isolir & Cancell diproses dalam 1 menit
-  const targetMins = (isIsolir || hasCancell) ? 1 : (matchCount === 0 ? 5 : 1)
-  const isAutoEligible = matchCount < 2 || isIsolir || hasCancell
+  const targetMins = matchCount === 0 ? 5 : 1
+  const isAutoEligible = matchCount < 2
 
   // Validation: Check if all mandatory fields are present
   const isDataComplete = !!(
@@ -59,21 +57,6 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
     
     const triggerVerify = () => {
       if (isAdmin && database) {
-        if (hasCancell) {
-          updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
-            status: 'rejected',
-            rejectionReason: 'Ditolak Otomatis: Terdeteksi status Cancell pada Data Master Pembanding.'
-          })
-          return;
-        }
-
-        if (isIsolir) {
-          updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
-            status: 'isolir_data',
-            rejectionReason: 'Pengajuan Diblok dikarenakan indikasi usaha yang sama'
-          })
-          return;
-        }
 
         if (!isAutoEligible) return;
         
@@ -108,7 +91,7 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [createdAt, targetMins, isAutoEligible, isAdmin, database, actorId, isDataComplete, hasCancell, isIsolir])
+  }, [createdAt, targetMins, isAutoEligible, isAdmin, database, actorId, isDataComplete])
 
   if (!isDataComplete) {
     return (
@@ -405,16 +388,8 @@ export default function VerifyActorPage() {
                             const combinedMatches = [...nikMatches, ...kkMatches];
                             const uniqueIds = new Set(combinedMatches.map(m => m.id || `${m.nik}-${m.nama}`));
                             
-                            const hasCancell = combinedMatches.some(m => (m.status || "").toLowerCase().includes('cancell'));
-                            const isIsolir = kkMatches.some((m: any) => 
-                              String(m.tahunPengajuan) === "2025" && 
-                              (m.usaha || "").toLowerCase().trim() === (actor.businessName || "").toLowerCase().trim()
-                            );
-
                             return {
                               matchCount: uniqueIds.size,
-                              hasCancell,
-                              isIsolir
                             }
                           })()}
                           database={database}
