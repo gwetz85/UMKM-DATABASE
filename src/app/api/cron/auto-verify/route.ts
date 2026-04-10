@@ -53,18 +53,36 @@ export async function GET(req: NextRequest) {
     let rejectedCount = 0;
     const now = Date.now();
     const updates: Record<string, any> = {};
+    const skipped: any[] = [];
 
     // 4. Processing Logic
     pendingActors.forEach(actor => {
       // Check data completeness
-      const isDataComplete = !!(
-        actor.fullName && actor.nik && actor.noKK && actor.gender && 
-        actor.pobDob && actor.phone && actor.address && actor.rtRw && 
-        actor.kelurahan && actor.kecamatan && actor.businessCategory && 
-        actor.businessName && actor.businessLocation && actor.coordinator
-      );
+      const missingFields = [];
+      if (!actor.fullName) missingFields.push("Nama Lengkap");
+      if (!actor.nik) missingFields.push("NIK");
+      if (!actor.noKK) missingFields.push("Nomor KK");
+      if (!actor.gender) missingFields.push("Jenis Kelamin");
+      if (!actor.pobDob) missingFields.push("TTL");
+      if (!actor.phone) missingFields.push("Nomor HP");
+      if (!actor.address) missingFields.push("Alamat");
+      if (!actor.rtRw) missingFields.push("RT/RW");
+      if (!actor.kelurahan) missingFields.push("Kelurahan");
+      if (!actor.kecamatan) missingFields.push("Kecamatan");
+      if (!actor.businessCategory) missingFields.push("Jenis Usaha");
+      if (!actor.businessName) missingFields.push("Nama Usaha");
+      if (!actor.businessLocation) missingFields.push("Lokasi Usaha");
+      if (!actor.coordinator) missingFields.push("Koordinator");
 
-      if (!isDataComplete) return;
+      if (missingFields.length > 0) {
+        skipped.push({
+          id: actor.id,
+          name: actor.fullName || "Unnamed",
+          reason: "Data tidak lengkap",
+          details: `Missing: ${missingFields.join(', ')}`
+        });
+        return;
+      }
 
       // Calculate matches in Master Data
       const nikMatches = allMasterData.filter((m: any) => m.nik && m.nik === actor.nik);
@@ -82,8 +100,8 @@ export async function GET(req: NextRequest) {
         return;
       }
 
-      // Rule 1 & 2: Verification Timeline
-      const targetMins = matchCount === 0 ? 10 : 60;
+      // Rule 1 & 2: Verification Timeline (REVISED: 1 min for match, 5 mins for new)
+      const targetMins = matchCount === 0 ? 5 : 1;
       const isAutoEligible = matchCount < 2;
 
       if (isAutoEligible) {
@@ -93,7 +111,22 @@ export async function GET(req: NextRequest) {
         if (now >= targetTime) {
           updates[`businessActors/${actor.id}/status`] = 'verified_actor';
           verifiedCount++;
+        } else {
+          const remainingSecs = Math.ceil((targetTime - now) / 1000);
+          skipped.push({
+            id: actor.id,
+            name: actor.fullName,
+            reason: `Menunggu timer (${targetMins}m)`,
+            details: `Akan diverifikasi dalam ${remainingSecs} detik.`
+          });
         }
+      } else {
+        skipped.push({
+          id: actor.id,
+          name: actor.fullName,
+          reason: "Verifikasi Manual",
+          details: `Terdeteksi ${matchCount} kecocokan di Master Data (Perlu cek manual).`
+        });
       }
     });
 
@@ -108,8 +141,10 @@ export async function GET(req: NextRequest) {
         totalPending: pendingActors.length,
         verified: verifiedCount,
         rejected: rejectedCount,
+        skippedCount: skipped.length,
         processedAt: new Date().toISOString()
-      }
+      },
+      skipped: skipped
     });
 
   } catch (error: any) {

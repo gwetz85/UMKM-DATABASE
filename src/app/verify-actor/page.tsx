@@ -27,8 +27,8 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
 }) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   
-  // Logic Baru: 0 matches = 10 min, 1 match = 60 min, 2+ matches = Manual Info
-  const targetMins = matchCount === 0 ? 10 : 60
+  // Logic Baru: 0 matches = 5 min, 1 match = 1 min, 2+ matches = Manual Info
+  const targetMins = matchCount === 0 ? 5 : 1
   const isAutoEligible = matchCount < 2
 
   // Validation: Check if all mandatory fields are present
