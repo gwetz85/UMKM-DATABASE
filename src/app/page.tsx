@@ -180,22 +180,31 @@ export default function DashboardPage() {
       name: "Total Pelaku Usaha", 
       value: allData?.length ?? 0, 
       icon: Building2, 
-      color: "text-blue-600", 
-      bg: "bg-blue-100/50" 
+      color: "text-amber-600", 
+      bg: "bg-amber-100",
+      cardBg: "bg-amber-50/40",
+      hoverBg: "hover:bg-amber-100/60",
+      border: "border-amber-200/50"
     },
     { 
       name: "Pelaku Laki-laki", 
       value: genderStats.laki, 
       icon: Users, 
-      color: "text-indigo-600", 
-      bg: "bg-indigo-100/50" 
+      color: "text-blue-600", 
+      bg: "bg-blue-100",
+      cardBg: "bg-blue-50/40",
+      hoverBg: "hover:bg-blue-100/60",
+      border: "border-blue-200/50"
     },
     { 
       name: "Pelaku Perempuan", 
       value: genderStats.perempuan, 
       icon: Users, 
-      color: "text-pink-600", 
-      bg: "bg-pink-100/50" 
+      color: "text-rose-600", 
+      bg: "bg-rose-100",
+      cardBg: "bg-rose-50/40",
+      hoverBg: "hover:bg-rose-100/60",
+      border: "border-rose-200/50"
     },
     { 
       name: "Data Terverifikasi", 
@@ -205,15 +214,20 @@ export default function DashboardPage() {
       }).length, 
       icon: UserCheck, 
       color: "text-emerald-600", 
-      bg: "bg-emerald-100/50" 
+      bg: "bg-emerald-100",
+      cardBg: "bg-emerald-50/40",
+      hoverBg: "hover:bg-emerald-100/60",
+      border: "border-emerald-200/50"
     },
-
     { 
       name: "Data Ditolak", 
       value: allData?.filter(d => d.status?.toLowerCase().trim() === "rejected").length || 0, 
       icon: UserX, 
-      color: "text-red-600", 
-      bg: "bg-red-100/50" 
+      color: "text-orange-600", 
+      bg: "bg-orange-100",
+      cardBg: "bg-orange-50/40",
+      hoverBg: "hover:bg-orange-100/60",
+      border: "border-orange-200/50"
     },
   ]
 
@@ -240,7 +254,13 @@ export default function DashboardPage() {
         {stats.map((stat) => (
           <Card 
             key={stat.name} 
-            className="glass hover:shadow-2xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-500 group overflow-hidden cursor-pointer active:scale-95"
+            className={cn(
+              "backdrop-blur-xl border shadow-sm transition-all duration-500 group overflow-hidden cursor-pointer active:scale-95",
+              "hover:shadow-2xl hover:-translate-y-1",
+              stat.cardBg,
+              stat.hoverBg,
+              stat.border
+            )}
           >
             <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
               <CardTitle className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-wider truncate mr-2">{stat.name}</CardTitle>
