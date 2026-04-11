@@ -65,6 +65,12 @@ function RejectedContent() {
     return ref(database, 'master_data')
   }, [database])
   const { data: allMasterDataRaw } = useList<any>(masterDataRef)
+
+  const blacklistDataRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'blacklist_data')
+  }, [database])
+  const { data: allBlacklistDataRaw } = useList<any>(blacklistDataRef)
   
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     // Status filter - equivalent to previous orderByChild('status').equalTo('rejected')
@@ -232,7 +238,7 @@ function RejectedContent() {
                       NIK: {actor.nik} | Koor: {actor.coordinator} | Alasan: {actor.rejectionReason}
                     </p>
                     <div className="flex justify-center print:hidden">
-                      <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} showText={false} />
+                      <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} showText={false} />
                     </div>
                   </div>
                   <div className="text-[9px] font-black uppercase bg-red-500 text-white w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
@@ -372,7 +378,7 @@ function RejectedContent() {
                         </div>
                       ))}
                       <div className="md:col-span-3 pt-2 border-t">
-                        <CheckDataIndicator actor={viewingActor} allMasterData={allMasterDataRaw} />
+                        <CheckDataIndicator actor={viewingActor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} />
                       </div>
                     </div>
                   </section>

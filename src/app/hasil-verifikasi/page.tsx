@@ -58,6 +58,12 @@ export default function HasilVerifikasiPage() {
   }, [database])
   const { data: allMasterDataRaw } = useList<any>(masterDataRef)
 
+  const blacklistDataRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'blacklist_data')
+  }, [database])
+  const { data: allBlacklistDataRaw } = useList<any>(blacklistDataRef)
+
   const actors = allActorsRaw?.filter(a => a.status === 'verified_dinas')
 
   const filteredActors = actors?.filter(actor =>
@@ -135,7 +141,7 @@ export default function HasilVerifikasiPage() {
                       <TableCell className="font-mono text-xs text-slate-500">
                         {actor.nik}
                         <div className="print:hidden">
-                          <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} />
+                          <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} />
                         </div>
                       </TableCell>
                       <TableCell className="font-medium text-slate-700">{actor.businessName}</TableCell>
@@ -200,7 +206,7 @@ export default function HasilVerifikasiPage() {
                                         </div>
                                       ))}
                                       <div className="md:col-span-3 pt-2 border-t">
-                                        <CheckDataIndicator actor={viewingActor} allMasterData={allMasterDataRaw} />
+                                        <CheckDataIndicator actor={viewingActor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} />
                                       </div>
                                     </div>
                                   </section>

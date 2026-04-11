@@ -190,6 +190,12 @@ export default function VerifyActorPage() {
   }, [database])
   const { data: allMasterDataRaw } = useList<any>(masterDataRef)
 
+  const blacklistDataRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'blacklist_data')
+  }, [database])
+  const { data: allBlacklistDataRaw } = useList<any>(blacklistDataRef)
+
   const actors = allActorsRaw?.filter(a => a.status === 'pending' || a.status === 'verifikasi_manual')
 
   const filteredActors = actors?.filter(actor =>
@@ -366,7 +372,7 @@ export default function VerifyActorPage() {
                     <TableCell className="font-mono text-xs text-slate-500">
                       <div className="font-semibold text-slate-700">{actor.nik}</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">KK: {actor.noKK}</div>
-                      <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} />
+                      <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} />
                     </TableCell>
                     <TableCell>
                       <span className="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider">

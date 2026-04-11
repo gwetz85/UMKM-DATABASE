@@ -51,6 +51,12 @@ export default function VerifikasiDinasPage() {
   }, [database])
   const { data: allMasterDataRaw } = useList<any>(masterDataRef)
 
+  const blacklistDataRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'blacklist_data')
+  }, [database])
+  const { data: allBlacklistDataRaw } = useList<any>(blacklistDataRef)
+
   const actors = allActorsRaw?.filter(a => a.status === 'lpj_pending')
 
   const filteredActors = actors?.filter(actor =>
@@ -133,7 +139,7 @@ export default function VerifikasiDinasPage() {
                       <TableCell className="font-mono text-xs text-slate-500">
                         {actor.nik}
                         <div className="print:hidden">
-                          <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} />
+                          <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} />
                         </div>
                       </TableCell>
                       <TableCell>
@@ -179,7 +185,7 @@ export default function VerifikasiDinasPage() {
                                           </div>
                                         ))}
                                         <div className="md:col-span-3 pt-2 border-t">
-                                          <CheckDataIndicator actor={viewingActor} allMasterData={allMasterDataRaw} />
+                                          <CheckDataIndicator actor={viewingActor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} />
                                         </div>
                                       </div>
                                     </section>

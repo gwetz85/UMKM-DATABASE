@@ -84,6 +84,12 @@ function ActorDataContent() {
     return ref(database, 'master_data')
   }, [database])
   const { data: allMasterDataRaw } = useList<any>(masterDataRef)
+
+  const blacklistDataRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'blacklist_data')
+  }, [database])
+  const { data: allBlacklistDataRaw } = useList<any>(blacklistDataRef)
   
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     if (!a) return false;
@@ -275,7 +281,7 @@ function ActorDataContent() {
                           <TableCell className="py-4">
                             <span className="font-mono text-[11px] text-slate-600 print:text-black">{actor.nik}</span>
                             <div className="print:hidden">
-                              <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} />
+                              <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} />
                             </div>
                           </TableCell>
                           <TableCell className="py-4">
@@ -476,7 +482,7 @@ function ActorDataContent() {
                         </div>
                       ))}
                       <div className="md:col-span-3 pt-2 border-t">
-                         <CheckDataIndicator actor={viewingActor} allMasterData={allMasterDataRaw} />
+                         <CheckDataIndicator actor={viewingActor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} />
                       </div>
                     </div>
                   </section>
