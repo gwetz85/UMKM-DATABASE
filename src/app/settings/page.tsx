@@ -204,43 +204,59 @@ export default function SettingsPage() {
     reader.onload = async (event) => {
       try {
         const bstr = event.target?.result
-        const wb = XLSX.read(bstr, { type: 'binary' })
+        const wb = XLSX.read(bstr, { type: 'binary', cellFormula: true, cellNF: true, cellText: true })
         const targetSheet = "DATABASE 2024-2025"
         const wsname = wb.SheetNames.find(n => n.trim().toUpperCase() === targetSheet.toUpperCase()) || wb.SheetNames[0]
         const ws = wb.Sheets[wsname]
         
-        const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false }) as any[]
+        const range = XLSX.utils.decode_range(ws['!ref'] || "A1")
+        const masterData: any[] = []
 
-        if (data.length <= 1) throw new Error("File Excel kosong atau tidak memiliki data.")
-
-        const masterData = data.slice(1).map((row: any[]) => {
-          const getStr = (idx: number) => {
-            const val = row[idx]
-            if (val === undefined || val === null) return ""
-            // Handle cases where Excel numeric format turns long IDs into scientific notation
-            if (typeof val === 'number' && val > 999999) {
-              return BigInt(Math.floor(val)).toString()
+        // Iterate through rows (skipping header)
+        for (let r = range.s.r + 1; r <= range.e.r; r++) {
+          const rowValues: string[] = []
+          for (let c = range.s.c; c <= range.e.c; c++) {
+            const cellRef = XLSX.utils.encode_cell({ r, c })
+            const cell = ws[cellRef]
+            
+            if (!cell) {
+              rowValues.push("")
+              continue
             }
-            return String(val).trim()
+
+            // High-precision handling
+            if (cell.t === 'n') {
+              // Fix for NIK/KK: If it's a number, prevent scientific notation
+              rowValues.push(BigInt(Math.floor(Number(cell.v))).toString())
+            } else {
+              // Priority for formatted text (.w) for VLOOKUP results, fallback to raw value (.v)
+              rowValues.push(cell.w || (cell.v !== undefined ? String(cell.v).trim() : ""))
+            }
           }
 
-          return {
-            noKK: getStr(0),
-            nik: getStr(1),
-            nomor: getStr(2),
-            tahunPengajuan: getStr(3),
-            nama: getStr(4),
-            status: getStr(5),
-            statusLpj: getStr(6),
-            nominal: getStr(7),
-            usaha: getStr(8),
-            alamat: getStr(9),
-            kelurahan: getStr(10),
-            kecamatan: getStr(11),
-            coordinator: getStr(12),
+          const getVal = (idx: number) => rowValues[idx] || ""
+
+          const item = {
+            noKK: getVal(0),
+            nik: getVal(1),
+            nomor: getVal(2),
+            tahunPengajuan: getVal(3),
+            nama: getVal(4),
+            status: getVal(5),
+            statusLpj: getVal(6),
+            nominal: getVal(7),
+            usaha: getVal(8),
+            alamat: getVal(9),
+            kelurahan: getVal(10),
+            kecamatan: getVal(11),
+            coordinator: getVal(12),
             uploadedAt: new Date().toISOString()
           }
-        }).filter(item => item.noKK || item.nik)
+
+          if (item.noKK || item.nik || item.nama) {
+            masterData.push(item)
+          }
+        }
 
         if (masterData.length === 0) throw new Error("Tidak ada data valid ditemukan. Pastikan kolom KK dan NIK terisi.")
 
