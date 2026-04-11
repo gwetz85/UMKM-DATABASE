@@ -204,47 +204,71 @@ export async function POST(req: NextRequest) {
           await sendMessage(chatId, "📌 *Cara Cek Data:*\nKetikkan NIK, No. KK, atau Nama setelah perintah.\nContoh: `/cekdata 12345` atau `/cekdata AGUS` ");
           return NextResponse.json({ ok: true });
         }
-        await sendMessage(chatId, `⏳ _Mengecek "${keyword}" di Database Master..._`);
+        await sendMessage(chatId, `⏳ _Mengecek "${keyword}" di Database Master & Blacklist..._`);
+        
         let foundResults: any[] = [];
         try {
-          const masterSnap = await get(ref(database, 'master_data'));
+          const [masterSnap, blacklistSnap] = await Promise.all([
+            get(ref(database, 'master_data')),
+            get(ref(database, 'blacklist_data'))
+          ]);
+          
+          const kw = keyword.toLowerCase();
+          
           if (masterSnap.exists()) {
-            const allData = Object.values(masterSnap.val()) as any[];
-            const kw = keyword.toLowerCase();
-            foundResults = allData.filter(r => 
+            const masterData = Object.values(masterSnap.val()) as any[];
+            const matches = masterData.filter(r => 
               r.nik === keyword || 
               r.noKK === keyword || 
               (r.nama && r.nama.toLowerCase().includes(kw))
-            );
+            ).map(r => ({ ...r, source: 'Sheet 1 (Accepted)' }));
+            foundResults = [...foundResults, ...matches];
+          }
+
+          if (blacklistSnap.exists()) {
+            const blacklistData = Object.values(blacklistSnap.val()) as any[];
+            const matches = blacklistData.filter(r => 
+              r.nik === keyword || 
+              r.noKK === keyword || 
+              (r.nama && r.nama.toLowerCase().includes(kw))
+            ).map(r => ({ ...r, source: 'Sheet 2 (Rejected)' }));
+            foundResults = [...foundResults, ...matches];
           }
         } catch (error) {
-          console.error("Master data query error:", error);
+          console.error("Master/Blacklist data query error:", error);
           await sendMessage(chatId, `❌ *Error:* Terjadi kesalahan koneksi database.`);
           return NextResponse.json({ ok: true });
         }
+
         if (foundResults.length > 0) {
-          let reply = `✅ *DATA DITEMUKAN* (${foundResults.length} record)\n\n`;
+          let reply = `🔍 *HASIL PENGECEKKAN GANDA* (${foundResults.length} record)\n\n`;
           const formatCurrency = (val: any) => {
             if (!val) return "Rp 0";
             const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.-]+/g, "")) : val;
             return isNaN(num) ? val : new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(num);
           };
+
           foundResults.slice(0, 50).forEach((r, i) => {
-            reply += `*${i+1}. ${r.nama || "-"}*\n`;
+            const isBlacklist = r.source.includes('Sheet 2');
+            const icon = isBlacklist ? "🚫" : "✅";
+            
+            reply += `${icon} *${i+1}. ${r.nama || "-"}*\n`;
+            reply += `■ SUMBER: *${r.source}*\n`;
             reply += `■ No: ${r.nomor || "-"}\n`;
-            reply += `■ NIK: ${r.nik || "-"}\n`;
-            reply += `■ KK: ${r.noKK || "-"}\n`;
+            reply += `■ NIK: \`${r.nik || "-"}\`\n`;
+            reply += `■ KK: \`${r.noKK || "-"}\`\n`;
             reply += `■ Usaha: ${r.usaha || "-"}\n`;
             reply += `■ Status: ${r.status || "-"}\n`;
             reply += `■ LPJ: ${r.statusLpj || "-"}\n`;
-            reply += `■ Nominal: *${formatCurrency(r.nominal)}*\n`;
+            reply += `■ Nominal: ${formatCurrency(r.nominal)}\n`;
             reply += `■ Tahun: ${r.tahunPengajuan || "-"}\n`;
             reply += `■ Alamat: ${r.alamat || "-"}\n\n`;
           });
+
           if (foundResults.length > 50) reply += `_Hanya menampilkan 50 data pertama._`;
           await sendMessage(chatId, reply);
         } else {
-          await sendMessage(chatId, `❌ *DATA TIDAK DITEMUKAN*\n\nKata kunci \`${keyword}\` tidak terdaftar dalam database master.`);
+          await sendMessage(chatId, `❌ *DATA TIDAK DITEMUKAN*\n\nKata kunci \`${keyword}\` tidak terdaftar dalam Database Master maupun Blacklist.`);
         }
       } else if (text.startsWith('/inputdata')) {
         const reply = `📝 *FORM INPUT DATA BARU*\n\n` +
