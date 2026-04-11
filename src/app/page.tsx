@@ -180,31 +180,31 @@ export default function DashboardPage() {
       name: "Total Pelaku Usaha", 
       value: allData?.length ?? 0, 
       icon: Building2, 
-      color: "text-amber-600", 
-      bg: "bg-amber-100",
-      cardBg: "bg-amber-50/40",
-      hoverBg: "hover:bg-amber-100/60",
-      border: "border-amber-200/50"
+      color: "text-white", 
+      bg: "bg-white/20",
+      cardBg: "bg-amber-500",
+      hoverBg: "hover:bg-amber-600",
+      border: "border-amber-400"
     },
     { 
       name: "Pelaku Laki-laki", 
       value: genderStats.laki, 
       icon: Users, 
-      color: "text-blue-600", 
-      bg: "bg-blue-100",
-      cardBg: "bg-blue-50/40",
-      hoverBg: "hover:bg-blue-100/60",
-      border: "border-blue-200/50"
+      color: "text-white", 
+      bg: "bg-white/20",
+      cardBg: "bg-blue-600",
+      hoverBg: "hover:bg-blue-700",
+      border: "border-blue-500"
     },
     { 
       name: "Pelaku Perempuan", 
       value: genderStats.perempuan, 
       icon: Users, 
-      color: "text-rose-600", 
-      bg: "bg-rose-100",
-      cardBg: "bg-rose-50/40",
-      hoverBg: "hover:bg-rose-100/60",
-      border: "border-rose-200/50"
+      color: "text-white", 
+      bg: "bg-white/20",
+      cardBg: "bg-rose-500",
+      hoverBg: "hover:bg-rose-600",
+      border: "border-rose-400"
     },
     { 
       name: "Data Terverifikasi", 
@@ -213,21 +213,21 @@ export default function DashboardPage() {
         return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
       }).length, 
       icon: UserCheck, 
-      color: "text-emerald-600", 
-      bg: "bg-emerald-100",
-      cardBg: "bg-emerald-50/40",
-      hoverBg: "hover:bg-emerald-100/60",
-      border: "border-emerald-200/50"
+      color: "text-white", 
+      bg: "bg-white/20",
+      cardBg: "bg-emerald-600",
+      hoverBg: "hover:bg-emerald-700",
+      border: "border-emerald-500"
     },
     { 
       name: "Data Ditolak", 
       value: allData?.filter(d => d.status?.toLowerCase().trim() === "rejected").length || 0, 
       icon: UserX, 
-      color: "text-orange-600", 
-      bg: "bg-orange-100",
-      cardBg: "bg-orange-50/40",
-      hoverBg: "hover:bg-orange-100/60",
-      border: "border-orange-200/50"
+      color: "text-white", 
+      bg: "bg-white/20",
+      cardBg: "bg-orange-500",
+      hoverBg: "hover:bg-orange-600",
+      border: "border-orange-400"
     },
   ]
 
@@ -255,7 +255,7 @@ export default function DashboardPage() {
           <Card 
             key={stat.name} 
             className={cn(
-              "backdrop-blur-xl border shadow-sm transition-all duration-500 group overflow-hidden cursor-pointer active:scale-95",
+              "border shadow-md transition-all duration-500 group overflow-hidden cursor-pointer active:scale-95",
               "hover:shadow-2xl hover:-translate-y-1",
               stat.cardBg,
               stat.hoverBg,
@@ -263,15 +263,15 @@ export default function DashboardPage() {
             )}
           >
             <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
-              <CardTitle className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-wider truncate mr-2">{stat.name}</CardTitle>
+              <CardTitle className="text-[10px] md:text-xs font-bold text-white/80 uppercase tracking-wider truncate mr-2">{stat.name}</CardTitle>
               <div className={cn(stat.bg, "p-1.5 md:p-2.5 rounded-lg md:rounded-xl group-hover:scale-110 transition-transform duration-300 shrink-0")}>
                 <stat.icon className={cn("w-4 h-4 md:w-5 md:h-5", stat.color)} />
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-              <div className="text-xl md:text-3xl font-black text-slate-800">{isLoading ? "..." : stat.value}</div>
-              <div className="flex items-center gap-1 mt-1 text-[8px] md:text-[10px] font-bold text-muted-foreground uppercase">
-                <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-emerald-500" />
+              <div className="text-xl md:text-3xl font-black text-white">{isLoading ? "..." : stat.value}</div>
+              <div className="flex items-center gap-1 mt-1 text-[8px] md:text-[10px] font-bold text-white/70 uppercase">
+                <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
                 Data Terkini
               </div>
             </CardContent>
