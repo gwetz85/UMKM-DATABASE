@@ -27,10 +27,9 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
 }) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   
-  // Logic Baru: 0 matches = 5 min, 1 match = 1 min, 2+ matches = Manual Info
-  // Rule Khusus: Isolir & Cancell diproses dalam 1 menit
-  const targetMins = matchCount === 0 ? 5 : 1
-  const isAutoEligible = matchCount < 2
+  // Logic Baru: 0 matches = 1 min, 1 match = 10 min, 2+ matches = Manual Info
+  const targetMins = matchCount === 0 ? 1 : 10
+  const isAutoEligible = matchCount < 2 && actor.status !== 'verifikasi_manual'
 
   // Validation: Check if all mandatory fields are present
   const isDataComplete = !!(
@@ -104,8 +103,8 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
 
   if (timeLeft === null) return <Loader2 className="w-3 h-3 animate-spin opacity-20" />
 
-  if (timeLeft === 0) {
-    if (isAutoEligible) {
+  if (timeLeft === 0 || actor.status === 'verifikasi_manual') {
+    if (isAutoEligible && actor.status !== 'verifikasi_manual') {
       return (
         <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-[10px] animate-pulse">
           <Loader2 className="w-3 h-3 animate-spin" />
@@ -115,7 +114,7 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
     } else {
       return (
         <div className="flex items-center gap-1.5 text-rose-600 font-black text-[9px] uppercase bg-rose-50 border border-rose-200 px-2 py-1 rounded shadow-sm">
-          <ShieldAlert className="w-3 h-3" />
+          <ShieldAlert className="w-3.5 h-3.5" />
           <span>VERIFIKASI MANUAL</span>
         </div>
       )
@@ -191,7 +190,7 @@ export default function VerifyActorPage() {
   }, [database])
   const { data: allMasterDataRaw } = useList<any>(masterDataRef)
 
-  const actors = allActorsRaw?.filter(a => a.status === 'pending')
+  const actors = allActorsRaw?.filter(a => a.status === 'pending' || a.status === 'verifikasi_manual')
 
   const filteredActors = actors?.filter(actor =>
     (actor.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -359,7 +358,10 @@ export default function VerifyActorPage() {
               <TableBody>
                 {filteredActors?.map((actor) => {
                   return (
-                  <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors border-b border-slate-100">
+                  <TableRow key={actor.id} className={cn(
+                    "hover:bg-primary/5 transition-colors border-b border-slate-100",
+                    actor.status === 'verifikasi_manual' && "bg-rose-50/30"
+                  )}>
                     <TableCell className="font-bold text-slate-800">{actor.fullName}</TableCell>
                     <TableCell className="font-mono text-xs text-slate-500">
                       <div className="font-semibold text-slate-700">{actor.nik}</div>

@@ -1,5 +1,5 @@
 
-export type BusinessActorStatus = 'pending' | 'verified_actor' | 'verified_dinas' | 'bank_pending' | 'lpj_pending' | 'finish' | 'rejected' | 'blacklist';
+export type BusinessActorStatus = 'pending' | 'verified_actor' | 'verified_dinas' | 'bank_pending' | 'lpj_pending' | 'finish' | 'rejected' | 'blacklist' | 'verifikasi_manual';
 
 export interface BusinessActor {
   id: string;

@@ -29,10 +29,12 @@ export async function GET(req: NextRequest) {
     // 3. Fetch Data
     const actorsRef = ref(database, 'businessActors');
     const masterDataRef = ref(database, 'master_data');
+    const blacklistDataRef = ref(database, 'blacklist_data');
 
-    const [actorsSnap, masterSnap] = await Promise.all([
+    const [actorsSnap, masterSnap, blacklistSnap] = await Promise.all([
       get(actorsRef),
-      get(masterDataRef)
+      get(masterDataRef),
+      get(blacklistDataRef)
     ]);
 
     if (!actorsSnap.exists()) {
@@ -48,17 +50,13 @@ export async function GET(req: NextRequest) {
     }
 
     const allMasterData = masterSnap.exists() ? Object.values(masterSnap.val()) : [];
+    const allBlacklistData = blacklistSnap.exists() ? Object.values(blacklistSnap.val()) : [];
     
     let verifiedCount = 0;
     let rejectedCount = 0;
+    let manualCount = 0;
     const now = Date.now();
     const updates: Record<string, any> = {};
-
-    // ONE-TIME CLEANUP (Restoration): Revert all 'isolir_data' to 'pending'
-    actorsList.filter(a => a.status === 'isolir_data').forEach(a => {
-      updates[`businessActors/${a.id}/status`] = 'pending';
-      updates[`businessActors/${a.id}/rejectionReason`] = null;
-    });
 
     const skipped: any[] = [];
 
@@ -91,49 +89,42 @@ export async function GET(req: NextRequest) {
         return;
       }
 
-      // Calculate matches in Master Data
-      const nikMatches = allMasterData.filter((m: any) => m.nik && m.nik === actor.nik);
-      const kkMatches = allMasterData.filter((m: any) => m.noKK && m.noKK === actor.noKK);
-      const combinedMatches = [...nikMatches, ...kkMatches];
-      const uniqueIds = new Set(combinedMatches.map(m => (m as any).id || `${(m as any).nik}-${(m as any).nama}`));
-      const matchCount = uniqueIds.size;
-
-      // Rule 4: Check for Cancell in Master Data
-      const hasCancell = combinedMatches.some(m => ((m as any).status || "").toLowerCase().includes('cancell'));
-      if (hasCancell) {
+      // RULE 1: Check Blacklist (Sheet 2) based on KK
+      const isBlacklisted = allBlacklistData.some((b: any) => b.noKK && b.noKK === actor.noKK);
+      if (isBlacklisted) {
         updates[`businessActors/${actor.id}/status`] = 'rejected';
-        updates[`businessActors/${actor.id}/rejectionReason`] = 'Ditolak Otomatis: Terdeteksi status Cancell pada Data Master Pembanding.';
+        updates[`businessActors/${actor.id}/rejectionReason`] = 'Ditolak Otomatis: Data KK terdeteksi pada Sheet 2 (Cancell).';
         rejectedCount++;
         return;
       }
 
+      // RULE 2: Calculate KK matches in Master Data (Sheet 1)
+      const kkMatches = allMasterData.filter((m: any) => m.noKK && m.noKK === actor.noKK);
+      const matchCount = kkMatches.length;
 
+      // RULE 3: Routing based on Match Count
+      if (matchCount >= 2) {
+        // 2+ matches -> Manual Verification
+        updates[`businessActors/${actor.id}/status`] = 'verifikasi_manual';
+        manualCount++;
+        return;
+      }
+
+      // RULE 4: Timer based on Match Count (0 match = 1m, 1 match = 10m)
+      const targetMins = matchCount === 0 ? 1 : 10;
       const createdAt = new Date(actor.createdAt).getTime();
-      // Rule 1 & 2: Verification Timeline (REVISED: 1 min for match, 5 mins for new)
-      const targetMins = matchCount === 0 ? 5 : 1;
-      const isAutoEligible = matchCount < 2;
-
-      if (isAutoEligible) {
-        const targetTime = createdAt + (targetMins * 60000);
-        
-        if (now >= targetTime) {
-          updates[`businessActors/${actor.id}/status`] = 'verified_actor';
-          verifiedCount++;
-        } else {
-          const remainingSecs = Math.ceil((targetTime - now) / 1000);
-          skipped.push({
-            id: actor.id,
-            name: actor.fullName,
-            reason: `Menunggu timer (${targetMins}m)`,
-            details: `Akan diverifikasi dalam ${remainingSecs} detik.`
-          });
-        }
+      const targetTime = createdAt + (targetMins * 60000);
+      
+      if (now >= targetTime) {
+        updates[`businessActors/${actor.id}/status`] = 'verified_actor';
+        verifiedCount++;
       } else {
+        const remainingSecs = Math.ceil((targetTime - now) / 1000);
         skipped.push({
           id: actor.id,
           name: actor.fullName,
-          reason: "Verifikasi Manual",
-          details: `Terdeteksi ${matchCount} kecocokan di Master Data (Perlu cek manual).`
+          reason: `Menunggu timer (${targetMins}m)`,
+          details: `Akan diverifikasi dalam ${remainingSecs} detik.`
         });
       }
     });
