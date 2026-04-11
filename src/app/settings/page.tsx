@@ -209,7 +209,7 @@ export default function SettingsPage() {
         const wsname = wb.SheetNames.find(n => n.trim().toUpperCase() === targetSheet.toUpperCase()) || wb.SheetNames[0]
         const ws = wb.Sheets[wsname]
         
-        const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as any[]
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false }) as any[]
 
         if (data.length <= 1) throw new Error("File Excel kosong atau tidak memiliki data.")
 
