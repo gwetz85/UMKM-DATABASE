@@ -22,6 +22,15 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { OfficeHoursTimer } from "@/components/OfficeHoursTimer"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
+import { Separator } from "@/components/ui/separator"
+import { Phone, MapPin, Building2, Code2 } from "lucide-react"
 
 
 
@@ -37,6 +46,7 @@ export default function LoginPage() {
   const [isRegisteringView, setIsRegisteringView] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [showInfoModal, setShowInfoModal] = useState(false)
 
   const auth = useAuth()
   const database = useDatabase()
@@ -197,7 +207,13 @@ export default function LoginPage() {
       {/* Office Hours Countdown - Top Right (visible when form is shown) */}
       {showForm && (
         <div className="absolute top-6 right-6 z-50">
-          <OfficeHoursTimer large />
+          <OfficeHoursTimer 
+            large 
+            onClick={(e: any) => {
+              e?.stopPropagation?.()
+              setShowInfoModal(true)
+            }}
+          />
         </div>
       )}
 
@@ -218,7 +234,13 @@ export default function LoginPage() {
           </div>
           
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
-            <OfficeHoursTimer large />
+            <OfficeHoursTimer 
+              large 
+              onClick={(e: any) => {
+                e?.stopPropagation?.()
+                setShowInfoModal(true)
+              }}
+            />
           </div>
         </div>
       ) : (
@@ -379,6 +401,69 @@ export default function LoginPage() {
           )}
         </Card>
       )}
+
+      {/* Information Modal */}
+      <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl">
+          {/* Top Part - Countdown */}
+          <div className="bg-slate-50 p-8 flex flex-col items-center justify-center border-b">
+            <div className="mb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Waktu Operasional Kantor</div>
+            <OfficeHoursTimer large />
+          </div>
+
+          {/* Bottom Part - Info */}
+          <div className="p-8 space-y-8 bg-white">
+            {/* Secretariat */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Building2 className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="font-black text-lg tracking-tight text-slate-800 uppercase">Sekretariat</h3>
+              </div>
+              <div className="space-y-3 pl-11">
+                <div className="flex items-start gap-2 text-sm font-bold text-slate-600 leading-relaxed uppercase">
+                  <MapPin className="w-4 h-4 mt-1 shrink-0 text-slate-400" />
+                  <span>JALAN GATOT SUBROTO ( DEPAN RAWASARI ) DEKAT CUCIAN MOBIL STARWASH</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm font-black text-primary">
+                  <Phone className="w-4 h-4" />
+                  <span>KONTAK OFFICE : 0823-2880-4478</span>
+                </div>
+              </div>
+            </div>
+
+            <Separator className="bg-slate-100" />
+
+            {/* Developer */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-slate-900/10 rounded-lg">
+                  <Code2 className="w-5 h-5 text-slate-900" />
+                </div>
+                <h3 className="font-black text-lg tracking-tight text-slate-800 uppercase">Pengembang Aplikasi</h3>
+              </div>
+              <div className="space-y-3 pl-11">
+                <div className="space-y-1">
+                  <div className="text-md font-black text-slate-900 uppercase">MT NET&SOFTWARE</div>
+                  <div className="flex items-start gap-2 text-xs font-bold text-slate-500 uppercase">
+                    <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
+                    <span>JL CENDRAWASIH KM 8 TANJUNGPINANG</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-sm font-black text-slate-700">
+                  <Phone className="w-4 h-4" />
+                  <span>KONTAK : 0817319885</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-4 bg-slate-50 border-t text-center">
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha © 2026</div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
