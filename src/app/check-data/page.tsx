@@ -11,7 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database, UserSearch, User, Eye, FileText } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { cn } from "@/lib/utils"
+import { cn, formatCurrency } from "@/lib/utils"
 
 export default function CheckDataPage() {
   const database = useDatabase()
@@ -59,16 +59,7 @@ export default function CheckDataPage() {
     setSearchDone(true)
   }
 
-  const formatCurrency = (value: any) => {
-    if (!value) return "Rp 0";
-    const num = typeof value === "string" ? parseFloat(value.replace(/[^0-9.-]+/g, "")) : value;
-    if (isNaN(num)) return value;
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(num);
-  };
+
 
   return (
     <div className="p-8 max-w-[95rem] mx-auto space-y-8">

@@ -5,6 +5,7 @@ import { ShieldAlert, Eye, FileText, User, Database, SearchCheck, UserSearch, In
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { BusinessActor } from "@/app/lib/types"
+import { formatCurrency } from "@/lib/utils"
 
 interface CheckDataIndicatorProps {
   actor: BusinessActor;
@@ -88,7 +89,7 @@ export function CheckDataIndicator({ actor, allMasterData, showText = true }: Ch
                       </div>
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Nominal</p>
-                        <p className="text-xs font-bold text-emerald-600">{data.nominal || "-"}</p>
+                        <p className="text-xs font-bold text-emerald-600">{formatCurrency(data.nominal)}</p>
                       </div>
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Kecamatan</p>
