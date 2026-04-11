@@ -78,7 +78,7 @@ export function CheckDataIndicator({ actor, allMasterData, showText = true }: Ch
                     <p className="text-sm font-bold text-slate-800 uppercase">{data.usaha || "-"}</p>
                   </div>
                   <div className="space-y-1 border-t pt-2 md:col-span-2">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Tahun</p>
                         <p className="text-xs font-bold">{data.tahunPengajuan || "-"}</p>
@@ -94,6 +94,10 @@ export function CheckDataIndicator({ actor, allMasterData, showText = true }: Ch
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Kecamatan</p>
                         <p className="text-xs font-bold">{data.kecamatan || "-"}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Koordinator</p>
+                        <p className="text-xs font-bold">{data.coordinator || "-"}</p>
                       </div>
                     </div>
                   </div>

@@ -216,7 +216,12 @@ export default function SettingsPage() {
         const masterData = data.slice(1).map((row: any[]) => {
           const getStr = (idx: number) => {
             const val = row[idx]
-            return val !== undefined && val !== null ? String(val).trim() : ""
+            if (val === undefined || val === null) return ""
+            // Handle cases where Excel numeric format turns long IDs into scientific notation
+            if (typeof val === 'number' && val > 999999) {
+              return BigInt(Math.floor(val)).toString()
+            }
+            return String(val).trim()
           }
 
           return {
@@ -231,9 +236,11 @@ export default function SettingsPage() {
             usaha: getStr(8),
             alamat: getStr(9),
             kelurahan: getStr(10),
+            kecamatan: getStr(11),
+            coordinator: getStr(12),
             uploadedAt: new Date().toISOString()
           }
-        }).filter(item => item.noKK && item.nik)
+        }).filter(item => item.noKK || item.nik)
 
         if (masterData.length === 0) throw new Error("Tidak ada data valid ditemukan. Pastikan kolom KK dan NIK terisi.")
 
@@ -417,7 +424,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2 font-bold text-sm text-primary">
                     <FileSpreadsheet className="w-4 h-4" /> Import Data Master (Excel)
                   </div>
-                  <p className="text-xs text-muted-foreground">Upload .xlsx (Kolom A-K: KK, NIK, No, Tahun, Nama, Status, LPJ, Nominal, Usaha, Alamat, Kelurahan).</p>
+                  <p className="text-xs text-muted-foreground">Upload .xlsx (Kolom A-M: KK, NIK, No, Tahun, Nama, Status, LPJ, Nominal, Usaha, Alamat, Kelurahan, Kecamatan, Koordinator).</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="relative">
                       <input type="file" accept=".xlsx, .xls" onChange={handleExcelUpload} className="hidden" id="excel-upload" disabled={uploadingExcel} />
