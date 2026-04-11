@@ -58,7 +58,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     <>
       <ThemePersistence />
       <SidebarProvider>
-        <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-background">
+        <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-transparent">
           {/* Global Components */}
           <GlobalAutoVerifier />
           <Toaster />

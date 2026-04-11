@@ -63,9 +63,11 @@
   }
   body {
     @apply text-foreground font-body antialiased;
-    background: linear-gradient(-45deg, #f8fafc, #f1f5f9, #e0f2fe, #f0fdf4);
-    background-size: 400% 400%;
-    animation: gradientBG 15s ease infinite;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url('/bg-app.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     min-height: 100vh;
   }
 }
