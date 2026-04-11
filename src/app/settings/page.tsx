@@ -205,7 +205,8 @@ export default function SettingsPage() {
       try {
         const bstr = event.target?.result
         const wb = XLSX.read(bstr, { type: 'binary' })
-        const wsname = wb.SheetNames[0]
+        const targetSheet = "DATABASE 2024-2025"
+        const wsname = wb.SheetNames.find(n => n.trim().toUpperCase() === targetSheet.toUpperCase()) || wb.SheetNames[0]
         const ws = wb.Sheets[wsname]
         
         const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as any[]
