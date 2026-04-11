@@ -16,6 +16,7 @@ import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Build
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
+import { cn } from "@/lib/utils"
 
 function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, actor }: { 
   actorId: string, 
