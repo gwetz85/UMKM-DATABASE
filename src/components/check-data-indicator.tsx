@@ -77,15 +77,23 @@ export function CheckDataIndicator({ actor, allMasterData, showText = true }: Ch
                     <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5"><Database className="w-3 h-3"/> Sektor Usaha</p>
                     <p className="text-sm font-bold text-slate-800 uppercase">{data.usaha || "-"}</p>
                   </div>
+                  <div className="space-y-1 md:col-span-2 border-t pt-2">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5">📍 Alamat & Kelurahan</p>
+                    <p className="text-xs font-bold text-slate-800 uppercase">{data.alamat || "-"} <span className="text-primary px-1 font-black"> / </span> {data.kelurahan || "-"}</p>
+                  </div>
                   <div className="space-y-1 border-t pt-2 md:col-span-2">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Tahun</p>
                         <p className="text-xs font-bold">{data.tahunPengajuan || "-"}</p>
                       </div>
                       <div className="space-y-0.5">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Status</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Status</p>
                         <p className="text-xs font-bold text-primary">{data.status || "-"}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Status LPJ</p>
+                        <p className="text-[11px] font-bold text-amber-600">{data.statusLpj || "-"}</p>
                       </div>
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Nominal</p>
