@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, VolumeX, SkipBack, SkipForward, Play, Pause } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+
 
 declare global {
   interface Window {
@@ -21,6 +23,9 @@ export function BackgroundMusic() {
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTitle, setCurrentTitle] = useState("");
+  const [volume, setVolume] = useState(50);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+
   const playerRef = useRef<any>(null);
 
   // Configuration: YouTube Playlist
@@ -159,6 +164,7 @@ export function BackgroundMusic() {
         playerRef.current.mute();
       } else {
         playerRef.current.unMute();
+        playerRef.current.setVolume(volume);
         // If we haven't successfully started playing yet, try now
         if (!hasInteracted) {
           playerRef.current.playVideo();
@@ -168,6 +174,22 @@ export function BackgroundMusic() {
       setIsMuted(nextMuteState);
     }
   };
+
+  const handleVolumeChange = (value: number[]) => {
+    const newVolume = value[0];
+    setVolume(newVolume);
+    if (playerRef.current && isPlayerReady) {
+      playerRef.current.setVolume(newVolume);
+      if (newVolume > 0 && isMuted) {
+        playerRef.current.unMute();
+        setIsMuted(false);
+      } else if (newVolume === 0 && !isMuted) {
+        playerRef.current.mute();
+        setIsMuted(true);
+      }
+    }
+  };
+
 
   const handleNext = () => {
     if (playerRef.current && isPlayerReady) {
@@ -259,37 +281,60 @@ export function BackgroundMusic() {
         {/* Divider */}
         <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-0.5" />
 
-        {/* Mute Toggle */}
-        <button
-          onClick={toggleMute}
-          disabled={!isPlayerReady}
-          className={`
-            p-2 rounded-full transition-all duration-300
-            ${isMuted 
-              ? 'text-red-500 bg-red-50 dark:bg-red-900/20' 
-              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
-            }
-            disabled:opacity-30 disabled:cursor-not-allowed
-          `}
-          title={isMuted ? "Aktifkan Musik" : "Senyap"}
+        {/* Mute Toggle & Volume Slider */}
+        <div 
+          className="relative flex items-center group"
+          onMouseEnter={() => setShowVolumeSlider(true)}
+          onMouseLeave={() => setShowVolumeSlider(false)}
         >
-          {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-        </button>
+          {/* Animated Volume Slider */}
+          <div className={`
+            overflow-hidden transition-all duration-300 ease-in-out flex items-center
+            ${showVolumeSlider ? 'w-24 px-2 opacity-100' : 'w-0 opacity-0'}
+          `}>
+            <Slider
+              value={[volume]}
+              max={100}
+              step={1}
+              onValueChange={handleVolumeChange}
+              className="w-20"
+            />
+          </div>
+
+          <button
+            onClick={toggleMute}
+            disabled={!isPlayerReady}
+            className={`
+              p-2 rounded-full transition-all duration-300
+              ${isMuted 
+                ? 'text-red-500 bg-red-50 dark:bg-red-900/20' 
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+              }
+              disabled:opacity-30 disabled:cursor-not-allowed
+            `}
+            title={isMuted ? "Aktifkan Musik" : "Senyap"}
+          >
+            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          </button>
+        </div>
       </div>
+
 
       {/* Song Title Marquee - Positioned below play menu */}
       {isPlaying && currentTitle && (
         <div className={`
-          w-full overflow-hidden py-1 px-4 rounded-full
-          bg-white/60 dark:bg-slate-900/60 backdrop-blur-md 
-          border border-white/20 dark:border-slate-800/40 shadow-sm
+          w-full overflow-hidden h-10 md:h-11 px-4 rounded-full
+          flex items-center
+          bg-white/80 dark:bg-slate-900/80 backdrop-blur-md 
+          border border-white/20 dark:border-slate-800/50 shadow-2xl
           animate-in fade-in slide-in-from-bottom-2 duration-700
         `}>
-          <div className="whitespace-nowrap animate-marquee text-[9px] font-black uppercase tracking-wider text-primary dark:text-primary-foreground/80">
-            Now Playing: {currentTitle}
+          <div className="whitespace-nowrap animate-marquee text-[10px] md:text-[11px] font-black uppercase tracking-widest text-primary dark:text-primary-foreground/90 w-full text-center">
+            SEDANG DIPUTAR: {currentTitle}
           </div>
         </div>
       )}
+
 
       {/* Status Tooltip (Optional, floating above) */}
       {!hasInteracted && isPlayerReady && (
