@@ -38,6 +38,7 @@ import { ref, query, equalTo, limitToFirst } from "firebase/database"
 import { signOut } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { useSoundEffect } from "@/hooks/use-sound-effect"
 
 import {
   Sidebar,
@@ -84,6 +85,8 @@ export function AppSidebar() {
   const database = useDatabase()
   const [copied, setCopied] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
+  const { playSound } = useSoundEffect()
+
   React.useEffect(() => {
     setMounted(true)
   }, [])
@@ -294,7 +297,10 @@ export function AppSidebar() {
                         )}
                       >
                         <CollapsibleTrigger asChild>
-                          <div className="flex items-center gap-3 w-full cursor-pointer">
+                          <div 
+                            className="flex items-center gap-3 w-full cursor-pointer"
+                            onClick={() => playSound('select')}
+                          >
                             <item.icon className="w-4.5 h-4.5 shrink-0" />
                             <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
                               {item.name}
@@ -315,7 +321,11 @@ export function AppSidebar() {
                                   "data-[active=true]:bg-white data-[active=true]:text-primary font-bold shadow-sm"
                                 )}
                               >
-                                <Link href={subItem.href} className="flex items-center gap-2 w-full">
+                                <Link 
+                                  href={subItem.href} 
+                                  className="flex items-center gap-2 w-full"
+                                  onClick={() => playSound('select')}
+                                >
                                   <div className="w-1 h-1 rounded-full bg-current opacity-40" />
                                   <span className="text-[11px] uppercase tracking-wider">{subItem.name}</span>
                                 </Link>
@@ -340,6 +350,7 @@ export function AppSidebar() {
                       <Link 
                         href={item.href} 
                         className="flex items-center gap-3 w-full"
+                        onClick={() => playSound('select')}
                       >
                         <item.icon className="w-4.5 h-4.5 shrink-0" />
                         <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">

@@ -16,8 +16,8 @@ import { User as UserIcon } from 'lucide-react'
 import Link from 'next/link'
 
 
-import { Toaster } from '@/components/ui/toaster';
 import { ThemePersistence } from '@/components/theme-persistence';
+import { useSoundEffect } from '@/hooks/use-sound-effect';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -30,6 +30,26 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [user, database])
   const { data: allUsers } = useList(userProfileRef)
   const profile = allUsers?.find((u: any) => u.uid === user?.uid)
+  const { playSound } = useSoundEffect();
+
+  React.useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      // Play sound if clicking a button, link, or something with a pointer cursor
+      const isClickable = 
+        target.closest('button') || 
+        target.closest('a') || 
+        target.closest('[role="button"]') ||
+        window.getComputedStyle(target).cursor === 'pointer';
+
+      if (isClickable) {
+        playSound('click', 0.15); // Subtle volume for general clicks
+      }
+    };
+
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, [playSound]);
 
   const isLoginPage = pathname === '/login'
 
