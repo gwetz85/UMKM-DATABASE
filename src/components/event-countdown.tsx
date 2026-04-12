@@ -89,6 +89,7 @@ export function EventCountdown({ targetDate, startDate }: EventCountdownProps) {
         <span className="text-[10px] md:text-sm font-black text-primary leading-none">{timeLeft.seconds.toString().padStart(2, '0')}</span>
         <span className="text-[6px] md:text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Detik</span>
       </div>
+      </div>
     </div>
   )
 }
