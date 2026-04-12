@@ -199,270 +199,268 @@ export default function LoginPage() {
     }
   }
 
-
-
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4 cursor-default relative overflow-hidden"
-      onClick={() => setShowForm(false)}
-    >
-      {/* Office Hours Countdown - Top Right (visible when form is shown) */}
-      {showForm && (
-        <div className="absolute top-6 right-6 z-50">
-          <OfficeHoursTimer 
-            large 
-            onClick={(e: any) => {
-              e?.stopPropagation?.()
-              setShowInfoModal(true)
-            }}
-          />
-        </div>
-      )}
+    <div className="min-h-screen w-full flex items-center justify-center p-0 md:p-4 bg-slate-50 relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl -mr-64 -mt-64" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/10 rounded-full blur-3xl -ml-64 -mb-64" />
 
       {!showForm ? (
         <div 
-          className="flex flex-col items-center gap-8 cursor-pointer group" 
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowForm(true);
-          }}
+          className="flex flex-col items-center gap-12 cursor-pointer group z-10 transition-all duration-700 hover:scale-105"
+          onClick={() => setShowForm(true)}
         >
-          <div className="w-48 h-48 overflow-hidden rounded-full border-8 border-white shadow-[0_20px_50px_rgba(0,0,0,0.2)] bg-white animate-pulse transition-transform group-hover:scale-105">
-            <img 
-              src="/logo.png" 
-              alt="SIMPU Logo" 
-              className="w-full h-full object-contain p-2"
-            />
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse group-hover:bg-primary/30 transition-colors" />
+            <div className="w-56 h-56 md:w-64 md:h-64 overflow-hidden rounded-full border-8 border-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] bg-white relative z-10 p-4 transition-transform duration-500 group-hover:rotate-6">
+              <img 
+                src="/logo.png" 
+                alt="SIMPU Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
           </div>
           
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
-            <OfficeHoursTimer 
-              large 
-              onClick={(e: any) => {
-                e?.stopPropagation?.()
-                setShowInfoModal(true)
-              }}
-            />
+          <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
+            <h1 className="text-3xl md:text-5xl font-black text-slate-800 tracking-tighter uppercase italic">
+              SIM<span className="text-primary tracking-widest not-italic">PU</span>
+            </h1>
+            <OfficeHoursTimer large />
+            <div className="px-6 py-2 bg-slate-100 rounded-full text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] border border-white/50 shadow-sm animate-bounce mt-4">
+              Klik Logo Untuk Masuk
+            </div>
           </div>
         </div>
       ) : (
-        <Card 
-          className="w-full max-w-md border-none shadow-2xl overflow-hidden bg-white/95 backdrop-blur-sm scale-in-center"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="h-2 bg-primary w-full" />
-          <CardHeader className="space-y-1 text-center pt-8 cursor-pointer select-none" onClick={() => !isRegisteringView && !isRegistered && setShowForm(false)}>
-            <div className="flex justify-center mb-2">
-              <div className="w-24 h-24 overflow-hidden rounded-full border-4 border-white shadow-lg relative z-10 bg-white">
-                <img 
-                  src="/logo.png" 
-                  alt="SIMPU Logo" 
-                  className="w-full h-full object-contain"
-                />
+        <div className="w-full max-w-5xl h-full md:h-[650px] bg-white md:rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 duration-700 relative z-20">
+          
+          {/* Left Panel: Branding & Countdown */}
+          <div className="w-full md:w-[45%] bg-gradient-to-br from-[#8E2DE2] to-[#4A00E0] p-8 md:p-12 flex flex-col items-center justify-center text-center relative overflow-hidden shrink-0">
+            {/* Animated Circles for Background */}
+            <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -ml-32 -mt-32 blur-3xl" />
+            <div className="absolute bottom-0 right-0 w-64 h-64 bg-black/10 rounded-full -mr-32 -mb-32 blur-3xl" />
+            
+            <div className="relative z-10 space-y-8 animate-in slide-in-from-left duration-1000">
+              <div className="w-32 h-32 md:w-48 md:h-48 bg-white p-4 rounded-3xl shadow-2xl flex items-center justify-center mx-auto transition-transform hover:scale-110 duration-500">
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+              </div>
+              
+              <div className="space-y-2">
+                <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight uppercase">SIMPU</h2>
+                <div className="h-1.5 w-12 bg-white/30 mx-auto rounded-full" />
+                <p className="text-white/60 text-xs md:text-sm font-black uppercase tracking-[0.2em] leading-relaxed">
+                  Sistem Informasi Manajemen<br/>Pelaku Usaha
+                </p>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-inner">
+                <div className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-3">Waktu Operasional</div>
+                <OfficeHoursTimer large />
               </div>
             </div>
-            <CardTitle className="text-xl font-bold text-slate-800">
-              {isRegistered ? "Pendaftaran Berhasil" : isRegisteringView ? "Pendaftaran User Baru" : "Masuk ke SIMPU"}
-            </CardTitle>
-          </CardHeader>
-          {isRegistered ? (
-            <CardContent className="py-10 text-center">
-              <div className="flex justify-center mb-6">
-                <div className="bg-emerald-100 p-4 rounded-full">
-                  <CheckCircle2 className="w-12 h-12 text-emerald-600" />
-                </div>
-              </div>
-              <p className="text-sm font-black text-slate-800 leading-relaxed uppercase px-4 whitespace-pre-line text-center">
-                DATA PENDAFTARAN AKUN BARU KAMU TELAH BERHASIL.{"\n"}
-                SILAHKAN LOGIN SETELAH ADMIN MEMVERIFIKASI AKUN KAMU MAKSIMAL 1X24JAM.{"\n"}
-                HUBUNGI ADMIN JIKA SAMPAI BATAS WAKTU AKUN BELUM TERVERIFIKASI.
-              </p>
-              <Button 
-                variant="outline" 
-                className="mt-10 w-full h-12 font-bold border-primary text-primary"
-                onClick={() => {
-                  setIsRegistered(false);
-                  setIsRegisteringView(false);
-                }}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Login
-              </Button>
-            </CardContent>
-          ) : isRegisteringView ? (
-            <form onSubmit={handleRegister}>
-              <CardContent className="grid gap-5 py-4 text-left">
-                <div className="grid gap-2 text-left">
-                  <Label className="font-bold text-slate-700 ml-1">Username</Label>
-                  <div className="relative">
-                    <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Nama Lengkap Anda" 
-                      className="pl-10 h-11 border-slate-200 focus:ring-primary"
-                      value={regName}
-                      onChange={(e) => setRegName(e.target.value)}
-                      required 
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-2 text-left">
-                  <Label className="font-bold text-slate-700 ml-1">Kata Sandi</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input 
-                      type="password" 
-                      placeholder="••••••••" 
-                      className="pl-10 h-11 border-slate-200 focus:ring-primary"
-                      value={regPass}
-                      onChange={(e) => setRegPass(e.target.value)}
-                      required 
-                    />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col gap-4 pb-10">
-                <Button type="submit" className="w-full font-bold h-12 bg-primary shadow-lg" disabled={registering}>
-                  {registering ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <UserPlus className="w-5 h-5 mr-2" />}
-                  Simpan Pendaftaran
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  type="button" 
-                  className="w-full text-muted-foreground font-bold"
-                  onClick={() => setIsRegisteringView(false)}
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" /> Batal & Kembali ke Login
-                </Button>
-              </CardFooter>
-            </form>
-          ) : (
-            <form onSubmit={handleAuth}>
-              <CardContent className="grid gap-5 py-4 text-left">
-                <div className="grid gap-2 text-left">
-                  <Label htmlFor="identifier" className="font-bold text-slate-700 ml-1">Username</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="identifier"
-                      type="text"
-                      placeholder="Masukkan Nama Anda"
-                      className="pl-10 h-11 border-slate-200 focus:ring-primary"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-2 text-left">
-                  <Label htmlFor="password" title="Kata sandi anda" className="font-bold text-slate-700 ml-1">Kata Sandi</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      className="pl-10 h-11 border-slate-200 focus:ring-primary"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col gap-4 pb-10">
-                <div className="flex gap-2 w-full">
-                  <Button 
-                    className="flex-1 bg-primary hover:bg-primary/90 h-12 text-md font-bold shadow-lg transition-all" 
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <><LogIn className="w-5 h-5 mr-2" /> Masuk</>
-                    )}
-                  </Button>
-
-                  <Button 
-                    variant="secondary" 
-                    type="button" 
-                    className="px-6 h-12 font-bold whitespace-nowrap shadow-sm"
-                    onClick={() => setIsRegisteringView(true)}
-                  >
-                    <UserPlus className="w-5 h-5 mr-2" /> Daftar
-                  </Button>
-                </div>
-
-                <div className="pt-2 flex flex-col items-center gap-3">
-
-
-                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60 font-medium tracking-tight">
-                    <MonitorOff className="w-3 h-3" /> Kebijakan 1 User 1 Perangkat Aktif
-                  </div>
-                </div>
-              </CardFooter>
-            </form>
-          )}
-        </Card>
-      )}
-
-      {/* Information Modal */}
-      <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl">
-          {/* Top Part - Countdown */}
-          <div className="bg-slate-50 p-8 flex flex-col items-center justify-center border-b">
-            <div className="mb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Waktu Operasional Kantor</div>
-            <OfficeHoursTimer large />
           </div>
 
-          {/* Bottom Part - Info */}
-          <div className="p-8 space-y-8 bg-white">
-            {/* Secretariat */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Building2 className="w-5 h-5 text-primary" />
-                </div>
-                <h3 className="font-black text-lg tracking-tight text-slate-800 uppercase">Sekretariat</h3>
+          {/* Right Panel: Authentication */}
+          <div className="flex-1 bg-white p-8 md:p-12 flex flex-col justify-center relative animate-in slide-in-from-right duration-1000">
+            {/* Top Navigation: Home Link */}
+            <div className="absolute top-8 right-8 flex items-center gap-2">
+               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                  {isRegisteringView ? "Sudah punya akun?" : "Belum punya akun?"}
+               </span>
+               <button 
+                  onClick={() => {
+                    setIsRegisteringView(!isRegisteringView);
+                    setIsRegistered(false);
+                  }}
+                  className="text-[11px] font-black text-primary uppercase hover:underline underline-offset-4 decoration-2"
+               >
+                  {isRegisteringView ? "Masuk Sekarang" : "Daftar Sekarang"}
+               </button>
+            </div>
+
+            <div className="max-w-sm w-full mx-auto space-y-10">
+              <div className="space-y-4">
+                <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight leading-none">
+                  {isRegistered ? "Berhasil!" : isRegisteringView ? "Bergabung!" : "Halo Kembali!"}
+                </h1>
+                <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                  {isRegistered 
+                    ? "Pendaftaran Anda telah kami terima." 
+                    : isRegisteringView 
+                      ? "Silakan isi data diri Anda untuk pendaftaran user baru." 
+                      : "Selamat datang kembali, silakan masuk untuk melanjutkan."}
+                </p>
               </div>
-              <div className="space-y-3 pl-11">
-                <div className="flex items-start gap-2 text-sm font-bold text-slate-600 leading-relaxed uppercase">
-                  <MapPin className="w-4 h-4 mt-1 shrink-0 text-slate-400" />
+
+              {isRegistered ? (
+                <div className="space-y-8 py-4 text-center animate-in zoom-in-95 duration-500">
+                  <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+                  </div>
+                  <p className="text-sm font-black text-slate-700 leading-relaxed uppercase whitespace-pre-line tracking-tight bg-slate-50 p-6 rounded-2xl border-2 border-dashed border-slate-200">
+                    AKUN BERHASIL TERDAFTAR.{"\n"}
+                    SILAHKAN LOGIN SETELAH ADMIN MEMVERIFIKASI AKUN KAMU MAKSIMAL 1X24JAM.
+                  </p>
+                  <Button 
+                    className="w-full h-14 rounded-2xl font-black text-md bg-emerald-600 hover:bg-emerald-700 shadow-lg"
+                    onClick={() => {
+                      setIsRegistered(false);
+                      setIsRegisteringView(false);
+                    }}
+                  >
+                    KEMBALI KE LOGIN
+                  </Button>
+                </div>
+              ) : (
+                <form 
+                  onSubmit={isRegisteringView ? handleRegister : handleAuth} 
+                  className="space-y-6"
+                >
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Username / Nama</Label>
+                      <div className="relative group">
+                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors">
+                          {isRegisteringView ? <UserPlus className="w-5 h-5" /> : <Mail className="w-5 h-5" />}
+                        </div>
+                        <Input 
+                          placeholder={isRegisteringView ? "Nama Lengkap" : "Masukkan Username"}
+                          className="h-14 pl-14 pr-5 rounded-2xl border-slate-100 bg-slate-50/50 transition-all focus:ring-4 focus:ring-primary/10 focus:border-primary text-slate-800 font-bold placeholder:text-slate-300 placeholder:font-medium"
+                          value={isRegisteringView ? regName : identifier}
+                          onChange={(e) => isRegisteringView ? setRegName(e.target.value) : setIdentifier(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center px-1">
+                        <Label className="text-xs font-black text-slate-400 uppercase tracking-widest">Kata Sandi</Label>
+                        {!isRegisteringView && (
+                          <button type="button" className="text-[10px] font-bold text-slate-400 hover:text-primary transition-colors uppercase">
+                            Lupa sandi?
+                          </button>
+                        )}
+                      </div>
+                      <div className="relative group">
+                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors">
+                          <Lock className="w-5 h-5" />
+                        </div>
+                        <Input 
+                          type="password"
+                          placeholder="••••••••"
+                          className="h-14 pl-14 pr-5 rounded-2xl border-slate-100 bg-slate-50/50 transition-all focus:ring-4 focus:ring-primary/10 focus:border-primary text-slate-800 font-bold placeholder:text-slate-300 placeholder:font-medium"
+                          value={isRegisteringView ? regPass : password}
+                          onChange={(e) => isRegisteringView ? setRegPass(e.target.value) : setPassword(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 space-y-6">
+                    <Button 
+                      type="submit" 
+                      className={cn(
+                        "w-full h-14 rounded-2xl text-md font-black shadow-xl transition-all duration-300",
+                        isRegisteringView ? "bg-indigo-600 hover:bg-indigo-700" : "bg-[#FD6B6B] hover:bg-[#ff5a5a]"
+                      )}
+                      disabled={loading || registering}
+                    >
+                      {loading || registering ? (
+                        <Loader2 className="w-6 h-6 animate-spin" />
+                      ) : (
+                        <>{isRegisteringView ? "SIMPAN PENDAFTARAN" : "MASUK SEKARANG"}</>
+                      )}
+                    </Button>
+
+                    {!isRegisteringView && (
+                      <div className="flex items-center gap-3 justify-center text-[10px] text-slate-400 font-bold uppercase tracking-tight opacity-50">
+                        <div className="h-px flex-1 bg-slate-200" />
+                        <span className="flex items-center gap-1.5 shrink-0">
+                          <MonitorOff className="w-3 h-3" /> Kebijakan 1 Perangkat Aktif
+                        </span>
+                        <div className="h-px flex-1 bg-slate-200" />
+                      </div>
+                    )}
+                  </div>
+                </form>
+              )}
+
+              {/* Secretariat Info Toggle */}
+              <div className="pt-6 border-t border-slate-100">
+                <button 
+                  onClick={() => setShowInfoModal(true)}
+                  className="w-full py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-primary transition-colors flex items-center justify-center gap-2"
+                >
+                  <Building2 className="w-3.5 h-3.5" /> Lihat Info Sekretariat
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Close Button (for desktop returning to landing) */}
+          <button 
+            onClick={() => setShowForm(false)}
+            className="absolute top-8 left-8 p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-md border border-white/20 shadow-lg group hidden md:flex items-center gap-2"
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-[10px] font-black uppercase tracking-widest hidden lg:block">Kembali</span>
+          </button>
+        </div>
+      )}
+
+      {/* Information Modal (Unchanged functionality, styled consistency) */}
+      <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
+          <div className="bg-slate-50 p-8 flex flex-col items-center justify-center border-b">
+            <div className="mb-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Waktu Operasional</div>
+            <OfficeHoursTimer large />
+          </div>
+          <div className="p-8 space-y-8 bg-white">
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-2xl">
+                  <Building2 className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-black text-xl tracking-tight text-slate-800 uppercase">Sekretariat</h3>
+              </div>
+              <div className="space-y-4 pl-[3.5rem]">
+                <div className="flex items-start gap-3 text-xs md:text-sm font-bold text-slate-600 leading-relaxed uppercase tracking-tight">
+                  <MapPin className="w-5 h-5 mt-1 shrink-0 text-slate-300" />
                   <span>JALAN GATOT SUBROTO ( DEPAN RAWASARI ) DEKAT CUCIAN MOBIL STARWASH</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm font-black text-primary">
-                  <Phone className="w-4 h-4" />
-                  <span>KONTAK OFFICE : 0823-2880-4478</span>
+                <div className="flex items-center gap-3 text-sm font-black text-primary">
+                  <Phone className="w-5 h-5" />
+                  <span>OFFICE : 0823-2880-4478</span>
                 </div>
               </div>
             </div>
-
             <Separator className="bg-slate-100" />
-
-            {/* Developer */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-900/10 rounded-lg">
-                  <Code2 className="w-5 h-5 text-slate-900" />
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-slate-900/10 rounded-2xl">
+                  <Code2 className="w-6 h-6 text-slate-900" />
                 </div>
-                <h3 className="font-black text-lg tracking-tight text-slate-800 uppercase">Pengembang Aplikasi</h3>
+                <h3 className="font-black text-xl tracking-tight text-slate-800 uppercase">Pengembang</h3>
               </div>
-              <div className="space-y-3 pl-11">
+              <div className="space-y-4 pl-[3.5rem]">
                 <div className="space-y-1">
-                  <div className="text-md font-black text-slate-900 uppercase">AGUS SURIYADI</div>
-                  <div className="flex items-start gap-2 text-xs font-bold text-slate-500 uppercase">
-                    <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
+                  <div className="text-lg font-black text-slate-900 uppercase">AGUS SURIYADI</div>
+                  <div className="flex items-start gap-3 text-xs font-bold text-slate-500 uppercase">
+                    <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-slate-300" />
                     <span>JL DAENG HAJI MEKAH NO 23 TANJUNGPINANG</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm font-black text-slate-700">
-                  <Phone className="w-4 h-4" />
-                  <span>KONTAK : 0817319885</span>
+                <div className="flex items-center gap-3 text-sm font-black text-slate-700">
+                  <Phone className="w-5 h-5" />
+                  <span>KONTAK : 0817-319-885</span>
                 </div>
               </div>
             </div>
           </div>
-          
-          <div className="p-4 bg-slate-50 border-t text-center">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha © 2026</div>
+          <div className="p-5 bg-slate-50 border-t text-center">
+            <div className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">SIMPU © 2026</div>
           </div>
         </DialogContent>
       </Dialog>
