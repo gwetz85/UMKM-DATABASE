@@ -285,7 +285,7 @@ export function BackgroundMusic() {
           border border-white/20 dark:border-slate-800/40 shadow-sm
           animate-in fade-in slide-in-from-bottom-2 duration-700
         `}>
-          <div className="whitespace-nowrap animate-marquee-ltr text-[9px] font-black uppercase tracking-wider text-primary dark:text-primary-foreground/80">
+          <div className="whitespace-nowrap animate-marquee text-[9px] font-black uppercase tracking-wider text-primary dark:text-primary-foreground/80">
             Now Playing: {currentTitle}
           </div>
         </div>

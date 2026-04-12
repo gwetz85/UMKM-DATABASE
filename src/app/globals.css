@@ -183,14 +183,4 @@
 
 .animate-blink {
   animation: blink 1s step-start infinite;
-}
-
-@keyframes marquee-ltr {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-.animate-marquee-ltr {
-  display: inline-block;
-  animation: marquee-ltr 20s linear infinite;
 }
