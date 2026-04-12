@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth, useDatabase } from "@/firebase"
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth"
@@ -21,6 +21,7 @@ import {
   CheckCircle2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 import { OfficeHoursTimer } from "@/components/OfficeHoursTimer"
 import {
   Dialog,
