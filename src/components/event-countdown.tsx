@@ -5,9 +5,10 @@ import { Timer } from "lucide-react"
 
 interface EventCountdownProps {
   targetDate: string
+  startDate?: string
 }
 
-export function EventCountdown({ targetDate }: EventCountdownProps) {
+export function EventCountdown({ targetDate, startDate }: EventCountdownProps) {
   const [mounted, setMounted] = React.useState(false)
   const [timeLeft, setTimeLeft] = useState<{
     days: number
@@ -15,7 +16,8 @@ export function EventCountdown({ targetDate }: EventCountdownProps) {
     minutes: number
     seconds: number
     isEnded: boolean
-  }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: false })
+    isStarted: boolean
+  }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: false, isStarted: false })
 
   useEffect(() => {
     setMounted(true)
@@ -26,8 +28,16 @@ export function EventCountdown({ targetDate }: EventCountdownProps) {
       const now = +new Date()
       const difference = target - now
       
+      let isStarted = true;
+      if (startDate) {
+        const start = +new Date(startDate)
+        if (now < start) {
+          isStarted = false;
+        }
+      }
+
       if (isNaN(difference) || difference <= 0) {
-        return { days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true }
+        return { days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true, isStarted }
       }
 
       return {
@@ -36,6 +46,7 @@ export function EventCountdown({ targetDate }: EventCountdownProps) {
         minutes: Math.floor((difference / 1000 / 60) % 60),
         seconds: Math.floor((difference / 1000) % 60),
         isEnded: false,
+        isStarted
       }
     }
 
@@ -51,7 +62,14 @@ export function EventCountdown({ targetDate }: EventCountdownProps) {
   if (!mounted || timeLeft.isEnded) return null
 
   return (
-    <div className="flex items-center gap-1.5 md:gap-3 bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-slate-800/40 px-3 py-1.5 md:px-5 md:py-2.5 rounded-2xl shadow-sm backdrop-blur-md">
+    <div className="flex flex-col items-center gap-1">
+      {startDate && !timeLeft.isStarted && (
+        <span className="text-[8px] md:text-[10px] font-bold text-amber-500 uppercase tracking-widest animate-pulse border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 rounded-full">Segera Hadir</span>
+      )}
+      {startDate && timeLeft.isStarted && !timeLeft.isEnded && (
+        <span className="text-[8px] md:text-[10px] font-bold text-emerald-500 uppercase tracking-widest animate-pulse border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 rounded-full">Sedang Berlangsung</span>
+      )}
+      <div className="flex items-center gap-1.5 md:gap-3 bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-slate-800/40 px-3 py-1.5 md:px-5 md:py-2.5 rounded-2xl shadow-sm backdrop-blur-md mt-1">
       <div className="flex flex-col items-center">
         <span className="text-[10px] md:text-sm font-black text-primary leading-none">{timeLeft.days}</span>
         <span className="text-[6px] md:text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Hari</span>

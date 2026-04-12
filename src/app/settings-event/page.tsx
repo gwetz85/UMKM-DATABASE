@@ -20,7 +20,8 @@ export default function EventSettingsPage() {
   
   // States for event info
   const [description, setDescription] = useState("")
-  const [date, setDate] = useState("")
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
   const [isEnabled, setIsEnabled] = useState(true)
 
   const adminRef = useMemoFirebase(() => {
@@ -37,7 +38,8 @@ export default function EventSettingsPage() {
   useEffect(() => {
     if (eventInfo) {
       setDescription(eventInfo.description || "")
-      setDate(eventInfo.date || "")
+      setStartDate(eventInfo.startDate || eventInfo.date || "") // Fallback to old 'date' field if needed
+      setEndDate(eventInfo.endDate || "")
       setIsEnabled(eventInfo.enabled ?? true)
     }
   }, [eventInfo])
@@ -49,7 +51,8 @@ export default function EventSettingsPage() {
     try {
       await update(ref(database, 'settings/event_info'), {
         description,
-        date,
+        startDate,
+        endDate,
         enabled: isEnabled,
         updatedAt: new Date().toISOString(),
         updatedBy: user?.email || user?.uid
@@ -116,18 +119,34 @@ export default function EventSettingsPage() {
                 />
               </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="date" className="font-bold text-xs uppercase tracking-widest text-primary">Tanggal & Waktu Event</Label>
-                <Input 
-                  id="date"
-                  type="datetime-local"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
-                />
-                <p className="text-[10px] text-muted-foreground italic flex items-center gap-1">
-                  <Info className="w-3 h-3" /> Countdown akan otomatis aktif berdasarkan waktu yang Anda tentukan.
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="startDate" className="font-bold text-xs uppercase tracking-widest text-primary">Jam & Tanggal Dimulai Event</Label>
+                  <Input 
+                    id="startDate"
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                  />
+                  <p className="text-[10px] text-muted-foreground italic flex items-center gap-1">
+                    <Info className="w-3 h-3" /> Event akan ditandai mulai pada waktu ini.
+                  </p>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="endDate" className="font-bold text-xs uppercase tracking-widest text-primary">Jam & Tanggal Berakhir Event</Label>
+                  <Input 
+                    id="endDate"
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                  />
+                  <p className="text-[10px] text-muted-foreground italic flex items-center gap-1">
+                    <Info className="w-3 h-3" /> Countdown akan menghitung mundur hingga waktu ini.
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-3 pt-4">

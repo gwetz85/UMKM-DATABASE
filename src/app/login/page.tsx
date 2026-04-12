@@ -18,10 +18,12 @@ import {
   SearchCheck, 
   UserPlus,
   ArrowLeft,
-  CheckCircle2
+  CheckCircle2,
+  CalendarDays
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { OfficeHoursTimer } from "@/components/OfficeHoursTimer"
+import { EventCountdown } from "@/components/event-countdown"
 import {
   Dialog,
   DialogContent,
@@ -52,6 +54,18 @@ export default function LoginPage() {
   const database = useDatabase()
   const router = useRouter()
   const { toast } = useToast()
+
+  const [eventInfo, setEventInfo] = useState<any>(null)
+  
+  useEffect(() => {
+    if (!database) return;
+    const evRef = ref(database, 'settings/event_info');
+    get(evRef).then(snap => {
+      if (snap.exists()) {
+        setEventInfo(snap.val());
+      }
+    });
+  }, [database]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -402,6 +416,24 @@ export default function LoginPage() {
             </form>
           )}
         </Card>
+      )}
+
+      {/* Event Info Card on Login */}
+      {showForm && eventInfo?.enabled && (eventInfo?.endDate || eventInfo?.date) && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4 md:px-0">
+          <Card className="border-none shadow-xl bg-white/95 backdrop-blur-md overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div className="h-1 bg-gradient-to-r from-primary via-emerald-500 to-amber-500 w-full" />
+            <CardContent className="p-4 flex flex-col items-center text-center gap-3">
+              <div className="flex items-center gap-2 text-primary">
+                <CalendarDays className="w-5 h-5 animate-pulse" />
+                <span className="text-xs font-black uppercase tracking-widest">{eventInfo.description || "EVENT MENDATANG"}</span>
+              </div>
+              <div className="scale-90 md:scale-100 origin-center">
+                <EventCountdown targetDate={eventInfo.endDate || eventInfo.date} startDate={eventInfo.startDate} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Information Modal */}
