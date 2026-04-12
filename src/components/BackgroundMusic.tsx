@@ -26,7 +26,10 @@ export function BackgroundMusic() {
   const [volume, setVolume] = useState(50);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
+  const [playerWidth, setPlayerWidth] = useState<number>(0);
   const playerRef = useRef<any>(null);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+
 
   // Configuration: YouTube Playlist
   // Playlist ID: PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7
@@ -138,6 +141,29 @@ export function BackgroundMusic() {
   }, [playlistId]);
 
   useEffect(() => {
+    // 2. Monitor player width to sync marquee width
+    if (!playerContainerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect) {
+          // Add padding (p-1.5 = 6px on each side approximately, plus border)
+          // Actually, just use offsetWidth for the whole container
+          setPlayerWidth(playerContainerRef.current?.offsetWidth || 0);
+        }
+      }
+    });
+
+    resizeObserver.observe(playerContainerRef.current);
+    
+    // Initial measurement
+    setPlayerWidth(playerContainerRef.current.offsetWidth);
+
+    return () => resizeObserver.disconnect();
+  }, [isPlayerReady]);
+
+  useEffect(() => {
+
     // 2. Start playback on interaction to satisfy browser policies
     const tryPlay = () => {
       if (playerRef.current && isPlayerReady && !hasInteracted) {
@@ -228,14 +254,18 @@ export function BackgroundMusic() {
       ></div>
       
       {/* Music Control Panel */}
-      <div className={`
-        flex items-center gap-1.5 p-1.5 rounded-full 
-        transition-all duration-700 ease-in-out
-        ${isPlayerReady 
-          ? 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800/50 shadow-2xl' 
-          : 'bg-slate-100/50 dark:bg-slate-800/20 backdrop-blur-sm opacity-50'
-        }
-      `}>
+      <div 
+        ref={playerContainerRef}
+        className={`
+          flex items-center gap-1.5 p-1.5 rounded-full 
+          transition-all duration-700 ease-in-out
+          ${isPlayerReady 
+            ? 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800/50 shadow-2xl' 
+            : 'bg-slate-100/50 dark:bg-slate-800/20 backdrop-blur-sm opacity-50'
+          }
+        `}
+      >
+
         {/* Previous Button */}
         <button
           onClick={handlePrevious}
@@ -323,13 +353,17 @@ export function BackgroundMusic() {
 
       {/* Song Title Marquee - Positioned below play menu */}
       {isPlaying && currentTitle && (
-        <div className={`
-          w-full overflow-hidden h-6 md:h-7 px-4 rounded-full
-          flex items-center
-          bg-white/80 dark:bg-slate-900/80 backdrop-blur-md 
-          border border-white/20 dark:border-slate-800/50 shadow-lg
-          animate-in fade-in slide-in-from-bottom-2 duration-700
-        `}>
+        <div 
+          style={{ width: playerWidth > 0 ? `${playerWidth}px` : '100%' }}
+          className={`
+            overflow-hidden h-6 md:h-7 px-4 rounded-full
+            flex items-center
+            bg-white/80 dark:bg-slate-900/80 backdrop-blur-md 
+            border border-white/20 dark:border-slate-800/50 shadow-lg
+            animate-in fade-in slide-in-from-bottom-2 duration-700
+          `}
+        >
+
           <div className="whitespace-nowrap animate-marquee text-[8px] md:text-[9px] font-bold uppercase tracking-wide text-primary dark:text-primary-foreground/90 w-full text-center">
             SEDANG DIPUTAR: {currentTitle}
           </div>
