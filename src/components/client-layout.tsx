@@ -12,8 +12,9 @@ import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
 import { BackgroundMusic } from '@/components/BackgroundMusic';
 import { useUser, useDatabase, useList, useMemoFirebase } from '@/firebase'
 import { ref } from 'firebase/database'
-import { User as UserIcon } from 'lucide-react'
+import { User as UserIcon, Calendar } from 'lucide-react'
 import Link from 'next/link'
+import { EventCountdown } from './event-countdown';
 
 
 import { Toaster } from '@/components/ui/toaster';
@@ -32,6 +33,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const { data: allUsers } = useList(userProfileRef)
   const profile = allUsers?.find((u: any) => u.uid === user?.uid)
   const { playSound } = useSoundEffect();
+
+  const eventSettingsRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'settings/event_info')
+  }, [database])
+  const { data: eventInfo } = useObject(eventSettingsRef)
 
   React.useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
@@ -135,6 +142,23 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       </h1>
                     )}
                   </div>
+                  
+                  {/* Event Info - Center Area */}
+                  {eventInfo?.enabled && eventInfo?.date && (
+                    <div className="flex-1 flex flex-col items-center justify-center px-4 animate-in fade-in zoom-in duration-1000">
+                      <div className="flex flex-col items-center gap-1 group cursor-default">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1 w-8 md:w-12 bg-primary/20 rounded-full" />
+                          <span className="text-[9px] md:text-[10px] font-black text-primary uppercase tracking-[0.3em] text-center drop-shadow-sm group-hover:tracking-[0.4em] transition-all">
+                            {eventInfo.description || 'EVENT MENDATANG'}
+                          </span>
+                          <div className="h-1 w-8 md:w-12 bg-primary/20 rounded-full" />
+                        </div>
+                        <EventCountdown targetDate={eventInfo.date} />
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-4">
                     <OfficeHoursTimer />
                     <Link 

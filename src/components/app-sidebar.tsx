@@ -28,7 +28,8 @@ import {
   BarChart3,
   ClipboardCheck,
   ListChecks,
-  ShieldAlert
+  ShieldAlert,
+  Calendar
 } from "lucide-react"
 
 import { usePathname, useRouter } from "next/navigation"
@@ -219,6 +220,12 @@ export function AppSidebar() {
       href: "/chat-monitoring", 
       icon: MessageSquare, 
       show: isAdmin || isMonitoring
+    },
+    { 
+      name: "Pengaturan Event", 
+      href: "/settings-event", 
+      icon: Calendar, 
+      show: isAdmin 
     },
   ], [user, isAdmin, isMonitoring, userProfile])
 
