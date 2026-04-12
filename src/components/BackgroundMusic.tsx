@@ -74,6 +74,9 @@ export function BackgroundMusic() {
         events: {
           onReady: (event: any) => {
             setIsPlayerReady(true);
+            // Ensure the playlist is told to loop
+            event.target.setLoop(true);
+            
             // Specifically load the playlist once ready to ensure it's registered
             event.target.cuePlaylist({
               listType: 'playlist',
@@ -95,8 +98,8 @@ export function BackgroundMusic() {
             } else if (event.data === window.YT.PlayerState.PAUSED) {
               setIsPlaying(false);
             } else if (event.data === window.YT.PlayerState.ENDED) {
-              // Automatically move to next if needed (though YouTube does this usually)
-              // setIsPlaying(false);
+              // Robust fallback: if reached the end, restart playlist
+              event.target.playVideoAt(0);
             }
           },
           onError: (event: any) => {
