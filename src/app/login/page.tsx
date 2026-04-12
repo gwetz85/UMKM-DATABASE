@@ -23,6 +23,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { OfficeHoursTimer } from "@/components/OfficeHoursTimer"
+import { useOfficeStatus } from "@/hooks/useOfficeStatus"
 import {
   Dialog,
   DialogContent,
@@ -31,9 +32,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { Phone, MapPin, Building2, Code2 } from "lucide-react"
-
-
+import { Phone, MapPin, Building2, Code2, DoorOpen, DoorClosed, Clock } from "lucide-react"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -53,6 +52,7 @@ export default function LoginPage() {
   const database = useDatabase()
   const router = useRouter()
   const { toast } = useToast()
+  const status = useOfficeStatus()
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -201,10 +201,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-0 md:p-4 bg-slate-50 relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl -mr-64 -mt-64" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/10 rounded-full blur-3xl -ml-64 -mb-64" />
+    <div className="min-h-screen w-full flex items-center justify-center p-0 md:p-4 bg-transparent relative overflow-hidden font-body">
+      {/* City Background Layer (Underlay) */}
+      <div 
+        className="absolute inset-0 bg-[url('/bg-app.png')] bg-cover bg-center z-[-1] transition-all duration-1000" 
+        style={{ filter: showForm ? 'blur(30px) brightness(0.6)' : 'blur(4px) brightness(0.95)' }}
+      />
+      <div className="absolute inset-0 bg-white/10 z-[-1]" />
 
       {!showForm ? (
         <div 
@@ -212,60 +215,90 @@ export default function LoginPage() {
           onClick={() => setShowForm(true)}
         >
           <div className="relative">
-            <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse group-hover:bg-primary/30 transition-colors" />
-            <div className="w-56 h-56 md:w-64 md:h-64 overflow-hidden rounded-full border-8 border-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] bg-white relative z-10 p-4 transition-transform duration-500 group-hover:rotate-6">
+            <div className="absolute inset-0 bg-white/20 rounded-full blur-3xl group-hover:bg-white/40 transition-all duration-500 scale-125" />
+            <div className="w-64 h-64 md:w-80 md:h-80 overflow-hidden rounded-full border-[12px] border-white shadow-[0_45px_100px_-20px_rgba(0,0,0,0.3)] bg-white relative z-10 p-6 transition-all duration-1000 group-hover:rotate-[8deg] group-hover:scale-110 shadow-glow">
               <img 
                 src="/logo.png" 
                 alt="SIMPU Logo" 
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain drop-shadow-2xl"
               />
             </div>
           </div>
           
-          <div className="flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-            <h1 className="text-3xl md:text-5xl font-black text-slate-800 tracking-tighter uppercase italic">
+          <div className="flex flex-col items-center gap-8 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
+            <h1 className="text-5xl md:text-7xl font-black text-slate-800 tracking-tighter uppercase italic drop-shadow-[0_4px_12px_rgba(255,255,255,0.8)]">
               SIM<span className="text-primary tracking-widest not-italic">PU</span>
             </h1>
-            <OfficeHoursTimer large />
-            <div className="px-6 py-2 bg-slate-100 rounded-full text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] border border-white/50 shadow-sm animate-bounce mt-4">
+
+            {/* Glassmorphic Countdown Card like Image 1 */}
+            {status && (
+              <div className="bg-white/90 backdrop-blur-3xl rounded-[2.5rem] px-12 py-8 border border-white shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] flex flex-col items-center gap-2 min-w-[340px] transition-all group-hover:-translate-y-6 duration-700 hover:bg-white">
+                 <div className="flex items-center gap-2 mb-1">
+                    {status.isOpen ? <DoorOpen className="w-6 h-6 text-emerald-500" /> : <DoorClosed className="w-6 h-6 text-rose-500" />}
+                    <span className={cn("text-sm font-black tracking-[0.3em] uppercase", status.isOpen ? "text-emerald-500" : "text-rose-500")}>
+                      {status.label}
+                    </span>
+                 </div>
+                 <div className="flex items-center gap-6">
+                    <Clock className="w-10 h-10 text-slate-300 opacity-60" />
+                    <span className="text-6xl md:text-7xl font-mono font-black text-slate-800 tracking-tighter leading-none">
+                      {status.timeLeft}
+                    </span>
+                    <span className="text-[10px] font-black text-slate-400/80 uppercase tracking-widest vertical-text writing-mode-vertical-rl">
+                       {status.isOpen ? "Menuju Tutup" : "Menuju Buka"}
+                    </span>
+                 </div>
+              </div>
+            )}
+
+            <div className="px-10 py-3.5 bg-white/20 backdrop-blur-2xl rounded-full text-[12px] font-black text-slate-700 uppercase tracking-[0.4em] border border-white/50 shadow-2xl animate-bounce mt-10 hover:bg-white/40 transition-all cursor-pointer">
               Klik Logo Untuk Masuk
             </div>
           </div>
         </div>
       ) : (
-        <div className="w-full max-w-5xl h-full md:h-[650px] bg-white md:rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 duration-700 relative z-20">
+        <div className="w-full max-w-5xl h-full md:h-[680px] bg-white/90 backdrop-blur-3xl md:rounded-[3.5rem] shadow-[0_120px_250px_-50px_rgba(0,0,0,0.4)] flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 duration-1000 relative z-20 border border-white/60">
           
           {/* Left Panel: Branding & Countdown */}
-          <div className="w-full md:w-[45%] bg-gradient-to-br from-[#8E2DE2] to-[#4A00E0] p-8 md:p-12 flex flex-col items-center justify-center text-center relative overflow-hidden shrink-0">
-            {/* Animated Circles for Background */}
-            <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full -ml-32 -mt-32 blur-3xl" />
-            <div className="absolute bottom-0 right-0 w-64 h-64 bg-black/10 rounded-full -mr-32 -mb-32 blur-3xl" />
+          <div className="w-full md:w-[45%] bg-gradient-to-br from-[#7C3AED] via-[#4F46E5] to-[#4338CA] p-8 md:p-14 flex flex-col items-center justify-center text-center relative overflow-hidden shrink-0 border-r border-white/10">
+            {/* Animated Background blobs */}
+            <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-white/10 rounded-full -ml-40 -mt-40 blur-[100px] animate-pulse" />
+            <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-black/10 rounded-full -mr-40 -mb-40 blur-[100px] animate-pulse duration-[4s]" />
             
-            <div className="relative z-10 space-y-8 animate-in slide-in-from-left duration-1000">
-              <div className="w-32 h-32 md:w-48 md:h-48 bg-white p-4 rounded-3xl shadow-2xl flex items-center justify-center mx-auto transition-transform hover:scale-110 duration-500">
-                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+            <div className="relative z-10 space-y-12 animate-in slide-in-from-left duration-1000">
+              <div className="w-44 h-44 md:w-60 md:h-60 bg-white p-6 rounded-[3rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] flex items-center justify-center mx-auto transition-all hover:rotate-[10deg] hover:scale-105 duration-700 group cursor-default">
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-xl" />
               </div>
               
-              <div className="space-y-2">
-                <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight uppercase">SIMPU</h2>
-                <div className="h-1.5 w-12 bg-white/30 mx-auto rounded-full" />
-                <p className="text-white/60 text-xs md:text-sm font-black uppercase tracking-[0.2em] leading-relaxed">
-                  Sistem Informasi Manajemen<br/>Pelaku Usaha
+              <div className="space-y-4">
+                <h2 className="text-5xl md:text-6xl font-black text-white tracking-tighter uppercase italic leading-none">
+                  SIM<span className="opacity-40 tracking-normal not-italic">PU</span>
+                </h2>
+                <div className="h-2 w-20 bg-white/30 mx-auto rounded-full" />
+                <p className="text-white/80 text-sm md:text-base font-black uppercase tracking-[0.3em] leading-relaxed max-w-[240px] mx-auto opacity-80">
+                  Sistem Informasi Pelaku Usaha
                 </p>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/10 shadow-inner">
-                <div className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-3">Waktu Operasional</div>
-                <OfficeHoursTimer large />
-              </div>
+               {status && (
+                <div className="bg-white/10 backdrop-blur-2xl rounded-[2rem] p-8 border border-white/20 shadow-inner group transition-all hover:bg-white/20 mt-8">
+                  <div className="text-[11px] font-black text-white/50 uppercase tracking-[0.4em] mb-4">{status.label}</div>
+                  <div className="flex items-center justify-center gap-4">
+                    <span className="text-4xl md:text-5xl font-mono font-black text-white tracking-tighter">
+                      {status.timeLeft}
+                    </span>
+                    <span className="text-[11px] text-white/40 font-black uppercase tracking-[0.2em]">{status.isOpen ? "Close" : "Open"}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Right Panel: Authentication */}
-          <div className="flex-1 bg-white p-8 md:p-12 flex flex-col justify-center relative animate-in slide-in-from-right duration-1000">
-            {/* Top Navigation: Home Link */}
-            <div className="absolute top-8 right-8 flex items-center gap-2">
-               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+          <div className="flex-1 bg-white/40 p-10 md:p-16 flex flex-col justify-center relative animate-in slide-in-from-right duration-1000">
+            {/* Top Navigation: Switch Mode */}
+            <div className="absolute top-12 right-12 flex items-center gap-4">
+               <span className="text-[11px] text-slate-400 font-black uppercase tracking-[0.3em]">
                   {isRegisteringView ? "Sudah punya akun?" : "Belum punya akun?"}
                </span>
                <button 
@@ -273,198 +306,197 @@ export default function LoginPage() {
                     setIsRegisteringView(!isRegisteringView);
                     setIsRegistered(false);
                   }}
-                  className="text-[11px] font-black text-primary uppercase hover:underline underline-offset-4 decoration-2"
+                  className="px-6 py-2 rounded-full bg-primary/10 border-2 border-primary/50 text-[11px] font-black text-primary uppercase hover:bg-primary hover:text-white transition-all transform active:scale-90"
                >
-                  {isRegisteringView ? "Masuk Sekarang" : "Daftar Sekarang"}
+                  {isRegisteringView ? "Masuk" : "Daftar Akun"}
                </button>
             </div>
 
-            <div className="max-w-sm w-full mx-auto space-y-10">
+            <div className="max-w-md w-full mx-auto space-y-12">
               <div className="space-y-4">
-                <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight leading-none">
-                  {isRegistered ? "Berhasil!" : isRegisteringView ? "Bergabung!" : "Halo Kembali!"}
+                <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none">
+                  {isRegistered ? "BERHASIL!" : isRegisteringView ? "DAFTAR!" : "HALO"}
                 </h1>
-                <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                <p className="text-slate-500 text-[13px] font-bold leading-relaxed uppercase tracking-widest opacity-80">
                   {isRegistered 
-                    ? "Pendaftaran Anda telah kami terima." 
+                    ? "Pendaftaran Anda sedang diproses." 
                     : isRegisteringView 
-                      ? "Silakan isi data diri Anda untuk pendaftaran user baru." 
-                      : "Selamat datang kembali, silakan masuk untuk melanjutkan."}
+                      ? "Silakan buat akun untuk akses penuh." 
+                      : "Sistem Informasi Pelaku Usaha."}
                 </p>
               </div>
 
               {isRegistered ? (
-                <div className="space-y-8 py-4 text-center animate-in zoom-in-95 duration-500">
-                  <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="w-10 h-10 text-emerald-600" />
+                <div className="space-y-10 py-6 text-center animate-in zoom-in-95 duration-500">
+                  <div className="w-28 h-28 bg-emerald-100 rounded-full flex items-center justify-center mx-auto shadow-inner border-[6px] border-emerald-50">
+                    <CheckCircle2 className="w-14 h-14 text-emerald-600" />
                   </div>
-                  <p className="text-sm font-black text-slate-700 leading-relaxed uppercase whitespace-pre-line tracking-tight bg-slate-50 p-6 rounded-2xl border-2 border-dashed border-slate-200">
-                    AKUN BERHASIL TERDAFTAR.{"\n"}
-                    SILAHKAN LOGIN SETELAH ADMIN MEMVERIFIKASI AKUN KAMU MAKSIMAL 1X24JAM.
-                  </p>
+                  <div className="p-8 rounded-[2.5rem] bg-emerald-50/50 border-2 border-emerald-100 shadow-sm">
+                    <p className="text-sm font-black text-emerald-800 leading-relaxed uppercase tracking-widest text-center">
+                      REGISTRATION SUCCESSFUL.{"\n"}
+                      PLEASE WAIT 1X24 HOUR FOR ADMIN APPROVAL.
+                    </p>
+                  </div>
                   <Button 
-                    className="w-full h-14 rounded-2xl font-black text-md bg-emerald-600 hover:bg-emerald-700 shadow-lg"
+                    className="w-full h-16 rounded-[1.8rem] font-black text-lg bg-emerald-600 hover:bg-emerald-700 shadow-2xl transition-all active:scale-95"
                     onClick={() => {
                       setIsRegistered(false);
                       setIsRegisteringView(false);
                     }}
                   >
-                    KEMBALI KE LOGIN
+                    RETURN TO LOGIN
                   </Button>
                 </div>
               ) : (
                 <form 
                   onSubmit={isRegisteringView ? handleRegister : handleAuth} 
-                  className="space-y-6"
+                  className="space-y-8"
                 >
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Username / Nama</Label>
-                      <div className="relative group">
-                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors">
-                          {isRegisteringView ? <UserPlus className="w-5 h-5" /> : <Mail className="w-5 h-5" />}
-                        </div>
-                        <Input 
-                          placeholder={isRegisteringView ? "Nama Lengkap" : "Masukkan Username"}
-                          className="h-14 pl-14 pr-5 rounded-2xl border-slate-100 bg-slate-50/50 transition-all focus:ring-4 focus:ring-primary/10 focus:border-primary text-slate-800 font-bold placeholder:text-slate-300 placeholder:font-medium"
-                          value={isRegisteringView ? regName : identifier}
-                          onChange={(e) => isRegisteringView ? setRegName(e.target.value) : setIdentifier(e.target.value)}
-                          required
-                        />
-                      </div>
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                       <Label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em] ml-3">Username</Label>
+                       <div className="relative group">
+                          <div className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-all duration-300 group-focus-within:scale-110">
+                             {isRegisteringView ? <UserPlus className="w-7 h-7" /> : <Mail className="w-7 h-7" />}
+                          </div>
+                          <Input 
+                            placeholder={isRegisteringView ? "Full Name" : "Username / Nickname"}
+                            className="h-20 pl-20 pr-8 rounded-[2rem] border-slate-100 bg-slate-100/50 transition-all focus:ring-[15px] focus:ring-primary/5 focus:border-primary text-slate-800 font-black placeholder:text-slate-300 placeholder:font-black uppercase tracking-tighter text-lg"
+                            value={isRegisteringView ? regName : identifier}
+                            onChange={(e) => isRegisteringView ? setRegName(e.target.value) : setIdentifier(e.target.value)}
+                            required
+                          />
+                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center px-1">
-                        <Label className="text-xs font-black text-slate-400 uppercase tracking-widest">Kata Sandi</Label>
-                        {!isRegisteringView && (
-                          <button type="button" className="text-[10px] font-bold text-slate-400 hover:text-primary transition-colors uppercase">
-                            Lupa sandi?
-                          </button>
-                        )}
-                      </div>
-                      <div className="relative group">
-                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors">
-                          <Lock className="w-5 h-5" />
-                        </div>
-                        <Input 
-                          type="password"
-                          placeholder="••••••••"
-                          className="h-14 pl-14 pr-5 rounded-2xl border-slate-100 bg-slate-50/50 transition-all focus:ring-4 focus:ring-primary/10 focus:border-primary text-slate-800 font-bold placeholder:text-slate-300 placeholder:font-medium"
-                          value={isRegisteringView ? regPass : password}
-                          onChange={(e) => isRegisteringView ? setRegPass(e.target.value) : setPassword(e.target.value)}
-                          required
-                        />
-                      </div>
+                    <div className="space-y-3">
+                       <div className="flex justify-between items-center px-4">
+                          <Label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.4em]">Password</Label>
+                          {!isRegisteringView && (
+                             <button type="button" className="text-[11px] font-black text-primary hover:underline uppercase tracking-widest">Forgot?</button>
+                          )}
+                       </div>
+                       <div className="relative group">
+                          <div className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-all duration-300 group-focus-within:scale-110">
+                             <Lock className="w-7 h-7" />
+                          </div>
+                          <Input 
+                            type="password"
+                            placeholder="••••••••"
+                            className="h-20 pl-20 pr-8 rounded-[2rem] border-slate-100 bg-slate-100/50 transition-all focus:ring-[15px] focus:ring-primary/5 focus:border-primary text-slate-800 font-black placeholder:text-slate-200 text-lg"
+                            value={isRegisteringView ? regPass : password}
+                            onChange={(e) => isRegisteringView ? setRegPass(e.target.value) : setPassword(e.target.value)}
+                            required
+                          />
+                       </div>
                     </div>
                   </div>
 
-                  <div className="pt-4 space-y-6">
+                  <div className="pt-6 space-y-8">
                     <Button 
                       type="submit" 
                       className={cn(
-                        "w-full h-14 rounded-2xl text-md font-black shadow-xl transition-all duration-300",
-                        isRegisteringView ? "bg-indigo-600 hover:bg-indigo-700" : "bg-[#FD6B6B] hover:bg-[#ff5a5a]"
+                        "w-full h-20 rounded-[2rem] text-xl font-black shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] transition-all duration-500 transform active:scale-95",
+                        isRegisteringView ? "bg-indigo-600 hover:bg-indigo-700" : "bg-primary hover:bg-primary/90"
                       )}
                       disabled={loading || registering}
                     >
                       {loading || registering ? (
-                        <Loader2 className="w-6 h-6 animate-spin" />
+                        <Loader2 className="w-10 h-10 animate-spin" />
                       ) : (
-                        <>{isRegisteringView ? "SIMPAN PENDAFTARAN" : "MASUK SEKARANG"}</>
+                        <span className="tracking-[0.2em] uppercase">{isRegisteringView ? "REGISTER NOW" : "LOGIN NOW"}</span>
                       )}
                     </Button>
 
                     {!isRegisteringView && (
-                      <div className="flex items-center gap-3 justify-center text-[10px] text-slate-400 font-bold uppercase tracking-tight opacity-50">
-                        <div className="h-px flex-1 bg-slate-200" />
-                        <span className="flex items-center gap-1.5 shrink-0">
-                          <MonitorOff className="w-3 h-3" /> Kebijakan 1 Perangkat Aktif
+                      <div className="flex items-center gap-4 justify-center text-[11px] text-slate-300 font-black uppercase tracking-[0.4em] opacity-60">
+                        <div className="h-px w-10 bg-slate-200" />
+                        <span className="flex items-center gap-3">
+                          <MonitorOff className="w-5 h-5 opacity-40" /> 1 DEVICE ONLY
                         </span>
-                        <div className="h-px flex-1 bg-slate-200" />
+                        <div className="h-px w-10 bg-slate-200" />
                       </div>
                     )}
                   </div>
                 </form>
               )}
 
-              {/* Secretariat Info Toggle */}
-              <div className="pt-6 border-t border-slate-100">
+              <div className="pt-10 border-t border-slate-100 flex justify-center">
                 <button 
                   onClick={() => setShowInfoModal(true)}
-                  className="w-full py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] hover:text-primary transition-colors flex items-center justify-center gap-2"
+                  className="flex items-center gap-3 group p-4 rounded-2xl hover:bg-slate-50 transition-all"
                 >
-                  <Building2 className="w-3.5 h-3.5" /> Lihat Info Sekretariat
+                  <Building2 className="w-5 h-5 text-slate-400 group-hover:text-primary transition-colors" />
+                  <span className="text-[11px] font-black text-slate-300 uppercase tracking-[0.4em] group-hover:text-slate-600 transition-colors">OFFICE INFO</span>
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Close Button (for desktop returning to landing) */}
+          {/* Close Button: Transparent Glass */}
           <button 
             onClick={() => setShowForm(false)}
-            className="absolute top-8 left-8 p-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-md border border-white/20 shadow-lg group hidden md:flex items-center gap-2"
+            className="absolute top-12 left-12 p-5 rounded-full bg-white/30 hover:bg-white/50 text-slate-900 transition-all backdrop-blur-3xl border border-white/40 shadow-2xl group flex items-center gap-3 z-30 transform hover:scale-110 active:scale-90"
           >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-[10px] font-black uppercase tracking-widest hidden lg:block">Kembali</span>
+            <ArrowLeft className="w-7 h-7 transition-transform group-hover:-translate-x-3" />
+            <span className="text-[12px] font-black uppercase tracking-[0.3em] hidden lg:block">Exit</span>
           </button>
         </div>
       )}
 
-      {/* Information Modal (Unchanged functionality, styled consistency) */}
+      {/* Info Modal remained consistent but updated with matching aesthetics */}
       <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl rounded-[2rem]">
-          <div className="bg-slate-50 p-8 flex flex-col items-center justify-center border-b">
-            <div className="mb-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Waktu Operasional</div>
-            <OfficeHoursTimer large />
+        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none shadow-[0_50px_150px_-30px_rgba(0,0,0,0.6)] rounded-[3.5rem] bg-white backdrop-blur-3xl">
+          <div className="bg-slate-950 p-16 flex flex-col items-center justify-center relative overflow-hidden">
+             <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/30 via-transparent to-purple-500/30" />
+             <div className="z-10 flex flex-col items-center gap-4">
+               <div className="text-[12px] font-black text-white/40 uppercase tracking-[0.6em] mb-4">OFFICE HOURS STATUS</div>
+               {status && (
+                 <div className="text-5xl md:text-7xl font-mono font-black text-white tracking-[0.2em]">{status.timeLeft}</div>
+               )}
+               <div className={cn("px-8 py-2 rounded-full text-[12px] font-black uppercase tracking-[0.3em] border border-white/20 mt-4", status?.isOpen ? "bg-emerald-500 text-white" : "bg-rose-600 text-white")}>
+                 {status?.label}
+               </div>
+             </div>
           </div>
-          <div className="p-8 space-y-8 bg-white">
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-primary/10 rounded-2xl">
-                  <Building2 className="w-6 h-6 text-primary" />
+          <div className="p-12 space-y-12 bg-white">
+            <div className="space-y-8">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 bg-primary/15 rounded-[1.5rem] flex items-center justify-center text-primary shadow-inner">
+                  <Building2 className="w-9 h-9" />
                 </div>
-                <h3 className="font-black text-xl tracking-tight text-slate-800 uppercase">Sekretariat</h3>
+                <h3 className="font-black text-3xl tracking-tighter text-slate-900 uppercase">LOCATION</h3>
               </div>
-              <div className="space-y-4 pl-[3.5rem]">
-                <div className="flex items-start gap-3 text-xs md:text-sm font-bold text-slate-600 leading-relaxed uppercase tracking-tight">
-                  <MapPin className="w-5 h-5 mt-1 shrink-0 text-slate-300" />
-                  <span>JALAN GATOT SUBROTO ( DEPAN RAWASARI ) DEKAT CUCIAN MOBIL STARWASH</span>
+              <div className="space-y-6">
+                <div className="flex items-start gap-5 text-[15px] font-black text-slate-600 leading-relaxed uppercase tracking-tight bg-slate-50 p-8 rounded-[2.5rem] border-2 border-dashed border-slate-200">
+                  <MapPin className="w-7 h-7 mt-1.5 shrink-0 text-primary/30" />
+                  <span className="opacity-80">JALAN GATOT SUBROTO ( DEPAN RAWASARI ) DEKAT CUCIAN MOBIL STARWASH</span>
                 </div>
-                <div className="flex items-center gap-3 text-sm font-black text-primary">
-                  <Phone className="w-5 h-5" />
-                  <span>OFFICE : 0823-2880-4478</span>
+                <div className="flex items-center gap-5 text-2xl font-black text-primary px-8">
+                  <Phone className="w-7 h-7" />
+                  <span className="tracking-tighter">0823-2880-4478</span>
                 </div>
               </div>
             </div>
+            
             <Separator className="bg-slate-100" />
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-slate-900/10 rounded-2xl">
-                  <Code2 className="w-6 h-6 text-slate-900" />
-                </div>
-                <h3 className="font-black text-xl tracking-tight text-slate-800 uppercase">Pengembang</h3>
-              </div>
-              <div className="space-y-4 pl-[3.5rem]">
+            
+            <div className="flex items-center justify-between p-8 bg-slate-950 rounded-[2.8rem] text-white shadow-2xl">
                 <div className="space-y-1">
-                  <div className="text-lg font-black text-slate-900 uppercase">AGUS SURIYADI</div>
-                  <div className="flex items-start gap-3 text-xs font-bold text-slate-500 uppercase">
-                    <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-slate-300" />
-                    <span>JL DAENG HAJI MEKAH NO 23 TANJUNGPINANG</span>
-                  </div>
+                  <div className="text-[11px] font-black text-white/30 uppercase tracking-[0.3em]">Developer Unit</div>
+                  <div className="text-2xl font-black uppercase tracking-tighter">AGUS SURIYADI</div>
                 </div>
-                <div className="flex items-center gap-3 text-sm font-black text-slate-700">
-                  <Phone className="w-5 h-5" />
-                  <span>KONTAK : 0817-319-885</span>
+                <div className="flex flex-col items-end">
+                   <div className="text-[11px] font-black text-white/30 uppercase mb-2">Support Line</div>
+                   <div className="text-lg font-black text-primary">0817-319-885</div>
                 </div>
-              </div>
             </div>
           </div>
-          <div className="p-5 bg-slate-50 border-t text-center">
-            <div className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">SIMPU © 2026</div>
+          <div className="p-6 text-center bg-slate-50 border-t">
+             <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">SIMPU ECOSYSTEM © 2026</span>
           </div>
         </DialogContent>
       </Dialog>
     </div>
   )
-}
+}
