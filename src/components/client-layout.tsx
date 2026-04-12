@@ -15,6 +15,7 @@ import { ref } from 'firebase/database'
 import { User as UserIcon, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
+import { useActiveEvent } from '@/hooks/use-active-event';
 
 
 import { Toaster } from '@/components/ui/toaster';
@@ -39,6 +40,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     return ref(database, 'settings/event_info')
   }, [database])
   const { data: eventInfo } = useObject(eventSettingsRef)
+  const activeEvent = useActiveEvent(eventInfo)
 
   React.useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
@@ -127,12 +129,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               <ProfileStatusDialog />
               
               {/* Mobile Event Banner */}
-              {eventInfo?.enabled && (eventInfo?.endDate || eventInfo?.date) && (
-                <div className="md:hidden bg-gradient-to-b from-primary/10 to-transparent border-b border-primary/20 px-4 py-3 flex flex-col items-center justify-center animate-in fade-in zoom-in slide-in-from-top-2 duration-700 w-full">
+              {activeEvent && (
+                <div key={activeEvent.id || activeEvent.description} className="md:hidden bg-gradient-to-b from-primary/10 to-transparent border-b border-primary/20 px-4 py-3 flex flex-col items-center justify-center animate-in fade-in zoom-in slide-in-from-top-2 duration-700 w-full">
                   <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2 text-center text-balance drop-shadow-sm">
-                    {eventInfo.description || 'EVENT MENDATANG'}
+                    {activeEvent.description || 'EVENT MENDATANG'}
                   </span>
-                  <EventCountdown targetDate={eventInfo.endDate || eventInfo.date} startDate={eventInfo.startDate} />
+                  <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
                 </div>
               )}
             </>
@@ -154,17 +156,17 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   </div>
                   
                   {/* Event Info - Center Area */}
-                  {eventInfo?.enabled && (eventInfo?.endDate || eventInfo?.date) && (
-                    <div className="flex-1 flex flex-col items-center justify-center px-4 animate-in fade-in zoom-in duration-1000">
+                  {activeEvent && (
+                    <div key={activeEvent.id || activeEvent.description} className="flex-1 flex flex-col items-center justify-center px-4 animate-in fade-in zoom-in duration-1000">
                       <div className="flex flex-col items-center gap-1 group cursor-default">
                         <div className="flex items-center gap-2">
                           <div className="h-1 w-8 md:w-12 bg-primary/20 rounded-full" />
                           <span className="text-[9px] md:text-[10px] font-black text-primary uppercase tracking-[0.3em] text-center drop-shadow-sm group-hover:tracking-[0.4em] transition-all">
-                            {eventInfo.description || 'EVENT MENDATANG'}
+                            {activeEvent.description || 'EVENT MENDATANG'}
                           </span>
                           <div className="h-1 w-8 md:w-12 bg-primary/20 rounded-full" />
                         </div>
-                        <EventCountdown targetDate={eventInfo.endDate || eventInfo.date} startDate={eventInfo.startDate} />
+                        <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
                       </div>
                     </div>
                   )}

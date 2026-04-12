@@ -24,6 +24,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { OfficeHoursTimer } from "@/components/OfficeHoursTimer"
 import { EventCountdown } from "@/components/event-countdown"
+import { useActiveEvent } from "@/hooks/use-active-event"
 import {
   Dialog,
   DialogContent,
@@ -66,6 +67,8 @@ export default function LoginPage() {
       }
     });
   }, [database]);
+
+  const activeEvent = useActiveEvent(eventInfo);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -235,16 +238,16 @@ export default function LoginPage() {
         )}
 
           {/* Event Info Card */}
-          {eventInfo?.enabled && (eventInfo?.endDate || eventInfo?.date) && (
-             <Card className="border-none shadow-xl bg-white/95 backdrop-blur-md overflow-hidden animate-in fade-in slide-in-from-top-8 duration-700 w-full pointer-events-auto">
+          {activeEvent && (
+             <Card key={activeEvent.id || activeEvent.description} className="border-none shadow-xl bg-white/95 backdrop-blur-md overflow-hidden animate-in fade-in slide-in-from-top-8 duration-700 w-full pointer-events-auto">
                <div className="h-1 bg-gradient-to-r from-primary via-emerald-500 to-amber-500 w-full" />
                <CardContent className="p-3 flex flex-col items-center text-center gap-2">
                  <div className="flex items-center gap-2 text-primary">
                    <CalendarDays className="w-4 h-4 animate-pulse" />
-                   <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{eventInfo.description || "EVENT MENDATANG"}</span>
+                   <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{activeEvent.description || "EVENT MENDATANG"}</span>
                  </div>
                  <div className="scale-[0.80] sm:scale-90 md:scale-100 origin-center -my-2 md:-my-1">
-                   <EventCountdown targetDate={eventInfo.endDate || eventInfo.date} startDate={eventInfo.startDate} />
+                   <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
                  </div>
                </CardContent>
              </Card>
