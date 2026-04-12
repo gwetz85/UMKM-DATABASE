@@ -31,6 +31,25 @@ export default function CheckDataPage() {
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
+  const memoQuery = useMemoFirebase(() => {
+    if (!database || !searchCriteria || !searchCriteria.value) return null
+    if (searchCriteria.type === 'nama') {
+      return query(
+        ref(database, 'master_data'),
+        orderByChild('nama'),
+        startAt(searchCriteria.value),
+        endAt(searchCriteria.value + "\uf8ff")
+      )
+    }
+    return query(
+      ref(database, 'master_data'),
+      orderByChild(searchCriteria.type),
+      equalTo(searchCriteria.value)
+    )
+  }, [database, searchCriteria])
+
+  const { data: realTimeResults, isLoading: isSearchLoading } = useList(memoQuery)
+
   if (isAdminLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -51,24 +70,7 @@ export default function CheckDataPage() {
     )
   }
 
-  const memoQuery = useMemoFirebase(() => {
-    if (!database || !searchCriteria || !searchCriteria.value) return null
-    if (searchCriteria.type === 'nama') {
-      return query(
-        ref(database, 'master_data'),
-        orderByChild('nama'),
-        startAt(searchCriteria.value),
-        endAt(searchCriteria.value + "\uf8ff")
-      )
-    }
-    return query(
-      ref(database, 'master_data'),
-      orderByChild(searchCriteria.type),
-      equalTo(searchCriteria.value)
-    )
-  }, [database, searchCriteria])
 
-  const { data: realTimeResults, isLoading: isSearchLoading } = useList(memoQuery)
 
   const handleCheck = (e: React.FormEvent) => {
     e.preventDefault()
