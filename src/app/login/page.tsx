@@ -84,18 +84,20 @@ export default function LoginPage() {
             return
           }
 
-          if (!userData.uid) {
-            await update(userRef, { uid: user.uid })
-            toast({ title: "Perangkat Terkunci", description: "Akun Anda sekarang terikat pada perangkat ini." })
-          } else if (userData.uid !== user.uid) {
-            await signOut(auth)
-            toast({ 
-              variant: "destructive", 
-              title: "Akses Ditolak", 
-              description: "Akun terikat pada perangkat lain. Hubungi Admin untuk reset." 
-            })
-            setLoading(false)
-            return
+          if (userData.role !== 'dinas') {
+            if (!userData.uid) {
+              await update(userRef, { uid: user.uid })
+              toast({ title: "Perangkat Terkunci", description: "Akun Anda sekarang terikat pada perangkat ini." })
+            } else if (userData.uid !== user.uid) {
+              await signOut(auth)
+              toast({ 
+                variant: "destructive", 
+                title: "Akses Ditolak", 
+                description: "Akun terikat pada perangkat lain. Hubungi Admin untuk reset." 
+              })
+              setLoading(false)
+              return
+            }
           }
         }
         
