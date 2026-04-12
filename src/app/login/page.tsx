@@ -445,10 +445,10 @@ export default function LoginPage() {
               </div>
               <div className="space-y-3 pl-11">
                 <div className="space-y-1">
-                  <div className="text-md font-black text-slate-900 uppercase">MT NET&SOFTWARE</div>
+                  <div className="text-md font-black text-slate-900 uppercase">AGUS SURIYADI</div>
                   <div className="flex items-start gap-2 text-xs font-bold text-slate-500 uppercase">
                     <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
-                    <span>JL CENDRAWASIH KM 8 TANJUNGPINANG</span>
+                    <span>JL DAENG HAJI MEKAH NO 23 TANJUNGPINANG</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm font-black text-slate-700">
