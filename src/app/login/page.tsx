@@ -220,16 +220,34 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center p-4 cursor-default relative overflow-hidden"
       onClick={() => setShowForm(false)}
     >
-      {/* Office Hours Countdown - Top Right (visible when form is shown) */}
+      {/* Top Right Widgets (visible when form is shown) */}
       {showForm && (
-        <div className="absolute top-6 right-6 z-50">
-          <OfficeHoursTimer 
-            large 
-            onClick={(e: any) => {
-              e?.stopPropagation?.()
-              setShowInfoModal(true)
-            }}
-          />
+        <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50 flex flex-col items-end gap-3 w-full md:w-auto max-w-[calc(100vw-2rem)] md:max-w-sm pointer-events-none">
+          <div className="pointer-events-auto">
+            <OfficeHoursTimer 
+              large 
+              onClick={(e: any) => {
+                e?.stopPropagation?.()
+                setShowInfoModal(true)
+              }}
+            />
+          </div>
+
+          {/* Event Info Card */}
+          {eventInfo?.enabled && (eventInfo?.endDate || eventInfo?.date) && (
+             <Card className="border-none shadow-xl bg-white/95 backdrop-blur-md overflow-hidden animate-in fade-in slide-in-from-top-8 duration-700 w-full pointer-events-auto">
+               <div className="h-1 bg-gradient-to-r from-primary via-emerald-500 to-amber-500 w-full" />
+               <CardContent className="p-3 flex flex-col items-center text-center gap-2">
+                 <div className="flex items-center gap-2 text-primary">
+                   <CalendarDays className="w-4 h-4 animate-pulse" />
+                   <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{eventInfo.description || "EVENT MENDATANG"}</span>
+                 </div>
+                 <div className="scale-[0.80] sm:scale-90 md:scale-100 origin-center -my-2 md:-my-1">
+                   <EventCountdown targetDate={eventInfo.endDate || eventInfo.date} startDate={eventInfo.startDate} />
+                 </div>
+               </CardContent>
+             </Card>
+          )}
         </div>
       )}
 
@@ -418,23 +436,7 @@ export default function LoginPage() {
         </Card>
       )}
 
-      {/* Event Info Card on Login */}
-      {showForm && eventInfo?.enabled && (eventInfo?.endDate || eventInfo?.date) && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4 md:px-0">
-          <Card className="border-none shadow-xl bg-white/95 backdrop-blur-md overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <div className="h-1 bg-gradient-to-r from-primary via-emerald-500 to-amber-500 w-full" />
-            <CardContent className="p-4 flex flex-col items-center text-center gap-3">
-              <div className="flex items-center gap-2 text-primary">
-                <CalendarDays className="w-5 h-5 animate-pulse" />
-                <span className="text-xs font-black uppercase tracking-widest">{eventInfo.description || "EVENT MENDATANG"}</span>
-              </div>
-              <div className="scale-90 md:scale-100 origin-center">
-                <EventCountdown targetDate={eventInfo.endDate || eventInfo.date} startDate={eventInfo.startDate} />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+
 
       {/* Information Modal */}
       <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
