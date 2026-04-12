@@ -10,7 +10,7 @@ export function OfficeHoursTimer({
   onClick 
 }: { 
   large?: boolean,
-  onClick?: () => void
+  onClick?: (e: React.MouseEvent) => void
 }) {
   const status = useOfficeStatus()
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { useDatabase, useList, useMemoFirebase, useUser, useObject } from "@/firebase"
 import { ref, query, orderByChild, equalTo, startAt, endAt } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -18,7 +18,6 @@ export default function CheckDataPage() {
   const database = useDatabase()
   const [loading, setLoading] = useState(false)
   const [searchDone, setSearchDone] = useState(false)
-  const [results, setResults] = useState<any[]>([])
   const [searchType, setSearchType] = useState<"nik" | "noKK" | "nama">("nik")
   const [inputValue, setInputValue] = useState("")
   const [selectedResult, setSelectedResult] = useState<any | null>(null)

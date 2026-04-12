@@ -26,7 +26,8 @@ import {
   ShieldQuestion,
   Phone,
   CreditCard,
-  MapPin
+  MapPin,
+  Building2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"

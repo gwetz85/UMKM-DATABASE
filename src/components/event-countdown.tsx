@@ -8,6 +8,7 @@ interface EventCountdownProps {
 }
 
 export function EventCountdown({ targetDate }: EventCountdownProps) {
+  const [mounted, setMounted] = React.useState(false)
   const [timeLeft, setTimeLeft] = useState<{
     days: number
     hours: number
@@ -17,12 +18,15 @@ export function EventCountdown({ targetDate }: EventCountdownProps) {
   }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: false })
 
   useEffect(() => {
+    setMounted(true)
     if (!targetDate) return
 
     const calculateTimeLeft = () => {
-      const difference = +new Date(targetDate) - +new Date()
+      const target = +new Date(targetDate)
+      const now = +new Date()
+      const difference = target - now
       
-      if (difference <= 0) {
+      if (isNaN(difference) || difference <= 0) {
         return { days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true }
       }
 
@@ -44,7 +48,7 @@ export function EventCountdown({ targetDate }: EventCountdownProps) {
     return () => clearInterval(timer)
   }, [targetDate])
 
-  if (timeLeft.isEnded) return null
+  if (!mounted || timeLeft.isEnded) return null
 
   return (
     <div className="flex items-center gap-1.5 md:gap-3 bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-slate-800/40 px-3 py-1.5 md:px-5 md:py-2.5 rounded-2xl shadow-sm backdrop-blur-md">

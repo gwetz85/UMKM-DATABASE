@@ -6,6 +6,7 @@ import { useUser, useDatabase, useList, useMemoFirebase, addDocumentNonBlocking,
 import { ref, query, equalTo, onValue, serverTimestamp, onDisconnect, update } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useOfficeStatus } from '@/hooks/useOfficeStatus';
+import { useToast } from '@/hooks/use-toast';
 
 export function ChatBubble() {
   const { user } = useUser();
@@ -26,6 +27,7 @@ export function ChatBubble() {
   
   const storage = useStorage();
   const officeStatus = useOfficeStatus();
+  const { toast } = useToast();
 
   const { data: allUsers } = useList(ref(database, 'system_users'));
 
@@ -214,6 +216,7 @@ export function ChatBubble() {
 
   const handleOfflineSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     if (!offlineForm.name || !offlineForm.phone || !offlineForm.message) return;
 
     setIsSubmittingOffline(true);
