@@ -364,9 +364,10 @@ export function BackgroundMusic() {
           `}
         >
 
-          <div className="whitespace-nowrap animate-marquee text-[8px] md:text-[9px] font-bold uppercase tracking-wide text-primary dark:text-primary-foreground/90 w-full text-center">
+          <div className="whitespace-nowrap animate-marquee text-[8px] md:text-[9px] font-bold uppercase tracking-wide text-primary dark:text-primary-foreground/90 w-max inline-block">
             SEDANG DIPUTAR: {currentTitle}
           </div>
+
         </div>
       )}
 
