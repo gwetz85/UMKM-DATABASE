@@ -20,6 +20,7 @@ export function BackgroundMusic() {
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTitle, setCurrentTitle] = useState("");
   const playerRef = useRef<any>(null);
 
   // Configuration: YouTube Playlist
@@ -89,12 +90,24 @@ export function BackgroundMusic() {
               event.target.unMute();
               event.target.setVolume(50);
             }
+
+            // Get initial title if already playing or cued
+            const videoData = event.target.getVideoData();
+            if (videoData && videoData.title) {
+              setCurrentTitle(videoData.title);
+            }
           },
           onStateChange: (event: any) => {
             // If the player starts playing, we consider it "interacted" or successful
             if (event.data === window.YT.PlayerState.PLAYING) {
               setHasInteracted(true);
               setIsPlaying(true);
+              
+              // Update title when video changes/starts
+              const videoData = event.target.getVideoData();
+              if (videoData && videoData.title) {
+                setCurrentTitle(videoData.title);
+              }
             } else if (event.data === window.YT.PlayerState.PAUSED) {
               setIsPlaying(false);
             } else if (event.data === window.YT.PlayerState.ENDED) {
@@ -184,7 +197,7 @@ export function BackgroundMusic() {
   };
 
   return (
-    <div className="fixed bottom-[18px] right-[20px] md:bottom-[38px] md:right-[30px] z-[1000] print:hidden flex items-center gap-2">
+    <div className="fixed bottom-[18px] right-[20px] md:bottom-[38px] md:right-[30px] z-[1000] print:hidden flex flex-col items-end gap-2">
       {/* Invisible YouTube Player Container */}
       <div 
         id="youtube-player-container" 
@@ -263,6 +276,20 @@ export function BackgroundMusic() {
           {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </button>
       </div>
+
+      {/* Song Title Marquee - Positioned below play menu */}
+      {isPlaying && currentTitle && (
+        <div className={`
+          w-full overflow-hidden py-1 px-4 rounded-full
+          bg-white/60 dark:bg-slate-900/60 backdrop-blur-md 
+          border border-white/20 dark:border-slate-800/40 shadow-sm
+          animate-in fade-in slide-in-from-bottom-2 duration-700
+        `}>
+          <div className="whitespace-nowrap animate-marquee-ltr text-[9px] font-black uppercase tracking-wider text-primary dark:text-primary-foreground/80">
+            Now Playing: {currentTitle}
+          </div>
+        </div>
+      )}
 
       {/* Status Tooltip (Optional, floating above) */}
       {!hasInteracted && isPlayerReady && (
