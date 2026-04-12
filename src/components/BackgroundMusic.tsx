@@ -219,7 +219,8 @@ export function BackgroundMusic() {
   };
 
   return (
-    <div className="fixed bottom-[18px] right-[20px] md:bottom-[38px] md:right-[30px] z-[1000] print:hidden flex flex-col items-end gap-2">
+    <div className="fixed bottom-[18px] right-[20px] md:bottom-[38px] md:right-[30px] z-[1000] print:hidden grid justify-items-end gap-2">
+
       {/* Invisible YouTube Player Container */}
       <div 
         id="youtube-player-container" 
@@ -323,17 +324,18 @@ export function BackgroundMusic() {
       {/* Song Title Marquee - Positioned below play menu */}
       {isPlaying && currentTitle && (
         <div className={`
-          w-full overflow-hidden h-10 md:h-11 px-4 rounded-full
+          w-full overflow-hidden h-6 md:h-7 px-4 rounded-full
           flex items-center
           bg-white/80 dark:bg-slate-900/80 backdrop-blur-md 
-          border border-white/20 dark:border-slate-800/50 shadow-2xl
+          border border-white/20 dark:border-slate-800/50 shadow-lg
           animate-in fade-in slide-in-from-bottom-2 duration-700
         `}>
-          <div className="whitespace-nowrap animate-marquee text-[10px] md:text-[11px] font-black uppercase tracking-widest text-primary dark:text-primary-foreground/90 w-full text-center">
+          <div className="whitespace-nowrap animate-marquee text-[8px] md:text-[9px] font-bold uppercase tracking-wide text-primary dark:text-primary-foreground/90 w-full text-center">
             SEDANG DIPUTAR: {currentTitle}
           </div>
         </div>
       )}
+
 
 
       {/* Status Tooltip (Optional, floating above) */}
