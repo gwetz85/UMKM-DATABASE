@@ -10,7 +10,7 @@ import { ChatBubble } from '@/components/chat-bubble';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
 import { BackgroundMusic } from '@/components/BackgroundMusic';
-import { useUser, useDatabase, useList, useMemoFirebase } from '@/firebase'
+import { useUser, useDatabase, useList, useMemoFirebase, useObject } from '@/firebase'
 import { ref } from 'firebase/database'
 import { User as UserIcon, Calendar } from 'lucide-react'
 import Link from 'next/link'
