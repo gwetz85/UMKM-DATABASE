@@ -119,7 +119,7 @@ export function AppSidebar() {
       name: "Cek Data", 
       href: "/check-data", 
       icon: SearchCheck, 
-      show: !isKoordinator
+      show: isAdmin
     },
     { 
       name: "Input Data", 

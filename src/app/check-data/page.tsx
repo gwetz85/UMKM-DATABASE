@@ -1,19 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import { useDatabase, useList, useMemoFirebase } from "@/firebase"
+import { useDatabase, useList, useMemoFirebase, useUser, useObject } from "@/firebase"
 import { ref, query, orderByChild, equalTo, startAt, endAt } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database, UserSearch, User, Eye, FileText } from "lucide-react"
+import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database, UserSearch, User, Eye, FileText, ShieldAlert } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { cn, formatCurrency } from "@/lib/utils"
 
 export default function CheckDataPage() {
+  const { user } = useUser()
   const database = useDatabase()
   const [loading, setLoading] = useState(false)
   const [searchDone, setSearchDone] = useState(false)
@@ -22,6 +23,34 @@ export default function CheckDataPage() {
   const [inputValue, setInputValue] = useState("")
   const [selectedResult, setSelectedResult] = useState<any | null>(null)
   const [searchCriteria, setSearchCriteria] = useState<{ type: string, value: string } | null>(null)
+
+  const adminRef = useMemoFirebase(() => {
+    if (!user || !database) return null
+    return ref(database, `roles_admin/${user.uid}`)
+  }, [user, database])
+
+  const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
+
+  if (isAdminLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center">
+        <ShieldAlert className="w-16 h-16 text-destructive" />
+        <h1 className="text-2xl font-bold">Akses Ditolak</h1>
+        <p className="text-muted-foreground max-w-md mx-auto">
+          Mohon maaf, halaman <strong>Cek Data Master</strong> hanya dapat diakses oleh Administrator Sistem.
+        </p>
+      </div>
+    )
+  }
 
   const memoQuery = useMemoFirebase(() => {
     if (!database || !searchCriteria || !searchCriteria.value) return null

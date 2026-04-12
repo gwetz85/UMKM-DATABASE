@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useUser, useDatabase, useMemoFirebase, useObject } from "@/firebase"
+import { ref } from "firebase/database"
 import { ShieldAlert, Eye, FileText, User, Database, SearchCheck, UserSearch, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -15,8 +17,19 @@ interface CheckDataIndicatorProps {
 }
 
 export function CheckDataIndicator({ actor, allMasterData, allBlacklistData, showText = true }: CheckDataIndicatorProps) {
+  const { user } = useUser()
+  const database = useDatabase()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
+  const adminRef = useMemoFirebase(() => {
+    if (!user || !database) return null
+    return ref(database, `roles_admin/${user.uid}`)
+  }, [user, database])
+
+  const { data: adminRole } = useObject(adminRef)
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
+
+  if (!isAdmin) return null
   if (!allMasterData && !allBlacklistData) return null
 
   const masterMatches = (allMasterData || []).filter((m: any) => 
