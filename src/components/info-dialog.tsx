@@ -31,7 +31,7 @@ export function InfoDialog({ children }: InfoDialogProps) {
               <DialogTitle className="text-2xl font-black tracking-tight text-white mb-1">
                 Informasi Aplikasi
               </DialogTitle>
-              <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] px-0.5">SIMPU Versi 7.0</p>
+              <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] px-0.5">SIMPU Versi 7.5</p>
             </div>
           </div>
         </div>
@@ -41,7 +41,7 @@ export function InfoDialog({ children }: InfoDialogProps) {
             <p className="text-gray-700 leading-relaxed font-bold text-sm uppercase tracking-tight">
               Selamat datang di Aplikasi **SIMPU** <br/>
               <span className="text-[10px] text-muted-foreground font-black tracking-widest">- SISTEM INFORMASI MANAJEMEN PELAKU USAHA -</span> <br/>
-              <span className="text-primary mt-1 block">Versi 7.0 Update tanggal 05042026 2250</span>
+              <span className="text-primary mt-1 block">Versi 7.5 Update tanggal 13042026 0350</span>
             </p>
             <div className="bg-blue-50 border-l-4 border-primary p-4 rounded-r-xl">
               <p className="text-sm text-blue-900 leading-relaxed italic">
@@ -56,8 +56,11 @@ export function InfoDialog({ children }: InfoDialogProps) {
             </h3>
             <div className="grid grid-cols-1 gap-2">
               {[
+                { icon: Zap, text: "Penambahan Event Card" },
+                { icon: Zap, text: "Penambahan Music Backsound" },
                 { icon: Send, text: "Penambahan Fitur Bot Telegram" },
                 { icon: Monitor, text: "Penambahan Fitur Chat" },
+                { icon: ShieldCheck, text: "Penambahan Menu Verifikasi Dinas" },
                 { icon: CreditCard, text: "Penambahan Halaman Bank" },
                 { icon: Database, text: "Penambahan Database 2.965 data" },
                 { icon: ShieldCheck, text: "Perbaikan di beberapa fitur tampilan" },
