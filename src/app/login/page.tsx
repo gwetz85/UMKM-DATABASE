@@ -220,9 +220,9 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center p-4 cursor-default relative overflow-hidden"
       onClick={() => setShowForm(false)}
     >
-      {/* Top Right Widgets (visible when form is shown) */}
-      {showForm && (
-        <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50 flex flex-col items-end gap-3 w-full md:w-auto max-w-[calc(100vw-2rem)] md:max-w-sm pointer-events-none">
+      {/* Top Right Widgets */}
+      <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50 flex flex-col items-end gap-3 w-full md:w-auto max-w-[calc(100vw-2rem)] md:max-w-sm pointer-events-none">
+        {showForm && (
           <div className="pointer-events-auto">
             <OfficeHoursTimer 
               large 
@@ -232,6 +232,7 @@ export default function LoginPage() {
               }}
             />
           </div>
+        )}
 
           {/* Event Info Card */}
           {eventInfo?.enabled && (eventInfo?.endDate || eventInfo?.date) && (
@@ -248,8 +249,7 @@ export default function LoginPage() {
                </CardContent>
              </Card>
           )}
-        </div>
-      )}
+      </div>
 
       {!showForm ? (
         <div 
