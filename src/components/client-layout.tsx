@@ -16,6 +16,7 @@ import { User as UserIcon } from 'lucide-react'
 import Link from 'next/link'
 
 
+import { Toaster } from '@/components/ui/toaster';
 import { ThemePersistence } from '@/components/theme-persistence';
 import { useSoundEffect } from '@/hooks/use-sound-effect';
 
