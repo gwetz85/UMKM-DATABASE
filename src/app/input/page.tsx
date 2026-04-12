@@ -287,7 +287,7 @@ export default function InputDataPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="businessName">Nama Usaha</Label>
+              <Label htmlFor="businessName">Usaha</Label>
               <Input id="businessName" name="businessName" required />
             </div>
             <div className="space-y-2 md:col-span-2">

@@ -289,7 +289,7 @@ export async function POST(req: NextRequest) {
                       `Kelurahan: \n` +
                       `Kecamatan: \n` +
                       `Jenis Usaha: \n` +
-                      `Nama Usaha: \n` +
+                      `Usaha: \n` +
                       `Lokasi Usaha: \n` +
                       `Koordinator: \`\n\n` +
                       `⚠️ *CatatanPentimg:*\n` +

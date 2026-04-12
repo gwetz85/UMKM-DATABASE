@@ -464,7 +464,7 @@ export default function VerifyActorPage() {
                                     <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
                                       {[
-                                        { label: "Nama Usaha", value: viewingActor.businessName },
+                                        { label: "Usaha", value: viewingActor.businessName },
                                         { label: "Kategori Usaha", value: viewingActor.businessCategory },
                                         { label: "Lokasi Usaha", value: viewingActor.businessLocation },
                                         { label: "Koordinator Lapangan", value: viewingActor.coordinator }
@@ -587,7 +587,7 @@ export default function VerifyActorPage() {
                                         </Select>
                                       </div>
                                       <div className="space-y-2">
-                                        <Label className="font-bold">Nama Usaha</Label>
+                                        <Label className="font-bold">Usaha</Label>
                                         <Input name="businessName" defaultValue={editingOnlyActor.businessName} required />
                                       </div>
                                       <div className="space-y-2 md:col-span-2">
@@ -695,7 +695,7 @@ export default function VerifyActorPage() {
                                         </Select>
                                       </div>
                                       <div className="space-y-2">
-                                        <Label className="font-bold">Nama Usaha</Label>
+                                        <Label className="font-bold">Usaha</Label>
                                         <Input name="businessName" defaultValue={editingActor.businessName} required />
                                       </div>
                                       <div className="space-y-2 md:col-span-2">

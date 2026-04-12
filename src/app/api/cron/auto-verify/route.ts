@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
       if (!actor.kelurahan) missingFields.push("Kelurahan");
       if (!actor.kecamatan) missingFields.push("Kecamatan");
       if (!actor.businessCategory) missingFields.push("Jenis Usaha");
-      if (!actor.businessName) missingFields.push("Nama Usaha");
+      if (!actor.businessName) missingFields.push("Usaha");
       if (!actor.businessLocation) missingFields.push("Lokasi Usaha");
       if (!actor.coordinator) missingFields.push("Koordinator");
 
