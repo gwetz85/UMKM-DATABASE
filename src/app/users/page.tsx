@@ -1,6 +1,7 @@
+
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, setDocumentNonBlocking, deleteDocumentNonBlocking, useObject, updateDocumentNonBlocking } from "@/firebase"
 import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -25,8 +26,7 @@ import {
   ShieldQuestion,
   Phone,
   CreditCard,
-  MapPin,
-  Building2
+  MapPin
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
@@ -197,7 +197,6 @@ export default function UserManagementPage() {
                       <SelectItem value="koordinator">Koordinator Lapangan</SelectItem>
                       <SelectItem value="admin">Administrator</SelectItem>
                       <SelectItem value="monitoring">Monitoring</SelectItem>
-                      <SelectItem value="dinas">Dinas</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -249,10 +248,6 @@ export default function UserManagementPage() {
                       ) : u.role === 'petugas' ? (
                         <Badge variant="secondary" className="text-slate-600 bg-slate-100 font-black uppercase text-[9px] gap-1">
                           <UserCheck className="w-3 h-3" /> Petugas
-                        </Badge>
-                      ) : u.role === 'dinas' ? (
-                        <Badge variant="outline" className="text-indigo-600 border-indigo-200 bg-indigo-50 font-black uppercase text-[9px] gap-1">
-                          <Building2 className="w-3 h-3" /> Dinas
                         </Badge>
                       ) : (
                         <Badge variant="destructive" className="animate-pulse font-black uppercase text-[9px] gap-1 bg-red-100 text-red-600 border-red-200">
@@ -311,7 +306,6 @@ export default function UserManagementPage() {
                                         <SelectItem value="koordinator">Koordinator Lapangan</SelectItem>
                                         <SelectItem value="admin">Administrator</SelectItem>
                                         <SelectItem value="monitoring">Monitoring</SelectItem>
-                                        <SelectItem value="dinas">Dinas</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>

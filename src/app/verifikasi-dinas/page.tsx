@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import { useState } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
 import { ref } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
@@ -37,7 +37,6 @@ export default function VerifikasiDinasPage() {
   const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
-  const isDinas = userProfile?.role === 'dinas'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
@@ -68,7 +67,7 @@ export default function VerifikasiDinasPage() {
 
   const handleVerifyDinas = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!verifyingActor || !database || (!isAdmin && !isDinas)) return
+    if (!verifyingActor || !database || !isAdmin) return
 
     setIsSubmitting(true)
     const formData = new FormData(e.currentTarget)
@@ -87,7 +86,7 @@ export default function VerifikasiDinasPage() {
     setIsSubmitting(false)
   }
 
-  if (!isAdmin && !isDinas && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
+  if (!isAdmin && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -265,7 +264,7 @@ export default function VerifikasiDinasPage() {
                           </Dialog>
                           
                           {/* Verifikasi Dinas Dialog */}
-                          {(isAdmin || isDinas) && (
+                          {isAdmin && (
                             <Dialog open={!!verifyingActor && verifyingActor.id === actor.id} onOpenChange={(open) => !open && setVerifyingActor(null)}>
                               <DialogTrigger asChild>
                                 <Button size="icon" variant="outline" onClick={() => setVerifyingActor(actor)} className="h-8 w-8 border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg shadow-sm" title="Verifikasi Dinas">

@@ -107,14 +107,13 @@ export function AppSidebar() {
   const isMonitoring = userProfile?.role === 'monitoring'
   const isKoordinator = userProfile?.role === 'koordinator'
   const isPetugas = userProfile?.role === 'petugas'
-  const isDinas = userProfile?.role === 'dinas'
 
   const navigation = React.useMemo(() => [
     { 
       name: "Dashboard", 
       href: "/", 
       icon: LayoutDashboard, 
-      show: (!!user && !isKoordinator) || isDinas
+      show: !!user && !isKoordinator
     },
     { 
       name: "Cek Data", 
@@ -138,13 +137,13 @@ export function AppSidebar() {
       name: "Data Pelaku", 
       href: "/actor-data", 
       icon: Users, 
-      show: !!user && !isDinas
+      show: !!user 
     },
     { 
       name: "Ditolak / Cancell", 
       href: "/rejected", 
       icon: Ban, 
-      show: !!user && !isDinas
+      show: !!user 
     },
     { 
       name: "Verifikasi Data", 
@@ -156,7 +155,7 @@ export function AppSidebar() {
       name: "Verifikasi & Validasi Dinas", 
       href: "/verifikasi-dinas", 
       icon: ClipboardCheck, 
-      show: isAdmin || isDinas
+      show: isAdmin 
     },
     { 
       name: "HASIL VERIFIKASI", 
@@ -167,7 +166,7 @@ export function AppSidebar() {
     { 
       name: "Rekening Bank", 
       icon: CreditCard, 
-      show: !!user && !isDinas,
+      show: !!user,
       items: [
         { name: "BCA", href: "/rekening-bank?bank=BCA" },
         { name: "BNI", href: "/rekening-bank?bank=BNI" },
@@ -191,7 +190,7 @@ export function AppSidebar() {
       name: "Finish", 
       href: "/finish", 
       icon: CheckCircle2, 
-      show: !!user && !isDinas
+      show: !!user 
     },
     { 
       name: "Manajemen User", 
@@ -376,7 +375,7 @@ export function AppSidebar() {
                       {userProfile?.fullName?.toUpperCase() || user.email?.split('@')[0].toUpperCase()}
                     </span>
                     <span className="text-[8px] text-white/60 font-black uppercase tracking-tighter">
-                      {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 Koordinator" : isPetugas ? "📝 Petugas" : isDinas ? "🏢 Dinas" : "👤 User"}
+                      {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 Koordinator" : isPetugas ? "📝 Petugas" : "👤 User"}
                     </span>
                   </div>
                 </Link>
