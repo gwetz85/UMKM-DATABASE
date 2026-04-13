@@ -50,10 +50,15 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         target.closest('button') || 
         target.closest('a') || 
         target.closest('[role="button"]') ||
+        target.closest('[role="tab"]') ||
+        target.closest('label') ||
+        target.closest('summary') ||
+        target.closest('input[type="checkbox"]') ||
+        target.closest('input[type="radio"]') ||
         window.getComputedStyle(target).cursor === 'pointer';
 
       if (isClickable) {
-        playSound('click', 0.15); // Subtle volume for general clicks
+        playSound('click', 0.35); // Increased volume for clearer feedback
       }
     };
 
