@@ -36,26 +36,40 @@ export default function CheckDataPage() {
     return ref(database, 'master_data')
   }, [database])
 
-  const { data: allMasterData, isLoading: isSearchLoading } = useList(masterDataRef)
+  const { data: allMasterData, isLoading: isMasterLoading } = useList(masterDataRef)
+
+  const blacklistDataRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'blacklist_data')
+  }, [database])
+  const { data: allBlacklistData, isLoading: isBlacklistLoading } = useList(blacklistDataRef)
+
+  const isSearchLoading = isMasterLoading || isBlacklistLoading
 
   const realTimeResults = React.useMemo(() => {
-    if (!allMasterData || !searchCriteria || !searchCriteria.value) return null
+    if (!searchCriteria || !searchCriteria.value) return null
     
+    const master = allMasterData || []
+    const blacklist = allBlacklistData || []
+    
+    const combinedData = [
+      ...master.map(m => ({ ...m, _source: 'DATA PEMBANDING' })),
+      ...blacklist.map(m => ({ ...m, _source: 'DATA CANCELL / BLACKLIST' }))
+    ]
+
+    let results = []
+
     if (searchCriteria.type === 'nama') {
       const searchVal = String(searchCriteria.value).toLowerCase()
-      return allMasterData.filter((m: any) => m.nama && String(m.nama).toLowerCase().includes(searchVal))
-    }
-    
-    if (searchCriteria.type === 'nik') {
-      return allMasterData.filter((m: any) => m.nik && String(m.nik).trim() === String(searchCriteria.value).trim())
-    }
-
-    if (searchCriteria.type === 'noKK') {
-      return allMasterData.filter((m: any) => m.noKK && String(m.noKK).trim() === String(searchCriteria.value).trim())
+      results = combinedData.filter((m: any) => m.nama && String(m.nama).toLowerCase().includes(searchVal))
+    } else if (searchCriteria.type === 'nik') {
+      results = combinedData.filter((m: any) => m.nik && String(m.nik).trim() === String(searchCriteria.value).trim())
+    } else if (searchCriteria.type === 'noKK') {
+      results = combinedData.filter((m: any) => m.noKK && String(m.noKK).trim() === String(searchCriteria.value).trim())
     }
 
-    return []
-  }, [allMasterData, searchCriteria])
+    return results
+  }, [allMasterData, allBlacklistData, searchCriteria])
 
   if (isAdminLoading) {
     return (
@@ -209,14 +223,21 @@ export default function CheckDataPage() {
                           </div>
                           <div className="flex flex-col min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-[10px] font-black text-primary uppercase tracking-widest">DATA PELAKU USAHA</span>
+                              <span className={cn(
+                                "text-[10px] font-black uppercase tracking-widest",
+                                res._source === 'DATA CANCELL / BLACKLIST' ? "text-red-600" : "text-primary"
+                              )}>
+                                {res._source === 'DATA CANCELL / BLACKLIST' ? 'DATA BLACKLIST / CANCELL' : 'DATA PELAKU USAHA'}
+                              </span>
                               <span className={cn(
                                 "text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter border",
-                                res.status?.toLowerCase().includes("terdaftar") || res.status?.toLowerCase().includes("finish") 
-                                  ? "bg-emerald-50 text-emerald-600 border-emerald-200" 
-                                  : "bg-amber-50 text-amber-600 border-amber-200"
+                                res._source === 'DATA CANCELL / BLACKLIST' 
+                                  ? "bg-red-50 text-red-600 border-red-200"
+                                  : res.status?.toLowerCase().includes("terdaftar") || res.status?.toLowerCase().includes("finish") 
+                                    ? "bg-emerald-50 text-emerald-600 border-emerald-200" 
+                                    : "bg-amber-50 text-amber-600 border-amber-200"
                               )}>
-                                {res.status || "PENDING"}
+                                {res._source === 'DATA CANCELL / BLACKLIST' ? "DITOLAK" : (res.status || "PENDING")}
                               </span>
                             </div>
                             <span className="text-sm font-black text-slate-800 uppercase truncate">
@@ -264,11 +285,17 @@ export default function CheckDataPage() {
       <Dialog open={!!selectedResult} onOpenChange={(open) => !open && setSelectedResult(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-none shadow-2xl rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
-              <UserSearch className="w-6 h-6" /> DATA PELAKU USAHA
+            <DialogTitle className={cn(
+              "text-2xl font-black uppercase flex items-center gap-2",
+              selectedResult?._source === 'DATA CANCELL / BLACKLIST' ? "text-red-600" : "text-primary"
+            )}>
+              <UserSearch className="w-6 h-6" /> 
+              {selectedResult?._source === 'DATA CANCELL / BLACKLIST' ? "DATA CANCELL / BLACKLIST" : "DATA PELAKU USAHA"}
             </DialogTitle>
             <DialogDescription className="font-bold text-muted-foreground">
-              Informasi lengkap yang terdaftar dalam sistem database master.
+              {selectedResult?._source === 'DATA CANCELL / BLACKLIST' 
+                ? "Data ini tercatat dalam daftar Blacklist / Cancell." 
+                : "Informasi lengkap yang terdaftar dalam sistem database master."}
             </DialogDescription>
           </DialogHeader>
           {selectedResult && (
