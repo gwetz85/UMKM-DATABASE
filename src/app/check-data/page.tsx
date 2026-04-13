@@ -31,24 +31,31 @@ export default function CheckDataPage() {
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
-  const memoQuery = useMemoFirebase(() => {
-    if (!database || !searchCriteria || !searchCriteria.value) return null
-    if (searchCriteria.type === 'nama') {
-      return query(
-        ref(database, 'master_data'),
-        orderByChild('nama'),
-        startAt(searchCriteria.value),
-        endAt(searchCriteria.value + "\uf8ff")
-      )
-    }
-    return query(
-      ref(database, 'master_data'),
-      orderByChild(searchCriteria.type),
-      equalTo(searchCriteria.value)
-    )
-  }, [database, searchCriteria])
+  const masterDataRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'master_data')
+  }, [database])
 
-  const { data: realTimeResults, isLoading: isSearchLoading } = useList(memoQuery)
+  const { data: allMasterData, isLoading: isSearchLoading } = useList(masterDataRef)
+
+  const realTimeResults = React.useMemo(() => {
+    if (!allMasterData || !searchCriteria || !searchCriteria.value) return null
+    
+    if (searchCriteria.type === 'nama') {
+      const searchVal = String(searchCriteria.value).toLowerCase()
+      return allMasterData.filter((m: any) => m.nama && String(m.nama).toLowerCase().includes(searchVal))
+    }
+    
+    if (searchCriteria.type === 'nik') {
+      return allMasterData.filter((m: any) => m.nik && String(m.nik).trim() === String(searchCriteria.value).trim())
+    }
+
+    if (searchCriteria.type === 'noKK') {
+      return allMasterData.filter((m: any) => m.noKK && String(m.noKK).trim() === String(searchCriteria.value).trim())
+    }
+
+    return []
+  }, [allMasterData, searchCriteria])
 
   if (isAdminLoading) {
     return (
@@ -77,10 +84,7 @@ export default function CheckDataPage() {
     if (!inputValue.trim()) return
     
     setSearchDone(false)
-    let processedValue = inputValue.trim()
-    if (searchType === 'nama') {
-      processedValue = processedValue.toUpperCase()
-    }
+    const processedValue = inputValue.trim()
     
     setSearchCriteria({ 
       type: searchType, 
@@ -161,7 +165,7 @@ export default function CheckDataPage() {
         </Card>
 
         <div className="lg:col-span-9 space-y-6">
-          {!searchDone && !loading && (
+          {!searchDone && !loading && !isSearchLoading && (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed rounded-3xl border-muted bg-white/30 backdrop-blur-sm p-8 text-center">
               <div className="bg-white/50 p-4 rounded-full mb-4">
                 <Info className="w-8 h-8 text-muted-foreground/60" />
