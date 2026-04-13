@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { Phone, MapPin, Building2, Code2 } from "lucide-react"
+import { PublicCheckData } from "@/components/public-check-data"
 
 
 
@@ -50,6 +51,7 @@ export default function LoginPage() {
   const [isRegistered, setIsRegistered] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
+  const [showCheckDataModal, setShowCheckDataModal] = useState(false)
 
   const auth = useAuth()
   const database = useDatabase()
@@ -270,7 +272,7 @@ export default function LoginPage() {
             />
           </div>
           
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300 flex flex-col items-center gap-6">
             <OfficeHoursTimer 
               large 
               onClick={(e: any) => {
@@ -278,6 +280,16 @@ export default function LoginPage() {
                 setShowInfoModal(true)
               }}
             />
+            <Button 
+               variant="outline" 
+               className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.1)] font-black text-primary hover:bg-white hover:text-primary hover:-translate-y-1 active:scale-95 transition-all text-[11px] sm:text-sm rounded-full px-6 sm:px-8 h-10 sm:h-12 border-none ring-2 ring-primary/20"
+               onClick={(e) => {
+                 e.stopPropagation();
+                 setShowCheckDataModal(true);
+               }}
+            >
+               <SearchCheck className="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> CEK DATA PELAKU USAHA
+            </Button>
           </div>
         </div>
       ) : (
@@ -501,6 +513,14 @@ export default function LoginPage() {
           <div className="p-4 bg-slate-50 border-t text-center">
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha © 2026</div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCheckDataModal} onOpenChange={setShowCheckDataModal}>
+        <DialogContent className="sm:max-w-[700px] w-[95vw] max-h-[90vh] overflow-hidden p-0 border-none shadow-2xl rounded-3xl bg-secondary/30 backdrop-blur-3xl flex flex-col">
+           <div className="p-4 md:p-8 bg-white overflow-y-auto flex-1 h-full min-h-[400px]">
+             <PublicCheckData />
+           </div>
         </DialogContent>
       </Dialog>
     </div>
