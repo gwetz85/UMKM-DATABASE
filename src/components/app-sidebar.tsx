@@ -222,6 +222,12 @@ export function AppSidebar() {
       show: isAdmin || isMonitoring
     },
     { 
+      name: "LOG APLIKASI", 
+      href: "/app-logs", 
+      icon: History, 
+      show: isAdmin 
+    },
+    { 
       name: "Pengaturan Event", 
       href: "/settings-event", 
       icon: Calendar, 

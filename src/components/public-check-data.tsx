@@ -6,8 +6,12 @@ import { Button } from "@/components/ui/button"
 import { SearchCheck, Loader2, CheckCircle2, XCircle, User, Eye, FileText, Database, Info } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { cn, formatCurrency } from "@/lib/utils"
+import { logActivity, getDeviceType } from "@/lib/logger"
+import { useUser } from "@/firebase"
+import { useEffect } from "react"
 
 export function PublicCheckData() {
+  const { user } = useUser()
   const database = useDatabase()
   const [loading, setLoading] = useState(false)
   const [searchDone, setSearchDone] = useState(false)
@@ -53,6 +57,23 @@ export function PublicCheckData() {
     setSearchQuery(inputValue.trim())
     setSearchDone(true)
   }
+
+  // Effect to log search activity when results are ready
+  useEffect(() => {
+    if (searchDone && !isSearchLoading && searchQuery) {
+      const resultStatus = realTimeResults && realTimeResults.length > 0 
+        ? `Ditemukan ${realTimeResults.length} data` 
+        : "Tidak ditemukan"
+
+      logActivity({
+        query: searchQuery,
+        results: resultStatus,
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        userId: user?.uid || 'Public'
+      })
+    }
+  }, [searchDone, isSearchLoading, searchQuery, realTimeResults, user?.uid])
 
   return (
     <div className="space-y-6">

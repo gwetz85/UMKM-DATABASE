@@ -3,6 +3,8 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getDatabase, ref, get, push, set } from 'firebase/database';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
+import { logActivity } from '@/lib/logger';
+
 
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
@@ -196,8 +198,26 @@ export async function POST(req: NextRequest) {
               reply += `_Hanya menampilkan 50 data pertama (Batas Keamanan Telegram)._`;
             }
             await sendMessage(chatId, reply);
+            
+            // Log the activity
+            logActivity({
+              query: keyword,
+              results: `Ditemukan ${results.length} data`,
+              device: 'Bot',
+              source: 'Telegram',
+              chatId: String(chatId)
+            });
           } else {
             await sendMessage(chatId, `Tidak ditemukan data untuk pencarian "${keyword}".`);
+            
+            // Log the activity
+            logActivity({
+              query: keyword,
+              results: `Tidak ditemukan`,
+              device: 'Bot',
+              source: 'Telegram',
+              chatId: String(chatId)
+            });
           }
         } else {
            await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
@@ -271,8 +291,26 @@ export async function POST(req: NextRequest) {
 
           if (foundResults.length > 50) reply += `_Hanya menampilkan 50 data pertama._`;
           await sendMessage(chatId, reply);
+
+          // Log the activity
+          logActivity({
+            query: keyword,
+            results: `Cek Data: Ditemukan ${foundResults.length} record`,
+            device: 'Bot',
+            source: 'Telegram',
+            chatId: String(chatId)
+          });
         } else {
           await sendMessage(chatId, `❌ *DATA TIDAK DITEMUKAN*\n\nKata kunci \`${keyword}\` tidak terdaftar dalam Database Master maupun Blacklist.`);
+
+          // Log the activity
+          logActivity({
+            query: keyword,
+            results: `Cek Data: Tidak ditemukan`,
+            device: 'Bot',
+            source: 'Telegram',
+            chatId: String(chatId)
+          });
         }
       } else if (text.startsWith('/inputdata')) {
         const reply = `📝 *FORM INPUT DATA BARU*\n\n` +
