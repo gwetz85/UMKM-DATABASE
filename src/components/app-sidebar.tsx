@@ -312,7 +312,6 @@ export function AppSidebar() {
                         <CollapsibleTrigger asChild>
                           <div 
                             className="flex items-center gap-3 w-full cursor-pointer"
-                            onClick={() => playSound('click')}
                           >
                             <item.icon className="w-4.5 h-4.5 shrink-0" />
                             <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
@@ -337,7 +336,6 @@ export function AppSidebar() {
                                 <Link 
                                   href={subItem.href} 
                                   className="flex items-center gap-2 w-full"
-                                  onClick={() => playSound('click')}
                                 >
                                   <div className="w-1 h-1 rounded-full bg-current opacity-40" />
                                   <span className="text-[11px] uppercase tracking-wider">{subItem.name}</span>
@@ -363,7 +361,6 @@ export function AppSidebar() {
                       <Link 
                         href={item.href} 
                         className="flex items-center gap-3 w-full"
-                        onClick={() => playSound('click')}
                       >
                         <item.icon className="w-4.5 h-4.5 shrink-0" />
                         <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">

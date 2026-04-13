@@ -45,7 +45,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Play sound if clicking a button, link, or something with a pointer cursor
+      
+      // Expanded detection for any interactive or pointer-enabled element
       const isClickable = 
         target.closest('button') || 
         target.closest('a') || 
@@ -53,12 +54,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         target.closest('[role="tab"]') ||
         target.closest('label') ||
         target.closest('summary') ||
-        target.closest('input[type="checkbox"]') ||
-        target.closest('input[type="radio"]') ||
+        target.closest('input') ||
+        target.closest('select') ||
+        target.closest('.cursor-pointer') ||
         window.getComputedStyle(target).cursor === 'pointer';
 
       if (isClickable) {
-        playSound('click', 0.35); // Increased volume for clearer feedback
+        // console.log('[SoundEffect] Global Click Detected on:', target.tagName);
+        playSound('click', 0.35);
       }
     };
 
