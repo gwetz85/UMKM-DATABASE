@@ -56,6 +56,11 @@
     "koordinator_kuotas": {
       ".read": "true",
       ".write": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')"
+    },
+    "activity_logs": {
+      ".read": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
+      ".write": "true",
+      ".indexOn": ["timestamp"]
     }
   }
 }
