@@ -22,6 +22,7 @@ import {
   CalendarDays
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 import { OfficeHoursTimer } from "@/components/OfficeHoursTimer"
 import { EventCountdown } from "@/components/event-countdown"
 import { useActiveEvent } from "@/hooks/use-active-event"
