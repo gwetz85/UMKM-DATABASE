@@ -86,7 +86,6 @@ export function BackgroundMusic() {
             // Ensure the playlist is told to loop
             event.target.setLoop(true);
             
-            // Specifically load the playlist once ready to ensure it's registered
             event.target.cuePlaylist({
               listType: 'playlist',
               list: playlistId,
@@ -162,26 +161,7 @@ export function BackgroundMusic() {
     return () => resizeObserver.disconnect();
   }, [isPlayerReady]);
 
-  useEffect(() => {
 
-    // 2. Start playback on interaction to satisfy browser policies
-    const tryPlay = () => {
-      if (playerRef.current && isPlayerReady && !hasInteracted) {
-        // Use loadPlaylist if cuePlaylist was used to force start
-        playerRef.current.playVideo();
-        setHasInteracted(true);
-      }
-    };
-
-    if (!hasInteracted && isPlayerReady) {
-      const events = ['click', 'keydown', 'scroll', 'touchstart'];
-      events.forEach(e => window.addEventListener(e, tryPlay, { once: true }));
-      
-      return () => {
-        events.forEach(e => window.removeEventListener(e, tryPlay));
-      };
-    }
-  }, [hasInteracted, isPlayerReady]);
 
   const toggleMute = () => {
     if (playerRef.current && isPlayerReady) {
