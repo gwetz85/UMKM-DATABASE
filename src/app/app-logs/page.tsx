@@ -17,6 +17,7 @@ function AppLogsContent() {
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
   const [isTesting, setIsTesting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Admin Check
   const adminRef = useMemoFirebase(() => {
@@ -62,8 +63,6 @@ function AppLogsContent() {
     )
   }, [allLogs, searchQuery])
 
-  const [isTesting, setIsTesting] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
 
   const handleCreateTestLog = async () => {
     setIsTesting(true)
