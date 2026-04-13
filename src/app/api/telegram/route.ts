@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
                       `📍 /alamat [kata] - Cari berdasar Alamat\n` +
                       `📱 /hp [nomor] - Cari berdasar No. HP\n` +
                       `🏢 /koor [nama] - Cari berdasar Koordinator\n` +
-                      `✅ /cekdata [nomor] - Cek NIK/KK dengan Master\n` +
+                      `✅ /cekdata [kata] - Cek NIK/KK/Nama di Master\n` +
                       `📝 /inputdata - Input data baru via Bot\n` +
                       `ℹ️ /about - Informasi Aplikasi`;
         await sendMessage(chatId, reply);
@@ -222,9 +222,9 @@ export async function POST(req: NextRequest) {
           if (masterSnap.exists()) {
             const masterData = Object.values(masterSnap.val()) as any[];
             const matches = masterData.filter(r => 
-              r.nik === keyword || 
-              r.noKK === keyword || 
-              (r.nama && r.nama.toLowerCase().includes(kw))
+              (r.nik && String(r.nik).trim() === keyword) || 
+              (r.noKK && String(r.noKK).trim() === keyword) || 
+              (r.nama && String(r.nama).toLowerCase().includes(kw))
             ).map(r => ({ ...r, source: 'Sheet 1 (Accepted)' }));
             foundResults = [...foundResults, ...matches];
           }
@@ -232,9 +232,9 @@ export async function POST(req: NextRequest) {
           if (blacklistSnap.exists()) {
             const blacklistData = Object.values(blacklistSnap.val()) as any[];
             const matches = blacklistData.filter(r => 
-              r.nik === keyword || 
-              r.noKK === keyword || 
-              (r.nama && r.nama.toLowerCase().includes(kw))
+              (r.nik && String(r.nik).trim() === keyword) || 
+              (r.noKK && String(r.noKK).trim() === keyword) || 
+              (r.nama && String(r.nama).toLowerCase().includes(kw))
             ).map(r => ({ ...r, source: 'Sheet 2 (Rejected)' }));
             foundResults = [...foundResults, ...matches];
           }
