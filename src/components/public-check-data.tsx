@@ -15,6 +15,7 @@ export function PublicCheckData() {
   const database = useDatabase()
   const [loading, setLoading] = useState(false)
   const [searchDone, setSearchDone] = useState(false)
+  const [searchTrigger, setSearchTrigger] = useState(0)
   const [inputValue, setInputValue] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
 
@@ -53,14 +54,14 @@ export function PublicCheckData() {
   const handleCheck = (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputValue.trim()) return
-    setSearchDone(false)
     setSearchQuery(inputValue.trim())
     setSearchDone(true)
+    setSearchTrigger(prev => prev + 1)
   }
 
   // Effect to log search activity when results are ready
   useEffect(() => {
-    if (searchDone && !isSearchLoading && searchQuery) {
+    if (searchDone && !isSearchLoading && searchQuery && searchTrigger > 0) {
       const resultStatus = realTimeResults && realTimeResults.length > 0 
         ? `Ditemukan ${realTimeResults.length} data` 
         : "Tidak ditemukan"
@@ -71,9 +72,9 @@ export function PublicCheckData() {
         device: getDeviceType(navigator.userAgent),
         source: 'Web',
         userId: user?.uid || 'Public'
-      })
+      }, database || undefined)
     }
-  }, [searchDone, isSearchLoading, searchQuery, realTimeResults, user?.uid])
+  }, [searchTrigger, isSearchLoading, searchDone, searchQuery, realTimeResults, user?.uid, database])
 
   return (
     <div className="space-y-6">

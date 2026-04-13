@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
               device: 'Bot',
               source: 'Telegram',
               chatId: String(chatId)
-            });
+            }, database);
           } else {
             await sendMessage(chatId, `Tidak ditemukan data untuk pencarian "${keyword}".`);
             
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest) {
               device: 'Bot',
               source: 'Telegram',
               chatId: String(chatId)
-            });
+            }, database);
           }
         } else {
            await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
@@ -299,7 +299,7 @@ export async function POST(req: NextRequest) {
             device: 'Bot',
             source: 'Telegram',
             chatId: String(chatId)
-          });
+          }, database);
         } else {
           await sendMessage(chatId, `❌ *DATA TIDAK DITEMUKAN*\n\nKata kunci \`${keyword}\` tidak terdaftar dalam Database Master maupun Blacklist.`);
 
@@ -310,7 +310,7 @@ export async function POST(req: NextRequest) {
             device: 'Bot',
             source: 'Telegram',
             chatId: String(chatId)
-          });
+          }, database);
         }
       } else if (text.startsWith('/inputdata')) {
         const reply = `📝 *FORM INPUT DATA BARU*\n\n` +

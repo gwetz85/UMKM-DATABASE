@@ -1,10 +1,16 @@
-import { initializeApp, getApps } from 'firebase/app';
-import { getDatabase, ref, push, set } from 'firebase/database';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { getDatabase, ref, push, set, Database } from 'firebase/database';
 import { firebaseConfig } from '@/firebase/config';
 
 // Safe initialization for both Client and Server environments
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const db = getDatabase(app);
+const getAppInstance = (): FirebaseApp => {
+  const apps = getApps();
+  return apps.length === 0 ? initializeApp(firebaseConfig) : apps[0];
+};
+
+const getDbInstance = (providedDb?: Database): Database => {
+  return providedDb || getDatabase(getAppInstance());
+}
 
 export interface ActivityLog {
   timestamp: string;
@@ -18,18 +24,26 @@ export interface ActivityLog {
 
 /**
  * Logs an activity to the Firebase Realtime Database.
- * @param log The activity data to log (timestamp is added automatically)
+ * @param log The activity data to log
+ * @param providedDb Optional database instance to use
  */
-export async function logActivity(log: Omit<ActivityLog, 'timestamp'>) {
+export async function logActivity(log: Omit<ActivityLog, 'timestamp'>, providedDb?: Database) {
   try {
-    const logsRef = ref(db, 'activity_logs');
+    const database = getDbInstance(providedDb);
+    const logsRef = ref(database, 'activity_logs');
     const newLogRef = push(logsRef);
-    await set(newLogRef, {
+    
+    const logData = {
       ...log,
       timestamp: new Date().toISOString()
-    });
+    };
+    
+    console.log("Logging activity:", logData);
+    await set(newLogRef, logData);
+    return true;
   } catch (error) {
     console.error("Failed to log activity:", error);
+    return false;
   }
 }
 
