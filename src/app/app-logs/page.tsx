@@ -7,13 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Loader2, Search, History, Smartphone, Monitor, Bot, Globe, Clock, User, MessageSquare, ShieldAlert } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Loader2, Search, History, Smartphone, Monitor, Bot, Globe, Clock, User, MessageSquare, ShieldAlert, Bug, RefreshCcw, AlertTriangle } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { logActivity } from "@/lib/logger"
 
 function AppLogsContent() {
   const { user } = useUser()
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
+  const [isTesting, setIsTesting] = useState(false)
 
   // Admin Check
   const adminRef = useMemoFirebase(() => {
@@ -36,7 +39,7 @@ function AppLogsContent() {
     return ref(database, 'activity_logs')
   }, [database])
 
-  const { data: allLogs, isLoading } = useList<any>(logsRef)
+  const { data: allLogs, isLoading, error } = useList<any>(logsRef)
 
   const filteredLogs = useMemo(() => {
     if (!allLogs) return []
@@ -58,6 +61,29 @@ function AppLogsContent() {
       (log.chatId || "").toLowerCase().includes(q)
     )
   }, [allLogs, searchQuery])
+
+  const handleCreateTestLog = async () => {
+    setIsTesting(true)
+    try {
+      const ok = await logActivity({
+        query: "TEST DEBUG " + new Date().toLocaleTimeString(),
+        results: "Berhasil Terkirim",
+        device: "Admin Panel",
+        source: 'Web',
+        userId: user?.uid || 'Admin'
+      }, database || undefined)
+      
+      if (ok) {
+        alert("Log Test BERHASIL dikirim ke database. Tunggu beberapa saat untuk sinkronisasi di layar.")
+      } else {
+        alert("Gagal kirim Log Test. Cek console browser.")
+      }
+    } catch (err) {
+      alert("Error: " + String(err))
+    } finally {
+      setIsTesting(false)
+    }
+  }
 
   if (!isAdmin && !isLoading) {
     return (
@@ -85,21 +111,49 @@ function AppLogsContent() {
           <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline flex items-center gap-3">
             <History className="w-8 h-8" /> LOG AKTIVITAS APLIKASI
           </h1>
-          <p className="text-xs md:text-sm text-muted-foreground uppercase font-bold tracking-wider">
+          <p className="text-xs md:text-sm text-muted-foreground uppercase font-bold tracking-wider text-left">
             Memantau riwayat pengecekkan data dari Web & Bot Telegram
           </p>
         </div>
         
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Cari Log (NIK, Hasil, Perangkat)..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-11 border-primary/20 bg-white ring-offset-primary focus-visible:ring-primary shadow-sm"
-          />
+        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleCreateTestLog}
+            className="font-bold text-[10px] h-11 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+            disabled={isTesting}
+          >
+            {isTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Bug className="w-4 h-4 mr-2" />}
+            TEST BUAT LOG
+          </Button>
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Cari Log (NIK, Hasil, Perangkat)..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-11 border-primary/20 bg-white ring-offset-primary focus-visible:ring-primary shadow-sm"
+            />
+          </div>
         </div>
       </div>
+
+      {error && (
+        <AlertTriangle className="bg-red-50 border border-red-200 p-6 rounded-2xl flex flex-col items-center gap-4">
+          <div className="flex items-center gap-3 text-red-600 font-bold uppercase text-xs">
+            <AlertTriangle className="w-5 h-5" />
+            Terjadi Kesalahan Database
+          </div>
+          <p className="text-sm font-medium text-red-900 bg-white/50 p-3 rounded-lg border w-full text-center">
+            {error.message || "Permission Denied / Akses Ditolak"}
+          </p>
+          <p className="text-[10px] text-red-500 font-black uppercase tracking-widest leading-relaxed text-center">
+            PASTIKAN DATABASE RULES ANDA TELAH DI-DEPLOY DENGAN BENAR.<br/>
+            IZIN BACA (READ) UNTUK NODE 'activity_logs' MUNGKIN DITOLAK.
+          </p>
+        </AlertTriangle>
+      )}
 
       <Card className="border-none shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
         <CardContent className="p-0">
@@ -125,17 +179,17 @@ function AppLogsContent() {
                     <TableRow key={log.id || idx} className="hover:bg-primary/5 transition-colors border-slate-100">
                       <TableCell className="pl-6 py-4">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-xs font-black text-slate-700">
-                            {new Date(log.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          <span className="text-xs font-black text-slate-700 text-left">
+                            {log.timestamp ? new Date(log.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : "-"}
                           </span>
-                          <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                          <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 justify-start">
                             <Clock className="w-3 h-3" />
-                            {new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            {log.timestamp ? new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "-"}
                           </span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex flex-col gap-1.5">
+                        <div className="flex flex-col gap-1.5 items-start">
                           <Badge 
                             variant="outline" 
                             className={cn(
@@ -151,16 +205,12 @@ function AppLogsContent() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-black text-primary font-mono select-all">
-                            {log.query || "-"}
-                          </span>
-                        </div>
+                      <TableCell className="text-left font-bold text-primary font-mono select-all">
+                        {log.query || "-"}
                       </TableCell>
                       <TableCell>
                         <div className={cn(
-                          "text-xs font-bold px-3 py-1.5 rounded-lg border w-fit",
+                          "text-xs font-bold px-3 py-1.5 rounded-lg border w-fit mx-auto sm:mx-0",
                           (log.results || "").toLowerCase().includes("tidak") 
                             ? "bg-red-50 text-red-600 border-red-100" 
                             : "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-sm"
@@ -169,11 +219,11 @@ function AppLogsContent() {
                         </div>
                       </TableCell>
                       <TableCell className="pr-6">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+                        <div className="flex items-center gap-2 justify-start">
+                          <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
                             {log.source === 'Telegram' ? <MessageSquare className="w-3.5 h-3.5 text-blue-500" /> : <User className="w-3.5 h-3.5 text-slate-400" />}
                           </div>
-                          <div className="flex flex-col overflow-hidden">
+                          <div className="flex flex-col overflow-hidden text-left">
                             <span className="text-[10px] font-black text-slate-700 truncate">
                               {log.source === 'Telegram' ? `ID: ${log.chatId}` : (log.userId === 'Public' ? 'USER PUBLIK' : log.userId)}
                             </span>
@@ -184,7 +234,7 @@ function AppLogsContent() {
                   ))}
                 </TableBody>
               </Table>
-              {filteredLogs.length === 0 && (
+              {!isLoading && filteredLogs.length === 0 && !error && (
                 <div className="p-20 flex flex-col items-center justify-center gap-2 text-slate-400">
                   <History className="w-12 h-12 opacity-10" />
                   <p className="font-bold uppercase text-xs tracking-widest">Tidak ada record aktivitas</p>
