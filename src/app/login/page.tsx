@@ -222,11 +222,19 @@ export default function LoginPage() {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4 cursor-default relative overflow-hidden"
+      className={cn(
+        "min-h-screen flex flex-col items-center justify-center p-4 cursor-default relative overflow-x-hidden overflow-y-auto w-full",
+        !showForm ? "justify-center" : "justify-start md:justify-center py-6 md:py-4"
+      )}
       onClick={() => setShowForm(false)}
     >
       {/* Top Right Widgets */}
-      <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50 flex flex-col items-end gap-3 w-full md:w-auto max-w-[calc(100vw-2rem)] md:max-w-sm pointer-events-none">
+      <div className={cn(
+        "z-50 flex flex-col items-center md:items-end gap-3 w-full md:w-auto md:max-w-sm pointer-events-none transition-all duration-500",
+        showForm 
+          ? "relative mt-2 mb-6 md:absolute md:top-6 md:right-6 md:mt-0 md:mb-0" 
+          : "absolute top-4 right-4 md:top-6 md:right-6 max-w-[calc(100vw-2rem)] md:max-w-sm"
+      )}>
         {showForm && (
           <div className="pointer-events-auto">
             <OfficeHoursTimer 
