@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet } from "lucide-react"
+import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
@@ -206,6 +207,53 @@ function ActorDataContent() {
     }
   }
 
+  const handleExportExcel = () => {
+    if (!filteredActors || filteredActors.length === 0) {
+      toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })
+      return
+    }
+
+    try {
+      const exportData = filteredActors.map((actor, index) => ({
+        "NO": index + 1,
+        "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
+        "JENIS KELAMIN": actor.gender || "-",
+        "NIK": actor.nik || "-",
+        "NOMOR KK": actor.noKK || "-",
+        "TEMPAT / TANGGAL LAHIR": actor.pobDob || "-",
+        "NOMOR HP": actor.phone || "-",
+        "ALAMAT": (actor.address || "").toUpperCase(),
+        "RT/RW": actor.rtRw || "-",
+        "KELURAHAN": (actor.kelurahan || "").toUpperCase(),
+        "JENIS USAHA": (actor.businessCategory || "").toUpperCase(),
+        "USAHA": (actor.businessName || "").toUpperCase(),
+        "LOKASI USAHA": (actor.businessLocation || "").toUpperCase(),
+        "KOORDINATOR": (actor.coordinator || "").toUpperCase(),
+      }))
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Pelaku")
+      
+      // Auto-width columns
+      const maxWidths = Object.keys(exportData[0]).map(key => {
+        let max = key.length;
+        exportData.forEach(row => {
+          const val = String((row as any)[key] || "");
+          if (val.length > max) max = val.length;
+        });
+        return { wch: max + 2 };
+      });
+      worksheet['!cols'] = maxWidths;
+
+      XLSX.writeFile(workbook, `Data_Pelaku_Usaha_${new Date().toISOString().split('T')[0]}.xlsx`)
+      toast({ title: "Berhasil", description: "Data berhasil diekspor ke Excel." })
+    } catch (error) {
+      console.error("Export Excel Error:", error)
+      toast({ variant: "destructive", title: "Error", description: "Gagal mengekspor data." })
+    }
+  }
+
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
@@ -236,6 +284,9 @@ function ActorDataContent() {
               className="pl-9 h-10 border-primary/20 bg-white"
             />
           </div>
+          <Button onClick={handleExportExcel} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md w-full md:w-auto h-10">
+            <FileSpreadsheet className="w-4 h-4 mr-2" /> EKSPOR EXCEL
+          </Button>
           <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto h-10">
             <Printer className="w-4 h-4 mr-2" /> CETAK
           </Button>
