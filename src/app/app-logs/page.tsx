@@ -202,6 +202,7 @@ function AppLogsContent() {
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="w-[180px] font-black text-slate-500 uppercase text-[10px] pl-6">Waktu</TableHead>
                     <TableHead className="w-[120px] font-black text-slate-500 uppercase text-[10px]">Sumber / Perangkat</TableHead>
+                    <TableHead className="w-[100px] font-black text-slate-500 uppercase text-[10px]">Metode</TableHead>
                     <TableHead className="font-black text-slate-500 uppercase text-[10px]">Data Yang Dicari</TableHead>
                     <TableHead className="font-black text-slate-500 uppercase text-[10px]">Hasil / Respon</TableHead>
                     <TableHead className="w-[130px] font-black text-slate-500 uppercase text-[10px]">Pengakses</TableHead>
@@ -238,6 +239,11 @@ function AppLogsContent() {
                             <span className="truncate max-w-[80px] text-left">{log.device}</span>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-[9px] font-black uppercase bg-slate-100 text-slate-600 border-none px-2">
+                          {log.method || "NIK/KK"}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-left font-bold text-primary font-mono select-all">
                         {log.query || "-"}

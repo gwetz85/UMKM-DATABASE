@@ -3,7 +3,7 @@ import { useDatabase, useList, useMemoFirebase } from "@/firebase"
 import { ref } from "firebase/database"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { SearchCheck, Loader2, CheckCircle2, XCircle, User, Eye, FileText, Database, Info } from "lucide-react"
+import { SearchCheck, Loader2, CheckCircle2, XCircle, User, Eye, FileText, Database, Info, CreditCard, Users2 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { cn, formatCurrency } from "@/lib/utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
@@ -18,6 +18,7 @@ export function PublicCheckData() {
   const [searchTrigger, setSearchTrigger] = useState(0)
   const [inputValue, setInputValue] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
+  const [searchMethod, setSearchMethod] = useState<'nik' | 'kk' | 'nama'>('nik')
 
   const masterDataRef = useMemoFirebase(() => {
     if (!database) return null
@@ -45,11 +46,21 @@ export function PublicCheckData() {
     ]
 
     const val = String(searchQuery).trim()
-    return combinedData.filter((m: any) => 
-      (m.nik && String(m.nik).trim() === val) || 
-      (m.noKK && String(m.noKK).trim() === val) 
-    )
-  }, [allMasterData, allBlacklistData, searchQuery])
+    const valUpper = val.toUpperCase()
+
+    return combinedData.filter((m: any) => {
+      if (searchMethod === 'nik') {
+        return m.nik && String(m.nik).trim() === val
+      }
+      if (searchMethod === 'kk') {
+        return m.noKK && String(m.noKK).trim() === val
+      }
+      if (searchMethod === 'nama') {
+        return m.nama && String(m.nama).toUpperCase().includes(valUpper)
+      }
+      return false
+    })
+  }, [allMasterData, allBlacklistData, searchQuery, searchMethod])
 
   const handleCheck = (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,30 +77,74 @@ export function PublicCheckData() {
         ? `Ditemukan ${realTimeResults.length} data` 
         : "Tidak ditemukan"
 
+      const methodLabel = searchMethod === 'nik' ? 'NIK' : searchMethod === 'kk' ? 'Nomor KK' : 'Nama'
+
       logActivity({
         query: searchQuery,
         results: resultStatus,
         device: getDeviceType(navigator.userAgent),
+        method: methodLabel,
         source: 'Web',
         userId: user?.uid || 'Public'
       }, database || undefined)
     }
-  }, [searchTrigger, isSearchLoading, searchDone, searchQuery, realTimeResults, user?.uid, database])
+  }, [searchTrigger, isSearchLoading, searchDone, searchQuery, realTimeResults, user?.uid, database, searchMethod])
 
   return (
     <div className="space-y-6">
       <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl border mb-6">
-        <h3 className="font-black text-primary uppercase text-center mb-4 text-lg">Cek Data Pelaku Usaha</h3>
+        <h3 className="font-black text-primary uppercase text-center mb-6 text-lg tracking-wider">Cek Data Pelaku Usaha</h3>
+        
+        {/* Method Selection */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+          <button
+            type="button"
+            onClick={() => setSearchMethod('nik')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase transition-all duration-300",
+              searchMethod === 'nik' ? "bg-primary text-white shadow-lg scale-105" : "bg-white text-slate-400 border hover:bg-slate-100"
+            )}
+          >
+            <CreditCard className="w-3.5 h-3.5" />
+            NIK
+          </button>
+          <button
+            type="button"
+            onClick={() => setSearchMethod('kk')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase transition-all duration-300",
+              searchMethod === 'kk' ? "bg-primary text-white shadow-lg scale-105" : "bg-white text-slate-400 border hover:bg-slate-100"
+            )}
+          >
+            <Database className="w-3.5 h-3.5" />
+            NOMOR KK
+          </button>
+          <button
+            type="button"
+            onClick={() => setSearchMethod('nama')}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase transition-all duration-300",
+              searchMethod === 'nama' ? "bg-primary text-white shadow-lg scale-105" : "bg-white text-slate-400 border hover:bg-slate-100"
+            )}
+          >
+            <User className="w-3.5 h-3.5" />
+            NAMA
+          </button>
+        </div>
+
         <form onSubmit={handleCheck} className="flex flex-col sm:flex-row gap-3">
           <Input 
-            placeholder="Ketik NIK atau Nomor KK..." 
-            className="flex-1 h-12 bg-white font-mono tracking-wider text-center sm:text-left"
+            placeholder={
+              searchMethod === 'nik' ? "Masukkan 16 Digit NIK..." : 
+              searchMethod === 'kk' ? "Masukkan 16 Digit Nomor KK..." : 
+              "Ketik Nama Lengkap..."
+            }
+            className="flex-1 h-12 bg-white font-mono tracking-wider text-center sm:text-left shadow-inner"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             required
-            maxLength={16}
           />
-          <Button type="submit" className="h-12 font-bold px-8 shadow-md hover:bg-primary/90" disabled={isSearchLoading}>
+          <Button type="submit" className="h-12 font-bold px-8 shadow-md hover:bg-primary/90 hover:scale-[1.02] active:scale-95 transition-all" disabled={isSearchLoading}>
              {isSearchLoading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <SearchCheck className="w-5 h-5 mr-2" />}
              CARI
           </Button>
@@ -170,7 +225,7 @@ export function PublicCheckData() {
                <XCircle className="w-5 h-5 text-red-600" />
                <AlertTitle className="font-black uppercase">TIDAK DITEMUKAN</AlertTitle>
                <AlertDescription className="font-medium text-xs">
-                 Nomor NIK/KK <strong>{searchQuery}</strong> tidak terdaftar dalam database master kami.
+                 {searchMethod === 'nik' ? 'NIK' : searchMethod === 'kk' ? 'Nomor KK' : 'Nama'} <strong>{searchQuery}</strong> tidak terdaftar dalam database master kami.
                </AlertDescription>
              </Alert>
            )}

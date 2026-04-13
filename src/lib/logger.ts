@@ -18,6 +18,7 @@ export interface ActivityLog {
   results: string;
   device: string;
   source: 'Web' | 'Telegram';
+  method?: string;
   userId?: string;
   chatId?: string;
 }
