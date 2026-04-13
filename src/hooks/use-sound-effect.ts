@@ -9,40 +9,18 @@ export const SOUND_URLS = {
   error: "https://www.soundjay.com/buttons/sounds/button-10.mp3",
 }
 
-// Global cache outside the component to persist across renders/navigation
-const audioCache: Record<string, HTMLAudioElement> = {}
-
 export function useSoundEffect() {
-  const playSound = useCallback((key: keyof typeof SOUND_URLS, volume = 0.3) => {
+  const playSound = useCallback((key: keyof typeof SOUND_URLS, volume = 0.45) => {
     if (typeof window === 'undefined') return;
 
     try {
-      // Initialize the source audio if not cached
-      if (!audioCache[key]) {
-        audioCache[key] = new Audio(SOUND_URLS[key]);
-        audioCache[key].preload = "auto";
-      }
-      
-      const audio = audioCache[key];
-      
-      // Use cloneNode to allow overlapping sounds (important for rapid clicks)
-      const soundClone = audio.cloneNode() as HTMLAudioElement;
-      soundClone.volume = volume;
-      
-      const playPromise = soundClone.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          console.warn(`[SoundEffect] Playback blocked for ${key}:`, err);
-        });
-      }
-
-      // Cleanup to prevent memory leaks
-      soundClone.onended = () => {
-        soundClone.remove();
-      };
-      
+      const audio = new Audio(SOUND_URLS[key]);
+      audio.volume = volume;
+      audio.play().catch((err) => {
+        // console.warn("Audio playback failed:", err);
+      });
     } catch (error) {
-      console.error("[SoundEffect] Error:", error);
+      // console.error("Sound effect error:", error);
     }
   }, [])
 

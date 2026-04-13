@@ -60,7 +60,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         window.getComputedStyle(target).cursor === 'pointer';
 
       if (isClickable) {
-        // console.log('[SoundEffect] Global Click Detected on:', target.tagName);
+        console.log('[SoundEffect] Click detected on:', target.tagName, target.className);
         playSound('click', 0.35);
       }
     };
