@@ -12,6 +12,13 @@ import { BusinessActor } from "./lib/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
+const KELURAHAN_LIST = [
+  "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
+  "Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru",
+  "Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana",
+  "Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"
+]
+
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
   const database = useDatabase()
@@ -106,18 +113,9 @@ export default function DashboardPage() {
     return combinedKuotaData.reduce((acc, curr) => acc + curr.achieved, 0)
   }, [combinedKuotaData])
 
-  const kelurahanList = [
-    "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
-    "Tanjungpinang Barat", "Kemboja", "Bukit Cermin", "Kampung Baru",
-    "Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana",
-    "Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"
-  ]
-
-
-
   const kelurahanStats = useMemo(() => {
-    const listMap = new Set(kelurahanList.map(k => k.toLowerCase().trim()));
-    const knownStats = kelurahanList.map(k => ({
+    const listMap = new Set(KELURAHAN_LIST.map(k => k.toLowerCase().trim()));
+    const knownStats = KELURAHAN_LIST.map(k => ({
       name: k,
       count: activeData.filter(d => d.kelurahan?.toLowerCase().trim() === k.toLowerCase().trim()).length
     })).filter(item => item.count > 0);
@@ -177,8 +175,29 @@ export default function DashboardPage() {
       return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
     })
     if (type === "rejected") return allData.filter(d => d.status?.toLowerCase().trim() === "rejected")
+    if (type === "kelurahan") {
+      return activeData.filter(d => {
+        const k = d.kelurahan?.toLowerCase().trim() || "";
+        const targetK = selectedFilter.name.toLowerCase().trim();
+        if (targetK === "lainnya / kosong") {
+          const listMap = new Set(KELURAHAN_LIST.map(item => item.toLowerCase().trim()));
+          return k === "" || !listMap.has(k);
+        }
+        return k === targetK;
+      })
+    }
+    if (type === "kategori") {
+      return allData.filter(d => {
+        const k = (d.businessCategory || "").toLowerCase().trim();
+        const targetK = selectedFilter.name.toLowerCase().trim();
+        if (targetK === "lainnya / kosong") {
+          return k !== "kuliner" && k !== "bukan kuliner";
+        }
+        return k === targetK;
+      })
+    }
     return []
-  }, [allData, selectedFilter])
+  }, [allData, activeData, selectedFilter])
 
   const handleCoordinatorClick = (name: string) => {
     router.push(`/actor-data?coordinator=${encodeURIComponent(name)}`);
@@ -430,6 +449,7 @@ export default function DashboardPage() {
                 {kelurahanStats.map((item) => (
                   <div 
                     key={item.name} 
+                    onClick={() => setSelectedFilter({ name: item.name, filterType: "kelurahan" })}
                     className="p-3 rounded-xl glass-panel flex flex-col justify-between hover:shadow-lg hover:border-white/80 hover:bg-white/90 active:scale-95 transition-all duration-300 group cursor-pointer"
                   >
                     <div className="flex justify-between items-start mb-1">
@@ -457,7 +477,10 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              <div className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md">
+              <div 
+                onClick={() => setSelectedFilter({ name: "Kuliner", filterType: "kategori" })}
+                className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md"
+              >
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Kuliner</span>
                   <span className="text-xl font-black text-primary">
@@ -468,7 +491,10 @@ export default function DashboardPage() {
                   <TrendingUp className="w-4 h-4 text-emerald-500" />
                 </div>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md">
+              <div 
+                onClick={() => setSelectedFilter({ name: "Bukan Kuliner", filterType: "kategori" })}
+                className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md"
+              >
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Bukan Kuliner</span>
                   <span className="text-xl font-black text-slate-700">
@@ -480,7 +506,10 @@ export default function DashboardPage() {
                 </div>
               </div>
               {categoryStats.unknown > 0 && (
-                <div className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md border-dashed border-2">
+                <div 
+                  onClick={() => setSelectedFilter({ name: "Lainnya / Kosong", filterType: "kategori" })}
+                  className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md border-dashed border-2"
+                >
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Lainnya / Kosong</span>
                     <span className="text-xl font-black text-slate-500">
