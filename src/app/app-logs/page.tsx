@@ -2,13 +2,13 @@
 
 import { useState, useMemo, Suspense } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, useObject } from "@/firebase"
-import { ref } from "firebase/database"
+import { ref, remove } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Loader2, Search, History, Smartphone, Monitor, Bot, Globe, Clock, User, MessageSquare, ShieldAlert, Bug, RefreshCcw, AlertTriangle } from "lucide-react"
+import { Loader2, Search, History, Smartphone, Monitor, Bot, Globe, Clock, User, MessageSquare, ShieldAlert, Bug, RefreshCcw, AlertTriangle, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { logActivity } from "@/lib/logger"
 
@@ -62,6 +62,9 @@ function AppLogsContent() {
     )
   }, [allLogs, searchQuery])
 
+  const [isTesting, setIsTesting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const handleCreateTestLog = async () => {
     setIsTesting(true)
     try {
@@ -82,6 +85,27 @@ function AppLogsContent() {
       alert("Error: " + String(err))
     } finally {
       setIsTesting(false)
+    }
+  }
+
+  const handleClearAllLogs = async () => {
+    if (!logsRef || !window.confirm("Apakah Anda yakin ingin menghapus SEMUA data log? Tindakan ini tidak dapat dibatalkan.")) return
+    setIsDeleting(true)
+    try {
+      await remove(logsRef)
+    } catch (err) {
+      alert("Gagal menghapus log: " + String(err))
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleDeleteLog = async (logId: string) => {
+    if (!database || !logId || !window.confirm("Hapus log ini?")) return
+    try {
+      await remove(ref(database, `activity_logs/${logId}`))
+    } catch (err) {
+      alert("Gagal menghapus log: " + String(err))
     }
   }
 
@@ -120,6 +144,16 @@ function AppLogsContent() {
           <Button 
             variant="outline" 
             size="sm" 
+            onClick={handleClearAllLogs}
+            className="font-bold text-[10px] h-11 border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
+            disabled={isDeleting || filteredLogs.length === 0}
+          >
+            {isDeleting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+            HAPUS SEMUA LOG
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
             onClick={handleCreateTestLog}
             className="font-bold text-[10px] h-11 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
             disabled={isTesting}
@@ -140,7 +174,7 @@ function AppLogsContent() {
       </div>
 
       {error && (
-        <AlertTriangle className="bg-red-50 border border-red-200 p-6 rounded-2xl flex flex-col items-center gap-4">
+        <div className="bg-red-50 border border-red-200 p-6 rounded-2xl flex flex-col items-center gap-4">
           <div className="flex items-center gap-3 text-red-600 font-bold uppercase text-xs">
             <AlertTriangle className="w-5 h-5" />
             Terjadi Kesalahan Database
@@ -152,7 +186,7 @@ function AppLogsContent() {
             PASTIKAN DATABASE RULES ANDA TELAH DI-DEPLOY DENGAN BENAR.<br/>
             IZIN BACA (READ) UNTUK NODE 'activity_logs' MUNGKIN DITOLAK.
           </p>
-        </AlertTriangle>
+        </div>
       )}
 
       <Card className="border-none shadow-xl bg-white/80 backdrop-blur-sm overflow-hidden">
@@ -171,7 +205,8 @@ function AppLogsContent() {
                     <TableHead className="w-[120px] font-black text-slate-500 uppercase text-[10px]">Sumber / Perangkat</TableHead>
                     <TableHead className="font-black text-slate-500 uppercase text-[10px]">Data Yang Dicari</TableHead>
                     <TableHead className="font-black text-slate-500 uppercase text-[10px]">Hasil / Respon</TableHead>
-                    <TableHead className="w-[150px] font-black text-slate-500 uppercase text-[10px] pr-6">Pengakses</TableHead>
+                    <TableHead className="w-[130px] font-black text-slate-500 uppercase text-[10px]">Pengakses</TableHead>
+                    <TableHead className="w-[80px] font-black text-slate-500 uppercase text-[10px] pr-6 text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -201,7 +236,7 @@ function AppLogsContent() {
                           </Badge>
                           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
                             {getDeviceIcon(log.device)}
-                            <span className="truncate max-w-[80px]">{log.device}</span>
+                            <span className="truncate max-w-[80px] text-left">{log.device}</span>
                           </div>
                         </div>
                       </TableCell>
@@ -218,7 +253,7 @@ function AppLogsContent() {
                           {log.results || "-"}
                         </div>
                       </TableCell>
-                      <TableCell className="pr-6">
+                      <TableCell>
                         <div className="flex items-center gap-2 justify-start">
                           <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
                             {log.source === 'Telegram' ? <MessageSquare className="w-3.5 h-3.5 text-blue-500" /> : <User className="w-3.5 h-3.5 text-slate-400" />}
@@ -229,6 +264,16 @@ function AppLogsContent() {
                             </span>
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell className="pr-6 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteLog(log.id)}
+                          className="w-8 h-8 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
