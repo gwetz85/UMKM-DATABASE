@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap, Calendar } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { BusinessActor } from "./lib/types"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 
 export default function DashboardPage() {
@@ -24,6 +25,7 @@ export default function DashboardPage() {
   const userProfile = allUsersForDashboard?.find((u: any) => u.uid === user?.uid)
   const isKoordinator = userProfile?.role === 'koordinator'
   const isAdmin = userProfile?.role === 'admin' || userProfile?.role === 'superadmin'
+  const [selectedFilter, setSelectedFilter] = useState<{name: string, filterType: string} | null>(null)
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -158,8 +160,25 @@ export default function DashboardPage() {
     return { kuliner, bukanKuliner, unknown };
   }, [allData])
 
-
-
+  const filteredModalData = useMemo(() => {
+    if (!selectedFilter || !allData) return []
+    const type = selectedFilter.filterType
+    if (type === "total") return allData
+    if (type === "laki") return allData.filter(d => {
+      const g = (d.gender || "").toLowerCase().trim();
+      return g === "laki-laki" || g === "l";
+    })
+    if (type === "perempuan") return allData.filter(d => {
+      const g = (d.gender || "").toLowerCase().trim();
+      return g === "perempuan" || g === "p";
+    })
+    if (type === "verified") return allData.filter(d => {
+      const s = d.status || "";
+      return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
+    })
+    if (type === "rejected") return allData.filter(d => d.status?.toLowerCase().trim() === "rejected")
+    return []
+  }, [allData, selectedFilter])
 
   const handleCoordinatorClick = (name: string) => {
     router.push(`/actor-data?coordinator=${encodeURIComponent(name)}`);
@@ -184,7 +203,8 @@ export default function DashboardPage() {
       bg: "bg-white/20",
       cardBg: "bg-amber-500",
       hoverBg: "hover:bg-amber-600",
-      border: "border-amber-400"
+      border: "border-amber-400",
+      filterType: "total"
     },
     { 
       name: "Pelaku Laki-laki", 
@@ -194,7 +214,8 @@ export default function DashboardPage() {
       bg: "bg-white/20",
       cardBg: "bg-blue-600",
       hoverBg: "hover:bg-blue-700",
-      border: "border-blue-500"
+      border: "border-blue-500",
+      filterType: "laki"
     },
     { 
       name: "Pelaku Perempuan", 
@@ -204,7 +225,8 @@ export default function DashboardPage() {
       bg: "bg-white/20",
       cardBg: "bg-rose-500",
       hoverBg: "hover:bg-rose-600",
-      border: "border-rose-400"
+      border: "border-rose-400",
+      filterType: "perempuan"
     },
     { 
       name: "Data Terverifikasi", 
@@ -217,7 +239,8 @@ export default function DashboardPage() {
       bg: "bg-white/20",
       cardBg: "bg-emerald-600",
       hoverBg: "hover:bg-emerald-700",
-      border: "border-emerald-500"
+      border: "border-emerald-500",
+      filterType: "verified"
     },
     { 
       name: "Data Ditolak", 
@@ -227,7 +250,8 @@ export default function DashboardPage() {
       bg: "bg-white/20",
       cardBg: "bg-orange-500",
       hoverBg: "hover:bg-orange-600",
-      border: "border-orange-400"
+      border: "border-orange-400",
+      filterType: "rejected"
     },
   ]
 
@@ -254,6 +278,7 @@ export default function DashboardPage() {
         {stats.map((stat) => (
           <Card 
             key={stat.name} 
+            onClick={() => setSelectedFilter({ name: stat.name, filterType: stat.filterType })}
             className={cn(
               "border shadow-md transition-all duration-500 group overflow-hidden cursor-pointer active:scale-95",
               "hover:shadow-2xl hover:-translate-y-1",
@@ -471,6 +496,53 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={!!selectedFilter} onOpenChange={(open) => !open && setSelectedFilter(null)}>
+        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black uppercase text-primary">
+              DATA: {selectedFilter?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto rounded-xl border">
+            <Table>
+              <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
+                <TableRow>
+                  <TableHead className="w-[50px] text-center font-black text-slate-800 text-xs">No</TableHead>
+                  <TableHead className="font-black text-slate-800 text-xs">Nama Lengkap</TableHead>
+                  <TableHead className="font-black text-slate-800 text-xs">NIK</TableHead>
+                  <TableHead className="font-black text-slate-800 text-xs">Nama Usaha</TableHead>
+                  <TableHead className="font-black text-slate-800 text-xs">Koordinator</TableHead>
+                  <TableHead className="font-black text-slate-800 text-xs text-center">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredModalData.map((d, i) => (
+                  <TableRow key={d.id} className="hover:bg-slate-50/80">
+                    <TableCell className="text-center font-bold text-slate-600 text-xs">{i + 1}</TableCell>
+                    <TableCell className="font-black text-slate-800 text-xs uppercase">{d.fullName || "-"}</TableCell>
+                    <TableCell className="font-mono text-slate-600 text-xs">{d.nik || "-"}</TableCell>
+                    <TableCell className="font-bold text-slate-700 text-xs uppercase">{d.businessName || "-"}</TableCell>
+                    <TableCell className="font-bold text-primary text-xs uppercase">{d.coordinator || "-"}</TableCell>
+                    <TableCell className="text-center">
+                       <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full border bg-slate-100 text-slate-600">
+                         {(d.status || "PENDING").replace(/_/g, " ")}
+                       </span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredModalData.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground font-bold">
+                      Tidak ada data yang ditemukan.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
