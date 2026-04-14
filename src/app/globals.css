@@ -178,11 +178,7 @@
 
 .animate-marquee {
   display: inline-block;
-  animation: marquee 60s linear infinite;
-}
-
-.animate-marquee:hover {
-  animation-play-state: paused;
+  animation: marquee 15s linear infinite;
 }
 
 
