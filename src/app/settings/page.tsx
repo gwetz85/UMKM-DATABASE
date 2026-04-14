@@ -28,6 +28,7 @@ import {
 import { updatePassword } from "firebase/auth"
 import { useAuth, useList } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
+import { useTranslation, Language } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -42,6 +43,7 @@ export default function SettingsPage() {
   const [changingPassword, setChangingPassword] = useState(false)
   const [uploadingExcel, setUploadingExcel] = useState(false)
   const [theme, setTheme] = useState<"light" | "dark">("light")
+  const { language, setLanguage, t } = useTranslation()
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -354,8 +356,8 @@ export default function SettingsPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-black text-primary font-headline">Pengaturan</h1>
-        <p className="text-muted-foreground font-medium">Konfigurasi tampilan {isAdmin ? "dan manajemen data aplikasi." : "aplikasi Anda."}</p>
+        <h1 className="text-4xl font-black text-primary font-headline">{t('settings')}</h1>
+        <p className="text-muted-foreground font-medium">{isAdmin ? "Konfigurasi tampilan dan manajemen data aplikasi." : "Konfigurasi tampilan aplikasi Anda."}</p>
       </div>
 
       {!isAdmin && (
@@ -379,6 +381,43 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-8">
             <div className="space-y-4">
+              <Label className="font-bold flex items-center gap-2">
+                <RefreshCcw className="w-4 h-4 text-primary" /> {t('app_language')}
+              </Label>
+              <RadioGroup 
+                value={language} 
+                onValueChange={(v: Language) => {
+                  setLanguage(v);
+                  toast({
+                    title: t('language') + " " + (v === 'id' ? 'Bahasa Indonesia' : v === 'en' ? 'English' : 'Bahasa Malaysia'),
+                    description: t('save_changes')
+                  });
+                }} 
+                className="flex flex-wrap gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="id" id="lang-id" />
+                  <Label htmlFor="lang-id" className="flex items-center gap-1.5 cursor-pointer">
+                    🇮🇩 Bahasa Indonesia
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="en" id="lang-en" />
+                  <Label htmlFor="lang-en" className="flex items-center gap-1.5 cursor-pointer">
+                    🇺🇸 English
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="ms" id="lang-ms" />
+                  <Label htmlFor="lang-ms" className="flex items-center gap-1.5 cursor-pointer">
+                    🇲🇾 Bahasa Malaysia
+                  </Label>
+                </div>
+              </RadioGroup>
+              <p className="text-[10px] text-muted-foreground italic">Pilih bahasa utama untuk antarmuka aplikasi Anda.</p>
+            </div>
+
+            <div className="space-y-4 pt-4 border-t border-dashed">
               <Label className="font-bold">Mode Tampilan</Label>
               <RadioGroup value={theme} onValueChange={(v: "light"|"dark") => toggleTheme(v)} className="flex gap-4">
                 <div className="flex items-center space-x-2">

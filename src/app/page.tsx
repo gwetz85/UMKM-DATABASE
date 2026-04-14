@@ -2,6 +2,7 @@
 "use client"
 
 import { useMemoFirebase, useList, useUser, useDatabase } from "@/firebase"
+import { useTranslation } from "@/lib/i18n"
 import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
   const database = useDatabase()
   const router = useRouter()
+  const { t } = useTranslation()
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -215,7 +217,7 @@ export default function DashboardPage() {
 
   const stats = [
     { 
-      name: "Total Pelaku Usaha", 
+      name: t('total_actors'), 
       value: allData?.length ?? 0, 
       icon: Building2, 
       color: "text-white", 
@@ -226,7 +228,7 @@ export default function DashboardPage() {
       filterType: "total"
     },
     { 
-      name: "Pelaku Laki-laki", 
+      name: t('male_actors'), 
       value: genderStats.laki, 
       icon: Users, 
       color: "text-white", 
@@ -237,7 +239,7 @@ export default function DashboardPage() {
       filterType: "laki"
     },
     { 
-      name: "Pelaku Perempuan", 
+      name: t('female_actors'), 
       value: genderStats.perempuan, 
       icon: Users, 
       color: "text-white", 
@@ -248,7 +250,7 @@ export default function DashboardPage() {
       filterType: "perempuan"
     },
     { 
-      name: "Data Terverifikasi", 
+      name: t('verified_data'), 
       value: (allData || []).filter(d => {
         const s = d.status || "";
         return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
@@ -262,7 +264,7 @@ export default function DashboardPage() {
       filterType: "verified"
     },
     { 
-      name: "Data Ditolak", 
+      name: t('rejected_data_dashboard'), 
       value: allData?.filter(d => d.status?.toLowerCase().trim() === "rejected").length || 0, 
       icon: UserX, 
       color: "text-white", 
@@ -328,7 +330,7 @@ export default function DashboardPage() {
           <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
             <CardHeader className="bg-primary/10 pb-4">
               <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
-                <BarChart3 className="w-5 h-5" /> JUMLAH KUOTA
+                <BarChart3 className="w-5 h-5" /> {t('quota_all')}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -461,7 +463,7 @@ export default function DashboardPage() {
                 ))}
                 {kelurahanStats.length === 0 && !isLoading && (
                   <div className="col-span-full py-10 text-center text-muted-foreground italic text-xs">
-                    Belum ada data wilayah terekam.
+                    {t('no_village_data')}
                   </div>
                 )}
               </div>

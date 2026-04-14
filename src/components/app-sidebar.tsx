@@ -40,6 +40,7 @@ import { signOut } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { useSoundEffect } from "@/hooks/use-sound-effect"
+import { useTranslation } from "@/lib/i18n"
 
 import {
   Sidebar,
@@ -113,45 +114,47 @@ export function AppSidebar() {
   const isPetugas = userProfile?.role === 'petugas'
   const isDinas = userProfile?.role === 'dinas'
 
+  const { t } = useTranslation()
+
   const navigation = React.useMemo(() => [
     {
-      name: "Dashboard",
+      name: t('dashboard'),
       href: "/",
       icon: LayoutDashboard,
       show: !!user && !isKoordinator
     },
     {
-      name: "Cek Data",
+      name: t('check_data_public'),
       href: "/check-data",
       icon: SearchCheck,
       show: isAdmin
     },
     {
-      name: "Input Data",
+      name: t('input_data'),
       href: "/input",
       icon: UserPlus,
       show: !!user && !isKoordinator
     },
     {
-      name: "Verifikasi Admin",
+      name: t('verify_admin'),
       href: "/verify-actor",
       icon: ShieldCheck,
       show: isAdmin || isPetugas || isMonitoring
     },
     {
-      name: "Data Pelaku",
+      name: t('actor_data'),
       href: "/actor-data",
       icon: Users,
       show: !!user && !isDinas
     },
     {
-      name: "Ditolak / Cancell",
+      name: t('rejected_data'),
       href: "/rejected",
       icon: Ban,
       show: !!user && !isDinas && !isKoordinator
     },
     {
-      name: "Verifikasi Data",
+      name: t('verify_bank'),
       href: "/verify-bank",
       icon: CreditCard,
       show: isAdmin || isMonitoring
@@ -192,19 +195,19 @@ export function AppSidebar() {
       show: (isAdmin || isPetugas || isMonitoring) && !isKoordinator
     },
     {
-      name: "Finish",
+      name: t('finish_data'),
       href: "/finish",
       icon: CheckCircle2,
       show: !!user && !isDinas
     },
     {
-      name: "Manajemen User",
+      name: t('user_management'),
       href: "/users",
       icon: UserCog,
       show: isAdmin
     },
     {
-      name: "Pengaturan",
+      name: t('settings'),
       href: "/settings",
       icon: Settings,
       show: !!user
@@ -216,7 +219,7 @@ export function AppSidebar() {
       show: isAdmin
     },
     {
-      name: "Monitoring Chat",
+      name: t('chat_monitoring'),
       href: "/chat-monitoring",
       icon: MessageSquare,
       show: isAdmin || isMonitoring
@@ -233,7 +236,7 @@ export function AppSidebar() {
       icon: Calendar,
       show: isAdmin
     },
-  ], [user, isAdmin, isMonitoring, userProfile])
+  ], [user, isAdmin, isMonitoring, userProfile, t])
 
   const copyUid = () => {
     if (user?.uid) {
@@ -432,7 +435,7 @@ export function AppSidebar() {
                   <>
                     <LogOut className="w-4.5 h-4.5 shrink-0" />
                     <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">
-                      Keluar Sistem
+                      {t('logout')}
                     </span>
                   </>
                 ) : (

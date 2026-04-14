@@ -16,6 +16,7 @@ import { User as UserIcon, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
 import { useActiveEvent } from '@/hooks/use-active-event';
+import { LanguageProvider, useTranslation } from '@/lib/i18n';
 
 
 import { Toaster } from '@/components/ui/toaster';
@@ -70,28 +71,55 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('click', handleGlobalClick);
   }, [playSound]);
 
+  const currentTitle = getPageTitle(pathname);
+
+  return (
+    <LanguageProvider>
+      <LayoutContent pathname={pathname} currentTitle={currentTitle} profile={profile} isKoordinator={isKoordinator} activeEvent={activeEvent}>
+        {children}
+      </LayoutContent>
+    </LanguageProvider>
+  );
+}
+
+function LayoutContent({ 
+  children, 
+  pathname, 
+  currentTitle, 
+  profile, 
+  isKoordinator,
+  activeEvent 
+}: { 
+  children: React.ReactNode, 
+  pathname: string, 
+  currentTitle: string, 
+  profile: any,
+  isKoordinator: boolean,
+  activeEvent: any
+}) {
+  const { t } = useTranslation();
+  const { playSound } = useSoundEffect();
+
   const isLoginPage = pathname === '/login'
 
-  const getPageTitle = (path: string) => {
-    switch (path) {
-      case '/': return 'Dashboard';
-      case '/actor-data': return 'Data Pelaku Usaha';
-      case '/finish': return 'Data Selesai';
-      case '/rejected': return 'Data Ditolak';
-      case '/verify-actor': return 'Verifikasi Admin';
-      case '/verify-bank': return 'Verifikasi Data';
-      case '/input': return 'Input Data';
-      case '/check-data': return 'Cek Data';
-      case '/profile': return 'Profil Saya';
-      case '/settings': return 'Pengaturan';
-      case '/users': return 'Manajemen User';
-      case '/chat-monitoring': return 'Monitoring Chat';
-      case '/lpj': return 'LPJ';
-      default: return '';
+  const getTranslatedTitle = (title: string) => {
+    switch (title) {
+      case 'Dashboard': return t('dashboard');
+      case 'Data Pelaku Usaha': return t('actor_data');
+      case 'Data Selesai': return t('finish_data');
+      case 'Data Ditolak': return t('rejected_data');
+      case 'Verifikasi Admin': return t('verify_admin');
+      case 'Verifikasi Data': return t('verify_bank');
+      case 'Input Data': return t('input_data');
+      case 'Cek Data': return t('check_data_public');
+      case 'Profil Saya': return t('profile');
+      case 'Pengaturan': return t('settings');
+      case 'Manajemen User': return t('user_management');
+      case 'Monitoring Chat': return t('chat_monitoring');
+      case 'LPJ': return 'LPJ';
+      default: return title;
     }
   };
-
-  const currentTitle = getPageTitle(pathname);
 
   return (
     <>
@@ -141,7 +169,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               {activeEvent && (
                 <div key={activeEvent.id || activeEvent.description} className="md:hidden bg-gradient-to-b from-primary/10 to-transparent border-b border-primary/20 px-4 py-3 flex flex-col items-center justify-center animate-in fade-in zoom-in slide-in-from-top-2 duration-700 w-full">
                   <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2 text-center text-balance drop-shadow-sm">
-                    {activeEvent.description || 'EVENT MENDATANG'}
+                    {activeEvent.description || t('coming_soon')}
                   </span>
                   <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
                 </div>
@@ -159,7 +187,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors p-2 rounded-lg" />
                     {currentTitle && (
                       <h1 className="text-xl md:text-2xl font-black text-primary tracking-tight uppercase">
-                        {currentTitle}
+                        {getTranslatedTitle(currentTitle)}
                       </h1>
                     )}
                   </div>
@@ -171,7 +199,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                         <div className="flex items-center gap-2">
                           <div className="h-1 w-8 md:w-12 bg-primary/20 rounded-full" />
                           <span className="text-[9px] md:text-[10px] font-black text-primary uppercase tracking-[0.3em] text-center drop-shadow-sm group-hover:tracking-[0.4em] transition-all">
-                            {activeEvent.description || 'EVENT MENDATANG'}
+                            {activeEvent.description || t('coming_soon')}
                           </span>
                           <div className="h-1 w-8 md:w-12 bg-primary/20 rounded-full" />
                         </div>
@@ -188,7 +216,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     >
                       <div className="flex flex-col items-end">
                         <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Lihat Profil</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">{t('profile')}</span>
                       </div>
                       <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-50 flex items-center justify-center">
                         {profile?.photoURL ? (

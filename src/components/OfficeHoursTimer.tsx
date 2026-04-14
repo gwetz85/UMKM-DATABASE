@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react"
 import { Clock, DoorOpen, DoorClosed } from "lucide-react"
 
 import { useOfficeStatus } from "@/hooks/useOfficeStatus"
+import { useTranslation } from "@/lib/i18n"
 
 export function OfficeHoursTimer({ 
   large = false, 
@@ -13,6 +14,7 @@ export function OfficeHoursTimer({
   onClick?: (e: React.MouseEvent) => void
 }) {
   const status = useOfficeStatus()
+  const { t } = useTranslation()
 
   if (!status) return null
 
@@ -24,7 +26,9 @@ export function OfficeHoursTimer({
       <div className={`flex flex-col ${large ? "items-center" : "items-start md:items-end"}`}>
         <div className="flex items-center gap-1.5 shrink-0">
           {status.isOpen ? <DoorOpen className={`${large ? "w-5 h-5" : "w-4 h-4 md:w-3.5 md:h-3.5"} animate-bounce`} /> : <DoorClosed className={`${large ? "w-5 h-5" : "w-4 h-4 md:w-3.5 md:h-3.5"}`} />}
-          <span className={`${large ? "text-xs" : "text-[10px] md:text-[10px]"} font-black tracking-widest uppercase`}>{status.label}</span>
+          <span className={`${large ? "text-xs" : "text-[10px] md:text-[10px]"} font-black tracking-widest uppercase`}>
+            {status.label === 'KANTOR BUKA' ? t('office_open') : status.label === 'KANTOR LIBUR' ? t('office_holiday') : t('office_closed')}
+          </span>
         </div>
         <div className="flex items-center gap-1.5 mt-0.5 md:mt-0">
           <Clock className={`${large ? "w-5 h-5" : "w-4 h-4 md:w-3.5 md:h-3.5"} opacity-70`} />
@@ -32,7 +36,7 @@ export function OfficeHoursTimer({
             {status.timeLeft}
           </span>
           <span className={`${large ? "text-[10px]" : "text-[9px]"} font-bold opacity-60 uppercase ml-1 ${large ? "inline" : "hidden lg:inline"}`}>
-            {status.isOpen ? "Menuju Tutup" : "Menuju Buka"}
+            {status.isOpen ? t('towards_closing') : t('towards_opening')}
           </span>
         </div>
       </div>
