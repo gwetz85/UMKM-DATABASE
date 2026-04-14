@@ -20,8 +20,12 @@ import {
   FileSpreadsheet,
   DatabaseZap,
   Check,
-  XCircle
+  XCircle,
+  Lock,
+  Key
 } from "lucide-react"
+import { updatePassword } from "firebase/auth"
+import { useAuth, useList } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -32,7 +36,9 @@ export default function SettingsPage() {
   const { user } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
+  const auth = useAuth()
   const [loading, setLoading] = useState(false)
+  const [changingPassword, setChangingPassword] = useState(false)
   const [uploadingExcel, setUploadingExcel] = useState(false)
   const [theme, setTheme] = useState<"light" | "dark">("light")
 
@@ -42,7 +48,19 @@ export default function SettingsPage() {
   }, [user, database])
 
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
+  
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user || !database) return null
+    return ref(database, 'system_users')
+  }, [user, database])
+  const { data: allUsersForProfile } = useList(userProfileRef)
+  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
+
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const isKoordinator = userProfile?.role === 'koordinator'
+  const isPetugas = userProfile?.role === 'petugas'
+  const isMonitoring = userProfile?.role === 'monitoring'
+  const isDinas = userProfile?.role === 'dinas'
 
   const themeSettingsRef = database ? ref(database, 'chats/__system_settings/theme') : null
   const { data: themeSettings, error: themeError } = useObject(themeSettingsRef)
@@ -342,9 +360,10 @@ export default function SettingsPage() {
       {!isAdmin && (
         <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
           <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertTitle className="text-blue-800 dark:text-blue-300 font-bold">Akses Terbatas</AlertTitle>
+          <AlertTitle className="text-blue-800 dark:text-blue-300 font-bold">Akses Pengaturan</AlertTitle>
           <AlertDescription className="text-blue-700 dark:text-blue-400">
-            Sebagai Petugas Input, Anda hanya dapat merubah tema dan warna aplikasi. Fitur manajemen data hanya tersedia untuk Administrator.
+            Halo {userProfile?.fullName || 'User'}, sebagai {isKoordinator ? "Koordinator Lapangan" : isPetugas ? "Petugas Input" : isDinas ? "Dinas" : isMonitoring ? "Monitoring" : "User"}, 
+            Anda hanya dapat merubah tema aplikasi dan mengganti kata sandi. Fitur manajemen data hanya tersedia untuk Administrator.
           </AlertDescription>
         </Alert>
       )}
@@ -414,6 +433,82 @@ export default function SettingsPage() {
               </div>
               <p className="text-[10px] text-muted-foreground italic">Pilihan warna ini akan merubah warna Sidebar dan elemen utama aplikasi.</p>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Lock className="w-5 h-5 text-primary" /> Keamanan Akun
+            </CardTitle>
+            <CardDescription>Ganti kata sandi untuk mengamankan akses Anda.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const newPass = formData.get('newPassword') as string;
+              const confirmPass = formData.get('confirmPassword') as string;
+
+              if (newPass !== confirmPass) {
+                toast({ variant: "destructive", title: "Gagal", description: "Konfirmasi kata sandi tidak cocok." });
+                return;
+              }
+
+              if (newPass.length < 6) {
+                toast({ variant: "destructive", title: "Gagal", description: "Kata sandi minimal 6 karakter." });
+                return;
+              }
+
+              setChangingPassword(true);
+              try {
+                // 1. Update di Firebase Auth
+                if (auth.currentUser) {
+                  await updatePassword(auth.currentUser, newPass);
+                }
+
+                // 2. Update di Database system_users (fallback/reference)
+                if (userProfile?.id && database) {
+                  await update(ref(database, `system_users/${userProfile.id}`), {
+                    password: newPass
+                  });
+                }
+
+                toast({ title: "Berhasil", description: "Kata sandi Anda telah diperbarui." });
+                (e.target as HTMLFormElement).reset();
+              } catch (err: any) {
+                console.error(err);
+                let msg = "Terjadi kesalahan saat mengganti kata sandi.";
+                if (err.code === 'auth/requires-recent-login') {
+                  msg = "Sesi Anda telah berakhir demi keamanan. Silakan login kembali untuk mengganti kata sandi.";
+                }
+                toast({ variant: "destructive", title: "Gagal", description: msg });
+              } finally {
+                setChangingPassword(false);
+              }
+            }} className="space-y-4 max-w-sm">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">Kata Sandi Baru</Label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input id="newPassword" name="newPassword" type="password" required className="pl-10" placeholder="Minimal 6 karakter" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Konfirmasi Kata Sandi Baru</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input id="confirmPassword" name="confirmPassword" type="password" required className="pl-10" placeholder="Ulangi kata sandi" />
+                </div>
+              </div>
+              <Button type="submit" disabled={changingPassword} className="w-full font-bold">
+                {changingPassword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCcw className="w-4 h-4 mr-2" />}
+                Ganti Kata Sandi
+              </Button>
+              <p className="text-[10px] text-muted-foreground italic">
+                PENTING: Jika terjadi kesalahan "Sesi Berakhir", silakan Keluar (Logout) dan Masuk kembali untuk melanjutkan perubahan kata sandi.
+              </p>
+            </form>
           </CardContent>
         </Card>
 

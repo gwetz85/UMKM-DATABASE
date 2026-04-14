@@ -44,6 +44,7 @@ export default function HasilVerifikasiPage() {
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isPetugas = userProfile?.role === 'petugas'
+  const isKoordinator = userProfile?.role === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
@@ -64,7 +65,14 @@ export default function HasilVerifikasiPage() {
   }, [database])
   const { data: allBlacklistDataRaw } = useList<any>(blacklistDataRef)
 
-  const actors = allActorsRaw?.filter(a => a.status === 'verified_dinas')
+  const actors = allActorsRaw ? allActorsRaw.filter(a => {
+    if (a.status !== 'verified_dinas') return false;
+    if (isKoordinator) {
+      if (!a.coordinator || !userProfile?.fullName) return false;
+      return a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase();
+    }
+    return true;
+  }) : []
 
   const filteredActors = actors?.filter(actor =>
     actor.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -88,7 +96,7 @@ export default function HasilVerifikasiPage() {
     setIsSubmittingBank(false)
   }
 
-  if (!isAdmin && !isPetugas && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
+  if (!isAdmin && !isPetugas && !isKoordinator && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
 
   return (
     <div className="p-4 md:p-8 space-y-6">

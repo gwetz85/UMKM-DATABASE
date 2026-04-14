@@ -148,7 +148,7 @@ export function AppSidebar() {
       name: "Ditolak / Cancell",
       href: "/rejected",
       icon: Ban,
-      show: !!user && !isDinas
+      show: !!user && !isDinas && !isKoordinator
     },
     {
       name: "Verifikasi Data",
@@ -166,7 +166,7 @@ export function AppSidebar() {
       name: "HASIL VERIFIKASI",
       href: "/hasil-verifikasi",
       icon: ListChecks,
-      show: (isAdmin || isPetugas) && !isDinas
+      show: (isAdmin || isPetugas || isKoordinator) && !isDinas
     },
     {
       name: "Rekening Bank",
@@ -207,7 +207,7 @@ export function AppSidebar() {
       name: "Pengaturan",
       href: "/settings",
       icon: Settings,
-      show: !!user && !isKoordinator
+      show: !!user
     },
     {
       name: "Kuota Koordinator",

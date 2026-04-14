@@ -40,6 +40,14 @@ function RekeningBankContent() {
   const searchParams = useSearchParams()
   const selectedBank = searchParams.get('bank')
 
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user || !database) return null
+    return ref(database, 'system_users')
+  }, [user, database])
+  const { data: allUsersForProfile } = useList(userProfileRef)
+  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
+  const isKoordinator = userProfile?.role === 'koordinator'
+
   const memoQuery = useMemoFirebase(() => {
     if (!database || !user) return null
     return ref(database, 'businessActors')
@@ -51,14 +59,22 @@ function RekeningBankContent() {
     if (!allData) return {}
 
     // Filter actors who are verified (lpj_pending or finish)
-    const verifiedActors = allData.filter(a => 
-      (a.status === 'finish') &&
-      (
-        a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        a.bankNumber?.includes(searchQuery) ||
-        a.businessName?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    )
+    const verifiedActors = allData.filter(a => {
+      const basicFilter = (a.status === 'finish') &&
+        (
+          a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          a.bankNumber?.includes(searchQuery) ||
+          a.businessName?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      
+      if (!basicFilter) return false;
+
+      if (isKoordinator) {
+        if (!a.coordinator || !userProfile?.fullName) return false;
+        return a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase();
+      }
+      return true;
+    })
 
     // Grouping by Bank Name
     const groups: Record<string, BusinessActor[]> = {}
