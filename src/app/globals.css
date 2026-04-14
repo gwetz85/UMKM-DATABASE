@@ -5,33 +5,33 @@
 @layer base {
   :root {
     --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    --foreground: 224 71.4% 4.1%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 224 71.4% 4.1%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 221 83% 53%;
+    --popover-foreground: 224 71.4% 4.1%;
+    --primary: 243 75% 59%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 151 81% 50%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 160 81% 40%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221 83% 53%;
-    --radius: 1rem;
-    --sidebar-background: 221 83% 53%;
+    --ring: 243 75% 59%;
+    --radius: 1.25rem;
+    --sidebar-background: 243 75% 59%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 221 83% 53%;
-    --sidebar-accent: 151 81% 50%;
-    --sidebar-accent-foreground: 210 40% 10%;
-    --sidebar-border: 221 60% 45%;
-    --sidebar-ring: 151 81% 50%;
+    --sidebar-primary-foreground: 243 75% 59%;
+    --sidebar-accent: 160 81% 40%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 243 60% 45%;
+    --sidebar-ring: 160 81% 40%;
   }
 
   .dark {
@@ -80,19 +80,19 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
   }
   
   .glass-dark {
-    @apply bg-slate-900/70 backdrop-blur-xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)];
+    @apply bg-slate-900/70 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
   }
 
   .glass-panel {
-    @apply bg-white/85 backdrop-blur-lg border border-white/60 shadow-sm;
+    @apply bg-white/85 backdrop-blur-xl border border-white shadow-[0_4px_16px_0_rgba(31,38,135,0.05)];
   }
   
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-emerald-500;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-500;
   }
 
   .animate-in {

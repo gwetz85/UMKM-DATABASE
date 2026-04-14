@@ -223,20 +223,23 @@ export default function LoginPage() {
   return (
     <div 
       className={cn(
-        "min-h-screen flex flex-col items-center justify-center p-4 cursor-default relative overflow-x-hidden overflow-y-auto w-full",
-        !showForm ? "justify-center" : "justify-start md:justify-center py-6 md:py-4"
+        "min-h-screen flex flex-col items-center justify-center p-4 cursor-default relative overflow-x-hidden overflow-y-auto w-full bg-gradient-to-br from-indigo-50/50 via-white to-purple-50/50",
+        !showForm ? "justify-center" : "justify-start md:justify-center py-6 md:py-8"
       )}
       onClick={() => setShowForm(false)}
     >
+      {/* Decorative Elements */}
+      <div className="absolute top-[10%] left-[5%] w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-[10%] right-[5%] w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-pulse duration-[5000ms]" />
       {/* Top Right Widgets */}
       <div className={cn(
-        "z-50 flex flex-col items-center md:items-end gap-3 w-full md:w-auto md:max-w-sm pointer-events-none transition-all duration-500",
+        "z-50 flex flex-col items-center md:items-end gap-4 w-full md:w-auto md:max-w-sm pointer-events-none transition-all duration-700 ease-in-out",
         showForm 
-          ? "relative mt-2 mb-6 md:absolute md:top-6 md:right-6 md:mt-0 md:mb-0" 
-          : "absolute top-4 right-4 md:top-6 md:right-6 max-w-[calc(100vw-2rem)] md:max-w-sm"
+          ? "relative mt-4 mb-8 md:absolute md:top-8 md:right-8 md:mt-0 md:mb-0" 
+          : "absolute top-6 right-6 md:top-8 md:right-8 max-w-[calc(100vw-3rem)] md:max-w-sm"
       )}>
         {showForm && (
-          <div className="pointer-events-auto">
+          <div className="pointer-events-auto scale-90 md:scale-100">
             <OfficeHoursTimer 
               large 
               onClick={(e: any) => {
@@ -249,14 +252,16 @@ export default function LoginPage() {
 
           {/* Event Info Card */}
           {activeEvent && (
-             <Card key={activeEvent.id || activeEvent.description} className="border-none shadow-xl bg-white/95 backdrop-blur-md overflow-hidden animate-in fade-in slide-in-from-top-8 duration-700 w-full pointer-events-auto">
-               <div className="h-1 bg-gradient-to-r from-primary via-emerald-500 to-amber-500 w-full" />
-               <CardContent className="p-3 flex flex-col items-center text-center gap-2">
-                 <div className="flex items-center gap-2 text-primary">
-                   <CalendarDays className="w-4 h-4 animate-pulse" />
-                   <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{activeEvent.description || "EVENT MENDATANG"}</span>
+             <Card key={activeEvent.id || activeEvent.description} className="border-white/40 shadow-2xl bg-white/70 backdrop-blur-2xl overflow-hidden animate-in fade-in slide-in-from-top-8 duration-1000 w-full pointer-events-auto rounded-[2rem]">
+               <div className="h-1.5 bg-gradient-to-r from-primary via-purple-500 to-emerald-500 w-full" />
+               <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                 <div className="flex items-center gap-2.5 text-primary">
+                   <div className="bg-primary/10 p-1.5 rounded-lg">
+                    <CalendarDays className="w-4 h-4 animate-pulse" />
+                   </div>
+                   <span className="text-[11px] font-black uppercase tracking-[0.2em] leading-tight drop-shadow-sm">{activeEvent.description || "EVENT MENDATANG"}</span>
                  </div>
-                 <div className="scale-[0.80] sm:scale-90 md:scale-100 origin-center -my-2 md:-my-1">
+                 <div className="scale-[0.85] sm:scale-95 md:scale-105 origin-center my-1">
                    <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
                  </div>
                </CardContent>
@@ -266,57 +271,62 @@ export default function LoginPage() {
 
       {!showForm ? (
         <div 
-          className="flex flex-col items-center gap-8 cursor-pointer group" 
+          className="flex flex-col items-center gap-10 cursor-pointer group" 
           onClick={(e) => {
             e.stopPropagation();
             setShowForm(true);
           }}
         >
-          <div className="w-48 h-48 overflow-hidden rounded-full border-8 border-white shadow-[0_20px_50px_rgba(0,0,0,0.2)] bg-white animate-pulse transition-transform group-hover:scale-105">
-            <img 
-              src="/logo.png" 
-              alt="SIMPU Logo" 
-              className="w-full h-full object-contain p-2"
-            />
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse scale-150" />
+            <div className="w-56 h-56 overflow-hidden rounded-full border-[10px] border-white shadow-[0_30px_60px_rgba(0,0,0,0.25)] bg-white transition-all duration-700 group-hover:scale-110 group-hover:border-primary/20 relative z-10">
+              <img 
+                src="/logo.png" 
+                alt="SIMPU Logo" 
+                className="w-full h-full object-contain p-4 transition-transform duration-700 group-hover:rotate-6"
+              />
+            </div>
           </div>
           
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300 flex flex-col items-center gap-6">
-            <OfficeHoursTimer 
-              large 
-              onClick={(e: any) => {
-                e?.stopPropagation?.()
-                setShowInfoModal(true)
-              }}
-            />
+          <div className="animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 flex flex-col items-center gap-8">
+            <div className="scale-110 group-hover:scale-115 transition-all">
+              <OfficeHoursTimer 
+                large 
+                onClick={(e: any) => {
+                  e?.stopPropagation?.()
+                  setShowInfoModal(true)
+                }}
+              />
+            </div>
             <Button 
                variant="outline" 
-               className="bg-white/90 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.1)] font-black text-primary hover:bg-white hover:text-primary hover:-translate-y-1 active:scale-95 transition-all text-[11px] sm:text-sm rounded-full px-6 sm:px-8 h-10 sm:h-12 border-none ring-2 ring-primary/20"
+               className="bg-white/90 backdrop-blur-md shadow-[0_15px_40px_rgba(0,0,0,0.12)] font-black text-primary hover:bg-primary hover:text-white hover:-translate-y-2 active:scale-95 transition-all text-sm sm:text-base rounded-full px-10 sm:px-12 h-12 sm:h-14 border-none ring-4 ring-primary/10"
                onClick={(e) => {
                  e.stopPropagation();
                  setShowCheckDataModal(true);
                }}
             >
-               <SearchCheck className="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> CEK DATA PELAKU USAHA
+               <SearchCheck className="w-5 h-5 sm:w-6 sm:h-6 mr-3" /> CEK DATA PELAKU USAHA
             </Button>
           </div>
         </div>
       ) : (
         <Card 
-          className="w-full max-w-md border-none shadow-2xl overflow-hidden bg-white/95 backdrop-blur-sm scale-in-center"
+          className="w-full max-w-md border-white/50 shadow-2xl overflow-hidden bg-white/90 backdrop-blur-xl scale-in-center rounded-[2.5rem]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="h-2 bg-primary w-full" />
-          <CardHeader className="space-y-1 text-center pt-8 cursor-pointer select-none" onClick={() => !isRegisteringView && !isRegistered && setShowForm(false)}>
-            <div className="flex justify-center mb-2">
-              <div className="w-24 h-24 overflow-hidden rounded-full border-4 border-white shadow-lg relative z-10 bg-white">
+          <div className="h-2.5 bg-gradient-to-r from-primary to-purple-600 w-full" />
+          <CardHeader className="space-y-2 text-center pt-10 cursor-pointer select-none" onClick={() => !isRegisteringView && !isRegistered && setShowForm(false)}>
+            <div className="flex justify-center mb-4">
+              <div className="w-28 h-28 overflow-hidden rounded-3xl border-4 border-white shadow-xl relative z-10 bg-white transition-all hover:rotate-3 hover:scale-105">
                 <img 
                   src="/logo.png" 
                   alt="SIMPU Logo" 
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain p-2"
                 />
               </div>
             </div>
-            <CardTitle className="text-xl font-bold text-slate-800">
+            <CardTitle className="text-2xl font-black text-slate-800 tracking-tight">
               {isRegistered ? "Pendaftaran Berhasil" : isRegisteringView ? "Pendaftaran User Baru" : "Masuk ke SIMPU"}
             </CardTitle>
           </CardHeader>

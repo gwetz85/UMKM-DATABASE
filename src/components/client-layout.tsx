@@ -105,35 +105,34 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           {/* Mobile Header - Hidden on Login */}
           {!isLoginPage && (
             <>
-              <header className="sticky top-0 flex md:hidden items-center justify-between px-4 h-16 bg-primary text-white shrink-0 z-50 shadow-md print:hidden">
-                <div className="flex items-center gap-2">
-                  <SidebarTrigger className="text-white hover:bg-white/10 transition-colors" />
+              <header className="sticky top-0 flex md:hidden items-center justify-between px-6 h-18 bg-white/80 backdrop-blur-xl text-slate-900 shrink-0 z-50 border-b border-slate-200 shadow-sm print:hidden">
+                <div className="flex items-center gap-3">
+                  <SidebarTrigger className="text-primary hover:bg-primary/5 transition-all p-2 rounded-xl" />
                   <div className="flex flex-col">
-                    <span className="text-2xl font-black tracking-tighter leading-none flex items-center gap-1">
+                    <span className="text-2xl font-black tracking-tighter leading-none bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
                       SIMPU
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                    <InfoDialog>
-                    <button className="w-10 h-10 overflow-hidden rounded-full border border-white/20 shadow-lg outline-none bg-white flex items-center justify-center">
+                    <button className="w-10 h-10 overflow-hidden rounded-2xl border-2 border-white shadow-md outline-none bg-white flex items-center justify-center transition-transform active:scale-95">
                       <img 
                         src="/logo.png" 
                         alt="SIMPU" 
-                        className="w-full h-full object-contain p-1"
+                        className="w-full h-full object-contain p-1.5"
                       />
                     </button>
                   </InfoDialog>
-                  <Link href="/profile" className="w-9 h-9 rounded-xl overflow-hidden border border-white/20 shadow-inner bg-white/10 flex items-center justify-center transition-transform active:scale-95">
+                  <Link href="/profile" className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white shadow-md bg-slate-50 flex items-center justify-center transition-all active:scale-90 hover:border-primary/30">
                     {profile?.photoURL ? (
                       <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <UserIcon className="w-5 h-5 text-white" />
+                      <UserIcon className="w-5 h-5 text-slate-400" />
                     )}
                   </Link>
                   <OfficeHoursTimer />
                 </div>
-
               </header>
               <ProfileStatusDialog />
               
@@ -154,13 +153,18 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
               {/* Desktop Top Bar - Hidden on Login */}
               {!isLoginPage && (
-                <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border border-white/20 shadow-sm mx-4 mb-4 mt-4 rounded-2xl backdrop-blur-xl">
-                  <div className="flex items-center gap-4">
-                    <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors p-2 rounded-lg" />
+                <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border-white shadow-xl shadow-primary/5 mx-6 mb-4 mt-4 rounded-3xl backdrop-blur-2xl">
+                  <div className="flex items-center gap-6">
+                    <div className="bg-primary/5 p-1 rounded-2xl border border-primary/10">
+                      <SidebarTrigger className="text-primary hover:bg-primary/10 transition-all p-2.5 rounded-xl shadow-sm bg-white" />
+                    </div>
                     {currentTitle && (
-                      <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight uppercase">
-                        {currentTitle}
-                      </h1>
+                      <div className="flex flex-col">
+                        <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight uppercase landing-none">
+                          {currentTitle}
+                        </h1>
+                        <div className="h-1 w-12 bg-primary rounded-full mt-1" />
+                      </div>
                     )}
                   </div>
                   
@@ -180,21 +184,21 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-6">
                     <OfficeHoursTimer />
                     <Link 
                       href="/profile" 
-                      className="flex items-center gap-3 pl-4 border-l border-slate-200 group"
+                      className="flex items-center gap-4 pl-6 border-l border-slate-200 group"
                     >
                       <div className="flex flex-col items-end">
-                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Lihat Profil</span>
+                        <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest group-hover:text-primary transition-colors">{profile?.fullName?.split(' ')[0] || 'User'}</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Profil Akun</span>
                       </div>
-                      <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-50 flex items-center justify-center">
+                      <div className="w-11 h-11 rounded-2xl overflow-hidden border-2 border-white ring-4 ring-primary/5 shadow-xl transition-all group-hover:scale-110 group-hover:ring-primary/10 bg-slate-50 flex items-center justify-center">
                         {profile?.photoURL ? (
                           <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
-                          <UserIcon className="w-5 h-5 text-primary/30" />
+                          <UserIcon className="w-6 h-6 text-primary/30" />
                         )}
                       </div>
                     </Link>

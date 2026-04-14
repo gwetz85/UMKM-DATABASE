@@ -219,33 +219,33 @@ export default function DashboardPage() {
       name: "Total Pelaku Usaha", 
       value: allData?.length ?? 0, 
       icon: Building2, 
-      color: "text-white", 
-      bg: "bg-white/20",
-      cardBg: "bg-amber-500",
-      hoverBg: "hover:bg-amber-600",
-      border: "border-amber-400",
+      color: "text-amber-500", 
+      bg: "bg-amber-50",
+      cardBg: "bg-white/80",
+      hoverBg: "hover:bg-amber-50/50",
+      border: "border-amber-100",
       filterType: "total"
     },
     { 
       name: "Pelaku Laki-laki", 
       value: genderStats.laki, 
-      icon: Users, 
-      color: "text-white", 
-      bg: "bg-white/20",
-      cardBg: "bg-blue-600",
-      hoverBg: "hover:bg-blue-700",
-      border: "border-blue-500",
+      icon: User, 
+      color: "text-indigo-600", 
+      bg: "bg-indigo-50",
+      cardBg: "bg-white/80",
+      hoverBg: "hover:bg-indigo-50/50",
+      border: "border-indigo-100",
       filterType: "laki"
     },
     { 
       name: "Pelaku Perempuan", 
       value: genderStats.perempuan, 
-      icon: Users, 
-      color: "text-white", 
-      bg: "bg-white/20",
-      cardBg: "bg-rose-500",
-      hoverBg: "hover:bg-rose-600",
-      border: "border-rose-400",
+      icon: User, 
+      color: "text-rose-500", 
+      bg: "bg-rose-50",
+      cardBg: "bg-white/80",
+      hoverBg: "hover:bg-rose-50/50",
+      border: "border-rose-100",
       filterType: "perempuan"
     },
     { 
@@ -255,22 +255,22 @@ export default function DashboardPage() {
         return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
       }).length, 
       icon: UserCheck, 
-      color: "text-white", 
-      bg: "bg-white/20",
-      cardBg: "bg-emerald-600",
-      hoverBg: "hover:bg-emerald-700",
-      border: "border-emerald-500",
+      color: "text-emerald-600", 
+      bg: "bg-emerald-50",
+      cardBg: "bg-white/80",
+      hoverBg: "hover:bg-emerald-50/50",
+      border: "border-emerald-100",
       filterType: "verified"
     },
     { 
       name: "Data Ditolak", 
       value: allData?.filter(d => d.status?.toLowerCase().trim() === "rejected").length || 0, 
       icon: UserX, 
-      color: "text-white", 
-      bg: "bg-white/20",
-      cardBg: "bg-orange-500",
-      hoverBg: "hover:bg-orange-600",
-      border: "border-orange-400",
+      color: "text-rose-600", 
+      bg: "bg-rose-50",
+      cardBg: "bg-white/80",
+      hoverBg: "hover:bg-rose-50/50",
+      border: "border-rose-100",
       filterType: "rejected"
     },
   ]
@@ -303,24 +303,24 @@ export default function DashboardPage() {
             key={stat.name} 
             onClick={() => setSelectedFilter({ name: stat.name, filterType: stat.filterType })}
             className={cn(
-              "border shadow-md transition-all duration-500 group overflow-hidden cursor-pointer active:scale-95",
-              "hover:shadow-2xl hover:-translate-y-1",
+              "border shadow-2xl transition-all duration-500 group overflow-hidden cursor-pointer active:scale-95",
+              "hover:shadow-primary/10 hover:-translate-y-2",
               stat.cardBg,
               stat.hoverBg,
               stat.border
             )}
           >
-            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
-              <CardTitle className="text-[10px] md:text-xs font-bold text-white/80 uppercase tracking-wider truncate mr-2">{stat.name}</CardTitle>
-              <div className={cn(stat.bg, "p-1.5 md:p-2.5 rounded-lg md:rounded-xl group-hover:scale-110 transition-transform duration-300 shrink-0")}>
-                <stat.icon className={cn("w-4 h-4 md:w-5 md:h-5", stat.color)} />
+            <CardHeader className="flex flex-row items-center justify-between p-6 pb-2">
+              <CardTitle className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-[0.2em] truncate mr-2">{stat.name}</CardTitle>
+              <div className={cn(stat.bg, "p-2.5 rounded-2xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shrink-0 shadow-sm")}>
+                <stat.icon className={cn("w-5 h-5", stat.color)} />
               </div>
             </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="text-xl md:text-3xl font-black text-white">{isLoading ? "..." : stat.value}</div>
-              <div className="flex items-center gap-1 mt-1 text-[8px] md:text-[10px] font-bold text-white/70 uppercase">
-                <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
-                DATA TERKINI
+            <CardContent className="p-6 pt-0">
+              <div className="text-3xl md:text-5xl font-black text-slate-800 tracking-tighter">{isLoading ? "..." : stat.value}</div>
+              <div className="flex items-center gap-1.5 mt-2 text-[9px] md:text-[10px] font-black text-primary uppercase tracking-widest">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                DIPERBARUI REAL-TIME
               </div>
             </CardContent>
           </Card>
