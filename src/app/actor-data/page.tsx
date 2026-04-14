@@ -309,88 +309,126 @@ function ActorDataContent() {
                   <h2 className="text-xl font-black text-primary uppercase tracking-tight print:text-black">{coordinator}</h2>
                   <Badge variant="secondary" className="font-bold print:hidden">{actors.length} DATA</Badge>
                 </div>
-                <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
-                  <Table>
-                    <TableHeader className="bg-muted/50 print:bg-slate-100">
-                      <TableRow>
-                        <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
-                        <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
-                        <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
-                        <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR KK</TableHead>
-                        <TableHead className="font-bold text-primary py-4 print:text-black">PONSEL</TableHead>
-                        <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
-                        <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {actors.map((actor, index) => (
-                        <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
-                          <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
-                          <TableCell className="py-4">
-                            <span className="font-bold text-slate-800 uppercase text-[13px] print:text-black">{actor.fullName}</span>
-                          </TableCell>
-                          <TableCell className="py-4">
-                            <span className="font-mono text-[11px] text-slate-600 print:text-black">{actor.nik}</span>
-                            <div className="print:hidden">
-                              <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} />
+                {isKoordinator ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 print:flex print:flex-col print:gap-1">
+                    {actors.map((actor) => (
+                      <Card 
+                        key={actor.id} 
+                        className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group relative overflow-hidden print:shadow-none print:border-b print:rounded-none"
+                        onClick={() => {
+                          setViewingActor(actor)
+                          setIsEditMode(false)
+                        }}
+                      >
+                        <CardContent className="p-4 flex flex-col items-center text-center gap-3 print:flex-row print:justify-between print:text-left print:p-2">
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform print:hidden shrink-0">
+                            <CheckCircle2 className="w-6 h-6" />
+                          </div>
+                          <div className="space-y-1 w-full justify-center">
+                            <p className="font-bold text-[13px] md:text-sm line-clamp-2 uppercase leading-tight print:line-clamp-none text-primary/80" title={actor.businessName}>
+                              {actor.businessName || "NAMA USAHA KOSONG"}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground uppercase line-clamp-1 print:line-clamp-none font-bold flex items-center justify-center print:justify-start gap-1" title={actor.fullName}>
+                              <User className="w-3 h-3 print:hidden" /> {actor.fullName}
+                            </p>
+                            <p className="text-[9px] text-muted-foreground font-mono hidden print:block">
+                              NIK: {actor.nik} | Koor: {actor.coordinator}
+                            </p>
+                            <div className="flex justify-center print:hidden">
+                              <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} showText={false} />
                             </div>
-                          </TableCell>
-                          <TableCell className="py-4">
-                            <span className="font-mono text-[11px] text-slate-600 print:text-black">{actor.noKK}</span>
-                          </TableCell>
-                          <TableCell className="py-4">
-                            <span className="font-medium text-[11px] text-slate-600 print:text-black">{actor.phone || "-"}</span>
-                          </TableCell>
-                          <TableCell className="py-4">
-                            <div className="flex flex-col">
-                              <span className="font-black text-primary uppercase text-[12px] print:text-black">{actor.businessName}</span>
-                              <span className="text-[10px] text-slate-500 font-bold uppercase print:hidden">{actor.businessCategory}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-4 pr-6 text-right print:hidden">
-                            <div className="flex justify-end gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200"
-                                onClick={() => {
-                                  setViewingActor(actor)
-                                  setIsEditMode(false)
-                                  setEditingBankMode(false)
-                                }}
-                                title="Detail"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-200"
-                                onClick={() => generateRegistrationForm(actor)}
-                                title="Cetak Formulir"
-                              >
-                                <Printer className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                className="h-8 w-8 p-0 text-purple-600 hover:bg-purple-50 border border-transparent hover:border-purple-200"
-                                onClick={() => {
-                                  setViewingActor(actor)
-                                  setIsEditMode(false)
-                                  setEditingBankMode(true)
-                                }}
-                                title="Teruskan ke Verifikasi Data (Input Rekening)"
-                              >
-                                <ChevronRight className="w-5 h-5" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                          </div>
+                          <div className="text-[9px] font-black uppercase bg-primary text-white w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
+                            LIHAT DETAIL
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
+                    <Table>
+                      <TableHeader className="bg-muted/50 print:bg-slate-100">
+                        <TableRow>
+                          <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR KK</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">PONSEL</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
+                          <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {actors.map((actor, index) => (
+                          <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
+                            <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
+                            <TableCell className="py-4">
+                              <span className="font-bold text-slate-800 uppercase text-[13px] print:text-black">{actor.fullName}</span>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <span className="font-mono text-[11px] text-slate-600 print:text-black">{actor.nik}</span>
+                              <div className="print:hidden">
+                                <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} />
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <span className="font-mono text-[11px] text-slate-600 print:text-black">{actor.noKK}</span>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <span className="font-medium text-[11px] text-slate-600 print:text-black">{actor.phone || "-"}</span>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <div className="flex flex-col">
+                                <span className="font-black text-primary uppercase text-[12px] print:text-black">{actor.businessName}</span>
+                                <span className="text-[10px] text-slate-500 font-bold uppercase print:hidden">{actor.businessCategory}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-4 pr-6 text-right print:hidden">
+                              <div className="flex justify-end gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200"
+                                  onClick={() => {
+                                    setViewingActor(actor)
+                                    setIsEditMode(false)
+                                    setEditingBankMode(false)
+                                  }}
+                                  title="Detail"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-200"
+                                  onClick={() => generateRegistrationForm(actor)}
+                                  title="Cetak Formulir"
+                                >
+                                  <Printer className="w-4 h-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  className="h-8 w-8 p-0 text-purple-600 hover:bg-purple-50 border border-transparent hover:border-purple-200"
+                                  onClick={() => {
+                                    setViewingActor(actor)
+                                    setIsEditMode(false)
+                                    setEditingBankMode(true)
+                                  }}
+                                  title="Teruskan ke Verifikasi Data (Input Rekening)"
+                                >
+                                  <ChevronRight className="w-5 h-5" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </div>
             ))}
             {Object.keys(groupedActors).length === 0 && (
@@ -419,7 +457,7 @@ function ActorDataContent() {
                   {isEditMode ? "Edit Data Pelaku Usaha" : "Detail Pelaku Usaha"}
                 </DialogTitle>
                 <div className="flex flex-wrap gap-2">
-                  {!isEditMode && viewingActor && (
+                  {!isEditMode && viewingActor && !isKoordinator && (
                     <Button 
                       size="sm" 
                       onClick={() => generateRegistrationForm(viewingActor)}
@@ -428,7 +466,7 @@ function ActorDataContent() {
                       <Printer className="w-4 h-4 mr-2" /> Cetak Formulir
                     </Button>
                   )}
-                  {!isAdmin && !isMonitoring && !isEditMode && viewingActor.status === 'verified_actor' && (
+                  {!isAdmin && !isMonitoring && !isKoordinator && !isEditMode && viewingActor.status === 'verified_actor' && (
 
                     <Button 
                       size="sm" 
