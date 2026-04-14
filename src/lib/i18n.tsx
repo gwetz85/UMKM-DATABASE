@@ -136,6 +136,47 @@ export const translations: Translation = {
     en: "Towards Opening",
     ms: "Menghampiri Waktu Buka"
   },
+  // Sidebar / Menu Advanced
+  verify_bank: {
+    id: "Verifikasi Data",
+    en: "Data Verification",
+    ms: "Pengesahan Data"
+  },
+  gov_verification: {
+    id: "Verifikasi & Validasi Dinas",
+    en: "Gov Verification & Validation",
+    ms: "Pengesahan & Pengesahan Dinas"
+  },
+  verification_results: {
+    id: "HASIL VERIFIKASI",
+    en: "VERIFICATION RESULTS",
+    ms: "KEPUTUSAN PENGESAHAN"
+  },
+  bank_accounts: {
+    id: "Rekening Bank",
+    en: "Bank Accounts",
+    ms: "Akaun Bank"
+  },
+  lpj: {
+    id: "LPJ",
+    en: "Reports (LPJ)",
+    ms: "Laporan (LPJ)"
+  },
+  quota_coordinator: {
+    id: "Kuota Koordinator",
+    en: "Coordinator Quota",
+    ms: "Kuota Penyelaras"
+  },
+  app_logs: {
+    id: "LOG APLIKASI",
+    en: "APP LOGS",
+    ms: "LOG APLIKASI"
+  },
+  event_settings: {
+    id: "Pengaturan Event",
+    en: "Event Settings",
+    ms: "Tetapan Acara"
+  },
   // Dashboard Specific
   total_actors: {
     id: "Total Pelaku Usaha",

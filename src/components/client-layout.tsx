@@ -138,7 +138,13 @@ function LayoutContent({
       case 'Pengaturan': return t('settings');
       case 'Manajemen User': return t('user_management');
       case 'Monitoring Chat': return t('chat_monitoring');
-      case 'LPJ': return 'LPJ';
+      case 'LPJ': return t('lpj');
+      case 'Verifikasi Dinas': return t('gov_verification');
+      case 'Hasil Verifikasi': return t('verification_results');
+      case 'Rekening Bank': return t('bank_accounts');
+      case 'Kuota Koordinator': return t('quota_coordinator');
+      case 'LOG APLIKASI': return t('app_logs');
+      case 'Pengaturan Event': return t('event_settings');
       default: return title;
     }
   };

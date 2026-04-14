@@ -160,19 +160,19 @@ export function AppSidebar() {
       show: isAdmin || isMonitoring
     },
     {
-      name: "Verifikasi & Validasi Dinas",
+      name: t('gov_verification'),
       href: "/verifikasi-dinas",
       icon: ClipboardCheck,
       show: isAdmin || isDinas
     },
     {
-      name: "HASIL VERIFIKASI",
+      name: t('verification_results'),
       href: "/hasil-verifikasi",
       icon: ListChecks,
       show: (isAdmin || isPetugas || isKoordinator) && !isDinas
     },
     {
-      name: "Rekening Bank",
+      name: t('bank_accounts'),
       icon: CreditCard,
       show: !!user && !isDinas,
       items: [
@@ -189,7 +189,7 @@ export function AppSidebar() {
       ]
     },
     {
-      name: "LPJ",
+      name: t('lpj'),
       href: "/lpj",
       icon: FileText,
       show: (isAdmin || isPetugas || isMonitoring) && !isKoordinator
@@ -213,7 +213,7 @@ export function AppSidebar() {
       show: !!user
     },
     {
-      name: "Kuota Koordinator",
+      name: t('quota_coordinator'),
       href: "/kuota-koordinator",
       icon: BarChart3,
       show: isAdmin
@@ -225,13 +225,13 @@ export function AppSidebar() {
       show: isAdmin || isMonitoring
     },
     {
-      name: "LOG APLIKASI",
+      name: t('app_logs'),
       href: "/app-logs",
       icon: History,
       show: isAdmin
     },
     {
-      name: "Pengaturan Event",
+      name: t('event_settings'),
       href: "/settings-event",
       icon: Calendar,
       show: isAdmin
