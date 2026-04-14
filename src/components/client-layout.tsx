@@ -149,7 +149,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     {currentTitle && (
                       <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-left-4 duration-1000">
                          <span className="text-xs font-bold text-primary uppercase tracking-[0.3em] ml-1">{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                        <h1 className="text-5xl md:text-6xl font-[900] text-slate-900 tracking-[-0.04em] landing-none">
+                        <h1 className="text-5xl md:text-6xl font-[900] text-slate-900 tracking-[-0.04em] leading-none">
                           {currentTitle}
                         </h1>
                       </div>
