@@ -391,32 +391,32 @@ export function AppSidebar() {
                   href="/profile"
                   className="flex items-center gap-3 hover:bg-white/10 p-1.5 rounded-xl transition-all cursor-pointer w-full group/profile"
                 >
-                  <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center group-hover/profile:scale-110 transition-all overflow-hidden border-2 border-white/20 shadow-md">
+                  <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center group-hover/profile:scale-110 transition-all overflow-hidden border-2 border-white shadow-md">
                     {userProfile?.photoURL ? (
                       <img src={userProfile.photoURL} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <UserIcon className="w-5 h-5 text-white" />
+                      <UserIcon className="w-5 h-5 text-primary" />
                     )}
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-black text-white truncate group-hover/profile:text-white transition-colors uppercase tracking-tight">
+                    <span className="text-[11px] font-black text-slate-900 truncate group-hover/profile:text-primary transition-colors uppercase tracking-tight">
                       {userProfile?.fullName?.toUpperCase() || user.email?.split('@')[0].toUpperCase()}
                     </span>
-                    <span className="text-[9px] text-white/60 font-black uppercase tracking-widest flex items-center gap-1">
+                    <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest flex items-center gap-1">
                        <ShieldCheck className="w-2.5 h-2.5" />
                        {isAdmin ? "Admin" : isMonitoring ? "Monitoring" : isKoordinator ? "KORLAP" : isPetugas ? "Petugas" : isDinas ? "Dinas" : "User"}
                     </span>
                   </div>
                 </Link>
 
-                <div className="flex items-center justify-between bg-black/20 p-2 rounded-xl gap-2 border border-white/5 shadow-inner">
-                  <span className="text-[9px] text-white/40 font-mono truncate select-all">
+                <div className="flex items-center justify-between bg-black/5 p-2 rounded-xl gap-2 border border-black/5 shadow-inner">
+                  <span className="text-[9px] text-slate-500 font-mono truncate select-all">
                     {user.uid}
                   </span>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 text-white/40 hover:text-white hover:bg-white/10 transition-all shadow-sm"
+                    className="h-6 w-6 text-slate-400 hover:text-primary hover:bg-white transition-all shadow-sm"
                     onClick={copyUid}
                   >
                     {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
