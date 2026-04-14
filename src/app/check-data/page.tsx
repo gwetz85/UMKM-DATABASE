@@ -61,7 +61,10 @@ export default function CheckDataPage() {
 
     if (searchCriteria.type === 'nama') {
       const searchVal = String(searchCriteria.value).toLowerCase()
-      results = combinedData.filter((m: any) => m.nama && String(m.nama).toLowerCase().includes(searchVal))
+      results = combinedData.filter((m: any) => 
+        (m.nama && String(m.nama).toLowerCase().includes(searchVal)) || 
+        (m.fullName && String(m.fullName).toLowerCase().includes(searchVal))
+      )
     } else if (searchCriteria.type === 'nik') {
       results = combinedData.filter((m: any) => m.nik && String(m.nik).trim() === String(searchCriteria.value).trim())
     } else if (searchCriteria.type === 'noKK') {
@@ -165,7 +168,10 @@ export default function CheckDataPage() {
                   maxLength={searchType === "nama" ? 100 : 16}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  className="flex h-12 w-full text-lg font-mono tracking-widest bg-white"
+                  className={cn(
+                    "flex h-12 w-full text-lg bg-white",
+                    searchType !== "nama" ? "font-mono tracking-widest" : "font-sans font-bold"
+                  )}
                   required 
                 />
               </div>
@@ -259,7 +265,7 @@ export default function CheckDataPage() {
                     <XCircle className="w-6 h-6 text-red-600" />
                     <AlertTitle className="text-xl font-black mb-2 uppercase">DATA TIDAK TERDAFTAR</AlertTitle>
                     <AlertDescription className="font-medium">
-                      Mohon maaf, nomor <strong>{inputValue}</strong> tidak ditemukan dalam database master.
+                      Mohon maaf, data <strong>{inputValue}</strong> tidak ditemukan dalam database master.
                     </AlertDescription>
                   </Alert>
                 </div>

@@ -244,7 +244,8 @@ export async function POST(req: NextRequest) {
             const matches = masterData.filter(r => 
               (r.nik && String(r.nik).trim() === keyword) || 
               (r.noKK && String(r.noKK).trim() === keyword) || 
-              (r.nama && String(r.nama).toLowerCase().includes(kw))
+              (r.nama && String(r.nama).toLowerCase().includes(kw)) ||
+              (r.fullName && String(r.fullName).toLowerCase().includes(kw))
             ).map(r => ({ ...r, source: 'Sheet 1 (Accepted)' }));
             foundResults = [...foundResults, ...matches];
           }
@@ -254,7 +255,8 @@ export async function POST(req: NextRequest) {
             const matches = blacklistData.filter(r => 
               (r.nik && String(r.nik).trim() === keyword) || 
               (r.noKK && String(r.noKK).trim() === keyword) || 
-              (r.nama && String(r.nama).toLowerCase().includes(kw))
+              (r.nama && String(r.nama).toLowerCase().includes(kw)) ||
+              (r.fullName && String(r.fullName).toLowerCase().includes(kw))
             ).map(r => ({ ...r, source: 'Sheet 2 (Rejected)' }));
             foundResults = [...foundResults, ...matches];
           }

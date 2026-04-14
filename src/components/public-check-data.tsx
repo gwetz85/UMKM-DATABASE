@@ -18,7 +18,7 @@ export function PublicCheckData() {
   const [searchTrigger, setSearchTrigger] = useState(0)
   const [inputValue, setInputValue] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
-  const [searchMethod, setSearchMethod] = useState<'nik' | 'kk'>('nik')
+  const [searchMethod, setSearchMethod] = useState<'nik' | 'kk' | 'nama'>('nik')
 
   const masterDataRef = useMemoFirebase(() => {
     if (!database) return null
@@ -55,7 +55,11 @@ export function PublicCheckData() {
       if (searchMethod === 'kk') {
         return m.noKK && String(m.noKK).trim() === val
       }
-      return false
+      if (searchMethod === 'nama') {
+        const lowerVal = val.toLowerCase()
+        return (m.nama && String(m.nama).toLowerCase().includes(lowerVal)) || 
+               (m.fullName && String(m.fullName).toLowerCase().includes(lowerVal))
+      }
     })
   }, [allMasterData, allBlacklistData, searchQuery, searchMethod])
 
@@ -116,14 +120,34 @@ export function PublicCheckData() {
             <Database className="w-3.5 h-3.5" />
             NOMOR KK
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchMethod('nama')
+              setInputValue("")
+              setSearchDone(false)
+            }}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase transition-all duration-300",
+              searchMethod === 'nama' ? "bg-primary text-white shadow-lg scale-105" : "bg-white text-slate-400 border hover:bg-slate-100"
+            )}
+          >
+            <User className="w-3.5 h-3.5" />
+            NAMA
+          </button>
         </div>
 
         <form onSubmit={handleCheck} className="flex flex-col sm:flex-row gap-3">
           <Input 
             placeholder={
-              searchMethod === 'nik' ? "Masukkan 16 Digit NIK..." : "Masukkan 16 Digit Nomor KK..."
+              searchMethod === 'nik' ? "Masukkan 16 Digit NIK..." : 
+              searchMethod === 'kk' ? "Masukkan 16 Digit Nomor KK..." :
+              "Masukkan Nama Lengkap..."
             }
-            className="flex-1 h-12 bg-white font-mono tracking-wider text-center sm:text-left shadow-inner"
+            className={cn(
+              "flex-1 h-12 bg-white text-center sm:text-left shadow-inner",
+              searchMethod !== 'nama' ? "font-mono tracking-wider" : "font-sans font-bold"
+            )}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             required
@@ -209,7 +233,7 @@ export function PublicCheckData() {
                <XCircle className="w-5 h-5 text-red-600" />
                <AlertTitle className="font-black uppercase">TIDAK DITEMUKAN</AlertTitle>
                <AlertDescription className="font-medium text-xs">
-                 {searchMethod === 'nik' ? 'NIK' : 'Nomor KK'} <strong>{searchQuery}</strong> tidak terdaftar dalam database master kami.
+                 {searchMethod === 'nik' ? 'NIK' : searchMethod === 'kk' ? 'Nomor KK' : 'Nama'} <strong>{searchQuery}</strong> tidak terdaftar dalam database master kami.
                </AlertDescription>
              </Alert>
            )}
