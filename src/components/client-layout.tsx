@@ -16,6 +16,7 @@ import { User as UserIcon, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
 import { useActiveEvent } from '@/hooks/use-active-event';
+import { HeaderTicker } from '@/components/header-ticker';
 
 
 import { Toaster } from '@/components/ui/toaster';
@@ -200,8 +201,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     </Link>
                   </div>
                 </div>
-
               )}
+              {!isLoginPage && <HeaderTicker />}
               <div key={pathname} className="w-full relative z-0 animate-in fade-in-up">
                 {children}
               </div>
