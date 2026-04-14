@@ -328,7 +328,7 @@ export default function DashboardPage() {
           <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
             <CardHeader className="bg-primary/10 pb-4">
               <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
-                <BarChart3 className="w-5 h-5" /> KUOTA KOORDINATOR
+                <BarChart3 className="w-5 h-5" /> KUOTA KORLAP / DEWAN AKTIF
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -337,8 +337,8 @@ export default function DashboardPage() {
                   <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="w-[40px] text-center font-black text-slate-800 text-[10px] md:text-xs">No</TableHead>
-                      <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">Nama Koordinator</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Koordinator</TableHead>
+                      <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">Nama Korlap / Dewan Aktif</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Korlap / Dewan Aktif</TableHead>
                       <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Tercapai</TableHead>
                       <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Sisa Kuota</TableHead>
                     </TableRow>

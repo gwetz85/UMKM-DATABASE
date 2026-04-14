@@ -245,7 +245,7 @@ export default function UserManagementPage() {
                         </Badge>
                       ) : u.role === 'koordinator' ? (
                         <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 font-black uppercase text-[9px] gap-1">
-                          <UserCheck className="w-3 h-3" /> Koordinator
+                          <UserCheck className="w-3 h-3" /> KORLAP / DEWAN AKTIF
                         </Badge>
                       ) : u.role === 'petugas' ? (
                         <Badge variant="secondary" className="text-slate-600 bg-slate-100 font-black uppercase text-[9px] gap-1">

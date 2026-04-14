@@ -195,7 +195,7 @@ export default function KuotaKorlapDewanAktifPage() {
         <div>
           <h1 className="text-3xl font-bold text-primary font-headline flex items-center gap-3">
             <BarChart3 className="w-8 h-8" />
-            Kuota Koordinator
+            Kuota KORLAP / DEWAN AKTIF
           </h1>
           <p className="text-muted-foreground font-medium">Pengelolaan target data pencapaian masing-masing korlap / dewan aktif.</p>
         </div>
@@ -238,8 +238,8 @@ export default function KuotaKorlapDewanAktifPage() {
               <TableHeader className="bg-muted/30">
                 <TableRow>
                   <TableHead className="font-bold uppercase text-[10px] w-[50px] text-center">No</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px]">Nama Koordinator</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] text-center">Kuota Koordinator</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px]">Nama Korlap / Dewan Aktif</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px] text-center">Kuota Korlap / Dewan Aktif</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] text-center">Kuota Tercapai</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] text-center">Sisa Kuota</TableHead>
                   <TableHead className="text-right font-bold uppercase text-[10px]">Aksi</TableHead>
