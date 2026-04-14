@@ -58,7 +58,7 @@ export default function SettingsPage() {
   const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
-  const isKoordinator = userProfile?.role === 'koordinator'
+  const isKoordinator = userProfile?.role?.toLowerCase() === 'koordinator'
   const isPetugas = userProfile?.role === 'petugas'
   const isMonitoring = userProfile?.role === 'monitoring'
   const isDinas = userProfile?.role === 'dinas'

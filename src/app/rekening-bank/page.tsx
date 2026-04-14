@@ -46,7 +46,7 @@ function RekeningBankContent() {
   }, [user, database])
   const { data: allUsersForProfile } = useList(userProfileRef)
   const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
-  const isKoordinator = userProfile?.role === 'koordinator'
+  const isKoordinator = userProfile?.role?.toLowerCase() === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database || !user) return null

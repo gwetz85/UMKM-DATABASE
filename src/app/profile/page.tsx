@@ -255,7 +255,11 @@ export default function ProfilePage() {
                 <Label className="font-bold text-[10px] uppercase tracking-wider text-slate-400">Role / Jabatan</Label>
                 <div className="relative">
                   <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input value={profile.role?.toUpperCase()} disabled className="pl-10 bg-slate-50 font-black text-xs uppercase" />
+                  <Input 
+                    value={profile.role?.toLowerCase() === 'koordinator' ? "KORLAP / DEWAN AKTIF" : profile.role?.toUpperCase()} 
+                    disabled 
+                    className="pl-10 bg-slate-50 font-black text-xs uppercase" 
+                  />
                 </div>
               </div>
             </div>

@@ -33,7 +33,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [user, database])
   const { data: allUsers } = useList(userProfileRef)
   const profile = allUsers?.find((u: any) => u.uid === user?.uid)
-  const isKoordinator = profile?.role === 'koordinator'
+  const isKoordinator = profile?.role?.toLowerCase() === 'koordinator'
   const { playSound } = useSoundEffect();
 
   const eventSettingsRef = useMemoFirebase(() => {

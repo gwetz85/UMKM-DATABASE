@@ -44,7 +44,7 @@ export default function HasilVerifikasiPage() {
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isPetugas = userProfile?.role === 'petugas'
-  const isKoordinator = userProfile?.role === 'koordinator'
+  const isKoordinator = userProfile?.role?.toLowerCase() === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null

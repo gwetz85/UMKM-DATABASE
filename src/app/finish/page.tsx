@@ -49,7 +49,7 @@ function FinishContent() {
   const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
-  const isKoordinator = userProfile?.role === 'koordinator'
+  const isKoordinator = userProfile?.role?.toLowerCase() === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null

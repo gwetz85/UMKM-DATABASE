@@ -71,7 +71,7 @@ function ActorDataContent() {
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isMonitoring = userProfile?.role === 'monitoring'
-  const isKoordinator = userProfile?.role === 'koordinator'
+  const isKoordinator = userProfile?.role?.toLowerCase() === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
