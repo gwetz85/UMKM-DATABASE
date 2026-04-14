@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
-import { useTranslation } from "@/lib/i18n"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -25,7 +24,6 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
 export default function LPJPage() {
-  const { t } = useTranslation()
   const { user } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
@@ -71,7 +69,7 @@ export default function LPJPage() {
     if (!canAccess || !database || !nominal) return
     const numNominal = parseFloat(nominal.replace(/[^0-9]/g, ''))
     if (isNaN(numNominal)) {
-        toast({ variant: "destructive", title: t('invalid_input'), description: t('enter_valid_nominal') })
+        toast({ variant: "destructive", title: "Input Tidak Valid", description: "Harap masukkan nominal angka yang benar." })
         return
     }
 
@@ -81,18 +79,18 @@ export default function LPJPage() {
       lpjNominal: numNominal,
       lpjDoneAt: new Date().toISOString()
     })
-    toast({ title: t('lpj_saved_success'), description: t('data_moved_to_finish') })
+    toast({ title: "LPJ Berhasil Disimpan", description: "Data telah dipindahkan ke folder Selesai." })
   }
 
   const handleUnblacklist = async (actorId: string) => {
     if (!isAdmin || !database) return
-    if (confirm(t('confirm_restore_lpj'))) {
+    if (confirm("Kembalikan data ini dari Blacklist ke antrean LPJ?")) {
         const actorRef = ref(database, `businessActors/${actorId}`)
         await updateDocumentNonBlocking(actorRef, { 
             status: 'finish',
             lpjEntryDate: new Date().toISOString() // Reset entry date to give another 14 days
         })
-        toast({ title: t('status_restored'), description: t('data_back_to_lpj_queue') })
+        toast({ title: "Status Dikembalikan", description: "Data kini kembali di antrean LPJ." })
     }
   }
 
@@ -102,8 +100,8 @@ export default function LPJPage() {
     return (
       <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center text-destructive">
         <ShieldAlert className="w-16 h-16" />
-        <h1 className="text-2xl font-bold uppercase tracking-tighter">{t('access_denied')}</h1>
-        <p className="text-muted-foreground font-medium">{t('lpj_access_denied_desc')}</p>
+        <h1 className="text-2xl font-bold uppercase tracking-tighter">Akses Ditolak</h1>
+        <p className="text-muted-foreground font-medium">Halaman pelaporan LPJ hanya untuk Petugas dan Administrator.</p>
       </div>
     )
   }
@@ -112,9 +110,9 @@ export default function LPJPage() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-black text-primary font-headline uppercase tracking-tight flex items-center gap-3">
-            <FileText className="w-8 h-8" /> {t('lpj_reporting')}
+             <FileText className="w-8 h-8" /> Pelaporan LPJ
         </h1>
-        <p className="text-muted-foreground font-medium">{t('lpj_reporting_desc')}</p>
+        <p className="text-muted-foreground font-medium">Catat laporan pertanggungjawaban dana yang telah diterima pelaku usaha.</p>
       </div>
 
       <Card className="border-none shadow-xl bg-white/80 backdrop-blur-md rounded-3xl overflow-hidden">
@@ -126,12 +124,12 @@ export default function LPJPage() {
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">{t('status_time')}</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">{t('deadline')}</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">{t('full_name')}</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">NIK / {t('bank_accounts')}</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">{t('lpj_nominal')}</TableHead>
-                    <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-slate-400">{t('action')}</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Status / Durasi</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Batas Waktu</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Nama Lengkap</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">NIK / Rekening Bank</TableHead>
+                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Nominal LPJ</TableHead>
+                    <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -143,7 +141,7 @@ export default function LPJPage() {
                     const isBlacklisted = actor.status === 'blacklist' || (isOverdue && actor.status === 'finish')
                     
                     // Auto-blacklist logic (visual cue, in a real app this would be a trigger)
-                    const statusLabel = isBlacklisted ? "BLACKLIST" : t('wait_lpj')
+                    const statusLabel = isBlacklisted ? "BLACKLIST" : "Menunggu LPJ"
 
                     return (
                       <TableRow key={actor.id} className={cn("hover:bg-slate-50 transition-colors", isBlacklisted && "bg-red-50/50")}>
@@ -156,7 +154,7 @@ export default function LPJPage() {
                                {statusLabel}
                              </Badge>
                              <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400">
-                                <Clock className="w-3 h-3" /> {daysInLPJ} {t('days_in_lpj')}
+                                <Clock className="w-3 h-3" /> {daysInLPJ} hari di LPJ
                              </div>
                            </div>
                         </TableCell>
@@ -169,7 +167,7 @@ export default function LPJPage() {
                                     {deadlineDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
                                 </span>
                                 <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
-                                    {isOverdue ? t('time_out') : t('last_submission')}
+                                    {isOverdue ? "WAKTU HABIS" : "PENYERAHAN TERAKHIR"}
                                 </span>
                             </div>
                         </TableCell>
@@ -183,7 +181,7 @@ export default function LPJPage() {
                         <TableCell>
                            {isBlacklisted ? (
                              <div className="flex items-center gap-2 text-destructive font-black text-xs">
-                               <Ban className="w-4 h-4" /> {t('access_locked')}
+                               <Ban className="w-4 h-4" /> DIBLOKIR
                              </div>
                            ) : (
                              <div className="relative max-w-[200px]">
@@ -202,10 +200,10 @@ export default function LPJPage() {
                             {isBlacklisted ? (
                               isAdmin ? (
                                 <Button size="sm" variant="outline" className="rounded-xl font-black text-[10px] border-red-200 text-red-600 hover:bg-red-50" onClick={() => handleUnblacklist(actor.id)}>
-                                    {t('restore_access')}
+                                    AKTIFKAN KEMBALI
                                 </Button>
                               ) : (
-                                <span className="text-[9px] font-black text-red-400 uppercase bg-red-50 px-3 py-2 rounded-lg py-1">{t('contact_admin')}</span>
+                                <span className="text-[9px] font-black text-red-400 uppercase bg-red-50 px-3 py-2 rounded-lg py-1">HUBUNGI ADMIN</span>
                               )
                             ) : (
                               !isMonitoring && (
@@ -217,7 +215,7 @@ export default function LPJPage() {
                                       handleSaveLPJ(actor.id, input.value)
                                   }}
                                 >
-                                  <Save className="w-3.5 h-3.5 mr-2" /> {t('save_lpj_btn')}
+                                  <Save className="w-3.5 h-3.5 mr-2" /> SIMPAN LPJ
                                 </Button>
                               )
                             )}
@@ -231,7 +229,7 @@ export default function LPJPage() {
                       <TableCell colSpan={6} className="text-center py-24">
                         <div className="flex flex-col items-center opacity-20">
                             <CheckCircle2 className="w-16 h-16 mb-4" />
-                            <p className="font-black uppercase tracking-widest text-xs">{t('all_lpj_finished')}</p>
+                            <p className="font-black uppercase tracking-widest text-xs">SEMUA DATA LPJ TELAH DISELESAIKAN</p>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -248,18 +246,18 @@ export default function LPJPage() {
         <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex gap-3 items-start">
             <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
-                <p className="text-xs font-black text-amber-900 uppercase tracking-tight">{t('deadline_rule_title')}</p>
+                <p className="text-xs font-black text-amber-900 uppercase tracking-tight">ATURAN TENGGAT WAKTU</p>
                 <p className="text-[10px] font-medium text-amber-700 leading-relaxed mt-1">
-                    {t('deadline_rule_desc')}
+                    Pelaku usaha wajib menyerahkan LPJ maksimal 14 hari setelah dana masuk ke rekening. Jika melewati batas, sistem akan otomatis memblokir (Blacklist) data tersebut.
                 </p>
             </div>
         </div>
         <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl flex gap-3 items-start">
             <ShieldAlert className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
             <div>
-                <p className="text-xs font-black text-blue-900 uppercase tracking-tight">{t('restore_authority_title')}</p>
+                <p className="text-xs font-black text-blue-900 uppercase tracking-tight">WEWENANG PEMULIHAN</p>
                 <p className="text-[10px] font-medium text-blue-700 leading-relaxed mt-1">
-                    {t('restore_authority_desc')}
+                    Hanya Administrator (Superadmin) yang dapat memulihkan data yang telah ter-blacklist karena keterlambatan LPJ.
                 </p>
             </div>
         </div>

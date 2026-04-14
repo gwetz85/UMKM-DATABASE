@@ -35,12 +35,11 @@ import {
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useUser, useObject, useMemoFirebase, useAuth, useList, useDatabase } from "@/firebase"
-import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import { ref, query } from "firebase/database"
 import { signOut } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { useSoundEffect } from "@/hooks/use-sound-effect"
-import { useTranslation } from "@/lib/i18n"
 
 import {
   Sidebar,
@@ -114,65 +113,63 @@ export function AppSidebar() {
   const isPetugas = userProfile?.role === 'petugas'
   const isDinas = userProfile?.role === 'dinas'
 
-  const { t } = useTranslation()
-
   const navigation = React.useMemo(() => [
     {
-      name: t('dashboard'),
+      name: "Dashboard",
       href: "/",
       icon: LayoutDashboard,
       show: !!user && !isKoordinator
     },
     {
-      name: t('check_data_public'),
+      name: "Cek Data",
       href: "/check-data",
       icon: SearchCheck,
       show: isAdmin
     },
     {
-      name: t('input_data'),
+      name: "Input Data",
       href: "/input",
       icon: UserPlus,
       show: !!user && !isKoordinator
     },
     {
-      name: t('verify_admin'),
+      name: "Verifikasi Admin",
       href: "/verify-actor",
       icon: ShieldCheck,
       show: isAdmin || isPetugas || isMonitoring
     },
     {
-      name: t('actor_data'),
+      name: "Data Pelaku Usaha",
       href: "/actor-data",
       icon: Users,
       show: !!user && !isDinas
     },
     {
-      name: t('rejected_data'),
+      name: "Data Ditolak",
       href: "/rejected",
       icon: Ban,
       show: !!user && !isDinas && !isKoordinator
     },
     {
-      name: t('verify_bank'),
+      name: "Verifikasi Data",
       href: "/verify-bank",
       icon: CreditCard,
       show: isAdmin || isMonitoring
     },
     {
-      name: t('gov_verification'),
+      name: "Verifikasi & Validasi Dinas",
       href: "/verifikasi-dinas",
       icon: ClipboardCheck,
       show: isAdmin || isDinas
     },
     {
-      name: t('verification_results'),
+      name: "HASIL VERIFIKASI",
       href: "/hasil-verifikasi",
       icon: ListChecks,
       show: (isAdmin || isPetugas || isKoordinator) && !isDinas
     },
     {
-      name: t('bank_accounts'),
+      name: "Rekening Bank",
       icon: CreditCard,
       show: !!user && !isDinas,
       items: [
@@ -189,60 +186,60 @@ export function AppSidebar() {
       ]
     },
     {
-      name: t('lpj'),
+      name: "LPJ",
       href: "/lpj",
       icon: FileText,
       show: (isAdmin || isPetugas || isMonitoring) && !isKoordinator
     },
     {
-      name: t('finish_data'),
+      name: "Data Selesai",
       href: "/finish",
       icon: CheckCircle2,
       show: !!user && !isDinas
     },
     {
-      name: t('user_management'),
+      name: "Manajemen User",
       href: "/users",
       icon: UserCog,
       show: isAdmin
     },
     {
-      name: t('settings'),
+      name: "Pengaturan",
       href: "/settings",
       icon: Settings,
       show: !!user
     },
     {
-      name: t('quota_coordinator'),
+      name: "Kuota KORLAP / DEWAN AKTIF",
       href: "/kuota-koordinator",
       icon: BarChart3,
       show: isAdmin
     },
     {
-      name: t('chat_monitoring'),
+      name: "Monitoring Chat",
       href: "/chat-monitoring",
       icon: MessageSquare,
       show: isAdmin || isMonitoring
     },
     {
-      name: t('app_logs'),
+      name: "LOG APLIKASI",
       href: "/app-logs",
       icon: History,
       show: isAdmin
     },
     {
-      name: t('event_settings'),
+      name: "Pengaturan Event",
       href: "/settings-event",
       icon: Calendar,
       show: isAdmin
     },
-  ], [user, isAdmin, isMonitoring, userProfile, t])
+  ], [user, isAdmin, isMonitoring, userProfile])
 
   const copyUid = () => {
     if (user?.uid) {
       navigator.clipboard.writeText(user.uid)
       setCopied(true)
-      toast({ title: t('uid_copied'), description: t('uid_copied_desc') })
+      toast({ title: "UID Disalin", description: "Berikan UID ini ke Admin untuk akses penuh." })
       setTimeout(() => setCopied(false), 2000)
     }
   }
@@ -294,7 +291,7 @@ export function AppSidebar() {
       <SidebarContent className="px-3 py-2">
         <SidebarGroup>
           <SidebarGroupLabel className="px-2 mb-2 group-data-[collapsible=icon]:hidden text-white/40 font-bold text-[10px] uppercase tracking-[0.2em]">
-            {t('main_menu')}
+            MENU UTAMA
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
@@ -435,7 +432,7 @@ export function AppSidebar() {
                   <>
                     <LogOut className="w-4.5 h-4.5 shrink-0" />
                     <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">
-                      {t('logout')}
+                      Keluar
                     </span>
                   </>
                 ) : (

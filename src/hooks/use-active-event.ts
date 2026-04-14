@@ -23,13 +23,13 @@ export function useActiveEvent(eventInfo: any) {
       }
 
       const active = eventsArray
-        .filter(e => e.enabled !== false)
-        .filter(e => {
+        .filter((e: any) => e.enabled !== false)
+        .filter((e: any) => {
             const end = e.endDate || e.date;
             if (!end) return false;
             return new Date(end).getTime() > Date.now();
         })
-        .sort((a, b) => {
+        .sort((a: any, b: any) => {
             const timeA = new Date(a.startDate || a.date || a.endDate || 0).getTime();
             const timeB = new Date(b.startDate || b.date || b.endDate || 0).getTime();
             return timeA - timeB;

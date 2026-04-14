@@ -2,7 +2,6 @@
 "use client"
 
 import { useMemoFirebase, useList, useUser, useDatabase } from "@/firebase"
-import { useTranslation } from "@/lib/i18n"
 import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
@@ -24,7 +23,6 @@ export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
   const database = useDatabase()
   const router = useRouter()
-  const { t } = useTranslation()
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -217,7 +215,7 @@ export default function DashboardPage() {
 
   const stats = [
     { 
-      name: t('total_actors'), 
+      name: "Total Pelaku Usaha", 
       value: allData?.length ?? 0, 
       icon: Building2, 
       color: "text-white", 
@@ -228,7 +226,7 @@ export default function DashboardPage() {
       filterType: "total"
     },
     { 
-      name: t('male_actors'), 
+      name: "Pelaku Laki-laki", 
       value: genderStats.laki, 
       icon: Users, 
       color: "text-white", 
@@ -239,7 +237,7 @@ export default function DashboardPage() {
       filterType: "laki"
     },
     { 
-      name: t('female_actors'), 
+      name: "Pelaku Perempuan", 
       value: genderStats.perempuan, 
       icon: Users, 
       color: "text-white", 
@@ -250,7 +248,7 @@ export default function DashboardPage() {
       filterType: "perempuan"
     },
     { 
-      name: t('verified_data'), 
+      name: "Data Terverifikasi", 
       value: (allData || []).filter(d => {
         const s = d.status || "";
         return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
@@ -264,7 +262,7 @@ export default function DashboardPage() {
       filterType: "verified"
     },
     { 
-      name: t('rejected_data_dashboard'), 
+      name: "Data Ditolak", 
       value: allData?.filter(d => d.status?.toLowerCase().trim() === "rejected").length || 0, 
       icon: UserX, 
       color: "text-white", 
@@ -281,16 +279,16 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div className="space-y-1 relative">
           <h1 className="text-3xl md:text-5xl font-black tracking-tight font-headline text-gradient uppercase drop-shadow-sm">
-            {t('dashboard')}
+            Dashboard
           </h1>
           <p className="text-xs md:text-sm text-slate-600 font-semibold">
-            {t('dashboard_desc')}
+            Monitor dan kelola pendaftaran pelaku usaha secara real-time.
           </p>
         </div>
         <div className="glass-panel px-3 py-1.5 md:px-4 md:py-2 rounded-xl flex items-center gap-2 md:gap-3 hover:shadow-lg transition-all">
           <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
           <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest">
-            {t('system')}: <span className="text-emerald-600">{t('system_active')}</span>
+            Sistem: <span className="text-emerald-600">SISTEM: AKTIF & SINKRON</span>
           </span>
         </div>
       </div>
@@ -318,7 +316,7 @@ export default function DashboardPage() {
               <div className="text-xl md:text-3xl font-black text-white">{isLoading ? "..." : stat.value}</div>
               <div className="flex items-center gap-1 mt-1 text-[8px] md:text-[10px] font-bold text-white/70 uppercase">
                 <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
-                {t('latest_data_label')}
+                DATA TERKINI
               </div>
             </CardContent>
           </Card>
@@ -330,7 +328,7 @@ export default function DashboardPage() {
           <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
             <CardHeader className="bg-primary/10 pb-4">
               <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
-                <BarChart3 className="w-5 h-5" /> {t('quota_all')}
+                <BarChart3 className="w-5 h-5" /> Jumlah Kuota
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
@@ -339,10 +337,10 @@ export default function DashboardPage() {
                   <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="w-[40px] text-center font-black text-slate-800 text-[10px] md:text-xs">No</TableHead>
-                      <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">{t('coordinator_name')}</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">{t('quota_target')}</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">{t('quota_achieved')}</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">{t('quota_remaining')}</TableHead>
+                      <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">Nama Korlap / Dewan Aktif</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Jumlah Kuota</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Tercapai</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Sisa Kuota</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -378,7 +376,7 @@ export default function DashboardPage() {
                           <div className="flex flex-col items-center gap-3">
                             <BarChart3 className="w-10 h-10 text-slate-300 animate-pulse" />
                             <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">
-                              {t('no_quota_data')}
+                              Data kuota koordinator belum dimasukkan.
                             </p>
                           </div>
                         </TableCell>
@@ -388,7 +386,7 @@ export default function DashboardPage() {
                   <TableFooter>
                     <TableRow className="bg-primary/5 border-t-2 border-primary/20">
                       <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs py-3">
-                        {t('total_quota_data')}
+                        Total Kuota Data
                       </TableCell>
                       <TableCell className="text-center font-black text-slate-600 text-sm">
                         {totalKuotaDashboard}
@@ -408,7 +406,7 @@ export default function DashboardPage() {
           <Card className="glass overflow-hidden transition-all hover:shadow-xl">
             <CardHeader className="pb-2">
               <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
-                <Cloud className="w-5 h-5 text-primary" /> {t('cloud_storage')}
+                <Cloud className="w-5 h-5 text-primary" /> Penyimpanan Cloud Online
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -418,21 +416,21 @@ export default function DashboardPage() {
                     <DatabaseZap className="w-8 h-8 text-emerald-600" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t('server_status')}</span>
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Status Server</span>
                     <span className="text-xl font-black text-emerald-600 flex items-center gap-2">
-                      {t('online')} <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                      ONLINE <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
                     </span>
                   </div>
                 </div>
                 <div className="w-full md:w-64 space-y-2">
                   <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase">
-                    <span>{t('availability')}</span>
+                    <span>Ketersediaan</span>
                     <span>99.9%</span>
                   </div>
                   <div className="h-2 bg-emerald-100 rounded-full overflow-hidden">
                     <div className="h-full bg-emerald-500 w-full" />
                   </div>
-                  <p className="text-[9px] text-muted-foreground italic text-center md:text-left">{t('cloud_desc')}</p>
+                  <p className="text-[9px] text-muted-foreground italic text-center md:text-left">Seluruh data tersimpan aman di infrastruktur Cloud Google.</p>
                 </div>
               </div>
             </CardContent>
@@ -443,7 +441,7 @@ export default function DashboardPage() {
           <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none">
             <CardHeader className="border-b border-slate-200/50 pb-4">
               <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-primary" /> {t('regional_distribution')}
+                <MapPin className="w-5 h-5 text-primary" /> Sebaran per Kelurahan
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 md:p-6">
@@ -463,7 +461,7 @@ export default function DashboardPage() {
                 ))}
                 {kelurahanStats.length === 0 && !isLoading && (
                   <div className="col-span-full py-10 text-center text-muted-foreground italic text-xs">
-                    {t('no_village_data')}
+                    Belum ada data wilayah terekam.
                   </div>
                 )}
               </div>
@@ -475,7 +473,7 @@ export default function DashboardPage() {
           <Card className="glass overflow-hidden transition-all hover:shadow-xl">
             <CardHeader>
               <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-primary" /> {t('business_category_title')}
+                <BarChart3 className="w-5 h-5 text-primary" /> Kategori Usaha
               </CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
@@ -484,7 +482,7 @@ export default function DashboardPage() {
                 className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md"
               >
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">{t('kuliner')}</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Kuliner</span>
                   <span className="text-xl font-black text-primary">
                     {categoryStats.kuliner}
                   </span>
@@ -498,7 +496,7 @@ export default function DashboardPage() {
                 className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md"
               >
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">{t('non_kuliner')}</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Bukan Kuliner</span>
                   <span className="text-xl font-black text-slate-700">
                     {categoryStats.bukanKuliner}
                   </span>
@@ -513,7 +511,7 @@ export default function DashboardPage() {
                   className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md border-dashed border-2"
                 >
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">{t('other_empty')}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Lainnya / Kosong</span>
                     <span className="text-xl font-black text-slate-500">
                       {categoryStats.unknown}
                     </span>
@@ -540,11 +538,11 @@ export default function DashboardPage() {
               <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
                 <TableRow>
                   <TableHead className="w-[50px] text-center font-black text-slate-800 text-xs">No</TableHead>
-                  <TableHead className="font-black text-slate-800 text-xs">{t('full_name')}</TableHead>
-                  <TableHead className="font-black text-slate-800 text-xs">{t('nik')}</TableHead>
-                  <TableHead className="font-black text-slate-800 text-xs">{t('business_name')}</TableHead>
-                  <TableHead className="font-black text-slate-800 text-xs">{t('coordinator')}</TableHead>
-                  <TableHead className="font-black text-slate-800 text-xs text-center">{t('status')}</TableHead>
+                  <TableHead className="font-black text-slate-800 text-xs">Nama Lengkap</TableHead>
+                  <TableHead className="font-black text-slate-800 text-xs">NIK</TableHead>
+                  <TableHead className="font-black text-slate-800 text-xs">Nama Usaha</TableHead>
+                  <TableHead className="font-black text-slate-800 text-xs">KORLAP / DEWAN AKTIF</TableHead>
+                  <TableHead className="font-black text-slate-800 text-xs text-center">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -565,7 +563,7 @@ export default function DashboardPage() {
                 {filteredModalData.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center text-muted-foreground font-bold">
-                      {t('no_data_found')}
+                      Tidak ada data yang ditemukan.
                     </TableCell>
                   </TableRow>
                 )}
