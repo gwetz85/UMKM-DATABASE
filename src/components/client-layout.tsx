@@ -144,6 +144,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
               {/* Desktop Top Bar - Hidden on Login */}
               {!isLoginPage && (
+                <>
                 <div className="hidden md:flex flex-col px-10 pt-12 pb-6 print:hidden">
                     {currentTitle && (
                       <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-left-4 duration-1000">
@@ -197,7 +198,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     </Link>
                   </div>
                 </div>
-              )}
+              </>
+            )}
               <div key={pathname} className="w-full relative z-0 animate-in fade-in-up">
                 {children}
               </div>

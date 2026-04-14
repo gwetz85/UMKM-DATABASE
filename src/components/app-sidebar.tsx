@@ -297,6 +297,8 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.name}>
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
+                      <SidebarMenuButton
+                        asChild
                         className={cn(
                           "h-12 px-4 rounded-xl transition-all duration-200 hover:bg-black/5 text-slate-900 font-[600]",
                           item.items.some((sub: any) => pathname === sub.href) ? "bg-black/5" : "bg-transparent",
@@ -326,8 +328,8 @@ export function AppSidebar() {
                                 asChild
                                 isActive={pathname === subItem.href}
                                 className={cn(
-                                  "rounded-xl transition-all text-white/60 hover:text-white hover:bg-white/10 h-9",
-                                  "data-[active=true]:bg-white data-[active=true]:text-primary font-black shadow-lg shadow-black/20"
+                                  "rounded-xl transition-all text-slate-500 hover:text-slate-900 hover:bg-black/5 h-9",
+                                  "data-[active=true]:bg-white data-[active=true]:text-primary font-black shadow-sm"
                                 )}
                               >
                                 <Link
