@@ -156,7 +156,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     )}
                 </div>
                 
-                <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-0 z-40 ios-glass border-b border-black/5 mx-0 mb-4 rounded-none h-16 opacity-0 hover:opacity-100 transition-opacity duration-300">
+                 <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-0 z-40 ios-glass border-b border-black/5 mx-0 mb-4 rounded-none h-16 transition-all duration-300">
                   <div className="flex items-center gap-4 px-6">
                     <SidebarTrigger className="text-primary hover:bg-primary/5 transition-all p-2 rounded-full" />
                     <span className="text-lg font-bold text-slate-800">{currentTitle}</span>

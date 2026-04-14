@@ -288,7 +288,7 @@ export function AppSidebar() {
 
       <SidebarContent className="px-3 py-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 mb-3 group-data-[collapsible=icon]:hidden text-white/40 font-black text-[10px] uppercase tracking-[0.25em]">
+          <SidebarGroupLabel className="px-3 mb-3 group-data-[collapsible=icon]:hidden text-slate-500 font-black text-[10px] uppercase tracking-[0.25em]">
             Navigasi Utama
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -300,7 +300,7 @@ export function AppSidebar() {
                       <SidebarMenuButton
                         asChild
                         className={cn(
-                          "h-12 px-4 rounded-xl transition-all duration-200 hover:bg-black/5 text-slate-900 font-[600]",
+                          "h-12 px-4 rounded-xl transition-all duration-200 hover:bg-black/5 text-slate-900 font-[700]",
                           item.items.some((sub: any) => pathname === sub.href) ? "bg-black/5" : "bg-transparent",
                           "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center active:scale-95"
                         )}
@@ -328,7 +328,7 @@ export function AppSidebar() {
                                 asChild
                                 isActive={pathname === subItem.href}
                                 className={cn(
-                                  "rounded-xl transition-all text-slate-500 hover:text-slate-900 hover:bg-black/5 h-9",
+                                  "rounded-xl transition-all text-slate-700 hover:text-slate-900 hover:bg-black/5 h-9",
                                   "data-[active=true]:bg-white data-[active=true]:text-primary font-black shadow-sm"
                                 )}
                               >
@@ -353,7 +353,7 @@ export function AppSidebar() {
                       tooltip={item.name}
                       onClick={() => playSound('click')}
                       className={cn(
-                        "h-12 px-4 rounded-xl transition-all duration-300 hover:bg-black/5 text-slate-600 font-[600]",
+                        "h-12 px-4 rounded-xl transition-all duration-300 hover:bg-black/5 text-slate-900 font-[700]",
                         "data-[active=true]:bg-primary data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:shadow-primary/20",
                         "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center active:scale-95"
                       )}
@@ -412,14 +412,16 @@ export function AppSidebar() {
                   <span className="text-[9px] text-slate-500 font-mono truncate select-all">
                     {user.uid}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-slate-400 hover:text-primary hover:bg-white transition-all shadow-sm"
-                    onClick={copyUid}
-                  >
-                    {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-                  </Button>
+                  <Copy 
+                    className="w-3 h-3 text-slate-400 cursor-pointer hover:text-primary transition-colors" 
+                    onClick={() => {
+                      navigator.clipboard.writeText(user.uid);
+                      toast({
+                        title: "ID Disalin",
+                        description: "UID akun Anda telah disalin ke clipboard",
+                      });
+                    }}
+                  />
                 </div>
               </div>
             </div>
