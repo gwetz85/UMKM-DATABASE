@@ -105,26 +105,17 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           {/* Mobile Header - Hidden on Login */}
           {!isLoginPage && (
             <>
-              <header className="sticky top-0 flex md:hidden items-center justify-between px-6 h-18 bg-white/80 backdrop-blur-xl text-slate-900 shrink-0 z-50 border-b border-slate-200 shadow-sm print:hidden">
-                <div className="flex items-center gap-3">
-                  <SidebarTrigger className="text-primary hover:bg-primary/5 transition-all p-2 rounded-xl" />
+              <header className="sticky top-0 flex md:hidden items-center justify-between px-6 h-20 ios-glass text-slate-900 shrink-0 z-50 border-b border-black/5 print:hidden">
+                <div className="flex items-center gap-4">
+                  <SidebarTrigger className="text-primary hover:bg-primary/5 transition-all p-2.5 rounded-full" />
                   <div className="flex flex-col">
-                    <span className="text-2xl font-black tracking-tighter leading-none bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-600">
+                    <span className="text-2xl font-[900] tracking-tighter leading-none text-slate-900">
                       SIMPU
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                   <InfoDialog>
-                    <button className="w-10 h-10 overflow-hidden rounded-2xl border-2 border-white shadow-md outline-none bg-white flex items-center justify-center transition-transform active:scale-95">
-                      <img 
-                        src="/logo.png" 
-                        alt="SIMPU" 
-                        className="w-full h-full object-contain p-1.5"
-                      />
-                    </button>
-                  </InfoDialog>
-                  <Link href="/profile" className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white shadow-md bg-slate-50 flex items-center justify-center transition-all active:scale-90 hover:border-primary/30">
+                <div className="flex items-center gap-4">
+                  <Link href="/profile" className="w-10 h-10 rounded-full overflow-hidden border border-black/5 shadow-sm bg-slate-100 flex items-center justify-center transition-all active:scale-90">
                     {profile?.photoURL ? (
                       <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
@@ -153,19 +144,21 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
               {/* Desktop Top Bar - Hidden on Login */}
               {!isLoginPage && (
-                <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border-white shadow-xl shadow-primary/5 mx-6 mb-4 mt-4 rounded-3xl backdrop-blur-2xl">
-                  <div className="flex items-center gap-6">
-                    <div className="bg-primary/5 p-1 rounded-2xl border border-primary/10">
-                      <SidebarTrigger className="text-primary hover:bg-primary/10 transition-all p-2.5 rounded-xl shadow-sm bg-white" />
-                    </div>
+                <div className="hidden md:flex flex-col px-10 pt-12 pb-6 print:hidden">
                     {currentTitle && (
-                      <div className="flex flex-col">
-                        <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight uppercase landing-none">
+                      <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-left-4 duration-1000">
+                         <span className="text-xs font-bold text-primary uppercase tracking-[0.3em] ml-1">{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        <h1 className="text-5xl md:text-6xl font-[900] text-slate-900 tracking-[-0.04em] landing-none">
                           {currentTitle}
                         </h1>
-                        <div className="h-1 w-12 bg-primary rounded-full mt-1" />
                       </div>
                     )}
+                </div>
+                
+                <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-0 z-40 ios-glass border-b border-black/5 mx-0 mb-4 rounded-none h-16 opacity-0 hover:opacity-100 transition-opacity duration-300">
+                  <div className="flex items-center gap-4 px-6">
+                    <SidebarTrigger className="text-primary hover:bg-primary/5 transition-all p-2 rounded-full" />
+                    <span className="text-lg font-bold text-slate-800">{currentTitle}</span>
                   </div>
                   
                   {/* Event Info - Center Area */}

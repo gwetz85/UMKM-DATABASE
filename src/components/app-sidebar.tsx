@@ -269,23 +269,21 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon" variant="floating" className="border-none shadow-2xl bg-white/90 md:glass-panel bg-transparent h-[calc(100vh-2rem)] my-4 ml-4">
-      <SidebarHeader className="py-8 flex flex-col items-center justify-center border-b border-primary/10">
+    <Sidebar collapsible="icon" variant="floating" className="border-none shadow-none bg-transparent h-full md:h-[calc(100vh-2rem)] md:my-4 md:ml-4">
+      <SidebarHeader className="py-10 flex flex-col items-center justify-center border-b border-black/5">
         <div className="flex flex-col items-center justify-center w-full">
           <InfoDialog>
-            <button className="flex flex-col items-center gap-2 transition-all duration-500 hover:scale-110 active:scale-95 outline-none group">
-              <div className="relative group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 w-24 h-24 flex items-center justify-center overflow-hidden rounded-full border-4 border-white shadow-2xl bg-white transition-all group-hover:border-primary/50 group-hover:shadow-primary/20">
+            <button className="flex flex-col items-center gap-4 transition-all duration-500 hover:scale-110 active:scale-95 outline-none group">
+              <div className="relative group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 w-28 h-28 flex items-center justify-center overflow-hidden rounded-[2.5rem] bg-white shadow-[0_15px_40px_rgba(0,0,0,0.1)] border border-black/5 transition-all group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.15)]">
                 <img
                   src="/logo.png"
                   alt="SIMPU Logo"
-                  className="w-full h-full object-contain p-2"
+                  className="w-full h-full object-contain p-3"
                 />
               </div>
             </button>
           </InfoDialog>
         </div>
-
-
       </SidebarHeader>
 
       <SidebarContent className="px-3 py-2">
@@ -299,26 +297,24 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.name}>
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
-                      <SidebarMenuButton
-                        asChild
-                        tooltip={item.name}
                         className={cn(
-                          "h-11 px-3 rounded-2xl transition-all duration-300 hover:bg-white/10 hover:text-white text-white/70 font-bold",
-                          item.items.some((sub: any) => pathname === sub.href) && "bg-white/10 text-white",
-                          "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
-                          "active:scale-95"
+                          "h-12 px-4 rounded-xl transition-all duration-200 hover:bg-black/5 text-slate-900 font-[600]",
+                          item.items.some((sub: any) => pathname === sub.href) ? "bg-black/5" : "bg-transparent",
+                          "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center active:scale-95"
                         )}
                       >
                         <CollapsibleTrigger asChild>
                           <div
-                            className="flex items-center gap-3 w-full cursor-pointer"
+                            className="flex items-center gap-3.5 w-full cursor-pointer"
                             onClick={() => playSound('click')}
                           >
-                             <item.icon className="w-4.5 h-4.5 shrink-0" />
-                            <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
+                            <div className="w-8 h-8 rounded-[10px] bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                <item.icon className="w-4.5 h-4.5" />
+                            </div>
+                            <span className="text-[15px] group-data-[collapsible=icon]:hidden">
                               {item.name}
                             </span>
-                            <ChevronRight className="ml-auto w-3 h-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden opacity-60" />
+                            <ChevronRight className="ml-auto w-4 h-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden opacity-30" />
                           </div>
                         </CollapsibleTrigger>
                       </SidebarMenuButton>
@@ -354,22 +350,23 @@ export function AppSidebar() {
                       isActive={pathname === item.href}
                       tooltip={item.name}
                       onClick={() => playSound('click')}
-                       className={cn(
-                        "h-11 px-3 rounded-2xl transition-all duration-500 hover:bg-white/10 hover:text-white text-white/70 font-bold",
-                        "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-xl data-[active=true]:shadow-black/20",
-                        "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
-                        "active:scale-95"
+                      className={cn(
+                        "h-12 px-4 rounded-xl transition-all duration-300 hover:bg-black/5 text-slate-600 font-[600]",
+                        "data-[active=true]:bg-primary data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:shadow-primary/20",
+                        "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center active:scale-95"
                       )}
                     >
                       <Link
                         href={item.href}
-                        className="flex items-center gap-3 w-full"
+                        className="flex items-center gap-3.5 w-full"
                       >
-                        <item.icon className={cn(
-                          "w-5 h-5 shrink-0 transition-transform duration-300",
-                          pathname === item.href && "scale-110"
-                        )} />
-                        <span className="text-[11px] uppercase tracking-wider group-data-[collapsible=icon]:hidden">
+                         <div className={cn(
+                            "w-8 h-8 rounded-[10px] flex items-center justify-center transition-all",
+                            pathname === item.href ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
+                         )}>
+                            <item.icon className="w-4.5 h-4.5" />
+                         </div>
+                        <span className="text-[15px] group-data-[collapsible=icon]:hidden">
                           {item.name}
                         </span>
                       </Link>
