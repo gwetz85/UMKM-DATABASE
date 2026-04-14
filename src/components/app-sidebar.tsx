@@ -290,7 +290,7 @@ export function AppSidebar() {
 
       <SidebarContent className="px-3 py-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 mb-3 group-data-[collapsible=icon]:hidden text-primary/60 font-black text-[10px] uppercase tracking-[0.25em]">
+          <SidebarGroupLabel className="px-3 mb-3 group-data-[collapsible=icon]:hidden text-white/40 font-black text-[10px] uppercase tracking-[0.25em]">
             Navigasi Utama
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -303,8 +303,8 @@ export function AppSidebar() {
                         asChild
                         tooltip={item.name}
                         className={cn(
-                          "h-11 px-3 rounded-2xl transition-all duration-300 hover:bg-primary/10 hover:text-primary text-slate-600 font-bold",
-                          item.items.some((sub: any) => pathname === sub.href) && "bg-primary/5 text-primary",
+                          "h-11 px-3 rounded-2xl transition-all duration-300 hover:bg-white/10 hover:text-white text-white/70 font-bold",
+                          item.items.some((sub: any) => pathname === sub.href) && "bg-white/10 text-white",
                           "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
                           "active:scale-95"
                         )}
@@ -314,11 +314,11 @@ export function AppSidebar() {
                             className="flex items-center gap-3 w-full cursor-pointer"
                             onClick={() => playSound('click')}
                           >
-                            <item.icon className="w-4.5 h-4.5 shrink-0" />
+                             <item.icon className="w-4.5 h-4.5 shrink-0" />
                             <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
                               {item.name}
                             </span>
-                            <ChevronRight className="ml-auto w-3 h-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden opacity-40" />
+                            <ChevronRight className="ml-auto w-3 h-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden opacity-60" />
                           </div>
                         </CollapsibleTrigger>
                       </SidebarMenuButton>
@@ -330,8 +330,8 @@ export function AppSidebar() {
                                 asChild
                                 isActive={pathname === subItem.href}
                                 className={cn(
-                                  "rounded-xl transition-all text-slate-500 hover:text-primary hover:bg-primary/5 h-9",
-                                  "data-[active=true]:bg-primary data-[active=true]:text-white font-black shadow-lg shadow-primary/20"
+                                  "rounded-xl transition-all text-white/60 hover:text-white hover:bg-white/10 h-9",
+                                  "data-[active=true]:bg-white data-[active=true]:text-primary font-black shadow-lg shadow-black/20"
                                 )}
                               >
                                 <Link
@@ -354,9 +354,9 @@ export function AppSidebar() {
                       isActive={pathname === item.href}
                       tooltip={item.name}
                       onClick={() => playSound('click')}
-                      className={cn(
-                        "h-11 px-3 rounded-2xl transition-all duration-500 hover:bg-primary/10 hover:text-primary text-slate-600 font-bold",
-                        "data-[active=true]:bg-primary data-[active=true]:text-white data-[active=true]:shadow-xl data-[active=true]:shadow-primary/30",
+                       className={cn(
+                        "h-11 px-3 rounded-2xl transition-all duration-500 hover:bg-white/10 hover:text-white text-white/70 font-bold",
+                        "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-xl data-[active=true]:shadow-black/20",
                         "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
                         "active:scale-95"
                       )}
@@ -389,34 +389,34 @@ export function AppSidebar() {
               <div className="glass-panel p-3.5 space-y-3 rounded-2xl border-primary/10 shadow-lg">
                 <Link
                   href="/profile"
-                  className="flex items-center gap-3 hover:bg-primary/5 p-1.5 rounded-xl transition-all cursor-pointer w-full group/profile"
+                  className="flex items-center gap-3 hover:bg-white/10 p-1.5 rounded-xl transition-all cursor-pointer w-full group/profile"
                 >
-                  <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center group-hover/profile:scale-110 transition-all overflow-hidden border-2 border-white shadow-md">
+                  <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center group-hover/profile:scale-110 transition-all overflow-hidden border-2 border-white/20 shadow-md">
                     {userProfile?.photoURL ? (
                       <img src={userProfile.photoURL} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <UserIcon className="w-5 h-5 text-primary" />
+                      <UserIcon className="w-5 h-5 text-white" />
                     )}
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-black text-slate-800 truncate group-hover/profile:text-primary transition-colors uppercase tracking-tight">
+                    <span className="text-[11px] font-black text-white truncate group-hover/profile:text-white transition-colors uppercase tracking-tight">
                       {userProfile?.fullName?.toUpperCase() || user.email?.split('@')[0].toUpperCase()}
                     </span>
-                    <span className="text-[9px] text-primary font-black uppercase tracking-widest flex items-center gap-1">
+                    <span className="text-[9px] text-white/60 font-black uppercase tracking-widest flex items-center gap-1">
                        <ShieldCheck className="w-2.5 h-2.5" />
                        {isAdmin ? "Admin" : isMonitoring ? "Monitoring" : isKoordinator ? "KORLAP" : isPetugas ? "Petugas" : isDinas ? "Dinas" : "User"}
                     </span>
                   </div>
                 </Link>
 
-                <div className="flex items-center justify-between bg-slate-950/5 p-2 rounded-xl gap-2 border border-black/5 shadow-inner">
-                  <span className="text-[9px] text-slate-400 font-mono truncate select-all">
+                <div className="flex items-center justify-between bg-black/20 p-2 rounded-xl gap-2 border border-white/5 shadow-inner">
+                  <span className="text-[9px] text-white/40 font-mono truncate select-all">
                     {user.uid}
                   </span>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 text-slate-400 hover:text-primary hover:bg-white transition-all shadow-sm"
+                    className="h-6 w-6 text-white/40 hover:text-white hover:bg-white/10 transition-all shadow-sm"
                     onClick={copyUid}
                   >
                     {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
@@ -428,9 +428,9 @@ export function AppSidebar() {
 
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton
+               <SidebarMenuButton
                 onClick={handleAuthAction}
-                className="h-11 rounded-2xl hover:bg-rose-50 hover:text-rose-600 text-slate-500 transition-all group-data-[collapsible=icon]:justify-center active:scale-95 font-black uppercase tracking-[0.1em] text-[10px]"
+                className="h-11 rounded-2xl hover:bg-white/10 hover:text-white text-white/60 transition-all group-data-[collapsible=icon]:justify-center active:scale-95 font-black uppercase tracking-[0.1em] text-[10px]"
               >
                 {user ? (
                   <>
