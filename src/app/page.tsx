@@ -4,6 +4,7 @@
 import { useMemoFirebase, useList, useUser, useDatabase } from "@/firebase"
 import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap, Calendar } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -278,9 +279,12 @@ export default function DashboardPage() {
     <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto animate-in fade-in-up duration-700">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div className="space-y-1 relative">
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight font-headline text-gradient uppercase drop-shadow-sm">
-            Dashboard
-          </h1>
+          <div className="flex items-center gap-3">
+            <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight font-headline text-gradient uppercase drop-shadow-sm">
+              Dashboard
+            </h1>
+          </div>
           <p className="text-xs md:text-sm text-slate-600 font-semibold">
             Monitor dan kelola pendaftaran pelaku usaha secara real-time.
           </p>

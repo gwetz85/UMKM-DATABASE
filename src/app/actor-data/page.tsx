@@ -15,11 +15,12 @@ import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, 
 import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
+import { BusinessActor } from "../lib/types"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 const normalizeGender = (g: string) => {
   const val = (g || "").toLowerCase().trim();
@@ -263,7 +264,10 @@ function ActorDataContent() {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Data Pelaku Usaha</h1>
+          <div className="flex items-center gap-3">
+            <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+            <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Data Pelaku Usaha</h1>
+          </div>
           <p className="text-xs md:text-sm text-muted-foreground">Data lolos verifikasi siap diisi rekening.</p>
           {filterCoordinator && (
             <div className="flex items-center gap-2 mt-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 w-fit">

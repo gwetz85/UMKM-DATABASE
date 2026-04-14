@@ -21,6 +21,7 @@ import {
   Camera,
   Image as ImageIcon
 } from "lucide-react"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser()
@@ -227,7 +228,10 @@ export default function ProfilePage() {
         </div>
         
         <div className="text-center md:text-left">
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight uppercase">Update Profil</h1>
+          <div className="flex items-center gap-3 justify-center md:justify-start">
+            <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+            <h1 className="text-3xl font-black text-slate-800 tracking-tight uppercase">Update Profil</h1>
+          </div>
           <p className="text-slate-500 font-medium">Lengkapi data diri Anda untuk memudahkan koordinasi.</p>
         </div>
       </div>

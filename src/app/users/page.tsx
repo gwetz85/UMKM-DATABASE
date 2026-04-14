@@ -30,6 +30,7 @@ import {
   Building2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 
@@ -162,8 +163,11 @@ export default function UserManagementPage() {
     <div className="p-8 space-y-6 max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
           <h1 className="text-3xl font-bold text-primary font-headline">Manajemen User</h1>
-          <p className="text-muted-foreground font-medium">Kelola akses dan peranan pengguna dalam sistem.</p>
+        </div>
+        <p className="text-muted-foreground font-medium">Kelola akses dan peranan pengguna dalam sistem.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>

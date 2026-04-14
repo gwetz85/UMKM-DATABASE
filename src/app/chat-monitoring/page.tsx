@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useDatabase, useUser, useObject, useMemoFirebase, deleteDocumentNonBlocking, useList } from '@/firebase';
 import { ref, query, onValue, get } from 'firebase/database';
 import { MessageSquare, ShieldAlert, Trash2 } from 'lucide-react';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 
 export default function ChatMonitoring() {
   const { user } = useUser();
@@ -143,14 +144,17 @@ export default function ChatMonitoring() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-8">
+    <div className="max-w-7xl mx-auto p-4 md:p-8">
       <div className="mb-10">
-        <h1 className="flex items-center gap-3 text-3xl font-black mb-2 text-primary font-headline">
-          <div className="bg-primary text-white p-2.5 rounded-xl flex shadow-sm">
-            <MessageSquare size={28} />
-          </div>
-          Monitoring Pesan
-        </h1>
+        <div className="flex items-center gap-3 mb-2">
+          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+          <h1 className="flex items-center gap-3 text-3xl font-black text-primary font-headline">
+            <div className="bg-primary text-white p-2.5 rounded-xl flex shadow-sm">
+              <MessageSquare size={28} />
+            </div>
+            Monitoring Pesan
+          </h1>
+        </div>
         <p className="text-muted-foreground font-medium">Audit percakapan live dan pesan offline dari pengguna.</p>
         
         <div className="flex gap-2 mt-6">

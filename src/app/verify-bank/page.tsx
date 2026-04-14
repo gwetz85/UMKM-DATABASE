@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { ShieldAlert, Loader2, RotateCcw, CheckCircle, Trash2 } from "lucide-react"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function VerifyBankPage() {
   const { user } = useUser()
@@ -79,7 +80,10 @@ export default function VerifyBankPage() {
   return (
     <div className="p-8 space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold text-primary font-headline">Verifikasi Data (Final)</h1>
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+          <h1 className="text-3xl font-bold text-primary font-headline">Verifikasi Data (Final)</h1>
+        </div>
         <p className="text-muted-foreground">Persetujuan akhir sebelum data dinyatakan SELESAI.</p>
       </div>
 

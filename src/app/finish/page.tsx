@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 function FinishContent() {
   const { user } = useUser()
@@ -144,6 +145,7 @@ function FinishContent() {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div className="flex items-center gap-3">
+          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
           <BadgeCheck className="w-8 h-8 text-green-600" />
           <div className="flex flex-col">
             <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Finish</h1>

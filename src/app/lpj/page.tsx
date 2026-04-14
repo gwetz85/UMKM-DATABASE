@@ -21,6 +21,7 @@ import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useState, useEffect, useMemo } from "react"
 import { Badge } from "@/components/ui/badge"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 
 export default function LPJPage() {
@@ -109,9 +110,12 @@ export default function LPJPage() {
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-black text-primary font-headline uppercase tracking-tight flex items-center gap-3">
-             <FileText className="w-8 h-8" /> Pelaporan LPJ
-        </h1>
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+          <h1 className="text-3xl font-black text-primary font-headline uppercase tracking-tight flex items-center gap-3">
+              <FileText className="w-8 h-8" /> Pelaporan LPJ
+          </h1>
+        </div>
         <p className="text-muted-foreground font-medium">Catat laporan pertanggungjawaban dana yang telah diterima pelaku usaha.</p>
       </div>
 

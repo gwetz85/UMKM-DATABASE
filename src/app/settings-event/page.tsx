@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Save, Loader2, Info, AlertTriangle, Plus, Trash2, Clock } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 interface EventItem {
   id: string
@@ -123,7 +124,10 @@ export default function EventSettingsPage() {
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8 animate-in fade-in-up duration-700 pb-24">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl md:text-4xl font-black text-primary font-headline uppercase tracking-tight text-stroke-thin">Antrean Event</h1>
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+          <h1 className="text-3xl md:text-4xl font-black text-primary font-headline uppercase tracking-tight text-stroke-thin">Antrean Event</h1>
+        </div>
         <p className="text-muted-foreground font-medium text-sm md:text-base">Kelola jadwal event yang akan datang. Sistem otomatis menampilkan event terdekat secara berurutan.</p>
       </div>
 

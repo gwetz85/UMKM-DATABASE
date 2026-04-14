@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { ShieldAlert, Loader2, BarChart3, UserPlus, Edit, Trash2 } from "lucide-react"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function KuotaKorlapDewanAktifPage() {
   const [mounted, setMounted] = useState(false)
@@ -185,12 +186,15 @@ export default function KuotaKorlapDewanAktifPage() {
   return (
     <div className="p-8 space-y-6 max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-primary font-headline flex items-center gap-3">
-            <BarChart3 className="w-8 h-8" />
-            Kuota KORLAP / DEWAN AKTIF
-          </h1>
-          <p className="text-muted-foreground font-medium">Pengelolaan target data pencapaian masing-masing korlap / dewan aktif.</p>
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+          <div>
+            <h1 className="text-3xl font-bold text-primary font-headline flex items-center gap-3">
+              <BarChart3 className="w-8 h-8" />
+              Kuota KORLAP / DEWAN AKTIF
+            </h1>
+            <p className="text-muted-foreground font-medium">Pengelolaan target data pencapaian masing-masing korlap / dewan aktif.</p>
+          </div>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>

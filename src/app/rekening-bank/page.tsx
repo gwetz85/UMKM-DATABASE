@@ -14,6 +14,7 @@ import { Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 const BANK_LIST = [
   "BCA", "BNI", "BRI", "BRK", "MANDIRI", "PANIN", "OCBC", "DANAMON", "BUKOPIN", "BTN"
@@ -143,9 +144,12 @@ function RekeningBankContent() {
     <div className="p-4 md:p-8 space-y-6 md:space-y-8 max-w-7xl mx-auto animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 print:hidden">
         <div className="space-y-1 relative">
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight font-headline text-gradient uppercase drop-shadow-sm flex items-center gap-3">
-            <CreditCard className="w-8 h-8 md:w-12 md:h-12 text-primary" /> {selectedBank ? `Bank ${selectedBank}` : 'Rekening Bank'}
-          </h1>
+          <div className="flex items-center gap-3">
+            <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+            <h1 className="text-3xl md:text-5xl font-black tracking-tight font-headline text-gradient uppercase drop-shadow-sm flex items-center gap-3">
+              <CreditCard className="w-8 h-8 md:w-12 md:h-12 text-primary" /> {selectedBank ? `Bank ${selectedBank}` : 'Rekening Bank'}
+            </h1>
+          </div>
           <p className="text-xs md:text-sm text-slate-600 font-semibold">
             {selectedBank ? `Daftar rekening untuk bank ${selectedBank} yang telah terverifikasi.` : 'Daftar rekening pelaku usaha yang telah terverifikasi, dikelompokkan per Bank.'}
           </p>

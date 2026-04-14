@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import * as XLSX from 'xlsx'
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function SettingsPage() {
   const { user } = useUser()
@@ -354,7 +355,10 @@ export default function SettingsPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-black text-primary font-headline">Pengaturan</h1>
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+          <h1 className="text-4xl font-black text-primary font-headline">Pengaturan</h1>
+        </div>
         <p className="text-muted-foreground font-medium">Konfigurasi tampilan {isAdmin ? "dan manajemen data aplikasi." : "aplikasi Anda."}</p>
       </div>
 

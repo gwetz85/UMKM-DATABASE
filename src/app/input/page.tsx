@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Save, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -190,7 +191,10 @@ export default function InputDataPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-primary font-headline">Input Data Pelaku Usaha Baru</h1>
+        <div className="flex items-center gap-3">
+          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+          <h1 className="text-3xl font-bold text-primary font-headline">Input Data Pelaku Usaha Baru</h1>
+        </div>
         <p className="text-muted-foreground">Silakan isi formulir di bawah ini dengan lengkap dan benar untuk pendaftaran pelaku usaha.</p>
         {isMonitoring && (
           <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl flex items-center gap-3 font-bold text-sm shadow-sm animate-pulse">

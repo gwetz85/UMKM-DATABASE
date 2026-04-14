@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ShieldAlert, Loader2, Eye, Search, User, FileText, Building2, MapPin, History, BadgeCheck, XSquare, CreditCard, ChevronRight } from "lucide-react"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { BusinessActor } from "../lib/types"
 import { updateDocumentNonBlocking } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
@@ -103,6 +104,7 @@ export default function HasilVerifikasiPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
+            <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
             <h1 className="text-3xl font-bold text-primary font-headline">HASIL VERIFIKASI</h1>
             {filteredActors && (
               <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/20 shadow-sm flex items-center gap-2">

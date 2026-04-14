@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database, UserSearch, User, Eye, FileText, ShieldAlert } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import { cn, formatCurrency } from "@/lib/utils"
 
 export default function CheckDataPage() {
@@ -109,12 +110,15 @@ export default function CheckDataPage() {
   }
 
   return (
-    <div className="p-8 max-w-[95rem] mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-[95rem] mx-auto space-y-8">
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl mb-2">
-          <Database className="w-8 h-8 text-primary" />
+        <div className="flex items-center justify-center gap-3">
+          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+          <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl">
+            <Database className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-4xl font-black text-primary font-headline">Cek Master Data & Blacklist</h1>
         </div>
-        <h1 className="text-4xl font-black text-primary font-headline">Cek Master Data & Blacklist</h1>
         <p className="text-muted-foreground max-w-xl mx-auto font-medium">
           Validasi NIK, No KK, atau Nama terhadap Database Master UMKM dan Daftar Blacklist.
         </p>

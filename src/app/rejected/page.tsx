@@ -18,6 +18,7 @@ import Link from "next/link"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 
 import { cn } from "@/lib/utils"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 function RejectedContent() {
   const { user } = useUser()
@@ -155,6 +156,7 @@ function RejectedContent() {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div className="flex items-center gap-3">
+          <SidebarTrigger className="text-red-700 hover:bg-red-50 transition-colors" />
           <div className="flex flex-col">
             <h1 className="text-2xl md:text-3xl font-bold text-red-700 font-headline">Data Ditolak / Batal</h1>
             <p className="text-xs md:text-sm text-muted-foreground">Arsip data yang ditolak oleh Administrator.</p>

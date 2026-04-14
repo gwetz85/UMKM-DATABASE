@@ -17,6 +17,7 @@ import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { cn } from "@/lib/utils"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, actor }: { 
   actorId: string, 
@@ -326,6 +327,7 @@ export default function VerifyActorPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
+            <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
             <h1 className="text-3xl font-bold text-primary font-headline">Verifikasi Admin</h1>
             {filteredActors && (
               <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/20 shadow-sm flex items-center gap-2">

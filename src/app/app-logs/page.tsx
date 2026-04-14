@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2, Search, History, Smartphone, Monitor, Bot, Globe, Clock, User, MessageSquare, ShieldAlert, Bug, RefreshCcw, AlertTriangle, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { logActivity } from "@/lib/logger"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 function AppLogsContent() {
   const { user } = useUser()
@@ -131,9 +132,12 @@ function AppLogsContent() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline flex items-center gap-3">
-            <History className="w-8 h-8" /> LOG AKTIVITAS APLIKASI
-          </h1>
+          <div className="flex items-center gap-3">
+            <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
+            <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline flex items-center gap-3">
+              <History className="w-8 h-8" /> LOG AKTIVITAS APLIKASI
+            </h1>
+          </div>
           <p className="text-xs md:text-sm text-muted-foreground uppercase font-bold tracking-wider text-left">
             Memantau riwayat pengecekkan data dari Web & Bot Telegram
           </p>
