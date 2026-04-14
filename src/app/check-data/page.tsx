@@ -2,7 +2,6 @@
 
 import React, { useState } from "react"
 import { useDatabase, useList, useMemoFirebase, useUser, useObject } from "@/firebase"
-import { useTranslation } from "@/lib/i18n"
 import { ref, query, orderByChild, equalTo, startAt, endAt } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,7 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn, formatCurrency } from "@/lib/utils"
 
 export default function CheckDataPage() {
-  const { t } = useTranslation()
   const { user } = useUser()
   const database = useDatabase()
   const [loading, setLoading] = useState(false)
@@ -55,8 +53,8 @@ export default function CheckDataPage() {
     const blacklist = allBlacklistData || []
     
     const combinedData = [
-      ...master.map(m => ({ ...m, _source: t('source_actor') })),
-      ...blacklist.map(m => ({ ...m, _source: t('source_blacklist') }))
+      ...master.map(m => ({ ...m, _source: "DATA PELAKU USAHA" })),
+      ...blacklist.map(m => ({ ...m, _source: "DATA CANCELL / BLACKLIST" }))
     ]
 
     let results = []
@@ -88,15 +86,13 @@ export default function CheckDataPage() {
     return (
       <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center">
         <ShieldAlert className="w-16 h-16 text-destructive" />
-        <h1 className="text-2xl font-bold">{t('access_denied')}</h1>
+        <h1 className="text-2xl font-bold">Akses Ditolak</h1>
         <p className="text-muted-foreground max-w-md mx-auto">
-          {t('access_denied_desc')}
+          Hanya Administrator yang dapat mengakses menu Master Data ini.
         </p>
       </div>
     )
   }
-
-
 
   const handleCheck = (e: React.FormEvent) => {
     e.preventDefault()
@@ -112,30 +108,28 @@ export default function CheckDataPage() {
     setSearchDone(true)
   }
 
-
-
   return (
     <div className="p-8 max-w-[95rem] mx-auto space-y-8">
       <div className="text-center space-y-3">
         <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl mb-2">
           <Database className="w-8 h-8 text-primary" />
         </div>
-        <h1 className="text-4xl font-black text-primary font-headline">{t('check_master_data')}</h1>
+        <h1 className="text-4xl font-black text-primary font-headline">Cek Master Data & Blacklist</h1>
         <p className="text-muted-foreground max-w-xl mx-auto font-medium">
-          {t('check_master_desc')}
+          Validasi NIK, No KK, atau Nama terhadap Database Master UMKM dan Daftar Blacklist.
         </p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
         <Card className="lg:col-span-3 border-none shadow-xl h-fit bg-white/80 backdrop-blur-md">
           <CardHeader>
-            <CardTitle className="text-lg">{t('search_parameters')}</CardTitle>
-            <CardDescription>{t('select_search_method')}</CardDescription>
+            <CardTitle className="text-lg">Parameter Pencarian</CardTitle>
+            <CardDescription>Pilih metode validasi data.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCheck} className="space-y-6">
               <div className="space-y-4">
-                <Label className="text-sm font-bold text-foreground">{t('search_type')}</Label>
+                <Label className="text-sm font-bold text-foreground">Tipe Pencarian</Label>
                 <RadioGroup 
                   value={searchType} 
                   onValueChange={(v: any) => {
@@ -147,26 +141,26 @@ export default function CheckDataPage() {
                 >
                   <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted hover:bg-muted/50 cursor-pointer transition-colors">
                     <RadioGroupItem value="nik" id="r-nik" />
-                    <Label htmlFor="r-nik" className="flex-1 cursor-pointer font-bold">{t('search_by_nik')}</Label>
+                    <Label htmlFor="r-nik" className="flex-1 cursor-pointer font-bold">Berdasarkan NIK</Label>
                   </div>
                   <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted hover:bg-muted/50 cursor-pointer transition-colors">
                     <RadioGroupItem value="noKK" id="r-kk" />
-                    <Label htmlFor="r-kk" className="flex-1 cursor-pointer font-bold">{t('search_by_kk')}</Label>
+                    <Label htmlFor="r-kk" className="flex-1 cursor-pointer font-bold">Berdasarkan Nomor KK</Label>
                   </div>
                   <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted hover:bg-muted/50 cursor-pointer transition-colors">
                     <RadioGroupItem value="nama" id="r-nama" />
-                    <Label htmlFor="r-nama" className="flex-1 cursor-pointer font-bold">{t('search_by_name')}</Label>
+                    <Label htmlFor="r-nama" className="flex-1 cursor-pointer font-bold">Berdasarkan Nama</Label>
                   </div>
                 </RadioGroup>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="inputValue" className="font-bold text-foreground">
-                  {searchType === "nik" ? "NIK" : searchType === "noKK" ? t('nomor_kk') : t('full_name')}
+                  {searchType === "nik" ? "NIK" : searchType === "noKK" ? "Nomor KK" : "Nama Lengkap"}
                 </Label>
                 <Input 
                   id="inputValue" 
-                  placeholder={searchType === "nik" ? t('input_nik_placeholder') : searchType === "noKK" ? t('input_kk_placeholder') : t('input_name_placeholder')} 
+                  placeholder={searchType === "nik" ? "Masukkan 16 digit NIK..." : searchType === "noKK" ? "Masukkan 16 digit Nomor KK..." : "Masukkan Nama Lengkap..."} 
                   maxLength={searchType === "nama" ? 100 : 16}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
@@ -180,7 +174,7 @@ export default function CheckDataPage() {
 
               <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20" disabled={loading}>
                 {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <SearchCheck className="w-5 h-5 mr-2" />}
-                {t('search_btn')}
+                Cek Database
               </Button>
             </form>
           </CardContent>
@@ -192,9 +186,9 @@ export default function CheckDataPage() {
               <div className="bg-white/50 p-4 rounded-full mb-4">
                 <Info className="w-8 h-8 text-muted-foreground/60" />
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">{t('ready_to_check')}</h3>
+              <h3 className="text-lg font-bold text-foreground mb-2">Siap Melakukan Validasi</h3>
               <p className="text-sm text-muted-foreground">
-                {t('ready_to_check_desc')}
+                Silakan pilih tipe pencarian dan masukkan data yang ingin divalidasi.
               </p>
             </div>
           )}
@@ -202,7 +196,7 @@ export default function CheckDataPage() {
           {isSearchLoading && (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border p-8 text-center">
               <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-              <p className="text-primary font-bold animate-pulse">{t('connecting_db')}</p>
+              <p className="text-primary font-bold animate-pulse">Menghubungkan ke Database...</p>
             </div>
           )}
 
@@ -212,9 +206,9 @@ export default function CheckDataPage() {
                 <div className="space-y-6">
                   <Alert className="bg-emerald-50/90 backdrop-blur-sm border-emerald-200 text-emerald-900 rounded-2xl p-6">
                     <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                    <AlertTitle className="text-xl font-black mb-1 uppercase">{t('data_found_label')}</AlertTitle>
+                    <AlertTitle className="text-xl font-black mb-1 uppercase">DATA DITEMUKAN!</AlertTitle>
                     <AlertDescription className="font-medium">
-                      {t('data_found_desc')}
+                      Terdapat kecocokan data pada database sistem. Silakan tinjau detail di bawah.
                     </AlertDescription>
                   </Alert>
 
@@ -235,7 +229,7 @@ export default function CheckDataPage() {
                                 "text-[10px] font-black uppercase tracking-widest",
                                 res._source === 'DATA CANCELL / BLACKLIST' ? "text-red-600" : "text-primary"
                               )}>
-                                {res._source === 'DATA CANCELL / BLACKLIST' ? 'DATA BLACKLIST / CANCELL' : 'DATA PELAKU USAHA'}
+                                {res._source}
                               </span>
                               <span className={cn(
                                 "text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter border",
@@ -245,11 +239,11 @@ export default function CheckDataPage() {
                                     ? "bg-emerald-50 text-emerald-600 border-emerald-200" 
                                     : "bg-amber-50 text-amber-600 border-amber-200"
                               )}>
-                                {res._source === t('source_blacklist') ? t('rejected') : (res.status || "PENDING")}
+                                {res._source === "DATA CANCELL / BLACKLIST" ? "DITOLAK" : (res.status || "PENDING")}
                               </span>
                             </div>
                             <span className="text-sm font-black text-slate-800 uppercase truncate">
-                              {res.nama}
+                              {res.nama || res.fullName}
                             </span>
                             <span className="text-[10px] font-mono font-bold text-muted-foreground mt-0.5">
                               NIK: {res.nik}
@@ -265,9 +259,9 @@ export default function CheckDataPage() {
                 <div className="space-y-6">
                   <Alert className="bg-red-50/90 backdrop-blur-sm border-red-200 text-red-900 rounded-2xl p-6">
                     <XCircle className="w-6 h-6 text-red-600" />
-                    <AlertTitle className="text-xl font-black mb-2 uppercase">{t('data_not_found_label')}</AlertTitle>
+                    <AlertTitle className="text-xl font-black mb-2 uppercase">DATA TIDAK DITEMUKAN</AlertTitle>
                     <AlertDescription className="font-medium">
-                      {t('data_not_found_desc')}
+                      Data yang Anda masukkan tidak terdaftar di Database Master maupun Blacklist.
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -278,9 +272,10 @@ export default function CheckDataPage() {
                 className="w-full h-11 rounded-xl bg-white/50 backdrop-blur-sm border-primary/20 hover:bg-primary/5 text-primary font-bold" 
                 onClick={() => {
                   setSearchCriteria(null);
+                  setSearchDone(false);
                 }}
               >
-                {t('repeat_search')}
+                Reset & Cari Lagi
               </Button>
             </div>
           )}
@@ -293,15 +288,15 @@ export default function CheckDataPage() {
           <DialogHeader>
             <DialogTitle className={cn(
               "text-2xl font-black uppercase flex items-center gap-2",
-              selectedResult?._source === t('source_blacklist') ? "text-red-600" : "text-primary"
+              selectedResult?._source === "DATA CANCELL / BLACKLIST" ? "text-red-600" : "text-primary"
             )}>
               <UserSearch className="w-6 h-6" /> 
-              {selectedResult?._source === t('source_blacklist') ? t('source_blacklist') : t('source_actor')}
+              {selectedResult?._source}
             </DialogTitle>
             <DialogDescription className="font-bold text-muted-foreground">
-              {selectedResult?._source === t('source_blacklist') 
-                ? t('detail_blacklist') 
-                : t('detail_actor')}
+              {selectedResult?._source === "DATA CANCELL / BLACKLIST" 
+                ? "Informasi Detail Data Pembatalan / Blacklist" 
+                : "Informasi Detail Data Pelaku Usaha"}
             </DialogDescription>
           </DialogHeader>
           {selectedResult && (
@@ -311,16 +306,16 @@ export default function CheckDataPage() {
                    { label: "Nomor", value: selectedResult.nomor, icon: FileText },
                    { label: "Nomor KK", value: selectedResult.noKK, icon: FileText },
                    { label: "NIK", value: selectedResult.nik, icon: FileText },
-                   { label: "Nama Lengkap", value: selectedResult.nama, icon: User, full: true },
-                   { label: "Usaha", value: selectedResult.usaha, icon: Database, full: true },
+                   { label: "Nama Lengkap", value: selectedResult.nama || selectedResult.fullName, icon: User, full: true },
+                   { label: "Usaha", value: selectedResult.usaha || selectedResult.businessName, icon: Database, full: true },
                    { label: "Kategori Status", value: selectedResult.status, icon: Info },
                    { label: "Status LPJ", value: selectedResult.statusLpj, icon: Info },
-                   { label: "Nominal", value: formatCurrency(selectedResult.nominal), icon: SearchCheck },
+                   { label: "Nominal", value: formatCurrency(selectedResult.nominal || selectedResult.lpjNominal), icon: SearchCheck },
                    { label: "Tahun Pengajuan", value: selectedResult.tahunPengajuan, icon: SearchCheck },
                    { label: "Kelurahan", value: selectedResult.kelurahan, icon: UserSearch },
                    { label: "Kecamatan", value: selectedResult.kecamatan, icon: UserSearch },
                    { label: "Koordinator", value: selectedResult.coordinator, icon: UserSearch },
-                   { label: "Alamat", value: selectedResult.alamat, icon: UserSearch, full: true },
+                   { label: "Alamat", value: selectedResult.alamat || selectedResult.address, icon: UserSearch, full: true },
                 ].map((item, i) => (
                   <div key={i} className={item.full ? "md:col-span-2 space-y-1" : "space-y-1"}>
                     <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
@@ -336,7 +331,7 @@ export default function CheckDataPage() {
           )}
           <div className="pt-4">
             <Button className="w-full font-bold h-12" onClick={() => setSelectedResult(null)}>
-              {t('close_detail')}
+              Tutup Detail
             </Button>
           </div>
         </DialogContent>

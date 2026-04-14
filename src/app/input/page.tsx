@@ -1,8 +1,6 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
-import { useTranslation } from "@/lib/i18n"
 import { useDatabase, useUser, addDocumentNonBlocking, useMemoFirebase, useList } from "@/firebase"
 import { ref, query, equalTo, get, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,7 +23,6 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function InputDataPage() {
-  const { t } = useTranslation()
   const { toast } = useToast()
   const { user } = useUser()
   const database = useDatabase()
@@ -193,12 +190,12 @@ export default function InputDataPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-primary font-headline">{t('input_new_data')}</h1>
-        <p className="text-muted-foreground">{t('input_new_desc')}</p>
+        <h1 className="text-3xl font-bold text-primary font-headline">Input Data Pelaku Usaha Baru</h1>
+        <p className="text-muted-foreground">Silakan isi formulir di bawah ini dengan lengkap dan benar untuk pendaftaran pelaku usaha.</p>
         {isMonitoring && (
           <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl flex items-center gap-3 font-bold text-sm shadow-sm animate-pulse">
             <span className="text-xl">👁️</span>
-            {t('monitoring_mode_desc')}
+            MODE MONITORING: Anda hanya dapat melihat data dan tidak diizinkan melakukan input.
           </div>
         )}
       </div>
@@ -206,37 +203,37 @@ export default function InputDataPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="border-none shadow-sm bg-card text-card-foreground">
           <CardHeader>
-            <CardTitle className="text-lg">{t('personal_biodata')}</CardTitle>
+            <CardTitle className="text-lg">Biodata Pribadi</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="fullName">{t('full_name')}</Label>
+              <Label htmlFor="fullName">Nama Lengkap</Label>
               <Input id="fullName" name="fullName" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="gender">{t('gender_label')}</Label>
+              <Label htmlFor="gender">Jenis Kelamin</Label>
               <Select name="gender" required>
-                <SelectTrigger><SelectValue placeholder={t('select_placeholder')} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Laki-laki">{t('male')}</SelectItem>
-                  <SelectItem value="Perempuan">{t('female')}</SelectItem>
+                  <SelectItem value="Laki-laki">Laki-laki</SelectItem>
+                  <SelectItem value="Perempuan">Perempuan</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="nik">NIK</Label>
-              <Input id="nik" name="nik" maxLength={16} placeholder={t('input_nik_placeholder')} required />
+              <Input id="nik" name="nik" maxLength={16} placeholder="Masukkan 16 digit NIK..." required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="noKK">Nomor KK</Label>
-              <Input id="noKK" name="noKK" maxLength={16} placeholder={t('input_kk_placeholder')} required />
+              <Input id="noKK" name="noKK" maxLength={16} placeholder="Masukkan 16 digit Nomor KK..." required />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="pobDob">{t('pob_dob_label')}</Label>
+              <Label htmlFor="pobDob">Tempat / Tanggal Lahir</Label>
               <Input id="pobDob" name="pobDob" placeholder="Contoh: Jakarta, 01-01-1990" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">{t('phone_label')}</Label>
+              <Label htmlFor="phone">Nomor HP</Label>
               <Input id="phone" name="phone" required />
             </div>
           </CardContent>
@@ -244,21 +241,21 @@ export default function InputDataPage() {
 
         <Card className="border-none shadow-sm bg-card text-card-foreground">
           <CardHeader>
-            <CardTitle className="text-lg">{t('address_location')}</CardTitle>
+            <CardTitle className="text-lg">Alamat & Lokasi</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="address">{t('full_address')}</Label>
+              <Label htmlFor="address">Alamat Lengkap</Label>
               <Textarea id="address" name="address" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="rtRw">{t('rt_rw')}</Label>
+              <Label htmlFor="rtRw">RT / RW</Label>
               <Input id="rtRw" name="rtRw" placeholder="001 / 002" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="kelurahan">{t('kelurahan')}</Label>
+              <Label htmlFor="kelurahan">Kelurahan</Label>
               <Select value={kelurahan} onValueChange={setKelurahan} required>
-                <SelectTrigger><SelectValue placeholder={t('select_placeholder')} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
                 <SelectContent className="max-h-[300px]">
                   {kelurahanList.map((k) => (
                     <SelectItem key={k} value={k}>{k}</SelectItem>
@@ -267,7 +264,7 @@ export default function InputDataPage() {
               </Select>
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="kecamatan">{t('kecamatan_auto')}</Label>
+              <Label htmlFor="kecamatan">Kecamatan (Otomatis)</Label>
               <Input id="kecamatan" name="kecamatan" value={kecamatan} readOnly className="bg-muted font-bold" />
             </div>
           </CardContent>
@@ -275,29 +272,29 @@ export default function InputDataPage() {
 
         <Card className="border-none shadow-sm bg-card text-card-foreground">
           <CardHeader>
-            <CardTitle className="text-lg">{t('business_data')}</CardTitle>
+            <CardTitle className="text-lg">Data Usaha</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="businessCategory">{t('business_type')}</Label>
+              <Label htmlFor="businessCategory">Jenis Usaha</Label>
               <Select name="businessCategory" required>
-                <SelectTrigger><SelectValue placeholder={t('select_placeholder')} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Kuliner">{t('culinary')}</SelectItem>
-                  <SelectItem value="Bukan Kuliner">{t('non_culinary')}</SelectItem>
+                  <SelectItem value="Kuliner">Kuliner</SelectItem>
+                  <SelectItem value="Bukan Kuliner">Bukan Kuliner</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="businessName">{t('business_label')}</Label>
+              <Label htmlFor="businessName">Nama Usaha / Produk</Label>
               <Input id="businessName" name="businessName" required />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="businessLocation">{t('business_location')}</Label>
+              <Label htmlFor="businessLocation">Lokasi Usaha</Label>
               <Input id="businessLocation" name="businessLocation" required />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="coordinator">{t('coordinator')}</Label>
+              <Label htmlFor="coordinator">KORLAP / DEWAN AKTIF</Label>
               <Input id="coordinator" name="coordinator" placeholder="Nama KORLAP / DEWAN AKTIF" required />
             </div>
           </CardContent>
@@ -313,7 +310,7 @@ export default function InputDataPage() {
             )}
           >
             {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-            {isMonitoring ? t('limited_access') : t('save_input_btn')}
+            {isMonitoring ? "Akses Terbatas" : "Simpan Data Pendaftaran"}
           </Button>
         </div>
       </form>
@@ -326,15 +323,15 @@ export default function InputDataPage() {
               <CheckCircle2 className="w-12 h-12 text-primary" />
             </div>
             <AlertDialogTitle className="text-2xl font-black text-primary uppercase tracking-tight">
-              {t('data_saved_success')}
+              DATA BERHASIL DISIMPAN!
             </AlertDialogTitle>
             <AlertDialogDescription className="text-base font-bold text-slate-700 leading-relaxed pt-2">
-              {t('wait_verification')}
+              Data pelaku usaha telah masuk ke sistem dan sedang menunggu verifikasi oleh Admin.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6">
             <AlertDialogAction className="w-full h-12 bg-primary hover:bg-primary/90 font-bold text-white rounded-xl">
-              {t('ok_understand')}
+              SAYA MENGERTI
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

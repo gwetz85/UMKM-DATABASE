@@ -19,7 +19,11 @@ import {
   UserPlus,
   ArrowLeft,
   CheckCircle2,
-  CalendarDays
+  CalendarDays,
+  Phone, 
+  MapPin, 
+  Building2, 
+  Code2
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -34,10 +38,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { Phone, MapPin, Building2, Code2 } from "lucide-react"
 import { PublicCheckData } from "@/components/public-check-data"
-
-
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -97,8 +98,8 @@ export default function LoginPage() {
             await signOut(auth)
             toast({ 
               variant: "destructive", 
-              title: t('access_inactive'), 
-              description: t('access_inactive_desc') 
+              title: "Akses Belum Aktif", 
+              description: "Akun Anda sudah terdaftar. Silakan hubungi Admin untuk pemberian akses (Role)." 
             })
             setLoading(false)
             return
@@ -107,13 +108,13 @@ export default function LoginPage() {
           if (userData.role !== 'dinas') {
             if (!userData.uid) {
               await update(userRef, { uid: user.uid })
-              toast({ title: t('device_locked'), description: t('device_locked_desc') })
+              toast({ title: "Perangkat Terkunci", description: "Akun Anda sekarang terikat pada perangkat ini." })
             } else if (userData.uid !== user.uid) {
               await signOut(auth)
               toast({ 
                 variant: "destructive", 
-                title: t('access_denied'), 
-                description: t('device_mismatch_desc') 
+                title: "Akses Ditolak", 
+                description: "Akun terikat pada perangkat lain. Hubungi Admin untuk reset." 
               })
               setLoading(false)
               return
@@ -121,7 +122,7 @@ export default function LoginPage() {
           }
         }
         
-        toast({ title: t('login_success'), description: t('welcome_back') })
+        toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
       } catch (loginError: any) {
         if (loginError.code === 'auth/user-not-found' || loginError.code === 'auth/invalid-credential' || loginError.code === 'auth/invalid-email') {
           const tempUserRef = ref(database, `system_users/${username}`)
@@ -133,8 +134,8 @@ export default function LoginPage() {
             if (preRegisteredData.role === 'pending') {
               toast({ 
                 variant: "destructive", 
-                title: t('account_not_ready'), 
-                description: t('waiting_admin_role') 
+                title: "Akun Belum Siap", 
+                description: "Menunggu Administrator memberikan akses/role untuk akun ini." 
               })
               setLoading(false)
               return
@@ -155,8 +156,8 @@ export default function LoginPage() {
               }
 
               toast({ 
-                title: t('access_granted'), 
-                description: t('account_registered_locked') 
+                title: "Akses Diberikan", 
+                description: "Akun berhasil didaftarkan dan dikunci ke perangkat ini." 
               })
             } else {
               throw new Error("auth/wrong-password")
@@ -171,12 +172,12 @@ export default function LoginPage() {
 
       router.push("/")
     } catch (error: any) {
-      let message = `${t('error_label')}: ${error.message || String(error)}`
-      if (error.code === 'auth/invalid-credential' || error.message === 'auth/wrong-password') message = t('invalid_credentials')
+      let message = `Kesalahan: ${error.message || String(error)}`
+      if (error.code === 'auth/invalid-credential' || error.message === 'auth/wrong-password') message = "Username atau kata sandi salah."
       
       toast({
         variant: "destructive",
-        title: t('failed'),
+        title: "Gagal",
         description: message,
       })
     } finally {
@@ -196,7 +197,7 @@ export default function LoginPage() {
     try {
       const snap = await get(userRef)
       if (snap.exists()) {
-        toast({ variant: "destructive", title: t('username_exists'), description: t('use_another_name_desc') })
+        toast({ variant: "destructive", title: "Username Sudah Ada", description: "Silakan gunakan nama lain atau hubungi Admin." })
         setRegistering(false)
         return
       }
@@ -213,13 +214,11 @@ export default function LoginPage() {
       setRegName("")
       setRegPass("")
     } catch (error) {
-      toast({ variant: "destructive", title: t('registration_failed'), description: t('connection_error') })
+      toast({ variant: "destructive", title: "Gagal Mendaftar", description: "Terjadi kesalahan koneksi." })
     } finally {
       setRegistering(false)
     }
   }
-
-
 
   return (
     <div 
@@ -255,7 +254,7 @@ export default function LoginPage() {
                <CardContent className="p-3 flex flex-col items-center text-center gap-2">
                  <div className="flex items-center gap-2 text-primary">
                    <CalendarDays className="w-4 h-4 animate-pulse" />
-                   <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{activeEvent.description || t('upcoming_event')}</span>
+                   <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{activeEvent.description || "EVENT MENDATANG"}</span>
                  </div>
                  <div className="scale-[0.80] sm:scale-90 md:scale-100 origin-center -my-2 md:-my-1">
                    <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
@@ -297,7 +296,7 @@ export default function LoginPage() {
                  setShowCheckDataModal(true);
                }}
             >
-               <SearchCheck className="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> {t('check_actor_data_btn')}
+               <SearchCheck className="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> CEK DATA PELAKU USAHA
             </Button>
           </div>
         </div>
@@ -318,7 +317,7 @@ export default function LoginPage() {
               </div>
             </div>
             <CardTitle className="text-xl font-bold text-slate-800">
-              {isRegistered ? t('registration_success') : isRegisteringView ? t('new_user_reg_title') : t('login_to_simpu')}
+              {isRegistered ? "Pendaftaran Berhasil" : isRegisteringView ? "Pendaftaran User Baru" : "Masuk ke SIMPU"}
             </CardTitle>
           </CardHeader>
           {isRegistered ? (
@@ -341,18 +340,18 @@ export default function LoginPage() {
                   setIsRegisteringView(false);
                 }}
               >
-                <ArrowLeft className="w-4 h-4 mr-2" /> {t('back_to_login_btn')}
+                <ArrowLeft className="w-4 h-4 mr-2" /> Kembali ke Login
               </Button>
             </CardContent>
           ) : isRegisteringView ? (
             <form onSubmit={handleRegister}>
               <CardContent className="grid gap-5 py-4 text-left">
                 <div className="grid gap-2 text-left">
-                  <Label className="font-bold text-slate-700 ml-1">{t('username')}</Label>
+                  <Label className="font-bold text-slate-700 ml-1">Username</Label>
                   <div className="relative">
                     <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input 
-                      placeholder={t('full_name_placeholder')} 
+                      placeholder="Nama Lengkap Anda" 
                       className="pl-10 h-11 border-slate-200 focus:ring-primary"
                       value={regName}
                       onChange={(e) => setRegName(e.target.value)}
@@ -361,7 +360,7 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <div className="grid gap-2 text-left">
-                  <Label className="font-bold text-slate-700 ml-1">{t('password')}</Label>
+                  <Label className="font-bold text-slate-700 ml-1">Kata Sandi</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input 
@@ -378,7 +377,7 @@ export default function LoginPage() {
               <CardFooter className="flex flex-col gap-4 pb-10">
                 <Button type="submit" className="w-full font-bold h-12 bg-primary shadow-lg" disabled={registering}>
                   {registering ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <UserPlus className="w-5 h-5 mr-2" />}
-                  {t('save_registration_btn')}
+                  Simpan Pendaftaran
                 </Button>
                 <Button 
                   variant="ghost" 
@@ -386,7 +385,7 @@ export default function LoginPage() {
                   className="w-full text-muted-foreground font-bold"
                   onClick={() => setIsRegisteringView(false)}
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" /> {t('cancel_back_login_btn')}
+                  <ArrowLeft className="w-4 h-4 mr-2" /> Batal & Kembali ke Login
                 </Button>
               </CardFooter>
             </form>
@@ -394,13 +393,13 @@ export default function LoginPage() {
             <form onSubmit={handleAuth}>
               <CardContent className="grid gap-5 py-4 text-left">
                 <div className="grid gap-2 text-left">
-                  <Label htmlFor="identifier" className="font-bold text-slate-700 ml-1">{t('username')}</Label>
+                  <Label htmlFor="identifier" className="font-bold text-slate-700 ml-1">Username</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="identifier"
                       type="text"
-                      placeholder={t('full_name_placeholder')}
+                      placeholder="Nama Lengkap Anda"
                       className="pl-10 h-11 border-slate-200 focus:ring-primary"
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
@@ -409,7 +408,7 @@ export default function LoginPage() {
                   </div>
                 </div>
                 <div className="grid gap-2 text-left">
-                  <Label htmlFor="password" title={t('password')} className="font-bold text-slate-700 ml-1">{t('password')}</Label>
+                  <Label htmlFor="password" title="Kata Sandi" className="font-bold text-slate-700 ml-1">Kata Sandi</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -433,7 +432,7 @@ export default function LoginPage() {
                     {loading ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
-                      <><LogIn className="w-5 h-5 mr-2" /> {t('login_btn')}</>
+                      <><LogIn className="w-5 h-5 mr-2" /> Masuk</>
                     )}
                   </Button>
 
@@ -443,15 +442,13 @@ export default function LoginPage() {
                     className="px-6 h-12 font-bold whitespace-nowrap shadow-sm"
                     onClick={() => setIsRegisteringView(true)}
                   >
-                    <UserPlus className="w-5 h-5 mr-2" /> {t('register_btn')}
+                    <UserPlus className="w-5 h-5 mr-2" /> Daftar
                   </Button>
                 </div>
 
                 <div className="pt-2 flex flex-col items-center gap-3">
-
-
                   <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60 font-medium tracking-tight">
-                    <MonitorOff className="w-3 h-3" /> {t('device_policy_desc')}
+                    <MonitorOff className="w-3 h-3" /> Kebijakan 1 User 1 Perangkat Aktif
                   </div>
                 </div>
               </CardFooter>
@@ -460,14 +457,12 @@ export default function LoginPage() {
         </Card>
       )}
 
-
-
       {/* Information Modal */}
       <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
         <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl">
           {/* Top Part - Countdown */}
           <div className="bg-slate-50 p-8 flex flex-col items-center justify-center border-b">
-            <div className="mb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">{t('office_hours_title')}</div>
+            <div className="mb-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Waktu Operasional Kantor</div>
             <OfficeHoursTimer large />
           </div>
 
@@ -479,16 +474,16 @@ export default function LoginPage() {
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <Building2 className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="font-black text-lg tracking-tight text-slate-800 uppercase">{t('secretariat')}</h3>
+                <h3 className="font-black text-lg tracking-tight text-slate-800 uppercase">Sekretariat</h3>
               </div>
               <div className="space-y-3 pl-11">
                 <div className="flex items-start gap-2 text-sm font-bold text-slate-600 leading-relaxed uppercase">
                   <MapPin className="w-4 h-4 mt-1 shrink-0 text-slate-400" />
-                  <span>{t('secretariat_address')}</span>
+                  <span>JALAN GATOT SUBROTO ( DEPAN RAWASARI ) DEKAT CUCIAN MOBIL STARWASH</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm font-black text-primary">
                   <Phone className="w-4 h-4" />
-                  <span>{t('office_contact')} : 0823-2880-4478</span>
+                  <span>KONTAK OFFICE : 0823-2880-4478</span>
                 </div>
               </div>
             </div>
@@ -501,26 +496,26 @@ export default function LoginPage() {
                 <div className="p-2 bg-slate-900/10 rounded-lg">
                   <Code2 className="w-5 h-5 text-slate-900" />
                 </div>
-                <h3 className="font-black text-lg tracking-tight text-slate-800 uppercase">{t('app_developer')}</h3>
+                <h3 className="font-black text-lg tracking-tight text-slate-800 uppercase">Pengembang Aplikasi</h3>
               </div>
               <div className="space-y-3 pl-11">
                 <div className="space-y-1">
-                  <div className="text-md font-black text-slate-900 uppercase">{t('developer_name')}</div>
+                  <div className="text-md font-black text-slate-900 uppercase">AGUS SURIYADI</div>
                   <div className="flex items-start gap-2 text-xs font-bold text-slate-500 uppercase">
                     <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" />
-                    <span>{t('developer_address')}</span>
+                    <span>JL DAENG HAJI MEKAH NO 23 TANJUNGPINANG</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm font-black text-slate-700">
                   <Phone className="w-4 h-4" />
-                  <span>{t('contact')} : 0817319885</span>
+                  <span>KONTAK : 0817319885</span>
                 </div>
               </div>
             </div>
           </div>
           
           <div className="p-4 bg-slate-50 border-t text-center">
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t('system_footer')}</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha © 2026</div>
           </div>
         </DialogContent>
       </Dialog>

@@ -7,10 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
-import { useTranslation } from "@/lib/i18n"
+import { ShieldAlert, Loader2, RotateCcw, CheckCircle, Trash2 } from "lucide-react"
 
 export default function VerifyBankPage() {
-  const { t } = useTranslation()
   const { user } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
@@ -46,24 +45,24 @@ export default function VerifyBankPage() {
       status: 'lpj_pending',
       lpjEntryDate: new Date().toISOString()
     })
-    toast({ title: t('verification_success'), description: t('final_verification_success_desc') })
+    toast({ title: "Verifikasi Berhasil", description: "Data telah lolos verifikasi final dan masuk tahap LPJ." })
   }
 
   const handleRevert = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm(t('confirm_revert_to_pending', { name: fullName }))) {
+    if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
       const actorRef = ref(database, `businessActors/${actorId}`)
       updateDocumentNonBlocking(actorRef, { status: 'pending' })
-      toast({ title: t('verification_cancelled'), description: t('reverted_to_pending_desc') })
+      toast({ title: "Verifikasi Dibatalkan", description: "Data dikembalikan ke antrean verifikasi awal." })
     }
   }
 
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm(t('confirm_delete_permanent', { name: fullName }))) {
+    if (confirm(`Hapus permanen ${fullName}? Semua data terkait akan hilang.`)) {
       const actorRef = ref(database, `businessActors/${actorId}`)
       deleteDocumentNonBlocking(actorRef)
-      toast({ variant: "destructive", title: t('deleted'), description: t('data_deleted_desc') })
+      toast({ variant: "destructive", title: "Terhapus", description: "Data telah dihapus dari sistem." })
     }
   }
 
@@ -71,8 +70,8 @@ export default function VerifyBankPage() {
     return (
       <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center text-destructive">
         <ShieldAlert className="w-16 h-16" />
-        <h1 className="text-2xl font-bold">{t('access_denied')}</h1>
-        <p className="text-muted-foreground font-medium">{t('admin_permission_required_desc')}</p>
+        <h1 className="text-2xl font-bold">Akses Ditolak</h1>
+        <p className="text-muted-foreground font-medium">Anda tidak memiliki izin Administrator untuk mengakses menu ini.</p>
       </div>
     )
   }
@@ -80,8 +79,8 @@ export default function VerifyBankPage() {
   return (
     <div className="p-8 space-y-6">
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold text-primary font-headline">{t('final_verification_title')}</h1>
-        <p className="text-muted-foreground">{t('final_verification_desc')}</p>
+        <h1 className="text-3xl font-bold text-primary font-headline">Verifikasi Data (Final)</h1>
+        <p className="text-muted-foreground">Persetujuan akhir sebelum data dinyatakan SELESAI.</p>
       </div>
 
       <Card className="border-none shadow-sm overflow-hidden bg-card">
@@ -92,11 +91,11 @@ export default function VerifyBankPage() {
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead className="font-bold">{t('nama_lengkap')}</TableHead>
-                  <TableHead className="font-bold">{t('bank')}</TableHead>
-                  <TableHead className="font-bold">{t('bank_account_number')}</TableHead>
-                  <TableHead className="font-bold">{t('bank_owner_label')}</TableHead>
-                  <TableHead className="text-right font-bold">{t('aksi')}</TableHead>
+                  <TableHead className="font-bold">Nama Lengkap</TableHead>
+                  <TableHead className="font-bold">Bank</TableHead>
+                  <TableHead className="font-bold">Nomor Rekening</TableHead>
+                  <TableHead className="font-bold">Pemilik Rekening</TableHead>
+                  <TableHead className="text-right font-bold">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -115,10 +114,10 @@ export default function VerifyBankPage() {
                             onClick={() => handleRevert(actor.id, actor.fullName)}
                             className="border-amber-500 text-amber-600 hover:bg-amber-50 font-bold"
                           >
-                            <RotateCcw className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t('revert_btn')}</span>
+                            <RotateCcw className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">BATAL</span>
                           </Button>
                           <Button size="sm" onClick={() => handleFinalVerify(actor.id)} className="bg-primary hover:bg-primary/90 font-bold">
-                            <CheckCircle className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">{t('approve_btn')}</span>
+                            <CheckCircle className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">SETUJU</span>
                           </Button>
                           <Button size="sm" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)} className="font-bold h-9">
                             <Trash2 className="w-4 h-4" />
@@ -131,7 +130,7 @@ export default function VerifyBankPage() {
                 {(!actors || actors.length === 0) && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-20 text-muted-foreground font-medium italic">
-                      {t('no_data_final_verification')}
+                      Tidak ada data yang menunggu persetujuan final.
                     </TableCell>
                   </TableRow>
                 )}

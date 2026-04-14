@@ -28,7 +28,6 @@ import {
 import { updatePassword } from "firebase/auth"
 import { useAuth, useList } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
-import { useTranslation, Language } from "@/lib/i18n"
 import { cn } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -43,7 +42,6 @@ export default function SettingsPage() {
   const [changingPassword, setChangingPassword] = useState(false)
   const [uploadingExcel, setUploadingExcel] = useState(false)
   const [theme, setTheme] = useState<"light" | "dark">("light")
-  const { language, setLanguage, t } = useTranslation()
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -79,8 +77,6 @@ export default function SettingsPage() {
       setTheme(themeSettings.mode)
     }
   }, [themeSettings])
-
-
 
   const applyLocalTheme = (themeData: any) => {
     if (!themeData) return;
@@ -136,8 +132,8 @@ export default function SettingsPage() {
     }
 
     toast({ 
-      title: t('theme_updated'), 
-      description: t('app_mode_changed', { mode: val === "dark" ? t('dark_mode') : t('light_mode') }) 
+      title: "Tema Diperbarui", 
+      description: `Mode aplikasi diubah ke mode ${val === "dark" ? "Gelap" : "Terang"}.` 
     });
   }
 
@@ -156,8 +152,8 @@ export default function SettingsPage() {
     }
 
     toast({ 
-      title: t('color_updated'), 
-      description: t('color_palette_changed', { name: name }) 
+      title: "Warna Diperbarui", 
+      description: `Palet warna aplikasi diubah ke ${name}.` 
     });
   }
 
@@ -177,9 +173,9 @@ export default function SettingsPage() {
       link.download = `backup-umkm-${new Date().toISOString().split('T')[0]}.json`
       link.click()
       
-      toast({ title: t('backup_success'), description: t('backup_file_downloaded') })
+      toast({ title: "Backup Berhasil", description: "File data pelaku usaha berhasil diunduh." })
     } catch (error) {
-      toast({ variant: "destructive", title: t('backup_failed'), description: t('error_fetching_data') })
+      toast({ variant: "destructive", title: "Backup Gagal", description: "Gagal mengambil data dari database." })
     } finally {
       setLoading(false)
     }
@@ -207,9 +203,9 @@ export default function SettingsPage() {
           await update(ref(database), updates)
         }
         
-        toast({ title: t('restore_success'), description: t('restore_data_count', { count: data.length }) })
+        toast({ title: "Pemulihan Berhasil", description: `${data.length} data pelaku usaha berhasil dipulihkan.` })
       } catch (error) {
-        toast({ variant: "destructive", title: t('restore_failed'), description: t('check_backup_format') })
+        toast({ variant: "destructive", title: "Pemulihan Gagal", description: "Pastikan format file backup sesuai." })
       } finally {
         setLoading(false)
       }
@@ -227,26 +223,20 @@ export default function SettingsPage() {
       try {
         const bstr = event.target?.result
         const wb = XLSX.read(bstr, { type: 'binary', cellFormula: true, cellNF: true, cellText: true })
-        
-        // Use the first sheet regardless of name, or specific name if needed
         const wsname = wb.SheetNames[0]
         const ws = wb.Sheets[wsname]
-        
         const range = XLSX.utils.decode_range(ws['!ref'] || "A1")
         const importedData: any[] = []
 
-        // Iterate through rows (skipping header at row 0)
         for (let r = range.s.r + 1; r <= range.e.r; r++) {
           const rowValues: string[] = []
           for (let c = range.s.c; c <= range.e.c; c++) {
             const cellRef = XLSX.utils.encode_cell({ r, c })
             const cell = ws[cellRef]
-            
             if (!cell) {
               rowValues.push("")
               continue
             }
-
             if (cell.t === 'n') {
               rowValues.push(BigInt(Math.floor(Number(cell.v))).toString())
             } else {
@@ -255,7 +245,6 @@ export default function SettingsPage() {
           }
 
           const getVal = (idx: number) => rowValues[idx] || ""
-
           const item = {
             noKK: getVal(0),
             nik: getVal(1),
@@ -273,10 +262,12 @@ export default function SettingsPage() {
             uploadedAt: new Date().toISOString()
           }
 
+          if (item.nik) {
+            importedData.push(item)
           }
         }
 
-        if (importedData.length === 0) throw new Error(t('no_valid_data_excel'))
+        if (importedData.length === 0) throw new Error("Tidak ada data valid yang ditemukan dalam file excel.")
 
         const dbPath = targetType === 'master' ? "master_data" : "blacklist_data"
         const batchSize = 500
@@ -291,11 +282,11 @@ export default function SettingsPage() {
         }
 
         toast({ 
-          title: t('upload_sheet_success', { sheet: targetType === 'master' ? '1' : '2' }), 
-          description: t('data_saved_to_desc', { count: importedData.length, target: targetType === 'master' ? t('master_data_sheet') : t('blacklist_data_sheet') }) 
+          title: `Import Sheet ${targetType === 'master' ? '1' : '2'} Berhasil`, 
+          description: `${importedData.length} data tersimpan ke ${targetType === 'master' ? 'Data Master' : 'Data Blacklist'}.` 
         })
       } catch (error: any) {
-        toast({ variant: "destructive", title: t('excel_import_failed'), description: error.message || t('check_column_format') })
+        toast({ variant: "destructive", title: "Gagal Mengimpor Excel", description: error.message || "Pastikan format kolom sudah sesuai." })
       } finally {
         setUploadingExcel(false)
         e.target.value = ''
@@ -305,43 +296,42 @@ export default function SettingsPage() {
   }
 
   const handleReset = async () => {
-    if (!confirm(t('confirm_reset_all_data_warning'))) return
+    if (!confirm("HAPUS SELURUH DATA SISTEM? Tindakan ini tidak dapat dibatalkan!")) return
 
     setLoading(true)
     try {
       await remove(ref(database, "businessActors"))
-      
-      toast({ title: t('reset_success'), description: t('all_actor_data_deleted') })
+      toast({ title: "Reset Berhasil", description: "Seluruh data pelaku usaha telah dihapus." })
     } catch (error) {
-      toast({ variant: "destructive", title: t('reset_failed'), description: t('error_deleting_data') })
+      toast({ variant: "destructive", title: "Reset Gagal", description: "Terjadi kesalahan saat menghapus data." })
     } finally {
       setLoading(false)
     }
   }
 
   const handleResetMaster = async () => {
-    if (!confirm(t('confirm_reset_sheet1_warning'))) return
+    if (!confirm("Hapus seluruh data master pembanding (Sheet 1)?")) return
 
     setLoading(true)
     try {
       await remove(ref(database, "master_data"))
-      toast({ title: t('delete_success'), description: t('all_master_data_deleted') })
+      toast({ title: "Berhasil Dihapus", description: "Seluruh data master telah dihapus." })
     } catch (error) {
-      toast({ variant: "destructive", title: t('delete_failed'), description: t('error_deleting_master_data') })
+      toast({ variant: "destructive", title: "Gagal Menghapus", description: "Terjadi kesalahan saat menghapus data master." })
     } finally {
       setLoading(false)
     }
   }
 
   const handleResetBlacklist = async () => {
-    if (!confirm(t('confirm_reset_sheet2_warning'))) return
+    if (!confirm("Hapus seluruh data blacklist/cancell (Sheet 2)?")) return
 
     setLoading(true)
     try {
       await remove(ref(database, "blacklist_data"))
-      toast({ title: t('delete_success'), description: t('all_blacklist_data_deleted') })
+      toast({ title: "Berhasil Dihapus", description: "Seluruh data blacklist telah dihapus." })
     } catch (error) {
-      toast({ variant: "destructive", title: t('delete_failed'), description: t('error_deleting_blacklist_data') })
+      toast({ variant: "destructive", title: "Gagal Menghapus", description: "Terjadi kesalahan saat menghapus data blacklist." })
     } finally {
       setLoading(false)
     }
@@ -354,16 +344,18 @@ export default function SettingsPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-black text-primary font-headline">{t('settings')}</h1>
-        <p className="text-muted-foreground font-medium">{isAdmin ? t('settings_admin_desc') : t('settings_user_desc')}</p>
+        <h1 className="text-4xl font-black text-primary font-headline">Pengaturan</h1>
+        <p className="text-muted-foreground font-medium">
+          {isAdmin ? "Kelola preferensi aplikasi, keamanan akun, dan manajemen database." : "Kelola preferensi tampilan dan keamanan akun Anda."}
+        </p>
       </div>
 
       {!isAdmin && (
         <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
           <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertTitle className="text-blue-800 dark:text-blue-300 font-bold">{t('settings_access')}</AlertTitle>
+          <AlertTitle className="text-blue-800 dark:text-blue-300 font-bold">Akses Pengaturan</AlertTitle>
           <AlertDescription className="text-blue-700 dark:text-blue-400">
-            {t('settings_access_desc', { name: userProfile?.fullName || 'User', role: isKoordinator ? t('coordinator') : isPetugas ? t('officer') : isDinas ? t('dinas') : isMonitoring ? t('monitoring') : t('user') })}
+            Halo {userProfile?.fullName || 'User'}, Anda masuk sebagai {isKoordinator ? "Koordinator" : isPetugas ? "Petugas" : isDinas ? "Dinas" : isMonitoring ? "Monitoring" : "Pengguna"}.
           </AlertDescription>
         </Alert>
       )}
@@ -372,61 +364,57 @@ export default function SettingsPage() {
         <Card className="border-none shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Palette className="w-5 h-5 text-primary" /> {t('appearance_theme')}
+              <Palette className="w-5 h-5 text-primary" /> Tampilan & Tema
             </CardTitle>
-            <CardDescription>{t('appearance_theme_desc')}</CardDescription>
+            <CardDescription>Sesuaikan antarmuka aplikasi sesuai kenyamanan Anda.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-8">
             <div className="space-y-4">
-              <Label className="font-bold flex items-center gap-2">
-                <RefreshCcw className="w-4 h-4 text-primary" /> {t('app_language')}
-              </Label>
-              <RadioGroup 
-                value={language} 
-                onValueChange={(v: Language) => {
-                  setLanguage(v);
-                  toast({
-                    </Label>
-                </div>
-              </RadioGroup>
-              <p className="text-[10px] text-muted-foreground italic">{t('app_language_desc')}</p>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t border-dashed">
-              <Label className="font-bold">{t('display_mode')}</Label>
+              <Label className="font-bold">Mode Tampilan</Label>
               <RadioGroup value={theme} onValueChange={(v: "light"|"dark") => toggleTheme(v)} className="flex gap-4">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="light" id="light" />
                   <Label htmlFor="light" className="flex items-center gap-1.5 cursor-pointer">
-                    <Sun className="w-4 h-4 text-amber-500" /> {t('light_mode')}
+                    <Sun className="w-4 h-4 text-amber-500" /> Mode Terang
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="dark" id="dark" />
                   <Label htmlFor="dark" className="flex items-center gap-1.5 cursor-pointer">
-                    <Moon className="w-4 h-4 text-blue-500" /> {t('dark_mode')}
+                    <Moon className="w-4 h-4 text-blue-500" /> Mode Gelap
                   </Label>
                 </div>
               </RadioGroup>
             </div>
 
-            <div className="space-y-4">
-              <Label className="font-bold">{t('main_color_palette')}</Label>
+            <div className="space-y-4 pt-4 border-t border-dashed">
+              <Label className="font-bold">Palet Warna Utama</Label>
               <div className="flex flex-wrap gap-4">
                 {[
-                  { name: t('color_blue'), hsl: "212 68% 42%", hex: "#2266B3" },
-                  { name: t('color_green'), hsl: "151 81% 40%", hex: "#198E53" },
-                  { name: t('color_red'), hsl: "346 84% 45%", hex: "#D41B42" },
-                  { name: t('color_purple'), hsl: "262 83% 58%", hex: "#8B5CF6" },
-                  { name: t('color_orange'), hsl: "25 95% 45%", hex: "#E65C00" },
-                  { name: t('color_black'), hsl: "210 40% 10%", hex: "#0F172A" },
+                  { name: "Biru Samudera", hsl: "212 68% 42%", hex: "#2266B3" },
+                  { name: "Hijau Botani", hsl: "151 81% 40%", hex: "#198E53" },
+                  { name: "Merah Berani", hsl: "346 84% 45%", hex: "#D41B42" },
+                  { name: "Ungu Royal", hsl: "262 83% 58%", hex: "#8B5CF6" },
+                  { name: "Oranye Senja", hsl: "25 95% 45%", hex: "#E65C00" },
+                  { name: "Hitam Elegan", hsl: "210 40% 10%", hex: "#0F172A" },
                 ].map((color) => (
                   <button 
                     key={color.name}
-                    </button>
+                    onClick={() => changePalette(color.hsl, color.name)}
+                    className="group relative flex flex-col items-center gap-2 transition-transform hover:scale-110 active:scale-95"
+                  >
+                    <div 
+                      className={cn(
+                        "w-12 h-12 rounded-2xl shadow-md border-4 border-white dark:border-slate-800 transition-all",
+                        themeSettings?.palette === color.hsl ? "ring-2 ring-primary ring-offset-2 scale-110" : "opacity-80"
+                      )} 
+                      style={{ backgroundColor: color.hex }}
+                    />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">{color.name}</span>
+                  </button>
                 ))}
               </div>
-              <p className="text-[10px] text-muted-foreground italic">{t('palette_desc')}</p>
+              <p className="text-[10px] text-muted-foreground italic">Perubahan warna akan diterapkan secara instan di seluruh aplikasi.</p>
             </div>
           </CardContent>
         </Card>
@@ -434,9 +422,9 @@ export default function SettingsPage() {
         <Card className="border-none shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Lock className="w-5 h-5 text-primary" /> {t('account_security')}
+              <Lock className="w-5 h-5 text-primary" /> Keamanan Akun
             </CardTitle>
-            <CardDescription>{t('change_password_desc')}</CardDescription>
+            <CardDescription>Amankan akun Anda dengan memperbarui kata sandi secara berkala.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={async (e) => {
@@ -446,12 +434,12 @@ export default function SettingsPage() {
               const confirmPass = formData.get('confirmPassword') as string;
 
               if (newPass !== confirmPass) {
-                toast({ variant: "destructive", title: t('failed'), description: t('password_mismatch') });
+                toast({ variant: "destructive", title: "Gagal", description: "Kata sandi tidak cocok." });
                 return;
               }
 
               if (newPass.length < 6) {
-                toast({ variant: "destructive", title: t('failed'), description: t('password_too_short') });
+                toast({ variant: "destructive", title: "Gagal", description: "Kata sandi terlalu pendek (minimal 6 karakter)." });
                 return;
               }
 
@@ -467,39 +455,39 @@ export default function SettingsPage() {
                   });
                 }
 
-                toast({ title: t('success'), description: t('password_updated_success') });
+                toast({ title: "Berhasil", description: "Kata sandi Anda telah diperbarui." });
                 (e.target as HTMLFormElement).reset();
               } catch (err: any) {
                 console.error(err);
-                let msg = t('change_password_error');
+                let msg = "Terjadi kesalahan saat mengganti kata sandi.";
                 if (err.code === 'auth/requires-recent-login') {
-                  msg = t('session_expired_security');
+                  msg = "Demi keamanan, silakan logout dan login kembali sebelum mengganti kata sandi.";
                 }
-                toast({ variant: "destructive", title: t('failed'), description: msg });
+                toast({ variant: "destructive", title: "Gagal", description: msg });
               } finally {
                 setChangingPassword(false);
               }
             }} className="space-y-4 max-w-sm">
               <div className="space-y-2">
-                <Label htmlFor="newPassword">{t('new_password')}</Label>
+                <Label htmlFor="newPassword">Kata Sandi Baru</Label>
                 <div className="relative">
                   <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input id="newPassword" name="newPassword" type="password" required className="pl-10" placeholder={t('min_6_chars')} />
+                  <Input id="newPassword" name="newPassword" type="password" required className="pl-10" placeholder="Minimal 6 karakter" />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">{t('confirm_new_password')}</Label>
+                <Label htmlFor="confirmPassword">Konfirmasi Kata Sandi Baru</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input id="confirmPassword" name="confirmPassword" type="password" required className="pl-10" placeholder={t('repeat_password')} />
+                  <Input id="confirmPassword" name="confirmPassword" type="password" required className="pl-10" placeholder="Ulangi kata sandi baru" />
                 </div>
               </div>
               <Button type="submit" disabled={changingPassword} className="w-full font-bold">
                 {changingPassword ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCcw className="w-4 h-4 mr-2" />}
-                {t('change_password_btn')}
+                Ganti Kata Sandi
               </Button>
               <p className="text-[10px] text-muted-foreground italic">
-                {t('session_expired_hint')}
+                Mungkin diperlukan login ulang demi alasan keamanan.
               </p>
             </form>
           </CardContent>
@@ -509,32 +497,32 @@ export default function SettingsPage() {
           <Card className="border-none shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <RefreshCcw className="w-5 h-5 text-primary" /> {t('data_management')}
+                <RefreshCcw className="w-5 h-5 text-primary" /> Manajemen Data
               </CardTitle>
-              <CardDescription>{t('data_management_desc')}</CardDescription>
+              <CardDescription>Ekspor, Impor, dan Pembersihan Database Sistem.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-xl space-y-3">
                   <div className="flex items-center gap-2 font-bold text-sm">
-                    <Download className="w-4 h-4 text-emerald-600" /> {t('backup_data')}
+                    <Download className="w-4 h-4 text-emerald-600" /> Cadangkan Data (Backup)
                   </div>
-                  <p className="text-xs text-muted-foreground">{t('backup_data_hint')}</p>
+                  <p className="text-xs text-muted-foreground">Ekspor seluruh data pelaku usaha ke file JSON.</p>
                   <Button variant="outline" size="sm" onClick={handleBackup} disabled={loading} className="w-full">
-                    {loading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null} {t('download_backup_btn')}
+                    {loading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null} Unduh Backup
                   </Button>
                 </div>
 
                 <div className="p-4 border rounded-xl space-y-3">
                   <div className="flex items-center gap-2 font-bold text-sm">
-                    <Upload className="w-4 h-4 text-blue-600" /> {t('restore_data')}
+                    <Upload className="w-4 h-4 text-blue-600" /> Pulihkan Data (Restore)
                   </div>
-                  <p className="text-xs text-muted-foreground">{t('restore_data_hint')}</p>
+                  <p className="text-xs text-muted-foreground">Impor data dari file backup JSON sebelumnya.</p>
                   <div className="relative">
                     <input type="file" accept=".json" onChange={handleRestore} className="hidden" id="restore-input" disabled={loading} />
                     <Label htmlFor="restore-input" className="cursor-pointer">
                       <div className="flex items-center justify-center w-full h-9 px-3 text-sm font-medium border rounded-md hover:bg-muted transition-colors">
-                        {loading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null} {t('choose_file_restore_btn')}
+                        {loading ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null} Pilih File Backup
                       </div>
                     </Label>
                   </div>
@@ -542,14 +530,14 @@ export default function SettingsPage() {
 
                 <div className="p-4 border border-accent/20 bg-accent/5 dark:bg-accent/10 rounded-xl space-y-3 sm:col-span-2">
                   <div className="flex items-center gap-2 font-bold text-sm text-primary">
-                    <FileSpreadsheet className="w-4 h-4" /> {t('excel_import_automation')}
+                    <FileSpreadsheet className="w-4 h-4" /> Automasi Impor Excel (Cek Data Master)
                   </div>
-                  <p className="text-[10px] text-muted-foreground italic mb-4">{t('excel_import_hint')}</p>
+                  <p className="text-[10px] text-muted-foreground italic mb-4">Fitur ini khusus untuk memperbarui Database Cek Data Master & Blacklist.</p>
                   
                   <div className="space-y-6">
                     <div className="space-y-3">
                       <Label className="text-[11px] font-black uppercase text-emerald-600 flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5" /> {t('sheet1_master_label')}
+                        <Check className="w-3.5 h-3.5" /> Sheet 1: DATA MASTER (PEMBANDING)
                       </Label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="relative">
@@ -558,20 +546,20 @@ export default function SettingsPage() {
                             <Button variant="outline" className="w-full border-emerald-500/20 hover:bg-emerald-500/5 text-emerald-700 dark:text-emerald-400" asChild>
                               <div className="flex items-center justify-center gap-2">
                                 {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                {t('upload_sheet1_btn')}
+                                Upload Sheet 1
                               </div>
                             </Button>
                           </Label>
                         </div>
                         <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={handleResetMaster} disabled={loading}>
-                          <Trash2 className="w-3.5 h-3.5 mr-2" /> {t('reset_sheet1_btn')}
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Kosongkan Sheet 1
                         </Button>
                       </div>
                     </div>
 
                     <div className="space-y-3 pt-4 border-t border-dashed">
                       <Label className="text-[11px] font-black uppercase text-rose-600 flex items-center gap-1.5">
-                        <XCircle className="w-3.5 h-3.5" /> {t('sheet2_blacklist_label')}
+                        <XCircle className="w-3.5 h-3.5" /> Sheet 2: DATA BLACKLIST (CANCELL)
                       </Label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="relative">
@@ -580,13 +568,13 @@ export default function SettingsPage() {
                             <Button variant="outline" className="w-full border-rose-500/20 hover:bg-rose-500/5 text-rose-700 dark:text-rose-400" asChild>
                               <div className="flex items-center justify-center gap-2">
                                 {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                {t('upload_sheet2_btn')}
+                                Upload Sheet 2
                               </div>
                             </Button>
                           </Label>
                         </div>
                         <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={handleResetBlacklist} disabled={loading}>
-                          <Trash2 className="w-3.5 h-3.5 mr-2" /> {t('reset_sheet2_btn')}
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Kosongkan Sheet 2
                         </Button>
                       </div>
                     </div>
@@ -597,11 +585,11 @@ export default function SettingsPage() {
               <div className="pt-4 border-t">
                 <Alert variant="destructive" className="bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30">
                   <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle className="font-bold">{t('danger_zone')}</AlertTitle>
+                  <AlertTitle className="font-bold">ZONA BERBAHAYA</AlertTitle>
                   <AlertDescription className="flex flex-col gap-3">
-                    <span className="text-xs">{t('reset_all_data_hint')}</span>
+                    <span className="text-xs">Tindakan ini akan menghapus seluruh data pelaku usaha secara permanen!</span>
                     <Button variant="destructive" size="sm" onClick={handleReset} disabled={loading} className="w-fit font-bold">
-                      <Trash2 className="w-4 h-4 mr-2" /> {t('reset_all_actor_data_btn')}
+                      <Trash2 className="w-4 h-4 mr-2" /> KOSONGKAN SELURUH DATA
                     </Button>
                   </AlertDescription>
                 </Alert>
