@@ -173,7 +173,7 @@ export const translations: Translation = {
     ms: "Laporan (LPJ)"
   },
   quota_coordinator: {
-    id: "Kuota Koordinator",
+    id: "Kuota KORLAP / DEWAN AKTIF",
     en: "Coordinator Quota",
     ms: "Kuota Penyelaras"
   },
@@ -327,7 +327,7 @@ export const translations: Translation = {
   full_name: { id: "Nama Lengkap", en: "Full Name", ms: "Nama Penuh" },
   nik: { id: "NIK", en: "National ID (NIK)", ms: "ID Nasional (NIK)" },
   business_name: { id: "Nama Usaha", en: "Business Name", ms: "Nama Perniagaan" },
-  coordinator: { id: "Koordinator", en: "Coordinator", ms: "Penyelaras" },
+  coordinator: { id: "KORLAP / DEWAN AKTIF", en: "Coordinator", ms: "Penyelaras" },
   status: { id: "Status", en: "Status", ms: "Status" },
   no_data_found: {
     id: "Tidak ada data yang ditemukan.",
@@ -467,7 +467,7 @@ export const translations: Translation = {
   business_data: { id: "Data Usaha", en: "Business Data", ms: "Data Perniagaan" },
   business_type: { id: "Jenis Usaha", en: "Business Type", ms: "Jenis Perniagaan" },
   business_location: { id: "Lokasi Usaha", en: "Business Location", ms: "Lokasi Perniagaan" },
-  coordinator: { id: "Koordinator", en: "Coordinator", ms: "Penyelaras" },
+  coordinator: { id: "KORLAP / DEWAN AKTIF", en: "Coordinator", ms: "Penyelaras" },
   save_input_btn: { id: "Simpan Data Input", en: "Save Input Data", ms: "Simpan Data Input" },
   limited_access: { id: "AKSES TERBATAS", en: "LIMITED ACCESS", ms: "AKSES TERHAD" },
   data_saved_success: { id: "DATA TELAH TERSIMPAN", en: "DATA SAVED successfully", ms: "DATA TELAH DISIMPAN" },
@@ -632,10 +632,10 @@ export const translations: Translation = {
   // Remaining Roles/Labels
   korlap_dewan: { id: "KORLAP / DEWAN AKTIF", en: "COORDINATOR", ms: "KORDINATOR" },
   // Coordinator Quota
-  coordinator_quota: { id: "Kuota Koordinator", en: "Coordinator Quota", ms: "Kuota Kordinator" },
-  manage_quotas_desc: { id: "Atur batas maksimal input data untuk setiap koordinator.", en: "Set maximum data input limits for each coordinator.", ms: "Tetapkan had input data maksimum untuk setiap kordinator." },
-  add_coordinator: { id: "Tambah Koordinator", en: "Add Coordinator", ms: "Tambah Kordinator" },
-  edit_coordinator: { id: "Edit Koordinator", en: "Edit Coordinator", ms: "Edit Kordinator" },
+  coordinator_quota: { id: "Kuota KORLAP / DEWAN AKTIF", en: "Coordinator Quota", ms: "Kuota Kordinator" },
+  manage_quotas_desc: { id: "Atur batas maksimal input data untuk setiap korlap / dewan aktif.", en: "Set maximum data input limits for each coordinator.", ms: "Tetapkan had input data maksimum untuk setiap kordinator." },
+  add_coordinator: { id: "Tambah KORLAP / DEWAN AKTIF", en: "Add Coordinator", ms: "Tambah Kordinator" },
+  edit_coordinator: { id: "Edit KORLAP / DEWAN AKTIF", en: "Edit Coordinator", ms: "Edit Kordinator" },
   quota_amount: { id: "Jumlah Kuota", en: "Quota Amount", ms: "Jumlah Kuota" },
   quota_updated: { id: "Kuota Diperbarui", en: "Quota Updated", ms: "Kuota Dikemas Kini" },
   quota_saved_desc: { id: "Batas kuota untuk {name} telah disimpan.", en: "Quota limit for {name} has been saved.", ms: "Had kuota untuk {name} telah disimpan." },
@@ -661,7 +661,7 @@ export const translations: Translation = {
   finish_data_report: { id: "LAPORAN DATA PELAKU USAHA (SIMPU)", en: "BUSINESS ACTOR DATA REPORT (SIMPU)", ms: "LAPORAN DATA PELAKU PERNIAGAAN (SIMPU)" },
   finish_title: { id: "Selesai", en: "Finished", ms: "Selesai" },
   finish_desc: { id: "Arsip data yang telah dinyatakan SELESAI.", en: "Archive of data that has been completed.", ms: "Arkib data yang telah diselesaikan." },
-  filter_coordinator_label: { id: "Filter Koordinator: {name}", en: "Coordinator Filter: {name}", ms: "Penapis Kordinator: {name}" },
+  filter_coordinator_label: { id: "Filter KORLAP / DEWAN AKTIF: {name}", en: "Coordinator Filter: {name}", ms: "Penapis Kordinator: {name}" },
   no_finish_data_found: { id: "Tidak ada data selesai yang ditemukan.", en: "No finished data found.", ms: "Tiada data selesai ditemui." },
   edit_finish_data: { id: "Edit Data Selesai", en: "Edit Finished Data", ms: "Edit Data Selesai" },
   full_detail_final_data: { id: "Detail Lengkap Data Final", en: "Full Detail Final Data", ms: "Butiran Penuh Data Akhir" },
@@ -683,11 +683,11 @@ export const translations: Translation = {
   no_rejection_reason_desc: { id: "Administrator tidak memberikan alasan spesifik.", en: "Administrator did not provide a specific reason.", ms: "Pentadbir tidak memberikan sebab khusus." },
   // Coordinator Quota
   kuota_korlap_dewan_aktif: { id: "Kuota KORLAP / DEWAN AKTIF", en: "COORDINATOR QUOTA", ms: "KUOTA KORDINATOR" },
-  manage_quotas_desc_long: { id: "Pengelolaan target data pencapaian masing-masing korlap / dewan aktif.", en: "Management of achievement data targets for each coordinator.", ms: "Pengurusan sasaran data pencapaian bagi setiap kordinator." },
+  manage_quotas_desc_long: { id: "Pengelolaan target data pencapaian masing-masing KORLAP / DEWAN AKTIF.", en: "Management of achievement data targets for each coordinator.", ms: "Pengurusan sasaran data pencapaian bagi setiap kordinator." },
   add_new_quota_btn: { id: "Tambah Kuota Baru", en: "Add New Quota", ms: "Tambah Kuota Baru" },
   add_quota_data: { id: "Tambah Data Kuota", en: "Add Quota Data", ms: "Tambah Data Kuota" },
-  add_quota_data_desc: { id: "Masukkan nama koordinator dan jumlah target kuotanya.", en: "Enter coordinator name and target quota amount.", ms: "Masukkan nama kordinator dan jumlah sasaran kuota." },
-  coordinator_name: { id: "Nama Koordinator", en: "Coordinator Name", ms: "Nama Kordinator" },
+  add_quota_data_desc: { id: "Masukkan nama KORLAP / DEWAN AKTIF dan jumlah target kuotanya.", en: "Enter coordinator name and target quota amount.", ms: "Masukkan nama kordinator dan jumlah sasaran kuota." },
+  coordinator_name: { id: "Nama KORLAP / DEWAN AKTIF", en: "Coordinator Name", ms: "Nama Kordinator" },
   save_data_btn: { id: "Simpan Data", en: "Save Data", ms: "Simpan Data" },
   no: { id: "No", en: "No", ms: "No" },
   achieved: { id: "Tercapai", en: "Achieved", ms: "Tercapai" },
