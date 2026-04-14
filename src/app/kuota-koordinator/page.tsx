@@ -10,17 +10,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { 
-  UserPlus, 
-  Trash2, 
-  Loader2, 
-  ShieldAlert, 
-  BarChart3,
-  Edit
-} from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useTranslation } from "@/lib/i18n"
 
 export default function KuotaKorlapDewanAktifPage() {
+  const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
   const { user } = useUser()
   const { toast } = useToast()
@@ -113,16 +107,16 @@ export default function KuotaKorlapDewanAktifPage() {
       addedAt: new Date().toISOString()
     }).then(() => {
       toast({ 
-        title: "Kuota Ditambahkan", 
-        description: `Data untuk ${name} berhasil disimpan.` 
+        title: t('quota_added'), 
+        description: t('quota_added_desc', { name }) 
       })
       setIsDialogOpen(false)
     }).catch((error) => {
       console.error("Firebase Error (Add):", error)
       toast({
         variant: "destructive",
-        title: "Gagal Menambah Data",
-        description: error.message || "Terjadi kesalahan saat menyimpan ke database."
+        title: t('fail_add_data'),
+        description: error.message || t('error_reading_file')
       })
     })
   }
@@ -145,23 +139,23 @@ export default function KuotaKorlapDewanAktifPage() {
       quota,
       addedAt: editingData.addedAt || new Date().toISOString()
     }).then(() => {
-      toast({ title: "Data Diperbarui", description: `Data kuota untuk ${name} telah diubah.` })
+      toast({ title: t('update_success'), description: t('edit_quota_data_desc', { name }) })
       setEditingData(null)
     }).catch((error) => {
       console.error("Firebase Error (Update):", error)
       toast({
         variant: "destructive",
-        title: "Gagal Update Data",
-        description: error.message || "Terjadi kesalahan saat memperbarui database."
+        title: t('fail_update_data'),
+        description: error.message || t('error_reading_file')
       })
     })
   }
 
   const handleDelete = (id: string, name: string) => {
     if (!database) return
-    if (confirm(`Hapus data kuota untuk ${name} secara permanen?`)) {
+    if (confirm(t('confirm_delete_coordinator', { name }))) {
       deleteDocumentNonBlocking(ref(database, `koordinator_kuotas/${id}`))
-      toast({ title: "Terhapus", description: "Data kuota telah dihapus." })
+      toast({ title: t('delete_success'), description: t('data_deleted_desc') })
     }
   }
 
@@ -183,8 +177,8 @@ export default function KuotaKorlapDewanAktifPage() {
     return (
       <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center">
         <ShieldAlert className="w-16 h-16 text-destructive" />
-        <h1 className="text-2xl font-bold">Akses Ditolak</h1>
-        <p className="text-muted-foreground max-md">Hanya Administrator yang dapat mengakses menu Kuota Koordinator.</p>
+        <h1 className="text-2xl font-bold">{t('access_denied')}</h1>
+        <p className="text-muted-foreground max-md">{t('admin_permission_required_desc')}</p>
       </div>
     )
   }
@@ -195,34 +189,34 @@ export default function KuotaKorlapDewanAktifPage() {
         <div>
           <h1 className="text-3xl font-bold text-primary font-headline flex items-center gap-3">
             <BarChart3 className="w-8 h-8" />
-            Kuota KORLAP / DEWAN AKTIF
+            {t('kuota_korlap_dewan_aktif')}
           </h1>
-          <p className="text-muted-foreground font-medium">Pengelolaan target data pencapaian masing-masing korlap / dewan aktif.</p>
+          <p className="text-muted-foreground font-medium">{t('manage_quotas_desc_long')}</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary/90 shadow-lg font-bold">
-              <UserPlus className="w-4 h-4 mr-2" /> Tambah Kuota Baru
+              <UserPlus className="w-4 h-4 mr-2" /> {t('add_new_quota_btn')}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <form onSubmit={handleAddData}>
               <DialogHeader>
-                <DialogTitle className="text-primary font-black uppercase">Tambah Data Kuota</DialogTitle>
-                <CardDescription>Masukkan nama koordinator dan jumlah target kuotanya.</CardDescription>
+                <DialogTitle className="text-primary font-black uppercase">{t('add_quota_data')}</DialogTitle>
+                <CardDescription>{t('add_quota_data_desc')}</CardDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label className="font-bold">Nama Koordinator</Label>
-                  <Input name="name" placeholder="Contoh: Budi Santoso" required />
+                  <Label className="font-bold">{t('coordinator_name')}</Label>
+                  <Input name="name" placeholder={t('full_name_placeholder')} required />
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-bold">Jumlah Kuota</Label>
-                  <Input name="quota" type="number" min="0" placeholder="Misal: 100" required />
+                  <Label className="font-bold">{t('quota_amount')}</Label>
+                  <Input name="quota" type="number" min="0" placeholder="100" required />
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" className="w-full font-bold">Simpan Data</Button>
+                <Button type="submit" className="w-full font-bold">{t('save_data_btn')}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -237,12 +231,12 @@ export default function KuotaKorlapDewanAktifPage() {
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead className="font-bold uppercase text-[10px] w-[50px] text-center">No</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px]">Nama Korlap / Dewan Aktif</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] text-center">Kuota Korlap / Dewan Aktif</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] text-center">Kuota Tercapai</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] text-center">Sisa Kuota</TableHead>
-                  <TableHead className="text-right font-bold uppercase text-[10px]">Aksi</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px] w-[50px] text-center">{t('no')}</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px]">{t('korlap_dewan')}</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px] text-center">{t('kuota_korlap_dewan_aktif')}</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px] text-center">{t('achieved')}</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px] text-center">{t('remaining')}</TableHead>
+                  <TableHead className="text-right font-bold uppercase text-[10px]">{t('aksi')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -277,29 +271,29 @@ export default function KuotaKorlapDewanAktifPage() {
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button variant="outline" size="sm" onClick={() => setEditingData(item)} className="h-8 text-[10px] font-bold border-primary/20 hover:bg-primary/5 text-primary">
-                              <Edit className="w-3 h-3 mr-1" /> EDIT
+                              <Edit className="w-3 h-3 mr-1" /> {t('edit_btn')}
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
                             <form onSubmit={handleUpdate}>
                               <DialogHeader>
-                                <DialogTitle className="text-primary font-black uppercase">Edit Data Kuota</DialogTitle>
-                                <CardDescription>Ubah target kuota untuk <strong>{item.name}</strong>.</CardDescription>
+                                <DialogTitle className="text-primary font-black uppercase">{t('edit_quota_data')}</DialogTitle>
+                                <CardDescription>{t('edit_quota_data_desc', { name: item.name })}</CardDescription>
                               </DialogHeader>
                               <div className="py-6">
                                 <div className="grid gap-4 py-4">
                                   <div className="space-y-2">
-                                    <Label className="font-bold">Nama Koordinator</Label>
+                                    <Label className="font-bold">{t('coordinator_name')}</Label>
                                     <Input name="name" defaultValue={item.name} required />
                                   </div>
                                   <div className="space-y-2">
-                                    <Label className="font-bold">Jumlah Kuota</Label>
+                                    <Label className="font-bold">{t('quota_amount')}</Label>
                                     <Input name="quota" type="number" min="0" defaultValue={item.quota} required />
                                   </div>
                                 </div>
                               </div>
                               <DialogFooter>
-                                <Button type="submit" className="w-full font-bold">Simpan Perubahan</Button>
+                                <Button type="submit" className="w-full font-bold">{t('save_changes_btn')}</Button>
                               </DialogFooter>
                             </form>
                           </DialogContent>
@@ -319,7 +313,7 @@ export default function KuotaKorlapDewanAktifPage() {
                 {combinedKuotaData.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic font-medium">
-                      Belum ada data target kuota yang didaftarkan.
+                      {t('no_quota_data')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -327,7 +321,7 @@ export default function KuotaKorlapDewanAktifPage() {
               <TableFooter>
                 <TableRow className="bg-primary/5 border-t-2 border-primary/20">
                   <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs">
-                    Total Keseluruhan Kuota Data
+                    {t('total_overall_quota')}
                   </TableCell>
                   <TableCell className="text-center font-black text-slate-600 text-base">
                     {totalQuota}

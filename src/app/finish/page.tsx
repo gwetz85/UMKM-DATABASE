@@ -14,10 +14,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
+import { useTranslation } from "@/lib/i18n"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
 function FinishContent() {
+  const { t } = useTranslation()
   const { user } = useUser()
   const database = useDatabase()
   const { toast } = useToast()
@@ -112,25 +114,25 @@ function FinishContent() {
     }
 
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
-    toast({ title: "Tersimpan", description: "Data pelaku usaha berhasil diperbarui." })
+    toast({ title: t('success'), description: t('update_success') })
     setIsEditMode(false)
     setViewingActor({ ...viewingActor, ...updates } as BusinessActor)
   }
 
   const handleRevert = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
+    if (confirm(t('confirm_revert_to_pending', { name: fullName }))) {
       updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
-      toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
+      toast({ title: t('success'), description: t('reverted_to_pending_desc') })
       setViewingActor(null)
     }
   }
   
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm(`HAPUS PERMANEN data ${fullName}? Tindakan ini tidak dapat dibatalkan.`)) {
+    if (confirm(t('confirm_delete_permanent', { name: fullName }))) {
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
-      toast({ title: "Data Dihapus", description: `Data ${fullName} telah dihapus dari sistem.` })
+      toast({ title: t('delete_success'), description: t('data_deleted_desc') })
       setViewingActor(null)
     }
   }
@@ -138,19 +140,19 @@ function FinishContent() {
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
-        <h1 className="text-xl font-black uppercase">LAPORAN DATA PELAKU USAHA (SIMPU)</h1>
-        <p className="text-xs font-bold uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha</p>
+        <h1 className="text-xl font-black uppercase">{t('finish_data_report')}</h1>
+        <p className="text-xs font-bold uppercase tracking-widest">{t('system_footer')}</p>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div className="flex items-center gap-3">
           <BadgeCheck className="w-8 h-8 text-green-600" />
           <div className="flex flex-col">
-            <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Finish</h1>
-            <p className="text-xs md:text-sm text-muted-foreground">Arsip data yang telah dinyatakan SELESAI.</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">{t('finish_title')}</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">{t('finish_desc')}</p>
             {filterCoordinator && (
               <div className="flex items-center gap-2 mt-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 w-fit">
-                <span className="text-[10px] font-black text-primary uppercase">Filter Koordinator: {filterCoordinator}</span>
+                <span className="text-[10px] font-black text-primary uppercase">{t('filter_coordinator_label', { name: filterCoordinator })}</span>
                 <Link href="/finish" className="text-primary hover:text-primary/70 transition-transform active:scale-90">
                   <X className="w-3.5 h-3.5" />
                 </Link>
@@ -159,7 +161,7 @@ function FinishContent() {
           </div>
         </div>
         <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto">
-          <Printer className="w-4 h-4 mr-2" /> CETAK
+          <Printer className="w-4 h-4 mr-2" /> {t('print_btn')}
         </Button>
       </div>
 
@@ -167,7 +169,7 @@ function FinishContent() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input 
-            placeholder="Cari Nama / Usaha / NIK..." 
+            placeholder={t('search_placeholder')} 
             className="pl-10 h-10 md:h-12 bg-card border-primary/20 focus-visible:ring-primary rounded-xl md:rounded-2xl"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -179,9 +181,9 @@ function FinishContent() {
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
-            <option value="">Semua Kategori</option>
-            <option value="Kuliner">Kuliner</option>
-            <option value="Bukan Kuliner">Bukan Kuliner</option>
+            <option value="">{t('all_categories')}</option>
+            <option value="Kuliner">{t('category_culinary')}</option>
+            <option value="Bukan Kuliner">{t('category_non_culinary')}</option>
           </select>
         </div>
       </div>
@@ -229,7 +231,7 @@ function FinishContent() {
                     </p>
                   </div>
                   <div className="text-[9px] font-black uppercase bg-green-500 text-white w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
-                    SELESAI
+                    {t('selesai')}
                   </div>
                 </CardContent>
               </Card>
@@ -237,7 +239,7 @@ function FinishContent() {
             {(!actors || actors.length === 0) && (
               <div className="col-span-full py-20 text-center text-muted-foreground grid place-items-center">
                 <BadgeCheck className="w-12 h-12 mb-4 opacity-20" />
-                <p>Tidak ada data selesai yang ditemukan.</p>
+                <p>{t('no_finish_data_found')}</p>
               </div>
             )}
           </div>
@@ -255,7 +257,7 @@ function FinishContent() {
             <div className="flex flex-col gap-2 relative">
               <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b gap-4">
                 <DialogTitle className="text-xl md:text-2xl font-black text-green-700 uppercase">
-                  {isEditMode ? "Edit Data Selesai" : "Detail Lengkap Data Final"}
+                  {isEditMode ? t('edit_finish_data') : t('full_detail_final_data')}
                 </DialogTitle>
                 <div className="flex flex-wrap gap-2">
                   {isAdmin && (
@@ -265,7 +267,7 @@ function FinishContent() {
                       onClick={() => setIsEditMode(!isEditMode)}
                       className={cn("font-bold", isEditMode ? "border-amber-500 text-amber-600" : "bg-primary")}
                     >
-                      {isEditMode ? "Batal Edit" : <><Edit3 className="w-4 h-4 mr-2"/> Edit Semua Data</>}
+                      {isEditMode ? t('cancel_edit') : <><Edit3 className="w-4 h-4 mr-2"/> {t('edit_all_data')}</>}
                     </Button>
                   )}
                   {isAdmin && !isEditMode && (
@@ -284,72 +286,72 @@ function FinishContent() {
               {isEditMode ? (
                 <form onSubmit={handleSaveFullEdit} className="grid gap-6 py-4">
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi (Edit)</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> {t('informasi_pribadi')} (Edit)</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Lengkap</Label><Input name="fullName" defaultValue={viewingActor.fullName} required /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">NIK</Label><Input name="nik" defaultValue={viewingActor.nik} required /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor KK</Label><Input name="noKK" defaultValue={viewingActor.noKK} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Jenis Kelamin</Label>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('nama_lengkap')}</Label><Input name="fullName" defaultValue={viewingActor.fullName} required /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('nik')}</Label><Input name="nik" defaultValue={viewingActor.nik} required /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('family_card_number')}</Label><Input name="noKK" defaultValue={viewingActor.noKK} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('gender')}</Label>
                         <select name="gender" defaultValue={viewingActor.gender || ""} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
                           <option value="L">Laki-Laki</option>
                           <option value="P">Perempuan</option>
                         </select>
                       </div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Tempat/Tgl Lahir</Label><Input name="pobDob" defaultValue={viewingActor.pobDob} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor HP</Label><Input name="phone" defaultValue={viewingActor.phone} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('place_date_of_birth')}</Label><Input name="pobDob" defaultValue={viewingActor.pobDob} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('phone_number')}</Label><Input name="phone" defaultValue={viewingActor.phone} /></div>
                     </div>
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili (Edit)</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> {t('alamat_domisili')} (Edit)</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">RT/RW</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} /></div>
-                      <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase">Alamat Lengkap</Label><Input name="address" defaultValue={viewingActor.address} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('district')}</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('subdistrict')}</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('rt_rw')}</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} /></div>
+                      <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase">{t('address')}</Label><Input name="address" defaultValue={viewingActor.address} /></div>
                     </div>
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha (Edit)</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> {t('informasi_usaha')} (Edit)</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} required /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kategori</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Koordinator</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('usaha')}</Label><Input name="businessName" defaultValue={viewingActor.businessName} required /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('kategori')}</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('business_location')}</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('korlap_dewan')}</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
                     </div>
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan & LPJ (Edit)</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> {t('informasi_perbankan')} (Edit)</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Bank</Label><Input name="bankName" defaultValue={viewingActor.bankName} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor Rekening</Label><Input name="bankNumber" defaultValue={viewingActor.bankNumber} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Pemilik Rekening</Label><Input name="bankOwner" defaultValue={viewingActor.bankOwner} className="uppercase" /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('bank_name_label')}</Label><Input name="bankName" defaultValue={viewingActor.bankName} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('bank_account_number')}</Label><Input name="bankNumber" defaultValue={viewingActor.bankNumber} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('bank_owner_label')}</Label><Input name="bankOwner" defaultValue={viewingActor.bankOwner} className="uppercase" /></div>
                       <div className="space-y-1 md:col-span-3 pt-2">
-                        <Label className="text-xs font-bold uppercase text-emerald-600">Nominal LPJ Terlaporkan</Label>
+                        <Label className="text-xs font-bold uppercase text-emerald-600">{t('nominal_reported_lpj')}</Label>
                         <Input name="lpjNominal" type="number" defaultValue={viewingActor.lpjNominal || 0} className="font-mono" />
                       </div>
                     </div>
                   </section>
 
                   <div className="sticky bottom-0 bg-white dark:bg-zinc-950 p-4 border-t flex justify-end gap-2 mt-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] rounded-b-lg z-10">
-                    <Button type="button" variant="outline" onClick={() => setIsEditMode(false)} className="font-bold">Batal</Button>
-                    <Button type="submit" className="bg-primary font-bold"><Save className="w-4 h-4 mr-2" /> Simpan Perubahan</Button>
+                    <Button type="button" variant="outline" onClick={() => setIsEditMode(false)} className="font-bold">{t('cancel')}</Button>
+                    <Button type="submit" className="bg-primary font-bold"><Save className="w-4 h-4 mr-2" /> {t('save_changes_btn')}</Button>
                   </div>
                 </form>
               ) : (
                 <div className="grid gap-6 py-4">
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> {t('informasi_pribadi')}</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
                       {[
-                        { label: "Nama Lengkap", value: viewingActor.fullName },
-                        { label: "NIK", value: viewingActor.nik },
-                        { label: "Nomor KK", value: viewingActor.noKK },
-                        { label: "Jenis Kelamin", value: viewingActor.gender },
-                        { label: "Tempat/Tgl Lahir", value: viewingActor.pobDob },
-                        { label: "Nomor HP", value: viewingActor.phone }
+                        { label: t('nama_lengkap'), value: viewingActor.fullName },
+                        { label: t('nik'), value: viewingActor.nik },
+                        { label: t('family_card_number'), value: viewingActor.noKK },
+                        { label: t('gender'), value: viewingActor.gender },
+                        { label: t('place_date_of_birth'), value: viewingActor.pobDob },
+                        { label: t('phone_number'), value: viewingActor.phone }
                       ].map((item, i) => (
                          <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
@@ -360,12 +362,12 @@ function FinishContent() {
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> {t('alamat_domisili')}</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
                       {[
-                        { label: "Kecamatan", value: viewingActor.kecamatan },
-                        { label: "Kelurahan", value: viewingActor.kelurahan },
-                        { label: "RT/RW", value: viewingActor.rtRw },
+                        { label: t('district'), value: viewingActor.kecamatan },
+                        { label: t('subdistrict'), value: viewingActor.kelurahan },
+                        { label: t('rt_rw'), value: viewingActor.rtRw },
                         { label: "Alamat Lengkap", value: viewingActor.address, fullWidth: true }
                       ].map((item, i) => (
                         <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
@@ -377,13 +379,13 @@ function FinishContent() {
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> {t('informasi_usaha')}</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
                       {[
-                        { label: "Usaha", value: viewingActor.businessName },
-                        { label: "Kategori Usaha", value: viewingActor.businessCategory },
-                        { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                        { label: "KORLAP / DEWAN AKTIF", value: viewingActor.coordinator }
+                        { label: t('usaha'), value: viewingActor.businessName },
+                        { label: t('business_category'), value: viewingActor.businessCategory },
+                        { label: t('business_location'), value: viewingActor.businessLocation },
+                        { label: t('korlap_dewan'), value: viewingActor.coordinator }
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
@@ -394,12 +396,12 @@ function FinishContent() {
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> {t('informasi_perbankan')}</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-primary/5 p-4 rounded-xl border border-primary/10">
                       {[
-                        { label: "Nama Bank", value: viewingActor.bankName },
-                        { label: "Nomor Rekening", value: viewingActor.bankNumber, isMono: true },
-                        { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner, isUpper: true }
+                        { label: t('bank_name_label'), value: viewingActor.bankName },
+                        { label: t('bank_account_number'), value: viewingActor.bankNumber, isMono: true },
+                        { label: t('bank_owner_label'), value: viewingActor.bankOwner, isUpper: true }
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
@@ -411,35 +413,35 @@ function FinishContent() {
 
                   <section className="space-y-4">
                     <div className="flex items-center gap-2 text-emerald-600 font-black text-sm uppercase border-b pb-1">
-                      <FileText className="w-4 h-4" /> Laporan Pertanggung Jawaban (LPJ)
+                      <FileText className="w-4 h-4" /> {t('lpj_report_title')}
                     </div>
                     <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 flex flex-col md:flex-row justify-between items-center gap-4">
                       <div>
-                          <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest mb-1">Nominal Terlaporkan</p>
+                          <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest mb-1">{t('nominal_reported_lpj')}</p>
                           <p className="text-3xl font-black text-emerald-600 font-mono">
                               RP {viewingActor.lpjNominal?.toLocaleString('id-ID') || "0"}
                           </p>
                       </div>
                       <div className="text-right">
-                          <p className="text-[10px] font-bold text-emerald-800 uppercase">Status Verifikasi LPJ</p>
-                          <Badge className="bg-emerald-600 font-black uppercase text-[10px] mt-1 px-4 py-1 hover:bg-emerald-600">TELAH TERVERIFIKASI</Badge>
+                          <p className="text-[10px] font-bold text-emerald-800 uppercase">{t('lpj_verification_status')}</p>
+                          <Badge className="bg-emerald-600 font-black uppercase text-[10px] mt-1 px-4 py-1 hover:bg-emerald-600">{t('verified_lpj')}</Badge>
                       </div>
                     </div>
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Informasi Sistem & Audit</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> {t('audit_sistem')}</div>
                     <div className="bg-slate-50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
                       <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Terakhir</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">{t('status')}</p>
                         <p className="capitalize text-primary">{viewingActor.status.replace('_', ' ')}</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Input</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">{t('input_by')}</p>
                         <p>{viewingActor.createdBy || "System"}</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Waktu Pendaftaran</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">{t('input_time')}</p>
                         <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
                       </div>
                     </div>

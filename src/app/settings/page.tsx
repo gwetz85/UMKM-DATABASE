@@ -292,7 +292,7 @@ export default function SettingsPage() {
 
         toast({ 
           title: t('upload_sheet_success', { sheet: targetType === 'master' ? '1' : '2' }), 
-          description: t('data_saved_to_desc', { count: importedData.length, target: targetType === 'master' ? t('master_data') : t('blacklist_data') }) 
+          description: t('data_saved_to_desc', { count: importedData.length, target: targetType === 'master' ? t('master_data_sheet') : t('blacklist_data_sheet') }) 
         })
       } catch (error: any) {
         toast({ variant: "destructive", title: t('excel_import_failed'), description: error.message || t('check_column_format') })
