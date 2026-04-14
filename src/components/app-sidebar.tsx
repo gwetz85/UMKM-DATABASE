@@ -114,63 +114,63 @@ export function AppSidebar() {
   const isDinas = userProfile?.role === 'dinas'
 
   const navigation = React.useMemo(() => [
-    { 
-      name: "Dashboard", 
-      href: "/", 
-      icon: LayoutDashboard, 
+    {
+      name: "Dashboard",
+      href: "/",
+      icon: LayoutDashboard,
       show: !!user && !isKoordinator
     },
-    { 
-      name: "Cek Data", 
-      href: "/check-data", 
-      icon: SearchCheck, 
+    {
+      name: "Cek Data",
+      href: "/check-data",
+      icon: SearchCheck,
       show: isAdmin
     },
-    { 
-      name: "Input Data", 
-      href: "/input", 
-      icon: UserPlus, 
+    {
+      name: "Input Data",
+      href: "/input",
+      icon: UserPlus,
       show: !!user && !isKoordinator
     },
-    { 
-      name: "Verifikasi Admin", 
-      href: "/verify-actor", 
-      icon: ShieldCheck, 
+    {
+      name: "Verifikasi Admin",
+      href: "/verify-actor",
+      icon: ShieldCheck,
       show: isAdmin || isPetugas || isMonitoring
     },
-    { 
-      name: "Data Pelaku", 
-      href: "/actor-data", 
-      icon: Users, 
+    {
+      name: "Data Pelaku",
+      href: "/actor-data",
+      icon: Users,
       show: !!user && !isDinas
     },
-    { 
-      name: "Ditolak / Cancell", 
-      href: "/rejected", 
-      icon: Ban, 
+    {
+      name: "Ditolak / Cancell",
+      href: "/rejected",
+      icon: Ban,
       show: !!user && !isDinas
     },
-    { 
-      name: "Verifikasi Data", 
-      href: "/verify-bank", 
-      icon: CreditCard, 
+    {
+      name: "Verifikasi Data",
+      href: "/verify-bank",
+      icon: CreditCard,
       show: isAdmin || isMonitoring
     },
-    { 
-      name: "Verifikasi & Validasi Dinas", 
-      href: "/verifikasi-dinas", 
-      icon: ClipboardCheck, 
+    {
+      name: "Verifikasi & Validasi Dinas",
+      href: "/verifikasi-dinas",
+      icon: ClipboardCheck,
       show: isAdmin || isDinas
     },
-    { 
-      name: "HASIL VERIFIKASI", 
-      href: "/hasil-verifikasi", 
-      icon: ListChecks, 
+    {
+      name: "HASIL VERIFIKASI",
+      href: "/hasil-verifikasi",
+      icon: ListChecks,
       show: (isAdmin || isPetugas) && !isDinas
     },
-    { 
-      name: "Rekening Bank", 
-      icon: CreditCard, 
+    {
+      name: "Rekening Bank",
+      icon: CreditCard,
       show: !!user && !isDinas,
       items: [
         { name: "BCA", href: "/rekening-bank?bank=BCA" },
@@ -185,53 +185,53 @@ export function AppSidebar() {
         { name: "BTN", href: "/rekening-bank?bank=BTN" }
       ]
     },
-    { 
-      name: "LPJ", 
-      href: "/lpj", 
-      icon: FileText, 
+    {
+      name: "LPJ",
+      href: "/lpj",
+      icon: FileText,
       show: (isAdmin || isPetugas || isMonitoring) && !isKoordinator
     },
-    { 
-      name: "Finish", 
-      href: "/finish", 
-      icon: CheckCircle2, 
+    {
+      name: "Finish",
+      href: "/finish",
+      icon: CheckCircle2,
       show: !!user && !isDinas
     },
-    { 
-      name: "Manajemen User", 
-      href: "/users", 
-      icon: UserCog, 
-      show: isAdmin 
+    {
+      name: "Manajemen User",
+      href: "/users",
+      icon: UserCog,
+      show: isAdmin
     },
-    { 
-      name: "Pengaturan", 
-      href: "/settings", 
-      icon: Settings, 
+    {
+      name: "Pengaturan",
+      href: "/settings",
+      icon: Settings,
       show: !!user && !isKoordinator
     },
-    { 
-      name: "Kuota Koordinator", 
-      href: "/kuota-koordinator", 
-      icon: BarChart3, 
-      show: isAdmin 
+    {
+      name: "Kuota Koordinator",
+      href: "/kuota-koordinator",
+      icon: BarChart3,
+      show: isAdmin
     },
-    { 
-      name: "Monitoring Chat", 
-      href: "/chat-monitoring", 
-      icon: MessageSquare, 
+    {
+      name: "Monitoring Chat",
+      href: "/chat-monitoring",
+      icon: MessageSquare,
       show: isAdmin || isMonitoring
     },
-    { 
-      name: "LOG APLIKASI", 
-      href: "/app-logs", 
-      icon: History, 
-      show: isAdmin 
+    {
+      name: "LOG APLIKASI",
+      href: "/app-logs",
+      icon: History,
+      show: isAdmin
     },
-    { 
-      name: "Pengaturan Event", 
-      href: "/settings-event", 
-      icon: Calendar, 
-      show: isAdmin 
+    {
+      name: "Pengaturan Event",
+      href: "/settings-event",
+      icon: Calendar,
+      show: isAdmin
     },
   ], [user, isAdmin, isMonitoring, userProfile])
 
@@ -275,9 +275,9 @@ export function AppSidebar() {
           <InfoDialog>
             <button className="flex flex-col items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 outline-none">
               <div className="relative group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 w-24 h-24 flex items-center justify-center overflow-hidden rounded-full border-2 border-white/20 shadow-2xl bg-white">
-                <img 
-                  src="/logo.png" 
-                  alt="SIMPU Logo" 
+                <img
+                  src="/logo.png"
+                  alt="SIMPU Logo"
                   className="w-full h-full object-contain p-2"
                 />
               </div>
@@ -310,7 +310,7 @@ export function AppSidebar() {
                         )}
                       >
                         <CollapsibleTrigger asChild>
-                          <div 
+                          <div
                             className="flex items-center gap-3 w-full cursor-pointer"
                             onClick={() => playSound('click')}
                           >
@@ -326,16 +326,16 @@ export function AppSidebar() {
                         <SidebarMenuSub className="border-white/10 ml-6 mr-2 mt-1 gap-1">
                           {item.items.map((subItem: any) => (
                             <SidebarMenuSubItem key={subItem.name}>
-                              <SidebarMenuSubButton 
-                                asChild 
+                              <SidebarMenuSubButton
+                                asChild
                                 isActive={pathname === subItem.href}
                                 className={cn(
                                   "rounded-lg transition-all text-white/60 hover:text-white hover:bg-white/5 h-8",
                                   "data-[active=true]:bg-white data-[active=true]:text-primary font-bold shadow-sm"
                                 )}
                               >
-                                <Link 
-                                  href={subItem.href} 
+                                <Link
+                                  href={subItem.href}
                                   className="flex items-center gap-2 w-full"
                                   onClick={() => playSound('click')}
                                 >
@@ -361,8 +361,8 @@ export function AppSidebar() {
                         "active:scale-95 animate-in fade-in-up"
                       )}
                     >
-                      <Link 
-                        href={item.href} 
+                      <Link
+                        href={item.href}
                         className="flex items-center gap-3 w-full"
                       >
                         <item.icon className="w-4.5 h-4.5 shrink-0" />
@@ -384,7 +384,7 @@ export function AppSidebar() {
           {user && (
             <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-2">
               <div className="bg-white/10 rounded-xl border border-white/10 p-2.5 space-y-2">
-                <Link 
+                <Link
                   href="/profile"
                   className="flex items-center gap-2 hover:bg-white/5 p-1 rounded-lg transition-colors cursor-pointer w-full group/profile"
                 >
@@ -404,15 +404,15 @@ export function AppSidebar() {
                     </span>
                   </div>
                 </Link>
-                
+
                 <div className="flex items-center justify-between bg-black/20 p-1.5 rounded-lg gap-2">
                   <span className="text-[8px] text-white/40 font-mono truncate select-all">
                     {user.uid}
                   </span>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-5 w-5 text-white/30 hover:text-white hover:bg-white/10" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 text-white/30 hover:text-white hover:bg-white/10"
                     onClick={copyUid}
                   >
                     {copied ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
@@ -421,10 +421,10 @@ export function AppSidebar() {
               </div>
             </div>
           )}
-          
+
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton 
+              <SidebarMenuButton
                 onClick={handleAuthAction}
                 className="h-10 rounded-xl hover:bg-white/20 hover:text-white text-white/60 transition-colors group-data-[collapsible=icon]:justify-center"
               >
