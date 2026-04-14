@@ -154,11 +154,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
               {/* Desktop Top Bar - Hidden on Login */}
               {!isLoginPage && (
-                <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border border-white/20 shadow-sm mx-4 mb-4 mt-4 rounded-2xl backdrop-blur-xl">
+                <div className="hidden md:flex py-2.5 px-6 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border border-white/20 shadow-sm mx-4 mb-4 mt-4 rounded-2xl backdrop-blur-xl">
                   <div className="flex items-center gap-4">
                     <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors p-2 rounded-lg" />
                     {currentTitle && (
-                      <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight uppercase">
+                      <h1 className="text-xl md:text-2xl font-black text-primary tracking-tight uppercase">
                         {currentTitle}
                       </h1>
                     )}

@@ -64,30 +64,30 @@ export function EventCountdown({ targetDate, startDate }: EventCountdownProps) {
   return (
     <div className="flex flex-col items-center gap-1">
       {startDate && !timeLeft.isStarted && (
-        <span className="text-[8px] md:text-xs font-bold text-amber-500 uppercase tracking-widest animate-pulse border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 md:px-4 md:py-1.5 rounded-full">Segera Hadir</span>
+        <span className="text-[8px] md:text-[10px] font-bold text-amber-500 uppercase tracking-widest animate-pulse border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 md:px-3 md:py-1 rounded-full">Segera Hadir</span>
       )}
       {startDate && timeLeft.isStarted && !timeLeft.isEnded && (
-        <span className="text-[8px] md:text-xs font-bold text-emerald-500 uppercase tracking-widest animate-pulse border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 md:px-4 md:py-1.5 rounded-full">Sedang Berlangsung</span>
+        <span className="text-[8px] md:text-[10px] font-bold text-emerald-500 uppercase tracking-widest animate-pulse border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 md:px-3 md:py-1 rounded-full">Sedang Berlangsung</span>
       )}
-      <div className="flex items-center gap-1.5 md:gap-3 bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-slate-800/40 px-3 py-1.5 md:px-6 md:py-4 rounded-2xl md:rounded-3xl shadow-sm backdrop-blur-md mt-1">
+      <div className="flex items-center gap-1.5 md:gap-3 bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-slate-800/40 px-3 py-1.5 md:px-5 md:py-2.5 rounded-2xl shadow-sm backdrop-blur-md mt-1">
       <div className="flex flex-col items-center">
-        <span className="text-[10px] md:text-3xl font-black text-primary leading-none">{timeLeft.days}</span>
-        <span className="text-[6px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tighter md:tracking-wider md:mt-2">Hari</span>
+        <span className="text-[10px] md:text-2xl font-black text-primary leading-none">{timeLeft.days}</span>
+        <span className="text-[6px] md:text-[8px] font-bold text-slate-400 uppercase tracking-tighter md:tracking-wider md:mt-1">Hari</span>
       </div>
-      <span className="text-primary font-black animate-pulse opacity-40 md:text-xl">:</span>
+      <span className="text-primary font-black animate-pulse opacity-40 md:text-lg">:</span>
       <div className="flex flex-col items-center">
-        <span className="text-[10px] md:text-3xl font-black text-primary leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
-        <span className="text-[6px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tighter md:tracking-wider md:mt-2">Jam</span>
+        <span className="text-[10px] md:text-2xl font-black text-primary leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
+        <span className="text-[6px] md:text-[8px] font-bold text-slate-400 uppercase tracking-tighter md:tracking-wider md:mt-1">Jam</span>
       </div>
-      <span className="text-primary font-black animate-pulse opacity-40 md:text-xl">:</span>
+      <span className="text-primary font-black animate-pulse opacity-40 md:text-lg">:</span>
       <div className="flex flex-col items-center">
-        <span className="text-[10px] md:text-3xl font-black text-primary leading-none">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-        <span className="text-[6px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tighter md:tracking-wider md:mt-2">Menit</span>
+        <span className="text-[10px] md:text-2xl font-black text-primary leading-none">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+        <span className="text-[6px] md:text-[8px] font-bold text-slate-400 uppercase tracking-tighter md:tracking-wider md:mt-1">Menit</span>
       </div>
-      <span className="text-primary font-black animate-pulse opacity-40 md:text-xl">:</span>
+      <span className="text-primary font-black animate-pulse opacity-40 md:text-lg">:</span>
       <div className="flex flex-col items-center">
-        <span className="text-[10px] md:text-3xl font-black text-primary leading-none">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-        <span className="text-[6px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tighter md:tracking-wider md:mt-2">Detik</span>
+        <span className="text-[10px] md:text-2xl font-black text-primary leading-none">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+        <span className="text-[6px] md:text-[8px] font-bold text-slate-400 uppercase tracking-tighter md:tracking-wider md:mt-1">Detik</span>
       </div>
       </div>
     </div>
