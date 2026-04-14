@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-export default function KuotaKoordinatorPage() {
+export default function KuotaKorlapDewanAktifPage() {
   const [mounted, setMounted] = useState(false)
   const { user } = useUser()
   const { toast } = useToast()
@@ -197,7 +197,7 @@ export default function KuotaKoordinatorPage() {
             <BarChart3 className="w-8 h-8" />
             Kuota Koordinator
           </h1>
-          <p className="text-muted-foreground font-medium">Pengelolaan target data pencapaian masing-masing koordinator lapangan.</p>
+          <p className="text-muted-foreground font-medium">Pengelolaan target data pencapaian masing-masing korlap / dewan aktif.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>

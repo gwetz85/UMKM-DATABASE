@@ -195,7 +195,7 @@ export default function UserManagementPage() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="petugas">Petugas Input</SelectItem>
-                      <SelectItem value="koordinator">Koordinator Lapangan</SelectItem>
+                      <SelectItem value="koordinator">KORLAP / DEWAN AKTIF</SelectItem>
                       <SelectItem value="admin">Administrator</SelectItem>
                       <SelectItem value="monitoring">Monitoring</SelectItem>
                       <SelectItem value="dinas">🏢 Dinas</SelectItem>
@@ -309,7 +309,7 @@ export default function UserManagementPage() {
                                       <SelectTrigger><SelectValue /></SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="petugas">Petugas Input</SelectItem>
-                                        <SelectItem value="koordinator">Koordinator Lapangan</SelectItem>
+                                        <SelectItem value="koordinator">KORLAP / DEWAN AKTIF</SelectItem>
                                         <SelectItem value="admin">Administrator</SelectItem>
                                         <SelectItem value="monitoring">Monitoring</SelectItem>
                                         <SelectItem value="dinas">🏢 Dinas</SelectItem>

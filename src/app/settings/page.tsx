@@ -362,7 +362,7 @@ export default function SettingsPage() {
           <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <AlertTitle className="text-blue-800 dark:text-blue-300 font-bold">Akses Pengaturan</AlertTitle>
           <AlertDescription className="text-blue-700 dark:text-blue-400">
-            Halo {userProfile?.fullName || 'User'}, sebagai {isKoordinator ? "Koordinator Lapangan" : isPetugas ? "Petugas Input" : isDinas ? "Dinas" : isMonitoring ? "Monitoring" : "User"}, 
+            Halo {userProfile?.fullName || 'User'}, sebagai {isKoordinator ? "KORLAP / DEWAN AKTIF" : isPetugas ? "Petugas Input" : isDinas ? "Dinas" : isMonitoring ? "Monitoring" : "User"}, 
             Anda hanya dapat merubah tema aplikasi dan mengganti kata sandi. Fitur manajemen data hanya tersedia untuk Administrator.
           </AlertDescription>
         </Alert>

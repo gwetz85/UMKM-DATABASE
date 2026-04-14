@@ -296,7 +296,7 @@ export default function InputDataPage() {
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="coordinator">Koordinator</Label>
-              <Input id="coordinator" name="coordinator" placeholder="Nama Koordinator Lapangan" required />
+              <Input id="coordinator" name="coordinator" placeholder="Nama KORLAP / DEWAN AKTIF" required />
             </div>
           </CardContent>
         </Card>
