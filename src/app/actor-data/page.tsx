@@ -2,7 +2,6 @@
 "use client"
 
 import { useState, useEffect, Suspense, useMemo } from "react"
-import { useTranslation } from "@/lib/i18n"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
@@ -40,7 +39,6 @@ const BANK_LIST = [
 
 
 function ActorDataContent() {
-  const { t } = useTranslation()
   const { user } = useUser()
   const database = useDatabase()
   const { toast } = useToast()
@@ -73,7 +71,7 @@ function ActorDataContent() {
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isMonitoring = userProfile?.role === 'monitoring'
-  const isKoordinator = userProfile?.role?.toLowerCase() === 'koordinator'
+  const isKoordinator = userProfile?.role === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
@@ -259,14 +257,14 @@ function ActorDataContent() {
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
-        <h1 className="text-xl font-black uppercase">{t('actor_data_title')} (SIMPU)</h1>
+        <h1 className="text-xl font-black uppercase">LAPORAN DATA PELAKU USAHA (SIMPU)</h1>
         <p className="text-xs font-bold uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha</p>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">{t('actor_data_title')}</h1>
-          <p className="text-xs md:text-sm text-muted-foreground">{t('actor_data_desc')}</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Data Pelaku Usaha</h1>
+          <p className="text-xs md:text-sm text-muted-foreground">Data lolos verifikasi siap diisi rekening.</p>
           {filterCoordinator && (
             <div className="flex items-center gap-2 mt-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 w-fit">
               <span className="text-[10px] font-black text-primary uppercase">Filter Koordinator: {filterCoordinator}</span>
@@ -280,17 +278,17 @@ function ActorDataContent() {
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
-              placeholder={t('search_actor_placeholder')} 
+              placeholder="Cari Nama, NIK, Usaha..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-10 border-primary/20 bg-white"
             />
           </div>
           <Button onClick={handleExportExcel} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md w-full md:w-auto h-10">
-            <FileSpreadsheet className="w-4 h-4 mr-2" /> {t('export_excel_btn')}
+            <FileSpreadsheet className="w-4 h-4 mr-2" /> EKSPOR EXCEL
           </Button>
           <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto h-10">
-            <Printer className="w-4 h-4 mr-2" /> {t('print_btn')}
+            <Printer className="w-4 h-4 mr-2" /> CETAK
           </Button>
         </div>
       </div>
@@ -309,7 +307,7 @@ function ActorDataContent() {
               <div key={coordinator} className="space-y-4 break-after-page">
                 <div className="flex items-center gap-3 border-l-4 border-primary pl-4 py-1 print:border-black">
                   <h2 className="text-xl font-black text-primary uppercase tracking-tight print:text-black">{coordinator}</h2>
-                  <Badge variant="secondary" className="font-bold print:hidden">{actors.length} {t('data')}</Badge>
+                  <Badge variant="secondary" className="font-bold print:hidden">{actors.length} DATA</Badge>
                 </div>
                 {isKoordinator ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 print:flex print:flex-col print:gap-1">
@@ -341,7 +339,7 @@ function ActorDataContent() {
                             </div>
                           </div>
                           <div className="text-[9px] font-black uppercase bg-primary text-white w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
-                            {t('look_detail_btn')}
+                            LIHAT DETAIL
                           </div>
                         </CardContent>
                       </Card>
@@ -353,12 +351,12 @@ function ActorDataContent() {
                       <TableHeader className="bg-muted/50 print:bg-slate-100">
                         <TableRow>
                           <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">{t('full_name')}</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
                           <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">NO KK</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">{t('phone_label')}</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">{t('business_label')}</TableHead>
-                          <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">{t('action')}</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR KK</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">PONSEL</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
+                          <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -436,7 +434,7 @@ function ActorDataContent() {
             {Object.keys(groupedActors).length === 0 && (
               <div className="rounded-xl border bg-white shadow-sm p-20 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
                 <Search className="w-8 h-8 opacity-20" />
-                <p className="font-bold">{t('no_data_found')}</p>
+                <p className="font-bold">Tidak ada data pelaku usaha ditemukan.</p>
               </div>
             )}
           </div>
@@ -456,7 +454,7 @@ function ActorDataContent() {
             <div className="flex flex-col gap-2 relative">
               <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b gap-4">
                 <DialogTitle className="text-xl md:text-2xl font-black text-primary uppercase">
-                  {isEditMode ? t('edit_all_data_btn') : t('look_detail_btn')}
+                  {isEditMode ? "Edit Data Pelaku Usaha" : "Detail Pelaku Usaha"}
                 </DialogTitle>
                 <div className="flex flex-wrap gap-2">
                   {!isEditMode && viewingActor && !isKoordinator && (
@@ -465,7 +463,7 @@ function ActorDataContent() {
                       onClick={() => generateRegistrationForm(viewingActor)}
                       className="font-bold bg-primary hover:bg-primary/90 text-white"
                     >
-                      <Printer className="w-4 h-4 mr-2" /> {t('print_btn')}
+                      <Printer className="w-4 h-4 mr-2" /> Cetak Formulir
                     </Button>
                   )}
                   {!isAdmin && !isMonitoring && !isKoordinator && !isEditMode && viewingActor.status === 'verified_actor' && (
@@ -475,7 +473,7 @@ function ActorDataContent() {
                       onClick={() => setEditingBankMode(true)}
                       className="font-bold bg-amber-500 hover:bg-amber-600 text-white"
                     >
-                      <CreditCard className="w-4 h-4 mr-2" /> {t('input_bank_btn')}
+                      <CreditCard className="w-4 h-4 mr-2" /> Input Rekening
                     </Button>
                   )}
                   {isAdmin && (
@@ -485,7 +483,7 @@ function ActorDataContent() {
                       onClick={() => setIsEditMode(!isEditMode)}
                       className={cn("font-bold", isEditMode ? "border-amber-500 text-amber-600" : "bg-primary")}
                     >
-                      {isEditMode ? t('cancel_edit_btn') : <><Edit3 className="w-4 h-4 mr-2"/> {t('edit_all_data_btn')}</>}
+                      {isEditMode ? "Batal Edit" : <><Edit3 className="w-4 h-4 mr-2"/> Edit Semua Data</>}
                     </Button>
                   )}
                   {isAdmin && !isEditMode && (
@@ -504,9 +502,9 @@ function ActorDataContent() {
               {isEditMode ? (
                 <form onSubmit={handleSaveFullEdit} className="grid gap-6 py-4">
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> {t('personal_biodata')} (Edit)</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi (Edit)</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('full_name')}</Label><Input name="fullName" defaultValue={viewingActor.fullName} required /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Lengkap</Label><Input name="fullName" defaultValue={viewingActor.fullName} required /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">NIK</Label><Input name="nik" defaultValue={viewingActor.nik} required /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor KK</Label><Input name="noKK" defaultValue={viewingActor.noKK} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Jenis Kelamin</Label>
@@ -521,9 +519,9 @@ function ActorDataContent() {
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> {t('address_location')} (Edit)</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili (Edit)</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('kecamatan')}</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">RT/RW</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} /></div>
                       <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase">Alamat Lengkap</Label><Input name="address" defaultValue={viewingActor.address} /></div>
@@ -531,9 +529,9 @@ function ActorDataContent() {
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> {t('business_data')} (Edit)</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha (Edit)</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">{t('business_label')}</Label><Input name="businessName" defaultValue={viewingActor.businessName} required /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} required /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kategori</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Koordinator</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
@@ -550,14 +548,14 @@ function ActorDataContent() {
                   </section>
 
                   <div className="sticky bottom-0 bg-white dark:bg-zinc-950 p-4 border-t flex justify-end gap-2 mt-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] rounded-b-lg">
-                    <Button type="button" variant="outline" onClick={() => setIsEditMode(false)} className="font-bold">{t('cancel_edit_btn')}</Button>
-                    <Button type="submit" className="bg-primary font-bold"><Save className="w-4 h-4 mr-2" /> {t('save_changes')}</Button>
+                    <Button type="button" variant="outline" onClick={() => setIsEditMode(false)} className="font-bold">Batal</Button>
+                    <Button type="submit" className="bg-primary font-bold"><Save className="w-4 h-4 mr-2" /> Simpan Perubahan</Button>
                   </div>
                 </form>
               ) : (
                 <div className="grid gap-6 py-4">
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> {t('personal_biodata')}</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
                       {[
                         { label: "Nama Lengkap", value: viewingActor.fullName },
@@ -579,7 +577,7 @@ function ActorDataContent() {
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> {t('address_location')}</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
                       {[
                         { label: "Kecamatan", value: viewingActor.kecamatan },
@@ -596,7 +594,7 @@ function ActorDataContent() {
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> {t('business_data')}</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
                       {[
                         { label: "Usaha", value: viewingActor.businessName },
@@ -613,7 +611,7 @@ function ActorDataContent() {
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> {t('bank_data')}</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
                       {[
                         { label: "Nama Bank", value: viewingActor.bankName },
@@ -629,7 +627,7 @@ function ActorDataContent() {
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> {t('audit_info')}</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Informasi Sistem & Audit</div>
                     <div className="bg-slate-50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
                       <div className="space-y-1">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Terakhir</p>
@@ -654,9 +652,9 @@ function ActorDataContent() {
             <div className="flex flex-col gap-4">
               <div className="border-b pb-2 flex justify-between items-center">
                 <DialogTitle className="text-xl font-black text-amber-600 flex items-center gap-2">
-                  <CreditCard className="w-5 h-5"/> {t('input_bank_btn')}
+                  <CreditCard className="w-5 h-5"/> INPUT REKENING
                 </DialogTitle>
-                <Button variant="ghost" size="sm" onClick={() => setEditingBankMode(false)}>{t('cancel')}</Button>
+                <Button variant="ghost" size="sm" onClick={() => setEditingBankMode(false)}>Batal</Button>
               </div>
               <form onSubmit={handleSaveBank}>
                 <div className="grid gap-4 py-4">

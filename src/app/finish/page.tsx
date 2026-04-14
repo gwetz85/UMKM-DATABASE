@@ -49,7 +49,7 @@ function FinishContent() {
   const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
-  const isKoordinator = userProfile?.role?.toLowerCase() === 'koordinator'
+  const isKoordinator = userProfile?.role === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
@@ -59,6 +59,7 @@ function FinishContent() {
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
+    // Status filter - equivalent to previous orderByChild('status').equalTo('finish')
     if (a.status !== 'finish' || !a.lpjNominal) return false;
 
     const matchesSearch = 
@@ -111,7 +112,7 @@ function FinishContent() {
     }
 
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
-    toast({ title: "Berhasil", description: "Data berhasil diperbarui." })
+    toast({ title: "Tersimpan", description: "Data pelaku usaha berhasil diperbarui." })
     setIsEditMode(false)
     setViewingActor({ ...viewingActor, ...updates } as BusinessActor)
   }
@@ -120,16 +121,16 @@ function FinishContent() {
     if (!isAdmin || !database) return
     if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
       updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
-      toast({ title: "Berhasil", description: "Status dikembalikan ke antrean verifikasi awal." })
+      toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
       setViewingActor(null)
     }
   }
   
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm(`Hapus permanen ${fullName}? Semua data terkait akan hilang.`)) {
+    if (confirm(`HAPUS PERMANEN data ${fullName}? Tindakan ini tidak dapat dibatalkan.`)) {
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
-      toast({ title: "Terhapus", description: "Data dihapus permanen dari sistem." })
+      toast({ title: "Data Dihapus", description: `Data ${fullName} telah dihapus dari sistem.` })
       setViewingActor(null)
     }
   }
@@ -137,16 +138,16 @@ function FinishContent() {
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
-        <h1 className="text-xl font-black uppercase">LAPORAN DATA SELESAI (FINISH)</h1>
-        <p className="text-xs font-bold uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha (SIMPU)</p>
+        <h1 className="text-xl font-black uppercase">LAPORAN DATA PELAKU USAHA (SIMPU)</h1>
+        <p className="text-xs font-bold uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha</p>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div className="flex items-center gap-3">
           <BadgeCheck className="w-8 h-8 text-green-600" />
           <div className="flex flex-col">
-            <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Data Selesai & LPJ Terverifikasi</h1>
-            <p className="text-xs md:text-sm text-muted-foreground">Daftar seluruh pelaku usaha yang telah melewati seluruh tahap verifikasi dan telah melaporkan LPJ.</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Finish</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">Arsip data yang telah dinyatakan SELESAI.</p>
             {filterCoordinator && (
               <div className="flex items-center gap-2 mt-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 w-fit">
                 <span className="text-[10px] font-black text-primary uppercase">Filter Koordinator: {filterCoordinator}</span>
@@ -158,7 +159,7 @@ function FinishContent() {
           </div>
         </div>
         <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto">
-          <Printer className="w-4 h-4 mr-2" /> Cetak Laporan
+          <Printer className="w-4 h-4 mr-2" /> CETAK
         </Button>
       </div>
 
@@ -166,7 +167,7 @@ function FinishContent() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input 
-            placeholder="Cari Nama, NIK, atau Usaha..." 
+            placeholder="Cari Nama / Usaha / NIK..." 
             className="pl-10 h-10 md:h-12 bg-card border-primary/20 focus-visible:ring-primary rounded-xl md:rounded-2xl"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -236,7 +237,7 @@ function FinishContent() {
             {(!actors || actors.length === 0) && (
               <div className="col-span-full py-20 text-center text-muted-foreground grid place-items-center">
                 <BadgeCheck className="w-12 h-12 mb-4 opacity-20" />
-                <p>Belum ada data yang mencapai tahap akhir ini.</p>
+                <p>Tidak ada data selesai yang ditemukan.</p>
               </div>
             )}
           </div>
@@ -305,7 +306,7 @@ function FinishContent() {
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">RT/RW</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} /></div>
-                      <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase">Alamat</Label><Input name="address" defaultValue={viewingActor.address} /></div>
+                      <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase">Alamat Lengkap</Label><Input name="address" defaultValue={viewingActor.address} /></div>
                     </div>
                   </section>
 
@@ -315,18 +316,18 @@ function FinishContent() {
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} required /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kategori</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">KORLAP / DEWAN AKTIF</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Koordinator</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
                     </div>
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Informasi Perbankan (Edit)</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan & LPJ (Edit)</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Bank</Label><Input name="bankName" defaultValue={viewingActor.bankName} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor Rekening</Label><Input name="bankNumber" defaultValue={viewingActor.bankNumber} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Pemilik Rekening</Label><Input name="bankOwner" defaultValue={viewingActor.bankOwner} className="uppercase" /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Pemilik Rekening</Label><Input name="bankOwner" defaultValue={viewingActor.bankOwner} className="uppercase" /></div>
                       <div className="space-y-1 md:col-span-3 pt-2">
-                        <Label className="text-xs font-bold uppercase text-emerald-600">Nominal LPJ yang Dilaporkan</Label>
+                        <Label className="text-xs font-bold uppercase text-emerald-600">Nominal LPJ Terlaporkan</Label>
                         <Input name="lpjNominal" type="number" defaultValue={viewingActor.lpjNominal || 0} className="font-mono" />
                       </div>
                     </div>
@@ -393,7 +394,7 @@ function FinishContent() {
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Informasi Perbankan</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-primary/5 p-4 rounded-xl border border-primary/10">
                       {[
                         { label: "Nama Bank", value: viewingActor.bankName },
@@ -410,35 +411,35 @@ function FinishContent() {
 
                   <section className="space-y-4">
                     <div className="flex items-center gap-2 text-emerald-600 font-black text-sm uppercase border-b pb-1">
-                      <FileText className="w-4 h-4" /> Laporan Pertanggungjawaban (LPJ)
+                      <FileText className="w-4 h-4" /> Laporan Pertanggung Jawaban (LPJ)
                     </div>
                     <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 flex flex-col md:flex-row justify-between items-center gap-4">
                       <div>
-                          <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest mb-1">Nominal LPJ yang Dilaporkan</p>
+                          <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest mb-1">Nominal Terlaporkan</p>
                           <p className="text-3xl font-black text-emerald-600 font-mono">
                               RP {viewingActor.lpjNominal?.toLocaleString('id-ID') || "0"}
                           </p>
                       </div>
                       <div className="text-right">
                           <p className="text-[10px] font-bold text-emerald-800 uppercase">Status Verifikasi LPJ</p>
-                          <Badge className="bg-emerald-600 font-black uppercase text-[10px] mt-1 px-4 py-1 hover:bg-emerald-600">LPJ TERVERIFIKASI</Badge>
+                          <Badge className="bg-emerald-600 font-black uppercase text-[10px] mt-1 px-4 py-1 hover:bg-emerald-600">TELAH TERVERIFIKASI</Badge>
                       </div>
                     </div>
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Informasi Sistem & Audit</div>
                     <div className="bg-slate-50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
                       <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Status</p>
-                        <p className="capitalize text-primary">{(viewingActor.status || "").replace('_', ' ')}</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Terakhir</p>
+                        <p className="capitalize text-primary">{viewingActor.status.replace('_', ' ')}</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Diinput Oleh</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Input</p>
                         <p>{viewingActor.createdBy || "System"}</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Waktu Input</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Waktu Pendaftaran</p>
                         <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
                       </div>
                     </div>

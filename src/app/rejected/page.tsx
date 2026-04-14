@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
+
 import { cn } from "@/lib/utils"
 
 function RejectedContent() {
@@ -50,7 +51,7 @@ function RejectedContent() {
   const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
-  const isKoordinator = userProfile?.role?.toLowerCase() === 'koordinator'
+  const isKoordinator = userProfile?.role === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
@@ -72,6 +73,7 @@ function RejectedContent() {
   const { data: allBlacklistDataRaw } = useList<any>(blacklistDataRef)
   
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
+    // Status filter - equivalent to previous orderByChild('status').equalTo('rejected')
     if (a.status !== 'rejected') return false;
 
     const matchesSearch = 
@@ -121,7 +123,7 @@ function RejectedContent() {
     }
 
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
-    toast({ title: "Berhasil", description: "Data berhasil diperbarui." })
+    toast({ title: "Tersimpan", description: "Data pelaku usaha berhasil diperbarui." })
     setIsEditMode(false)
     setViewingActor({ ...viewingActor, ...updates } as BusinessActor)
   }
@@ -130,7 +132,7 @@ function RejectedContent() {
     if (!isAdmin || !database) return
     if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
       updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
-      toast({ title: "Berhasil", description: "Status dikembalikan ke antrean verifikasi awal." })
+      toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
       setViewingActor(null)
     }
   }
@@ -139,7 +141,7 @@ function RejectedContent() {
     if (!isAdmin || !database) return
     if (confirm(`Hapus permanen ${fullName}? Semua data terkait akan hilang.`)) {
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
-      toast({ variant: "destructive", title: "Terhapus", description: "Data dihapus permanen dari sistem." })
+      toast({ variant: "destructive", title: "Terhapus", description: "Data dihapus permanen." })
       setViewingActor(null)
     }
   }
@@ -147,15 +149,15 @@ function RejectedContent() {
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
-        <h1 className="text-xl font-black uppercase">LAPORAN DATA DITOLAK / CANCEL</h1>
-        <p className="text-xs font-bold uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha (SIMPU)</p>
+        <h1 className="text-xl font-black uppercase">LAPORAN DATA DITOLAK / CANCEL (SIMPU)</h1>
+        <p className="text-xs font-bold uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha</p>
       </div>
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div className="flex items-center gap-3">
           <div className="flex flex-col">
-            <h1 className="text-2xl md:text-3xl font-bold text-red-700 font-headline">Data Ditolak (Rejected)</h1>
-            <p className="text-xs md:text-sm text-muted-foreground">Daftar data pelaku usaha yang tidak lolos verifikasi atau dibatalkan.</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-red-700 font-headline">Data Ditolak / Batal</h1>
+            <p className="text-xs md:text-sm text-muted-foreground">Arsip data yang ditolak oleh Administrator.</p>
             {filterCoordinator && (
               <div className="flex items-center gap-2 mt-2 bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 w-fit">
                 <span className="text-[10px] font-black text-red-700 uppercase">Filter Koordinator: {filterCoordinator}</span>
@@ -167,7 +169,7 @@ function RejectedContent() {
           </div>
         </div>
         <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto">
-          <Printer className="w-4 h-4 mr-2" /> Cetak Laporan
+          <Printer className="w-4 h-4 mr-2" /> CETAK
         </Button>
       </div>
 
@@ -175,7 +177,7 @@ function RejectedContent() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input 
-            placeholder="Cari Nama, NIK, atau Usaha..." 
+            placeholder="Cari Nama / Usaha / NIK..." 
             className="pl-10 h-10 md:h-12 bg-card border-red-200 focus-visible:ring-red-500 rounded-xl md:rounded-2xl"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -248,7 +250,7 @@ function RejectedContent() {
             {(!actors || actors.length === 0) && (
               <div className="col-span-full py-20 text-center text-muted-foreground grid place-items-center">
                 <Ban className="w-12 h-12 mb-4 text-slate-300" />
-                <p>Belum ada data yang ditolak.</p>
+                <p>Tidak ada data ditolak yang ditemukan.</p>
               </div>
             )}
           </div>
@@ -266,7 +268,7 @@ function RejectedContent() {
             <div className="flex flex-col gap-2 relative">
               <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b gap-4">
                 <DialogTitle className="text-xl md:text-2xl font-black text-red-700 uppercase">
-                  {isEditMode ? "Edit Data Ditolak" : "Detail Lengkap Data Ditolak"}
+                  {isEditMode ? "Edit Data Ditolak" : "Detail Lengkap Data Ditolak/Batal"}
                 </DialogTitle>
                 <div className="flex flex-wrap gap-2">
                   {isAdmin && (
@@ -295,8 +297,8 @@ function RejectedContent() {
               {isEditMode ? (
                 <form onSubmit={handleSaveFullEdit} className="grid gap-6 py-4">
                   <section className="p-4 bg-red-50 border border-red-200 rounded-2xl relative">
-                    <p className="text-[10px] font-black text-red-600 uppercase mb-2 tracking-widest flex items-center gap-1"><AlertCircle className="w-3 h-3"/> REVISI ALASAN PENOLAKAN</p>
-                    <Input name="rejectionReason" defaultValue={viewingActor.rejectionReason} className="font-bold text-red-700 bg-white" placeholder="Tuliskan alasan penolakan..." required />
+                    <p className="text-[10px] font-black text-red-600 uppercase mb-2 tracking-widest flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Alasan Penolakan (Edit)</p>
+                    <Input name="rejectionReason" defaultValue={viewingActor.rejectionReason} className="font-bold text-red-700 bg-white" placeholder="Masukkan alasan penolakan" required />
                   </section>
                   
                   <section className="space-y-4">
@@ -322,7 +324,7 @@ function RejectedContent() {
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">RT/RW</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} /></div>
-                      <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase">Alamat</Label><Input name="address" defaultValue={viewingActor.address} /></div>
+                      <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase">Alamat Lengkap</Label><Input name="address" defaultValue={viewingActor.address} /></div>
                     </div>
                   </section>
 
@@ -332,16 +334,16 @@ function RejectedContent() {
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} required /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kategori</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">KORLAP / DEWAN AKTIF</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Koordinator</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
                     </div>
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Informasi Perbankan (Edit)</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan (Edit)</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Bank</Label><Input name="bankName" defaultValue={viewingActor.bankName} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor Rekening</Label><Input name="bankNumber" defaultValue={viewingActor.bankNumber} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Pemilik Rekening</Label><Input name="bankOwner" defaultValue={viewingActor.bankOwner} className="uppercase" /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Pemilik Rekening</Label><Input name="bankOwner" defaultValue={viewingActor.bankOwner} className="uppercase" /></div>
                     </div>
                   </section>
 
@@ -353,9 +355,9 @@ function RejectedContent() {
               ) : (
                 <div className="grid gap-6 py-4">
                   <section className="p-4 bg-red-50 border border-red-200 rounded-2xl">
-                    <p className="text-[10px] font-black text-red-600 uppercase mb-2 tracking-widest flex items-center gap-1"><AlertCircle className="w-3 h-3"/> ALASAN PENOLAKAN</p>
+                    <p className="text-[10px] font-black text-red-600 uppercase mb-2 tracking-widest flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Alasan Penolakan:</p>
                     <p className="text-sm font-black text-red-700 leading-relaxed italic">
-                      "{viewingActor.rejectionReason || "Tidak ada alasan penolakan yang dicantumkan."}"
+                      "{viewingActor.rejectionReason || "Administrator tidak memberikan alasan spesifik."}"
                     </p>
                   </section>
                   
@@ -416,18 +418,18 @@ function RejectedContent() {
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Informasi Sistem & Audit</div>
                     <div className="bg-slate-50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
                       <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Status</p>
-                        <p className="capitalize text-red-600">Ditolak</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Terakhir</p>
+                        <p className="capitalize text-red-600">Ditolak / Batal</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Diinput Oleh</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Input</p>
                         <p>{viewingActor.createdBy || "System"}</p>
                       </div>
                       <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Waktu Input</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Waktu Pendaftaran</p>
                         <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
                       </div>
                     </div>

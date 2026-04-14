@@ -16,7 +16,6 @@ import { User as UserIcon, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
 import { useActiveEvent } from '@/hooks/use-active-event';
-import { LanguageProvider, useTranslation } from '@/lib/i18n';
 
 
 import { Toaster } from '@/components/ui/toaster';
@@ -34,7 +33,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [user, database])
   const { data: allUsers } = useList(userProfileRef)
   const profile = allUsers?.find((u: any) => u.uid === user?.uid)
-  const isKoordinator = profile?.role?.toLowerCase() === 'koordinator'
+  const isKoordinator = profile?.role === 'koordinator'
   const { playSound } = useSoundEffect();
 
   const eventSettingsRef = useMemoFirebase(() => {
@@ -71,6 +70,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('click', handleGlobalClick);
   }, [playSound]);
 
+  const isLoginPage = pathname === '/login'
+
   const getPageTitle = (path: string) => {
     switch (path) {
       case '/': return 'Dashboard';
@@ -86,68 +87,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       case '/users': return 'Manajemen User';
       case '/chat-monitoring': return 'Monitoring Chat';
       case '/lpj': return 'LPJ';
-      case '/settings-event': return 'Pengaturan Event';
-      case '/verifikasi-dinas': return 'Verifikasi Dinas';
-      case '/hasil-verifikasi': return 'Hasil Verifikasi';
       default: return '';
     }
   };
 
   const currentTitle = getPageTitle(pathname);
-
-  return (
-    <LanguageProvider>
-      <LayoutContent pathname={pathname} currentTitle={currentTitle} profile={profile} isKoordinator={isKoordinator} activeEvent={activeEvent}>
-        {children}
-      </LayoutContent>
-    </LanguageProvider>
-  );
-}
-
-function LayoutContent({ 
-  children, 
-  pathname, 
-  currentTitle, 
-  profile, 
-  isKoordinator,
-  activeEvent 
-}: { 
-  children: React.ReactNode, 
-  pathname: string, 
-  currentTitle: string, 
-  profile: any,
-  isKoordinator: boolean,
-  activeEvent: any
-}) {
-  const { t } = useTranslation();
-  const { playSound } = useSoundEffect();
-
-  const isLoginPage = pathname === '/login'
-
-  const getTranslatedTitle = (title: string) => {
-    switch (title) {
-      case 'Dashboard': return t('dashboard');
-      case 'Data Pelaku Usaha': return t('actor_data');
-      case 'Data Selesai': return t('finish_data');
-      case 'Data Ditolak': return t('rejected_data');
-      case 'Verifikasi Admin': return t('verify_admin');
-      case 'Verifikasi Data': return t('verify_bank');
-      case 'Input Data': return t('input_data');
-      case 'Cek Data': return t('check_data_public');
-      case 'Profil Saya': return t('profile');
-      case 'Pengaturan': return t('settings');
-      case 'Manajemen User': return t('user_management');
-      case 'Monitoring Chat': return t('chat_monitoring');
-      case 'LPJ': return t('lpj');
-      case 'Verifikasi Dinas': return t('gov_verification');
-      case 'Hasil Verifikasi': return t('verification_results');
-      case 'Rekening Bank': return t('bank_accounts');
-      case 'Kuota Koordinator': return t('quota_coordinator');
-      case 'LOG APLIKASI': return t('app_logs');
-      case 'Pengaturan Event': return t('event_settings');
-      default: return title;
-    }
-  };
 
   return (
     <>
@@ -197,7 +141,7 @@ function LayoutContent({
               {activeEvent && (
                 <div key={activeEvent.id || activeEvent.description} className="md:hidden bg-gradient-to-b from-primary/10 to-transparent border-b border-primary/20 px-4 py-3 flex flex-col items-center justify-center animate-in fade-in zoom-in slide-in-from-top-2 duration-700 w-full">
                   <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2 text-center text-balance drop-shadow-sm">
-                    {activeEvent.description || t('coming_soon')}
+                    {activeEvent.description || 'EVENT MENDATANG'}
                   </span>
                   <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
                 </div>
@@ -210,12 +154,12 @@ function LayoutContent({
             <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
               {/* Desktop Top Bar - Hidden on Login */}
               {!isLoginPage && (
-                <div className="hidden md:flex py-2.5 px-6 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border border-white/20 shadow-sm mx-4 mb-4 mt-4 rounded-2xl backdrop-blur-xl">
+                <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border border-white/20 shadow-sm mx-4 mb-4 mt-4 rounded-2xl backdrop-blur-xl">
                   <div className="flex items-center gap-4">
                     <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors p-2 rounded-lg" />
                     {currentTitle && (
-                      <h1 className="text-xl md:text-2xl font-black text-primary tracking-tight uppercase">
-                        {getTranslatedTitle(currentTitle)}
+                      <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight uppercase">
+                        {currentTitle}
                       </h1>
                     )}
                   </div>
@@ -227,7 +171,7 @@ function LayoutContent({
                         <div className="flex items-center gap-2">
                           <div className="h-1 w-8 md:w-12 bg-primary/20 rounded-full" />
                           <span className="text-[9px] md:text-[10px] font-black text-primary uppercase tracking-[0.3em] text-center drop-shadow-sm group-hover:tracking-[0.4em] transition-all">
-                            {activeEvent.description || t('coming_soon')}
+                            {activeEvent.description || 'EVENT MENDATANG'}
                           </span>
                           <div className="h-1 w-8 md:w-12 bg-primary/20 rounded-full" />
                         </div>
@@ -244,7 +188,7 @@ function LayoutContent({
                     >
                       <div className="flex flex-col items-end">
                         <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">{t('profile')}</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Lihat Profil</span>
                       </div>
                       <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-50 flex items-center justify-center">
                         {profile?.photoURL ? (

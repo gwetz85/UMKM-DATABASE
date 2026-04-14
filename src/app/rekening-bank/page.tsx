@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useTranslation } from "@/lib/i18n"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking } from "@/firebase"
 import { ref } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,7 +32,6 @@ export default function RekeningBankPage() {
 }
 
 function RekeningBankContent() {
-  const { t } = useTranslation()
   const { user, isUserLoading } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
@@ -48,7 +46,7 @@ function RekeningBankContent() {
   }, [user, database])
   const { data: allUsersForProfile } = useList(userProfileRef)
   const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
-  const isKoordinator = userProfile?.role?.toLowerCase() === 'koordinator'
+  const isKoordinator = userProfile?.role === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database || !user) return null
@@ -108,11 +106,11 @@ function RekeningBankContent() {
     // Only forward those who are not ready yet
     const targetActors = actors.filter(a => !a.readyForLPJ)
     if (targetActors.length === 0) {
-      toast({ title: t('information'), description: t('all_data_forwarded_to_lpj') })
+      toast({ title: "Informasi", description: "Semua data di bank ini sudah diteruskan ke LPJ." })
       return
     }
 
-    if (confirm(t('confirm_forward_to_lpj', { count: targetActors.length, bank: bankName }))) {
+    if (confirm(`Teruskan ${targetActors.length} data dari ${bankName} ke menu LPJ?`)) {
       setIsForwarding(bankName)
       
       const now = new Date().toISOString()
@@ -126,7 +124,7 @@ function RekeningBankContent() {
         })
       })
 
-      toast({ title: t('successfully_forwarded'), description: t('data_sent_to_lpj_queue', { count: targetActors.length }) })
+      toast({ title: "Berhasil Diteruskan", description: `${targetActors.length} data dikirim ke antrean LPJ.` })
       setTimeout(() => setIsForwarding(null), 1000)
     }
   }
@@ -146,10 +144,10 @@ function RekeningBankContent() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 print:hidden">
         <div className="space-y-1 relative">
           <h1 className="text-3xl md:text-5xl font-black tracking-tight font-headline text-gradient uppercase drop-shadow-sm flex items-center gap-3">
-            <CreditCard className="w-8 h-8 md:w-12 md:h-12 text-primary" /> {selectedBank ? `${t('bank')} ${selectedBank}` : t('bank_accounts')}
+            <CreditCard className="w-8 h-8 md:w-12 md:h-12 text-primary" /> {selectedBank ? `Bank ${selectedBank}` : 'Rekening Bank'}
           </h1>
           <p className="text-xs md:text-sm text-slate-600 font-semibold">
-            {selectedBank ? t('bank_rekening_desc_selected', { bank: selectedBank }) : t('bank_rekening_desc')}
+            {selectedBank ? `Daftar rekening untuk bank ${selectedBank} yang telah terverifikasi.` : 'Daftar rekening pelaku usaha yang telah terverifikasi, dikelompokkan per Bank.'}
           </p>
         </div>
         
@@ -167,7 +165,7 @@ function RekeningBankContent() {
             onClick={() => window.print()}
             className="h-10 px-6 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
           >
-            <Printer className="w-4 h-4" /> {t('print_data_btn')}
+            <Printer className="w-4 h-4" /> CETAK DATA
           </button>
         </div>
       </div>
@@ -175,20 +173,20 @@ function RekeningBankContent() {
       <div className="space-y-8">
         {/* Print Only Header */}
         <div className="hidden print:block text-center space-y-1 mb-8">
-          <h1 className="text-2xl font-black uppercase tracking-tight">{t('actor_data_title')}</h1>
+          <h1 className="text-2xl font-black uppercase tracking-tight">DAFTAR PELAKU USAHA</h1>
           <h2 className="text-lg font-bold uppercase tracking-widest text-slate-800">
-            {t('bank')} {selectedBank || t('all_banks')}
+            BANK {selectedBank || 'SEMUA BANK'}
           </h2>
           <div className="w-full h-1 bg-black my-2" />
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-            {t('printed_at')}: {new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
+            Dicetak pada: {new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
           </p>
         </div>
 
         {isLoading ? (
           <div className="py-20 flex flex-col items-center justify-center gap-4 text-muted-foreground">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <p className="font-bold animate-pulse uppercase tracking-widest text-xs">{t('loading_bank_data')}</p>
+            <p className="font-bold animate-pulse uppercase tracking-widest text-xs">Memuat Data Rekening...</p>
           </div>
         ) : Object.keys(filteredAndGroupedData).length > 0 ? (
           BANK_LIST.concat(["LAINNYA"]).map(bankName => {
@@ -203,7 +201,7 @@ function RekeningBankContent() {
                   </div>
                   <div className="flex-1">
                     <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">{bankName}</h2>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest print:hidden">{actors.length} {t('data_actor')}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest print:hidden">{actors.length} Pelaku Usaha</p>
                   </div>
                   <Button 
                     size="sm" 
@@ -213,7 +211,7 @@ function RekeningBankContent() {
                     className="h-8 rounded-lg border-primary/20 text-primary hover:bg-primary hover:text-white font-bold text-[10px] px-3 gap-2 print:hidden"
                   >
                     {isForwarding === bankName ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                    {t('forward_to_lpj_btn')}
+                    TERUSKAN KE LPJ
                   </Button>
                 </div>
 
@@ -223,10 +221,10 @@ function RekeningBankContent() {
                       <TableHeader className="bg-slate-50/50 print:bg-slate-100">
                         <TableRow className="hover:bg-transparent border-b-slate-100 print:border-b-2 print:border-black">
                           <TableHead className="w-[50px] font-black uppercase text-[10px] tracking-widest py-4 pl-6 print:text-black print:border-r-2 print:border-black">NO</TableHead>
-                          <TableHead className="w-[180px] font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">{t('bank_account_number')}</TableHead>
-                          <TableHead className="w-[120px] font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">{t('bank_name_label')}</TableHead>
-                          <TableHead className="font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">{t('full_name')}</TableHead>
-                          <TableHead className="w-[150px] font-black uppercase text-[10px] tracking-widest py-4 pr-6 text-right print:text-black text-center">{t('nominal')}</TableHead>
+                          <TableHead className="w-[180px] font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">Nomor Rekening</TableHead>
+                          <TableHead className="w-[120px] font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">Nama Bank</TableHead>
+                          <TableHead className="font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">Nama Pelaku Usaha</TableHead>
+                          <TableHead className="w-[150px] font-black uppercase text-[10px] tracking-widest py-4 pr-6 text-right print:text-black text-center">Nominal</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -274,8 +272,8 @@ function RekeningBankContent() {
               <CreditCard className="w-12 h-12 text-slate-300" />
             </div>
             <div className="space-y-1">
-              <h3 className="font-black text-xl text-slate-800 uppercase">{t('no_data')}</h3>
-              <p className="text-sm text-muted-foreground font-medium">{t('no_bank_data_desc')}</p>
+              <h3 className="font-black text-xl text-slate-800 uppercase">Tidak Ada Data</h3>
+              <p className="text-sm text-muted-foreground font-medium">Belum ada data rekening yang terverifikasi untuk ditampilkan.</p>
             </div>
           </div>
         )}
