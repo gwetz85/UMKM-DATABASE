@@ -5,33 +5,33 @@
 @layer base {
   :root {
     --background: 210 40% 98%;
-    --foreground: 224 71.4% 4.1%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
-    --primary: 210 100% 50%; /* iOS System Blue */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 98%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 160 81% 40%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 151 81% 50%;
+    --accent-foreground: 222 47% 11%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 210 100% 50%;
-    --radius: 1.25rem;
-    --sidebar-background: 210 40% 98%;
-    --sidebar-foreground: 224 71.4% 4.1%;
-    --sidebar-primary: 210 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96.1%;
-    --sidebar-accent-foreground: 224 71.4% 4.1%;
-    --sidebar-border: 210 40% 90%;
-    --sidebar-ring: 210 100% 50%;
+    --ring: 221 83% 53%;
+    --radius: 1rem;
+    --sidebar-background: 221 83% 53%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 221 83% 53%;
+    --sidebar-accent: 151 81% 50%;
+    --sidebar-accent-foreground: 210 40% 10%;
+    --sidebar-border: 221 60% 45%;
+    --sidebar-ring: 151 81% 50%;
   }
 
   .dark {
@@ -80,23 +80,19 @@
 
 @layer utilities {
   .glass {
-    @apply bg-white/70 backdrop-blur-[24px] border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.05)];
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
   }
   
   .glass-dark {
-    @apply bg-slate-900/60 backdrop-blur-[24px] border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
+    @apply bg-slate-900/70 backdrop-blur-xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)];
   }
 
   .glass-panel {
-    @apply bg-white/80 backdrop-blur-[32px] border border-white/50 shadow-[0_4px_24px_0_rgba(0,0,0,0.03)];
-  }
-
-  .ios-glass {
-    @apply bg-white/60 backdrop-blur-[40px] border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.08)];
+    @apply bg-white/85 backdrop-blur-lg border border-white/60 shadow-sm;
   }
   
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-emerald-500;
   }
 
   .animate-in {
@@ -182,7 +178,11 @@
 
 .animate-marquee {
   display: inline-block;
-  animation: marquee 15s linear infinite;
+  animation: marquee 60s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
 }
 
 

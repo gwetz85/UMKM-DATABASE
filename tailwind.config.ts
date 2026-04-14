@@ -26,7 +26,7 @@ export default {
           foreground: 'hsl(var(--popover-foreground))',
         },
         primary: {
-          DEFAULT: "#007AFF", // iOS System Blue
+          DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
@@ -67,12 +67,9 @@ export default {
         },
       },
       borderRadius: {
-        lg: '1.25rem', // 20px
-        md: '1rem',    // 16px
-        sm: '0.75rem', // 12px
-        xl: '1.5rem',  // 24px
-        '2xl': '2rem', // 32px
-        '3xl': '2.5rem', // 40px
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
       },
       keyframes: {
         'accordion-down': {

@@ -16,6 +16,7 @@ import { User as UserIcon, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
 import { useActiveEvent } from '@/hooks/use-active-event';
+import { HeaderTicker } from '@/components/header-ticker';
 
 
 import { Toaster } from '@/components/ui/toaster';
@@ -105,25 +106,35 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           {/* Mobile Header - Hidden on Login */}
           {!isLoginPage && (
             <>
-              <header className="sticky top-0 flex md:hidden items-center justify-between px-6 h-20 ios-glass text-slate-900 shrink-0 z-50 border-b border-black/5 print:hidden">
-                <div className="flex items-center gap-4">
-                  <SidebarTrigger className="text-primary hover:bg-primary/5 transition-all p-2.5 rounded-full" />
+              <header className="sticky top-0 flex md:hidden items-center justify-between px-4 h-16 bg-primary text-white shrink-0 z-50 shadow-md print:hidden">
+                <div className="flex items-center gap-2">
+                  <SidebarTrigger className="text-white hover:bg-white/10 transition-colors" />
                   <div className="flex flex-col">
-                    <span className="text-2xl font-[900] tracking-tighter leading-none text-slate-900">
+                    <span className="text-2xl font-black tracking-tighter leading-none flex items-center gap-1">
                       SIMPU
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <Link href="/profile" className="w-10 h-10 rounded-full overflow-hidden border border-black/5 shadow-sm bg-slate-100 flex items-center justify-center transition-all active:scale-90">
+                <div className="flex items-center gap-3">
+                   <InfoDialog>
+                    <button className="w-10 h-10 overflow-hidden rounded-full border border-white/20 shadow-lg outline-none bg-white flex items-center justify-center">
+                      <img 
+                        src="/logo.png" 
+                        alt="SIMPU" 
+                        className="w-full h-full object-contain p-1"
+                      />
+                    </button>
+                  </InfoDialog>
+                  <Link href="/profile" className="w-9 h-9 rounded-xl overflow-hidden border border-white/20 shadow-inner bg-white/10 flex items-center justify-center transition-transform active:scale-95">
                     {profile?.photoURL ? (
                       <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <UserIcon className="w-5 h-5 text-slate-400" />
+                      <UserIcon className="w-5 h-5 text-white" />
                     )}
                   </Link>
                   <OfficeHoursTimer />
                 </div>
+
               </header>
               <ProfileStatusDialog />
               
@@ -144,22 +155,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
               {/* Desktop Top Bar - Hidden on Login */}
               {!isLoginPage && (
-                <>
-                <div className="hidden md:flex flex-col px-10 pt-12 pb-6 print:hidden">
+                <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border border-white/20 shadow-sm mx-4 mb-4 mt-4 rounded-2xl backdrop-blur-xl">
+                  <div className="flex items-center gap-4">
+                    <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors p-2 rounded-lg" />
                     {currentTitle && (
-                      <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-left-4 duration-1000">
-                         <span className="text-xs font-bold text-primary uppercase tracking-[0.3em] ml-1">{new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                        <h1 className="text-5xl md:text-6xl font-[900] text-slate-900 tracking-[-0.04em] leading-none">
-                          {currentTitle}
-                        </h1>
-                      </div>
+                      <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight uppercase">
+                        {currentTitle}
+                      </h1>
                     )}
-                </div>
-                
-                 <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-0 z-40 ios-glass border-b border-black/5 mx-0 mb-4 rounded-none h-16 transition-all duration-300">
-                  <div className="flex items-center gap-4 px-6">
-                    <SidebarTrigger className="text-primary hover:bg-primary/5 transition-all p-2 rounded-full" />
-                    <span className="text-lg font-bold text-slate-800">{currentTitle}</span>
                   </div>
                   
                   {/* Event Info - Center Area */}
@@ -178,28 +181,28 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4">
                     <OfficeHoursTimer />
                     <Link 
                       href="/profile" 
-                      className="flex items-center gap-4 pl-6 border-l border-slate-200 group"
+                      className="flex items-center gap-3 pl-4 border-l border-slate-200 group"
                     >
                       <div className="flex flex-col items-end">
-                        <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest group-hover:text-primary transition-colors">{profile?.fullName?.split(' ')[0] || 'User'}</span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Profil Akun</span>
+                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Lihat Profil</span>
                       </div>
-                      <div className="w-11 h-11 rounded-2xl overflow-hidden border-2 border-white ring-4 ring-primary/5 shadow-xl transition-all group-hover:scale-110 group-hover:ring-primary/10 bg-slate-50 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-50 flex items-center justify-center">
                         {profile?.photoURL ? (
                           <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
-                          <UserIcon className="w-6 h-6 text-primary/30" />
+                          <UserIcon className="w-5 h-5 text-primary/30" />
                         )}
                       </div>
                     </Link>
                   </div>
                 </div>
-              </>
-            )}
+              )}
+              {!isLoginPage && <HeaderTicker />}
               <div key={pathname} className="w-full relative z-0 animate-in fade-in-up">
                 {children}
               </div>

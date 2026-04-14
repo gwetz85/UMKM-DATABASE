@@ -219,33 +219,33 @@ export default function DashboardPage() {
       name: "Total Pelaku Usaha", 
       value: allData?.length ?? 0, 
       icon: Building2, 
-      color: "text-amber-500", 
-      bg: "bg-amber-50",
-      cardBg: "bg-white/80",
-      hoverBg: "hover:bg-amber-50/50",
-      border: "border-amber-100",
+      color: "text-white", 
+      bg: "bg-white/20",
+      cardBg: "bg-amber-500",
+      hoverBg: "hover:bg-amber-600",
+      border: "border-amber-400",
       filterType: "total"
     },
     { 
       name: "Pelaku Laki-laki", 
       value: genderStats.laki, 
-      icon: User, 
-      color: "text-indigo-600", 
-      bg: "bg-indigo-50",
-      cardBg: "bg-white/80",
-      hoverBg: "hover:bg-indigo-50/50",
-      border: "border-indigo-100",
+      icon: Users, 
+      color: "text-white", 
+      bg: "bg-white/20",
+      cardBg: "bg-blue-600",
+      hoverBg: "hover:bg-blue-700",
+      border: "border-blue-500",
       filterType: "laki"
     },
     { 
       name: "Pelaku Perempuan", 
       value: genderStats.perempuan, 
-      icon: User, 
-      color: "text-rose-500", 
-      bg: "bg-rose-50",
-      cardBg: "bg-white/80",
-      hoverBg: "hover:bg-rose-50/50",
-      border: "border-rose-100",
+      icon: Users, 
+      color: "text-white", 
+      bg: "bg-white/20",
+      cardBg: "bg-rose-500",
+      hoverBg: "hover:bg-rose-600",
+      border: "border-rose-400",
       filterType: "perempuan"
     },
     { 
@@ -255,22 +255,22 @@ export default function DashboardPage() {
         return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
       }).length, 
       icon: UserCheck, 
-      color: "text-emerald-600", 
-      bg: "bg-emerald-50",
-      cardBg: "bg-white/80",
-      hoverBg: "hover:bg-emerald-50/50",
-      border: "border-emerald-100",
+      color: "text-white", 
+      bg: "bg-white/20",
+      cardBg: "bg-emerald-600",
+      hoverBg: "hover:bg-emerald-700",
+      border: "border-emerald-500",
       filterType: "verified"
     },
     { 
       name: "Data Ditolak", 
       value: allData?.filter(d => d.status?.toLowerCase().trim() === "rejected").length || 0, 
       icon: UserX, 
-      color: "text-rose-600", 
-      bg: "bg-rose-50",
-      cardBg: "bg-white/80",
-      hoverBg: "hover:bg-rose-50/50",
-      border: "border-rose-100",
+      color: "text-white", 
+      bg: "bg-white/20",
+      cardBg: "bg-orange-500",
+      hoverBg: "hover:bg-orange-600",
+      border: "border-orange-400",
       filterType: "rejected"
     },
   ]
@@ -303,18 +303,25 @@ export default function DashboardPage() {
             key={stat.name} 
             onClick={() => setSelectedFilter({ name: stat.name, filterType: stat.filterType })}
             className={cn(
-              "border-black/5 shadow-[0_10px_30px_rgba(0,0,0,0.03)] transition-all duration-300 group overflow-hidden cursor-pointer active:scale-95 bg-white/70 backdrop-blur-3xl rounded-[2rem]",
-              "hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] hover:-translate-y-1"
+              "border shadow-md transition-all duration-500 group overflow-hidden cursor-pointer active:scale-95",
+              "hover:shadow-2xl hover:-translate-y-1",
+              stat.cardBg,
+              stat.hoverBg,
+              stat.border
             )}
           >
-            <CardHeader className="flex flex-row items-center justify-between p-6 pb-0">
-              <div className={cn(stat.bg, "w-10 h-10 rounded-[12px] flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-sm")}>
-                <stat.icon className={cn("w-5 h-5", stat.color)} />
+            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
+              <CardTitle className="text-[10px] md:text-xs font-bold text-white/80 uppercase tracking-wider truncate mr-2">{stat.name}</CardTitle>
+              <div className={cn(stat.bg, "p-1.5 md:p-2.5 rounded-lg md:rounded-xl group-hover:scale-110 transition-transform duration-300 shrink-0")}>
+                <stat.icon className={cn("w-4 h-4 md:w-5 md:h-5", stat.color)} />
               </div>
             </CardHeader>
-            <CardContent className="p-6 pt-4">
-              <div className="text-3xl md:text-4xl font-[800] text-slate-900 tracking-tight">{isLoading ? "..." : stat.value}</div>
-              <CardTitle className="text-[11px] font-[700] text-slate-400 uppercase tracking-[0.1em] mt-1">{stat.name}</CardTitle>
+            <CardContent className="p-4 pt-0">
+              <div className="text-xl md:text-3xl font-black text-white">{isLoading ? "..." : stat.value}</div>
+              <div className="flex items-center gap-1 mt-1 text-[8px] md:text-[10px] font-bold text-white/70 uppercase">
+                <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
+                DATA TERKINI
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -322,22 +329,22 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="ios-glass overflow-hidden border-black/5 shadow-[0_20px_60px_rgba(0,0,0,0.05)] h-full rounded-[2.5rem]">
-            <CardHeader className="bg-slate-100/50 pb-4 border-b border-black/5">
-              <CardTitle className="text-[17px] font-[700] flex items-center gap-2.5 text-slate-900">
-                <BarChart3 className="w-5 h-5 text-primary" /> Statistik Kuota
+          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
+            <CardHeader className="bg-primary/10 pb-4">
+              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
+                <BarChart3 className="w-5 h-5" /> Jumlah Kuota
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="max-h-[500px] overflow-auto">
+              <div className="max-h-[350px] overflow-auto">
                 <Table>
-                  <TableHeader className="bg-transparent sticky top-0 z-10 border-b border-black/5">
-                    <TableRow className="hover:bg-transparent border-none">
-                      <TableHead className="w-[50px] text-center font-[700] text-slate-500 text-[12px]">NO</TableHead>
-                      <TableHead className="font-[700] text-slate-500 text-[12px] min-w-[150px]">KORLAP / DEWAN</TableHead>
-                      <TableHead className="text-center font-[700] text-slate-500 text-[12px]">TOTAL</TableHead>
-                      <TableHead className="text-center font-[700] text-slate-500 text-[12px]">TARGET</TableHead>
-                      <TableHead className="text-center font-[700] text-slate-500 text-[12px]">SISA</TableHead>
+                  <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[40px] text-center font-black text-slate-800 text-[10px] md:text-xs">No</TableHead>
+                      <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">Nama Korlap / Dewan Aktif</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Jumlah Kuota</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Tercapai</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Sisa Kuota</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

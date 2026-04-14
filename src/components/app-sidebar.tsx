@@ -258,78 +258,80 @@ export function AppSidebar() {
 
   if (!mounted) {
     return (
-      <Sidebar collapsible="icon" variant="floating" className="border-none shadow-2xl glass bg-transparent h-[calc(100vh-2rem)] my-4 ml-4">
-        <SidebarHeader className="py-8 flex flex-col items-center justify-center border-b border-primary/5">
-          <div className="bg-primary/10 rounded-2xl p-2 w-12 h-12 shadow-inner animate-pulse" />
+      <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-primary">
+        <SidebarHeader className="py-6 flex flex-col items-center justify-center border-b border-white/5">
+          <div className="bg-accent rounded-xl p-2 w-10 h-10 shadow-inner" />
         </SidebarHeader>
         <SidebarContent />
-        <SidebarFooter className="p-4 bg-primary/5 mt-auto" />
+        <SidebarFooter className="p-4 bg-black/10 mt-auto" />
       </Sidebar>
     )
   }
 
   return (
-    <Sidebar collapsible="icon" variant="floating" className="border-none shadow-none bg-transparent h-full md:h-[calc(100vh-2rem)] md:my-4 md:ml-4">
-      <SidebarHeader className="py-10 flex flex-col items-center justify-center border-b border-black/5">
+    <Sidebar collapsible="icon" className="border-r-0 text-white">
+      <SidebarHeader className="py-6 flex flex-col items-center justify-center border-b border-white/10">
         <div className="flex flex-col items-center justify-center w-full">
           <InfoDialog>
-            <button className="flex flex-col items-center gap-4 transition-all duration-500 hover:scale-110 active:scale-95 outline-none group">
-              <div className="relative group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 w-28 h-28 flex items-center justify-center overflow-hidden rounded-[2.5rem] bg-white shadow-[0_15px_40px_rgba(0,0,0,0.1)] border border-black/5 transition-all group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.15)]">
+            <button className="flex flex-col items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 outline-none">
+              <div className="relative group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 w-24 h-24 flex items-center justify-center overflow-hidden rounded-full border-2 border-white/20 shadow-2xl bg-white">
                 <img
                   src="/logo.png"
                   alt="SIMPU Logo"
-                  className="w-full h-full object-contain p-3"
+                  className="w-full h-full object-contain p-2"
                 />
               </div>
             </button>
           </InfoDialog>
         </div>
+
+
       </SidebarHeader>
 
       <SidebarContent className="px-3 py-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 mb-3 group-data-[collapsible=icon]:hidden text-slate-500 font-black text-[10px] uppercase tracking-[0.25em]">
-            Navigasi Utama
+          <SidebarGroupLabel className="px-2 mb-2 group-data-[collapsible=icon]:hidden text-white/40 font-bold text-[10px] uppercase tracking-[0.2em]">
+            MENU UTAMA
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1.5">
+            <SidebarMenu className="gap-1">
               {navigation.filter((i: any) => i.show).map((item: any) => (
                 <SidebarMenuItem key={item.name}>
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
                       <SidebarMenuButton
                         asChild
+                        tooltip={item.name}
                         className={cn(
-                          "h-12 px-4 rounded-xl transition-all duration-200 hover:bg-black/5 text-slate-900 font-[700]",
-                          item.items.some((sub: any) => pathname === sub.href) ? "bg-black/5" : "bg-transparent",
-                          "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center active:scale-95"
+                          "h-10 px-3 rounded-xl transition-all duration-300 hover:bg-white/10 text-white/80",
+                          item.items.some((sub: any) => pathname === sub.href) && "bg-white/5",
+                          "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
+                          "active:scale-95 animate-in fade-in-up"
                         )}
                       >
                         <CollapsibleTrigger asChild>
                           <div
-                            className="flex items-center gap-3.5 w-full cursor-pointer"
+                            className="flex items-center gap-3 w-full cursor-pointer"
                             onClick={() => playSound('click')}
                           >
-                            <div className="w-8 h-8 rounded-[10px] bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                <item.icon className="w-4.5 h-4.5" />
-                            </div>
-                            <span className="text-[15px] group-data-[collapsible=icon]:hidden">
+                            <item.icon className="w-4.5 h-4.5 shrink-0" />
+                            <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
                               {item.name}
                             </span>
-                            <ChevronRight className="ml-auto w-4 h-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden opacity-30" />
+                            <ChevronRight className="ml-auto w-3 h-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden opacity-40" />
                           </div>
                         </CollapsibleTrigger>
                       </SidebarMenuButton>
-                      <CollapsibleContent className="animate-in slide-in-from-top-1 duration-300">
-                        <SidebarMenuSub className="border-primary/10 ml-6 mr-2 mt-1 gap-1.5">
+                      <CollapsibleContent className="animate-in slide-in-from-top-1 duration-200">
+                        <SidebarMenuSub className="border-white/10 ml-6 mr-2 mt-1 gap-1">
                           {item.items.map((subItem: any) => (
                             <SidebarMenuSubItem key={subItem.name}>
                               <SidebarMenuSubButton
                                 asChild
                                 isActive={pathname === subItem.href}
                                 className={cn(
-                                  "rounded-xl transition-all text-slate-700 hover:text-slate-900 hover:bg-black/5 h-9",
-                                  "data-[active=true]:bg-white data-[active=true]:text-primary font-black shadow-sm"
+                                  "rounded-lg transition-all text-white/60 hover:text-white hover:bg-white/5 h-8",
+                                  "data-[active=true]:bg-white data-[active=true]:text-primary font-bold shadow-sm"
                                 )}
                               >
                                 <Link
@@ -337,8 +339,8 @@ export function AppSidebar() {
                                   className="flex items-center gap-2 w-full"
                                   onClick={() => playSound('click')}
                                 >
-                                  <div className="w-1.5 h-1.5 rounded-full bg-current opacity-40 group-data-[active=true]:opacity-100" />
-                                  <span className="text-[11px] uppercase tracking-widest">{subItem.name}</span>
+                                  <div className="w-1 h-1 rounded-full bg-current opacity-40" />
+                                  <span className="text-[11px] uppercase tracking-wider">{subItem.name}</span>
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
@@ -353,22 +355,18 @@ export function AppSidebar() {
                       tooltip={item.name}
                       onClick={() => playSound('click')}
                       className={cn(
-                        "h-12 px-4 rounded-xl transition-all duration-300 hover:bg-black/5 text-slate-900 font-[700]",
-                        "data-[active=true]:bg-primary data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:shadow-primary/20",
-                        "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center active:scale-95"
+                        "h-10 px-3 rounded-xl transition-all duration-300 hover:bg-white/10 text-white/80",
+                        "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-lg",
+                        "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
+                        "active:scale-95 animate-in fade-in-up"
                       )}
                     >
                       <Link
                         href={item.href}
-                        className="flex items-center gap-3.5 w-full"
+                        className="flex items-center gap-3 w-full"
                       >
-                         <div className={cn(
-                            "w-8 h-8 rounded-[10px] flex items-center justify-center transition-all",
-                            pathname === item.href ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
-                         )}>
-                            <item.icon className="w-4.5 h-4.5" />
-                         </div>
-                        <span className="text-[15px] group-data-[collapsible=icon]:hidden">
+                        <item.icon className="w-4.5 h-4.5 shrink-0" />
+                        <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
                           {item.name}
                         </span>
                       </Link>
@@ -381,47 +379,44 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 bg-primary/5 mt-auto border-t border-primary/10">
-        <div className="flex flex-col gap-4">
+      <SidebarFooter className="p-3 bg-black/10 mt-auto">
+        <div className="flex flex-col gap-3">
           {user && (
-            <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-3">
-              <div className="glass-panel p-3.5 space-y-3 rounded-2xl border-primary/10 shadow-lg">
+            <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-2">
+              <div className="bg-white/10 rounded-xl border border-white/10 p-2.5 space-y-2">
                 <Link
                   href="/profile"
-                  className="flex items-center gap-3 hover:bg-white/10 p-1.5 rounded-xl transition-all cursor-pointer w-full group/profile"
+                  className="flex items-center gap-2 hover:bg-white/5 p-1 rounded-lg transition-colors cursor-pointer w-full group/profile"
                 >
-                  <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center group-hover/profile:scale-110 transition-all overflow-hidden border-2 border-white shadow-md">
+                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center group-hover/profile:bg-white/30 transition-colors overflow-hidden border border-white/10">
                     {userProfile?.photoURL ? (
                       <img src={userProfile.photoURL} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
-                      <UserIcon className="w-5 h-5 text-primary" />
+                      <UserIcon className="w-3.5 h-3.5 text-white" />
                     )}
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-black text-slate-900 truncate group-hover/profile:text-primary transition-colors uppercase tracking-tight">
+                    <span className="text-[10px] font-black text-white truncate group-hover/profile:text-accent transition-colors">
                       {userProfile?.fullName?.toUpperCase() || user.email?.split('@')[0].toUpperCase()}
                     </span>
-                    <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest flex items-center gap-1">
-                       <ShieldCheck className="w-2.5 h-2.5" />
-                       {isAdmin ? "Admin" : isMonitoring ? "Monitoring" : isKoordinator ? "KORLAP" : isPetugas ? "Petugas" : isDinas ? "Dinas" : "User"}
+                    <span className="text-[8px] text-white/60 font-black uppercase tracking-tighter">
+                      {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 KORLAP / DEWAN AKTIF" : isPetugas ? "📝 Petugas" : isDinas ? "🏢 Dinas" : "👤 User"}
                     </span>
                   </div>
                 </Link>
 
-                <div className="flex items-center justify-between bg-black/5 p-2 rounded-xl gap-2 border border-black/5 shadow-inner">
-                  <span className="text-[9px] text-slate-500 font-mono truncate select-all">
+                <div className="flex items-center justify-between bg-black/20 p-1.5 rounded-lg gap-2">
+                  <span className="text-[8px] text-white/40 font-mono truncate select-all">
                     {user.uid}
                   </span>
-                  <Copy 
-                    className="w-3 h-3 text-slate-400 cursor-pointer hover:text-primary transition-colors" 
-                    onClick={() => {
-                      navigator.clipboard.writeText(user.uid);
-                      toast({
-                        title: "ID Disalin",
-                        description: "UID akun Anda telah disalin ke clipboard",
-                      });
-                    }}
-                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 text-white/30 hover:text-white hover:bg-white/10"
+                    onClick={copyUid}
+                  >
+                    {copied ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -429,22 +424,22 @@ export function AppSidebar() {
 
           <SidebarMenu>
             <SidebarMenuItem>
-               <SidebarMenuButton
+              <SidebarMenuButton
                 onClick={handleAuthAction}
-                className="h-11 rounded-2xl hover:bg-white/10 hover:text-white text-white/60 transition-all group-data-[collapsible=icon]:justify-center active:scale-95 font-black uppercase tracking-[0.1em] text-[10px]"
+                className="h-10 rounded-xl hover:bg-white/20 hover:text-white text-white/60 transition-colors group-data-[collapsible=icon]:justify-center"
               >
                 {user ? (
                   <>
-                    <LogOut className="w-5 h-5 shrink-0" />
-                    <span className="group-data-[collapsible=icon]:hidden ml-2">
-                      Logout (Keluar)
+                    <LogOut className="w-4.5 h-4.5 shrink-0" />
+                    <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">
+                      Keluar
                     </span>
                   </>
                 ) : (
                   <>
-                    <LogIn className="w-5 h-5 shrink-0 text-primary" />
-                    <span className="group-data-[collapsible=icon]:hidden ml-2">
-                      Login (Masuk)
+                    <LogIn className="w-4.5 h-4.5 shrink-0" />
+                    <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">
+                      Masuk (Login)
                     </span>
                   </>
                 )}
