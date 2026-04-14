@@ -71,6 +71,28 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('click', handleGlobalClick);
   }, [playSound]);
 
+  const getPageTitle = (path: string) => {
+    switch (path) {
+      case '/': return 'Dashboard';
+      case '/actor-data': return 'Data Pelaku Usaha';
+      case '/finish': return 'Data Selesai';
+      case '/rejected': return 'Data Ditolak';
+      case '/verify-actor': return 'Verifikasi Admin';
+      case '/verify-bank': return 'Verifikasi Data';
+      case '/input': return 'Input Data';
+      case '/check-data': return 'Cek Data';
+      case '/profile': return 'Profil Saya';
+      case '/settings': return 'Pengaturan';
+      case '/users': return 'Manajemen User';
+      case '/chat-monitoring': return 'Monitoring Chat';
+      case '/lpj': return 'LPJ';
+      case '/settings-event': return 'Pengaturan Event';
+      case '/verifikasi-dinas': return 'Verifikasi Dinas';
+      case '/hasil-verifikasi': return 'Hasil Verifikasi';
+      default: return '';
+    }
+  };
+
   const currentTitle = getPageTitle(pathname);
 
   return (
