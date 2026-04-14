@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Volume2, VolumeX, SkipBack, SkipForward, Play, Pause } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
+import { useTranslation } from '@/lib/i18n';
 
 
 declare global {
@@ -18,6 +19,7 @@ declare global {
  * Handles interaction-based autoplay and provides a global mute toggle.
  */
 export function BackgroundMusic() {
+  const { t } = useTranslation();
   const [isMuted, setIsMuted] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
@@ -251,7 +253,7 @@ export function BackgroundMusic() {
           onClick={handlePrevious}
           disabled={!isPlayerReady}
           className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Sebelumnya"
+          title={t('previous')}
         >
           <SkipBack size={16} fill="currentColor" />
         </button>
@@ -271,7 +273,7 @@ export function BackgroundMusic() {
                 : 'bg-primary/90 text-white shadow-lg hover:scale-110 active:scale-95'
             }
           `}
-          title={isPlaying ? "Jeda" : "Putar"}
+          title={isPlaying ? t('pause') : t('play')}
         >
           {isPlaying && (
             <span className="absolute inset-0 rounded-full animate-ping bg-primary opacity-20" />
@@ -284,7 +286,7 @@ export function BackgroundMusic() {
           onClick={handleNext}
           disabled={!isPlayerReady}
           className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Selanjutnya"
+          title={t('next')}
         >
           <SkipForward size={16} fill="currentColor" />
         </button>
@@ -323,7 +325,7 @@ export function BackgroundMusic() {
               }
               disabled:opacity-30 disabled:cursor-not-allowed
             `}
-            title={isMuted ? "Aktifkan Musik" : "Senyap"}
+            title={isMuted ? t('unmute') : t('mute')}
           >
             {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
@@ -345,7 +347,7 @@ export function BackgroundMusic() {
         >
 
           <div className="whitespace-nowrap animate-marquee text-[8px] md:text-[9px] font-bold uppercase tracking-wide text-primary dark:text-primary-foreground/90 w-max inline-block">
-            SEDANG DIPUTAR: {currentTitle}
+            {t('now_playing')}: {currentTitle}
           </div>
 
         </div>
@@ -357,7 +359,7 @@ export function BackgroundMusic() {
       {!hasInteracted && isPlayerReady && (
         <div className="absolute bottom-full right-0 mb-4 animate-bounce">
           <div className="px-3 py-1.5 bg-primary text-white text-[11px] font-bold rounded-xl shadow-xl whitespace-nowrap">
-            Klik untuk Memulai Musik 🎵
+            {t('music_start')} 🎵
             <div className="absolute -bottom-1 right-5 w-2 h-2 bg-primary rotate-45" />
           </div>
         </div>

@@ -34,6 +34,11 @@ export const translations: Translation = {
     en: "Logout",
     ms: "Log Keluar"
   },
+  system: {
+    id: "Sistem",
+    en: "System",
+    ms: "Sistem"
+  },
   language: {
     id: "Bahasa",
     en: "Language",
@@ -217,6 +222,112 @@ export const translations: Translation = {
     id: "Belum ada data wilayah terekam.",
     en: "No regional data recorded yet.",
     ms: "Belum ada data wilayah dirakam."
+  },
+  // Advanced Dashboard & Global
+  dashboard_desc: {
+    id: "Monitor dan kelola pendaftaran pelaku usaha secara real-time.",
+    en: "Monitor and manage business actor registration in real-time.",
+    ms: "Pantau dan urus pendaftaran pelaku usaha secara masa nyata."
+  },
+  system_active: {
+    id: "SISTEM: AKTIF & SINKRON",
+    en: "SYSTEM: ACTIVE & SYNCED",
+    ms: "SISTEM: AKTIF & SEGERAK"
+  },
+  latest_data_label: {
+    id: "DATA TERKINI",
+    en: "LATEST DATA",
+    ms: "DATA TERKINI"
+  },
+  coordinator_name: {
+    id: "Nama Korlap / Dewan Aktif",
+    en: "Coordinator Name",
+    ms: "Nama Penyelaras"
+  },
+  quota_target: {
+    id: "Jumlah Kuota",
+    en: "Target Quota",
+    ms: "Jumlah Kuota"
+  },
+  quota_achieved: {
+    id: "Kuota Tercapai",
+    en: "Quota Achieved",
+    ms: "Kuota Tercapai"
+  },
+  quota_remaining: {
+    id: "Sisa Kuota",
+    en: "Remaining Quota",
+    ms: "Baki Kuota"
+  },
+  regional_distribution: {
+    id: "Sebaran per Kelurahan",
+    en: "Sub-district Distribution",
+    ms: "Agihan setiap Kelurahan"
+  },
+  music_start: {
+    id: "Klik untuk Memulai Musik",
+    en: "Click to Start Music",
+    ms: "Klik untuk Mulakan Muzik"
+  },
+  now_playing: {
+    id: "SEDANG DIPUTAR",
+    en: "NOW PLAYING",
+    ms: "SEDANG DIMAINKAN"
+  },
+  days: { id: "Hari", en: "Days", ms: "Hari" },
+  hours: { id: "Jam", en: "Hours", ms: "Jam" },
+  minutes: { id: "Menit", en: "Minutes", ms: "Minit" },
+  seconds: { id: "Detik", en: "Seconds", ms: "Saat" },
+  previous: { id: "Sebelumnya", en: "Previous", ms: "Sebelumnya" },
+  next: { id: "Selanjutnya", en: "Next", ms: "Seterusnya" },
+  play: { id: "Putar", en: "Play", ms: "Mainkan" },
+  pause: { id: "Jeda", en: "Pause", ms: "Jeda" },
+  mute: { id: "Senyap", en: "Mute", ms: "Senyap" },
+  unmute: { id: "Aktifkan Musik", en: "Unmute", ms: "Aktifkan Muzik" },
+  cloud_storage: {
+    id: "Penyimpanan Cloud Online",
+    en: "Online Cloud Storage",
+    ms: "Storan Awan Dalam Talian"
+  },
+  server_status: {
+    id: "Status Server",
+    en: "Server Status",
+    ms: "Status Pelayan"
+  },
+  online: { id: "ONLINE", en: "ONLINE", ms: "DALAM TALIAN" },
+  availability: { id: "Ketersediaan", en: "Availability", ms: "Ketersediaan" },
+  cloud_desc: {
+    id: "Seluruh data tersimpan aman di infrastruktur Cloud Google.",
+    en: "All data is stored securely in Google Cloud infrastructure.",
+    ms: "Semua data disimpan dengan selamat di infrastruktur Cloud Google."
+  },
+  business_category_title: {
+    id: "Kategori Usaha",
+    en: "Business Categories",
+    ms: "Kategori Perniagaan"
+  },
+  kuliner: { id: "Kuliner", en: "Culinary", ms: "Kulinari" },
+  non_kuliner: { id: "Bukan Kuliner", en: "Non-Culinary", ms: "Bukan Kulinari" },
+  other_empty: { id: "Lainnya / Kosong", en: "Others / Empty", ms: "Lain-lain / Kosong" },
+  total_quota_data: {
+    id: "Total Kuota Data",
+    en: "Total Quota Data",
+    ms: "Jumlah Data Kuota"
+  },
+  no_quota_data: {
+    id: "Data kuota koordinator belum dimasukkan.",
+    en: "Coordinator quota data has not been entered.",
+    ms: "Data kuota penyelaras belum dimasukkan."
+  },
+  full_name: { id: "Nama Lengkap", en: "Full Name", ms: "Nama Penuh" },
+  nik: { id: "NIK", en: "National ID (NIK)", ms: "ID Nasional (NIK)" },
+  business_name: { id: "Nama Usaha", en: "Business Name", ms: "Nama Perniagaan" },
+  coordinator: { id: "Koordinator", en: "Coordinator", ms: "Penyelaras" },
+  status: { id: "Status", en: "Status", ms: "Status" },
+  no_data_found: {
+    id: "Tidak ada data yang ditemukan.",
+    en: "No data found.",
+    ms: "Tiada data dijumpai."
   }
 }
 
