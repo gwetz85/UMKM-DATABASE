@@ -288,7 +288,9 @@ export async function POST(req: NextRequest) {
             reply += `■ LPJ: ${r.statusLpj || "-"}\n`;
             reply += `■ Nominal: ${formatCurrency(r.nominal)}\n`;
             reply += `■ Tahun: ${r.tahunPengajuan || "-"}\n`;
-            reply += `■ Alamat: ${r.alamat || "-"}\n\n`;
+            reply += `■ Alamat: ${r.alamat || "-"}\n`;
+            reply += `■ Wilayah: ${r.kelurahan || "-"}, ${r.kecamatan || "-"}\n`;
+            reply += `■ Koordinator: ${r.coordinator || "-"}\n\n`;
           });
 
           if (foundResults.length > 50) reply += `_Hanya menampilkan 50 data pertama._`;

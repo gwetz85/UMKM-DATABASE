@@ -318,6 +318,8 @@ export default function CheckDataPage() {
                    { label: "Nominal", value: formatCurrency(selectedResult.nominal), icon: SearchCheck },
                    { label: "Tahun Pengajuan", value: selectedResult.tahunPengajuan, icon: SearchCheck },
                    { label: "Kelurahan", value: selectedResult.kelurahan, icon: UserSearch },
+                   { label: "Kecamatan", value: selectedResult.kecamatan, icon: UserSearch },
+                   { label: "Koordinator", value: selectedResult.coordinator, icon: UserSearch },
                    { label: "Alamat", value: selectedResult.alamat, icon: UserSearch, full: true },
                 ].map((item, i) => (
                   <div key={i} className={item.full ? "md:col-span-2 space-y-1" : "space-y-1"}>
