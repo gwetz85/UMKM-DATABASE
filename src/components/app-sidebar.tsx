@@ -242,7 +242,7 @@ export function AppSidebar() {
     if (user?.uid) {
       navigator.clipboard.writeText(user.uid)
       setCopied(true)
-      toast({ title: "UID Disalin", description: "Berikan UID ini ke Admin untuk akses penuh." })
+      toast({ title: t('uid_copied'), description: t('uid_copied_desc') })
       setTimeout(() => setCopied(false), 2000)
     }
   }
@@ -294,7 +294,7 @@ export function AppSidebar() {
       <SidebarContent className="px-3 py-2">
         <SidebarGroup>
           <SidebarGroupLabel className="px-2 mb-2 group-data-[collapsible=icon]:hidden text-white/40 font-bold text-[10px] uppercase tracking-[0.2em]">
-            Menu Utama
+            {t('main_menu')}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">

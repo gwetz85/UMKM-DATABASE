@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslation } from "@/lib/i18n"
 import { useMemoFirebase, useList, useUser, useDatabase, useObject } from "@/firebase"
 import { ref } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
@@ -21,6 +22,7 @@ const BANK_LIST = [
 ]
 
 export default function HasilVerifikasiPage() {
+  const { t } = useTranslation()
   const { user } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
@@ -91,27 +93,27 @@ export default function HasilVerifikasiPage() {
       readyForLPJ: false
     })
 
-    toast({ title: "Data Diselesaikan", description: "Data telah dipindahkan ke menu Rekening Bank." })
+    toast({ title: t('data_finalized'), description: t('data_moved_to_bank') })
     setInputtingBankActor(null)
     setIsSubmittingBank(false)
   }
 
-  if (!isAdmin && !isPetugas && !isKoordinator && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
+  if (!isAdmin && !isPetugas && !isKoordinator && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">{t('access_denied')}</h1></div>
 
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-primary font-headline">HASIL VERIFIKASI</h1>
+            <h1 className="text-3xl font-bold text-primary font-headline">{t('verification_results')}</h1>
             {filteredActors && (
               <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/20 shadow-sm flex items-center gap-2">
-                <span>Total Data Selesai diverifikasi Dinas:</span>
+                <span>{t('total_verified_data')}:</span>
                 <span className="bg-primary text-white px-2 py-0.5 rounded-full">{filteredActors.length}</span>
               </div>
             )}
           </div>
-          <p className="text-muted-foreground mt-1">Daftar pelaku usaha yang telah melewati tahapan verifikasi dan validasi dinas.</p>
+          <p className="text-muted-foreground mt-1">{t('verification_results_desc')}</p>
         </div>
         <div className="relative w-full md:w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -130,17 +132,17 @@ export default function HasilVerifikasiPage() {
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead className="font-bold">Nama Lengkap</TableHead>
+                  <TableHead className="font-bold">{t('full_name')}</TableHead>
                   <TableHead className="font-bold">NIK</TableHead>
-                  <TableHead className="font-bold">Usaha</TableHead>
-                  <TableHead className="font-bold">Hasil Verifikasi</TableHead>
-                  <TableHead className="text-right font-bold">Aksi</TableHead>
+                  <TableHead className="font-bold">{t('business_label')}</TableHead>
+                  <TableHead className="font-bold">{t('verification_results')}</TableHead>
+                  <TableHead className="text-right font-bold">{t('action')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredActors?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">Belum ada data hasil verifikasi Dinas.</TableCell>
+                    <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">{t('no_data_found')}</TableCell>
                   </TableRow>
                 ) : (
                   filteredActors?.map((actor) => (
@@ -156,11 +158,11 @@ export default function HasilVerifikasiPage() {
                       <TableCell>
                         {actor.hasilVerifikasiDinas === 'Lolos' ? (
                           <span className="flex items-center gap-1.5 bg-emerald-100 text-emerald-700 font-semibold px-2.5 py-1 rounded-md text-[10px] uppercase w-fit tracking-wider">
-                            <BadgeCheck className="w-3 h-3" /> Lolos Validasi
+                            <BadgeCheck className="w-3 h-3" /> {t('valid_verified')}
                           </span>
                         ) : (
                           <span className="flex items-center gap-1.5 bg-red-100 text-red-700 font-semibold px-2.5 py-1 rounded-md text-[10px] uppercase w-fit tracking-wider">
-                            <XSquare className="w-3 h-3" /> Tidak Lolos
+                            <XSquare className="w-3 h-3" /> {t('not_valid')}
                           </span>
                         )}
                       </TableCell>
@@ -176,9 +178,9 @@ export default function HasilVerifikasiPage() {
                               <>
                                 <DialogHeader>
                                   <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
-                                    <FileText className="w-6 h-6" /> Data Hasil Verifikasi
+                                    <FileText className="w-6 h-6" /> {t('detail_results_title')}
                                   </DialogTitle>
-                                  <DialogDescription className="sr-only">Rincian data pelaku usaha purna verifikasi dinas.</DialogDescription>
+                                  <DialogDescription className="sr-only">{t('detail_results_desc')}</DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-6 py-4">
                                   
@@ -187,11 +189,11 @@ export default function HasilVerifikasiPage() {
                                     <Card className={viewingActor.hasilVerifikasiDinas === 'Lolos' ? "border-emerald-200 bg-emerald-50/50" : "border-red-200 bg-red-50/50"}>
                                       <CardContent className="p-4">
                                         <h3 className={`font-black text-sm uppercase mb-2 ${viewingActor.hasilVerifikasiDinas === 'Lolos' ? 'text-emerald-700' : 'text-red-700'}`}>
-                                          Keputusan Dinas: {viewingActor.hasilVerifikasiDinas}
+                                          {t('dept_decision')}: {viewingActor.hasilVerifikasiDinas === 'Lolos' ? t('passed') : t('failed')}
                                         </h3>
                                         <div className="space-y-1 mt-3">
-                                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Keterangan / Alasan</p>
-                                          <p className="text-sm font-medium">{viewingActor.keteranganDinas || "Tidak ada keterangan."}</p>
+                                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{t('description_label')}</p>
+                                          <p className="text-sm font-medium">{viewingActor.keteranganDinas || t('no_description')}</p>
                                         </div>
                                       </CardContent>
                                     </Card>
@@ -254,18 +256,18 @@ export default function HasilVerifikasiPage() {
                                   </section>
 
                                   <section className="space-y-4">
-                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem</div>
+                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> {t('audit_system')}</div>
                                     <div className="bg-slate-50 p-4 rounded-xl text-[10px] font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
                                       <div className="space-y-1">
-                                        <p className="text-muted-foreground uppercase">Status</p>
+                                        <p className="text-muted-foreground uppercase">{t('status_label')}</p>
                                         <p className="text-primary">{viewingActor.status.toUpperCase()}</p>
                                       </div>
                                       <div className="space-y-1">
-                                        <p className="text-muted-foreground uppercase">Diinput Oleh</p>
+                                        <p className="text-muted-foreground uppercase">{t('input_officer')}</p>
                                         <p>{viewingActor.createdBy || "System"}</p>
                                       </div>
                                       <div className="space-y-1">
-                                        <p className="text-muted-foreground uppercase">Waktu Input</p>
+                                        <p className="text-muted-foreground uppercase">{t('reg_time')}</p>
                                         <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
                                       </div>
                                     </div>
@@ -287,9 +289,9 @@ export default function HasilVerifikasiPage() {
                             <form onSubmit={handleInputBank}>
                               <DialogHeader>
                                 <DialogTitle className="text-xl font-black text-purple-600 uppercase flex items-center gap-2">
-                                  <CreditCard className="w-5 h-5" /> Konfirmasi Penyaluran
+                                  <CreditCard className="w-5 h-5" /> {t('confirm_distribution')}
                                 </DialogTitle>
-                                <DialogDescription>Apakah Anda yakin data rekening pelaku usaha {actor.fullName} sudah benar? Data akan diteruskan ke menu Rekening Bank.</DialogDescription>
+                                <DialogDescription>{t('confirm_distribution_desc')}</DialogDescription>
                               </DialogHeader>
                               <div className="py-6 space-y-4">
                                 <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 space-y-3">
@@ -307,13 +309,13 @@ export default function HasilVerifikasiPage() {
                                   </div>
                                 </div>
                                 <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-700 font-bold leading-relaxed">
-                                  PENTING: Pastikan data di atas sudah valid. Setelah dikonfirmasi, data akan masuk ke daftar tunggu penyaluran (Rekening Bank).
+                                  {t('confirm_distribution_warning')}
                                 </div>
                               </div>
                               <DialogFooter>
-                                <Button type="button" variant="ghost" onClick={() => setInputtingBankActor(null)}>Batal</Button>
+                                <Button type="button" variant="ghost" onClick={() => setInputtingBankActor(null)}>{t('cancel')}</Button>
                                 <Button type="submit" disabled={isSubmittingBank} className="min-w-[150px] bg-purple-600 hover:bg-purple-700 text-white font-bold">
-                                  {isSubmittingBank ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "KONFIRMASI SELESAI"}
+                                  {isSubmittingBank ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : t('confirm_finish')}
                                 </Button>
                               </DialogFooter>
                             </form>

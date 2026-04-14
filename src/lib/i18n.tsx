@@ -19,6 +19,11 @@ export const translations: Translation = {
     en: "Dashboard",
     ms: "Papan Pemuka"
   },
+  main_menu: {
+    id: "Menu Utama",
+    en: "Main Menu",
+    ms: "Menu Utama"
+  },
   settings: {
     id: "Pengaturan",
     en: "Settings",
@@ -328,7 +333,114 @@ export const translations: Translation = {
     id: "Tidak ada data yang ditemukan.",
     en: "No data found.",
     ms: "Tiada data dijumpai."
-  }
+  },
+  // Phase 3 - Global UI
+  uid_copied: { id: "UID Disalin", en: "UID Copied", ms: "UID Disalin" },
+  uid_copied_desc: {
+    id: "Berikan UID ini ke Admin untuk akses penuh.",
+    en: "Provide this UID to Admin for full access.",
+    ms: "Berikan UID ini kepada Admin untuk akses penuh."
+  },
+  access_denied_desc: {
+    id: "Halaman ini hanya dapat diakses oleh Administrator Sistem.",
+    en: "This page can only be accessed by System Administrators.",
+    ms: "Halaman ini hanya boleh diakses oleh Pentadbir Sistem."
+  },
+  // Check Data Page
+  check_master_data: {
+    id: "Cek Data Master",
+    en: "Check Master Data",
+    ms: "Semak Data Induk"
+  },
+  check_master_desc: {
+    id: "Lakukan pengecekan data penduduk berdasarkan NIK individu atau seluruh anggota dalam satu Kartu Keluarga.",
+    en: "Check resident data based on individual NIK or all members in one Family Card (KK).",
+    ms: "Semak data penduduk berdasarkan NIK individu atau semua ahli dalam satu Kad Keluarga (KK)."
+  },
+  search_parameters: { id: "Parameter Pencarian", en: "Search Parameters", ms: "Parameter Carian" },
+  select_search_method: { id: "Pilih salah satu metode pencarian.", en: "Select one search method.", ms: "Pilih satu kaedah carian." },
+  search_type: { id: "Tipe Pencarian", en: "Search Type", ms: "Jenis Carian" },
+  search_by_nik: { id: "Berdasarkan NIK", en: "Based on NIK", ms: "Berdasarkan NIK" },
+  search_by_kk: { id: "Berdasarkan Nomor KK", en: "Based on Family Card No", ms: "Berdasarkan No Kad Keluarga" },
+  search_by_name: { id: "Berdasarkan Nama", en: "Based on Name", ms: "Berdasarkan Nama" },
+  input_nik_placeholder: { id: "Input NIK", en: "Input NIK", ms: "Masukkan NIK" },
+  input_kk_placeholder: { id: "Input No KK", en: "Input Family Card No", ms: "Masukkan No Kad Keluarga" },
+  input_name_placeholder: { id: "Input Nama", en: "Input Name", ms: "Masukkan Nama" },
+  search_btn: { id: "Cari Data", en: "Search Data", ms: "Cari Data" },
+  ready_to_check: { id: "Siap Melakukan Pengecekan", en: "Ready to Check", ms: "Sedia untuk Semak" },
+  ready_to_check_desc: {
+    id: "Silakan pilih metode pencarian dan masukkan nomor yang valid pada form di samping.",
+    en: "Please select a search method and enter a valid number in the form.",
+    ms: "Sila pilih kaedah carian dan masukkan nombor yang sah dalam borang."
+  },
+  connecting_db: { id: "Menghubungkan ke Database Master...", en: "Connecting to Master Database...", ms: "Menghubung ke Pangkalan Data Induk..." },
+  data_found_label: { id: "DATA DITEMUKAN", en: "DATA FOUND", ms: "DATA DIJUMPAI" },
+  data_found_desc: {
+    id: "Klik kartu untuk melihat detail lengkap.",
+    en: "Click card to view full details.",
+    ms: "Klik kad untuk melihat butiran penuh."
+  },
+  data_not_found_label: { id: "DATA TIDAK TERDAFTAR", en: "DATA NOT REGISTERED", ms: "DATA TIDAK BERDAFTAR" },
+  data_not_found_desc: {
+    id: "Mohon maaf, data tidak ditemukan dalam database master.",
+    en: "Sorry, data not found in the master database.",
+    ms: "Maaf, data tidak dijumpai dalam pangkalan data induk."
+  },
+  repeat_search: { id: "Ulangi Pencarian", en: "Repeat Search", ms: "Ulangi Carian" },
+  detail_info: { id: "Informasi Lengkap", en: "Full Information", ms: "Maklumat Lengkap" },
+  close_detail: { id: "TUTUP DETAIL", en: "CLOSE DETAILS", ms: "TUTUP BUTIRAN" },
+  // Input Data Page
+  input_new_data: { id: "Input Data Baru", en: "Input New Data", ms: "Masukkan Data Baru" },
+  input_new_desc: { id: "Lengkapi formulir untuk mendaftarkan pelaku usaha baru.", en: "Complete the form to register a new business actor.", ms: "Lengkapkan borang untuk mendaftar pelaku usaha baru." },
+  monitoring_mode_desc: { id: "MODE MONITORING: Anda hanya dapat melihat formulir ini.", en: "MONITORING MODE: You can only view this form.", ms: "MOD PEMANTAUAN: Anda hanya boleh melihat borang ini." },
+  personal_biodata: { id: "Biodata Pribadi", en: "Personal Biodata", ms: "Biodata Peribadi" },
+  gender_label: { id: "Jenis Kelamin", en: "Gender", ms: "Jantina" },
+  select_placeholder: { id: "Pilih", en: "Select", ms: "Pilih" },
+  male: { id: "Laki-laki", en: "Male", ms: "Lelaki" },
+  female: { id: "Perempuan", en: "Female", ms: "Perempuan" },
+  pob_dob_label: { id: "Tempat / Tanggal Lahir", en: "Place / Date of Birth", ms: "Tempat / Tarikh Lahir" },
+  phone_label: { id: "Nomor Ponsel", en: "Phone Number", ms: "No Telefon" },
+  address_location: { id: "Alamat & Lokasi", en: "Address & Location", ms: "Alamat & Lokasi" },
+  full_address: { id: "Alamat Lengkap", en: "Full Address", ms: "Alamat Penuh" },
+  rt_rw: { id: "RT / RW", en: "RT / RW", ms: "RT / RW" },
+  kelurahan: { id: "Kelurahan", en: "Sub-district", ms: "Kelurahan" },
+  kecamatan_auto: { id: "Kecamatan (Otomatis)", en: "District (Auto)", ms: "Kecamatan (Auto)" },
+  business_data: { id: "Data Usaha", en: "Business Data", ms: "Data Perniagaan" },
+  business_type: { id: "Jenis Usaha", en: "Business Type", ms: "Jenis Perniagaan" },
+  business_location: { id: "Lokasi Usaha", en: "Business Location", ms: "Lokasi Perniagaan" },
+  coordinator: { id: "Koordinator", en: "Coordinator", ms: "Penyelaras" },
+  save_input_btn: { id: "Simpan Data Input", en: "Save Input Data", ms: "Simpan Data Input" },
+  limited_access: { id: "AKSES TERBATAS", en: "LIMITED ACCESS", ms: "AKSES TERHAD" },
+  data_saved_success: { id: "DATA TELAH TERSIMPAN", en: "DATA SAVED successfully", ms: "DATA TELAH DISIMPAN" },
+  wait_verification: { id: "Mohon menunggu ADMIN memverifikasi data anda.", en: "Please wait for ADMIN to verify your data.", ms: "Sila tunggu ADMIN mengesahkan data anda." },
+  ok_understand: { id: "OKE, MENGERTI", en: "OK, UNDERSTAND", ms: "OK, FAHAM" },
+  // Actor Data Page
+  actor_data_title: { id: "Data Pelaku Usaha", en: "Business Actor Data", ms: "Data Pelaku Usaha" },
+  actor_data_desc: { id: "Data lolos verifikasi siap diisi rekening.", en: "Verified data ready for account entry.", ms: "Data disahkan sedia untuk kemasukan akaun." },
+  search_actor_placeholder: { id: "Cari Nama, NIK, Usaha...", en: "Search Name, NIK, Business...", ms: "Cari Nama, NIK, Perniagaan..." },
+  export_excel_btn: { id: "EKSPOR EXCEL", en: "EXPORT EXCEL", ms: "EKSPORT EXCEL" },
+  print_btn: { id: "CETAK", en: "PRINT", ms: "CETAK" },
+  look_detail_btn: { id: "LIHAT DETAIL", en: "VIEW DETAILS", ms: "LIHAT BUTIRAN" },
+  edit_all_data_btn: { id: "Edit Semua Data", en: "Edit All Data", ms: "Edit Semua Data" },
+  cancel_edit_btn: { id: "Batal Edit", en: "Cancel Edit", ms: "Batal Edit" },
+  input_bank_btn: { id: "Input Rekening", en: "Enter Account", ms: "Masukkan Akaun" },
+  audit_info: { id: "Informasi Sistem & Audit", en: "System & Audit Info", ms: "Maklumat Sistem & Audit" },
+  input_officer: { id: "Petugas Input", en: "Input Officer", ms: "Pegawai Input" },
+  reg_time: { id: "Waktu Pendaftaran", en: "Registration Time", ms: "Masa Pendaftaran" },
+  // LPJ & Bank
+  bank_accounts: { id: "Rekening Bank", en: "Bank Accounts", ms: "Akaun Bank" },
+  distribution: { id: "Penyaluran", en: "Distribution", ms: "Penyaluran" },
+  lpj_reporting: { id: "Pelaporan LPJ", en: "LPJ Reporting", ms: "Pelaporan LPJ" },
+  total_nominal: { id: "Total Nominal", en: "Total Nominal", ms: "Jumlah Nominal" },
+  realization: { id: "Realisasi", en: "Realization", ms: "Realisasi" },
+  lpj_status: { id: "Status LPJ", en: "LPJ Status", ms: "Status LPJ" },
+  wait_lpj: { id: "Menunggu LPJ", en: "Waiting for LPJ", ms: "Menunggu LPJ" },
+  // User & Profile
+  user_management: { id: "Manajemen Pengguna", en: "User Management", ms: "Pengurusan Pengguna" },
+  profile_settings: { id: "Pengaturan Profil", en: "Profile Settings", ms: "Tetapan Profil" },
+  personal_info: { id: "Informasi Pribadi", en: "Personal Information", ms: "Maklumat Peribadi" },
+  change_password: { id: "Ganti Kata Sandi", en: "Change Password", ms: "Tukar Kata Laluan" },
+  logout: { id: "Keluar", en: "Logout", ms: "Log Keluar" }
 }
 
 interface LanguageContextProps {

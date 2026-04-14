@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslation } from "@/lib/i18n"
 import { useUser, useDatabase, useMemoFirebase, useList, updateDocumentNonBlocking } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -23,6 +24,7 @@ import {
 } from "lucide-react"
 
 export default function ProfilePage() {
+  const { t } = useTranslation()
   const { user, isUserLoading } = useUser()
   const database = useDatabase()
   const { toast } = useToast()
@@ -96,13 +98,10 @@ export default function ProfilePage() {
               const ctx = canvas.getContext('2d')
               ctx?.drawImage(img, 0, 0, width, height)
               
-              // Low quality and small size to stay free & fast in RTDB
-              const dataUrl = canvas.toDataURL('image/jpeg', 0.6)
-              resolve(dataUrl)
-            }
-            img.onerror = (err) => reject(new Error("Gagal membaca gambar"))
+              }
+            img.onerror = (err) => reject(new Error(t('error_reading_image')))
           }
-          reader.onerror = (err) => reject(new Error("Gagal membaca file"))
+          reader.onerror = (err) => reject(new Error(t('error_reading_file')))
         })
       }
 
@@ -112,15 +111,15 @@ export default function ProfilePage() {
       updateDocumentNonBlocking(userRef, { photoURL: base64Photo })
 
       toast({
-        title: "Foto Berhasil Diperbarui",
-        description: "Foto profil Anda telah disimpan ke sistem.",
+        title: t('photo_updated_success'),
+        description: t('photo_saved_desc'),
       })
     } catch (error: any) {
       console.error("Upload error details:", error)
       toast({
         variant: "destructive",
-        title: "Gagal Mengunggah",
-        description: `Error: ${error.message || "Terjadi kesalahan saat memproses foto."}`,
+        title: t('upload_failed'),
+        description: `${t('error_label')}: ${error.message || t('process_photo_error')}`,
       })
     } finally {
       setIsUploading(false)
@@ -145,14 +144,14 @@ export default function ProfilePage() {
       const userRef = ref(database, `system_users/${profile.id}`)
       updateDocumentNonBlocking(userRef, updates)
       toast({
-        title: "Profil Diperbarui",
-        description: "Data diri Anda berhasil disimpan ke sistem.",
+        title: t('profile_updated'),
+        description: t('profile_saved_desc'),
       })
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Gagal Menyimpan",
-        description: "Terjadi kesalahan saat memperbarui profil.",
+        title: t('save_failed'),
+        description: t('profile_update_error'),
       })
     } finally {
       setIsSaving(false)
@@ -173,10 +172,10 @@ export default function ProfilePage() {
         <div className="mx-auto w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-6">
           <UserCircle className="w-12 h-12 text-slate-300" />
         </div>
-        <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">Login Terlebih Dahulu</h1>
-        <p className="text-slate-500 font-medium mb-8">Anda harus masuk ke sistem untuk mengakses halaman ini.</p>
+        <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">{t('login_first')}</h1>
+        <p className="text-slate-500 font-medium mb-8">{t('login_first_desc')}</p>
         <Button asChild className="font-bold px-8 h-12">
-          <a href="/login">MASUK KE SISTEM</a>
+          <a href="/login">{t('login_system_btn')}</a>
         </Button>
       </div>
     )
@@ -188,14 +187,14 @@ export default function ProfilePage() {
          <div className="mx-auto w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-6">
           <ShieldCheck className="w-12 h-12 text-amber-500" />
         </div>
-        <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">Data Belum Sinkron</h1>
+        <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tight mb-2">{t('unsynced_data')}</h1>
         <p className="text-slate-500 font-medium max-w-sm mx-auto">
-          Akun Anda ({user.email}) sudah aktif, namun data profil Anda belum tersedia atau belum ditautkan oleh Admin.
+          {t('unsynced_data_desc', { email: user.email })}
         </p>
         <div className="mt-8 flex flex-col items-center gap-4">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Atau coba reload halaman</p>
+           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t('reload_hint')}</p>
            <Button onClick={() => window.location.reload()} variant="outline" className="font-bold border-slate-200">
-              RELOAD HALAMAN
+              {t('reload_page_btn')}
            </Button>
         </div>
       </div>
@@ -227,18 +226,18 @@ export default function ProfilePage() {
         </div>
         
         <div className="text-center md:text-left">
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight uppercase">Update Profil</h1>
-          <p className="text-slate-500 font-medium">Lengkapi data diri Anda untuk memudahkan koordinasi.</p>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight uppercase">{t('update_profile')}</h1>
+          <p className="text-slate-500 font-medium">{t('update_profile_desc')}</p>
         </div>
       </div>
 
       <Card className="border-none shadow-xl bg-white overflow-hidden">
         <CardHeader className="bg-slate-50 border-b border-slate-100">
           <CardTitle className="text-sm font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4" /> Informasi Akun & Data Diri
+            <ShieldCheck className="w-4 h-4" /> {t('account_info_personal')}
           </CardTitle>
           <CardDescription>
-            Username dan Role ditentukan oleh Administrator dan tidak dapat diubah secara mandiri.
+            {t('readonly_profile_hint')}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
@@ -298,7 +297,7 @@ export default function ProfilePage() {
 
             <Button type="submit" className="w-full h-12 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-[0.98]" disabled={isSaving}>
               {isSaving ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Save className="w-5 h-5 mr-2" />}
-              Simpan Data Profil
+              {t('save_profile_data_btn')}
             </Button>
           </form>
         </CardContent>

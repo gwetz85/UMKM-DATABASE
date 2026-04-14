@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import { useDatabase, useList, useMemoFirebase, useUser, useObject } from "@/firebase"
+import { useTranslation } from "@/lib/i18n"
 import { ref, query, orderByChild, equalTo, startAt, endAt } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -14,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { cn, formatCurrency } from "@/lib/utils"
 
 export default function CheckDataPage() {
+  const { t } = useTranslation()
   const { user } = useUser()
   const database = useDatabase()
   const [loading, setLoading] = useState(false)
@@ -53,8 +55,8 @@ export default function CheckDataPage() {
     const blacklist = allBlacklistData || []
     
     const combinedData = [
-      ...master.map(m => ({ ...m, _source: 'DATA PEMBANDING' })),
-      ...blacklist.map(m => ({ ...m, _source: 'DATA CANCELL / BLACKLIST' }))
+      ...master.map(m => ({ ...m, _source: t('source_actor') })),
+      ...blacklist.map(m => ({ ...m, _source: t('source_blacklist') }))
     ]
 
     let results = []
@@ -86,9 +88,9 @@ export default function CheckDataPage() {
     return (
       <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center">
         <ShieldAlert className="w-16 h-16 text-destructive" />
-        <h1 className="text-2xl font-bold">Akses Ditolak</h1>
+        <h1 className="text-2xl font-bold">{t('access_denied')}</h1>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Mohon maaf, halaman <strong>Cek Data Master</strong> hanya dapat diakses oleh Administrator Sistem.
+          {t('access_denied_desc')}
         </p>
       </div>
     )
@@ -118,22 +120,22 @@ export default function CheckDataPage() {
         <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl mb-2">
           <Database className="w-8 h-8 text-primary" />
         </div>
-        <h1 className="text-4xl font-black text-primary font-headline">Cek Data Master</h1>
+        <h1 className="text-4xl font-black text-primary font-headline">{t('check_master_data')}</h1>
         <p className="text-muted-foreground max-w-xl mx-auto font-medium">
-          Lakukan pengecekan data penduduk berdasarkan NIK individu atau seluruh anggota dalam satu Kartu Keluarga.
+          {t('check_master_desc')}
         </p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
         <Card className="lg:col-span-3 border-none shadow-xl h-fit bg-white/80 backdrop-blur-md">
           <CardHeader>
-            <CardTitle className="text-lg">Parameter Pencarian</CardTitle>
-            <CardDescription>Pilih salah satu metode pencarian.</CardDescription>
+            <CardTitle className="text-lg">{t('search_parameters')}</CardTitle>
+            <CardDescription>{t('select_search_method')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCheck} className="space-y-6">
               <div className="space-y-4">
-                <Label className="text-sm font-bold text-foreground">Tipe Pencarian</Label>
+                <Label className="text-sm font-bold text-foreground">{t('search_type')}</Label>
                 <RadioGroup 
                   value={searchType} 
                   onValueChange={(v: any) => {
@@ -145,26 +147,26 @@ export default function CheckDataPage() {
                 >
                   <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted hover:bg-muted/50 cursor-pointer transition-colors">
                     <RadioGroupItem value="nik" id="r-nik" />
-                    <Label htmlFor="r-nik" className="flex-1 cursor-pointer font-bold">Berdasarkan NIK</Label>
+                    <Label htmlFor="r-nik" className="flex-1 cursor-pointer font-bold">{t('search_by_nik')}</Label>
                   </div>
                   <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted hover:bg-muted/50 cursor-pointer transition-colors">
                     <RadioGroupItem value="noKK" id="r-kk" />
-                    <Label htmlFor="r-kk" className="flex-1 cursor-pointer font-bold">Berdasarkan Nomor KK</Label>
+                    <Label htmlFor="r-kk" className="flex-1 cursor-pointer font-bold">{t('search_by_kk')}</Label>
                   </div>
                   <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted hover:bg-muted/50 cursor-pointer transition-colors">
                     <RadioGroupItem value="nama" id="r-nama" />
-                    <Label htmlFor="r-nama" className="flex-1 cursor-pointer font-bold">Berdasarkan Nama</Label>
+                    <Label htmlFor="r-nama" className="flex-1 cursor-pointer font-bold">{t('search_by_name')}</Label>
                   </div>
                 </RadioGroup>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="inputValue" className="font-bold text-foreground">
-                  {searchType === "nik" ? "NIK (16 Digit)" : searchType === "noKK" ? "Nomor KK (16 Digit)" : "Nama Lengkap"}
+                  {searchType === "nik" ? "NIK" : searchType === "noKK" ? t('nomor_kk') : t('full_name')}
                 </Label>
                 <Input 
                   id="inputValue" 
-                  placeholder={searchType === "nik" ? "Input NIK" : searchType === "noKK" ? "Input No KK" : "Input Nama"} 
+                  placeholder={searchType === "nik" ? t('input_nik_placeholder') : searchType === "noKK" ? t('input_kk_placeholder') : t('input_name_placeholder')} 
                   maxLength={searchType === "nama" ? 100 : 16}
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
@@ -178,7 +180,7 @@ export default function CheckDataPage() {
 
               <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20" disabled={loading}>
                 {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <SearchCheck className="w-5 h-5 mr-2" />}
-                Cari Data
+                {t('search_btn')}
               </Button>
             </form>
           </CardContent>
@@ -190,9 +192,9 @@ export default function CheckDataPage() {
               <div className="bg-white/50 p-4 rounded-full mb-4">
                 <Info className="w-8 h-8 text-muted-foreground/60" />
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Siap Melakukan Pengecekan</h3>
+              <h3 className="text-lg font-bold text-foreground mb-2">{t('ready_to_check')}</h3>
               <p className="text-sm text-muted-foreground">
-                Silakan pilih metode pencarian dan masukkan nomor yang valid pada form di samping.
+                {t('ready_to_check_desc')}
               </p>
             </div>
           )}
@@ -200,7 +202,7 @@ export default function CheckDataPage() {
           {isSearchLoading && (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border p-8 text-center">
               <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-              <p className="text-primary font-bold animate-pulse">Menghubungkan ke Database Master...</p>
+              <p className="text-primary font-bold animate-pulse">{t('connecting_db')}</p>
             </div>
           )}
 
@@ -210,9 +212,9 @@ export default function CheckDataPage() {
                 <div className="space-y-6">
                   <Alert className="bg-emerald-50/90 backdrop-blur-sm border-emerald-200 text-emerald-900 rounded-2xl p-6">
                     <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                    <AlertTitle className="text-xl font-black mb-1 uppercase">DATA DITEMUKAN</AlertTitle>
+                    <AlertTitle className="text-xl font-black mb-1 uppercase">{t('data_found_label')}</AlertTitle>
                     <AlertDescription className="font-medium">
-                      Ditemukan <strong>{realTimeResults.length}</strong> record data. Klik kartu untuk melihat detail lengkap.
+                      {t('data_found_desc')}
                     </AlertDescription>
                   </Alert>
 
@@ -243,7 +245,7 @@ export default function CheckDataPage() {
                                     ? "bg-emerald-50 text-emerald-600 border-emerald-200" 
                                     : "bg-amber-50 text-amber-600 border-amber-200"
                               )}>
-                                {res._source === 'DATA CANCELL / BLACKLIST' ? "DITOLAK" : (res.status || "PENDING")}
+                                {res._source === t('source_blacklist') ? t('rejected') : (res.status || "PENDING")}
                               </span>
                             </div>
                             <span className="text-sm font-black text-slate-800 uppercase truncate">
@@ -263,9 +265,9 @@ export default function CheckDataPage() {
                 <div className="space-y-6">
                   <Alert className="bg-red-50/90 backdrop-blur-sm border-red-200 text-red-900 rounded-2xl p-6">
                     <XCircle className="w-6 h-6 text-red-600" />
-                    <AlertTitle className="text-xl font-black mb-2 uppercase">DATA TIDAK TERDAFTAR</AlertTitle>
+                    <AlertTitle className="text-xl font-black mb-2 uppercase">{t('data_not_found_label')}</AlertTitle>
                     <AlertDescription className="font-medium">
-                      Mohon maaf, data <strong>{inputValue}</strong> tidak ditemukan dalam database master.
+                      {t('data_not_found_desc')}
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -275,12 +277,10 @@ export default function CheckDataPage() {
                 variant="outline" 
                 className="w-full h-11 rounded-xl bg-white/50 backdrop-blur-sm border-primary/20 hover:bg-primary/5 text-primary font-bold" 
                 onClick={() => {
-                  setSearchDone(false);
-                  setInputValue("");
                   setSearchCriteria(null);
                 }}
               >
-                Ulangi Pencarian
+                {t('repeat_search')}
               </Button>
             </div>
           )}
@@ -293,15 +293,15 @@ export default function CheckDataPage() {
           <DialogHeader>
             <DialogTitle className={cn(
               "text-2xl font-black uppercase flex items-center gap-2",
-              selectedResult?._source === 'DATA CANCELL / BLACKLIST' ? "text-red-600" : "text-primary"
+              selectedResult?._source === t('source_blacklist') ? "text-red-600" : "text-primary"
             )}>
               <UserSearch className="w-6 h-6" /> 
-              {selectedResult?._source === 'DATA CANCELL / BLACKLIST' ? "DATA CANCELL / BLACKLIST" : "DATA PELAKU USAHA"}
+              {selectedResult?._source === t('source_blacklist') ? t('source_blacklist') : t('source_actor')}
             </DialogTitle>
             <DialogDescription className="font-bold text-muted-foreground">
-              {selectedResult?._source === 'DATA CANCELL / BLACKLIST' 
-                ? "Data ini tercatat dalam daftar Blacklist / Cancell." 
-                : "Informasi lengkap yang terdaftar dalam sistem database master."}
+              {selectedResult?._source === t('source_blacklist') 
+                ? t('detail_blacklist') 
+                : t('detail_actor')}
             </DialogDescription>
           </DialogHeader>
           {selectedResult && (
@@ -336,7 +336,7 @@ export default function CheckDataPage() {
           )}
           <div className="pt-4">
             <Button className="w-full font-bold h-12" onClick={() => setSelectedResult(null)}>
-              TUTUP DETAIL
+              {t('close_detail')}
             </Button>
           </div>
         </DialogContent>
