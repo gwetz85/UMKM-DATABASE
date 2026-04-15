@@ -63,7 +63,9 @@ export default function KuotaKorlapDewanAktifPage() {
     const counts: Record<string, number> = {}
     if (allData) {
       allData.forEach((d: any) => {
-        if (d.status === 'rejected') return;
+        // Only count if they reached the "Pelaku Usaha" stage (verified_actor and beyond)
+        const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'];
+        if (!activeStatuses.includes(d.status)) return;
         if (d.coordinator) {
           const name = d.coordinator.toUpperCase().trim()
           counts[name] = (counts[name] || 0) + 1

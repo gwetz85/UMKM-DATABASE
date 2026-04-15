@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useDatabase, useUser, addDocumentNonBlocking, useMemoFirebase, useList } from "@/firebase"
 import { ref, query, equalTo, get, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,6 +31,42 @@ export default function InputDataPage() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [kelurahan, setKelurahan] = useState<string>("")
   const [kecamatan, setKecamatan] = useState<string>("")
+  const [selectedCoordinator, setSelectedCoordinator] = useState<string>("")
+
+  // Fetch Quotas and All Actors for validation
+  const quotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
+  const actorsRef = useMemoFirebase(() => database ? ref(database, 'businessActors') : null, [database])
+  
+  const { data: rawQuotaData } = useList<any>(quotaRef)
+  const { data: rawActorsData } = useList<any>(actorsRef)
+
+  const availableCoordinators = useMemo(() => {
+    if (!rawQuotaData) return []
+    
+    // Calculate current usage for each coordinator
+    const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'];
+    const usageCounts: Record<string, number> = {}
+    
+    if (rawActorsData) {
+      rawActorsData.forEach((actor: any) => {
+        if (activeStatuses.includes(actor.status) && actor.coordinator) {
+          const name = actor.coordinator.toUpperCase().trim()
+          usageCounts[name] = (usageCounts[name] || 0) + 1
+        }
+      })
+    }
+
+    return rawQuotaData
+      .map((q: any) => {
+        const nameUpper = (q.name || "").toUpperCase().trim()
+        const quota = q.quota || 0
+        const used = usageCounts[nameUpper] || 0
+        const remaining = quota - used
+        return { ...q, remaining }
+      })
+      .filter((q: any) => q.remaining > 0)
+      .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))
+  }, [rawQuotaData, rawActorsData])
 
   // Get current user profile to record who created the entry
   const userProfileRef = useMemoFirebase(() => {
@@ -102,40 +138,17 @@ export default function InputDataPage() {
         return
       }
 
-      // Coordinator Quota Check
-      const selectedCoordinator = (formData.get("coordinator") as string)?.toUpperCase().trim()
+      // Coordinator Quota Check (Safeguard)
       if (selectedCoordinator) {
-        const quotaRef = ref(database, 'koordinator_kuotas')
-        const quotaSnapshot = await get(quotaRef)
-        
-        if (quotaSnapshot.exists()) {
-          const quotaData = Object.values(quotaSnapshot.val()) as any[]
-          const coordQuota = quotaData.find(q => (q.name || "").toUpperCase().trim() === selectedCoordinator)
-          
-          if (coordQuota) {
-            const limit = coordQuota.quota || 0
-            let achieved = 0
-            
-            // Count from the actorsSnapshot we already have
-            if (actorsSnapshot.exists()) {
-              actorsSnapshot.forEach((child) => {
-                const val = child.val()
-                if (val.status !== 'rejected' && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
-                  achieved++
-                }
-              })
-            }
-            
-            if (achieved >= limit) {
-              toast({
-                variant: "destructive",
-                title: "KUOTA HABIS",
-                description: "DATA TIDAK BISA DIINPUT , DIKARENAKAN KUOTA KOORDINATOR TELAH HABIS"
-              })
-              setLoading(false)
-              return
-            }
-          }
+        const coord = availableCoordinators.find(c => c.name === selectedCoordinator)
+        if (!coord || coord.remaining <= 0) {
+          toast({
+            variant: "destructive",
+            title: "KUOTA HABIS",
+            description: "DATA TIDAK BISA DIINPUT , DIKARENAKAN KUOTA KOORDINATOR TELAH HABIS"
+          })
+          setLoading(false)
+          return
         }
       }
 
@@ -155,7 +168,7 @@ export default function InputDataPage() {
         businessCategory: formData.get("businessCategory"),
         businessName: formData.get("businessName"),
         businessLocation: formData.get("businessLocation"),
-        coordinator: formData.get("coordinator"),
+        coordinator: selectedCoordinator,
         status: "pending",
         createdAt: new Date().toISOString(),
       }
@@ -169,6 +182,7 @@ export default function InputDataPage() {
       formElement.reset()
       setKelurahan("")
       setKecamatan("")
+      setSelectedCoordinator("")
     } catch (error) {
       console.error(error)
       toast({
@@ -299,7 +313,23 @@ export default function InputDataPage() {
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="coordinator">KORLAP / DEWAN AKTIF</Label>
-              <Input id="coordinator" name="coordinator" placeholder="Nama KORLAP / DEWAN AKTIF" required />
+              <Select value={selectedCoordinator} onValueChange={setSelectedCoordinator} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Korlap/Dewan Aktif..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableCoordinators.map((c) => (
+                    <SelectItem key={c.id} value={c.name}>
+                      <div className="flex justify-between items-center w-full min-w-[300px]">
+                        <span className="font-bold">{c.name}</span>
+                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                          Sisa Kuota: {c.remaining}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
