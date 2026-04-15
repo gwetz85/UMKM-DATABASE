@@ -12,12 +12,14 @@ declare global {
   }
 }
 
+import { cn } from '@/lib/utils';
+
 /**
  * BackgroundMusic Component (YouTube Version)
  * Plays a specific YouTube video in the background hidden from view.
  * Handles interaction-based autoplay and provides a global mute toggle.
  */
-export function BackgroundMusic() {
+export function BackgroundMusic({ className }: { className?: string }) {
   const [isMuted, setIsMuted] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
@@ -257,7 +259,7 @@ export function BackgroundMusic() {
   };
 
   return (
-    <div className="fixed bottom-[18px] right-[20px] md:bottom-[38px] md:right-[30px] z-[1000] print:hidden grid justify-items-end gap-2">
+    <div className={cn("z-[1000] print:hidden grid justify-items-end gap-1", className)}>
 
       {/* Invisible YouTube Player Container */}
       <div 

@@ -131,7 +131,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       <UserIcon className="w-5 h-5 text-white" />
                     )}
                   </Link>
-                  <OfficeHoursTimer />
+                  <div className="flex flex-col items-end gap-1">
+                    <OfficeHoursTimer />
+                    {(isLoginPage || !isKoordinator) && (
+                      <BackgroundMusic className="scale-[0.6] origin-top-right -mr-4 -mt-3.5 mb-[-1.5rem]" />
+                    )}
+                  </div>
                 </div>
 
               </header>
@@ -181,7 +186,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   )}
 
                   <div className="flex items-center gap-4">
-                    <OfficeHoursTimer />
+                    <div className="flex flex-col items-end gap-1.5 translate-y-2">
+                       <OfficeHoursTimer />
+                       {(isLoginPage || !isKoordinator) && (
+                         <BackgroundMusic className="scale-[0.8] origin-top-right -mr-2" />
+                       )}
+                    </div>
                     <Link 
                       href="/profile" 
                       className="flex items-center gap-3 pl-4 border-l border-slate-200 group"
@@ -206,7 +216,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               </div>
               
               {!isLoginPage && <ChatBubble />}
-              {(isLoginPage || !isKoordinator) && <BackgroundMusic />}
             </main>
           </div>
         </div>
