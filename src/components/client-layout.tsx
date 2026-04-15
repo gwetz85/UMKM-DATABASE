@@ -9,7 +9,6 @@ import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { ChatBubble } from '@/components/chat-bubble';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
-import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject } from '@/firebase'
 import { ref } from 'firebase/database'
 import { User as UserIcon, Calendar } from 'lucide-react'
