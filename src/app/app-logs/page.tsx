@@ -19,7 +19,6 @@ function AppLogsContent() {
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
   const [isTesting, setIsTesting] = useState(false)
-  const [isTesting, setIsTesting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [selectedQuery, setSelectedQuery] = useState<string | null>(null)
 
