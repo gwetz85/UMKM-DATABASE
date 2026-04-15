@@ -295,8 +295,6 @@ function RejectedContent() {
           </div>
         )}
       </div>
-        )}
-      </div>
 
       <Dialog open={!!viewingActor} onOpenChange={(open) => {
         if (!open) {
