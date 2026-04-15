@@ -72,14 +72,14 @@ export async function POST(req: NextRequest) {
         await sendMessage(chatId, reply);
       } 
       else if (text.startsWith('/about')) {
-        const reply = `🏛️ *SIMPU v7.0*\n` +
+        const reply = `🏛️ *SIMPU v7.5*\n` +
                       `_Sistem Informasi Manajemen Pelaku Usaha_\n\n` +
-                      `Update: 05/04/2026 22:50\n\n` +
+                      `Update: 15/04/2026 10:42\n\n` +
                       `"Aplikasi ini dikembangkan secara mandiri dan independen oleh Tim Admin. Hak Cipta sepenuhnya dimiliki oleh pencipta aplikasi."\n\n` +
                       `🚀 *Pembaruan Terbaru:*\n` +
                       `▫️ Fitur Bot Telegram & Chat\n` +
                       `▫️ Modul Rekening Bank\n` +
-                      `▫️ Sinkronisasi 2.965 data baru\n` +
+                      `▫️ Sinkronisasi 4.045 data baru\n` +
                       `▫️ Optimalisasi UI/UX\n\n` +
                       `✉️ *Kontak Pengembang:*\n` +
                       `👤 *AGUS SURIYADI*\n` +

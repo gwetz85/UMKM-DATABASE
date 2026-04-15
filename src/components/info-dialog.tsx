@@ -41,7 +41,7 @@ export function InfoDialog({ children }: InfoDialogProps) {
             <p className="text-gray-700 leading-relaxed font-bold text-sm uppercase tracking-tight">
               Selamat datang di Aplikasi **SIMPU** <br/>
               <span className="text-[10px] text-muted-foreground font-black tracking-widest">- SISTEM INFORMASI MANAJEMEN PELAKU USAHA -</span> <br/>
-              <span className="text-primary mt-1 block">Versi 7.5 Update tanggal 13042026 0350</span>
+              <span className="text-primary mt-1 block">Versi 7.5 Update tanggal 15042026 1042</span>
             </p>
             <div className="bg-blue-50 border-l-4 border-primary p-4 rounded-r-xl">
               <p className="text-sm text-blue-900 leading-relaxed italic">
@@ -62,7 +62,7 @@ export function InfoDialog({ children }: InfoDialogProps) {
                 { icon: Monitor, text: "Penambahan Fitur Chat" },
                 { icon: ShieldCheck, text: "Penambahan Menu Verifikasi Dinas" },
                 { icon: CreditCard, text: "Penambahan Halaman Bank" },
-                { icon: Database, text: "Penambahan Database 2.965 data" },
+                { icon: Database, text: "Penambahan Database 4.045 data" },
                 { icon: ShieldCheck, text: "Perbaikan di beberapa fitur tampilan" },
                 { icon: Zap, text: "Penambahan & perbaikan file system" }
               ].map((item, i) => (
