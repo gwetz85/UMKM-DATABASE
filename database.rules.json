@@ -30,6 +30,21 @@
       ".write": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
       ".indexOn": ["nik", "kk", "noKK", "nama", "koperasi"]
     },
+    "master_data_2023": {
+      ".read": "true",
+      ".write": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
+      ".indexOn": ["nik", "kk", "noKK", "nama", "koperasi"]
+    },
+    "master_data_2024": {
+      ".read": "true",
+      ".write": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
+      ".indexOn": ["nik", "kk", "noKK", "nama", "koperasi"]
+    },
+    "master_data_2025": {
+      ".read": "true",
+      ".write": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
+      ".indexOn": ["nik", "kk", "noKK", "nama", "koperasi"]
+    },
     "blacklist_data": {
       ".read": "true",
       ".write": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
