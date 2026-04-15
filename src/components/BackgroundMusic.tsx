@@ -36,7 +36,7 @@ export function BackgroundMusic({ className }: { className?: string }) {
   // Configuration: YouTube Playlist
   // Playlist ID: PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7
   const playlistId = "PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7";
-  const useShuffle = true; // Enabled shuffle by default for better experience
+  const useShuffle = false; // Disabled shuffle to follow playlist order
 
   useEffect(() => {
     // 1. Load the YouTube IFrame API script manually
