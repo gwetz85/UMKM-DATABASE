@@ -20,29 +20,31 @@ export function PublicCheckData() {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchMethod, setSearchMethod] = useState<'nik' | 'kk' | 'nama'>('nik')
 
-  const masterDataRef = useMemoFirebase(() => {
-    if (!database) return null
-    return ref(database, 'master_data')
-  }, [database])
-  const { data: allMasterData, isLoading: isMasterLoading } = useList(masterDataRef)
+  const m2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
+  const m2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
+  const m2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
+  const blacklistRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
 
-  const blacklistDataRef = useMemoFirebase(() => {
-    if (!database) return null
-    return ref(database, 'blacklist_data')
-  }, [database])
-  const { data: allBlacklistData, isLoading: isBlacklistLoading } = useList(blacklistDataRef)
+  const { data: d2023, isLoading: is2023Loading } = useList(m2023Ref)
+  const { data: d2024, isLoading: is2024Loading } = useList(m2024Ref)
+  const { data: d2025, isLoading: is2025Loading } = useList(m2025Ref)
+  const { data: dBlacklist, isLoading: isBlacklistLoading } = useList(blacklistRef)
 
-  const isSearchLoading = isMasterLoading || isBlacklistLoading
+  const isSearchLoading = is2023Loading || is2024Loading || is2025Loading || isBlacklistLoading
 
   const realTimeResults = useMemo(() => {
     if (!searchQuery) return null
     
-    const master = allMasterData || []
-    const blacklist = allBlacklistData || []
+    const data23 = d2023 || []
+    const data24 = d2024 || []
+    const data25 = d2025 || []
+    const dataBL = dBlacklist || []
     
     const combinedData = [
-      ...master.map(m => ({ ...m, _source: 'DATA PEMBANDING' })),
-      ...blacklist.map(m => ({ ...m, _source: 'DATA CANCELL / BLACKLIST' }))
+      ...data23.map(m => ({ ...m, _source: 'SHEET 2023' })),
+      ...data24.map(m => ({ ...m, _source: 'SHEET 2024' })),
+      ...data25.map(m => ({ ...m, _source: 'SHEET 2025' })),
+      ...dataBL.map(m => ({ ...m, _source: 'DATA BLACKLIST' }))
     ]
 
     const val = String(searchQuery).trim()
@@ -61,7 +63,7 @@ export function PublicCheckData() {
                (m.fullName && String(m.fullName).toLowerCase().includes(lowerVal))
       }
     })
-  }, [allMasterData, allBlacklistData, searchQuery, searchMethod])
+  }, [d2023, d2024, d2025, dBlacklist, searchQuery, searchMethod])
 
   const handleCheck = (e: React.FormEvent) => {
     e.preventDefault()
@@ -187,9 +189,9 @@ export function PublicCheckData() {
                            <div className="flex flex-wrap items-center gap-2 mb-2">
                              <span className={cn(
                                "text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded border",
-                               res._source === 'DATA CANCELL / BLACKLIST' ? "bg-red-50 text-red-600 border-red-200" : "bg-primary/10 text-primary border-primary/20"
+                               res._source === 'DATA BLACKLIST' ? "bg-red-50 text-red-600 border-red-200" : "bg-primary/10 text-primary border-primary/20"
                              )}>
-                               {res._source === 'DATA CANCELL / BLACKLIST' ? "BLACKLIST / DITOLAK" : "TERDAFTAR"}
+                               {res._source === 'DATA BLACKLIST' ? "BLACKLIST / DITOLAK" : res._source}
                              </span>
                              <span className={cn(
                                "text-[10px] font-bold px-2 py-0.5 rounded uppercase border",

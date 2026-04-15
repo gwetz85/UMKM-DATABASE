@@ -32,30 +32,31 @@ export default function CheckDataPage() {
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
 
-  const masterDataRef = useMemoFirebase(() => {
-    if (!database) return null
-    return ref(database, 'master_data')
-  }, [database])
+  const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
+  const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
+  const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
+  const blacklistDataRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
 
-  const { data: allMasterData, isLoading: isMasterLoading } = useList(masterDataRef)
-
-  const blacklistDataRef = useMemoFirebase(() => {
-    if (!database) return null
-    return ref(database, 'blacklist_data')
-  }, [database])
+  const { data: data2023, isLoading: is2023Loading } = useList(master2023Ref)
+  const { data: data2024, isLoading: is2024Loading } = useList(master2024Ref)
+  const { data: data2025, isLoading: is2025Loading } = useList(master2025Ref)
   const { data: allBlacklistData, isLoading: isBlacklistLoading } = useList(blacklistDataRef)
 
-  const isSearchLoading = isMasterLoading || isBlacklistLoading
+  const isSearchLoading = is2023Loading || is2024Loading || is2025Loading || isBlacklistLoading
 
   const realTimeResults = React.useMemo(() => {
     if (!searchCriteria || !searchCriteria.value) return null
     
-    const master = allMasterData || []
+    const d2023 = data2023 || []
+    const d2024 = data2024 || []
+    const d2025 = data2025 || []
     const blacklist = allBlacklistData || []
     
     const combinedData = [
-      ...master.map(m => ({ ...m, _source: "DATA PELAKU USAHA" })),
-      ...blacklist.map(m => ({ ...m, _source: "DATA CANCELL / BLACKLIST" }))
+      ...d2023.map(m => ({ ...m, _source: "SHEET 2023" })),
+      ...d2024.map(m => ({ ...m, _source: "SHEET 2024" })),
+      ...d2025.map(m => ({ ...m, _source: "SHEET 2025" })),
+      ...blacklist.map(m => ({ ...m, _source: "DATA BLACKLIST" }))
     ]
 
     let results = []
@@ -73,7 +74,7 @@ export default function CheckDataPage() {
     }
 
     return results
-  }, [allMasterData, allBlacklistData, searchCriteria])
+  }, [data2023, data2024, data2025, allBlacklistData, searchCriteria])
 
   if (isAdminLoading) {
     return (
@@ -231,7 +232,7 @@ export default function CheckDataPage() {
                             <div className="flex items-center gap-2 mb-1">
                               <span className={cn(
                                 "text-[10px] font-black uppercase tracking-widest",
-                                res._source === 'DATA CANCELL / BLACKLIST' ? "text-red-600" : "text-primary"
+                                res._source === 'DATA BLACKLIST' ? "text-red-600" : "text-primary"
                               )}>
                                 {res._source}
                               </span>
@@ -265,7 +266,7 @@ export default function CheckDataPage() {
                     <XCircle className="w-6 h-6 text-red-600" />
                     <AlertTitle className="text-xl font-black mb-2 uppercase">DATA TIDAK DITEMUKAN</AlertTitle>
                     <AlertDescription className="font-medium">
-                      Data yang Anda masukkan tidak terdaftar di Database Master maupun Blacklist.
+                      Data yang Anda masukkan tidak terdaftar di Database Pembanding manapun maupun Blacklist.
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -292,13 +293,13 @@ export default function CheckDataPage() {
           <DialogHeader>
             <DialogTitle className={cn(
               "text-2xl font-black uppercase flex items-center gap-2",
-              selectedResult?._source === "DATA CANCELL / BLACKLIST" ? "text-red-600" : "text-primary"
+              selectedResult?._source === "DATA BLACKLIST" ? "text-red-600" : "text-primary"
             )}>
               <UserSearch className="w-6 h-6" /> 
               {selectedResult?._source}
             </DialogTitle>
             <DialogDescription className="font-bold text-muted-foreground">
-              {selectedResult?._source === "DATA CANCELL / BLACKLIST" 
+              {selectedResult?._source === "DATA BLACKLIST" 
                 ? "Informasi Detail Data Pembatalan / Blacklist" 
                 : "Informasi Detail Data Pelaku Usaha"}
             </DialogDescription>
