@@ -205,15 +205,67 @@ export function BackgroundMusic({ className }: { className?: string }) {
       } else {
         playerRef.current.unMute();
         playerRef.current.setVolume(volume);
-        // If we haven't successfully started playing yet, try now
         if (!hasInteracted) {
           playerRef.current.playVideo();
           setHasInteracted(true);
         }
       }
       setIsMuted(nextMuteState);
+      
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('music-mute-change', { detail: { isMuted: nextMuteState } }));
     }
   };
+
+  const handleManualPlayPause = (shouldPlay: boolean) => {
+    if (playerRef.current && isPlayerReady) {
+      if (shouldPlay) {
+        playerRef.current.playVideo();
+        setIsPlaying(true);
+        setHasInteracted(true);
+      } else {
+        playerRef.current.pauseVideo();
+        setIsPlaying(false);
+      }
+    }
+  };
+
+  // Listen for external controls (like from Dashboard)
+  useEffect(() => {
+    const handleRemoteControl = (e: any) => {
+      const { action, value } = e.detail;
+      if (!playerRef.current || !isPlayerReady) return;
+
+      switch(action) {
+        case 'play': handleManualPlayPause(true); break;
+        case 'pause': handleManualPlayPause(false); break;
+        case 'next': handleNext(); break;
+        case 'previous': handlePrevious(); break;
+        case 'volume': handleVolumeChange([value]); break;
+        case 'playAt': 
+          playerRef.current.playVideoAt(value);
+          setIsPlaying(true);
+          setHasInteracted(true);
+          break;
+        case 'get-playlist':
+          if (playerRef.current && typeof playerRef.current.getPlaylist === 'function') {
+            const playlistIds = playerRef.current.getPlaylist();
+            window.dispatchEvent(new CustomEvent('music-playlist-ids-callback', { detail: { playlistIds } }));
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('music-remote-control', handleRemoteControl);
+    return () => window.removeEventListener('music-remote-control', handleRemoteControl);
+  }, [isPlayerReady, isPlaying]);
+
+  // Dispatch state changes to listeners (like Dashboard)
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('music-status-update', { 
+      detail: { isPlaying, currentTitle, isPlayerReady, volume, isMuted } 
+    }));
+  }, [isPlaying, currentTitle, isPlayerReady, volume, isMuted]);
 
   const handleVolumeChange = (value: number[]) => {
     const newVolume = value[0];

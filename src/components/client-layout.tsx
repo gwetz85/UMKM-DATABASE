@@ -9,7 +9,7 @@ import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { ChatBubble } from '@/components/chat-bubble';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
-import { BackgroundMusic } from '@/components/BackgroundMusic';
+import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject } from '@/firebase'
 import { ref } from 'firebase/database'
 import { User as UserIcon, Calendar } from 'lucide-react'
@@ -133,9 +133,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                   <div className="flex flex-col items-end gap-1">
                     <OfficeHoursTimer />
-                    {(isLoginPage || !isKoordinator) && (
-                      <BackgroundMusic className="scale-[0.6] origin-top-right -mr-4 -mt-3.5 mb-[-1.5rem]" />
-                    )}
                   </div>
                 </div>
 
@@ -188,9 +185,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   <div className="flex items-center gap-4">
                     <div className="flex flex-col items-end gap-1.5 translate-y-2">
                        <OfficeHoursTimer />
-                       {(isLoginPage || !isKoordinator) && (
-                         <BackgroundMusic className="scale-[0.8] origin-top-right -mr-2" />
-                       )}
                     </div>
                     <Link 
                       href="/profile" 
