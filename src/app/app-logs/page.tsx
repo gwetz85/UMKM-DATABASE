@@ -12,13 +12,16 @@ import { Loader2, Search, History, Smartphone, Monitor, Bot, Globe, Clock, User,
 import { cn } from "@/lib/utils"
 import { logActivity } from "@/lib/logger"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { LogDataDialog } from "@/components/log-data-dialog"
 
 function AppLogsContent() {
   const { user } = useUser()
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
   const [isTesting, setIsTesting] = useState(false)
+  const [isTesting, setIsTesting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [selectedQuery, setSelectedQuery] = useState<string | null>(null)
 
   // Admin Check
   const adminRef = useMemoFirebase(() => {
@@ -249,7 +252,11 @@ function AppLogsContent() {
                           {log.method || "NIK/KK"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-left font-bold text-primary font-mono select-all">
+                      <TableCell 
+                        className="text-left font-bold text-primary font-mono select-all cursor-pointer hover:underline decoration-primary/30 active:scale-95 transition-transform"
+                        onClick={() => setSelectedQuery(log.query)}
+                        title="Klik untuk lihat detail data"
+                      >
                         {log.query || "-"}
                       </TableCell>
                       <TableCell>
@@ -298,6 +305,11 @@ function AppLogsContent() {
           )}
         </CardContent>
       </Card>
+
+      <LogDataDialog 
+        query={selectedQuery} 
+        onClose={() => setSelectedQuery(null)} 
+      />
     </div>
   )
 }
