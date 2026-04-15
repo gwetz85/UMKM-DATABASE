@@ -28,13 +28,17 @@ export async function GET(req: NextRequest) {
 
     // 3. Fetch Data
     const actorsRef = ref(database, 'businessActors');
-    const masterDataRef = ref(database, 'master_data');
-    const blacklistDataRef = ref(database, 'blacklist_data');
+    const master2023Ref = ref(database, 'master_data_2023');
+    const master2024Ref = ref(database, 'master_data_2024');
+    const master2025Ref = ref(database, 'master_data_2025');
+    const blacklistRef = ref(database, 'blacklist_data');
 
-    const [actorsSnap, masterSnap, blacklistSnap] = await Promise.all([
+    const [actorsSnap, m2023Snap, m2024Snap, m2025Snap, blacklistSnap] = await Promise.all([
       get(actorsRef),
-      get(masterDataRef),
-      get(blacklistDataRef)
+      get(master2023Ref),
+      get(master2024Ref),
+      get(master2025Ref),
+      get(blacklistRef)
     ]);
 
     if (!actorsSnap.exists()) {
@@ -43,90 +47,133 @@ export async function GET(req: NextRequest) {
 
     const allActors = actorsSnap.val();
     const actorsList = Object.keys(allActors).map(id => ({ ...allActors[id], id }));
-    const pendingActors = actorsList.filter(a => a.status === 'pending');
+    
+    // Process actors that are pending, lengkapi_data, or hold (to re-evaluate)
+    const pendingActors = actorsList.filter(a => 
+      a.status === 'pending' || 
+      a.status === 'lengkapi_data' || 
+      a.status === 'hold' ||
+      a.status === 'verifikasi_manual'
+    );
 
     if (pendingActors.length === 0) {
-      return NextResponse.json({ message: 'No pending actors to process', processed: 0 });
+      return NextResponse.json({ message: 'No actors to process', processed: 0 });
     }
 
-    const allMasterData = masterSnap.exists() ? Object.values(masterSnap.val()) : [];
-    const allBlacklistData = blacklistSnap.exists() ? Object.values(blacklistSnap.val()) : [];
+    const data2023 = m2023Snap.exists() ? Object.values(m2023Snap.val()) : [];
+    const data2024 = m2024Snap.exists() ? Object.values(m2024Snap.val()) : [];
+    const data2025 = m2025Snap.exists() ? Object.values(m2025Snap.val()) : [];
+    const dataBlacklist = blacklistSnap.exists() ? Object.values(blacklistSnap.val()) : [];
     
     let verifiedCount = 0;
     let rejectedCount = 0;
-    let manualCount = 0;
+    let holdCount = 0;
+    let incompleteCount = 0;
     const now = Date.now();
     const updates: Record<string, any> = {};
-
     const skipped: any[] = [];
 
     // 4. Processing Logic
     pendingActors.forEach(actor => {
       // Check data completeness
-      const missingFields = [];
-      if (!actor.fullName) missingFields.push("Nama Lengkap");
-      if (!actor.nik) missingFields.push("NIK");
-      if (!actor.noKK) missingFields.push("Nomor KK");
-      if (!actor.gender) missingFields.push("Jenis Kelamin");
-      if (!actor.pobDob) missingFields.push("TTL");
-      if (!actor.phone) missingFields.push("Nomor HP");
-      if (!actor.address) missingFields.push("Alamat");
-      if (!actor.rtRw) missingFields.push("RT/RW");
-      if (!actor.kelurahan) missingFields.push("Kelurahan");
-      if (!actor.kecamatan) missingFields.push("Kecamatan");
-      if (!actor.businessCategory) missingFields.push("Jenis Usaha");
-      if (!actor.businessName) missingFields.push("Usaha");
-      if (!actor.businessLocation) missingFields.push("Lokasi Usaha");
-      if (!actor.coordinator) missingFields.push("Koordinator");
+      const isComplete = !!(
+        actor.fullName && actor.nik && actor.noKK && actor.gender && 
+        actor.pobDob && actor.phone && actor.address && actor.rtRw && 
+        actor.kelurahan && actor.kecamatan && actor.businessCategory && 
+        actor.businessName && actor.businessLocation && actor.coordinator
+      );
 
-      if (missingFields.length > 0) {
-        skipped.push({
-          id: actor.id,
-          name: actor.fullName || "Unnamed",
-          reason: "Data tidak lengkap",
-          details: `Missing: ${missingFields.join(', ')}`
-        });
+      if (!isComplete) {
+        if (actor.status !== 'lengkapi_data') {
+          updates[`businessActors/${actor.id}/status`] = 'lengkapi_data';
+          incompleteCount++;
+        }
+        skipped.push({ id: actor.id, name: actor.fullName, reason: "Data belum lengkap" });
         return;
       }
 
-      // RULE 1: Check Blacklist (Sheet 2) based on KK
-      const isBlacklisted = allBlacklistData.some((b: any) => b.noKK && b.noKK === actor.noKK);
-      if (isBlacklisted) {
-        updates[`businessActors/${actor.id}/status`] = 'rejected';
-        updates[`businessActors/${actor.id}/rejectionReason`] = 'Ditolak Otomatis: Data KK terdeteksi pada Sheet 2 (Cancell).';
-        rejectedCount++;
-        return;
-      }
+      // Check Matches
+      const checkMatch = (data: any[]) => data.some((d: any) => 
+        (d.nik && d.nik === actor.nik) || (d.noKK && d.noKK === actor.noKK)
+      );
 
-      // RULE 2: Calculate KK matches in Master Data (Sheet 1)
-      const kkMatches = allMasterData.filter((m: any) => m.noKK && m.noKK === actor.noKK);
-      const matchCount = kkMatches.length;
+      const hasBlacklist = checkMatch(dataBlacklist);
+      const has2023 = checkMatch(data2023);
+      const has2024 = checkMatch(data2024);
+      const has2025 = checkMatch(data2025);
 
-      // RULE 3: Routing based on Match Count
-      if (matchCount >= 2) {
-        // 2+ matches -> Manual Verification
-        updates[`businessActors/${actor.id}/status`] = 'verifikasi_manual';
-        manualCount++;
-        return;
-      }
-
-      // RULE 4: Timer based on Match Count (0 match = 1m, 1 match = 10m)
-      const targetMins = matchCount === 0 ? 1 : 10;
       const createdAt = new Date(actor.createdAt).getTime();
-      const targetTime = createdAt + (targetMins * 60000);
-      
-      if (now >= targetTime) {
-        updates[`businessActors/${actor.id}/status`] = 'verified_actor';
-        verifiedCount++;
-      } else {
-        const remainingSecs = Math.ceil((targetTime - now) / 1000);
-        skipped.push({
-          id: actor.id,
-          name: actor.fullName,
-          reason: `Menunggu timer (${targetMins}m)`,
-          details: `Akan diverifikasi dalam ${remainingSecs} detik.`
-        });
+
+      // LOGIC PRIORITY
+      // 1. Blacklist -> 30s -> rejected
+      if (hasBlacklist) {
+        const targetTime = createdAt + 30000;
+        if (now >= targetTime) {
+          updates[`businessActors/${actor.id}/status`] = 'rejected';
+          updates[`businessActors/${actor.id}/rejectionReason`] = 'Ditolak Otomatis: Terdaftar di Data Blacklist (Sheet 4).';
+          rejectedCount++;
+        } else {
+          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting Blacklist timer (30s)" });
+        }
+        return;
       }
+
+      // 2. 2023 -> 1m -> verified_actor
+      if (has2023) {
+        const targetTime = createdAt + 60000;
+        if (now >= targetTime) {
+          updates[`businessActors/${actor.id}/status`] = 'verified_actor';
+          verifiedCount++;
+        } else {
+          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2023 timer (1m)" });
+        }
+        return;
+      }
+
+      // 3. 2024 -> 10m -> verified_actor
+      if (has2024) {
+        const targetTime = createdAt + 600000;
+        if (now >= targetTime) {
+          updates[`businessActors/${actor.id}/status`] = 'verified_actor';
+          verifiedCount++;
+        } else {
+          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2024 timer (10m)" });
+        }
+        return;
+      }
+
+      // 4. 2025 -> instant -> hold
+      if (has2025) {
+        if (actor.status !== 'hold') {
+          updates[`businessActors/${actor.id}/status`] = 'hold';
+          holdCount++;
+        }
+        return;
+      }
+
+      // 5. No Match -> Move to manual verification if it was pending or lengkapi_data
+      if (actor.status !== 'verifikasi_manual') {
+        updates[`businessActors/${actor.id}/status`] = 'verifikasi_manual';
+      }
+    });
+
+    // 5. Apply Updates
+    if (Object.keys(updates).length > 0) {
+      await update(ref(database), updates);
+    }
+
+    return NextResponse.json({
+      success: true,
+      summary: {
+        totalProcessed: pendingActors.length,
+        verified: verifiedCount,
+        rejected: rejectedCount,
+        hold: holdCount,
+        incomplete: incompleteCount,
+        skippedCount: skipped.length,
+        processedAt: new Date().toISOString()
+      },
+      skipped
     });
 
     // 5. Apply Updates

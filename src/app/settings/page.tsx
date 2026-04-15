@@ -216,7 +216,7 @@ export default function SettingsPage() {
     reader.readAsText(file)
   }
 
-  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>, targetType: 'master' | 'blacklist') => {
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>, targetType: 'master_2024' | 'master_2023' | 'master_2025' | 'blacklist') => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -227,14 +227,12 @@ export default function SettingsPage() {
         const bstr = event.target?.result
         const wb = XLSX.read(bstr, { type: 'binary', cellFormula: true, cellNF: true, cellText: true })
         
-        // Use the first sheet regardless of name, or specific name if needed
         const wsname = wb.SheetNames[0]
         const ws = wb.Sheets[wsname]
         
         const range = XLSX.utils.decode_range(ws['!ref'] || "A1")
         const importedData: any[] = []
 
-        // Iterate through rows (skipping header at row 0)
         for (let r = range.s.r + 1; r <= range.e.r; r++) {
           const rowValues: string[] = []
           for (let c = range.s.c; c <= range.e.c; c++) {
@@ -279,7 +277,11 @@ export default function SettingsPage() {
 
         if (importedData.length === 0) throw new Error("Tidak ada data valid ditemukan. Pastikan kolom KK dan NIK terisi.")
 
-        const dbPath = targetType === 'master' ? "master_data" : "blacklist_data"
+        let dbPath = "blacklist_data"
+        if (targetType === 'master_2024') dbPath = "master_data_2024"
+        else if (targetType === 'master_2023') dbPath = "master_data_2023"
+        else if (targetType === 'master_2025') dbPath = "master_data_2025"
+
         const batchSize = 500
         for (let i = 0; i < importedData.length; i += batchSize) {
           const chunk = importedData.slice(i, i + batchSize)
@@ -291,9 +293,13 @@ export default function SettingsPage() {
           await update(ref(database), updates)
         }
 
+        const label = targetType === 'master_2024' ? 'Sheet 1 (2024)' : 
+                      targetType === 'master_2023' ? 'Sheet 2 (2023)' :
+                      targetType === 'master_2025' ? 'Sheet 3 (2025)' : 'Sheet 4 (Blacklist)'
+
         toast({ 
-          title: `Upload ${targetType === 'master' ? 'Sheet 1' : 'Sheet 2'} Berhasil`, 
-          description: `${importedData.length} data telah disimpan ke ${targetType === 'master' ? 'Data Pembanding' : 'Data Blacklist'}.` 
+          title: `Upload ${label} Berhasil`, 
+          description: `${importedData.length} data telah disimpan.` 
         })
       } catch (error: any) {
         toast({ variant: "destructive", title: "Gagal Impor Excel", description: error.message || "Pastikan format kolom benar." })
@@ -320,29 +326,28 @@ export default function SettingsPage() {
     }
   }
 
-  const handleResetMaster = async () => {
-    if (!confirm("Hapus semua data Sheet 1 (Data Pembanding)? Tindakan ini tidak dapat dibatalkan.")) return
-
-    setLoading(true)
-    try {
-      await remove(ref(database, "master_data"))
-      toast({ title: "Hapus Berhasil", description: "Seluruh data pembanding telah dihapus." })
-    } catch (error) {
-      toast({ variant: "destructive", title: "Gagal Hapus", description: "Terjadi kesalahan saat menghapus data master." })
-    } finally {
-      setLoading(false)
+  const handleResetSheet = async (target: '2023' | '2024' | '2025' | 'blacklist') => {
+    const labels = {
+      '2023': 'Sheet 2 (Data Pembanding 2023)',
+      '2024': 'Sheet 1 (Data Pembanding 2024)',
+      '2025': 'Sheet 3 (Data Pembanding 2025)',
+      'blacklist': 'Sheet 4 (Data Blacklist)'
     }
-  }
+    const paths = {
+      '2023': 'master_data_2023',
+      '2024': 'master_data_2024',
+      '2025': 'master_data_2025',
+      'blacklist': 'blacklist_data'
+    }
 
-  const handleResetBlacklist = async () => {
-    if (!confirm("Hapus semua data Sheet 2 (Data Blacklist)? Tindakan ini tidak dapat dibatalkan.")) return
+    if (!confirm(`Hapus semua data ${labels[target]}? Tindakan ini tidak dapat dibatalkan.`)) return
 
     setLoading(true)
     try {
-      await remove(ref(database, "blacklist_data"))
-      toast({ title: "Hapus Berhasil", description: "Seluruh data blacklist telah dihapus." })
+      await remove(ref(database, paths[target]))
+      toast({ title: "Hapus Berhasil", description: `Data ${labels[target]} telah dihapus.` })
     } catch (error) {
-      toast({ variant: "destructive", title: "Gagal Hapus", description: "Terjadi kesalahan saat menghapus data blacklist." })
+      toast({ variant: "destructive", title: "Gagal Hapus", description: "Terjadi kesalahan saat menghapus data." })
     } finally {
       setLoading(false)
     }
@@ -559,33 +564,79 @@ export default function SettingsPage() {
                   <p className="text-[10px] text-muted-foreground italic mb-4">Upload .xlsx dengan 13 kolom: KK, NIK, No, Thn, Nama, Status, LPJ, Nom, Usaha, Alamat, Kel, Kec, Koor.</p>
                   
                   <div className="space-y-6">
-                    {/* Sheet 1: Master/Accepted */}
+                    {/* Sheet 1: 2024 */}
                     <div className="space-y-3">
                       <Label className="text-[11px] font-black uppercase text-emerald-600 flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5" /> Sheet 1: Data Pembanding (Countdown 1m/10m)
+                        <Check className="w-3.5 h-3.5" /> Sheet 1: Data Pembanding 2024 (10 Menit)
                       </Label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="relative">
-                          <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'master')} className="hidden" id="excel-master-upload" disabled={uploadingExcel} />
-                          <Label htmlFor="excel-master-upload" className="cursor-pointer">
+                          <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'master_2024')} className="hidden" id="excel-2024-upload" disabled={uploadingExcel} />
+                          <Label htmlFor="excel-2024-upload" className="cursor-pointer">
                             <Button variant="outline" className="w-full border-emerald-500/20 hover:bg-emerald-500/5 text-emerald-700 dark:text-emerald-400" asChild>
                               <div className="flex items-center justify-center gap-2">
                                 {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                Upload Sheet 1 (Accepted)
+                                Upload Sheet 1 (2024)
                               </div>
                             </Button>
                           </Label>
                         </div>
-                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={handleResetMaster} disabled={loading}>
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => handleResetSheet('2024')} disabled={loading}>
                           <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 1
                         </Button>
                       </div>
                     </div>
 
-                    {/* Sheet 2: Blacklist/Rejected */}
+                    {/* Sheet 2: 2023 */}
+                    <div className="space-y-3 pt-4 border-t border-dashed">
+                      <Label className="text-[11px] font-black uppercase text-blue-600 flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5" /> Sheet 2: Data Pembanding 2023 (1 Menit)
+                      </Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="relative">
+                          <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'master_2023')} className="hidden" id="excel-2023-upload" disabled={uploadingExcel} />
+                          <Label htmlFor="excel-2023-upload" className="cursor-pointer">
+                            <Button variant="outline" className="w-full border-blue-500/20 hover:bg-blue-500/5 text-blue-700 dark:text-blue-400" asChild>
+                              <div className="flex items-center justify-center gap-2">
+                                {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                Upload Sheet 2 (2023)
+                              </div>
+                            </Button>
+                          </Label>
+                        </div>
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => handleResetSheet('2023')} disabled={loading}>
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 2
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Sheet 3: 2025 */}
+                    <div className="space-y-3 pt-4 border-t border-dashed">
+                      <Label className="text-[11px] font-black uppercase text-amber-600 flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5" /> Sheet 3: Data Pembanding 2025 (HOLD)
+                      </Label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="relative">
+                          <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'master_2025')} className="hidden" id="excel-2025-upload" disabled={uploadingExcel} />
+                          <Label htmlFor="excel-2025-upload" className="cursor-pointer">
+                            <Button variant="outline" className="w-full border-amber-500/20 hover:bg-amber-500/5 text-amber-700 dark:text-amber-400" asChild>
+                              <div className="flex items-center justify-center gap-2">
+                                {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                Upload Sheet 3 (2025)
+                              </div>
+                            </Button>
+                          </Label>
+                        </div>
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => handleResetSheet('2025')} disabled={loading}>
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 3
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Sheet 4: Blacklist */}
                     <div className="space-y-3 pt-4 border-t border-dashed">
                       <Label className="text-[11px] font-black uppercase text-rose-600 flex items-center gap-1.5">
-                        <XCircle className="w-3.5 h-3.5" /> Sheet 2: Data Blacklist (Auto Reject/Cancell)
+                        <XCircle className="w-3.5 h-3.5" /> Sheet 4: Data Blacklist (30s Reject)
                       </Label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="relative">
@@ -594,13 +645,13 @@ export default function SettingsPage() {
                             <Button variant="outline" className="w-full border-rose-500/20 hover:bg-rose-500/5 text-rose-700 dark:text-rose-400" asChild>
                               <div className="flex items-center justify-center gap-2">
                                 {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                Upload Sheet 2 (Rejected)
+                                Upload Sheet 4 (Blacklist)
                               </div>
                             </Button>
                           </Label>
                         </div>
-                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={handleResetBlacklist} disabled={loading}>
-                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 2
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => handleResetSheet('blacklist')} disabled={loading}>
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 4
                         </Button>
                       </div>
                     </div>

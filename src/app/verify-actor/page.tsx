@@ -19,60 +19,76 @@ import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { cn } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
-function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, actor }: { 
+function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, actor }: { 
   actorId: string, 
   createdAt: string, 
-  matchCount: number, 
+  matches: { has2023: boolean, has2024: boolean, has2025: boolean, hasBlacklist: boolean }, 
   database: any,
   isAdmin: boolean,
   actor: BusinessActor
 }) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   
-  // Logic Baru: 0 matches = 1 min, 1 match = 10 min, 2+ matches = Manual Info
-  const targetMins = matchCount === 0 ? 1 : 10
-  const isAutoEligible = matchCount < 2 && actor.status !== 'verifikasi_manual'
+  // Logic Baru:
+  // Blacklist -> 30s
+  // 2023 -> 1m
+  // 2024 -> 10m
+  // 2025 -> HOLD (instant)
+  
+  const targetMins = matches.hasBlacklist ? 0.5 : (matches.has2023 ? 1 : (matches.has2024 ? 10 : null));
+  const isHold = matches.has2025;
 
   // Validation: Check if all mandatory fields are present
   const isDataComplete = !!(
-    actor.fullName && 
-    actor.nik && 
-    actor.noKK && 
-    actor.gender && 
-    actor.pobDob && 
-    actor.phone && 
-    actor.address && 
-    actor.rtRw && 
-    actor.kelurahan && 
-    actor.kecamatan && 
-    actor.businessCategory && 
-    actor.businessName && 
-    actor.businessLocation && 
-    actor.coordinator
+    actor.fullName && actor.nik && actor.noKK && actor.gender && 
+    actor.pobDob && actor.phone && actor.address && actor.rtRw && 
+    actor.kelurahan && actor.kecamatan && actor.businessCategory && 
+    actor.businessName && actor.businessLocation && actor.coordinator
   );
 
   useEffect(() => {
-    if (!isDataComplete) return;
+    if (!isDataComplete) {
+      if (actor.status !== 'lengkapi_data' && isAdmin && database) {
+        updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'lengkapi_data' });
+      }
+      return;
+    }
+
+    if (isHold) {
+       if (actor.status !== 'hold' && isAdmin && database) {
+         updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'hold' });
+       }
+       return;
+    }
+
+    if (targetMins === null) {
+      if (actor.status !== 'verifikasi_manual' && isAdmin && database) {
+        updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'verifikasi_manual' });
+      }
+      return;
+    }
 
     const targetTime = new Date(createdAt).getTime() + (targetMins * 60000)
     
-    const triggerVerify = () => {
+    const triggerProcess = () => {
       if (isAdmin && database) {
-
-        if (!isAutoEligible) return;
-        
-        // Finalize auto-verify
-        updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
-          status: 'verified_actor'
-        })
+        if (matches.hasBlacklist) {
+          updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
+            status: 'rejected',
+            rejectionReason: 'Ditolak Otomatis: Terdaftar di Data Blacklist (Sheet 4).'
+          })
+        } else {
+          updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
+            status: 'verified_actor'
+          })
+        }
       }
     }
 
-    // Initial check
     const initialDiff = targetTime - Date.now()
     if (initialDiff <= 0) {
       setTimeLeft(0)
-      triggerVerify()
+      triggerProcess()
       return
     }
 
@@ -85,14 +101,14 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
       if (diff <= 0) {
         setTimeLeft(0)
         clearInterval(interval)
-        triggerVerify()
+        triggerProcess()
       } else {
         setTimeLeft(diff)
       }
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [createdAt, targetMins, isAutoEligible, isAdmin, database, actorId, isDataComplete])
+  }, [createdAt, targetMins, isHold, isAdmin, database, actorId, isDataComplete, matches.hasBlacklist, actor.status])
 
   if (!isDataComplete) {
     return (
@@ -103,37 +119,46 @@ function VerificationTimer({ actorId, createdAt, matchCount, database, isAdmin, 
     )
   }
 
+  if (isHold) {
+    return (
+      <div className="flex items-center gap-1.5 text-blue-600 font-black text-[9px] uppercase bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-lg shadow-sm">
+        <Clock className="w-3.5 h-3.5" />
+        <span>DATA DI-HOLD</span>
+      </div>
+    )
+  }
+
+  if (targetMins === null) {
+    return (
+      <div className="flex items-center gap-1.5 text-rose-600 font-black text-[9px] uppercase bg-rose-50 border border-rose-200 px-2 py-1 rounded shadow-sm">
+        <ShieldAlert className="w-3.5 h-3.5" />
+        <span>VERIFIKASI MANUAL</span>
+      </div>
+    )
+  }
+
   if (timeLeft === null) return <Loader2 className="w-3 h-3 animate-spin opacity-20" />
 
-  if (timeLeft === 0 || actor.status === 'verifikasi_manual') {
-    if (isAutoEligible && actor.status !== 'verifikasi_manual') {
-      return (
-        <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-[10px] animate-pulse">
-          <Loader2 className="w-3 h-3 animate-spin" />
-          <span>PROSES VERIFIKASI...</span>
-        </div>
-      )
-    } else {
-      return (
-        <div className="flex items-center gap-1.5 text-rose-600 font-black text-[9px] uppercase bg-rose-50 border border-rose-200 px-2 py-1 rounded shadow-sm">
-          <ShieldAlert className="w-3.5 h-3.5" />
-          <span>VERIFIKASI MANUAL</span>
-        </div>
-      )
-    }
+  if (timeLeft === 0) {
+    return (
+      <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-[10px] animate-pulse">
+        <Loader2 className="w-3 h-3 animate-spin" />
+        <span>PROSES...</span>
+      </div>
+    )
   }
 
   const hours = Math.floor(timeLeft / 3600000)
   const minutes = Math.floor((timeLeft % 3600000) / 60000)
   const seconds = Math.floor((timeLeft % 60000) / 1000)
 
-  const timerColor = timeLeft < 300000 ? "text-rose-600 border-rose-200 bg-rose-50" : 
-                     timeLeft < 900000 ? "text-amber-600 border-amber-200 bg-amber-50" : 
+  const timerColor = matches.hasBlacklist ? "text-rose-600 border-rose-400 bg-rose-50 animate-pulse" : 
+                     timeLeft < 60000 ? "text-amber-600 border-amber-200 bg-amber-50" : 
                      "text-primary border-primary/20 bg-slate-50"
 
   return (
     <div className={`flex items-center gap-2 font-mono text-[10px] font-black ${timerColor} border px-2.5 py-1.5 rounded-lg shadow-sm transition-all`}>
-      <Clock className="w-3 h-3 animate-pulse" />
+      <Clock className="w-3 h-3" />
       <span className="tracking-widest">
         {hours > 0 ? `${hours}:` : ""}{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
       </span>
@@ -162,6 +187,8 @@ export default function VerifyActorPage() {
   const [editKelurahan, setEditKelurahan] = useState<string>("")
   const [editKecamatan, setEditKecamatan] = useState<string>("")
 
+  const [activeTab, setActiveTab] = useState<'pending' | 'hold' | 'manual'>('pending')
+
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
     return ref(database, `roles_admin/${user.uid}`)
@@ -186,19 +213,22 @@ export default function VerifyActorPage() {
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
 
-  const masterDataRef = useMemoFirebase(() => {
-    if (!database) return null
-    return ref(database, 'master_data')
-  }, [database])
-  const { data: allMasterDataRaw } = useList<any>(masterDataRef)
+  const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
+  const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
+  const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
+  const blacklistRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
 
-  const blacklistDataRef = useMemoFirebase(() => {
-    if (!database) return null
-    return ref(database, 'blacklist_data')
-  }, [database])
-  const { data: allBlacklistDataRaw } = useList<any>(blacklistDataRef)
+  const { data: data2023 } = useList<any>(master2023Ref)
+  const { data: data2024 } = useList<any>(master2024Ref)
+  const { data: data2025 } = useList<any>(master2025Ref)
+  const { data: dataBlacklist } = useList<any>(blacklistRef)
 
-  const actors = allActorsRaw?.filter(a => a.status === 'pending' || a.status === 'verifikasi_manual')
+  const actors = allActorsRaw?.filter(a => {
+    if (activeTab === 'pending') return a.status === 'pending' || a.status === 'lengkapi_data';
+    if (activeTab === 'hold') return a.status === 'hold';
+    if (activeTab === 'manual') return a.status === 'verifikasi_manual';
+    return false;
+  })
 
   const filteredActors = actors?.filter(actor =>
     (actor.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -329,20 +359,42 @@ export default function VerifyActorPage() {
           <div className="flex items-center gap-3">
             <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
             <h1 className="text-3xl font-bold text-primary font-headline">Verifikasi Admin</h1>
-            {filteredActors && (
-              <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/20 shadow-sm flex items-center gap-2">
-                <span>Total Menunggu Verifikasi:</span>
-                <span className="bg-primary text-white px-2 py-0.5 rounded-full">{filteredActors.length}</span>
-              </div>
-            )}
           </div>
-          <p className="text-muted-foreground mt-1">Tinjau dan verifikasi data pelaku usaha yang masuk untuk disetujui atau ditolak.</p>
+          <p className="text-muted-foreground mt-1 text-xs uppercase font-black tracking-widest">Manajemen Verifikasi Data Pelaku Usaha</p>
         </div>
-        <div className="relative w-full md:w-80">
+
+        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
+          {[
+            { id: 'pending', label: 'Menunggu', count: (allActorsRaw?.filter(a => a.status === 'pending' || a.status === 'lengkapi_data').length || 0) },
+            { id: 'hold', label: 'HOLD', count: (allActorsRaw?.filter(a => a.status === 'hold').length || 0) },
+            { id: 'manual', label: 'Manual', count: (allActorsRaw?.filter(a => a.status === 'verifikasi_manual').length || 0) }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-black uppercase transition-all whitespace-nowrap",
+                activeTab === tab.id 
+                  ? "bg-white text-primary shadow-sm" 
+                  : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              {tab.label}
+              <span className={cn(
+                "px-1.5 py-0.5 rounded-full text-[8px]",
+                activeTab === tab.id ? "bg-primary text-white" : "bg-slate-200 text-slate-500"
+              )}>
+                {tab.count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="relative w-full md:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
-            placeholder="Cari Nama, NIK, atau Usaha..."
-            className="flex h-11 w-full rounded-md border border-primary/20 bg-card px-3 py-2 pl-9 text-sm text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            placeholder="Cari..."
+            className="flex h-10 w-full rounded-xl border border-primary/20 bg-card px-3 py-2 pl-9 text-xs text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -375,7 +427,13 @@ export default function VerifyActorPage() {
                     <TableCell className="font-mono text-xs text-slate-500">
                       <div className="font-semibold text-slate-700">{actor.nik}</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">KK: {actor.noKK}</div>
-                      <CheckDataIndicator actor={actor} allMasterData={allMasterDataRaw} allBlacklistData={allBlacklistDataRaw} />
+                      <CheckDataIndicator 
+                        actor={actor} 
+                        data2023={data2023}
+                        data2024={data2024}
+                        data2025={data2025}
+                        dataBlacklist={dataBlacklist}
+                      />
                     </TableCell>
                     <TableCell>
                       <span className="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider">
@@ -394,13 +452,17 @@ export default function VerifyActorPage() {
                           actorId={actor.id} 
                           createdAt={actor.createdAt} 
                           {...(() => {
-                            const nikMatches = allMasterDataRaw?.filter((m: any) => m.nik && m.nik === actor.nik) || [];
-                            const kkMatches = allMasterDataRaw?.filter((m: any) => m.noKK && m.noKK === actor.noKK) || [];
-                            const combinedMatches = [...nikMatches, ...kkMatches];
-                            const uniqueIds = new Set(combinedMatches.map(m => m.id || `${m.nik}-${m.nama}`));
+                            const checkMatch = (data: any[] | null) => (data || []).some((m: any) => 
+                              (m.nik && m.nik === actor.nik) || (m.noKK && m.noKK === actor.noKK)
+                            );
                             
                             return {
-                              matchCount: uniqueIds.size,
+                              matches: {
+                                has2023: checkMatch(data2023),
+                                has2024: checkMatch(data2024),
+                                has2025: checkMatch(data2025),
+                                hasBlacklist: checkMatch(dataBlacklist),
+                              }
                             }
                           })()}
                           database={database}
