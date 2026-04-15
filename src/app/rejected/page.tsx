@@ -8,8 +8,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, RotateCcw, Trash2, Eye, User, CreditCard, History, X, Building2, MapPin, Ban, AlertCircle, Search } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Printer, Edit3, Loader2, Save, RotateCcw, Trash2, Eye, User, CreditCard, History, X, Building2, MapPin, Ban, AlertCircle, Search, Info } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
@@ -196,71 +196,105 @@ function RejectedContent() {
         </div>
       </div>
 
-      <div className="bg-card print:bg-transparent">
+      <div className="bg-card print:bg-transparent border border-red-100 rounded-2xl overflow-hidden shadow-sm">
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-            {[...Array(12)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-4 flex flex-col items-center gap-3">
-                  <Skeleton className="w-12 h-12 rounded-full" />
-                  <div className="space-y-2 w-full">
-                    <Skeleton className="h-4 w-3/4 mx-auto" />
-                    <Skeleton className="h-3 w-1/2 mx-auto" />
-                  </div>
-                  <Skeleton className="h-5 w-full rounded-full" />
-                </CardContent>
-              </Card>
+          <div className="p-4 space-y-4">
+            <div className="flex gap-4 border-b pb-4">
+              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-4 flex-1" />)}
+            </div>
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="flex gap-4 pt-2">
+                {[...Array(6)].map((_, j) => <Skeleton key={j} className="h-10 flex-1" />)}
+              </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 print:flex print:flex-col print:gap-1">
-            {actors?.map((actor) => (
-              <Card 
-                key={actor.id} 
-                className="cursor-pointer hover:border-red-500/50 transition-all hover:shadow-md group relative overflow-hidden print:shadow-none print:border-b print:rounded-none"
-                onClick={() => {
-                  setViewingActor(actor)
-                  setIsEditMode(false)
-                }}
-              >
-                <CardContent className="p-4 flex flex-col items-center text-center gap-3 print:flex-row print:justify-between print:text-left print:p-2">
-                  <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 group-hover:scale-110 transition-transform print:hidden shrink-0">
-                    <Ban className="w-6 h-6" />
-                  </div>
-                  <div className="space-y-1 w-full justify-center">
-                    <p className="font-bold text-[13px] md:text-sm line-clamp-2 uppercase leading-tight print:line-clamp-none text-red-800" title={actor.businessName}>
-                      {actor.businessName || "NAMA USAHA KOSONG"}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground uppercase line-clamp-1 print:line-clamp-none font-bold flex items-center justify-center print:justify-start gap-1" title={actor.fullName}>
-                      <User className="w-3 h-3 print:hidden" /> {actor.fullName}
-                    </p>
-                    <p className="text-[9px] text-muted-foreground font-mono hidden print:block">
-                      NIK: {actor.nik} | Koor: {actor.coordinator} | Alasan: {actor.rejectionReason}
-                    </p>
-                    <div className="flex justify-center print:hidden">
-                      <CheckDataIndicator 
-                        actor={actor} 
-                        data2023={data2023}
-                        data2024={data2024}
-                        data2025={data2025}
-                        dataBlacklist={dataBlacklist}
-                        showText={false} 
-                      />
-                    </div>
-                  </div>
-                  <div className="text-[9px] font-black uppercase bg-red-500 text-white w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
-                    DITOLAK
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {(!actors || actors.length === 0) && (
-              <div className="col-span-full py-20 text-center text-muted-foreground grid place-items-center">
-                <Ban className="w-12 h-12 mb-4 text-slate-300" />
-                <p>Tidak ada data ditolak yang ditemukan.</p>
-              </div>
-            )}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-red-50/50">
+                <TableRow className="border-red-100 hover:bg-transparent">
+                  <TableHead className="w-[50px] font-black text-red-700 text-center uppercase text-[10px]">No</TableHead>
+                  <TableHead className="font-black text-red-700 uppercase text-[10px]">Nama Usaha</TableHead>
+                  <TableHead className="font-black text-red-700 uppercase text-[10px]">Pelaku Usaha</TableHead>
+                  <TableHead className="font-black text-red-700 uppercase text-[10px] text-center">Kategori</TableHead>
+                  <TableHead className="font-black text-red-700 uppercase text-[10px]">Koordinator</TableHead>
+                  <TableHead className="font-black text-red-700 uppercase text-[10px]">Alasan Penolakan</TableHead>
+                  <TableHead className="font-black text-red-700 uppercase text-[10px] text-right">Detail</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {actors && actors.length > 0 ? (
+                  actors.map((actor, index) => (
+                    <TableRow 
+                      key={actor.id} 
+                      className="cursor-pointer hover:bg-red-50/30 border-red-50 transition-colors group print:border-b print:rounded-none"
+                      onClick={() => {
+                        setViewingActor(actor)
+                        setIsEditMode(false)
+                      }}
+                    >
+                      <TableCell className="text-center font-bold text-slate-400 text-xs">{index + 1}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-black text-red-700 uppercase text-[12px] leading-tight">
+                            {actor.businessName || "NAMA USAHA KOSONG"}
+                          </span>
+                          <div className="flex items-center gap-1 mt-1 print:hidden">
+                             <CheckDataIndicator 
+                                actor={actor} 
+                                data2023={data2023}
+                                data2024={data2024}
+                                data2025={data2025}
+                                dataBlacklist={dataBlacklist}
+                                showText={false} 
+                              />
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-700 text-[11px] uppercase">{actor.fullName}</span>
+                          <span className="text-[9px] text-slate-400 font-mono tracking-tighter uppercase">{actor.nik}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className={cn(
+                          "text-[9px] font-black uppercase px-2 py-0 border-2",
+                          actor.businessCategory === 'Kuliner' ? "border-amber-200 text-amber-600 bg-amber-50" : "border-blue-200 text-blue-600 bg-blue-50"
+                        )}>
+                          {actor.businessCategory || "-"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-[10px] font-bold text-slate-600 uppercase">{actor.coordinator || "-"}</span>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-[10px] italic text-red-500 line-clamp-2 max-w-[200px] leading-relaxed" title={actor.rejectionReason}>
+                           {actor.rejectionReason || "Tidak ada alasan spesifik."}
+                        </p>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 group-hover:text-red-600 group-hover:bg-red-100 rounded-full transition-all">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-48 text-center">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground gap-3">
+                        <Ban className="w-12 h-12 opacity-10" />
+                        <p className="font-black text-[10px] uppercase tracking-[0.2em]">Tidak Ada Data Ditolak</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
+        )}
+      </div>
         )}
       </div>
 
