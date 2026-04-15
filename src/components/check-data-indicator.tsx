@@ -11,10 +11,10 @@ import { formatCurrency } from "@/lib/utils"
 
 interface CheckDataIndicatorProps {
   actor: BusinessActor;
-  data2023?: any[] | null;
-  data2024?: any[] | null;
-  data2025?: any[] | null;
-  dataBlacklist?: any[] | null;
+  data2023?: any[] | null | undefined;
+  data2024?: any[] | null | undefined;
+  data2025?: any[] | null | undefined;
+  dataBlacklist?: any[] | null | undefined;
   showText?: boolean;
 }
 
@@ -33,7 +33,7 @@ export function CheckDataIndicator({ actor, data2023, data2024, data2025, dataBl
 
   if (!isAdmin) return null
 
-  const checkMatches = (data: any[] | null, label: string) => 
+  const checkMatches = (data: any[] | null | undefined, label: string) => 
     (data || []).filter((m: any) => (m.noKK && m.noKK === actor.noKK) || (m.nik && m.nik === actor.nik))
       .map(m => ({ ...m, source: label }));
 
@@ -42,7 +42,7 @@ export function CheckDataIndicator({ actor, data2023, data2024, data2025, dataBl
   const matches2025 = checkMatches(data2025, 'Sheet 3 (2025 - HOLD)');
   const matchesBlacklist = checkMatches(dataBlacklist, 'Sheet 4 (Blacklist - REJECT)');
 
-  const combinedMatches = [...matchesBlacklist, ...matches2023, ...matches2024, ...matches2025]
+  const combinedMatches = [...matchesBlacklist, ...matches2025, ...matches2023, ...matches2024]
   const hasBlacklistMatch = matchesBlacklist.length > 0
   const hasMatch = combinedMatches.length > 0
 
@@ -164,68 +164,4 @@ export function CheckDataIndicator({ actor, data2023, data2024, data2025, dataBl
     </>
   )
 }
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
-                    <div className="space-y-1 border-b pb-2 md:border-b-0 md:pb-0">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5"><User className="w-3 h-3"/> Nama Lengkap (Data Cek)</p>
-                      <p className={`text-sm font-bold uppercase ${itemIsBlacklist ? "text-red-700" : "text-slate-800"}`}>{data.nama || "-"}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5"><FileText className="w-3 h-3"/> No. KK / NIK</p>
-                      <p className="text-sm font-bold text-slate-800 font-mono">{data.noKK || "-"} <span className="opacity-40">/</span> {data.nik || "-"}</p>
-                    </div>
-                    <div className="space-y-1 border-b pb-2 md:border-b-0 md:pb-0">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5"><SearchCheck className="w-3 h-3"/> Nomor (ID Program)</p>
-                      <p className="text-sm font-bold text-slate-800">{data.nomor || "-"}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5"><Database className="w-3 h-3"/> Sektor Usaha</p>
-                      <p className="text-sm font-bold text-slate-800 uppercase">{data.usaha || "-"}</p>
-                    </div>
-                    <div className="space-y-1 md:col-span-2 border-t pt-2">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5">📍 Alamat & Kelurahan</p>
-                      <p className="text-xs font-bold text-slate-800 uppercase">{data.alamat || "-"} <span className="text-primary px-1 font-black"> / </span> {data.kelurahan || "-"}</p>
-                    </div>
-                    <div className="space-y-1 border-t pt-2 md:col-span-2">
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                        <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase">Tahun</p>
-                          <p className="text-xs font-bold">{data.tahunPengajuan || "-"}</p>
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Status</p>
-                          <p className={`text-xs font-bold ${itemIsBlacklist ? "text-red-600" : "text-primary"}`}>{data.status || "-"}</p>
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Status LPJ</p>
-                          <p className="text-[11px] font-bold text-amber-600">{data.statusLpj || "-"}</p>
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase">Nominal</p>
-                          <p className="text-xs font-bold text-emerald-600">{formatCurrency(data.nominal)}</p>
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase">Kecamatan</p>
-                          <p className="text-xs font-bold">{data.kecamatan || "-"}</p>
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase">Koordinator</p>
-                          <p className="text-xs font-bold">{data.coordinator || "-"}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          
-          <div className="pt-4">
-            <Button className="w-full font-bold h-12 bg-slate-900 hover:bg-slate-800 text-white" onClick={() => setIsDialogOpen(false)}>
-              TUTUP DATA PEMBANDING
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  )
-}
+

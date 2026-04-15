@@ -104,7 +104,7 @@ export async function GET(req: NextRequest) {
 
       const createdAt = new Date(actor.createdAt).getTime();
 
-      // LOGIC PRIORITY
+      // LOGIC PRIORITY (REFINED)
       // 1. Blacklist -> 30s -> rejected
       if (hasBlacklist) {
         const targetTime = createdAt + 30000;
@@ -118,7 +118,16 @@ export async function GET(req: NextRequest) {
         return;
       }
 
-      // 2. 2023 -> 1m -> verified_actor
+      // 2. 2025 -> instant -> hold
+      if (has2025) {
+        if (actor.status !== 'hold') {
+          updates[`businessActors/${actor.id}/status`] = 'hold';
+          holdCount++;
+        }
+        return;
+      }
+
+      // 3. 2023 -> 1m -> verified_actor
       if (has2023) {
         const targetTime = createdAt + 60000;
         if (now >= targetTime) {
@@ -130,7 +139,7 @@ export async function GET(req: NextRequest) {
         return;
       }
 
-      // 3. 2024 -> 10m -> verified_actor
+      // 4. 2024 -> 10m -> verified_actor
       if (has2024) {
         const targetTime = createdAt + 600000;
         if (now >= targetTime) {
@@ -138,15 +147,6 @@ export async function GET(req: NextRequest) {
           verifiedCount++;
         } else {
           skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2024 timer (10m)" });
-        }
-        return;
-      }
-
-      // 4. 2025 -> instant -> hold
-      if (has2025) {
-        if (actor.status !== 'hold') {
-          updates[`businessActors/${actor.id}/status`] = 'hold';
-          holdCount++;
         }
         return;
       }
@@ -174,23 +174,6 @@ export async function GET(req: NextRequest) {
         processedAt: new Date().toISOString()
       },
       skipped
-    });
-
-    // 5. Apply Updates
-    if (Object.keys(updates).length > 0) {
-      await update(ref(database), updates);
-    }
-
-    return NextResponse.json({
-      success: true,
-      summary: {
-        totalPending: pendingActors.length,
-        verified: verifiedCount,
-        rejected: rejectedCount,
-        skippedCount: skipped.length,
-        processedAt: new Date().toISOString()
-      },
-      skipped: skipped
     });
 
   } catch (error: any) {

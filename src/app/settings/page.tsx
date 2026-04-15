@@ -23,6 +23,7 @@ import {
   Check,
   XCircle,
   Lock,
+  Clock,
   Key
 } from "lucide-react"
 import { updatePassword } from "firebase/auth"

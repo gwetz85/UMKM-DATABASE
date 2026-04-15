@@ -29,14 +29,14 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
 }) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   
-  // Logic Baru:
-  // Blacklist -> 30s
-  // 2023 -> 1m
-  // 2024 -> 10m
-  // 2025 -> HOLD (instant)
+  // Priority Logic Refined:
+  // 1. Blacklist -> 30s
+  // 2. 2025 -> HOLD
+  // 3. 2023 -> 1m
+  // 4. 2024 -> 10m
   
-  const targetMins = matches.hasBlacklist ? 0.5 : (matches.has2023 ? 1 : (matches.has2024 ? 10 : null));
-  const isHold = matches.has2025;
+  const targetMins = matches.hasBlacklist ? 0.5 : (!matches.has2025 ? (matches.has2023 ? 1 : (matches.has2024 ? 10 : null)) : null);
+  const isHold = !matches.hasBlacklist && matches.has2025;
 
   // Validation: Check if all mandatory fields are present
   const isDataComplete = !!(
