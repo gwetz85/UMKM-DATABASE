@@ -206,7 +206,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               </div>
               
               {!isLoginPage && <ChatBubble />}
-              {!isKoordinator && <BackgroundMusic />}
+              {(isLoginPage || !isKoordinator) && <BackgroundMusic />}
             </main>
           </div>
         </div>

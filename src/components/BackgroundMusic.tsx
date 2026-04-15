@@ -34,7 +34,7 @@ export function BackgroundMusic() {
   // Configuration: YouTube Playlist
   // Playlist ID: PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7
   const playlistId = "PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7";
-  const useShuffle = false;
+  const useShuffle = true; // Enabled shuffle by default for better experience
 
   useEffect(() => {
     // 1. Load the YouTube IFrame API script manually
@@ -70,26 +70,31 @@ export function BackgroundMusic() {
         playerVars: {
           listType: 'playlist',
           list: playlistId,
-          autoplay: 1, // Attempt autoplay (browser may still block until interaction)
+          autoplay: 1, 
           loop: 1,
-          playlist: playlistId,
+          playlist: playlistId, // Required for loop to work with playlists
           controls: 0,
           showinfo: 0,
           modestbranding: 1,
           disablekb: 1,
           rel: 0,
           origin: currentOrigin,
+          mute: isMuted ? 1 : 0, // Set initial mute state in playerVars
         },
         events: {
           onReady: (event: any) => {
             setIsPlayerReady(true);
-            // Ensure the playlist is told to loop
+            
+            // Set loop for the player
             event.target.setLoop(true);
             
-            event.target.cuePlaylist({
-              listType: 'playlist',
-              list: playlistId,
-            });
+            // Handle shuffle if enabled
+            if (useShuffle) {
+              event.target.setShuffle(true);
+            }
+            
+            // Load or cue depending on interaction
+            // Note: loading might fail autoplay, but we handle it via interaction below
             
             if (isMuted) {
               event.target.mute();
@@ -98,32 +103,44 @@ export function BackgroundMusic() {
               event.target.setVolume(50);
             }
 
-            // Get initial title if already playing or cued
+            // Get initial title
             const videoData = event.target.getVideoData();
             if (videoData && videoData.title) {
               setCurrentTitle(videoData.title);
             }
           },
           onStateChange: (event: any) => {
-            // If the player starts playing, we consider it "interacted" or successful
-            if (event.data === window.YT.PlayerState.PLAYING) {
+            const playerState = event.data;
+            
+            if (playerState === window.YT.PlayerState.PLAYING) {
               setHasInteracted(true);
               setIsPlaying(true);
               
-              // Update title when video changes/starts
               const videoData = event.target.getVideoData();
               if (videoData && videoData.title) {
                 setCurrentTitle(videoData.title);
               }
-            } else if (event.data === window.YT.PlayerState.PAUSED) {
+            } else if (playerState === window.YT.PlayerState.PAUSED) {
               setIsPlaying(false);
-            } else if (event.data === window.YT.PlayerState.ENDED) {
-              // Robust fallback: if reached the end, restart playlist
+            } else if (playerState === window.YT.PlayerState.ENDED) {
+              // If it ended and didn't loop automatically, force it
               event.target.playVideoAt(0);
+            } else if (playerState === window.YT.PlayerState.UNSTARTED) {
+              // Sometimes playlists get stuck at unstarted when moving between videos
+              // If we have interacted, try to kickstart it
+              if (hasInteracted) {
+                event.target.playVideo();
+              }
             }
           },
           onError: (event: any) => {
             console.error("YouTube Player Error:", event.data);
+            // On error, try to skip to next video after a short delay
+            setTimeout(() => {
+              if (playerRef.current && isPlayerReady) {
+                playerRef.current.nextVideo();
+              }
+            }, 2000);
           }
         },
       });
@@ -160,6 +177,21 @@ export function BackgroundMusic() {
 
     return () => resizeObserver.disconnect();
   }, [isPlayerReady]);
+
+  // 3. Global Interaction Handler: Support autoplay by playing on first window click
+  useEffect(() => {
+    if (!isPlayerReady || hasInteracted || isMuted) return;
+
+    const handleWindowClick = () => {
+      if (playerRef.current && !hasInteracted) {
+        playerRef.current.playVideo();
+        // The play event will setHasInteracted(true) in onStateChange
+      }
+    };
+
+    window.addEventListener('click', handleWindowClick, { once: true });
+    return () => window.removeEventListener('click', handleWindowClick);
+  }, [isPlayerReady, hasInteracted, isMuted]);
 
 
 
