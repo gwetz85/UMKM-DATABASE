@@ -6,7 +6,6 @@ import { Play, Pause, SkipBack, SkipForward, Music2, ListMusic, Volume2, VolumeX
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { BackgroundMusic } from './BackgroundMusic';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, RefreshCw } from 'lucide-react';
 
@@ -48,10 +47,19 @@ export function MusicDashboardCard() {
       setIsReady(isPlayerReady);
       setIsMuted(isMuted);
 
-      // Dynamic Sync: If a new song is detected that's not in our list, add it
-      if (currentTitle && !playlist.some(item => currentTitle.toLowerCase().includes(item.toLowerCase()) || 
-                                              item.toLowerCase().includes(currentTitle.toLowerCase()))) {
-        setPlaylist(prev => [...prev, currentTitle]);
+      // Dynamic Sync: Refined duplicate detection
+      if (currentTitle) {
+        const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+        const normalizedCurrent = normalize(currentTitle);
+        
+        const exists = playlist.some(item => {
+          const normalizedItem = normalize(item);
+          return normalizedItem.includes(normalizedCurrent) || normalizedCurrent.includes(normalizedItem);
+        });
+
+        if (!exists) {
+          setPlaylist(prev => [...prev, currentTitle]);
+        }
       }
     };
 
@@ -126,9 +134,6 @@ export function MusicDashboardCard() {
 
   return (
     <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none">
-      {/* Hidden Global Audio Engine */}
-      <BackgroundMusic className="hidden" />
-      
       <CardHeader className="bg-primary/10 pb-4">
         <CardTitle className="text-base md:text-lg font-bold flex items-center justify-between text-primary">
           <div className="flex items-center gap-2">
