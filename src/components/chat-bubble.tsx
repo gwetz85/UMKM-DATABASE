@@ -255,7 +255,7 @@ export function ChatBubble() {
   if (!user || !currentUserProfile) return null;
 
   return (
-    <div className="fixed bottom-[115px] right-4 md:bottom-[155px] md:right-8 z-[1000] print:hidden flex flex-col items-end">
+    <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-[1000] print:hidden flex flex-col items-end">
       {/* Chat Bubble Button */}
       {!isOpen && (
         <div style={{ position: 'relative' }}>
