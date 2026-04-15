@@ -44,37 +44,38 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
   const results = useMemo(() => {
     if (!searchTerm || isLoading) return []
 
-    const q = searchTerm.toLowerCase().trim()
+    const q = searchTerm.trim()
+    const qLower = q.toLowerCase()
     const matches: any[] = []
+
+    const matchesQuery = (item: any) => {
+      // Check NIK with exact match (String conversion for numeric NIK values)
+      if (item.nik && String(item.nik).trim() === q) return true
+      // Check NoKK with exact match
+      if (item.noKK && String(item.noKK).trim() === q) return true
+      // Check name fields with partial match (case-insensitive)
+      if (item.fullName && String(item.fullName).toLowerCase().includes(qLower)) return true
+      if (item.nama && String(item.nama).toLowerCase().includes(qLower)) return true
+      if (item.businessName && String(item.businessName).toLowerCase().includes(qLower)) return true
+      if (item.usaha && String(item.usaha).toLowerCase().includes(qLower)) return true
+      return false
+    }
 
     // Search in Business Actors
     if (allActors) {
-      allActors.filter((a: any) => 
-        (a.fullName || "").toLowerCase().includes(q) ||
-        (a.nik || "").includes(q) ||
-        (a.businessName || "").toLowerCase().includes(q)
-      ).forEach(a => matches.push({ ...a, _sourceType: 'Registration' }))
+      allActors.filter(matchesQuery).forEach(a => matches.push({ ...a, _sourceType: 'Registration' }))
     }
 
     // Search in Master Data
     if (allMaster) {
-      allMaster.filter((m: any) => 
-        (m.nama || "").toLowerCase().includes(q) ||
-        (m.nik || "").includes(q) ||
-        (m.fullName || "").toLowerCase().includes(q)
-      ).forEach(m => matches.push({ ...m, _sourceType: 'Master (Accepted)' }))
+      allMaster.filter(matchesQuery).forEach(m => matches.push({ ...m, _sourceType: 'Master (Accepted)' }))
     }
 
     // Search in Blacklist Data
     if (allBlacklist) {
-      allBlacklist.filter((b: any) => 
-        (b.nama || "").toLowerCase().includes(q) ||
-        (b.nik || "").includes(q) ||
-        (b.fullName || "").toLowerCase().includes(q)
-      ).forEach(b => matches.push({ ...b, _sourceType: 'Blacklist (Rejected)' }))
+      allBlacklist.filter(matchesQuery).forEach(b => matches.push({ ...b, _sourceType: 'Blacklist (Rejected)' }))
     }
 
-    // Deduplicate by NIK if possible, but keeping multiple records for same NIK if they are from different sources is better
     return matches
   }, [searchTerm, allActors, allMaster, allBlacklist, isLoading])
 
