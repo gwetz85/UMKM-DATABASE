@@ -118,11 +118,19 @@ export async function GET(req: NextRequest) {
         return;
       }
 
-      // 2. 2025 -> instant -> hold
+      // 2. 2025 -> instant -> hold (moves to manual after 24h)
       if (has2025) {
-        if (actor.status !== 'hold') {
-          updates[`businessActors/${actor.id}/status`] = 'hold';
-          holdCount++;
+        const holdTargetTime = createdAt + (24 * 60 * 60 * 1000); 
+        if (now >= holdTargetTime) {
+          if (actor.status !== 'verifikasi_manual') {
+            updates[`businessActors/${actor.id}/status`] = 'verifikasi_manual';
+          }
+        } else {
+          if (actor.status !== 'hold') {
+            updates[`businessActors/${actor.id}/status`] = 'hold';
+            holdCount++;
+          }
+          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2025/HOLD timer (24h)" });
         }
         return;
       }

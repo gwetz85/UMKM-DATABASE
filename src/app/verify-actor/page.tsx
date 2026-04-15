@@ -30,12 +30,12 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   
   // Priority Logic Refined:
-  // 1. Blacklist -> 30s
-  // 2. 2025 -> HOLD
-  // 3. 2023 -> 1m
-  // 4. 2024 -> 10m
+  // 1. Blacklist -> 30s -> Rejected
+  // 2. 2025 -> 24h -> Manual
+  // 3. 2023 -> 1m -> Verified
+  // 4. 2024 -> 10m -> Verified
   
-  const targetMins = matches.hasBlacklist ? 0.5 : (!matches.has2025 ? (matches.has2023 ? 1 : (matches.has2024 ? 10 : null)) : null);
+  const targetMins = matches.hasBlacklist ? 0.5 : (matches.has2025 ? 1440 : (matches.has2023 ? 1 : (matches.has2024 ? 10 : null)));
   const isHold = !matches.hasBlacklist && matches.has2025;
 
   // Validation: Check if all mandatory fields are present
@@ -55,10 +55,10 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
     }
 
     if (isHold) {
-       if (actor.status !== 'hold' && isAdmin && database) {
+       if (actor.status !== 'hold' && actor.status !== 'verifikasi_manual' && isAdmin && database) {
          updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'hold' });
        }
-       return;
+       // Don't return, let the timer run to move it to manual after 24h
     }
 
     if (targetMins === null) {
@@ -76,6 +76,10 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
           updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
             status: 'rejected',
             rejectionReason: 'Ditolak Otomatis: Terdaftar di Data Blacklist (Sheet 4).'
+          })
+        } else if (matches.has2025 || targetMins === null) {
+          updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
+            status: 'verifikasi_manual'
           })
         } else {
           updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
@@ -119,14 +123,23 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
     )
   }
 
-  if (isHold) {
+  if (timeLeft === 0) {
     return (
-      <div className="flex items-center gap-1.5 text-blue-600 font-black text-[9px] uppercase bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-lg shadow-sm">
-        <Clock className="w-3.5 h-3.5" />
-        <span>DATA DI-HOLD</span>
+      <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-[10px] animate-pulse">
+        <Loader2 className="w-3 h-3 animate-spin" />
+        <span>PROSES...</span>
       </div>
     )
   }
+
+  const formatLargeTime = (ms: number | null) => {
+    if (ms === null) return "--:--:--";
+    const totalSecs = Math.floor(ms / 1000);
+    const hrs = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   if (targetMins === null) {
     return (
@@ -137,15 +150,15 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
     )
   }
 
-  if (timeLeft === null) return <Loader2 className="w-3 h-3 animate-spin opacity-20" />
+  if (timeLeft === null) return <div className="flex items-center gap-1.5 opacity-20"><Loader2 className="w-3 h-3 animate-spin" /></div>
 
-  if (timeLeft === 0) {
+  if (isHold) {
     return (
-      <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-[10px] animate-pulse">
-        <Loader2 className="w-3 h-3 animate-spin" />
-        <span>PROSES...</span>
+      <div className="flex items-center gap-1.5 text-blue-600 font-black text-[9px] uppercase bg-blue-50 border border-blue-200 px-2.5 py-1.5 rounded-lg shadow-sm">
+        <Clock className="w-3.5 h-3.5" />
+        <span>HOLD: {formatLargeTime(timeLeft)}</span>
       </div>
-    )
+    );
   }
 
   const hours = Math.floor(timeLeft / 3600000)
