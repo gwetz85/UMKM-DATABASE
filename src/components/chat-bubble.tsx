@@ -108,7 +108,9 @@ export function ChatBubble() {
   useEffect(() => {
     if (!selectedUser || !user || !database) return;
 
-    const chatId = [user.uid, selectedUser.uid].sort().join('_');
+    const currentId = user.email?.split('@')[0] || user.uid;
+    const selectedId = selectedUser.id || selectedUser.uid;
+    const chatId = [currentId, selectedId].sort().join('_');
     const messagesRef = ref(database, 'chat_messages');
     
     // Mark as read when opening
@@ -143,7 +145,9 @@ export function ChatBubble() {
     e.preventDefault();
     if (!inputText.trim() || !selectedUser || !user || !database) return;
 
-    const chatId = [user.uid, selectedUser.uid || selectedUser.id].sort().join('_');
+    const currentId = user.email?.split('@')[0] || user.uid;
+    const selectedId = selectedUser.id || selectedUser.uid;
+    const chatId = [currentId, selectedId].sort().join('_');
     
     const messagesRef = ref(database, 'chat_messages');
     addDocumentNonBlocking(messagesRef, {
@@ -182,7 +186,9 @@ export function ChatBubble() {
     setIsUploading(true);
     
     try {
-      const chatId = [user.uid, selectedUser.uid || selectedUser.id].sort().join('_');
+      const currentId = user.email?.split('@')[0] || user.uid;
+      const selectedId = selectedUser.id || selectedUser.uid;
+      const chatId = [currentId, selectedId].sort().join('_');
       
       // Convert file to Base64 (Data URL)
       const base64Data = await new Promise<string>((resolve, reject) => {
