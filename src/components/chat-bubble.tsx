@@ -219,10 +219,10 @@ export function ChatBubble() {
 
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error: any) {
-      console.error("Base64 conversion error:", error);
+      console.error("File processing error:", error);
       toast({
         title: "Gagal Mengunggah",
-        description: "Terjadi kesalahan saat memproses file.",
+        description: error.message || "Terjadi kesalahan saat memproses file. Pastikan file tidak rusak.",
         variant: "destructive"
       });
     } finally {
