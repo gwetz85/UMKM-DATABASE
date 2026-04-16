@@ -143,21 +143,21 @@ export function ChatBubble() {
     e.preventDefault();
     if (!inputText.trim() || !selectedUser || !user || !database) return;
 
-    const chatId = [user.uid, selectedUser.uid].sort().join('_');
+    const chatId = [user.uid, selectedUser.uid || selectedUser.id].sort().join('_');
     
     const messagesRef = ref(database, 'chat_messages');
     addDocumentNonBlocking(messagesRef, {
       chatId,
       senderId: user.uid,
       senderName: currentUserProfile?.fullName || 'User',
-      receiverId: selectedUser.uid,
+      receiverId: selectedUser.uid || selectedUser.id || 'unknown',
       text: inputText,
       timestamp: serverTimestamp()
     });
 
-    const unreadRef = ref(database, `chat_unread/${selectedUser.uid}_${chatId}`);
+    const unreadRef = ref(database, `chat_unread/${selectedUser.uid || selectedUser.id}_${chatId}`);
     setDocumentNonBlocking(unreadRef, {
-      userId: selectedUser.uid,
+      userId: selectedUser.uid || selectedUser.id || 'unknown',
       chatId: chatId,
       hasUnread: true
     });
@@ -182,13 +182,13 @@ export function ChatBubble() {
     setIsUploading(true);
     
     try {
-      const chatId = [user.uid, selectedUser.uid].sort().join('_');
+      const chatId = [user.uid, selectedUser.uid || selectedUser.id].sort().join('_');
       
       // Convert file to Base64 (Data URL)
       const base64Data = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
+        reader.onerror = () => reject(new Error("Gagal membaca file."));
         reader.readAsDataURL(file);
       });
 
@@ -197,7 +197,7 @@ export function ChatBubble() {
         chatId,
         senderId: user.uid,
         senderName: currentUserProfile?.fullName || 'User',
-        receiverId: selectedUser.uid,
+        receiverId: selectedUser.uid || selectedUser.id || 'unknown',
         text: `Mengirim file: ${file.name}`,
         fileUrl: base64Data, // Storing Base64 string directly
         fileName: file.name,
@@ -205,9 +205,9 @@ export function ChatBubble() {
         timestamp: serverTimestamp()
       });
 
-      const unreadRef = ref(database, `chat_unread/${selectedUser.uid}_${chatId}`);
+      const unreadRef = ref(database, `chat_unread/${selectedUser.uid || selectedUser.id}_${chatId}`);
       setDocumentNonBlocking(unreadRef, {
-        userId: selectedUser.uid,
+        userId: selectedUser.uid || selectedUser.id || 'unknown',
         chatId: chatId,
         hasUnread: true
       });
