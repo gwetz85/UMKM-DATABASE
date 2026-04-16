@@ -124,9 +124,10 @@ export function ChatBubble() {
     }
 
     setIsLoadingMessages(true);
-    const messagesQuery = query(ref(database, 'chat_messages'), orderByChild('chatId'), equalTo(chatId));
+    // Listen directly to the room's node for 100% reliability and speed
+    const messagesRef = ref(database, `chat_messages/${chatId}`);
 
-    const unsubscribe = onValue(messagesQuery, (snapshot) => {
+    const unsubscribe = onValue(messagesRef, (snapshot) => {
       const msgList: any[] = [];
       snapshot.forEach(child => {
         msgList.push({
@@ -154,7 +155,8 @@ export function ChatBubble() {
     const theirUsername = normalize(selectedUser.id || selectedUser.uid);
     const chatId = [myUsername, theirUsername].sort().join('_');
     
-    const messagesRef = ref(database, 'chat_messages');
+    // Save directly to the room's specific node
+    const messagesRef = ref(database, `chat_messages/${chatId}`);
     addDocumentNonBlocking(messagesRef, {
       chatId,
       senderId: myUsername,
@@ -202,7 +204,7 @@ export function ChatBubble() {
         reader.readAsDataURL(file);
       });
 
-      const messagesRef = ref(database, 'chat_messages');
+      const messagesRef = ref(database, `chat_messages/${chatId}`);
       addDocumentNonBlocking(messagesRef, {
         chatId,
         senderId: myUsername,
