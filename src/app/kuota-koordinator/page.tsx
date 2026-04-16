@@ -82,7 +82,8 @@ export default function KuotaKorlapDewanAktifPage() {
         ...item,
         quota,
         achieved,
-        remaining
+        remaining,
+        remainingPercent: quota > 0 ? (remaining / quota) * 100 : 0
       }
     }).sort((a: any, b: any) => {
       const nameA = (a.name || "").toLowerCase()
@@ -241,6 +242,7 @@ export default function KuotaKorlapDewanAktifPage() {
                   <TableHead className="font-bold uppercase text-[10px] text-center">Kuota KORLAP / DEWAN AKTIF</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] text-center">Tercapai</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] text-center">Sisa</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px] text-center">Sisa (%)</TableHead>
                   <TableHead className="text-right font-bold uppercase text-[10px]">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -270,6 +272,16 @@ export default function KuotaKorlapDewanAktifPage() {
                         )}>
                           {item.remaining}
                        </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                        <span className={cn(
+                          "inline-flex items-center justify-center font-black px-2 py-1 rounded-md min-w-[3rem] text-[10px] border shadow-sm",
+                          item.remainingPercent <= 0 
+                            ? "bg-red-50 text-red-600 border-red-100" 
+                            : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                        )}>
+                          {item.remainingPercent.toFixed(1)}%
+                        </span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -317,7 +329,7 @@ export default function KuotaKorlapDewanAktifPage() {
                 ))}
                 {combinedKuotaData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic font-medium">
+                    <TableCell colSpan={7} className="text-center py-20 text-muted-foreground italic font-medium">
                       Belum ada data target kuota yang didaftarkan.
                     </TableCell>
                   </TableRow>
@@ -334,7 +346,7 @@ export default function KuotaKorlapDewanAktifPage() {
                   <TableCell className="text-center font-black text-emerald-600 text-base">
                     {totalAchieved}
                   </TableCell>
-                  <TableCell colSpan={2}></TableCell>
+                  <TableCell colSpan={3}></TableCell>
                 </TableRow>
               </TableFooter>
             </Table>
