@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Search, User as UserIcon, Paperclip, FileText, Image as ImageIcon, Download, Loader2 } from 'lucide-react';
 import { useUser, useDatabase, useList, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking, useStorage } from '@/firebase';
-import { ref, query, equalTo, onValue, serverTimestamp, onDisconnect, update, orderByChild } from 'firebase/database';
+import { ref, onValue, serverTimestamp, onDisconnect, update } from 'firebase/database';
 // Storage imports removed to keep the app free (using Base64 in Realtime Database)
 import { ref as storageRef, uploadBytes, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { useOfficeStatus } from '@/hooks/useOfficeStatus';
@@ -116,7 +116,6 @@ export function ChatBubble() {
     const theirUsername = normalize(selectedUser.id || selectedUser.uid);
     const chatId = [myUsername, theirUsername].sort().join('_');
     
-    const messagesRef = ref(database, 'chat_messages');
     
     // Mark as read when opening
     if (isOpen) {
