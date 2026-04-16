@@ -140,7 +140,7 @@ export function ChatBubble() {
     });
 
     return () => unsubscribe();
-  }, [selectedUser, user, database, isOpen]);
+  }, [selectedUser, user, database, isOpen, myUsername]);
 
   // Auto scroll to bottom
   useEffect(() => {
