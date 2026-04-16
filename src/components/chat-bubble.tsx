@@ -39,6 +39,10 @@ export function ChatBubble() {
     role: 'Pengguna'
   };
 
+  // ID Normalization helper
+  const normalize = (id: string) => (id || '').toLowerCase().trim().replace(/\s+/g, '_');
+  const myUsername = normalize(currentUserProfile?.id || user?.email?.split('@')[0] || user?.uid);
+
   // Show all users but sort online ones to top
   const sortedUsers = (allUsers || []).filter((u: any) => u.uid !== user?.uid).sort((a, b) => {
     if (a.isOnline === b.isOnline) return (a.fullName || '').localeCompare(b.fullName || '');
@@ -108,16 +112,14 @@ export function ChatBubble() {
   useEffect(() => {
     if (!selectedUser || !user || !database) return;
 
-    const normalize = (id: string) => (id || '').toLowerCase().trim().replace(/\s+/g, '_');
-    const myId = normalize(currentUserProfile?.id || user.email?.split('@')[0] || user.uid);
-    const theirId = normalize(selectedUser.id || selectedUser.uid);
-    const chatId = [myId, theirId].sort().join('_');
+    const theirUsername = normalize(selectedUser.id || selectedUser.uid);
+    const chatId = [myUsername, theirUsername].sort().join('_');
     
     const messagesRef = ref(database, 'chat_messages');
     
     // Mark as read when opening
     if (isOpen) {
-      deleteDocumentNonBlocking(ref(database, `chat_unread/${user.uid}_${chatId}`));
+      deleteDocumentNonBlocking(ref(database, `chat_unread/${myUsername}_${chatId}`));
     }
 
     const unsubscribe = onValue(messagesRef, (snapshot) => {
@@ -147,24 +149,22 @@ export function ChatBubble() {
     e.preventDefault();
     if (!inputText.trim() || !selectedUser || !user || !database) return;
 
-    const normalize = (id: string) => (id || '').toLowerCase().trim().replace(/\s+/g, '_');
-    const myId = normalize(currentUserProfile?.id || user.email?.split('@')[0] || user.uid);
-    const theirId = normalize(selectedUser.id || selectedUser.uid);
-    const chatId = [myId, theirId].sort().join('_');
+    const theirUsername = normalize(selectedUser.id || selectedUser.uid);
+    const chatId = [myUsername, theirUsername].sort().join('_');
     
     const messagesRef = ref(database, 'chat_messages');
     addDocumentNonBlocking(messagesRef, {
       chatId,
-      senderId: user.uid,
+      senderId: myUsername,
       senderName: currentUserProfile?.fullName || 'User',
-      receiverId: selectedUser.uid || selectedUser.id || 'unknown',
+      receiverId: theirUsername,
       text: inputText,
       timestamp: serverTimestamp()
     });
 
-    const unreadRef = ref(database, `chat_unread/${selectedUser.uid || selectedUser.id}_${chatId}`);
+    const unreadRef = ref(database, `chat_unread/${theirUsername}_${chatId}`);
     setDocumentNonBlocking(unreadRef, {
-      userId: selectedUser.uid || selectedUser.id || 'unknown',
+      userId: theirUsername,
       chatId: chatId,
       hasUnread: true
     });
@@ -189,10 +189,8 @@ export function ChatBubble() {
     setIsUploading(true);
     
     try {
-      const normalize = (id: string) => (id || '').toLowerCase().trim().replace(/\s+/g, '_');
-      const myId = normalize(currentUserProfile?.id || user.email?.split('@')[0] || user.uid);
-      const theirId = normalize(selectedUser.id || selectedUser.uid);
-      const chatId = [myId, theirId].sort().join('_');
+      const theirUsername = normalize(selectedUser.id || selectedUser.uid);
+      const chatId = [myUsername, theirUsername].sort().join('_');
       
       // Convert file to Base64 (Data URL)
       const base64Data = await new Promise<string>((resolve, reject) => {
@@ -205,9 +203,9 @@ export function ChatBubble() {
       const messagesRef = ref(database, 'chat_messages');
       addDocumentNonBlocking(messagesRef, {
         chatId,
-        senderId: user.uid,
+        senderId: myUsername,
         senderName: currentUserProfile?.fullName || 'User',
-        receiverId: selectedUser.uid || selectedUser.id || 'unknown',
+        receiverId: theirUsername,
         text: `Mengirim file: ${file.name}`,
         fileUrl: base64Data, // Storing Base64 string directly
         fileName: file.name,
@@ -215,9 +213,9 @@ export function ChatBubble() {
         timestamp: serverTimestamp()
       });
 
-      const unreadRef = ref(database, `chat_unread/${selectedUser.uid || selectedUser.id}_${chatId}`);
+      const unreadRef = ref(database, `chat_unread/${theirUsername}_${chatId}`);
       setDocumentNonBlocking(unreadRef, {
-        userId: selectedUser.uid || selectedUser.id || 'unknown',
+        userId: theirUsername,
         chatId: chatId,
         hasUnread: true
       });
@@ -494,9 +492,9 @@ export function ChatBubble() {
                   <div
                     key={msg.id}
                     style={{
-                      alignSelf: msg.senderId === user.uid ? 'flex-end' : 'flex-start',
+                      alignSelf: msg.senderId === myUsername ? 'flex-end' : 'flex-start',
                       maxWidth: '85%', display: 'flex', gap: '0.6rem',
-                      flexDirection: msg.senderId === user.uid ? 'row-reverse' : 'row',
+                      flexDirection: msg.senderId === myUsername ? 'row-reverse' : 'row',
                       alignItems: 'flex-end'
                     }}
                   >
@@ -506,23 +504,23 @@ export function ChatBubble() {
                       background: 'rgba(37, 99, 235, 0.1)', flexShrink: 0,
                       border: '1px solid rgba(0,0,0,0.05)', marginBottom: '1.2rem'
                     }}>
-                       {(allUsers || []).find((u: any) => u.uid === msg.senderId)?.photoURL ? (
-                         <img src={(allUsers || []).find((u: any) => u.uid === msg.senderId)?.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                       {(allUsers || []).find((u: any) => (u.id || u.uid) === msg.senderId)?.photoURL ? (
+                         <img src={(allUsers || []).find((u: any) => (u.id || u.uid) === msg.senderId)?.photoURL} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                        ) : (
                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'hsl(var(--primary))', fontSize: '10px' }}>
                            <UserIcon size={12} />
                          </div>
                        )}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: msg.senderId === user.uid ? 'flex-end' : 'flex-start' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: msg.senderId === myUsername ? 'flex-end' : 'flex-start' }}>
                     <div style={{
                       padding: '0.75rem 1.1rem', borderRadius: '18px',
-                      borderBottomLeftRadius: msg.senderId === user.uid ? '18px' : '4px',
-                      borderBottomRightRadius: msg.senderId === user.uid ? '4px' : '18px',
-                      background: msg.senderId === user.uid ? 'hsl(var(--primary))' : '#f3f4f6',
-                      color: msg.senderId === user.uid ? 'white' : '#1f2937', 
+                      borderBottomLeftRadius: msg.senderId === myUsername ? '18px' : '4px',
+                      borderBottomRightRadius: msg.senderId === myUsername ? '4px' : '18px',
+                      background: msg.senderId === myUsername ? 'hsl(var(--primary))' : '#f3f4f6',
+                      color: msg.senderId === myUsername ? 'white' : '#1f2937', 
                       fontSize: '0.95rem', lineHeight: '1.5', fontWeight: 500,
-                      boxShadow: msg.senderId === user.uid ? '0 4px 12px rgba(37, 99, 235, 0.2)' : 'none',
+                      boxShadow: msg.senderId === myUsername ? '0 4px 12px rgba(37, 99, 235, 0.2)' : 'none',
                       display: 'flex', flexDirection: 'column', gap: '0.5rem'
                     }}>
                       {msg.fileUrl ? (
