@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Search, User as UserIcon, Paperclip, FileText, Image as ImageIcon, Download, Loader2 } from 'lucide-react';
 import { useUser, useDatabase, useList, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking, useStorage } from '@/firebase';
-import { ref, query, equalTo, onValue, serverTimestamp, onDisconnect, update } from 'firebase/database';
+import { ref, query, equalTo, onValue, serverTimestamp, onDisconnect, update, orderByChild } from 'firebase/database';
 // Storage imports removed to keep the app free (using Base64 in Realtime Database)
 import { ref as storageRef, uploadBytes, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { useOfficeStatus } from '@/hooks/useOfficeStatus';
@@ -122,19 +122,19 @@ export function ChatBubble() {
       deleteDocumentNonBlocking(ref(database, `chat_unread/${myUsername}_${chatId}`));
     }
 
-    const unsubscribe = onValue(messagesRef, (snapshot) => {
+    const messagesQuery = query(ref(database, 'chat_messages'), orderByChild('chatId'), equalTo(chatId));
+
+    const unsubscribe = onValue(messagesQuery, (snapshot) => {
       const msgList: any[] = [];
       snapshot.forEach(child => {
-        const data = child.val();
-        if (data.chatId === chatId) {
-          msgList.push({
-            id: child.key,
-            ...data
-          });
-        }
+        msgList.push({
+          id: child.key,
+          ...child.val()
+        });
       });
       msgList.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
       setMessages(msgList);
+      setIsLoadingMessages(false);
     });
 
     return () => unsubscribe();
