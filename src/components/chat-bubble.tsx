@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Search, User as UserIcon, Paperclip, FileText, Image as ImageIcon, Download, Loader2 } from 'lucide-react';
 import { useUser, useDatabase, useList, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking, useStorage } from '@/firebase';
 import { ref, query, equalTo, onValue, serverTimestamp, onDisconnect, update } from 'firebase/database';
+// Storage imports removed to keep the app free (using Base64 in Realtime Database)
 import { ref as storageRef, uploadBytes, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { useOfficeStatus } from '@/hooks/useOfficeStatus';
 import { useToast } from '@/hooks/use-toast';
@@ -166,13 +167,13 @@ export function ChatBubble() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !selectedUser || !user || !storage || !database) return;
+    if (!file || !selectedUser || !user || !database) return;
 
-    // Check size limit (e.g., 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Check size limit for Base64 (Keep it small for Database safety: 1MB)
+    if (file.size > 1 * 1024 * 1024) {
       toast({
         title: "File Terlalu Besar",
-        description: "Maksimal ukuran file adalah 5MB.",
+        description: "Maksimal 1MB untuk pengiriman gratis. Untuk file besar, gunakan link eksternal.",
         variant: "destructive"
       });
       return;
@@ -180,62 +181,32 @@ export function ChatBubble() {
 
     setIsUploading(true);
     
-    // Create a timeout promise
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("Timeout: Unggahan terlalu lama (30 detik).")), 30000);
-    });
-
     try {
       const chatId = [user.uid, selectedUser.uid].sort().join('_');
-      const fileExt = file.name.split('.').pop() || '';
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}${fileExt ? '.' + fileExt : ''}`;
-      const path = `chat_files/${chatId}/${fileName}`;
-      const fRef = storageRef(storage, path);
-
-      console.log(`Starting upload to: ${path}`);
       
-      // Use Resumable Upload for better reliability, wrapped in Promise
-      const uploadPromise = new Promise<string>((resolve, reject) => {
-        const uploadTask = uploadBytesResumable(fRef, file);
-        
-        uploadTask.on('state_changed', 
-          (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            console.log('Upload is ' + progress + '% done');
-          }, 
-          (error) => {
-            console.error("Upload task error:", error);
-            reject(error);
-          }, 
-          async () => {
-            try {
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve(downloadURL);
-            } catch (err) {
-              reject(err);
-            }
-          }
-        );
+      // Convert file to Base64 (Data URL)
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
       });
 
-      // Race against timeout
-      const downloadURL = await Promise.race([uploadPromise, timeoutPromise]) as string;
-
       const messagesRef = ref(database, 'chat_messages');
-      await addDocumentNonBlocking(messagesRef, {
+      addDocumentNonBlocking(messagesRef, {
         chatId,
         senderId: user.uid,
         senderName: currentUserProfile?.fullName || 'User',
         receiverId: selectedUser.uid,
         text: `Mengirim file: ${file.name}`,
-        fileUrl: downloadURL,
+        fileUrl: base64Data, // Storing Base64 string directly
         fileName: file.name,
         fileType: file.type.startsWith('image/') ? 'image' : 'pdf',
         timestamp: serverTimestamp()
       });
 
       const unreadRef = ref(database, `chat_unread/${selectedUser.uid}_${chatId}`);
-      await setDocumentNonBlocking(unreadRef, {
+      setDocumentNonBlocking(unreadRef, {
         userId: selectedUser.uid,
         chatId: chatId,
         hasUnread: true
@@ -243,15 +214,15 @@ export function ChatBubble() {
       
       toast({
         title: "Berhasil",
-        description: "File telah terkirim.",
+        description: "File telah terkirim (Mode Gratis).",
       });
 
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (error: any) {
-      console.error("Upload error details:", error);
+      console.error("Base64 conversion error:", error);
       toast({
         title: "Gagal Mengunggah",
-        description: error.message || "Pastikan koneksi internet stabil dan coba lagi.",
+        description: "Terjadi kesalahan saat memproses file.",
         variant: "destructive"
       });
     } finally {
