@@ -20,6 +20,7 @@ export function ChatBubble() {
   const [searchTerm, setSearchTerm] = useState('');
   const [hasUnread, setHasUnread] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [offlineForm, setOfflineForm] = useState({ name: '', phone: '', message: '' });
   const [isSubmittingOffline, setIsSubmittingOffline] = useState(false);
   const [offlineSubmitted, setOfflineSubmitted] = useState(false);
@@ -122,6 +123,7 @@ export function ChatBubble() {
       deleteDocumentNonBlocking(ref(database, `chat_unread/${myUsername}_${chatId}`));
     }
 
+    setIsLoadingMessages(true);
     const messagesQuery = query(ref(database, 'chat_messages'), orderByChild('chatId'), equalTo(chatId));
 
     const unsubscribe = onValue(messagesQuery, (snapshot) => {
