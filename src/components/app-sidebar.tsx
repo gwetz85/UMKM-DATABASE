@@ -216,12 +216,6 @@ export function AppSidebar() {
       show: isAdmin
     },
     {
-      name: "Monitoring Chat",
-      href: "/chat-monitoring",
-      icon: MessageSquare,
-      show: isAdmin || isMonitoring
-    },
-    {
       name: "LOG APLIKASI",
       href: "/app-logs",
       icon: History,

@@ -6,7 +6,6 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { InfoDialog } from '@/components/info-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
-import { ChatBubble } from '@/components/chat-bubble';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
 import { BackgroundMusic } from '@/components/BackgroundMusic';
@@ -207,11 +206,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 </div>
               )}
               <div key={pathname} className="w-full relative z-0 animate-in fade-in-up">
-                {children}
-              </div>
-              
-              {!isLoginPage && <ChatBubble />}
-            </main>
+              {children}
+            </div>
+          </main>
           </div>
         </div>
       </SidebarProvider>
