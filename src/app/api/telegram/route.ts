@@ -321,9 +321,9 @@ export async function POST(req: NextRequest) {
                       `Silakan *Salin (Copy)* template di bawah ini, isi data dengan lengkap, lalu kirim kembali ke bot:\n\n` +
                       `\`/simpandata\n` +
                       `Nama Lengkap: \n` +
-                      `Jenis Kelamin: \n` +
                       `NIK: \n` +
                       `Nomor KK: \n` +
+                      `Jenis Kelamin: \n` +
                       `TTL: \n` +
                       `Nomor HP: \n` +
                       `Alamat: \n` +
@@ -331,14 +331,15 @@ export async function POST(req: NextRequest) {
                       `Kelurahan: \n` +
                       `Kecamatan: \n` +
                       `Jenis Usaha: \n` +
-                      `Usaha: \n` +
+                      `Nama Usaha: \n` +
                       `Lokasi Usaha: \n` +
                       `Koordinator: \`\n\n` +
-                      `⚠️ *CatatanPentimg:*\n` +
+                      `⚠️ *Catatan Penting:*\n` +
                       `▫️ Biarkan \`/simpandata\` di baris pertama.\n` +
                       `▫️ Isi data tepat setelah tanda titik dua ( : ).\n` +
-                      `▫️ Jenis Kelamin: Laki-laki / Perempuan.\n` +
-                      `▫️ Jenis Usaha: Kuliner / Bukan Kuliner.`;
+                      `▫️ *Jenis Kelamin:* Laki-laki / Perempuan.\n` +
+                      `▫️ *Jenis Usaha:* Kuliner / Bukan Kuliner.\n` +
+                      `▫️ *Nama Usaha:* Isi dengan nama warung/toko/usaha Anda.`;
         await sendMessage(chatId, reply);
       } else if (text.startsWith('/simpandata')) {
         // Handle both actual newlines and literal \n characters
@@ -349,18 +350,18 @@ export async function POST(req: NextRequest) {
             const parts = line.split(':');
             const key = parts[0].trim().toLowerCase();
             const value = parts.slice(1).join(':').trim();
-            if (key.includes('nama lengkap')) parsedData.fullName = value;
-            else if (key.includes('jenis kelamin') || key === 'kelamin') {
+            if (key.includes('nama lengkap') || key === 'nama') parsedData.fullName = value;
+            else if (key.includes('jenis kelamin') || key === 'kelamin' || key === 'jk') {
               if (value.toLowerCase().includes('perempuan')) parsedData.gender = "Perempuan";
               else if (value.toLowerCase().includes('laki')) parsedData.gender = "Laki-laki";
               else parsedData.gender = value;
             }
-            else if (key.includes('nik')) parsedData.nik = value.replace(/[^0-9]/g, ''); // Clean NIK
-            else if (key.includes('nomor kk')) parsedData.noKK = value.replace(/[^0-9]/g, ''); // Clean KK
-            else if (key.includes('ttl')) parsedData.pobDob = value;
-            else if (key.includes('nomor hp')) parsedData.phone = value;
+            else if (key.includes('nik')) parsedData.nik = value.replace(/[^0-9]/g, '');
+            else if (key.includes('nomor kk') || key === 'kk' || key === 'no kk') parsedData.noKK = value.replace(/[^0-9]/g, '');
+            else if (key.includes('ttl') || key === 'pobdob') parsedData.pobDob = value;
+            else if (key.includes('nomor hp') || key === 'hp' || key === 'wa' || key === 'no hp') parsedData.phone = value;
             else if (key === 'alamat') parsedData.address = value;
-            else if (key.includes('rt/rw')) parsedData.rtRw = value;
+            else if (key.includes('rt/rw') || key === 'rt rw') parsedData.rtRw = value;
             else if (key.includes('kelurahan')) {
               const kelList = [
                 "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
@@ -372,13 +373,13 @@ export async function POST(req: NextRequest) {
               parsedData.kelurahan = matched || value;
             }
             else if (key.includes('kecamatan')) parsedData.kecamatan = value;
-            else if (key.includes('jenis usaha') || key === 'usaha') {
+            else if (key.includes('jenis usaha') || key === 'kategori') {
               if (value.toLowerCase().includes('bukan kuliner')) parsedData.businessCategory = "Bukan Kuliner";
               else if (value.toLowerCase().includes('kuliner')) parsedData.businessCategory = "Kuliner";
               else parsedData.businessCategory = value;
             }
-            else if (key.includes('nama usaha')) parsedData.businessName = value;
-            else if (key.includes('lokasi usaha')) parsedData.businessLocation = value;
+            else if (key.includes('nama usaha') || key === 'usaha') parsedData.businessName = value;
+            else if (key.includes('lokasi usaha') || key === 'lokasi') parsedData.businessLocation = value;
             else if (key.includes('koordinator')) parsedData.coordinator = value;
           }
         });
@@ -406,7 +407,7 @@ export async function POST(req: NextRequest) {
         if (snapshot.exists()) {
           snapshot.forEach((child) => {
             const val = child.val();
-            if (val.nik === parsedData.nik || val.noKK === parsedData.nik) {
+            if ((parsedData.nik && val.nik === parsedData.nik) || (parsedData.noKK && val.noKK === parsedData.noKK)) {
               duplicate = true;
             }
           });
