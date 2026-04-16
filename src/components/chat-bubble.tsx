@@ -108,9 +108,11 @@ export function ChatBubble() {
   useEffect(() => {
     if (!selectedUser || !user || !database) return;
 
-    const currentId = user.email?.split('@')[0] || user.uid;
-    const selectedId = selectedUser.id || selectedUser.uid;
-    const chatId = [currentId, selectedId].sort().join('_');
+    const normalize = (id: string) => (id || '').toLowerCase().trim().replace(/\s+/g, '_');
+    const myId = normalize(currentUserProfile?.id || user.email?.split('@')[0] || user.uid);
+    const theirId = normalize(selectedUser.id || selectedUser.uid);
+    const chatId = [myId, theirId].sort().join('_');
+    
     const messagesRef = ref(database, 'chat_messages');
     
     // Mark as read when opening
@@ -145,9 +147,10 @@ export function ChatBubble() {
     e.preventDefault();
     if (!inputText.trim() || !selectedUser || !user || !database) return;
 
-    const currentId = user.email?.split('@')[0] || user.uid;
-    const selectedId = selectedUser.id || selectedUser.uid;
-    const chatId = [currentId, selectedId].sort().join('_');
+    const normalize = (id: string) => (id || '').toLowerCase().trim().replace(/\s+/g, '_');
+    const myId = normalize(currentUserProfile?.id || user.email?.split('@')[0] || user.uid);
+    const theirId = normalize(selectedUser.id || selectedUser.uid);
+    const chatId = [myId, theirId].sort().join('_');
     
     const messagesRef = ref(database, 'chat_messages');
     addDocumentNonBlocking(messagesRef, {
@@ -186,9 +189,10 @@ export function ChatBubble() {
     setIsUploading(true);
     
     try {
-      const currentId = user.email?.split('@')[0] || user.uid;
-      const selectedId = selectedUser.id || selectedUser.uid;
-      const chatId = [currentId, selectedId].sort().join('_');
+      const normalize = (id: string) => (id || '').toLowerCase().trim().replace(/\s+/g, '_');
+      const myId = normalize(currentUserProfile?.id || user.email?.split('@')[0] || user.uid);
+      const theirId = normalize(selectedUser.id || selectedUser.uid);
+      const chatId = [myId, theirId].sort().join('_');
       
       // Convert file to Base64 (Data URL)
       const base64Data = await new Promise<string>((resolve, reject) => {
@@ -322,7 +326,14 @@ export function ChatBubble() {
                   ←
                 </button>
               ) : <MessageSquare size={20} />}
-              <span style={{ fontWeight: 800, fontSize: '1rem' }}>{selectedUser ? selectedUser.fullName : !officeStatus?.isOpen ? 'Kirim Pesan Offline' : 'Pusat Diskusi'}</span>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontWeight: 800, fontSize: '1rem' }}>{selectedUser ? selectedUser.fullName : !officeStatus?.isOpen ? 'Kirim Pesan Offline' : 'Pusat Diskusi'}</span>
+                {selectedUser && (
+                  <span style={{ fontSize: '10px', opacity: 0.6, fontWeight: 500 }}>
+                    ROOM: {[(currentUserProfile?.id || user.email?.split('@')[0] || user.uid).toLowerCase(), (selectedUser.id || selectedUser.uid).toLowerCase()].sort().join('_')}
+                  </span>
+                )}
+              </div>
             </div>
             <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', opacity: 0.8 }}>
               <X size={20} />
