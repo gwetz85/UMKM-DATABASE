@@ -331,7 +331,7 @@ export async function POST(req: NextRequest) {
                       `Kelurahan: \n` +
                       `Kecamatan: \n` +
                       `Jenis Usaha: \n` +
-                      `Nama Usaha: \n` +
+                      `Nama Usaha / Produk: \n` +
                       `Lokasi Usaha: \n` +
                       `Koordinator: \`\n\n` +
                       `⚠️ *Catatan Penting:*\n` +
@@ -339,7 +339,7 @@ export async function POST(req: NextRequest) {
                       `▫️ Isi data tepat setelah tanda titik dua ( : ).\n` +
                       `▫️ *Jenis Kelamin:* Laki-laki / Perempuan.\n` +
                       `▫️ *Jenis Usaha:* Kuliner / Bukan Kuliner.\n` +
-                      `▫️ *Nama Usaha:* Isi dengan nama warung/toko/usaha Anda.`;
+                      `▫️ *Nama Usaha:* Nama warung/toko/produk Anda.`;
         await sendMessage(chatId, reply);
       } else if (text.startsWith('/simpandata')) {
         // Handle both actual newlines and literal \n characters
@@ -359,8 +359,8 @@ export async function POST(req: NextRequest) {
             else if (key.includes('nik')) parsedData.nik = value.replace(/[^0-9]/g, '');
             else if (key.includes('nomor kk') || key === 'kk' || key === 'no kk') parsedData.noKK = value.replace(/[^0-9]/g, '');
             else if (key.includes('ttl') || key === 'pobdob') parsedData.pobDob = value;
-            else if (key.includes('nomor hp') || key === 'hp' || key === 'wa' || key === 'no hp') parsedData.phone = value;
-            else if (key === 'alamat') parsedData.address = value;
+            else if (key.includes('nomor hp') || key === 'hp' || key === 'wa' || key === 'no hp' || key === 'telepon') parsedData.phone = value;
+            else if (key.includes('alamat')) parsedData.address = value;
             else if (key.includes('rt/rw') || key === 'rt rw') parsedData.rtRw = value;
             else if (key.includes('kelurahan')) {
               const kelList = [
@@ -373,14 +373,14 @@ export async function POST(req: NextRequest) {
               parsedData.kelurahan = matched || value;
             }
             else if (key.includes('kecamatan')) parsedData.kecamatan = value;
-            else if (key.includes('jenis usaha') || key === 'kategori') {
+            else if (key.includes('jenis usaha') || key.includes('kategori')) {
               if (value.toLowerCase().includes('bukan kuliner')) parsedData.businessCategory = "Bukan Kuliner";
               else if (value.toLowerCase().includes('kuliner')) parsedData.businessCategory = "Kuliner";
               else parsedData.businessCategory = value;
             }
-            else if (key.includes('nama usaha') || key === 'usaha') parsedData.businessName = value;
-            else if (key.includes('lokasi usaha') || key === 'lokasi') parsedData.businessLocation = value;
-            else if (key.includes('koordinator')) parsedData.coordinator = value;
+            else if (key.includes('nama usaha') || key.includes('produk') || key === 'usaha' || key === 'produk' || key.includes('product') || key === 'nama produk') parsedData.businessName = value;
+            else if (key.includes('lokasi usaha') || key.includes('lokasi') || key.includes('tempat usaha')) parsedData.businessLocation = value;
+            else if (key.includes('koordinator') || key === 'koor') parsedData.coordinator = value;
           }
         });
 
@@ -465,7 +465,12 @@ export async function POST(req: NextRequest) {
           };
           const newActorRef = push(actorsRef);
           await set(newActorRef, newData);
-          await sendMessage(chatId, `✅ *DATA BERHASIL DIINPUT*\n\nAtas Nama: *${parsedData.fullName}*\nNIK: \`${parsedData.nik}\`\n\nData telah masuk ke sistem dan sedang menunggu verifikasi oleh tim Admin.`);
+          await sendMessage(chatId, `✅ *DATA BERHASIL DIINPUT*\n\n` +
+                                   `👤 Nama: *${parsedData.fullName}*\n` +
+                                   `🆔 NIK: \`${parsedData.nik}\`\n` +
+                                   `🏬 Usaha: *${parsedData.businessName || "-"}*\n` +
+                                   `📍 Lokasi: ${parsedData.businessLocation || "-"}\n\n` +
+                                   `Data telah masuk ke sistem dan sedang menunggu verifikasi oleh tim Admin.`);
         } catch (error) {
            console.error("Error saving data from bot:", error);
            await sendMessage(chatId, `❌ *Error:* Gagal menyimpan data ke database.`);
