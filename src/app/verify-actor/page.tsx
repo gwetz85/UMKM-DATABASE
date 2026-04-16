@@ -35,7 +35,7 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
   // 3. 2023 -> 1m -> Verified
   // 4. 2024 -> 10m -> Verified
   
-  const targetMins = matches.hasBlacklist ? 0.5 : (matches.has2025 ? 1440 : (matches.has2023 ? 1 : (matches.has2024 ? 10 : null)));
+  const targetMins = matches.hasBlacklist ? 0.5 : (matches.has2025 ? 1440 : (matches.has2023 ? 1 : (matches.has2024 ? 10 : 5))); // Default 5m if no match found
   const isHold = !matches.hasBlacklist && matches.has2025;
 
   // Validation: Check if all mandatory fields are present
@@ -61,12 +61,6 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
        // Don't return, let the timer run to move it to manual after 24h
     }
 
-    if (targetMins === null) {
-      if (actor.status !== 'verifikasi_manual' && isAdmin && database) {
-        updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'verifikasi_manual' });
-      }
-      return;
-    }
 
     const targetTime = new Date(createdAt).getTime() + (targetMins * 60000)
     
@@ -77,7 +71,7 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
             status: 'rejected',
             rejectionReason: 'Ditolak Otomatis: Terdaftar di Data Blacklist (Sheet 4).'
           })
-        } else if (matches.has2025 || targetMins === null) {
+        } else if (matches.has2025) {
           updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
             status: 'verifikasi_manual'
           })
@@ -141,14 +135,6 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (targetMins === null) {
-    return (
-      <div className="flex items-center gap-1.5 text-rose-600 font-black text-[9px] uppercase bg-rose-50 border border-rose-200 px-2 py-1 rounded shadow-sm">
-        <ShieldAlert className="w-3.5 h-3.5" />
-        <span>VERIFIKASI MANUAL</span>
-      </div>
-    )
-  }
 
   if (timeLeft === null) return <div className="flex items-center gap-1.5 opacity-20"><Loader2 className="w-3 h-3 animate-spin" /></div>
 
