@@ -98,8 +98,7 @@ export default function DashboardPage() {
         ...item,
         quota,
         achieved,
-        remaining,
-        remainingPercent: quota > 0 ? (remaining / quota) * 100 : 0
+        remaining
       }
     }).sort((a: any, b: any) => {
       const nameA = (a.name || "").toLowerCase()
@@ -347,7 +346,6 @@ export default function DashboardPage() {
                       <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Jumlah Kuota</TableHead>
                       <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Tercapai</TableHead>
                       <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Sisa Kuota</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Sisa (%)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -375,21 +373,11 @@ export default function DashboardPage() {
                             {item.remaining}
                           </span>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <span className={cn(
-                            "inline-flex items-center justify-center font-black px-2 py-1 rounded-md min-w-[3rem] text-[10px] border shadow-sm",
-                            item.remainingPercent <= 0 
-                              ? "bg-rose-50 text-rose-600 border-rose-100" 
-                              : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                          )}>
-                            {item.remainingPercent.toFixed(1)}%
-                          </span>
-                        </TableCell>
                       </TableRow>
                     ))}
                     {combinedKuotaData.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-12">
+                        <TableCell colSpan={5} className="text-center py-12">
                           <div className="flex flex-col items-center gap-3">
                             <BarChart3 className="w-10 h-10 text-slate-300 animate-pulse" />
                             <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">
@@ -411,7 +399,19 @@ export default function DashboardPage() {
                       <TableCell className="text-center font-black text-emerald-600 text-sm">
                         {totalAchievedDashboard}
                       </TableCell>
-                      <TableCell colSpan={2}></TableCell>
+                      <TableCell className="text-center">
+                        <span className={cn(
+                          "inline-flex items-center gap-1 font-black px-3 py-1 rounded-full shadow-sm text-xs border",
+                          (totalKuotaDashboard - totalAchievedDashboard) <= 0 
+                            ? "bg-rose-100 text-rose-700 border-rose-200" 
+                            : "bg-blue-100 text-blue-700 border-blue-200"
+                        )}>
+                          {totalKuotaDashboard - totalAchievedDashboard}
+                          <span className="text-[10px] opacity-70">
+                            ({(totalKuotaDashboard > 0 ? ((totalKuotaDashboard - totalAchievedDashboard) / totalKuotaDashboard) * 100 : 0).toFixed(1)}%)
+                          </span>
+                        </span>
+                      </TableCell>
                     </TableRow>
                   </TableFooter>
                 </Table>
