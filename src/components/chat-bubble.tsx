@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Search, User as UserIcon, Paperclip, FileText, Image as ImageIcon, Download, Loader2 } from 'lucide-react';
 import { useUser, useDatabase, useList, useMemoFirebase, addDocumentNonBlocking, setDocumentNonBlocking, deleteDocumentNonBlocking, useStorage } from '@/firebase';
 import { ref, query, equalTo, onValue, serverTimestamp, onDisconnect, update } from 'firebase/database';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, getDownloadURL, uploadBytesResumable } from 'firebase/storage';
 import { useOfficeStatus } from '@/hooks/useOfficeStatus';
 import { useToast } from '@/hooks/use-toast';
 
@@ -170,23 +170,59 @@ export function ChatBubble() {
 
     // Check size limit (e.g., 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert("File terlalu besar. Maksimal 5MB.");
+      toast({
+        title: "File Terlalu Besar",
+        description: "Maksimal ukuran file adalah 5MB.",
+        variant: "destructive"
+      });
       return;
     }
 
     setIsUploading(true);
+    
+    // Create a timeout promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Timeout: Unggahan terlalu lama (30 detik).")), 30000);
+    });
+
     try {
       const chatId = [user.uid, selectedUser.uid].sort().join('_');
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileExt = file.name.split('.').pop() || '';
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}${fileExt ? '.' + fileExt : ''}`;
       const path = `chat_files/${chatId}/${fileName}`;
       const fRef = storageRef(storage, path);
 
-      await uploadBytes(fRef, file);
-      const downloadURL = await getDownloadURL(fRef);
+      console.log(`Starting upload to: ${path}`);
+      
+      // Use Resumable Upload for better reliability, wrapped in Promise
+      const uploadPromise = new Promise<string>((resolve, reject) => {
+        const uploadTask = uploadBytesResumable(fRef, file);
+        
+        uploadTask.on('state_changed', 
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log('Upload is ' + progress + '% done');
+          }, 
+          (error) => {
+            console.error("Upload task error:", error);
+            reject(error);
+          }, 
+          async () => {
+            try {
+              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(downloadURL);
+            } catch (err) {
+              reject(err);
+            }
+          }
+        );
+      });
+
+      // Race against timeout
+      const downloadURL = await Promise.race([uploadPromise, timeoutPromise]) as string;
 
       const messagesRef = ref(database, 'chat_messages');
-      addDocumentNonBlocking(messagesRef, {
+      await addDocumentNonBlocking(messagesRef, {
         chatId,
         senderId: user.uid,
         senderName: currentUserProfile?.fullName || 'User',
@@ -199,16 +235,25 @@ export function ChatBubble() {
       });
 
       const unreadRef = ref(database, `chat_unread/${selectedUser.uid}_${chatId}`);
-      setDocumentNonBlocking(unreadRef, {
+      await setDocumentNonBlocking(unreadRef, {
         userId: selectedUser.uid,
         chatId: chatId,
         hasUnread: true
       });
       
+      toast({
+        title: "Berhasil",
+        description: "File telah terkirim.",
+      });
+
       if (fileInputRef.current) fileInputRef.current.value = '';
-    } catch (error) {
-      console.error("Upload error:", error);
-      alert("Gagal mengunggah file.");
+    } catch (error: any) {
+      console.error("Upload error details:", error);
+      toast({
+        title: "Gagal Mengunggah",
+        description: error.message || "Pastikan koneksi internet stabil dan coba lagi.",
+        variant: "destructive"
+      });
     } finally {
       setIsUploading(false);
     }
