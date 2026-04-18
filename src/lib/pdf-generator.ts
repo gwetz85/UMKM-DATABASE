@@ -59,7 +59,7 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
 
   // --- ACTOR DATA TABLE ---
   const tableData = [
-    [{ content: 'I. DATA PRIBADI', colSpan: 2, styles: { fillColor: [245, 245, 245], fontStyle: 'bold' } }],
+    [{ content: 'I. DATA PRIBADI', colSpan: 2, styles: { fillColor: [245, 245, 245], fontStyle: 'bold' as any } }],
     ['NAMA LENGKAP', `: ${actor.fullName || '-'}`],
     ['NIK (NOMOR INDUK KEPENDUDUKAN)', `: ${actor.nik || '-'}`],
     ['NOMOR KARTU KELUARGA', `: ${actor.noKK || '-'}`],
@@ -68,12 +68,12 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
     ['NOMOR HP / WHATSAPP', `: ${actor.phone || '-'}`],
     ['KECAMATAN / KELURAHAN', `: ${actor.kecamatan || '-'} / ${actor.kelurahan || '-'}`],
     ['ALAMAT DOMISILI', `: ${actor.address || '-'}`],
-    [{ content: 'II. INFORMASI USAHA', colSpan: 2, styles: { fillColor: [245, 245, 245], fontStyle: 'bold' } }],
+    [{ content: 'II. INFORMASI USAHA', colSpan: 2, styles: { fillColor: [245, 245, 245], fontStyle: 'bold' as any } }],
     ['NAMA USAHA', `: ${actor.businessName || '-'}`],
     ['KATEGORI USAHA', `: ${actor.businessCategory || '-'}`],
     ['LOKASI USAHA', `: ${actor.businessLocation || '-'}`],
     ['KORLAP / KOORDINATOR', `: ${actor.coordinator || '-'}`],
-    [{ content: 'III. DATA PERBANKAN', colSpan: 2, styles: { fillColor: [245, 245, 245], fontStyle: 'bold' } }],
+    [{ content: 'III. DATA PERBANKAN', colSpan: 2, styles: { fillColor: [245, 245, 245], fontStyle: 'bold' as any } }],
     ['NAMA BANK', `: ${actor.bankName || '-'}`],
     ['NOMOR REKENING', `: ${actor.bankNumber || '-'}`],
     ['NAMA PEMILIK REKENING', `: ${actor.bankOwner || '-'}`],
