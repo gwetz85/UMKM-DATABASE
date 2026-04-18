@@ -58,20 +58,20 @@ export function OfficeHoursTimer({
           </span>
         </div>
         {currentTime && (
-          <div className={`flex flex-col ${large ? "items-center gap-0.5 mt-1" : "items-end gap-0 mt-0.5"}`}>
+          <div className={`flex items-center gap-1.5 ${large ? "mt-1" : "mt-0.5"}`}>
             {/* Tanggal */}
             <span className={`${large ? "text-sm" : "text-[10px] md:text-[11px]"} font-mono font-black tracking-tight text-black leading-none`}>
               {currentDate}
             </span>
+            {/* Pemisah */}
+            <span className="text-black/30 font-black leading-none">·</span>
             {/* Jam */}
-            <div className="flex items-center gap-1">
-              <span className={`${large ? "text-xl" : "text-[12px] md:text-sm"} font-mono font-black tracking-tighter text-black leading-none`}>
-                {currentTime}
-              </span>
-              <span className={`${large ? "text-[9px]" : "text-[8px]"} font-black text-black/50 uppercase`}>
-                WIB
-              </span>
-            </div>
+            <span className={`${large ? "text-xl" : "text-[12px] md:text-sm"} font-mono font-black tracking-tighter text-black leading-none`}>
+              {currentTime}
+            </span>
+            <span className={`${large ? "text-[9px]" : "text-[8px]"} font-black text-black/50 uppercase`}>
+              WIB
+            </span>
           </div>
         )}
       </div>
