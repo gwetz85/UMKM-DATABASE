@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { InfoDialog } from '@/components/info-dialog';
@@ -9,8 +9,9 @@ import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
 import { BackgroundMusic } from '@/components/BackgroundMusic';
-import { useUser, useDatabase, useList, useMemoFirebase, useObject } from '@/firebase'
+import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref } from 'firebase/database'
+import { signOut } from 'firebase/auth'
 import { User as UserIcon, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
@@ -23,14 +24,17 @@ import { useSoundEffect } from '@/hooks/use-sound-effect';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user } = useUser();
+  const router = useRouter();
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth()
   const database = useDatabase();
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
     return ref(database, 'system_users')
   }, [user, database])
-  const { data: allUsers } = useList(userProfileRef)
+  
+  const { data: allUsers, isLoading: isUsersLoading } = useList(userProfileRef)
   const profile = allUsers?.find((u: any) => u.uid === user?.uid)
   const isKoordinator = profile?.role === 'koordinator'
   const { playSound } = useSoundEffect();
@@ -41,6 +45,18 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [database])
   const { data: eventInfo } = useObject(eventSettingsRef)
   const activeEvent = useActiveEvent(eventInfo)
+
+  React.useEffect(() => {
+    // SECURITY FIX: Continuous verification
+    // Log out if user is active in Firebase Auth but no longer in our system_users database.
+    if (!isUserLoading && user && !isUsersLoading && allUsers && pathname !== '/login') {
+       if (!profile) {
+          signOut(auth).then(() => {
+             router.push('/login');
+          });
+       }
+    }
+  }, [user, allUsers, isUserLoading, isUsersLoading, profile, auth, router, pathname])
 
   React.useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {

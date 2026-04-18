@@ -120,6 +120,16 @@ export default function LoginPage() {
               return
             }
           }
+        } else {
+          // KEY SECURITY FIX: Reject login if user is not found in system_users
+          await signOut(auth)
+          toast({ 
+            variant: "destructive", 
+            title: "Akses Ditolak", 
+            description: "Username ini tidak terdaftar di sistem Manajemen User."
+          })
+          setLoading(false)
+          return
         }
         
         toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
