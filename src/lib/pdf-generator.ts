@@ -81,7 +81,7 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
 
   autoTable(doc, {
     startY: 85,
-    body: tableData,
+    body: tableData as any,
     theme: 'plain',
     styles: {
       fontSize: 10,
