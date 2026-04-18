@@ -14,6 +14,21 @@ export function OfficeHoursTimer({
 }) {
   const status = useOfficeStatus()
 
+  const [currentTime, setCurrentTime] = useState("")
+
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date()
+      const hh = now.getHours().toString().padStart(2, "0")
+      const mm = now.getMinutes().toString().padStart(2, "0")
+      const ss = now.getSeconds().toString().padStart(2, "0")
+      setCurrentTime(`${hh}:${mm}:${ss}`)
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [])
+
   if (!status) return null
 
   return (
@@ -37,7 +52,18 @@ export function OfficeHoursTimer({
             {status.isOpen ? 'Menuju Tutup' : 'Menuju Buka'}
           </span>
         </div>
+        {currentTime && (
+          <div className={`flex items-center gap-1 ${large ? "mt-1" : "mt-0.5"}`}>
+            <span className={`${large ? "text-lg" : "text-[11px] md:text-xs"} font-mono font-bold tracking-tighter opacity-60 leading-none`}>
+              {currentTime}
+            </span>
+            <span className={`${large ? "text-[9px]" : "text-[8px]"} font-bold opacity-40 uppercase`}>
+              WIB
+            </span>
+          </div>
+        )}
       </div>
     </div>
   )
 }
+
