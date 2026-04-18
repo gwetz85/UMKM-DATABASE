@@ -164,7 +164,7 @@ export default function KuotaKorlapDewanAktifPage() {
   const handleExportPDF = () => {
     import('jspdf').then(({ default: jsPDF }) => {
       import('jspdf-autotable').then(({ default: autoTable }) => {
-        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
         // Header
         doc.setFont('helvetica', 'bold')
@@ -191,19 +191,30 @@ export default function KuotaKorlapDewanAktifPage() {
         const totalPct = totalQuota > 0 ? `${((totalAchieved / totalQuota) * 100).toFixed(1)}%` : '0%'
         tableBody.push(['', 'TOTAL', totalQuota, totalAchieved, totalRemaining, totalPct] as any)
 
+        // A4 portrait usable width: 210 - 14 (left) - 14 (right) = 182mm
+        // Fixed cols: No=10, Kuota=22, Tercapai=24, Sisa=22, %=24 → 102mm
+        // Name col = 182 - 102 = 80mm
+        const margin = 14
+        const pageWidth = doc.internal.pageSize.getWidth()
+        const usableWidth = pageWidth - margin * 2
+        const fixedWidth = 10 + 22 + 24 + 22 + 24
+        const nameWidth = usableWidth - fixedWidth
+
         autoTable(doc, {
           startY: 30,
+          margin: { left: margin, right: margin },
+          tableWidth: usableWidth,
           head: [['No', 'Nama Koordinator', 'Kuota', 'Tercapai', 'Sisa', '% Tercapai']],
           body: tableBody,
           styles: { font: 'helvetica', fontSize: 9, cellPadding: 3, halign: 'center' },
           headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold', halign: 'center' },
           columnStyles: {
-            0: { cellWidth: 12 },
-            1: { halign: 'left', cellWidth: 70 },
-            2: { cellWidth: 25 },
-            3: { cellWidth: 25 },
-            4: { cellWidth: 25 },
-            5: { cellWidth: 28 },
+            0: { cellWidth: 10 },
+            1: { halign: 'left', cellWidth: nameWidth },
+            2: { cellWidth: 22 },
+            3: { cellWidth: 24 },
+            4: { cellWidth: 22 },
+            5: { cellWidth: 24 },
           },
           didParseCell: (data: any) => {
             // Style the last (total) row
