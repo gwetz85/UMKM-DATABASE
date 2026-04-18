@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
-import { ShieldAlert, Loader2, BarChart3, UserPlus, Edit, Trash2 } from "lucide-react"
+import { ShieldAlert, Loader2, BarChart3, UserPlus, Edit, Trash2, FileDown } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function KuotaKorlapDewanAktifPage() {
@@ -161,6 +161,73 @@ export default function KuotaKorlapDewanAktifPage() {
     }
   }
 
+  const handleExportPDF = () => {
+    import('jspdf').then(({ default: jsPDF }) => {
+      import('jspdf-autotable').then(({ default: autoTable }) => {
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+
+        // Header
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(14)
+        doc.text('DATA KUOTA KORLAP / DEWAN AKTIF', doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' })
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(9)
+        doc.text(
+          `Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`,
+          doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' }
+        )
+
+        const tableBody = combinedKuotaData.map((item: any, index: number) => [
+          index + 1,
+          item.name || '-',
+          item.quota,
+          item.achieved,
+          item.remaining,
+          item.quota > 0 ? `${((item.achieved / item.quota) * 100).toFixed(1)}%` : '0%'
+        ])
+
+        // Footer row
+        const totalRemaining = totalQuota - totalAchieved
+        const totalPct = totalQuota > 0 ? `${((totalAchieved / totalQuota) * 100).toFixed(1)}%` : '0%'
+        tableBody.push(['', 'TOTAL', totalQuota, totalAchieved, totalRemaining, totalPct] as any)
+
+        autoTable(doc, {
+          startY: 30,
+          head: [['No', 'Nama Koordinator', 'Kuota', 'Tercapai', 'Sisa', '% Tercapai']],
+          body: tableBody,
+          styles: { font: 'helvetica', fontSize: 9, cellPadding: 3, halign: 'center' },
+          headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold', halign: 'center' },
+          columnStyles: {
+            0: { cellWidth: 12 },
+            1: { halign: 'left', cellWidth: 70 },
+            2: { cellWidth: 25 },
+            3: { cellWidth: 25 },
+            4: { cellWidth: 25 },
+            5: { cellWidth: 28 },
+          },
+          didParseCell: (data: any) => {
+            // Style the last (total) row
+            if (data.row.index === tableBody.length - 1) {
+              data.cell.styles.fontStyle = 'bold'
+              data.cell.styles.fillColor = [241, 245, 249]
+            }
+          },
+          didDrawCell: (data: any) => {
+            // Color remaining cell: red if <= 0
+            if (data.column.index === 4 && data.section === 'body' && data.row.index < combinedKuotaData.length) {
+              const item = combinedKuotaData[data.row.index]
+              if (item.remaining <= 0) {
+                data.cell.styles.textColor = [220, 38, 38]
+              }
+            }
+          }
+        })
+
+        doc.save(`Kuota_Koordinator_${new Date().toISOString().slice(0, 10)}.pdf`)
+      })
+    })
+  }
+
   const totalQuota = useMemo(() => {
     return combinedKuotaData.reduce((acc: number, curr: any) => acc + curr.quota, 0)
   }, [combinedKuotaData])
@@ -198,12 +265,20 @@ export default function KuotaKorlapDewanAktifPage() {
             <p className="text-muted-foreground font-medium">Pengelolaan target data pencapaian masing-masing korlap / dewan aktif.</p>
           </div>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary hover:bg-primary/90 shadow-lg font-bold">
-              <UserPlus className="w-4 h-4 mr-2" /> Tambah Kuota Baru
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={handleExportPDF}
+            className="font-bold border-red-200 text-red-600 hover:bg-red-50 shadow-sm"
+          >
+            <FileDown className="w-4 h-4 mr-2" /> Ekspor PDF
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90 shadow-lg font-bold">
+                <UserPlus className="w-4 h-4 mr-2" /> Tambah Kuota Baru
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <form onSubmit={handleAddData}>
               <DialogHeader>
@@ -225,7 +300,8 @@ export default function KuotaKorlapDewanAktifPage() {
               </DialogFooter>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <Card className="border-none shadow-sm overflow-hidden bg-white">
