@@ -232,8 +232,9 @@ export default function VerifyActorPage() {
   const { data: dataBlacklist } = useList<any>(blacklistRef)
 
   // dataReady = true hanya setelah semua data referensi sudah dimuat dari Firebase.
-  // Ini mencegah timer dimulai dengan data yang masih null/kosong.
-  const dataReady = data2023 !== undefined && data2024 !== undefined && data2025 !== undefined && dataBlacklist !== undefined
+  // useList() mengembalikan null saat loading, lalu array [] setelah selesai (meski kosong).
+  // Ini mencegah timer dimulai dengan data yang masih null/belum siap.
+  const dataReady = data2023 !== null && data2024 !== null && data2025 !== null && dataBlacklist !== null
 
   const actors = allActorsRaw?.filter(a => {
     if (activeTab === 'pending') return a.status === 'pending' || a.status === 'lengkapi_data';
