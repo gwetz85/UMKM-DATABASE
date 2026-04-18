@@ -19,13 +19,14 @@ import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { cn } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
-function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, actor }: { 
+function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, actor, dataReady }: { 
   actorId: string, 
   createdAt: string, 
   matches: { has2023: boolean, has2024: boolean, has2025: boolean, hasBlacklist: boolean }, 
   database: any,
   isAdmin: boolean,
-  actor: BusinessActor
+  actor: BusinessActor,
+  dataReady: boolean
 }) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   
@@ -47,6 +48,9 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
   );
 
   useEffect(() => {
+    // ⚠️ Tunggu semua data master selesai dimuat sebelum mulai timer
+    if (!dataReady) return;
+
     if (!isDataComplete) {
       if (actor.status !== 'lengkapi_data' && isAdmin && database) {
         updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'lengkapi_data' });
@@ -106,7 +110,12 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [createdAt, targetMins, isHold, isAdmin, database, actorId, isDataComplete, matches.hasBlacklist, actor.status])
+  // ⚠️ actor.status SENGAJA TIDAK ADA di dependency array.
+  // Memasukkannya menyebabkan timer reset setiap kali status berubah di Firebase
+  // (misal: pending->hold), yang mengakibatkan keterlambatan 5-10 menit.
+  // dataReady memastikan timer hanya dimulai sekali saat semua data referensi siap.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataReady, createdAt, targetMins, isHold, isAdmin, database, actorId, isDataComplete, matches.hasBlacklist])
 
   if (!isDataComplete) {
     return (
@@ -221,6 +230,10 @@ export default function VerifyActorPage() {
   const { data: data2024 } = useList<any>(master2024Ref)
   const { data: data2025 } = useList<any>(master2025Ref)
   const { data: dataBlacklist } = useList<any>(blacklistRef)
+
+  // dataReady = true hanya setelah semua data referensi sudah dimuat dari Firebase.
+  // Ini mencegah timer dimulai dengan data yang masih null/kosong.
+  const dataReady = data2023 !== undefined && data2024 !== undefined && data2025 !== undefined && dataBlacklist !== undefined
 
   const actors = allActorsRaw?.filter(a => {
     if (activeTab === 'pending') return a.status === 'pending' || a.status === 'lengkapi_data';
@@ -467,6 +480,7 @@ export default function VerifyActorPage() {
                           database={database}
                           isAdmin={isAdmin}
                           actor={actor}
+                          dataReady={dataReady}
                         />
                       </div>
                     </TableCell>
