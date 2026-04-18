@@ -135,26 +135,26 @@ export async function GET(req: NextRequest) {
         return;
       }
 
-      // 3. 2023 -> 1m -> verified_actor
-      if (has2023) {
-        const targetTime = createdAt + 60000;
+      // 3. 2024 -> 5m -> verified_actor  (prioritas lebih tinggi dari 2023 per rule 5)
+      if (has2024) {
+        const targetTime = createdAt + 300000; // 5 menit
         if (now >= targetTime) {
           updates[`businessActors/${actor.id}/status`] = 'verified_actor';
           verifiedCount++;
         } else {
-          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2023 timer (1m)" });
+          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2024 timer (5m)" });
         }
         return;
       }
 
-      // 4. 2024 -> 10m -> verified_actor
-      if (has2024) {
-        const targetTime = createdAt + 600000;
+      // 4. 2023 -> 5m -> verified_actor
+      if (has2023) {
+        const targetTime = createdAt + 300000; // 5 menit
         if (now >= targetTime) {
           updates[`businessActors/${actor.id}/status`] = 'verified_actor';
           verifiedCount++;
         } else {
-          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2024 timer (10m)" });
+          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2023 timer (5m)" });
         }
         return;
       }

@@ -235,10 +235,10 @@ export function ProfileStatusDialog() {
                     </p>
                     <div className="grid grid-cols-1 gap-2 ml-3.5">
                       {[
-                        { label: "Data Lengkap & No Checkdata", value: "Auto Verif 10 Menit", icon: <Clock className="w-3 h-3" /> },
-                        { label: "Data Lengkap & Checkdata 1", value: "Auto Verif 60 Menit", icon: <Clock className="w-3 h-3" /> },
-                        { label: "Data Lengkap & Checkdata 2", value: "Manual Hold (Review)", icon: <AlertTriangle className="w-3 h-3" /> },
-                        { label: "Tanpa LPJ 2024/2025", value: "Auto Cancel", icon: <Ban className="w-3 h-3" /> }
+                        { label: "Data Lengkap & Ada di Sheet 2024", value: "Auto Verif 5 Menit", icon: <Clock className="w-3 h-3" /> },
+                        { label: "Data Lengkap & Ada di Sheet 2023", value: "Auto Verif 5 Menit", icon: <Clock className="w-3 h-3" /> },
+                        { label: "Data Lengkap & Ada di Sheet 2025", value: "Hold → Manual Review", icon: <AlertTriangle className="w-3 h-3" /> },
+                        { label: "Ada di Sheet Blacklist", value: "Auto Cancel (30 Detik)", icon: <Ban className="w-3 h-3" /> }
                       ].map((s, i) => (
                         <div key={i} className="flex justify-between items-center text-[10px] bg-white/50 p-2 rounded-lg border border-emerald-100">
                           <span className="font-semibold text-slate-600">{s.label}</span>

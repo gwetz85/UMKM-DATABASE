@@ -30,13 +30,14 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
 }) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   
-  // Priority Logic Refined:
-  // 1. Blacklist -> 30s -> Rejected
-  // 2. 2025 -> 24h -> Manual
-  // 3. 2023 -> 1m -> Verified
-  // 4. 2024 -> 10m -> Verified
+  // Priority Logic (sesuai rules):
+  // 1. Blacklist  -> 30 detik -> Rejected
+  // 2. Sheet 2025 -> Langsung Hold (24h -> Manual)
+  // 3. Sheet 2024 -> 5 Menit  -> Verified  (prioritas lebih tinggi dari 2023)
+  // 4. Sheet 2023 -> 5 Menit  -> Verified
+  // 5. Tidak ada match -> Verifikasi Manual
   
-  const targetMins = matches.hasBlacklist ? 0.5 : (matches.has2025 ? 1440 : (matches.has2023 ? 1 : (matches.has2024 ? 10 : 5))); // Default 5m if no match found
+  const targetMins = matches.hasBlacklist ? 0.5 : (matches.has2025 ? 1440 : (matches.has2024 ? 5 : (matches.has2023 ? 5 : 5)));
   const isHold = !matches.hasBlacklist && matches.has2025;
 
   // Validation: Check if all mandatory fields are present
