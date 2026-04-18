@@ -238,6 +238,7 @@ export function ProfileStatusDialog() {
                         { label: "Data Lengkap & Ada di Sheet 2024", value: "Auto Verif 5 Menit", icon: <Clock className="w-3 h-3" /> },
                         { label: "Data Lengkap & Ada di Sheet 2023", value: "Auto Verif 5 Menit", icon: <Clock className="w-3 h-3" /> },
                         { label: "Data Lengkap & Ada di Sheet 2025", value: "Hold → Manual Review", icon: <AlertTriangle className="w-3 h-3" /> },
+                        { label: "Tidak ada di Sheet Manapun", value: "Auto Verif (45 Detik)", icon: <Clock className="w-3 h-3" /> },
                         { label: "Ada di Sheet Blacklist", value: "Auto Cancel (30 Detik)", icon: <Ban className="w-3 h-3" /> }
                       ].map((s, i) => (
                         <div key={i} className="flex justify-between items-center text-[10px] bg-white/50 p-2 rounded-lg border border-emerald-100">

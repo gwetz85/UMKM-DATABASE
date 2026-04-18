@@ -159,9 +159,15 @@ export async function GET(req: NextRequest) {
         return;
       }
 
-      // 5. No Match -> Move to manual verification if it was pending or lengkapi_data
-      if (actor.status !== 'verifikasi_manual') {
-        updates[`businessActors/${actor.id}/status`] = 'verifikasi_manual';
+      // 5. No Match -> 45 detik -> verified_actor (Pelaku Usaha)
+      const noMatchTargetTime = createdAt + 45000; // 45 detik
+      if (now >= noMatchTargetTime) {
+        if (actor.status !== 'verified_actor') {
+          updates[`businessActors/${actor.id}/status`] = 'verified_actor';
+          verifiedCount++;
+        }
+      } else {
+        skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting no-match timer (45s)" });
       }
     });
 

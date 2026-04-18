@@ -31,13 +31,14 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   
   // Priority Logic (sesuai rules):
-  // 1. Blacklist  -> 30 detik -> Rejected
+  // 1. Blacklist  -> 30 detik  -> Rejected
   // 2. Sheet 2025 -> Langsung Hold (24h -> Manual)
-  // 3. Sheet 2024 -> 5 Menit  -> Verified  (prioritas lebih tinggi dari 2023)
-  // 4. Sheet 2023 -> 5 Menit  -> Verified
-  // 5. Tidak ada match -> Verifikasi Manual
+  // 3. Sheet 2024 -> 5 Menit   -> Verified  (prioritas lebih tinggi dari 2023)
+  // 4. Sheet 2023 -> 5 Menit   -> Verified
+  // 5. Tidak ada match -> 45 Detik -> Verifikasi Manual
   
-  const targetMins = matches.hasBlacklist ? 0.5 : (matches.has2025 ? 1440 : (matches.has2024 ? 5 : (matches.has2023 ? 5 : 5)));
+  const hasAnyMatch = matches.hasBlacklist || matches.has2025 || matches.has2024 || matches.has2023;
+  const targetMins = matches.hasBlacklist ? 0.5 : (matches.has2025 ? 1440 : (matches.has2024 ? 5 : (matches.has2023 ? 5 : 0.75))); // 0.75 = 45 detik
   const isHold = !matches.hasBlacklist && matches.has2025;
 
   // Validation: Check if all mandatory fields are present
@@ -72,15 +73,23 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
     const triggerProcess = () => {
       if (isAdmin && database) {
         if (matches.hasBlacklist) {
+          // Rule 1: Blacklist -> Rejected
           updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
             status: 'rejected',
             rejectionReason: 'Ditolak Otomatis: Terdaftar di Data Blacklist (Sheet 4).'
           })
         } else if (matches.has2025) {
+          // Rule 2: 2025 -> sudah Hold, pindah ke Verifikasi Manual setelah 24h
           updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
             status: 'verifikasi_manual'
           })
+        } else if (matches.has2024 || matches.has2023) {
+          // Rule 3 & 4: 2024 atau 2023 -> Verified
+          updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
+            status: 'verified_actor'
+          })
         } else {
+          // Rule 5: Tidak ada match -> 45 detik -> Pelaku Usaha (Verified)
           updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
             status: 'verified_actor'
           })
