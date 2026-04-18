@@ -34,4 +34,5 @@ export interface BusinessActor {
   hasilVerifikasiDinas?: string;
   keteranganDinas?: string;
   readyForLPJ?: boolean;
+  registrationCode?: string;
 }

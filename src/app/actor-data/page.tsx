@@ -206,6 +206,24 @@ function ActorDataContent() {
     }
   }
 
+  const handlePrintForm = (actor: BusinessActor) => {
+    if (!database) return
+
+    let actorToPrint = { ...actor }
+
+    // Generate random 8-digit code if not exists
+    if (!actor.registrationCode) {
+      const randomCode = Math.floor(10000000 + Math.random() * 90000000).toString()
+      updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), {
+        registrationCode: randomCode
+      })
+      actorToPrint.registrationCode = randomCode
+      toast({ title: "Kode Registrasi Di-generate", description: `Kode baru: ${randomCode} telah disimpan.` })
+    }
+
+    generateRegistrationForm(actorToPrint)
+  }
+
   const handleExportExcel = () => {
     if (!filteredActors || filteredActors.length === 0) {
       toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })
@@ -418,7 +436,7 @@ function ActorDataContent() {
                                   size="sm" 
                                   variant="ghost" 
                                   className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-200"
-                                  onClick={() => generateRegistrationForm(actor)}
+                                  onClick={() => handlePrintForm(actor)}
                                   title="Cetak Formulir"
                                 >
                                   <Printer className="w-4 h-4" />
@@ -475,7 +493,7 @@ function ActorDataContent() {
                   {!isEditMode && viewingActor && !isKoordinator && (
                     <Button 
                       size="sm" 
-                      onClick={() => generateRegistrationForm(viewingActor)}
+                      onClick={() => handlePrintForm(viewingActor)}
                       className="font-bold bg-primary hover:bg-primary/90 text-white"
                     >
                       <Printer className="w-4 h-4 mr-2" /> Cetak Formulir

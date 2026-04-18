@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
                       `📊 /stats - Ringkasan data\n` +
                       `📊 /kuota - Cek kuota koordinator\n` +
                       `🔍 /search [kata] - Cari umum\n` +
+                      `🆔 /code [nomor] - Cek Kode Registrasi\n` +
                       `📌 /nik [nomor] - Cari berdasar NIK\n` +
                       `👤 /nama [nama] - Cari berdasar Nama\n` +
                       `📍 /alamat [kata] - Cari berdasar Alamat\n` +
@@ -113,7 +114,7 @@ export async function POST(req: NextRequest) {
           await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
         }
       }
-      else if (text.startsWith('/search') || text.startsWith('/nik') || text.startsWith('/nama') || text.startsWith('/alamat') || text.startsWith('/hp') || text.startsWith('/koor')) {
+      else if (text.startsWith('/search') || text.startsWith('/nik') || text.startsWith('/nama') || text.startsWith('/alamat') || text.startsWith('/hp') || text.startsWith('/koor') || text.startsWith('/code')) {
         
         let keyword = '';
         let type = '';
@@ -123,6 +124,7 @@ export async function POST(req: NextRequest) {
         else if (text.startsWith('/alamat')) { keyword = text.replace('/alamat', '').trim().toLowerCase(); type = 'alamat'; }
         else if (text.startsWith('/hp')) { keyword = text.replace('/hp', '').trim().toLowerCase(); type = 'hp'; }
         else if (text.startsWith('/koor')) { keyword = text.replace('/koor', '').trim().toLowerCase(); type = 'koor'; }
+        else if (text.startsWith('/code')) { keyword = text.replace('/code', '').trim().toLowerCase(); type = 'code'; }
 
         if (!keyword) {
           let example = type === 'search' ? 'bengkel' : (type === 'nik' || type === 'hp') ? '08123' : type === 'alamat' ? 'pemuda' : 'agus';
@@ -145,6 +147,7 @@ export async function POST(req: NextRequest) {
             if (type === 'alamat') return a.address && a.address.toLowerCase().includes(keyword);
             if (type === 'hp') return a.phone && a.phone.includes(keyword);
             if (type === 'koor') return a.coordinator && a.coordinator.toLowerCase().includes(keyword);
+            if (type === 'code') return a.registrationCode && a.registrationCode === keyword;
             
             return (a.fullName && a.fullName.toLowerCase().includes(keyword)) ||
                    (a.nik && a.nik.includes(keyword)) ||
@@ -158,6 +161,7 @@ export async function POST(req: NextRequest) {
             let reply = `🔍 *Hasil Pencarian [${type.toUpperCase()}]:*\n\n`;
             results.forEach((r, i) => {
               reply += `*${i+1}. ${r.businessName || "TANPA NAMA USAHA"}*\n`;
+              reply += `■ Reg ID: *${r.registrationCode || "PENDING"}*\n`;
               reply += `■ Nama: ${r.fullName}\n`;
               reply += `■ NIK: \`${r.nik || "-"}\`\n`;
               reply += `■ KK: \`${r.noKK || "-"}\`\n`;

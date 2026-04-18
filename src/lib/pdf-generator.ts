@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { BusinessActor } from '@/app/lib/types';
+import { generateBarcodeBase64 } from './barcode-utils';
 
 export const generateRegistrationForm = (actor: BusinessActor) => {
   const doc = new jsPDF({
@@ -10,97 +11,120 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 15;
+  const margin = 20;
 
-  // --- TITLE ---
+  // --- OFFICIAL HEADER ---
+  try {
+     // We try to add the logo if possible. In client-side Next.js, /logo.png should work.
+     doc.addImage('/logo.png', 'PNG', margin, 12, 22, 22);
+  } catch (e) {
+     console.warn("Logo not found or could not be loaded");
+  }
+
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.text('FORMULIR PENDAFTARAN', pageWidth / 2, 20, { align: 'center' });
-  doc.setFontSize(11);
-  doc.text('SISTEM INFORMASI MANAJEMEN PELAKU USAHA (SIMPU)', pageWidth / 2, 26, { align: 'center' });
+  doc.setFontSize(14);
+  doc.text('PEMERINTAH KABUPATEN / KOTA', pageWidth / 2 + 10, 18, { align: 'center' });
+  doc.setFontSize(16);
+  doc.text('DINAS KOPERASI DAN UMKM', pageWidth / 2 + 10, 25, { align: 'center' });
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Sistem Informasi Manajemen Pelaku Usaha (SIMPU)', pageWidth / 2 + 10, 30, { align: 'center' });
+
+  // Double Line Separator
+  doc.setLineWidth(0.8);
+  doc.line(margin, 38, pageWidth - margin, 38);
+  doc.setLineWidth(0.2);
+  doc.line(margin, 39, pageWidth - margin, 39);
+
+  // --- REGISTRATION CODE & BARCODE (TOP RIGHT) ---
+  const regCode = actor.registrationCode || 'PENDING';
+  const barcodeBase64 = generateBarcodeBase64(regCode);
+
+  if (barcodeBase64 && regCode !== 'PENDING') {
+    doc.addImage(barcodeBase64, 'PNG', pageWidth - margin - 45, 45, 45, 12);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(regCode, pageWidth - margin - 22.5, 62, { align: 'center' });
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text('REGISTRATION CODE', pageWidth - margin - 22.5, 65, { align: 'center' });
+  }
+
+  // --- DOCUMENT TITLE ---
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text('FORMULIR BIODATA PELAKU USAHA', pageWidth / 2, 75, { align: 'center' });
+  doc.setLineWidth(0.5);
+  doc.line(pageWidth / 2 - 40, 77, pageWidth / 2 + 40, 77);
 
   // --- ACTOR DATA TABLE ---
   const tableData = [
+    [{ content: 'I. DATA PRIBADI', colSpan: 2, styles: { fillColor: [245, 245, 245], fontStyle: 'bold' } }],
     ['NAMA LENGKAP', `: ${actor.fullName || '-'}`],
-    ['NIK', `: ${actor.nik || '-'}`],
-    ['NOMOR KK', `: ${actor.noKK || '-'}`],
+    ['NIK (NOMOR INDUK KEPENDUDUKAN)', `: ${actor.nik || '-'}`],
+    ['NOMOR KARTU KELUARGA', `: ${actor.noKK || '-'}`],
     ['JENIS KELAMIN', `: ${actor.gender || '-'}`],
-    ['TEMPAT, TGL LAHIR', `: ${actor.pobDob || '-'}`],
-    ['NOMOR HP / WA', `: ${actor.phone || '-'}`],
-    ['KECAMATAN', `: ${actor.kecamatan || '-'}`],
-    ['KELURAHAN', `: ${actor.kelurahan || '-'}`],
-    ['ALAMAT LENGKAP', `: ${actor.address || '-'}`],
-    ['', ''], // Spacer
+    ['TEMPAT, TANGGAL LAHIR', `: ${actor.pobDob || '-'}`],
+    ['NOMOR HP / WHATSAPP', `: ${actor.phone || '-'}`],
+    ['KECAMATAN / KELURAHAN', `: ${actor.kecamatan || '-'} / ${actor.kelurahan || '-'}`],
+    ['ALAMAT DOMISILI', `: ${actor.address || '-'}`],
+    [{ content: 'II. INFORMASI USAHA', colSpan: 2, styles: { fillColor: [245, 245, 245], fontStyle: 'bold' } }],
     ['NAMA USAHA', `: ${actor.businessName || '-'}`],
     ['KATEGORI USAHA', `: ${actor.businessCategory || '-'}`],
     ['LOKASI USAHA', `: ${actor.businessLocation || '-'}`],
-    ['KOORDINATOR', `: ${actor.coordinator || '-'}`],
-    ['REKENING BANK', `: ${actor.bankName || '-'} - ${actor.bankNumber || '-'}`],
-    ['PEMILIK REKENING', `: ${actor.bankOwner || '-'}`],
+    ['KORLAP / KOORDINATOR', `: ${actor.coordinator || '-'}`],
+    [{ content: 'III. DATA PERBANKAN', colSpan: 2, styles: { fillColor: [245, 245, 245], fontStyle: 'bold' } }],
+    ['NAMA BANK', `: ${actor.bankName || '-'}`],
+    ['NOMOR REKENING', `: ${actor.bankNumber || '-'}`],
+    ['NAMA PEMILIK REKENING', `: ${actor.bankOwner || '-'}`],
   ];
 
   autoTable(doc, {
-    startY: 35,
+    startY: 85,
     body: tableData,
     theme: 'plain',
     styles: {
       fontSize: 10,
-      cellPadding: 2,
+      cellPadding: 3,
       font: 'helvetica',
     },
     columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 45 },
+      0: { fontStyle: 'bold', cellWidth: 60 },
       1: { cellWidth: 'auto' },
     },
-    margin: { left: margin + 5 },
+    margin: { left: margin, right: margin },
   });
 
-  // --- VERIFICATION CHECKLIST ---
-  const finalY = (doc as any).lastAutoTable.finalY || 150;
+  const finalY = (doc as any).lastAutoTable.finalY || 180;
+
+  // --- SIGNATURE SECTION ---
+  const sigWidth = 60;
+  const sigY = finalY + 20;
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
   
+  // Left: Applicant
+  doc.text('Pemohon / Pelaku Usaha,', margin + 10, sigY);
+  doc.line(margin + 10, sigY + 25, margin + 10 + sigWidth, sigY + 25);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.text('TABEL VERIFIKASI BERKAS (Oleh Petugas)', margin + 5, finalY + 15);
+  doc.text(actor.fullName.toUpperCase(), margin + 10 + sigWidth / 2, sigY + 30, { align: 'center' });
 
-  const checklistData = [
-    ['1', 'Fhotocopy KTP Pelaku Usaha', '[      ]'],
-    ['2', 'Fhotocopy Kartu Keluarga', '[      ]'],
-    ['3', 'Nomor Induk Berusaha (NIB)', '[      ]'],
-    ['4', 'Fhoto Usaha dan Pelaku Usaha', '[      ]'],
-    ['5', 'Map', '[      ]'],
-  ];
-
-  autoTable(doc, {
-    startY: finalY + 20,
-    head: [['NO', 'PERSYARATAN / DOKUMEN', 'CEKLIST']],
-    body: checklistData,
-    theme: 'grid',
-    headStyles: {
-      fillColor: [240, 240, 240],
-      textColor: [0, 0, 0],
-      fontStyle: 'bold',
-      halign: 'center',
-    },
-    columnStyles: {
-      0: { halign: 'center', cellWidth: 15 },
-      1: { cellWidth: 100 },
-      2: { halign: 'center', cellWidth: 30 },
-    },
-    styles: {
-      fontSize: 10,
-      cellPadding: 4,
-    },
-    margin: { left: margin + 5 },
-  });
+  // Right: Officer
+  doc.setFont('helvetica', 'normal');
+  doc.text('Petugas Verifikasi,', pageWidth - margin - sigWidth - 10, sigY);
+  doc.line(pageWidth - margin - sigWidth - 10, sigY + 25, pageWidth - margin - 10, sigY + 25);
+  doc.text('( ........................................ )', pageWidth - margin - 10 - sigWidth / 2, sigY + 30, { align: 'center' });
 
   // --- FOOTER ---
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setTextColor(150);
-  doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, margin, 285);
-  doc.text('SIMPU - Sistem Informasi Manajemen Pelaku Usaha', pageWidth / 2, 285, { align: 'center' });
-  doc.text(`Halaman 1 / 1`, pageWidth - margin, 285, { align: 'right' });
+  doc.setFont('helvetica', 'italic');
+  doc.text(`Dokumen ini di-generate secara otomatis oleh Sistem SIMPU pada ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, 285, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.text(`ID: ${actor.id} | Page 1 of 1`, pageWidth - margin, 285, { align: 'right' });
 
   // Save the PDF
-  const filename = `FORMULIR_PENDAFTARAN_${actor.fullName.replace(/\s+/g, '_').toUpperCase()}.pdf`;
+  const filename = `FORMULIR_${regCode}_${actor.fullName.replace(/\s+/g, '_').toUpperCase()}.pdf`;
   doc.save(filename);
 };
