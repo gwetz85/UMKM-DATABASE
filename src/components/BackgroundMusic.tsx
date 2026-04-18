@@ -32,6 +32,14 @@ export function BackgroundMusic({ className }: { className?: string }) {
   const playerRef = useRef<any>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
 
+  // Refs to avoid stale closures in YouTube callbacks
+  const hasInteractedRef = useRef(false);
+  const isPlayingRef = useRef(false);
+  const isPlayerReadyRef = useRef(false);
+  const isMutedRef = useRef(false);
+  const volumeRef = useRef(50);
+  const currentTitleRef = useRef("");
+
 
   // Configuration: YouTube Playlist
   // Playlist ID: PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7
@@ -115,22 +123,26 @@ export function BackgroundMusic({ className }: { className?: string }) {
             const playerState = event.data;
             
             if (playerState === window.YT.PlayerState.PLAYING) {
+              hasInteractedRef.current = true;
+              isPlayingRef.current = true;
               setHasInteracted(true);
               setIsPlaying(true);
               
               const videoData = event.target.getVideoData();
               if (videoData && videoData.title) {
+                currentTitleRef.current = videoData.title;
                 setCurrentTitle(videoData.title);
               }
             } else if (playerState === window.YT.PlayerState.PAUSED) {
+              isPlayingRef.current = false;
               setIsPlaying(false);
             } else if (playerState === window.YT.PlayerState.ENDED) {
               // If it ended and didn't loop automatically, force it
               event.target.playVideoAt(0);
             } else if (playerState === window.YT.PlayerState.UNSTARTED) {
               // Sometimes playlists get stuck at unstarted when moving between videos
-              // If we have interacted, try to kickstart it
-              if (hasInteracted) {
+              // Use ref to avoid stale closure
+              if (hasInteractedRef.current) {
                 event.target.playVideo();
               }
             }
@@ -150,12 +162,10 @@ export function BackgroundMusic({ className }: { className?: string }) {
 
     loadYoutubeApi();
 
-    return () => {
-      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
-        playerRef.current.destroy();
-        playerRef.current = null;
-      }
-    };
+    // NOTE: Do NOT destroy the player on cleanup.
+    // BackgroundMusic lives in the global layout and must persist across page navigations.
+    // Destroying the player would stop music when navigating between pages.
+    return () => {};
   }, [playlistId]);
 
   useEffect(() => {
@@ -198,18 +208,20 @@ export function BackgroundMusic({ className }: { className?: string }) {
 
 
   const toggleMute = () => {
-    if (playerRef.current && isPlayerReady) {
-      const nextMuteState = !isMuted;
+    if (playerRef.current && isPlayerReadyRef.current) {
+      const nextMuteState = !isMutedRef.current;
       if (nextMuteState) {
         playerRef.current.mute();
       } else {
         playerRef.current.unMute();
-        playerRef.current.setVolume(volume);
-        if (!hasInteracted) {
+        playerRef.current.setVolume(volumeRef.current);
+        if (!hasInteractedRef.current) {
           playerRef.current.playVideo();
+          hasInteractedRef.current = true;
           setHasInteracted(true);
         }
       }
+      isMutedRef.current = nextMuteState;
       setIsMuted(nextMuteState);
       
       // Dispatch event for other components
@@ -218,23 +230,27 @@ export function BackgroundMusic({ className }: { className?: string }) {
   };
 
   const handleManualPlayPause = (shouldPlay: boolean) => {
-    if (playerRef.current && isPlayerReady) {
+    if (playerRef.current && isPlayerReadyRef.current) {
       if (shouldPlay) {
         playerRef.current.playVideo();
+        isPlayingRef.current = true;
+        hasInteractedRef.current = true;
         setIsPlaying(true);
         setHasInteracted(true);
       } else {
         playerRef.current.pauseVideo();
+        isPlayingRef.current = false;
         setIsPlaying(false);
       }
     }
   };
 
   // Listen for external controls (like from Dashboard)
+  // Uses refs internally to avoid stale closures — no isPlaying in deps
   useEffect(() => {
     const handleRemoteControl = (e: any) => {
       const { action, value } = e.detail;
-      if (!playerRef.current || !isPlayerReady) return;
+      if (!playerRef.current || !isPlayerReadyRef.current) return;
 
       switch(action) {
         case 'play': handleManualPlayPause(true); break;
@@ -244,6 +260,8 @@ export function BackgroundMusic({ className }: { className?: string }) {
         case 'volume': handleVolumeChange([value]); break;
         case 'playAt': 
           playerRef.current.playVideoAt(value);
+          isPlayingRef.current = true;
+          hasInteractedRef.current = true;
           setIsPlaying(true);
           setHasInteracted(true);
           break;
@@ -256,9 +274,33 @@ export function BackgroundMusic({ className }: { className?: string }) {
       }
     };
 
+    // Listen for status requests from Dashboard card when it mounts
+    const handleStatusRequest = () => {
+      window.dispatchEvent(new CustomEvent('music-status-update', {
+        detail: {
+          isPlaying: isPlayingRef.current,
+          currentTitle: currentTitleRef.current,
+          isPlayerReady: isPlayerReadyRef.current,
+          volume: volumeRef.current,
+          isMuted: isMutedRef.current,
+        }
+      }));
+    };
+
     window.addEventListener('music-remote-control', handleRemoteControl);
-    return () => window.removeEventListener('music-remote-control', handleRemoteControl);
-  }, [isPlayerReady, isPlaying]);
+    window.addEventListener('music-request-status', handleStatusRequest);
+    return () => {
+      window.removeEventListener('music-remote-control', handleRemoteControl);
+      window.removeEventListener('music-request-status', handleStatusRequest);
+    };
+  }, []);
+
+  // Sync all refs whenever state changes
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+  useEffect(() => { isPlayerReadyRef.current = isPlayerReady; }, [isPlayerReady]);
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+  useEffect(() => { volumeRef.current = volume; }, [volume]);
+  useEffect(() => { currentTitleRef.current = currentTitle; }, [currentTitle]);
 
   // Dispatch state changes to listeners (like Dashboard)
   useEffect(() => {
@@ -269,14 +311,17 @@ export function BackgroundMusic({ className }: { className?: string }) {
 
   const handleVolumeChange = (value: number[]) => {
     const newVolume = value[0];
+    volumeRef.current = newVolume;
     setVolume(newVolume);
-    if (playerRef.current && isPlayerReady) {
+    if (playerRef.current && isPlayerReadyRef.current) {
       playerRef.current.setVolume(newVolume);
-      if (newVolume > 0 && isMuted) {
+      if (newVolume > 0 && isMutedRef.current) {
         playerRef.current.unMute();
+        isMutedRef.current = false;
         setIsMuted(false);
-      } else if (newVolume === 0 && !isMuted) {
+      } else if (newVolume === 0 && !isMutedRef.current) {
         playerRef.current.mute();
+        isMutedRef.current = true;
         setIsMuted(true);
       }
     }
@@ -284,26 +329,31 @@ export function BackgroundMusic({ className }: { className?: string }) {
 
 
   const handleNext = () => {
-    if (playerRef.current && isPlayerReady) {
+    if (playerRef.current && isPlayerReadyRef.current) {
       playerRef.current.nextVideo();
+      isPlayingRef.current = true;
       setIsPlaying(true);
     }
   };
 
   const handlePrevious = () => {
-    if (playerRef.current && isPlayerReady) {
+    if (playerRef.current && isPlayerReadyRef.current) {
       playerRef.current.previousVideo();
+      isPlayingRef.current = true;
       setIsPlaying(true);
     }
   };
 
   const togglePlayPause = () => {
-    if (playerRef.current && isPlayerReady) {
-      if (isPlaying) {
+    if (playerRef.current && isPlayerReadyRef.current) {
+      if (isPlayingRef.current) {
         playerRef.current.pauseVideo();
+        isPlayingRef.current = false;
         setIsPlaying(false);
       } else {
         playerRef.current.playVideo();
+        isPlayingRef.current = true;
+        hasInteractedRef.current = true;
         setIsPlaying(true);
         setHasInteracted(true);
       }

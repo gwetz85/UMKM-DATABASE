@@ -39,6 +39,11 @@ export function MusicDashboardCard() {
   const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
 
+  // On mount, request current status from BackgroundMusic (persists across navigation)
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('music-request-status'));
+  }, []);
+
   useEffect(() => {
     const handleStatusUpdate = (e: any) => {
       const { isPlaying, currentTitle, isPlayerReady, isMuted } = e.detail;
