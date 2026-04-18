@@ -72,27 +72,6 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
     margin: { left: margin, right: margin },
   });
 
-  const finalY = (doc as any).lastAutoTable.finalY || 180;
-
-  // --- SIGNATURE SECTION ---
-  const sigWidth = 60;
-  const sigY = finalY + 20;
-
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  
-  // Left: Applicant
-  doc.text('Pemohon / Pelaku Usaha,', margin + 10, sigY);
-  doc.line(margin + 10, sigY + 25, margin + 10 + sigWidth, sigY + 25);
-  doc.setFont('helvetica', 'bold');
-  doc.text(actor.fullName.toUpperCase(), margin + 10 + sigWidth / 2, sigY + 30, { align: 'center' });
-
-  // Right: Officer
-  doc.setFont('helvetica', 'normal');
-  doc.text('Petugas Verifikasi,', pageWidth - margin - sigWidth - 10, sigY);
-  doc.line(pageWidth - margin - sigWidth - 10, sigY + 25, pageWidth - margin - 10, sigY + 25);
-  doc.text('( ........................................ )', pageWidth - margin - 10 - sigWidth / 2, sigY + 30, { align: 'center' });
-
   // --- FOOTER ---
   doc.setFontSize(7);
   doc.setTextColor(150);

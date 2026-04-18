@@ -615,6 +615,7 @@ function ActorDataContent() {
                     <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
                       {[
+                        { label: "Reg ID", value: viewingActor.registrationCode },
                         { label: "Nama Lengkap", value: viewingActor.fullName },
                         { label: "NIK", value: viewingActor.nik },
                         { label: "Nomor KK", value: viewingActor.noKK },
