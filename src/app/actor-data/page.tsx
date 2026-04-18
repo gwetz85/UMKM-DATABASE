@@ -246,6 +246,7 @@ function ActorDataContent() {
         "USAHA": (actor.businessName || "").toUpperCase(),
         "LOKASI USAHA": (actor.businessLocation || "").toUpperCase(),
         "KOORDINATOR": (actor.coordinator || "").toUpperCase(),
+        "REG ID": actor.registrationCode || "-",
       }))
 
       const worksheet = XLSX.utils.json_to_sheet(exportData)
@@ -270,6 +271,23 @@ function ActorDataContent() {
       toast({ variant: "destructive", title: "Error", description: "Gagal mengekspor data." })
     }
   }
+
+  // Auto-generate missing registration codes for currently filtered actors
+  useEffect(() => {
+    if (!database || !filteredActors || filteredActors.length === 0) return;
+    
+    const missingCodes = filteredActors.filter(a => !a.registrationCode);
+    if (missingCodes.length === 0) return;
+
+    // Process a small batch to prevent firebase connection throttling
+    const batch = missingCodes.slice(0, 20);
+    batch.forEach(actor => {
+       const randomCode = Math.floor(10000000 + Math.random() * 90000000).toString();
+       updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), {
+          registrationCode: randomCode
+       });
+    });
+  }, [filteredActors, database]);
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -351,8 +369,11 @@ function ActorDataContent() {
                             <p className="text-[10px] text-muted-foreground uppercase line-clamp-1 print:line-clamp-none font-bold flex items-center justify-center print:justify-start gap-1" title={actor.fullName}>
                               <User className="w-3 h-3 print:hidden" /> {actor.fullName}
                             </p>
+                            <p className="text-[9px] font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-sm print:hidden">
+                              Reg: {actor.registrationCode || "PROSES..."}
+                            </p>
                             <p className="text-[9px] text-muted-foreground font-mono hidden print:block">
-                              NIK: {actor.nik} | Koor: {actor.coordinator}
+                              NIK: {actor.nik} | Reg: {actor.registrationCode || "-"} | Koor: {actor.coordinator}
                             </p>
                             <div className="flex justify-center print:hidden">
                               <CheckDataIndicator 
@@ -394,8 +415,11 @@ function ActorDataContent() {
                               <span className="font-bold text-slate-800 uppercase text-[13px] print:text-black">{actor.fullName}</span>
                             </TableCell>
                             <TableCell className="py-4">
-                              <span className="font-mono text-[11px] text-slate-600 print:text-black">{actor.nik}</span>
-                              <div className="print:hidden">
+                              <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.nik}</span>
+                              <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm print:hidden inline-block mt-0.5">
+                                Reg: {actor.registrationCode || "..."}
+                              </span>
+                              <div className="print:hidden mt-0.5">
                                 <CheckDataIndicator 
                                   actor={actor} 
                                   data2023={data2023}

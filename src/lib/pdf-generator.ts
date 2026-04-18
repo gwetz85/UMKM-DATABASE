@@ -13,49 +13,26 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
 
-  // --- OFFICIAL HEADER ---
-  try {
-     // We try to add the logo if possible. In client-side Next.js, /logo.png should work.
-     doc.addImage('/logo.png', 'PNG', margin, 12, 22, 22);
-  } catch (e) {
-     console.warn("Logo not found or could not be loaded");
-  }
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.text('PEMERINTAH KABUPATEN / KOTA', pageWidth / 2 + 10, 18, { align: 'center' });
-  doc.setFontSize(16);
-  doc.text('DINAS KOPERASI DAN UMKM', pageWidth / 2 + 10, 25, { align: 'center' });
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Sistem Informasi Manajemen Pelaku Usaha (SIMPU)', pageWidth / 2 + 10, 30, { align: 'center' });
-
-  // Double Line Separator
-  doc.setLineWidth(0.8);
-  doc.line(margin, 38, pageWidth - margin, 38);
-  doc.setLineWidth(0.2);
-  doc.line(margin, 39, pageWidth - margin, 39);
-
   // --- REGISTRATION CODE & BARCODE (TOP RIGHT) ---
   const regCode = actor.registrationCode || 'PENDING';
   const barcodeBase64 = generateBarcodeBase64(regCode);
 
   if (barcodeBase64 && regCode !== 'PENDING') {
-    doc.addImage(barcodeBase64, 'PNG', pageWidth - margin - 45, 45, 45, 12);
+    doc.addImage(barcodeBase64, 'PNG', pageWidth - margin - 45, 20, 45, 12);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text(regCode, pageWidth - margin - 22.5, 62, { align: 'center' });
+    doc.text(regCode, pageWidth - margin - 22.5, 37, { align: 'center' });
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.text('REGISTRATION CODE', pageWidth - margin - 22.5, 65, { align: 'center' });
+    doc.text('REGISTRATION CODE', pageWidth - margin - 22.5, 40, { align: 'center' });
   }
 
   // --- DOCUMENT TITLE ---
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text('FORMULIR BIODATA PELAKU USAHA', pageWidth / 2, 75, { align: 'center' });
+  doc.text('FORMULIR BIODATA PELAKU USAHA', pageWidth / 2, 55, { align: 'center' });
   doc.setLineWidth(0.5);
-  doc.line(pageWidth / 2 - 40, 77, pageWidth / 2 + 40, 77);
+  doc.line(pageWidth / 2 - 40, 57, pageWidth / 2 + 40, 57);
 
   // --- ACTOR DATA TABLE ---
   const tableData = [
@@ -80,7 +57,7 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
   ];
 
   autoTable(doc, {
-    startY: 85,
+    startY: 65,
     body: tableData as any,
     theme: 'plain',
     styles: {
@@ -120,9 +97,7 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
   doc.setFontSize(7);
   doc.setTextColor(150);
   doc.setFont('helvetica', 'italic');
-  doc.text(`Dokumen ini di-generate secara otomatis oleh Sistem SIMPU pada ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, 285, { align: 'center' });
-  doc.setFont('helvetica', 'normal');
-  doc.text(`ID: ${actor.id} | Page 1 of 1`, pageWidth - margin, 285, { align: 'right' });
+  doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, 285, { align: 'center' });
 
   // Save the PDF
   const filename = `FORMULIR_${regCode}_${actor.fullName.replace(/\s+/g, '_').toUpperCase()}.pdf`;
