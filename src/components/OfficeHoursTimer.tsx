@@ -15,6 +15,7 @@ export function OfficeHoursTimer({
   const status = useOfficeStatus()
 
   const [currentTime, setCurrentTime] = useState("")
+  const [currentDate, setCurrentDate] = useState("")
 
   useEffect(() => {
     const tick = () => {
@@ -22,7 +23,11 @@ export function OfficeHoursTimer({
       const hh = now.getHours().toString().padStart(2, "0")
       const mm = now.getMinutes().toString().padStart(2, "0")
       const ss = now.getSeconds().toString().padStart(2, "0")
+      const dd = now.getDate().toString().padStart(2, "0")
+      const mo = (now.getMonth() + 1).toString().padStart(2, "0")
+      const yy = now.getFullYear().toString().slice(-2)
       setCurrentTime(`${hh}:${mm}:${ss}`)
+      setCurrentDate(`${dd}/${mo}/${yy}`)
     }
     tick()
     const id = setInterval(tick, 1000)
@@ -53,13 +58,20 @@ export function OfficeHoursTimer({
           </span>
         </div>
         {currentTime && (
-          <div className={`flex items-center gap-1 ${large ? "mt-1" : "mt-0.5"}`}>
-            <span className={`${large ? "text-lg" : "text-[11px] md:text-xs"} font-mono font-bold tracking-tighter opacity-60 leading-none`}>
-              {currentTime}
+          <div className={`flex flex-col ${large ? "items-center gap-0.5 mt-1" : "items-end gap-0 mt-0.5"}`}>
+            {/* Tanggal */}
+            <span className={`${large ? "text-sm" : "text-[10px] md:text-[11px]"} font-mono font-black tracking-tight text-black leading-none`}>
+              {currentDate}
             </span>
-            <span className={`${large ? "text-[9px]" : "text-[8px]"} font-bold opacity-40 uppercase`}>
-              WIB
-            </span>
+            {/* Jam */}
+            <div className="flex items-center gap-1">
+              <span className={`${large ? "text-xl" : "text-[12px] md:text-sm"} font-mono font-black tracking-tighter text-black leading-none`}>
+                {currentTime}
+              </span>
+              <span className={`${large ? "text-[9px]" : "text-[8px]"} font-black text-black/50 uppercase`}>
+                WIB
+              </span>
+            </div>
           </div>
         )}
       </div>
