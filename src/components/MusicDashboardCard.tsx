@@ -39,9 +39,14 @@ export function MusicDashboardCard() {
   const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
 
-  // On mount, request current status from BackgroundMusic (persists across navigation)
+  // On mount, request current status from BackgroundMusic (persists across navigation).
+  // Small delay (300ms) to allow YouTube to auto-resume after the brief navigation-triggered
+  // PAUSED event before we query its actual state.
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('music-request-status'));
+    const timer = setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('music-request-status'));
+    }, 300);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {

@@ -274,13 +274,50 @@ export function BackgroundMusic({ className }: { className?: string }) {
       }
     };
 
-    // Listen for status requests from Dashboard card when it mounts
+    // Listen for status requests from Dashboard card when it mounts.
+    // IMPORTANT: Query actual YouTube player state, not cached refs.
+    // Navigation may trigger a brief PAUSED event in YouTube then auto-resume,
+    // leaving refs stale. getPlayerState() always returns the real current state.
     const handleStatusRequest = () => {
+      let actualIsPlaying = isPlayingRef.current;
+      let actualTitle = currentTitleRef.current;
+      let actualIsReady = isPlayerReadyRef.current;
+
+      if (playerRef.current && typeof playerRef.current.getPlayerState === 'function') {
+        try {
+          const ytState = playerRef.current.getPlayerState();
+          // YT.PlayerState.PLAYING === 1
+          actualIsPlaying = ytState === 1;
+          actualIsReady = ytState !== -1 && ytState !== undefined;
+
+          const videoData = playerRef.current.getVideoData?.();
+          if (videoData?.title) {
+            actualTitle = videoData.title;
+          }
+
+          // Sync refs and React state to match actual player state
+          if (actualIsPlaying !== isPlayingRef.current) {
+            isPlayingRef.current = actualIsPlaying;
+            setIsPlaying(actualIsPlaying);
+          }
+          if (actualTitle !== currentTitleRef.current) {
+            currentTitleRef.current = actualTitle;
+            setCurrentTitle(actualTitle);
+          }
+          if (actualIsReady !== isPlayerReadyRef.current) {
+            isPlayerReadyRef.current = actualIsReady;
+            setIsPlayerReady(actualIsReady);
+          }
+        } catch (e) {
+          // Player not ready yet, fall back to refs
+        }
+      }
+
       window.dispatchEvent(new CustomEvent('music-status-update', {
         detail: {
-          isPlaying: isPlayingRef.current,
-          currentTitle: currentTitleRef.current,
-          isPlayerReady: isPlayerReadyRef.current,
+          isPlaying: actualIsPlaying,
+          currentTitle: actualTitle,
+          isPlayerReady: actualIsReady,
           volume: volumeRef.current,
           isMuted: isMutedRef.current,
         }
