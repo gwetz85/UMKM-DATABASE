@@ -288,7 +288,7 @@ export function BackgroundMusic({ className }: { className?: string }) {
           const ytState = playerRef.current.getPlayerState();
           // YT.PlayerState.PLAYING === 1
           actualIsPlaying = ytState === 1;
-          actualIsReady = ytState !== -1 && ytState !== undefined;
+          actualIsReady = ytState !== undefined;
 
           const videoData = playerRef.current.getVideoData?.();
           if (videoData?.title) {
