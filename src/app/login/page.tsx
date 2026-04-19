@@ -122,14 +122,26 @@ export default function LoginPage() {
           }
         } else {
           // KEY SECURITY FIX: Reject login if user is not found in system_users
-          await signOut(auth)
-          toast({ 
-            variant: "destructive", 
-            title: "Akses Ditolak", 
-            description: "Username ini tidak terdaftar di sistem Manajemen User."
-          })
-          setLoading(false)
-          return
+          // Bypass for developer explicitly defined in the app
+          let hasAdminBypass = email === 'agus@umkm.id';
+          if (!hasAdminBypass && user.uid) {
+            const roleRef = ref(database, `roles_admin/${user.uid}`);
+            const roleSnap = await get(roleRef);
+            if (roleSnap.exists() && roleSnap.val().admin === true) {
+              hasAdminBypass = true;
+            }
+          }
+
+          if (!hasAdminBypass) {
+            await signOut(auth)
+            toast({ 
+              variant: "destructive", 
+              title: "Akses Ditolak", 
+              description: "Username ini tidak terdaftar di sistem Manajemen User."
+            })
+            setLoading(false)
+            return
+          }
         }
         
         toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
