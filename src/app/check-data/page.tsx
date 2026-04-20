@@ -8,11 +8,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database, UserSearch, User, Eye, FileText, ShieldAlert } from "lucide-react"
+import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database, UserSearch, User, Eye, FileText, ShieldAlert, Camera } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { cn, formatCurrency } from "@/lib/utils"
+import { KKOcrScanner } from "@/components/kk-ocr-scanner"
 
 export default function CheckDataPage() {
   const { user } = useUser()
@@ -23,6 +24,7 @@ export default function CheckDataPage() {
   const [inputValue, setInputValue] = useState("")
   const [selectedResult, setSelectedResult] = useState<any | null>(null)
   const [searchCriteria, setSearchCriteria] = useState<{ type: string, value: string } | null>(null)
+  const [isOcrOpen, setIsOcrOpen] = useState(false)
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -110,6 +112,19 @@ export default function CheckDataPage() {
     setSearchDone(true)
   }
 
+  const handleOcrSuccess = (noKK: string) => {
+    setSearchType("noKK")
+    setInputValue(noKK)
+    
+    // Langsung trigger pencarian
+    setSearchDone(false)
+    setSearchCriteria({ 
+      type: "noKK", 
+      value: noKK.trim()
+    })
+    setSearchDone(true)
+  }
+
   return (
     <div className="p-4 md:p-8 max-w-[95rem] mx-auto space-y-8">
       <div className="text-center space-y-3">
@@ -160,9 +175,20 @@ export default function CheckDataPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="inputValue" className="font-bold text-foreground">
-                  {searchType === "nik" ? "NIK" : searchType === "noKK" ? "Nomor KK" : "Nama Lengkap"}
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="inputValue" className="font-bold text-foreground">
+                    {searchType === "nik" ? "NIK" : searchType === "noKK" ? "Nomor KK" : "Nama Lengkap"}
+                  </Label>
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 text-[10px] font-black uppercase text-primary hover:bg-primary/10 gap-1.5"
+                    onClick={() => setIsOcrOpen(true)}
+                  >
+                    <Camera className="w-3 h-3" /> Scan Kartu Keluarga
+                  </Button>
+                </div>
                 <Input 
                   id="inputValue" 
                   placeholder={searchType === "nik" ? "Masukkan 16 digit NIK..." : searchType === "noKK" ? "Masukkan 16 digit Nomor KK..." : "Masukkan Nama Lengkap..."} 
@@ -341,6 +367,12 @@ export default function CheckDataPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <KKOcrScanner 
+        open={isOcrOpen} 
+        onOpenChange={setIsOcrOpen} 
+        onScanSuccess={handleOcrSuccess} 
+      />
     </div>
   )
 }
