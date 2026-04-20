@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
 
     const genAI = new GoogleGenerativeAI(API_KEY);
     
-    // Try multiple models in order of preference
-    const modelNames = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro-vision"];
+    // Try multiple models in order of preference (newest first)
+    const modelNames = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash"];
     
     let result = "";
     let lastError = "";
