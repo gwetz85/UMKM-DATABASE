@@ -184,7 +184,6 @@ export default function InputDataPage() {
       setKelurahan("")
       setKecamatan("")
       setSelectedCoordinator("")
-      setNoKKValue("")
     } catch (error) {
       console.error(error)
       toast({
