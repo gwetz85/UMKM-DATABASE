@@ -69,7 +69,8 @@ export function KKOcrScanner({ onScanSuccess, open, onOpenChange }: KKOcrScanner
         onOpenChange(false)
         resetScanner()
       } else {
-        throw new Error(data.error || "Gagal membaca Nomor KK")
+        const errorMsg = data.details ? `${data.error}: ${data.details}` : (data.error || "Gagal membaca Nomor KK")
+        throw new Error(errorMsg)
       }
     } catch (error: any) {
       toast({
