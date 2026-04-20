@@ -2,15 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+    // Hardcoded fallback - API key dari Google AI Studio
+    const apiKey = process.env.GOOGLE_API_KEY 
+      || process.env.GEMINI_API_KEY 
+      || process.env.GOOGLE_GENAI_API_KEY
+      || "AIzaSyDs96utVHtd3h0Lp3m7phO7LOH4MRuZiF8";
     
-    if (!apiKey) {
-      return NextResponse.json({ 
-        error: "API Key tidak ditemukan", 
-        details: "Pastikan GOOGLE_API_KEY sudah diset di .env.local" 
-      }, { status: 500 });
-    }
-
     const { image } = await req.json();
 
     if (!image) {
