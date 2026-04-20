@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Save, CheckCircle2, Camera } from "lucide-react"
+import { Loader2, Save, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { KKOcrScanner } from "@/components/kk-ocr-scanner"
+
 
 export default function InputDataPage() {
   const { toast } = useToast()
@@ -33,8 +33,6 @@ export default function InputDataPage() {
   const [kelurahan, setKelurahan] = useState<string>("")
   const [kecamatan, setKecamatan] = useState<string>("")
   const [selectedCoordinator, setSelectedCoordinator] = useState<string>("")
-  const [noKKValue, setNoKKValue] = useState("")
-  const [isOcrOpen, setIsOcrOpen] = useState(false)
 
   // Fetch Quotas and All Actors for validation
   const quotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
@@ -247,27 +245,8 @@ export default function InputDataPage() {
               <Input id="nik" name="nik" maxLength={16} placeholder="Masukkan 16 digit NIK..." required />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="noKK">Nomor KK</Label>
-                <Button 
-                  type="button"
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 text-[10px] font-black uppercase text-primary hover:bg-primary/10 gap-1.5"
-                  onClick={() => setIsOcrOpen(true)}
-                >
-                  <Camera className="w-3 h-3" /> Scan KK
-                </Button>
-              </div>
-              <Input 
-                id="noKK" 
-                name="noKK" 
-                maxLength={16} 
-                placeholder="Masukkan 16 digit Nomor KK..." 
-                value={noKKValue}
-                onChange={(e) => setNoKKValue(e.target.value)}
-                required 
-              />
+              <Label htmlFor="noKK">Nomor KK</Label>
+              <Input id="noKK" name="noKK" maxLength={16} placeholder="Masukkan 16 digit Nomor KK..." required />
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="pobDob">Tempat / Tanggal Lahir</Label>
@@ -394,11 +373,7 @@ export default function InputDataPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <KKOcrScanner 
-        open={isOcrOpen} 
-        onOpenChange={setIsOcrOpen} 
-        onScanSuccess={(val) => setNoKKValue(val)} 
-      />
+
     </div>
   )
 }
