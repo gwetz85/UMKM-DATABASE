@@ -42,6 +42,9 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error("OCR API Error:", error);
-    return NextResponse.json({ error: "Terjadi kesalahan pada server OCR" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Terjadi kesalahan pada server OCR", 
+      details: error.message 
+    }, { status: 500 });
   }
 }
