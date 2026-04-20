@@ -3,6 +3,9 @@ import { ai } from "@/ai/genkit";
 
 export async function POST(req: NextRequest) {
   try {
+    const apiKey = process.env.GOOGLE_GENAI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
+    console.log("OCR API: Checking environment...", { hasKey: !!apiKey });
+
     const { image } = await req.json();
 
     if (!image) {
