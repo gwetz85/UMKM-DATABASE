@@ -8,7 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Info, Mail, Phone, ShieldCheck, Zap, Database, Monitor, CreditCard, Send } from "lucide-react"
+import { Info, Mail, Phone, ShieldCheck, Zap, Database, Monitor, CreditCard, Send, SearchCheck } from "lucide-react"
 
 interface InfoDialogProps {
   children: React.ReactNode
@@ -31,7 +31,7 @@ export function InfoDialog({ children }: InfoDialogProps) {
               <DialogTitle className="text-2xl font-black tracking-tight text-white mb-1">
                 Informasi Aplikasi
               </DialogTitle>
-              <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] px-0.5">SIMPU Versi 7.5</p>
+              <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] px-0.5">SIMPU Versi 8.0</p>
             </div>
           </div>
         </div>
@@ -41,11 +41,11 @@ export function InfoDialog({ children }: InfoDialogProps) {
             <p className="text-gray-700 leading-relaxed font-bold text-sm uppercase tracking-tight">
               Selamat datang di Aplikasi **SIMPU** <br/>
               <span className="text-[10px] text-muted-foreground font-black tracking-widest">- SISTEM INFORMASI MANAJEMEN PELAKU USAHA -</span> <br/>
-              <span className="text-primary mt-1 block">Versi 7.5 Update tanggal 15042026 1042</span>
+              <span className="text-primary mt-1 block">Versi 8.0 Update tanggal 22042026 0400</span>
             </p>
             <div className="bg-blue-50 border-l-4 border-primary p-4 rounded-r-xl">
               <p className="text-sm text-blue-900 leading-relaxed italic">
-                "Aplikasi ini dikembangkan dan dibuat secara Mandiri dan Independent oleh Tim Admin yang bekerja. Hak Cipta Sepenuhnya dimiliki oleh Pencipta aplikasi."
+                "Aplikasi ini dikembangkan dan dibuat secara Mandiri dan Independent oleh Tim Admin yang bekerja. Hak Cipta Sepenuhnya dimiliki oleh AGUS SURIYADI sebagai Pembuat dan Pengembang Aplikasi"
               </p>
             </div>
           </div>
@@ -59,7 +59,7 @@ export function InfoDialog({ children }: InfoDialogProps) {
                 { icon: Zap, text: "Penambahan Event Card" },
                 { icon: Zap, text: "Penambahan Music Backsound" },
                 { icon: Send, text: "Penambahan Fitur Bot Telegram" },
-                { icon: Monitor, text: "Penambahan Fitur Chat" },
+                { icon: SearchCheck, text: "Penambahan Fitur Cek Data Kolektif" },
                 { icon: ShieldCheck, text: "Penambahan Menu Verifikasi Dinas" },
                 { icon: CreditCard, text: "Penambahan Halaman Bank" },
                 { icon: Database, text: "Penambahan Database 4.045 data" },
