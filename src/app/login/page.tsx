@@ -295,9 +295,9 @@ export default function LoginPage() {
                    <CalendarDays className="w-4 h-4 animate-pulse" />
                    <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{activeEvent.description || "EVENT MENDATANG"}</span>
                  </div>
-                 <div className="scale-[0.80] sm:scale-90 md:scale-100 origin-center -my-2 md:-my-1">
-                   <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} small />
-                 </div>
+                 <div className="mt-1">
+                    <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} size="sm" />
+                  </div>
                </CardContent>
              </Card>
           )}
@@ -601,10 +601,11 @@ export default function LoginPage() {
               <div className="h-1 w-16 bg-gradient-to-r from-primary via-emerald-500 to-amber-500 rounded-full shadow-lg" />
             </div>
 
-            <div className="scale-[0.9] sm:scale-100 md:scale-[1.1] lg:scale-[1.2] origin-center py-8 md:py-12">
+            <div className="origin-center py-8 md:py-12">
               <EventCountdown 
                 targetDate={activeEvent.endDate || activeEvent.date} 
                 startDate={activeEvent.startDate} 
+                size="lg"
               />
             </div>
 

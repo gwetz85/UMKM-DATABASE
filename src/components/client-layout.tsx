@@ -161,7 +161,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2 text-center text-balance drop-shadow-sm">
                     {activeEvent.description || 'EVENT MENDATANG'}
                   </span>
-                  <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
+                  <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} size="md" />
                 </div>
               )}
             </>
@@ -193,7 +193,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                           </span>
                           <div className="h-1 w-8 md:w-12 bg-primary/20 rounded-full" />
                         </div>
-                        <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
+                        <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} size="md" />
                       </div>
                     </div>
                   )}
