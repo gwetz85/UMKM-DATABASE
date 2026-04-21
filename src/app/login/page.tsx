@@ -296,7 +296,7 @@ export default function LoginPage() {
                    <span className="text-[10px] font-black uppercase tracking-widest leading-tight">{activeEvent.description || "EVENT MENDATANG"}</span>
                  </div>
                  <div className="scale-[0.80] sm:scale-90 md:scale-100 origin-center -my-2 md:-my-1">
-                   <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
+                   <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} small />
                  </div>
                </CardContent>
              </Card>
@@ -588,28 +588,28 @@ export default function LoginPage() {
           </div>
 
           <div 
-            className="w-full max-w-5xl flex flex-col items-center gap-8 md:gap-12 animate-in zoom-in-95 slide-in-from-bottom-20 duration-500"
+            className="w-full max-w-4xl flex flex-col items-center gap-6 md:gap-10 animate-in zoom-in-95 slide-in-from-bottom-20 duration-500"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex flex-col items-center text-center gap-4 md:gap-6 px-4">
-              <div className="p-4 bg-primary/20 backdrop-blur-xl rounded-3xl border border-white/10 mb-2">
-                <CalendarDays className="w-12 h-12 md:w-20 md:h-20 text-white animate-pulse" />
+            <div className="flex flex-col items-center text-center gap-2 md:gap-4 px-4 max-w-3xl">
+              <div className="p-2 md:p-3 bg-primary/20 backdrop-blur-xl rounded-2xl border border-white/10 mb-1">
+                <CalendarDays className="w-8 h-8 md:w-12 md:h-12 text-white animate-pulse" />
               </div>
-              <h2 className="text-3xl md:text-6xl font-black text-white uppercase tracking-tight leading-tight [text-shadow:_0_4px_24px_rgba(0,0,0,0.5)]">
+              <h2 className="text-xl md:text-3xl font-black text-white uppercase tracking-tight leading-tight [text-shadow:_0_4px_24px_rgba(0,0,0,0.5)]">
                 {activeEvent.description || "EVENT MENDATANG"}
               </h2>
-              <div className="h-1.5 w-32 bg-gradient-to-r from-primary via-emerald-500 to-amber-500 rounded-full shadow-lg" />
+              <div className="h-1 w-16 bg-gradient-to-r from-primary via-emerald-500 to-amber-500 rounded-full shadow-lg" />
             </div>
 
-            <div className="scale-[1.5] sm:scale-[2] md:scale-[3] lg:scale-[3.5] origin-center py-20 md:py-32">
+            <div className="scale-[0.9] sm:scale-100 md:scale-[1.1] lg:scale-[1.2] origin-center py-8 md:py-12">
               <EventCountdown 
                 targetDate={activeEvent.endDate || activeEvent.date} 
                 startDate={activeEvent.startDate} 
               />
             </div>
 
-            <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 md:p-8 rounded-[32px] max-w-2xl text-center shadow-2xl animate-in fade-in delay-500 duration-1000">
-              <p className="text-white/80 font-bold text-sm md:text-lg uppercase tracking-widest leading-relaxed">
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-5 md:p-6 rounded-[28px] max-w-xl text-center shadow-2xl animate-in fade-in delay-500 duration-1000">
+              <p className="text-white/80 font-bold text-xs md:text-base uppercase tracking-widest leading-relaxed">
                 Persiapkan diri Anda untuk mengikuti agenda penting ini. <br className="hidden md:block" />
                 Pastikan seluruh persyaratan data sudah lengkap di sistem SIMPU.
               </p>

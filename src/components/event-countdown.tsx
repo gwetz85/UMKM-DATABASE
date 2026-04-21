@@ -6,9 +6,10 @@ import { Timer } from "lucide-react"
 interface EventCountdownProps {
   targetDate: string
   startDate?: string
+  small?: boolean
 }
 
-export function EventCountdown({ targetDate, startDate }: EventCountdownProps) {
+export function EventCountdown({ targetDate, startDate, small }: EventCountdownProps) {
   const [mounted, setMounted] = React.useState(false)
   const [timeLeft, setTimeLeft] = useState<{
     days: number
@@ -61,34 +62,62 @@ export function EventCountdown({ targetDate, startDate }: EventCountdownProps) {
 
   if (!mounted || timeLeft.isEnded) return null
 
+  if (small) {
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center gap-1.5 bg-slate-100/50 dark:bg-slate-800/50 px-2 py-1 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
+          <div className="flex flex-col items-center min-w-[20px]">
+            <span className="text-xs font-black text-primary leading-none">{timeLeft.days}</span>
+            <span className="text-[6px] font-bold text-slate-400 uppercase tracking-tighter">Hari</span>
+          </div>
+          <span className="text-primary font-black opacity-30 text-[10px]">:</span>
+          <div className="flex flex-col items-center min-w-[20px]">
+            <span className="text-xs font-black text-primary leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
+            <span className="text-[6px] font-bold text-slate-400 uppercase tracking-tighter">Jam</span>
+          </div>
+          <span className="text-primary font-black opacity-30 text-[10px]">:</span>
+          <div className="flex flex-col items-center min-w-[20px]">
+            <span className="text-xs font-black text-primary leading-none">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+            <span className="text-[6px] font-bold text-slate-400 uppercase tracking-tighter">Menit</span>
+          </div>
+          <span className="text-primary font-black opacity-30 text-[10px]">:</span>
+          <div className="flex flex-col items-center min-w-[20px]">
+            <span className="text-xs font-black text-primary leading-none">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+            <span className="text-[6px] font-bold text-slate-400 uppercase tracking-tighter">Detik</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-2">
       {startDate && !timeLeft.isStarted && (
-        <span className="text-[8px] md:text-[10px] font-bold text-amber-500 uppercase tracking-widest animate-pulse border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 md:px-3 md:py-1 rounded-full">Segera Hadir</span>
+        <span className="text-[10px] md:text-xs font-black text-amber-500 uppercase tracking-widest animate-pulse border-2 border-amber-500/30 bg-amber-500/10 px-4 py-1.5 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.2)]">Segera Hadir</span>
       )}
       {startDate && timeLeft.isStarted && !timeLeft.isEnded && (
-        <span className="text-[8px] md:text-[10px] font-bold text-emerald-500 uppercase tracking-widest animate-pulse border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 md:px-3 md:py-1 rounded-full">Sedang Berlangsung</span>
+        <span className="text-[10px] md:text-xs font-black text-emerald-500 uppercase tracking-widest animate-pulse border-2 border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.2)]">Sedang Berlangsung</span>
       )}
-      <div className="flex items-center gap-1.5 md:gap-3 bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-slate-800/40 px-3 py-1.5 md:px-5 md:py-2.5 rounded-2xl shadow-sm backdrop-blur-md mt-1">
-      <div className="flex flex-col items-center">
-        <span className="text-[10px] md:text-2xl font-black text-primary leading-none">{timeLeft.days}</span>
-        <span className="text-[6px] md:text-[8px] font-bold text-slate-400 uppercase tracking-tighter md:tracking-wider md:mt-1">Hari</span>
-      </div>
-      <span className="text-primary font-black animate-pulse opacity-40 md:text-lg">:</span>
-      <div className="flex flex-col items-center">
-        <span className="text-[10px] md:text-2xl font-black text-primary leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
-        <span className="text-[6px] md:text-[8px] font-bold text-slate-400 uppercase tracking-tighter md:tracking-wider md:mt-1">Jam</span>
-      </div>
-      <span className="text-primary font-black animate-pulse opacity-40 md:text-lg">:</span>
-      <div className="flex flex-col items-center">
-        <span className="text-[10px] md:text-2xl font-black text-primary leading-none">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-        <span className="text-[6px] md:text-[8px] font-bold text-slate-400 uppercase tracking-tighter md:tracking-wider md:mt-1">Menit</span>
-      </div>
-      <span className="text-primary font-black animate-pulse opacity-40 md:text-lg">:</span>
-      <div className="flex flex-col items-center">
-        <span className="text-[10px] md:text-2xl font-black text-primary leading-none">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-        <span className="text-[6px] md:text-[8px] font-bold text-slate-400 uppercase tracking-tighter md:tracking-wider md:mt-1">Detik</span>
-      </div>
+      <div className="flex items-center gap-2 md:gap-4 bg-white/10 dark:bg-slate-900/40 border border-white/20 dark:border-slate-800/40 px-4 py-3 md:px-8 md:py-6 rounded-[32px] shadow-2xl backdrop-blur-xl mt-2">
+        <div className="flex flex-col items-center min-w-[50px] md:min-w-[80px]">
+          <span className="text-3xl md:text-6xl font-black text-primary leading-none tracking-tighter">{timeLeft.days}</span>
+          <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 md:mt-2 opacity-70">Hari</span>
+        </div>
+        <span className="text-primary font-black animate-pulse opacity-30 text-xl md:text-4xl -mt-4 md:-mt-6">:</span>
+        <div className="flex flex-col items-center min-w-[50px] md:min-w-[80px]">
+          <span className="text-3xl md:text-6xl font-black text-primary leading-none tracking-tighter">{timeLeft.hours.toString().padStart(2, '0')}</span>
+          <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 md:mt-2 opacity-70">Jam</span>
+        </div>
+        <span className="text-primary font-black animate-pulse opacity-30 text-xl md:text-4xl -mt-4 md:-mt-6">:</span>
+        <div className="flex flex-col items-center min-w-[50px] md:min-w-[80px]">
+          <span className="text-3xl md:text-6xl font-black text-primary leading-none tracking-tighter">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+          <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 md:mt-2 opacity-70">Menit</span>
+        </div>
+        <span className="text-primary font-black animate-pulse opacity-30 text-xl md:text-4xl -mt-4 md:-mt-6">:</span>
+        <div className="flex flex-col items-center min-w-[50px] md:min-w-[80px]">
+          <span className="text-3xl md:text-6xl font-black text-primary leading-none tracking-tighter">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+          <span className="text-[8px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1 md:mt-2 opacity-70">Detik</span>
+        </div>
       </div>
     </div>
   )
