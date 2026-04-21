@@ -23,7 +23,8 @@ import {
   Phone, 
   MapPin, 
   Building2, 
-  Code2
+  Code2,
+  X
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -54,6 +55,7 @@ export default function LoginPage() {
   const [showForm, setShowForm] = useState(false)
   const [showInfoModal, setShowInfoModal] = useState(false)
   const [showCheckDataModal, setShowCheckDataModal] = useState(false)
+  const [showFullEvent, setShowFullEvent] = useState(false)
 
   const auth = useAuth()
   const database = useDatabase()
@@ -71,6 +73,14 @@ export default function LoginPage() {
       }
     });
   }, [database]);
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowFullEvent(false);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
 
   const activeEvent = useActiveEvent(eventInfo);
 
@@ -271,7 +281,14 @@ export default function LoginPage() {
 
           {/* Event Info Card */}
           {activeEvent && (
-             <Card key={activeEvent.id || activeEvent.description} className="border-none shadow-xl bg-white/95 backdrop-blur-md overflow-hidden animate-in fade-in slide-in-from-top-8 duration-700 w-full pointer-events-auto">
+             <Card 
+               key={activeEvent.id || activeEvent.description} 
+               className="border-none shadow-xl bg-white/95 backdrop-blur-md overflow-hidden animate-in fade-in slide-in-from-top-8 duration-700 w-full pointer-events-auto cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+               onClick={(e) => {
+                 e.stopPropagation();
+                 setShowFullEvent(true);
+               }}
+             >
                <div className="h-1 bg-gradient-to-r from-primary via-emerald-500 to-amber-500 w-full" />
                <CardContent className="p-3 flex flex-col items-center text-center gap-2">
                  <div className="flex items-center gap-2 text-primary">
@@ -549,6 +566,57 @@ export default function LoginPage() {
            </div>
         </DialogContent>
       </Dialog>
+
+      {/* Full Screen Event View overlay */}
+      {showFullEvent && activeEvent && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-2xl p-4 md:p-8 animate-in fade-in duration-500"
+          onClick={() => setShowFullEvent(false)}
+        >
+          <div className="absolute top-6 right-6 md:top-10 md:right-10">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-white hover:bg-white/20 rounded-full w-12 h-12"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowFullEvent(false);
+              }}
+            >
+              <X className="w-8 h-8" />
+            </Button>
+          </div>
+
+          <div 
+            className="w-full max-w-5xl flex flex-col items-center gap-8 md:gap-12 animate-in zoom-in-95 slide-in-from-bottom-20 duration-500"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex flex-col items-center text-center gap-4 md:gap-6 px-4">
+              <div className="p-4 bg-primary/20 backdrop-blur-xl rounded-3xl border border-white/10 mb-2">
+                <CalendarDays className="w-12 h-12 md:w-20 md:h-20 text-white animate-pulse" />
+              </div>
+              <h2 className="text-3xl md:text-6xl font-black text-white uppercase tracking-tight leading-tight [text-shadow:_0_4px_24px_rgba(0,0,0,0.5)]">
+                {activeEvent.description || "EVENT MENDATANG"}
+              </h2>
+              <div className="h-1.5 w-32 bg-gradient-to-r from-primary via-emerald-500 to-amber-500 rounded-full shadow-lg" />
+            </div>
+
+            <div className="scale-[1.5] sm:scale-[2] md:scale-[3] lg:scale-[3.5] origin-center py-20 md:py-32">
+              <EventCountdown 
+                targetDate={activeEvent.endDate || activeEvent.date} 
+                startDate={activeEvent.startDate} 
+              />
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-6 md:p-8 rounded-[32px] max-w-2xl text-center shadow-2xl animate-in fade-in delay-500 duration-1000">
+              <p className="text-white/80 font-bold text-sm md:text-lg uppercase tracking-widest leading-relaxed">
+                Persiapkan diri Anda untuk mengikuti agenda penting ini. <br className="hidden md:block" />
+                Pastikan seluruh persyaratan data sudah lengkap di sistem SIMPU.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
