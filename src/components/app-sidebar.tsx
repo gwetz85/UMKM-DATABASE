@@ -127,6 +127,12 @@ export function AppSidebar() {
       show: isAdmin
     },
     {
+      name: "Cek Data Kolektif",
+      href: "/check-data-collective",
+      icon: SearchCheck,
+      show: isAdmin
+    },
+    {
       name: "Input Data",
       href: "/input",
       icon: UserPlus,
