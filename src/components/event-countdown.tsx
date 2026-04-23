@@ -25,20 +25,23 @@ export function EventCountdown({ targetDate, startDate, size = 'lg' }: EventCoun
     if (!targetDate) return
 
     const calculateTimeLeft = () => {
-      const target = +new Date(targetDate)
       const now = +new Date()
-      const difference = target - now
+      const start = startDate ? +new Date(startDate) : 0
+      const end = +new Date(targetDate)
       
-      let isStarted = true;
-      if (startDate) {
-        const start = +new Date(startDate)
-        if (now < start) {
-          isStarted = false;
-        }
+      let targetTime = end
+      let isStarted = true
+      
+      if (start && now < start) {
+        isStarted = false
+        targetTime = start
       }
 
-      if (isNaN(difference) || difference <= 0) {
-        return { days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true, isStarted }
+      const difference = targetTime - now
+      
+      // If end time is reached, it's ended
+      if (isNaN(difference) || (isStarted && difference <= 0)) {
+        return { days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: now >= end, isStarted }
       }
 
       return {
@@ -58,7 +61,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg' }: EventCoun
     setTimeLeft(calculateTimeLeft())
 
     return () => clearInterval(timer)
-  }, [targetDate])
+  }, [targetDate, startDate])
 
   if (!mounted || timeLeft.isEnded) return null
 
@@ -69,7 +72,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg' }: EventCoun
       number: "text-[14px]",
       label: "text-[6px]",
       colon: "text-[12px]",
-      gap: "gap-1"
+      gap: "gap-0.5"
     },
     md: {
       container: "gap-2 bg-white/40 dark:bg-slate-900/40 border border-white/40 dark:border-slate-800/40 px-4 py-2 rounded-2xl shadow-sm backdrop-blur-md",
@@ -77,7 +80,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg' }: EventCoun
       number: "text-lg md:text-2xl",
       label: "text-[7px] md:text-[8px]",
       colon: "text-base md:text-xl",
-      gap: "gap-2"
+      gap: "gap-1.5"
     },
     lg: {
       container: "gap-3 md:gap-6",
@@ -93,10 +96,10 @@ export function EventCountdown({ targetDate, startDate, size = 'lg' }: EventCoun
     return (
       <div className="flex flex-col items-center gap-4">
         {startDate && !timeLeft.isStarted && (
-          <span className="text-xs md:text-sm font-black text-amber-500 uppercase tracking-[0.2em] animate-pulse border-2 border-amber-500/30 bg-amber-500/10 px-6 py-2 rounded-full shadow-[0_0_30px_rgba(245,158,11,0.3)]">Segera Hadir</span>
+          <span className="text-xs md:text-sm font-black text-amber-500 uppercase tracking-[0.2em] animate-pulse border-2 border-amber-500/30 bg-amber-500/10 px-6 py-2 rounded-full shadow-[0_0_30px_rgba(245,158,11,0.3)]">Dimulai Dalam</span>
         )}
         {startDate && timeLeft.isStarted && !timeLeft.isEnded && (
-          <span className="text-xs md:text-sm font-black text-emerald-500 uppercase tracking-[0.2em] animate-pulse border-2 border-emerald-500/30 bg-emerald-500/10 px-6 py-2 rounded-full shadow-[0_0_30px_rgba(16,185,129,0.3)]">Sedang Berlangsung</span>
+          <span className="text-xs md:text-sm font-black text-emerald-500 uppercase tracking-[0.2em] animate-pulse border-2 border-emerald-500/30 bg-emerald-500/10 px-6 py-2 rounded-full shadow-[0_0_30px_rgba(16,185,129,0.3)]">Berakhir Dalam</span>
         )}
         
         <div className="flex items-center gap-3 md:gap-6">
@@ -149,6 +152,15 @@ export function EventCountdown({ targetDate, startDate, size = 'lg' }: EventCoun
 
   return (
     <div className={cn("flex flex-col items-center", config.gap)}>
+      {startDate && (
+        <span className={cn(
+          "font-black uppercase tracking-widest",
+          size === 'sm' ? "text-[6px] mb-0.5" : "text-[8px] mb-1",
+          timeLeft.isStarted ? "text-emerald-500" : "text-amber-500"
+        )}>
+          {timeLeft.isStarted ? "Berakhir Dalam" : "Dimulai Dalam"}
+        </span>
+      )}
       <div className={cn("flex items-center", config.container)}>
         <div className={cn("flex flex-col items-center", config.unit)}>
           <span className={cn(config.number, "font-black text-primary leading-none")}>{timeLeft.days}</span>
