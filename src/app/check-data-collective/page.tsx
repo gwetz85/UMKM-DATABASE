@@ -20,7 +20,8 @@ import {
   FileText, 
   ShieldAlert,
   AlertTriangle,
-  Table as TableIcon
+  Table as TableIcon,
+  FileDown
 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -145,6 +146,64 @@ export default function CheckDataCollectivePage() {
     setInputValue("")
   }
 
+  const handleExportPdf = () => {
+    import('jspdf').then(({ default: jsPDF }) => {
+      import('jspdf-autotable').then(({ default: autoTable }) => {
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+
+        // Header
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(14)
+        doc.text('HASIL PENGECEKKAN DATA KOLEKTIF', doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' })
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(9)
+        doc.text(
+          `Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`,
+          doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' }
+        )
+
+        const tableBody = results.map((res, index) => [
+          index + 1,
+          res.noKK || res._searchKk || '-',
+          (res.nama || res.fullName || (res._notFound ? 'TIDAK DITEMUKAN' : '-')).toUpperCase(),
+          (res.coordinator || '-').toUpperCase(),
+          (res._source || '-').toUpperCase(),
+          (res.statusLpj || (res._notFound ? '-' : 'PENDING')).toUpperCase()
+        ])
+
+        const margin = 14
+        const pageWidth = doc.internal.pageSize.getWidth()
+        const usableWidth = pageWidth - margin * 2
+
+        autoTable(doc, {
+          startY: 30,
+          margin: { left: margin, right: margin },
+          tableWidth: usableWidth,
+          head: [['No', 'Nomor KK', 'Nama Pelaku Usaha', 'Koordinator', 'Nama Sheet', 'Status']],
+          body: tableBody,
+          styles: { font: 'helvetica', fontSize: 8, cellPadding: 2, halign: 'center' },
+          headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold', halign: 'center' },
+          columnStyles: {
+            0: { cellWidth: 10 },
+            1: { cellWidth: 35 },
+            2: { halign: 'left', cellWidth: 'auto' },
+            3: { halign: 'left', cellWidth: 30 },
+            4: { cellWidth: 30 },
+            5: { cellWidth: 25 },
+          },
+          didParseCell: (data: any) => {
+             if (data.section === 'body' && data.column.index === 2 && data.cell.raw === 'TIDAK DITEMUKAN') {
+               data.cell.styles.textColor = [220, 38, 38]
+               data.cell.styles.fontStyle = 'italic'
+             }
+          }
+        })
+
+        doc.save(`Hasil_Cek_Kolektif_${new Date().toISOString().slice(0, 10)}.pdf`)
+      })
+    })
+  }
+
   return (
     <div className="p-4 md:p-8 max-w-[95rem] mx-auto space-y-8">
       <div className="text-center space-y-3">
@@ -220,9 +279,14 @@ export default function CheckDataCollectivePage() {
                   <h3 className="font-black text-primary uppercase flex items-center gap-2">
                     <TableIcon className="w-5 h-5" /> Hasil Pengecekkan Kolektif
                   </h3>
-                  <Button variant="outline" size="sm" onClick={resetSearch} className="font-bold border-primary/20 hover:bg-primary/5">
-                    Reset
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={handleExportPdf} className="font-bold border-red-200 text-red-600 hover:bg-red-50 shadow-sm">
+                      <FileDown className="w-4 h-4 mr-2" /> Cetak PDF
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={resetSearch} className="font-bold border-primary/20 hover:bg-primary/5">
+                      Reset
+                    </Button>
+                  </div>
                 </div>
                 <div className="overflow-x-auto">
                   <Table>
