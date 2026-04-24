@@ -17,15 +17,39 @@ import { BusinessActor } from "../lib/types"
 import { cn } from "@/lib/utils"
 
 const calculateAge = (dobString: string) => {
-  if (!dobString) return 0;
-  // Format: "Place, DD-MM-YYYY" atau hanya "DD-MM-YYYY"
+  if (!dobString || dobString === "-") return 0;
+  
+  // Ambil bagian tanggalnya saja (setelah koma jika ada)
   const datePart = dobString.includes(',') ? dobString.split(',').pop()?.trim() : dobString.trim();
   if (!datePart) return 0;
   
-  const [day, month, year] = datePart.split('-').map(Number);
-  if (isNaN(day) || isNaN(month) || isNaN(year)) return 0;
+  const monthsIndo: { [key: string]: number } = {
+    'JANUARI': 0, 'FEBRUARI': 1, 'MARET': 2, 'APRIL': 3, 'MEI': 4, 'JUNI': 5,
+    'JULI': 6, 'AGUSTUS': 7, 'SEPTEMBER': 8, 'OKTOBER': 9, 'NOVEMBER': 10, 'DESEMBER': 11
+  };
 
-  const birthDate = new Date(year, month - 1, day);
+  let day, month, year;
+
+  // Cek jika formatnya DD-MM-YYYY (angka)
+  if (datePart.includes('-')) {
+    const parts = datePart.split('-').map(Number);
+    day = parts[0];
+    month = parts[1] - 1;
+    year = parts[2];
+  } else {
+    // Format DD NamaBulan YYYY
+    const parts = datePart.split(' ');
+    if (parts.length < 3) return 0;
+    
+    day = parseInt(parts[0]);
+    const monthName = parts[1].toUpperCase();
+    month = monthsIndo[monthName];
+    year = parseInt(parts[2]);
+  }
+
+  if (isNaN(day) || month === undefined || isNaN(year)) return 0;
+
+  const birthDate = new Date(year, month, day);
   const today = new Date();
   
   let age = today.getFullYear() - birthDate.getFullYear();
