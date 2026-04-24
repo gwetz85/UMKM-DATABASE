@@ -151,6 +151,12 @@ export function AppSidebar() {
       show: !!user && !isDinas
     },
     {
+      name: "BPJS Ketenagakerjaan",
+      href: "/bpjs",
+      icon: ShieldCheck,
+      show: !!user && !isDinas
+    },
+    {
       name: "Data Ditolak",
       href: "/rejected",
       icon: Ban,
