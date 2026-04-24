@@ -129,7 +129,7 @@ export default function InputDataPage() {
       
       // Tahap 1: Cek duplikasi di Database Aktif (businessActors)
       const actorsSnapshot = await get(actorsRef)
-      let duplicateInActors = null
+      let duplicateInActors: any = null
       
       if (actorsSnapshot.exists()) {
         actorsSnapshot.forEach((child) => {
