@@ -41,6 +41,17 @@ export default function InputDataPage() {
   const { data: rawQuotaData } = useList<any>(quotaRef)
   const { data: rawActorsData } = useList<any>(actorsRef)
 
+  // Fetch Master Data for auto-verification
+  const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
+  const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
+  const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
+  const blacklistRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
+
+  const { data: data2023 } = useList<any>(master2023Ref)
+  const { data: data2024 } = useList<any>(master2024Ref)
+  const { data: data2025 } = useList<any>(master2025Ref)
+  const { data: dataBlacklist } = useList<any>(blacklistRef)
+
   const availableCoordinators = useMemo(() => {
     if (!rawQuotaData) return []
     
@@ -116,27 +127,38 @@ export default function InputDataPage() {
     try {
       const actorsRef = ref(database, 'businessActors')
       
-      // In-memory duplicate check to avoid orderByChild ReferenceError
+      // Tahap 1: Cek duplikasi di Database Aktif (businessActors)
       const actorsSnapshot = await get(actorsRef)
-      let duplicateFound = false
+      let duplicateInActors = null
       
       if (actorsSnapshot.exists()) {
         actorsSnapshot.forEach((child) => {
           const val = child.val()
           if (val.nik === nik || val.noKK === noKK) {
-            duplicateFound = true
+            duplicateInActors = val
           }
         })
       }
 
-      if (duplicateFound) {
+      if (duplicateInActors) {
         toast({ 
           variant: "destructive", 
           title: "DATA TELAH DI INPUT", 
-          description: "NIK atau Nomor KK ini sudah terdaftar dalam sistem." 
+          description: `NIK atau Nomor KK ini sudah terdaftar dengan Nomor Registrasi: ${duplicateInActors.registrationCode || '-'} dan Koordinator: ${duplicateInActors.coordinator || '-'}` 
         })
         setLoading(false)
         return
+      }
+
+      // Tahap 2: Cek di Database Pembanding (Informasi)
+      // Kita tidak memblokir di sini karena akan ditangani oleh Verifikasi Otomatis di menu Admin.
+      const checkMaster = (data: any[] | null) => {
+        return (data || []).find((m: any) => (m.noKK && String(m.noKK).trim() === noKK) || (m.nik && String(m.nik).trim() === nik))
+      }
+      const matchMaster = checkMaster(dataBlacklist) || checkMaster(data2025) || checkMaster(data2024) || checkMaster(data2023)
+      
+      if (matchMaster) {
+        console.log("Data ditemukan di database pembanding, akan diproses oleh verifikasi otomatis.")
       }
 
       // Coordinator Quota Check (Safeguard)
@@ -153,12 +175,15 @@ export default function InputDataPage() {
         }
       }
 
+      const registrationCode = Math.floor(10000000 + Math.random() * 90000000).toString()
+
       const data = {
         ownerId: user.uid,
         createdBy: currentUserProfile?.fullName || user.email?.split('@')[0] || "Unknown",
         fullName: formData.get("fullName"),
         nik: nik,
         noKK: noKK,
+        registrationCode: registrationCode,
         pobDob: formData.get("pobDob"),
         gender: formData.get("gender"),
         phone: formData.get("phone"),
