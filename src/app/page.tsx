@@ -6,13 +6,31 @@ import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
-import { Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap, Calendar } from "lucide-react"
+import { Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap, Calendar, PieChart as PieIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { BusinessActor } from "./lib/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MusicDashboardCard } from "@/components/MusicDashboardCard"
 import { cn } from "@/lib/utils"
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell,
+  LabelList,
+  Tooltip as RechartsTooltip
+} from "recharts"
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent,
+  type ChartConfig
+} from "@/components/ui/chart"
 
 const KELURAHAN_LIST = [
   "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
@@ -20,6 +38,28 @@ const KELURAHAN_LIST = [
   "Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana",
   "Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"
 ]
+
+const kelurahanChartConfig = {
+  count: {
+    label: "Jumlah Pelaku Usaha",
+    color: "hsl(var(--primary))",
+  },
+} satisfies ChartConfig
+
+const categoryChartConfig = {
+  kuliner: {
+    label: "Kuliner",
+    color: "hsl(var(--primary))",
+  },
+  bukan_kuliner: {
+    label: "Bukan Kuliner",
+    color: "hsl(var(--indigo-500))",
+  },
+  unknown: {
+    label: "Lainnya",
+    color: "hsl(var(--slate-400))",
+  },
+} satisfies ChartConfig
 
 export default function DashboardPage() {
   const { user, isUserLoading } = useUser()
@@ -425,87 +465,129 @@ export default function DashboardPage() {
         <div className="space-y-6">
           <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none">
             <CardHeader className="border-b border-slate-200/50 pb-4">
-              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-primary" /> Sebaran per Kelurahan
+              <CardTitle className="text-base md:text-lg font-bold flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-primary" /> Sebaran per Kelurahan
+                </div>
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-full">Bar Chart</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 md:p-6">
-              <div className="grid grid-cols-2 gap-3 md:gap-4">
-                {kelurahanStats.map((item) => (
-                  <div 
-                    key={item.name} 
-                    onClick={() => setSelectedFilter({ name: item.name, filterType: "kelurahan" })}
-                    className="p-3 rounded-xl glass-panel flex flex-col justify-between hover:shadow-lg hover:border-white/80 hover:bg-white/90 active:scale-95 transition-all duration-300 group cursor-pointer"
+              <ChartContainer config={kelurahanChartConfig} className="min-h-[400px] w-full">
+                <BarChart
+                  accessibilityLayer
+                  data={kelurahanStats}
+                  layout="vertical"
+                  margin={{
+                    left: 20,
+                    right: 40,
+                  }}
+                >
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                    tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
+                    className="text-[10px] font-bold uppercase text-slate-500"
+                    width={100}
+                  />
+                  <XAxis type="number" hide />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideIndicator />}
+                  />
+                  <Bar 
+                    dataKey="count" 
+                    layout="vertical" 
+                    radius={5} 
+                    fill="var(--color-count)"
+                    onClick={(data) => setSelectedFilter({ name: data.name, filterType: "kelurahan" })}
+                    className="cursor-pointer hover:opacity-80 transition-opacity"
                   >
-                    <div className="flex justify-between items-start mb-1">
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase leading-tight group-hover:text-primary transition-colors pr-1">{item.name}</span>
-                        <MapPin className="w-3 h-3 text-primary/30 group-hover:text-primary transition-colors shrink-0" />
-                    </div>
-                    <div className="text-lg font-black text-primary">{item.count}</div>
-                  </div>
-                ))}
-                {kelurahanStats.length === 0 && !isLoading && (
-                  <div className="col-span-full py-10 text-center text-muted-foreground italic text-xs">
-                    Belum ada data wilayah terekam.
-                  </div>
-                )}
-              </div>
+                    <LabelList
+                      dataKey="count"
+                      position="right"
+                      offset={12}
+                      className="fill-foreground font-black text-[10px]"
+                    />
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
+              {kelurahanStats.length === 0 && !isLoading && (
+                <div className="py-10 text-center text-muted-foreground italic text-xs">
+                  Belum ada data wilayah terekam.
+                </div>
+              )}
             </CardContent>
           </Card>
 
-
-
-          <Card className="glass overflow-hidden transition-all hover:shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-primary" /> Kategori Usaha
+          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none">
+            <CardHeader className="border-b border-slate-200/50 pb-4">
+              <CardTitle className="text-base md:text-lg font-bold flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <PieIcon className="w-5 h-5 text-primary" /> Kategori Usaha
+                </div>
+                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded-full">Pie Chart</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div 
-                onClick={() => setSelectedFilter({ name: "Kuliner", filterType: "kategori" })}
-                className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md"
+            <CardContent className="p-6">
+              <ChartContainer
+                config={categoryChartConfig}
+                className="mx-auto aspect-square max-h-[300px]"
               >
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Kuliner</span>
-                  <span className="text-xl font-black text-primary">
-                    {categoryStats.kuliner}
-                  </span>
-                </div>
-                <div className="p-2 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm group-hover:bg-primary/10 transition-colors">
-                  <TrendingUp className="w-4 h-4 text-emerald-500" />
-                </div>
-              </div>
-              <div 
-                onClick={() => setSelectedFilter({ name: "Bukan Kuliner", filterType: "kategori" })}
-                className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md"
-              >
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Bukan Kuliner</span>
-                  <span className="text-xl font-black text-slate-700">
-                    {categoryStats.bukanKuliner}
-                  </span>
-                </div>
-                <div className="p-2 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm group-hover:bg-primary/10 transition-colors">
-                  <Building2 className="w-4 h-4 text-indigo-500" />
-                </div>
-              </div>
-              {categoryStats.unknown > 0 && (
-                <div 
-                  onClick={() => setSelectedFilter({ name: "Lainnya / Kosong", filterType: "kategori" })}
-                  className="flex items-center justify-between p-3 rounded-xl glass-panel hover:bg-white/90 active:scale-95 transition-all duration-300 cursor-pointer group hover:shadow-md border-dashed border-2"
-                >
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase group-hover:text-primary transition-colors">Lainnya / Kosong</span>
-                    <span className="text-xl font-black text-slate-500">
-                      {categoryStats.unknown}
-                    </span>
+                <PieChart>
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
+                  <Pie
+                    data={[
+                      { name: "Kuliner", value: categoryStats.kuliner, fill: "var(--color-kuliner)" },
+                      { name: "Bukan Kuliner", value: categoryStats.bukanKuliner, fill: "var(--color-bukan_kuliner)" },
+                      { name: "Lainnya", value: categoryStats.unknown, fill: "var(--color-unknown)" },
+                    ]}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={60}
+                    strokeWidth={5}
+                    onClick={(data) => {
+                      const targetName = data.name === "Lainnya" ? "Lainnya / Kosong" : data.name;
+                      setSelectedFilter({ name: targetName, filterType: "kategori" });
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <LabelList
+                      dataKey="value"
+                      className="fill-white font-black text-[10px]"
+                      stroke="none"
+                    />
+                  </Pie>
+                </PieChart>
+              </ChartContainer>
+              <div className="mt-4 flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs font-bold uppercase text-slate-500">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-primary" /> Kuliner
                   </div>
-                  <div className="p-2 bg-white/50 backdrop-blur-sm rounded-lg shadow-sm">
-                    <DatabaseZap className="w-4 h-4 text-slate-400" />
-                  </div>
+                  <span>{categoryStats.kuliner}</span>
                 </div>
-              )}
+                <div className="flex items-center justify-between text-xs font-bold uppercase text-slate-500">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-indigo-500" /> Bukan Kuliner
+                  </div>
+                  <span>{categoryStats.bukanKuliner}</span>
+                </div>
+                {categoryStats.unknown > 0 && (
+                  <div className="flex items-center justify-between text-xs font-bold uppercase text-slate-500">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-slate-400" /> Lainnya
+                    </div>
+                    <span>{categoryStats.unknown}</span>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
