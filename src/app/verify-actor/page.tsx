@@ -376,7 +376,7 @@ export default function VerifyActorPage() {
     setEditKecamatan(actor.kecamatan || "")
   }
 
-  if (!isAdmin && !isPetugas && !isMonitoring && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
+  if (!isAdmin && !isMonitoring && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
 
   return (
     <div className="p-4 md:p-8 space-y-6">

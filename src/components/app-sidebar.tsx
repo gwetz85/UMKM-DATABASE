@@ -124,13 +124,13 @@ export function AppSidebar() {
       name: "Cek Data",
       href: "/check-data",
       icon: SearchCheck,
-      show: isAdmin
+      show: isAdmin || isPetugas
     },
     {
       name: "Cek Data Kolektif",
       href: "/check-data-collective",
       icon: SearchCheck,
-      show: isAdmin
+      show: isAdmin || isPetugas
     },
     {
       name: "Input Data",
@@ -142,7 +142,7 @@ export function AppSidebar() {
       name: "Verifikasi Admin",
       href: "/verify-actor",
       icon: ShieldCheck,
-      show: isAdmin || isPetugas || isMonitoring
+      show: isAdmin || isMonitoring
     },
     {
       name: "Data Pelaku Usaha",
@@ -172,7 +172,7 @@ export function AppSidebar() {
       name: "Verifikasi & Validasi Dinas",
       href: "/verifikasi-dinas",
       icon: ClipboardCheck,
-      show: isAdmin || isDinas
+      show: isAdmin || isDinas || isPetugas
     },
     {
       name: "HASIL VERIFIKASI",

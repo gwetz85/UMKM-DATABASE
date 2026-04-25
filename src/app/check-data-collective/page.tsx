@@ -51,7 +51,17 @@ export default function CheckDataCollectivePage() {
   }, [user, database])
 
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id')
+  
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user || !database) return null
+    return ref(database, 'system_users')
+  }, [user, database])
+  const { data: allUsersForProfile } = useList(userProfileRef)
+  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
+
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const isPetugas = userProfile?.role === 'petugas'
+  const hasAccess = isAdmin || isPetugas
 
   const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
   const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
@@ -112,13 +122,13 @@ export default function CheckDataCollectivePage() {
     )
   }
 
-  if (!isAdmin) {
+  if (!hasAccess) {
     return (
       <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center">
         <ShieldAlert className="w-16 h-16 text-destructive" />
         <h1 className="text-2xl font-bold">Akses Ditolak</h1>
         <p className="text-muted-foreground max-w-md mx-auto">
-          Hanya Administrator yang dapat mengakses menu Master Data ini.
+          Hanya Administrator dan Petugas yang dapat mengakses menu Master Data ini.
         </p>
       </div>
     )
