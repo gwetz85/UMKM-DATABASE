@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { PublicCheckData } from "@/components/public-check-data"
+import { logActivity, getDeviceType } from "@/lib/logger"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -201,6 +202,16 @@ export default function LoginPage() {
           throw loginError
         }
       }
+
+      // Log Login Activity
+      await logActivity({
+        query: `LOGIN: ${username.toUpperCase()}`,
+        results: "Berhasil Masuk",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'LOGIN',
+        userId: username.toUpperCase()
+      }, database || undefined)
 
       router.push("/")
     } catch (error: any) {

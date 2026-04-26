@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { cn, formatCurrency } from "@/lib/utils"
+import { logActivity, getDeviceType } from "@/lib/logger"
 
 
 export default function CheckDataPage() {
@@ -120,6 +121,20 @@ export default function CheckDataPage() {
       value: processedValue 
     })
     setSearchDone(true)
+
+    // Log Search Activity
+    const logResults = realTimeResults && realTimeResults.length > 0 
+      ? `Ditemukan ${realTimeResults.length} Data` 
+      : "Data Tidak Ditemukan";
+      
+    logActivity({
+      query: `CEK ${searchType.toUpperCase()}: ${processedValue}`,
+      results: logResults,
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'CEK MASTER',
+      userId: userProfile?.fullName || user?.email || "Public"
+    }, database || undefined)
   }
 
 

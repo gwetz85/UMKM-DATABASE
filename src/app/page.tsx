@@ -6,13 +6,14 @@ import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
-import { Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap, Calendar, PieChart as PieIcon } from "lucide-react"
+import { Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Cloud, DatabaseZap, Calendar, PieChart as PieIcon, History, MessageSquare, Monitor, Smartphone, Bot, Globe, Clock, ShieldAlert } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { BusinessActor } from "./lib/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MusicDashboardCard } from "@/components/MusicDashboardCard"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 import { 
   BarChart, 
   Bar, 
@@ -99,6 +100,19 @@ export default function DashboardPage() {
   }, [database])
 
   const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery)
+
+  const logsRef = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'activity_logs')
+  }, [database])
+  const { data: allLogs, isLoading: isLogsLoading } = useList<any>(logsRef)
+
+  const recentLogs = useMemo(() => {
+    if (!allLogs) return []
+    return [...allLogs]
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 10)
+  }, [allLogs])
 
   const activeData = useMemo(() => {
     return allData?.filter(d => {
@@ -619,8 +633,111 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>
+
+      {/* Riwayat Aplikasi Section */}
+      <Card className="glass overflow-hidden mt-6 transition-all hover:shadow-xl border-none">
+        <CardHeader className="bg-slate-50/50 pb-4 flex flex-row items-center justify-between">
+          <CardTitle className="text-base md:text-xl font-bold flex items-center gap-2 text-slate-800">
+            <History className="w-6 h-6 text-primary" /> Riwayat Aktivitas Aplikasi
+          </CardTitle>
+          <div className="flex items-center gap-2">
+             <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-100 font-bold">
+               WEB & TELEGRAM BOT
+             </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-slate-100/50">
+                <TableRow>
+                  <TableHead className="w-[180px] font-black text-slate-500 uppercase text-[10px] pl-6">Tanggal</TableHead>
+                  <TableHead className="font-black text-slate-500 uppercase text-[10px]">Yang Mengakses</TableHead>
+                  <TableHead className="font-black text-slate-500 uppercase text-[10px]">Menu / Sumber</TableHead>
+                  <TableHead className="font-black text-slate-500 uppercase text-[10px]">Data Yang Di Cari / Input</TableHead>
+                  <TableHead className="w-[150px] font-black text-slate-500 uppercase text-[10px] pr-6 text-center">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentLogs.map((log, idx) => (
+                  <TableRow key={log.id || idx} className="hover:bg-primary/5 transition-colors border-slate-50">
+                    <TableCell className="pl-6 py-4">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-black text-slate-700">
+                          {log.timestamp ? new Date(log.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : "-"}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {log.timestamp ? new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : "-"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+                          {log.source === 'Telegram' ? <MessageSquare className="w-3.5 h-3.5 text-blue-500" /> : <User className="w-3.5 h-3.5 text-slate-400" />}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-slate-700 uppercase">
+                            {log.source === 'Telegram' ? `ID: ${log.chatId}` : (log.userId === 'Public' ? 'USER PUBLIK' : (log.userId || "Unknown"))}
+                          </span>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                            {log.source === 'Telegram' ? 'TELEGRAM BOT' : 'WEB INTERFACE'}
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[9px] font-black uppercase bg-slate-50 text-slate-500 border-slate-200">
+                          {log.method || "SISTEM"}
+                        </Badge>
+                        <span className="text-[10px] font-bold text-slate-400 hidden md:inline">
+                          {log.device || "Browser"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-[11px] font-bold text-primary truncate max-w-[200px]">
+                      {log.query || "-"}
+                    </TableCell>
+                    <TableCell className="pr-6 text-center">
+                      <div className={cn(
+                        "text-[10px] font-black px-2 py-1 rounded-full border inline-block uppercase tracking-tighter",
+                        (log.results || "").toLowerCase().includes("tidak") || (log.results || "").toLowerCase().includes("gagal")
+                          ? "bg-rose-50 text-rose-600 border-rose-100" 
+                          : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                      )}>
+                        {log.results || "-"}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {recentLogs.length === 0 && !isLogsLoading && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-12 text-center">
+                      <div className="flex flex-col items-center gap-2 text-slate-300">
+                        <History className="w-10 h-10 opacity-20" />
+                        <p className="font-black uppercase text-[10px] tracking-widest">Belum ada riwayat aktivitas</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="p-3 bg-slate-50 border-t flex justify-center">
+             <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-[10px] font-black text-primary uppercase tracking-widest hover:bg-primary/5"
+                onClick={() => router.push('/app-logs')}
+             >
+               Lihat Seluruh Log Aktivitas <TrendingUp className="w-3 h-3 ml-2" />
+             </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Dialog open={!!selectedFilter} onOpenChange={(open) => !open && setSelectedFilter(null)}>
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">

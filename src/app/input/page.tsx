@@ -22,6 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { logActivity, getDeviceType } from "@/lib/logger"
 
 
 export default function InputDataPage() {
@@ -201,6 +202,16 @@ export default function InputDataPage() {
 
       addDocumentNonBlocking(actorsRef, data)
       
+      // Log Input Activity
+      await logActivity({
+        query: `INPUT: ${data.fullName} (${nik})`,
+        results: "Berhasil Simpan",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'INPUT DATA',
+        userId: data.createdBy
+      }, database)
+
       // Munculkan Pop Out Sukses
       setShowSuccessDialog(true)
       
