@@ -515,6 +515,35 @@ export default function DashboardPage() {
                   </Bar>
                 </BarChart>
               </ChartContainer>
+              
+              {/* Keterangan Kelurahan List */}
+              <div className="mt-6 space-y-3">
+                <div className="flex items-center gap-2 px-1">
+                  <div className="h-px flex-1 bg-slate-200" />
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Keterangan Wilayah</span>
+                  <div className="h-px flex-1 bg-slate-200" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                  {kelurahanStats.map((item) => (
+                    <div 
+                      key={item.name}
+                      onClick={() => setSelectedFilter({ name: item.name, filterType: "kelurahan" })}
+                      className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50/50 hover:bg-white hover:shadow-sm border border-transparent hover:border-primary/20 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-1.5 h-1.5 rounded-full bg-primary/40 group-hover:bg-primary transition-colors shrink-0" />
+                        <span className="text-[11px] font-bold text-slate-600 truncate uppercase tracking-tight group-hover:text-primary transition-colors">
+                          {item.name}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded-md min-w-[1.5rem] text-center">
+                        {item.count}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {kelurahanStats.length === 0 && !isLoading && (
                 <div className="py-10 text-center text-muted-foreground italic text-xs">
                   Belum ada data wilayah terekam.
