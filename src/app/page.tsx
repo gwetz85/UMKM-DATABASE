@@ -383,8 +383,8 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 items-stretch">
+        <div className="lg:col-span-2 space-y-6 flex flex-col">
           <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
             <CardHeader className="bg-primary/10 pb-4">
               <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
@@ -474,10 +474,10 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <MusicDashboardCard />
+          <MusicDashboardCard className="flex-1 h-full" />
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 flex flex-col">
           <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none">
             <CardHeader className="border-b border-slate-200/50 pb-4">
               <CardTitle className="text-base md:text-lg font-bold flex items-center justify-between">
@@ -567,7 +567,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none">
+          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none flex-1 h-full">
             <CardHeader className="border-b border-slate-200/50 pb-4">
               <CardTitle className="text-base md:text-lg font-bold flex items-center justify-between">
                 <div className="flex items-center gap-2">

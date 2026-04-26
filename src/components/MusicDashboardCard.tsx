@@ -30,7 +30,7 @@ const PLAYLIST_ITEMS_INITIAL = [
   "DJ Mardua Holong Remix Viral TikTok Terbaru 2024 Full Bass"
 ];
 
-export function MusicDashboardCard() {
+export function MusicDashboardCard({ className }: { className?: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTitle, setCurrentTitle] = useState("");
   const [isReady, setIsReady] = useState(false);
@@ -143,7 +143,7 @@ export function MusicDashboardCard() {
   };
 
   return (
-    <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none">
+    <Card className={cn("glass overflow-hidden transition-all hover:shadow-xl border-none", className)}>
       <CardHeader className="bg-primary/10 pb-4">
         <CardTitle className="text-base md:text-lg font-bold flex items-center justify-between text-primary">
           <div className="flex items-center gap-2">
@@ -162,8 +162,8 @@ export function MusicDashboardCard() {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="p-6 space-y-4">
+      <CardContent className="p-0 flex-1 flex flex-col">
+        <div className="p-6 space-y-4 flex-1 flex flex-col">
           {/* Now Playing Area */}
           <div className="flex items-center gap-4 bg-muted/30 p-4 rounded-2xl relative overflow-hidden group">
             <div className={cn(
@@ -210,7 +210,7 @@ export function MusicDashboardCard() {
             </Button>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 flex-1 flex flex-col">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                 <ListMusic className="w-3.5 h-3.5" /> Full Playlist
@@ -230,7 +230,7 @@ export function MusicDashboardCard() {
                 {isSyncing ? "Syncing..." : "Update Playlist"}
               </Button>
             </div>
-            <ScrollArea className="h-[180px] w-full rounded-xl border bg-slate-50/50 p-2">
+            <ScrollArea className="flex-1 min-h-[180px] w-full rounded-xl border bg-slate-50/50 p-2">
               <div className="space-y-1">
                 {playlist.map((song, index) => {
                   const isCurrent = currentTitle.toLowerCase().includes(song.toLowerCase()) || 
