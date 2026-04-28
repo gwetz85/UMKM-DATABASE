@@ -60,9 +60,17 @@
        }
     },
     "chats": {
-      ".read": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
-      ".write": "auth != null",
-      ".indexOn": ["timestamp", "senderId"]
+      "$userId": {
+        ".read": "auth != null && auth.uid == $userId",
+        ".write": "auth != null"
+      }
+    },
+    "messages": {
+      "$chatId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": ["timestamp", "senderId"]
+      }
     },
     "settings": {
       ".read": "true",

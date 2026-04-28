@@ -121,6 +121,12 @@ export function AppSidebar() {
       show: !!user && !isKoordinator
     },
     {
+      name: "Pesan Chat",
+      href: "/messages",
+      icon: MessageSquare,
+      show: !!user
+    },
+    {
       name: "Cek Data",
       href: "/check-data",
       icon: SearchCheck,
