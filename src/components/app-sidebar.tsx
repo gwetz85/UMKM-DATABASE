@@ -222,6 +222,12 @@ export function AppSidebar() {
       show: isAdmin
     },
     {
+      name: "Pengaturan Teks",
+      href: "/settings-running-text",
+      icon: MessageSquare,
+      show: isAdmin
+    },
+    {
       name: "Pengaturan",
       href: "/settings",
       icon: Settings,
