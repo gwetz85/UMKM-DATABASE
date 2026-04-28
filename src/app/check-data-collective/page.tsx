@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import { useDatabase, useList, useMemoFirebase, useUser, useObject } from "@/firebase"
 import { ref } from "firebase/database"
+import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -148,6 +149,15 @@ export default function CheckDataCollectivePage() {
     setSearchKks(kks)
     setSearchDone(true)
     setLoading(false)
+    
+    logActivity({
+      query: `CEK DATA KOLEKTIF: ${kks.length} KK`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'CEK DATA KOLEKTIF',
+      userId: user?.email || user?.uid || 'Admin'
+    })
   }
 
   const resetSearch = () => {
@@ -210,6 +220,15 @@ export default function CheckDataCollectivePage() {
         })
 
         doc.save(`Hasil_Cek_Kolektif_${new Date().toISOString().slice(0, 10)}.pdf`)
+        
+        logActivity({
+          query: `CETAK PDF: Hasil Cek Data Kolektif`,
+          results: "Berhasil",
+          device: getDeviceType(navigator.userAgent),
+          source: 'Web',
+          method: 'CEK DATA KOLEKTIF',
+          userId: user?.email || user?.uid || 'Admin'
+        })
       })
     })
   }

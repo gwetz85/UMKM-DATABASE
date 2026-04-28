@@ -2,6 +2,7 @@
 
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -39,13 +40,23 @@ export default function VerifyBankPage() {
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   const actors = allActorsRaw?.filter(a => a.status === 'bank_pending')
 
-  const handleFinalVerify = (actorId: string) => {
+  const handleFinalVerify = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     const actorRef = ref(database, `businessActors/${actorId}`)
     updateDocumentNonBlocking(actorRef, { 
       status: 'lpj_pending',
       lpjEntryDate: new Date().toISOString()
     })
+    
+    logActivity({
+      query: `VERIFIKASI BANK: ${fullName} - DITERIMA`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'VERIFIKASI BANK',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
     toast({ title: "Verifikasi Berhasil", description: "Data telah lolos verifikasi final dan masuk tahap LPJ." })
   }
 
@@ -54,6 +65,16 @@ export default function VerifyBankPage() {
     if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
       const actorRef = ref(database, `businessActors/${actorId}`)
       updateDocumentNonBlocking(actorRef, { status: 'pending' })
+      
+      logActivity({
+        query: `KEMBALIKAN DATA DARI BANK: ${fullName}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'VERIFIKASI BANK',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
       toast({ title: "Verifikasi Dibatalkan", description: "Data dikembalikan ke antrean verifikasi awal." })
     }
   }
@@ -63,6 +84,16 @@ export default function VerifyBankPage() {
     if (confirm(`Hapus permanen ${fullName}? Semua data terkait akan hilang.`)) {
       const actorRef = ref(database, `businessActors/${actorId}`)
       deleteDocumentNonBlocking(actorRef)
+      
+      logActivity({
+        query: `HAPUS DATA BANK: ${fullName}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'VERIFIKASI BANK',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
       toast({ variant: "destructive", title: "Terhapus", description: "Data telah dihapus dari sistem." })
     }
   }
@@ -120,7 +151,7 @@ export default function VerifyBankPage() {
                           >
                             <RotateCcw className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">BATAL</span>
                           </Button>
-                          <Button size="sm" onClick={() => handleFinalVerify(actor.id)} className="bg-primary hover:bg-primary/90 font-bold">
+                          <Button size="sm" onClick={() => handleFinalVerify(actor.id, actor.fullName)} className="bg-primary hover:bg-primary/90 font-bold">
                             <CheckCircle className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">SETUJU</span>
                           </Button>
                           <Button size="sm" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)} className="font-bold h-9">

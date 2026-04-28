@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, deleteDocumentNonBlocking, useObject } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -123,6 +124,16 @@ function RejectedContent() {
     }
 
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
+    
+    logActivity({
+      query: `EDIT DATA DITOLAK: ${viewingActor.fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'DATA DITOLAK',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
     toast({ title: "Tersimpan", description: "Data pelaku usaha berhasil diperbarui." })
     setIsEditMode(false)
     setViewingActor({ ...viewingActor, ...updates } as BusinessActor)
@@ -132,6 +143,16 @@ function RejectedContent() {
     if (!isAdmin || !database) return
     if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
       updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
+      
+      logActivity({
+        query: `KEMBALIKAN DATA DITOLAK: ${fullName}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'DATA DITOLAK',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
       toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
       setViewingActor(null)
     }
@@ -141,6 +162,16 @@ function RejectedContent() {
     if (!isAdmin || !database) return
     if (confirm(`Hapus permanen ${fullName}? Semua data terkait akan hilang.`)) {
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
+      
+      logActivity({
+        query: `HAPUS DATA DITOLAK: ${fullName}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'DATA DITOLAK',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
       toast({ variant: "destructive", title: "Terhapus", description: "Data dihapus permanen." })
       setViewingActor(null)
     }

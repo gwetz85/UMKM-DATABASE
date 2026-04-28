@@ -4,6 +4,7 @@
 import { useState, useEffect, Suspense, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -162,6 +163,16 @@ function ActorDataContent() {
     }
 
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
+    
+    logActivity({
+      query: `EDIT DATA: ${viewingActor.fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'DATA PELAKU USAHA',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
     toast({ title: "Tersimpan", description: "Data pelaku usaha berhasil diperbarui." })
     setIsEditMode(false)
     setViewingActor({ ...viewingActor, ...updates } as BusinessActor)
@@ -178,6 +189,16 @@ function ActorDataContent() {
       status: 'bank_pending'
     }
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
+    
+    logActivity({
+      query: `INPUT REKENING: ${viewingActor.fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'DATA PELAKU USAHA',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
     toast({ title: "Tersimpan", description: "Data rekening telah dikirim." })
     setEditingBankMode(false)
     setViewingActor(null)
@@ -191,6 +212,16 @@ function ActorDataContent() {
         status: 'pending',
         createdAt: new Date().toISOString() 
       })
+      
+      logActivity({
+        query: `KEMBALIKAN DATA: ${fullName}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'DATA PELAKU USAHA',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
       toast({ title: "Berhasil", description: "Status dikembalikan ke antrean Verifikasi Admin." })
       setViewingActor(null)
     }
@@ -201,6 +232,16 @@ function ActorDataContent() {
     if (!isAdmin || !database) return
     if (confirm(`Hapus permanen ${fullName}? Semua data terkait akan hilang.`)) {
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
+      
+      logActivity({
+        query: `HAPUS DATA: ${fullName}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'DATA PELAKU USAHA',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
       toast({ variant: "destructive", title: "Terhapus", description: "Data dihapus permanen." })
       setViewingActor(null)
     }

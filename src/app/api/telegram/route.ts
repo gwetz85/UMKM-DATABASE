@@ -54,6 +54,16 @@ export async function POST(req: NextRequest) {
       
       console.log(`Received message from ${chatId}: ${text}`);
 
+      // Log Every Interaction
+      await logActivity({
+        query: `BOT MSG: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`,
+        results: "Diproses",
+        device: 'Bot',
+        source: 'Telegram',
+        method: 'INTERAKSI BOT',
+        chatId: String(chatId)
+      });
+
       if (text.startsWith('/start') || text.startsWith('/help')) {
         const reply = `Selamat datang di *Bot UMKM Database* 🏬\n\n` +
                       `Bot ini melayani pemantauan & input data.\n\n` +
@@ -110,6 +120,16 @@ export async function POST(req: NextRequest) {
                         `⏳ Menunggu: *${pending}*\n` +
                         `❌ Ditolak/Batal: *${rejected}*\n`;
           await sendMessage(chatId, reply);
+
+          // Log Activity
+          await logActivity({
+            query: 'Cek Statistik',
+            results: `Total: ${total}`,
+            device: 'Bot',
+            source: 'Telegram',
+            method: 'STATISTIK',
+            chatId: String(chatId)
+          });
         } else {
           await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
         }
@@ -204,24 +224,26 @@ export async function POST(req: NextRequest) {
             await sendMessage(chatId, reply);
             
             // Log the activity
-            logActivity({
-              query: keyword,
+            await logActivity({
+              query: `CARI [${type.toUpperCase()}]: ${keyword}`,
               results: `Ditemukan ${results.length} data`,
               device: 'Bot',
               source: 'Telegram',
+              method: 'CARI DATA',
               chatId: String(chatId)
-            }, database);
+            });
           } else {
             await sendMessage(chatId, `Tidak ditemukan data untuk pencarian "${keyword}".`);
             
             // Log the activity
-            logActivity({
-              query: keyword,
+            await logActivity({
+              query: `CARI [${type.toUpperCase()}]: ${keyword}`,
               results: `Tidak ditemukan`,
               device: 'Bot',
               source: 'Telegram',
+              method: 'CARI DATA',
               chatId: String(chatId)
-            }, database);
+            });
           }
         } else {
            await sendMessage(chatId, "Belum ada data pendaftar UMKM.");
@@ -301,24 +323,26 @@ export async function POST(req: NextRequest) {
           await sendMessage(chatId, reply);
 
           // Log the activity
-          logActivity({
-            query: keyword,
-            results: `Cek Data: Ditemukan ${foundResults.length} record`,
+          await logActivity({
+            query: `CEK MASTER: ${keyword}`,
+            results: `Ditemukan ${foundResults.length} record`,
             device: 'Bot',
             source: 'Telegram',
+            method: 'CEK MASTER',
             chatId: String(chatId)
-          }, database);
+          });
         } else {
           await sendMessage(chatId, `❌ *DATA TIDAK DITEMUKAN*\n\nKata kunci \`${keyword}\` tidak terdaftar dalam Database Master maupun Blacklist.`);
 
           // Log the activity
-          logActivity({
-            query: keyword,
-            results: `Cek Data: Tidak ditemukan`,
+          await logActivity({
+            query: `CEK MASTER: ${keyword}`,
+            results: `Tidak ditemukan`,
             device: 'Bot',
             source: 'Telegram',
+            method: 'CEK MASTER',
             chatId: String(chatId)
-          }, database);
+          });
         }
       } else if (text.startsWith('/inputdata')) {
         const reply = `📝 *FORM INPUT DATA BARU*\n\n` +
@@ -475,6 +499,16 @@ export async function POST(req: NextRequest) {
                                    `🏬 Usaha: *${parsedData.businessName || "-"}*\n` +
                                    `📍 Lokasi: ${parsedData.businessLocation || "-"}\n\n` +
                                    `Data telah masuk ke sistem dan sedang menunggu verifikasi oleh tim Admin.`);
+          
+          // Log Activity
+          await logActivity({
+            query: `INPUT: ${parsedData.fullName} (${parsedData.nik})`,
+            results: `Berhasil Simpan`,
+            device: 'Bot',
+            source: 'Telegram',
+            method: 'INPUT DATA',
+            chatId: String(chatId)
+          });
         } catch (error) {
            console.error("Error saving data from bot:", error);
            await sendMessage(chatId, `❌ *Error:* Gagal menyimpan data ke database.`);
@@ -515,6 +549,16 @@ export async function POST(req: NextRequest) {
           });
           
           await sendMessage(chatId, reply);
+
+          // Log Activity
+          await logActivity({
+            query: 'Cek Kuota Koordinator',
+            results: `Berhasil Tampil`,
+            device: 'Bot',
+            source: 'Telegram',
+            method: 'CEK KUOTA',
+            chatId: String(chatId)
+          });
         } else {
           await sendMessage(chatId, "⚠️ Tidak ada data kuota yang terdaftar.");
         }

@@ -2,6 +2,7 @@
 
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -66,7 +67,7 @@ export default function LPJPage() {
       return filtered;
   }, [allActorsRaw])
 
-  const handleSaveLPJ = async (actorId: string, nominal: string) => {
+  const handleSaveLPJ = async (actorId: string, fullName: string, nominal: string) => {
     if (!canAccess || !database || !nominal) return
     const numNominal = parseFloat(nominal.replace(/[^0-9]/g, ''))
     if (isNaN(numNominal)) {
@@ -80,10 +81,20 @@ export default function LPJPage() {
       lpjNominal: numNominal,
       lpjDoneAt: new Date().toISOString()
     })
+    
+    logActivity({
+      query: `SIMPAN LPJ: ${fullName} (Rp${numNominal})`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'DATA LPJ',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
     toast({ title: "LPJ Berhasil Disimpan", description: "Data telah dipindahkan ke folder Selesai." })
   }
 
-  const handleUnblacklist = async (actorId: string) => {
+  const handleUnblacklist = async (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     if (confirm("Kembalikan data ini dari Blacklist ke antrean LPJ?")) {
         const actorRef = ref(database, `businessActors/${actorId}`)
@@ -91,6 +102,16 @@ export default function LPJPage() {
             status: 'finish',
             lpjEntryDate: new Date().toISOString() // Reset entry date to give another 14 days
         })
+        
+        logActivity({
+          query: `PULIHKAN DARI BLACKLIST (LPJ): ${fullName}`,
+          results: "Berhasil",
+          device: getDeviceType(navigator.userAgent),
+          source: 'Web',
+          method: 'DATA LPJ',
+          userId: user?.email || user?.uid || 'Admin'
+        })
+        
         toast({ title: "Status Dikembalikan", description: "Data kini kembali di antrean LPJ." })
     }
   }
@@ -203,7 +224,7 @@ export default function LPJPage() {
                           <div className="flex justify-end gap-2">
                             {isBlacklisted ? (
                               isAdmin ? (
-                                <Button size="sm" variant="outline" className="rounded-xl font-black text-[10px] border-red-200 text-red-600 hover:bg-red-50" onClick={() => handleUnblacklist(actor.id)}>
+                                <Button size="sm" variant="outline" className="rounded-xl font-black text-[10px] border-red-200 text-red-600 hover:bg-red-50" onClick={() => handleUnblacklist(actor.id, actor.fullName)}>
                                     AKTIFKAN KEMBALI
                                 </Button>
                               ) : (
@@ -216,7 +237,7 @@ export default function LPJPage() {
                                   className="bg-primary hover:bg-primary/90 font-black text-[10px] rounded-xl px-4 h-9 shadow-lg shadow-primary/20"
                                   onClick={() => {
                                       const input = document.getElementById(`lpj-${actor.id}`) as HTMLInputElement
-                                      handleSaveLPJ(actor.id, input.value)
+                                      handleSaveLPJ(actor.id, actor.fullName, input.value)
                                   }}
                                 >
                                   <Save className="w-3.5 h-3.5 mr-2" /> SIMPAN LPJ

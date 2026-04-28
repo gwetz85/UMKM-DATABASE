@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, setDocumentNonBlocking, deleteDocumentNonBlocking, useObject, updateDocumentNonBlocking } from "@/firebase"
 import { ref, query } from "firebase/database"
+import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -81,6 +82,15 @@ export default function UserManagementPage() {
       addedAt: new Date().toISOString()
     })
 
+    logActivity({
+      query: `TAMBAH USER: ${username}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'MANAJEMEN USER',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+
     toast({ 
       title: "User Terdaftar", 
       description: `Akun untuk ${fullName} berhasil dibuat.`
@@ -115,6 +125,15 @@ export default function UserManagementPage() {
       setDocumentNonBlocking(roleRef, { admin: true })
     }
 
+    logActivity({
+      query: `UBAH AKSES: ${editingUser.fullName} (${role})`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'MANAJEMEN USER',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+
     toast({ title: "Akses Diperbarui", description: `Hak akses ${editingUser.fullName} telah diubah.` })
     setEditingUser(null)
   }
@@ -124,6 +143,16 @@ export default function UserManagementPage() {
     if (confirm(`Reset penguncian perangkat untuk ${fullName}?`)) {
       const userRef = ref(database, `system_users/${id}`)
       updateDocumentNonBlocking(userRef, { uid: null })
+      
+      logActivity({
+        query: `RESET PERANGKAT: ${fullName}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'MANAJEMEN USER',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
       toast({ title: "Perangkat Direset", description: `Penguncian perangkat ${fullName} telah dihapus.` })
     }
   }
@@ -139,6 +168,16 @@ export default function UserManagementPage() {
       if (userUid) {
         deleteDocumentNonBlocking(ref(database, `roles_admin/${userUid}`))
       }
+      
+      logActivity({
+        query: `HAPUS USER: ${fullName}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'MANAJEMEN USER',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
       toast({ title: "Terhapus", description: "Akses pengguna telah dicabut." })
     }
   }

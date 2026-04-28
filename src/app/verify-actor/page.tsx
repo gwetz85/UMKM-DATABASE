@@ -4,6 +4,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
 import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -310,6 +311,16 @@ export default function VerifyActorPage() {
       coordinator: formData.get("coordinator"),
       status: 'verified_actor'
     })
+    
+    logActivity({
+      query: `VERIFIKASI ADMIN: ${editingActor.fullName} - DITERIMA`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'VERIFIKASI ADMIN',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
     toast({ title: "Berhasil diverifikasi", description: "Data pelaku telah diverifikasi oleh Admin." })
     setEditingActor(null)
     setIsVerifying(false)
@@ -338,6 +349,16 @@ export default function VerifyActorPage() {
       businessLocation: formData.get("businessLocation"),
       coordinator: formData.get("coordinator")
     })
+    
+    logActivity({
+      query: `EDIT DATA PENDING: ${editingOnlyActor.fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'VERIFIKASI ADMIN',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
     toast({ title: "Data diperbarui", description: "Perubahan data berhasil disimpan (Status tetap Pending)." })
     setEditingOnlyActor(null)
     setIsVerifying(false)
@@ -356,6 +377,15 @@ export default function VerifyActorPage() {
       rejectionReason: reason || "Tanpa keterangan"
     })
 
+    logActivity({
+      query: `VERIFIKASI ADMIN: ${rejectingActor.fullName} - DITOLAK`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'VERIFIKASI ADMIN',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+
     toast({ variant: "destructive", title: "Data Ditolak", description: "Data telah dipindahkan ke menu Ditolak / Cancell." })
     setRejectingActor(null)
   }
@@ -364,6 +394,16 @@ export default function VerifyActorPage() {
     if (!isAdmin) return
     if (confirm(`Hapus data pending milik "${fullName}"?`)) {
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
+      
+      logActivity({
+        query: `HAPUS DATA PENDING: ${fullName}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'VERIFIKASI ADMIN',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
       toast({ variant: "destructive", title: "Data Dibatalkan", description: "Data telah dihapus." })
     }
   }

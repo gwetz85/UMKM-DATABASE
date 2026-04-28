@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking } from "@/firebase"
 import { ref } from "firebase/database"
+import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
@@ -125,9 +126,30 @@ function RekeningBankContent() {
         })
       })
 
+      logActivity({
+        query: `TERUSKAN KE LPJ: ${bankName} (${targetActors.length} DATA)`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'REKENING BANK',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+
       toast({ title: "Berhasil Diteruskan", description: `${targetActors.length} data dikirim ke antrean LPJ.` })
       setTimeout(() => setIsForwarding(null), 1000)
     }
+  }
+
+  const handlePrint = () => {
+    logActivity({
+      query: `CETAK HALAMAN: Rekening Bank ${selectedBank || 'Semua'}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'REKENING BANK',
+      userId: user?.email || user?.uid || 'Admin'
+    });
+    window.print();
   }
 
   if (isUserLoading) {
@@ -166,7 +188,7 @@ function RekeningBankContent() {
             />
           </div>
           <button 
-            onClick={() => window.print()}
+            onClick={handlePrint}
             className="h-10 px-6 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
           >
             <Printer className="w-4 h-4" /> CETAK DATA

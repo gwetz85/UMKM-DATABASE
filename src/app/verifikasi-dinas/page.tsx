@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
 import { ref } from "firebase/database"
+import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -92,6 +93,15 @@ export default function VerifikasiDinasPage() {
       status: 'verified_dinas',
       hasilVerifikasiDinas: hasilVerifikasi,
       keteranganDinas: keterangan || "Tanpa keterangan tambahan"
+    })
+
+    logActivity({
+      query: `VERIFIKASI DINAS: ${verifyingActor.fullName} - ${hasilVerifikasi.toUpperCase()}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'VERIFIKASI DINAS',
+      userId: user?.email || user?.uid || 'Admin'
     })
 
     toast({ title: "Berhasil Difinalisasi", description: `Data pelaku usaha telah di-update dengan hasil: ${hasilVerifikasi}.` })

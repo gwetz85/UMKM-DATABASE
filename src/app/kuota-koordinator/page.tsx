@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, deleteDocumentNonBlocking, useObject, updateDocumentNonBlocking } from "@/firebase"
 import { ref, push, set, query } from "firebase/database"
+import { logActivity, getDeviceType } from "@/lib/logger"
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
@@ -108,6 +109,15 @@ export default function KuotaKorlapDewanAktifPage() {
       quota,
       addedAt: new Date().toISOString()
     }).then(() => {
+      logActivity({
+        query: `TAMBAH KUOTA KORLAP: ${name} (${quota})`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'KUOTA KOORDINATOR',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
       toast({ 
         title: "Kuota Ditambahkan", 
         description: `Data untuk ${name} berhasil disimpan.` 
@@ -141,6 +151,15 @@ export default function KuotaKorlapDewanAktifPage() {
       quota,
       addedAt: editingData.addedAt || new Date().toISOString()
     }).then(() => {
+      logActivity({
+        query: `UBAH KUOTA KORLAP: ${name} (${quota})`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'KUOTA KOORDINATOR',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
       toast({ title: "Berhasil Diperbarui", description: `Ubah target kuota untuk ${name}.` })
       setEditingData(null)
     }).catch((error) => {
@@ -157,6 +176,16 @@ export default function KuotaKorlapDewanAktifPage() {
     if (!database) return
     if (confirm(`Hapus koordinator ${name}?`)) {
       deleteDocumentNonBlocking(ref(database, `koordinator_kuotas/${id}`))
+      
+      logActivity({
+        query: `HAPUS KUOTA KORLAP: ${name}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'KUOTA KOORDINATOR',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
       toast({ title: "Berhasil Dihapus", description: "Data telah dihapus dari sistem." })
     }
   }
@@ -235,6 +264,15 @@ export default function KuotaKorlapDewanAktifPage() {
         })
 
         doc.save(`Kuota_Koordinator_${new Date().toISOString().slice(0, 10)}.pdf`)
+        
+        logActivity({
+          query: `CETAK PDF: Kuota Korlap`,
+          results: "Berhasil",
+          device: getDeviceType(navigator.userAgent),
+          source: 'Web',
+          method: 'KUOTA KOORDINATOR',
+          userId: user?.email || user?.uid || 'Admin'
+        })
       })
     })
   }
