@@ -174,7 +174,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               {!isLoginPage && <RunningText />}
               {/* Desktop Top Bar - Hidden on Login */}
               {!isLoginPage && (
-                <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border border-white/20 shadow-sm mx-4 mb-4 mt-4 rounded-2xl backdrop-blur-xl">
+                <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-[76px] z-20 glass-panel border border-white/20 shadow-sm mx-4 mb-4 mt-2 rounded-2xl backdrop-blur-xl">
                   <div className="flex items-center gap-4">
                     <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors p-2 rounded-lg" />
                     {currentTitle && (
