@@ -21,6 +21,7 @@ import { useActiveEvent } from '@/hooks/use-active-event';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemePersistence } from '@/components/theme-persistence';
 import { RunningText } from './running-text';
+import { useSoundEffect } from '@/hooks/use-sound-effect';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
