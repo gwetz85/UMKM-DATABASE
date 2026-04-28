@@ -22,7 +22,9 @@ import {
   UserCheck,
   Eye,
   ShieldQuestion,
-  MessageCircle
+  MessageCircle,
+  MoreVertical,
+  Trash2
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -34,6 +36,13 @@ import { format, isToday, isYesterday } from "date-fns"
 import { id as localeId } from "date-fns/locale"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useToast } from "@/hooks/use-toast"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useObject } from "@/firebase"
 
 // ─── Helper Components ────────────────────────────────────────────────────────
 
@@ -138,11 +147,24 @@ export default function PesanPage() {
     ? [user?.uid, selectedContact.uid].sort().join("_")
     : null
 
+  // Ambil metadata chat untuk melihat deletedAt
+  const chatMetaRef = useMemoFirebase(() => {
+    if (!database || !user || !selectedContact) return null
+    return ref(database, `chats/${user.uid}/${selectedContact.uid}`)
+  }, [database, user, selectedContact])
+  const { data: chatMeta } = useObject(chatMetaRef)
+
   const messagesRef = useMemoFirebase(() => {
     if (!database || !chatId) return null
     return ref(database, `chat_messages/${chatId}`)
   }, [database, chatId])
-  const { data: messages, isLoading: messagesLoading } = useList(messagesRef)
+  const { data: allMessages, isLoading: messagesLoading } = useList(messagesRef)
+
+  // Filter pesan berdasarkan deletedAt
+  const messages = allMessages?.filter((msg: any) => {
+    if (!chatMeta?.deletedAt) return true
+    return (msg.timestamp || 0) > chatMeta.deletedAt
+  })
 
   // Auto-scroll
   useEffect(() => {
@@ -159,6 +181,22 @@ export default function PesanPage() {
   }, [selectedContact])
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
+
+  const handleDeleteChat = async () => {
+    if (!user || !selectedContact || !database) return
+    if (!confirm("Apakah Anda yakin ingin menghapus seluruh riwayat chat ini dari perangkat Anda? Lawan bicara Anda masih tetap dapat melihat pesan-pesan tersebut.")) return
+
+    try {
+      await update(ref(database, `chats/${user.uid}/${selectedContact.uid}`), {
+        deletedAt: Date.now(),
+        lastMessage: "Obrolan dihapus",
+        lastTimestamp: serverTimestamp()
+      })
+      toast({ title: "Riwayat Dihapus", description: "Pesan-pesan lama telah disembunyikan dari perangkat ini." })
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Gagal Menghapus", description: error.message })
+    }
+  }
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
@@ -368,6 +406,24 @@ export default function PesanPage() {
                   </span>
                 </div>
               </div>
+
+              {/* Menu Opsi Chat */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="shrink-0 rounded-xl hover:bg-slate-100">
+                    <MoreVertical className="w-5 h-5 text-slate-400" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl p-1.5 shadow-2xl border-slate-100">
+                  <DropdownMenuItem 
+                    onClick={handleDeleteChat}
+                    className="flex items-center gap-2.5 p-3 rounded-xl text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="font-bold text-xs uppercase tracking-tight">Hapus Riwayat Chat</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* Pesan-pesan */}
