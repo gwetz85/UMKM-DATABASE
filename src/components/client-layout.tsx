@@ -20,7 +20,7 @@ import { useActiveEvent } from '@/hooks/use-active-event';
 
 import { Toaster } from '@/components/ui/toaster';
 import { ThemePersistence } from '@/components/theme-persistence';
-import { useSoundEffect } from '@/hooks/use-sound-effect';
+import { RunningText } from './running-text';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -170,6 +170,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-1 min-h-0 w-full overflow-hidden">
             <AppSidebar />
             <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
+              {!isLoginPage && <RunningText />}
               {/* Desktop Top Bar - Hidden on Login */}
               {!isLoginPage && (
                 <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border border-white/20 shadow-sm mx-4 mb-4 mt-4 rounded-2xl backdrop-blur-xl">
