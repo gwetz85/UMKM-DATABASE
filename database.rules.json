@@ -21,7 +21,7 @@
       }
     },
     "chat_messages": {
-      ".read": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
+      ".read": "auth != null",
       ".write": "auth != null",
       ".indexOn": ["chatId", "timestamp", "senderId"]
     },
@@ -60,17 +60,8 @@
        }
     },
     "chats": {
-      "$userId": {
-        ".read": "auth != null && auth.uid == $userId",
-        ".write": "auth != null"
-      }
-    },
-    "messages": {
-      "$chatId": {
-        ".read": "auth != null",
-        ".write": "auth != null",
-        ".indexOn": ["timestamp", "senderId"]
-      }
+      ".read": "auth != null",
+      ".write": "auth != null"
     },
     "settings": {
       ".read": "true",

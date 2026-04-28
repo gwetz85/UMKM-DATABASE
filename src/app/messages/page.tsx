@@ -7,10 +7,8 @@ import {
   useDatabase,
   useList,
   useMemoFirebase,
-  setDocumentNonBlocking,
-  updateDocumentNonBlocking
 } from "@/firebase"
-import { ref, push, serverTimestamp } from "firebase/database"
+import { ref, push, set, update, serverTimestamp } from "firebase/database"
 import {
   Search,
   Send,
@@ -35,6 +33,7 @@ import { cn } from "@/lib/utils"
 import { format, isToday, isYesterday } from "date-fns"
 import { id as localeId } from "date-fns/locale"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { useToast } from "@/hooks/use-toast"
 
 // ─── Helper Components ────────────────────────────────────────────────────────
 
@@ -97,11 +96,13 @@ function formatDateLabel(ts: number): string {
 export default function PesanPage() {
   const { user } = useUser()
   const database = useDatabase()
+  const { toast } = useToast()
   const [selectedContact, setSelectedContact] = useState<any>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [messageInput, setMessageInput] = useState("")
   const [isMobile, setIsMobile] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [isSending, setIsSending] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -122,6 +123,9 @@ export default function PesanPage() {
   }, [database])
   const { data: allUsers, isLoading: usersLoading } = useList(usersRef)
 
+  // Cari profil user yang sedang login
+  const myProfile = (allUsers || []).find((u: any) => u.uid === user?.uid)
+
   const contacts = (allUsers || [])
     .filter((u: any) => u.uid && u.uid !== user?.uid)
     .filter((u: any) =>
@@ -136,7 +140,7 @@ export default function PesanPage() {
 
   const messagesRef = useMemoFirebase(() => {
     if (!database || !chatId) return null
-    return ref(database, `messages/${chatId}`)
+    return ref(database, `chat_messages/${chatId}`)
   }, [database, chatId])
   const { data: messages, isLoading: messagesLoading } = useList(messagesRef)
 
@@ -156,38 +160,57 @@ export default function PesanPage() {
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleSend = useCallback(
-    (e?: React.FormEvent) => {
-      if (e) e.preventDefault()
-      if (!messageInput.trim() || !chatId || !user) return
+  const handleSend = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!messageInput.trim() || !chatId || !user || isSending) return
 
-      const newMsgRef = push(ref(database, `messages/${chatId}`))
-      setDocumentNonBlocking(newMsgRef, {
-        text: messageInput.trim(),
+    const text = messageInput.trim()
+    setMessageInput("") // Clear input segera agar UX responsif
+    setIsSending(true)
+
+    try {
+      // Tulis pesan ke /chat_messages/{chatId}/{newId}
+      const newMsgRef = push(ref(database, `chat_messages/${chatId}`))
+      await set(newMsgRef, {
+        text,
         senderId: user.uid,
-        senderName:
-          user.displayName || user.email?.split("@")[0] || "Pengguna",
+        senderName: myProfile?.fullName || user.displayName || user.email?.split("@")[0] || "Pengguna",
         timestamp: serverTimestamp(),
       })
 
-      // Update last message metadata
-      const meta = {
-        lastMessage: messageInput.trim(),
-        lastTimestamp: serverTimestamp(),
-      }
-      updateDocumentNonBlocking(
-        ref(database, `chats/${user.uid}/${selectedContact.uid}`),
-        { ...meta, unread: false, friendName: selectedContact.fullName, friendRole: selectedContact.role }
-      )
-      updateDocumentNonBlocking(
-        ref(database, `chats/${selectedContact.uid}/${user.uid}`),
-        { ...meta, unread: true }
-      )
+      // Update metadata chat untuk kedua belah pihak
+      const myName = myProfile?.fullName || user.displayName || user.email?.split("@")[0] || "Pengguna"
+      const myRole = myProfile?.role || "user"
 
-      setMessageInput("")
-    },
-    [messageInput, chatId, user, database, selectedContact]
-  )
+      await Promise.all([
+        update(ref(database, `chats/${user.uid}/${selectedContact.uid}`), {
+          lastMessage: text,
+          lastTimestamp: serverTimestamp(),
+          unread: false,
+          friendName: selectedContact.fullName,
+          friendRole: selectedContact.role || "user",
+        }),
+        update(ref(database, `chats/${selectedContact.uid}/${user.uid}`), {
+          lastMessage: text,
+          lastTimestamp: serverTimestamp(),
+          unread: true,
+          friendName: myName,
+          friendRole: myRole,
+        }),
+      ])
+    } catch (error: any) {
+      console.error("Gagal mengirim pesan:", error)
+      setMessageInput(text) // Kembalikan teks jika gagal
+      toast({
+        variant: "destructive",
+        title: "Gagal Mengirim Pesan",
+        description: error?.message || "Terjadi kesalahan. Periksa koneksi internet Anda.",
+      })
+    } finally {
+      setIsSending(false)
+      inputRef.current?.focus()
+    }
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -455,10 +478,10 @@ export default function PesanPage() {
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={!messageInput.trim()}
+                  disabled={!messageInput.trim() || isSending}
                   className="h-9 w-9 rounded-xl shadow-md shadow-primary/20 shrink-0 transition-all active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <Send className="w-4 h-4" />
+                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </form>
               <p className="text-center text-[10px] text-slate-400 mt-2 font-medium">
