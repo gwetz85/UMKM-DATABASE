@@ -258,34 +258,32 @@ export async function POST(req: NextRequest) {
         
         let foundResults: any[] = [];
         try {
-          const [masterSnap, blacklistSnap] = await Promise.all([
-            get(ref(database, 'master_data')),
+          const [m2023Snap, m2024Snap, m2025Snap, blacklistSnap] = await Promise.all([
+            get(ref(database, 'master_data_2023')),
+            get(ref(database, 'master_data_2024')),
+            get(ref(database, 'master_data_2025')),
             get(ref(database, 'blacklist_data'))
           ]);
           
           const kw = keyword.toLowerCase();
-          
-          if (masterSnap.exists()) {
-            const masterData = Object.values(masterSnap.val()) as any[];
-            const matches = masterData.filter(r => 
-              (r.nik && String(r.nik).trim() === keyword) || 
-              (r.noKK && String(r.noKK).trim() === keyword) || 
-              (r.nama && String(r.nama).toLowerCase().includes(kw)) ||
-              (r.fullName && String(r.fullName).toLowerCase().includes(kw))
-            ).map(r => ({ ...r, source: 'Sheet 1 (Accepted)' }));
-            foundResults = [...foundResults, ...matches];
-          }
 
-          if (blacklistSnap.exists()) {
-            const blacklistData = Object.values(blacklistSnap.val()) as any[];
-            const matches = blacklistData.filter(r => 
+          const searchInSnap = (snap: any, label: string) => {
+            if (!snap.exists()) return [];
+            const data = Object.values(snap.val()) as any[];
+            return data.filter(r => 
               (r.nik && String(r.nik).trim() === keyword) || 
               (r.noKK && String(r.noKK).trim() === keyword) || 
               (r.nama && String(r.nama).toLowerCase().includes(kw)) ||
               (r.fullName && String(r.fullName).toLowerCase().includes(kw))
-            ).map(r => ({ ...r, source: 'Sheet 2 (Rejected)' }));
-            foundResults = [...foundResults, ...matches];
-          }
+            ).map(r => ({ ...r, source: label }));
+          };
+
+          foundResults = [
+            ...searchInSnap(blacklistSnap, 'Sheet 4 (Blacklist - REJECT)'),
+            ...searchInSnap(m2025Snap, 'Sheet 3 (2025 - HOLD)'),
+            ...searchInSnap(m2023Snap, 'Sheet 2 (2023 - 1m)'),
+            ...searchInSnap(m2024Snap, 'Sheet 1 (2024 - 10m)')
+          ];
         } catch (error) {
           console.error("Master/Blacklist data query error:", error);
           await sendMessage(chatId, `❌ *Error:* Terjadi kesalahan koneksi database.`);
@@ -301,7 +299,7 @@ export async function POST(req: NextRequest) {
           };
 
           foundResults.slice(0, 50).forEach((r, i) => {
-            const isBlacklist = r.source.includes('Sheet 2');
+            const isBlacklist = r.source.includes('Blacklist') || r.source.includes('Sheet 4');
             const icon = isBlacklist ? "🚫" : "✅";
             
             reply += `${icon} *${i+1}. ${r.nama || "-"}*\n`;
