@@ -29,8 +29,7 @@ import {
   ClipboardCheck,
   ListChecks,
   ShieldAlert,
-  Calendar,
-  Globe
+  Calendar
 } from "lucide-react"
 
 import { usePathname, useRouter } from "next/navigation"
@@ -186,12 +185,6 @@ export function AppSidebar() {
       href: "/hasil-verifikasi",
       icon: ListChecks,
       show: (isAdmin || isPetugas || isKoordinator) && !isDinas
-    },
-    {
-      name: "PEMBUATAN NIB (OSS)",
-      href: "/oss",
-      icon: Globe,
-      show: isAdmin || isPetugas
     },
     {
       name: "Rekening Bank",
