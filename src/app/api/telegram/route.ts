@@ -282,7 +282,7 @@ export async function POST(req: NextRequest) {
             ...searchInSnap(blacklistSnap, 'Sheet 4 (Blacklist - REJECT)'),
             ...searchInSnap(m2025Snap, 'Sheet 3 (2025 - HOLD)'),
             ...searchInSnap(m2023Snap, 'Sheet 2 (2023 - 1m)'),
-            ...searchInSnap(m2024Snap, 'Sheet 1 (2024 - 10m)')
+            ...searchInSnap(m2024Snap, 'Sheet 1 (2024 - 3m)')
           ];
         } catch (error) {
           console.error("Master/Blacklist data query error:", error);

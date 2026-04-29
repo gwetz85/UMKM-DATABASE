@@ -38,7 +38,7 @@ export function CheckDataIndicator({ actor, data2023, data2024, data2025, dataBl
       .map(m => ({ ...m, source: label }));
 
   const matches2023 = checkMatches(data2023, 'Sheet 2 (2023 - 1m)');
-  const matches2024 = checkMatches(data2024, 'Sheet 1 (2024 - 10m)');
+  const matches2024 = checkMatches(data2024, 'Sheet 1 (2024 - 3m)');
   const matches2025 = checkMatches(data2025, 'Sheet 3 (2025 - HOLD)');
   const matchesBlacklist = checkMatches(dataBlacklist, 'Sheet 4 (Blacklist - REJECT)');
 
