@@ -32,7 +32,7 @@ const normalizeGender = (g: string) => {
 
 
 import { cn } from "@/lib/utils"
-import { generateRegistrationForm } from "@/lib/pdf-generator"
+import { generateRegistrationForm, generateCoordinatorReport, generateAllCoordinatorsReport } from "@/lib/pdf-generator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const BANK_LIST = [
@@ -366,8 +366,11 @@ function ActorDataContent() {
           <Button onClick={handleExportExcel} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md w-full md:w-auto h-10">
             <FileSpreadsheet className="w-4 h-4 mr-2" /> EKSPOR EXCEL
           </Button>
+          <Button onClick={() => generateAllCoordinatorsReport(groupedActors)} className="bg-red-600 hover:bg-red-700 font-bold shadow-md w-full md:w-auto h-10">
+            <Printer className="w-4 h-4 mr-2" /> CETAK PDF
+          </Button>
           <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto h-10">
-            <Printer className="w-4 h-4 mr-2" /> CETAK
+            <Printer className="w-4 h-4 mr-2" /> PRINT HALAMAN
           </Button>
         </div>
       </div>
@@ -384,9 +387,19 @@ function ActorDataContent() {
           <div className="space-y-12">
             {Object.entries(groupedActors).map(([coordinator, actors]) => (
               <div key={coordinator} className="space-y-4 break-after-page">
-                <div className="flex items-center gap-3 border-l-4 border-primary pl-4 py-1 print:border-black">
-                  <h2 className="text-xl font-black text-primary uppercase tracking-tight print:text-black">{coordinator}</h2>
-                  <Badge variant="secondary" className="font-bold print:hidden">{actors.length} DATA</Badge>
+                <div className="flex items-center justify-between border-l-4 border-primary pl-4 py-1 print:border-black">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-black text-primary uppercase tracking-tight print:text-black">{coordinator}</h2>
+                    <Badge variant="secondary" className="font-bold print:hidden">{actors.length} DATA</Badge>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="print:hidden border-primary text-primary hover:bg-primary/10 font-bold h-8"
+                    onClick={() => generateCoordinatorReport(coordinator, actors)}
+                  >
+                    <Printer className="w-3.5 h-3.5 mr-2" /> CETAK PDF {coordinator.toUpperCase()}
+                  </Button>
                 </div>
                 {isKoordinator ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 print:flex print:flex-col print:gap-1">
