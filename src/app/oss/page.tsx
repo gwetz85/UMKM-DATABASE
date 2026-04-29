@@ -50,10 +50,11 @@ export default function OSSPage() {
         */}
         <iframe 
           src="https://oss.go.id/id" 
-          className="w-full h-full border-none"
+          className="w-full h-full border-none bg-white"
           onLoad={() => setIsLoading(false)}
           title="Layanan OSS RI"
-          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+          allow="geolocation; microphone; camera; midi; vr; accelerometer; gyroscope; payment; ambient-light-sensor; encrypted-media; usb"
+          sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-top-navigation-by-user-activation allow-storage-access-by-user-activation"
         />
       </div>
       
