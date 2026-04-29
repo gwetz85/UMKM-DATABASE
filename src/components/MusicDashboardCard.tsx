@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, RefreshCw } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+
 
 const PLAYLIST_ITEMS_INITIAL = [
   "REMIX HOREG VERSION - GEMOY DJ GEMOY - INGKAR JANJI - [ OFICIAL MUSIC VIDEO ]",
@@ -37,6 +39,8 @@ export function MusicDashboardCard({ className }: { className?: string }) {
   const [isMuted, setIsMuted] = useState(false);
   const [playlist, setPlaylist] = useState(PLAYLIST_ITEMS_INITIAL);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [volume, setVolume] = useState(50);
+
   const { toast } = useToast();
 
   // On mount, request current status from BackgroundMusic (persists across navigation).
@@ -51,11 +55,13 @@ export function MusicDashboardCard({ className }: { className?: string }) {
 
   useEffect(() => {
     const handleStatusUpdate = (e: any) => {
-      const { isPlaying, currentTitle, isPlayerReady, isMuted } = e.detail;
+      const { isPlaying, currentTitle, isPlayerReady, isMuted, volume } = e.detail;
       setIsPlaying(isPlaying);
       setCurrentTitle(currentTitle);
       setIsReady(isPlayerReady);
       setIsMuted(isMuted);
+      if (volume !== undefined) setVolume(volume);
+
 
       // Dynamic Sync: Refined duplicate detection
       if (currentTitle) {
@@ -205,10 +211,29 @@ export function MusicDashboardCard({ className }: { className?: string }) {
               <SkipForward className="w-5 h-5" />
             </Button>
             <div className="w-px h-6 bg-slate-200" />
-            <Button variant="ghost" size="icon" onClick={() => sendControl('volume', isMuted ? 50 : 0)}>
-              {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5" />}
-            </Button>
+            
+            <div className="flex items-center gap-3 group/volume relative flex-1 max-w-[120px]">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="shrink-0"
+                onClick={() => sendControl('volume', isMuted ? (volume > 0 ? volume : 50) : 0)}
+              >
+                {isMuted || volume === 0 ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5" />}
+              </Button>
+              <Slider
+                value={[isMuted ? 0 : volume]}
+                max={100}
+                step={1}
+                onValueChange={(val) => {
+                  setVolume(val[0]);
+                  sendControl('volume', val[0]);
+                }}
+                className="w-full"
+              />
+            </div>
           </div>
+
 
           <div className="space-y-3 flex-1 flex flex-col">
             <div className="flex items-center justify-between px-1">
