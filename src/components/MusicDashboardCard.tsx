@@ -37,7 +37,29 @@ export function MusicDashboardCard({ className }: { className?: string }) {
   const [currentTitle, setCurrentTitle] = useState("");
   const [isReady, setIsReady] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [playlist, setPlaylist] = useState(PLAYLIST_ITEMS_INITIAL);
+  const [playlist, setPlaylist] = useState<string[]>(PLAYLIST_ITEMS_INITIAL);
+
+  // Persistence: Load playlist from localStorage on mount
+  useEffect(() => {
+    const savedPlaylist = localStorage.getItem('music-dashboard-playlist');
+    if (savedPlaylist) {
+      try {
+        const parsed = JSON.parse(savedPlaylist);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPlaylist(parsed);
+        }
+      } catch (e) {
+        console.error("Error loading playlist from storage:", e);
+      }
+    }
+  }, []);
+
+  // Persistence: Save playlist to localStorage whenever it changes
+  useEffect(() => {
+    if (playlist && playlist !== PLAYLIST_ITEMS_INITIAL) {
+      localStorage.setItem('music-dashboard-playlist', JSON.stringify(playlist));
+    }
+  }, [playlist]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [volume, setVolume] = useState(50);
 
