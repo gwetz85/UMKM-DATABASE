@@ -167,8 +167,8 @@ export function MusicDashboardCard({ className }: { className?: string }) {
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0 flex-1 flex flex-col">
-        <div className="p-6 space-y-4 flex-1 flex flex-col">
+      <CardContent className="p-0 flex-1 flex flex-col min-h-0">
+        <div className="p-6 space-y-4 flex-1 flex flex-col min-h-0">
           {/* Now Playing Area */}
           <div className="flex items-center gap-4 bg-muted/30 p-4 rounded-2xl relative overflow-hidden group">
             <div className={cn(
@@ -234,7 +234,7 @@ export function MusicDashboardCard({ className }: { className?: string }) {
           </div>
 
 
-          <div className="space-y-3 flex-1 flex flex-col">
+          <div className="space-y-3 flex-1 flex flex-col min-h-0">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                 <ListMusic className="w-3.5 h-3.5" /> Full Playlist
@@ -254,7 +254,7 @@ export function MusicDashboardCard({ className }: { className?: string }) {
                 {isSyncing ? "Syncing..." : "Update Playlist"}
               </Button>
             </div>
-            <ScrollArea className="h-[350px] w-full rounded-xl border bg-slate-50/50 p-2">
+            <ScrollArea className="flex-1 min-h-[300px] w-full rounded-xl border bg-slate-50/50 p-2">
               <div className="space-y-1">
                 {playlist.map((song, index) => {
                   const isCurrent = currentTitle.toLowerCase().includes(song.toLowerCase()) || 

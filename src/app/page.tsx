@@ -384,7 +384,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 items-stretch">
-        <div className="lg:col-span-2 space-y-6 flex flex-col">
+        <div className="lg:col-span-2 space-y-6 flex flex-col h-full">
           <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
             <CardHeader className="bg-primary/10 pb-4">
               <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
