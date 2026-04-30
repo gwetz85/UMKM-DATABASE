@@ -195,7 +195,6 @@ export default function CheckDataCollectivePage() {
         ])
 
         const margin = 14
-        const pageWidth = doc.internal.pageSize.getWidth()
         const usableWidth = pageWidth - margin * 2
 
         autoTable(doc, {

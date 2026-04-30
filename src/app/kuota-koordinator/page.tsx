@@ -227,7 +227,6 @@ export default function KuotaKorlapDewanAktifPage() {
         // Fixed cols: No=10, Kuota=22, Tercapai=24, Sisa=22, %=24 → 102mm
         // Name col = 182 - 102 = 80mm
         const margin = 14
-        const pageWidth = doc.internal.pageSize.getWidth()
         const usableWidth = pageWidth - margin * 2
         const fixedWidth = 10 + 22 + 24 + 22 + 24
         const nameWidth = usableWidth - fixedWidth
