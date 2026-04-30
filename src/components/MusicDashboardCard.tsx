@@ -93,22 +93,21 @@ export function MusicDashboardCard({ className }: { className?: string }) {
       
       try {
         // Fetch titles for each ID using noembed (CORS-friendly)
-        // We limit to first 25 for performance, following established patterns
-        const idsToFetch = playlistIds.slice(0, 25);
+        // We limit to first 100 for better coverage while maintaining performance
+        const idsToFetch = playlistIds.slice(0, 100);
         
-        for (const id of idsToFetch) {
+        const fetchTitle = async (id: string, index: number) => {
           try {
             const response = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${id}`);
             const data = await response.json();
-            if (data.title) {
-              newTitles.push(data.title);
-            } else {
-              newTitles.push(`Track ${newTitles.length + 1} (Unknown Title)`);
-            }
+            return data.title || `Track ${index + 1} (Unknown Title)`;
           } catch (err) {
-            newTitles.push(`Track ${newTitles.length + 1} (Fetch Error)`);
+            return `Track ${index + 1} (Fetch Error)`;
           }
-        }
+        };
+
+        const results = await Promise.all(idsToFetch.map((id: string, index: number) => fetchTitle(id, index)));
+        newTitles.push(...results);
 
         if (newTitles.length > 0) {
           setPlaylist(newTitles);
@@ -255,7 +254,7 @@ export function MusicDashboardCard({ className }: { className?: string }) {
                 {isSyncing ? "Syncing..." : "Update Playlist"}
               </Button>
             </div>
-            <ScrollArea className="flex-1 min-h-[180px] w-full rounded-xl border bg-slate-50/50 p-2">
+            <ScrollArea className="h-[350px] w-full rounded-xl border bg-slate-50/50 p-2">
               <div className="space-y-1">
                 {playlist.map((song, index) => {
                   const isCurrent = currentTitle.toLowerCase().includes(song.toLowerCase()) || 
