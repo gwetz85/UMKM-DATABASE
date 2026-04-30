@@ -244,7 +244,14 @@ export default function InputDataPage() {
       {/* Header Tunas Bangsa */}
       <div className="flex flex-col md:flex-row items-center gap-6 bg-white dark:bg-slate-900/50 p-6 rounded-[2rem] shadow-xl shadow-primary/5 border border-primary/10 animate-in fade-in slide-in-from-top-4 duration-1000">
         <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-2xl p-2 shadow-inner shrink-0 flex items-center justify-center border-4 border-primary/5">
-          <img src="/logo-tunas-bangsa.png" alt="Logo Tunas Bangsa" className="w-full h-full object-contain" />
+          <img 
+            src="/logo-tunas-bangsa.png" 
+            alt="Logo Tunas Bangsa" 
+            className="w-full h-full object-contain" 
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
         </div>
         <div className="flex flex-col text-center md:text-left gap-1">
           <h2 className="text-2xl md:text-4xl font-black text-primary font-headline leading-none uppercase tracking-tight">TUNAS BANGSA KEPULAUAN RIAU</h2>
