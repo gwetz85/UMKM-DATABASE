@@ -7,44 +7,14 @@ export const addTunasBangsaHeader = (doc: jsPDF) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
 
-  // Try to use a pre-loaded image
-  const logo = new Image();
-  logo.src = '/logo-tunas-bangsa.png';
-  
-  // Test Base64 (A small red dot for debugging)
-  const testBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==';
-
-  try {
-    if (logo.complete && logo.naturalWidth !== 0) {
-      doc.addImage(logo, 'PNG', margin, 10, 22, 22);
-    } else {
-      // Attempt addImage with URL
-      doc.addImage('/logo-tunas-bangsa.png', 'PNG', margin, 10, 22, 22);
-    }
-  } catch (e) {
-    // If it still fails, use the test base64 if it's a critical branding
-    try {
-       // Only use if real logo fails
-       // doc.addImage(testBase64, 'PNG', margin, 10, 5, 5); 
-    } catch(e2) {}
-    
-    // Draw a professional placeholder (Blue Circle with T)
-    doc.setDrawColor(37, 99, 235);
-    doc.setFillColor(37, 99, 235);
-    doc.circle(margin + 11, 21, 11, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(14);
-    doc.text('T', margin + 8, 25);
-  }
-
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(37, 99, 235); // Primary Blue
-  doc.text('TUNAS BANGSA KEPULAUAN RIAU', margin + 25, 17);
+  doc.text('TUNAS BANGSA KEPULAUAN RIAU', margin, 17);
   
   doc.setFontSize(9);
   doc.setTextColor(100);
-  doc.text('PENGAJUAN BANTUAN UMKM TAHUN 2026', margin + 25, 23);
+  doc.text('PENGAJUAN BANTUAN UMKM TAHUN 2026', margin, 23);
   
   doc.setDrawColor(37, 99, 235);
   doc.setLineWidth(0.5);
