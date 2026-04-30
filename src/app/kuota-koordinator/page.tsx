@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, deleteDocumentNonBlocking, useObject, updateDocumentNonBlocking } from "@/firebase"
 import { ref, push, set, query } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
+import { addTunasBangsaHeader } from "@/lib/pdf-generator"
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
@@ -194,17 +195,19 @@ export default function KuotaKorlapDewanAktifPage() {
     import('jspdf').then(({ default: jsPDF }) => {
       import('jspdf-autotable').then(({ default: autoTable }) => {
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+        const pageWidth = doc.internal.pageSize.getWidth()
 
-        // Header
+        // Header Tunas Bangsa
+        addTunasBangsaHeader(doc)
+        
         doc.setFont('helvetica', 'bold')
-        doc.setFontSize(14)
-        doc.text('DATA KUOTA KORLAP / DEWAN AKTIF', doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' })
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(9)
-        doc.text(
-          `Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`,
-          doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' }
-        )
+        doc.setFontSize(10)
+        doc.setTextColor(0)
+        doc.text('DATA KUOTA KORLAP / DEWAN AKTIF', pageWidth - 14, 17, { align: 'right' })
+        doc.setFontSize(7)
+        doc.setTextColor(150)
+        doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth - 14, 21, { align: 'right' })
+        doc.setTextColor(0)
 
         const tableBody = combinedKuotaData.map((item: any, index: number) => [
           index + 1,

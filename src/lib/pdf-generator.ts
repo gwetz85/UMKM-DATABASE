@@ -3,6 +3,34 @@ import autoTable from 'jspdf-autotable';
 import { BusinessActor } from '@/app/lib/types';
 import { generateBarcodeBase64 } from './barcode-utils';
 
+export const addTunasBangsaHeader = (doc: jsPDF) => {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+
+  try {
+    // Attempt to add the logo
+    doc.addImage('/logo-tunas-bangsa.png', 'PNG', margin, 10, 22, 22);
+  } catch (e) {
+    // Fallback if image not found
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(37, 99, 235); // Primary Blue
+  doc.text('TUNAS BANGSA KEPULAUAN RIAU', margin + 25, 17);
+  
+  doc.setFontSize(9);
+  doc.setTextColor(100);
+  doc.text('PENGAJUAN BANTUAN UMKM TAHUN 2026', margin + 25, 23);
+  
+  doc.setDrawColor(37, 99, 235);
+  doc.setLineWidth(0.5);
+  doc.line(margin, 34, pageWidth - margin, 34);
+  
+  doc.setTextColor(0); // Reset text color
+  return 38; // Return the next Y position
+};
+
 export const generateRegistrationForm = (actor: BusinessActor) => {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -13,26 +41,39 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
 
+  // --- HEADER TUNAS BANGSA ---
+  try {
+    doc.addImage('/logo-tunas-bangsa.png', 'PNG', margin, 12, 25, 25);
+  } catch (e) {
+    console.error("Logo not found at /logo-tunas-bangsa.png");
+  }
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  addTunasBangsaHeader(doc);
+
   // --- REGISTRATION CODE & BARCODE (TOP RIGHT) ---
   const regCode = actor.registrationCode || 'PENDING';
   const barcodeBase64 = generateBarcodeBase64(regCode);
 
   if (barcodeBase64 && regCode !== 'PENDING') {
-    doc.addImage(barcodeBase64, 'PNG', pageWidth - margin - 45, 20, 45, 12);
+    doc.addImage(barcodeBase64, 'PNG', pageWidth - margin - 45, 12, 45, 12);
     doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0);
     doc.setFontSize(10);
-    doc.text(regCode, pageWidth - margin - 22.5, 37, { align: 'center' });
+    doc.text(regCode, pageWidth - margin - 22.5, 29, { align: 'center' });
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.text('REGISTRATION CODE', pageWidth - margin - 22.5, 40, { align: 'center' });
+    doc.text('REGISTRATION CODE', pageWidth - margin - 22.5, 32, { align: 'center' });
   }
 
   // --- DOCUMENT TITLE ---
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text('FORMULIR BIODATA PELAKU USAHA', pageWidth / 2, 55, { align: 'center' });
+  doc.setTextColor(0);
+  doc.text('FORMULIR BIODATA PELAKU USAHA', pageWidth / 2, 50, { align: 'center' });
   doc.setLineWidth(0.5);
-  doc.line(pageWidth / 2 - 40, 57, pageWidth / 2 + 40, 57);
+  doc.line(pageWidth / 2 - 40, 52, pageWidth / 2 + 40, 52);
 
   // --- ACTOR DATA TABLE ---
   const tableData = [
@@ -92,18 +133,16 @@ export const generateCoordinatorReport = (coordinator: string, actors: BusinessA
 
   const pageWidth = doc.internal.pageSize.getWidth();
   
-  // Header
+  // Header Tunas Bangsa
+  const startY = addTunasBangsaHeader(doc);
+  
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('LAPORAN DATA PELAKU USAHA (SIMPU)', pageWidth / 2, 15, { align: 'center' });
-  doc.setFontSize(8);
-  doc.text('Sistem Informasi Manajemen Pelaku Usaha', pageWidth / 2, 19, { align: 'center' });
-  
   doc.setFontSize(10);
-  doc.text(`KOORDINATOR: ${coordinator.toUpperCase()}`, pageWidth / 2, 26, { align: 'center' });
-  
-  doc.setLineWidth(0.3);
-  doc.line(10, 30, pageWidth - 10, 30);
+  doc.text(`LAPORAN DATA PELAKU USAHA: ${coordinator.toUpperCase()}`, pageWidth - 14, 17, { align: 'right' });
+  doc.setFontSize(7);
+  doc.setTextColor(150);
+  doc.text('Sistem Informasi Manajemen Pelaku Usaha (SIMPU)', pageWidth - 14, 21, { align: 'right' });
+  doc.setTextColor(0);
 
   const tableData = actors.map((actor, index) => [
     index + 1,
@@ -117,7 +156,7 @@ export const generateCoordinatorReport = (coordinator: string, actors: BusinessA
   ]);
 
   autoTable(doc, {
-    startY: 35,
+    startY: 38,
     head: [['NO', 'REGISTRASI', 'NAMA', 'NIK', 'NO KK', 'ALAMAT', 'USAHA', 'ALAMAT USAHA']],
     body: tableData,
     theme: 'grid',
@@ -179,18 +218,16 @@ export const generateAllCoordinatorsReport = (groupedActors: Record<string, Busi
     }
     isFirstPage = false;
 
-    // Header
+    // Header Tunas Bangsa
+    addTunasBangsaHeader(doc);
+    
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text('LAPORAN DATA PELAKU USAHA (SIMPU)', pageWidth / 2, 15, { align: 'center' });
-    doc.setFontSize(8);
-    doc.text('Sistem Informasi Manajemen Pelaku Usaha', pageWidth / 2, 19, { align: 'center' });
-    
     doc.setFontSize(10);
-    doc.text(`KOORDINATOR: ${coordinator.toUpperCase()}`, pageWidth / 2, 26, { align: 'center' });
-    
-    doc.setLineWidth(0.3);
-    doc.line(10, 30, pageWidth - 10, 30);
+    doc.text(`LAPORAN KOORDINATOR: ${coordinator.toUpperCase()}`, pageWidth - 14, 17, { align: 'right' });
+    doc.setFontSize(7);
+    doc.setTextColor(150);
+    doc.setLineWidth(0.5);
+    doc.line(10, 32, pageWidth - 10, 32);
 
     const tableData = actors.map((actor, index) => [
       index + 1,
@@ -204,7 +241,7 @@ export const generateAllCoordinatorsReport = (groupedActors: Record<string, Busi
     ]);
 
     autoTable(doc, {
-      startY: 35,
+      startY: 38,
       head: [['NO', 'REGISTRASI', 'NAMA', 'NIK', 'NO KK', 'ALAMAT', 'USAHA', 'ALAMAT USAHA']],
       body: tableData,
       theme: 'grid',

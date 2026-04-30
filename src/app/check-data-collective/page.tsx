@@ -4,6 +4,7 @@ import React, { useState } from "react"
 import { useDatabase, useList, useMemoFirebase, useUser, useObject } from "@/firebase"
 import { ref } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
+import { addTunasBangsaHeader } from "@/lib/pdf-generator"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -170,17 +171,19 @@ export default function CheckDataCollectivePage() {
     import('jspdf').then(({ default: jsPDF }) => {
       import('jspdf-autotable').then(({ default: autoTable }) => {
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+        const pageWidth = doc.internal.pageSize.getWidth()
 
-        // Header
+        // Header Tunas Bangsa
+        addTunasBangsaHeader(doc)
+        
         doc.setFont('helvetica', 'bold')
-        doc.setFontSize(14)
-        doc.text('HASIL PENGECEKKAN DATA KOLEKTIF', doc.internal.pageSize.getWidth() / 2, 18, { align: 'center' })
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(9)
-        doc.text(
-          `Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`,
-          doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' }
-        )
+        doc.setFontSize(10)
+        doc.setTextColor(0)
+        doc.text('HASIL PENGECEKKAN DATA KOLEKTIF', pageWidth - 14, 17, { align: 'right' })
+        doc.setFontSize(7)
+        doc.setTextColor(150)
+        doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth - 14, 21, { align: 'right' })
+        doc.setTextColor(0)
 
         const tableBody = results.map((res, index) => [
           index + 1,

@@ -240,13 +240,25 @@ export default function InputDataPage() {
   ]
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-6">
+    <div className="p-8 max-w-4xl mx-auto space-y-8">
+      {/* Header Tunas Bangsa */}
+      <div className="flex flex-col md:flex-row items-center gap-6 bg-white dark:bg-slate-900/50 p-6 rounded-[2rem] shadow-xl shadow-primary/5 border border-primary/10 animate-in fade-in slide-in-from-top-4 duration-1000">
+        <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-2xl p-2 shadow-inner shrink-0 flex items-center justify-center border-4 border-primary/5">
+          <img src="/logo-tunas-bangsa.png" alt="Logo Tunas Bangsa" className="w-full h-full object-contain" />
+        </div>
+        <div className="flex flex-col text-center md:text-left gap-1">
+          <h2 className="text-2xl md:text-4xl font-black text-primary font-headline leading-none uppercase tracking-tight">TUNAS BANGSA KEPULAUAN RIAU</h2>
+          <h3 className="text-lg md:text-2xl font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">PENGAJUAN BANTUAN UMKM TAHUN 2026</h3>
+          <div className="h-1 w-20 bg-primary mt-2 mx-auto md:mx-0 rounded-full" />
+        </div>
+      </div>
+
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
           <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
-          <h1 className="text-3xl font-bold text-primary font-headline">Input Data Pelaku Usaha Baru</h1>
+          <h1 className="text-3xl font-bold text-primary font-headline uppercase tracking-tighter">Formulir Pendaftaran</h1>
         </div>
-        <p className="text-muted-foreground">Silakan isi formulir di bawah ini dengan lengkap dan benar untuk pendaftaran pelaku usaha.</p>
+        <p className="text-muted-foreground font-medium">Silakan isi formulir di bawah ini dengan lengkap dan benar untuk pendaftaran pelaku usaha.</p>
         {isMonitoring && (
           <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-xl flex items-center gap-3 font-bold text-sm shadow-sm animate-pulse">
             <span className="text-xl">👁️</span>

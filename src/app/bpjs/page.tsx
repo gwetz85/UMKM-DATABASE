@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react"
 import { useDatabase, useList, useMemoFirebase, useUser } from "@/firebase"
 import { ref } from "firebase/database"
+import { addTunasBangsaHeader } from "@/lib/pdf-generator"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -116,13 +117,19 @@ export default function BpjsPage() {
     if (filteredActors.length === 0) return
 
     const doc = new jsPDF('p', 'mm', 'a4')
+    const pageWidth = doc.internal.pageSize.getWidth()
+
+    // Header Tunas Bangsa
+    addTunasBangsaHeader(doc)
     
-    doc.setFontSize(16)
-    doc.setTextColor(15, 117, 188) // Primary color
-    doc.text("DATA BPJS KETENAGAKERJAAN", 105, 15, { align: 'center' })
+    doc.setFont('helvetica', 'bold')
     doc.setFontSize(10)
-    doc.setTextColor(100)
-    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 105, 22, { align: 'center' })
+    doc.setTextColor(0)
+    doc.text("DATA BPJS KETENAGAKERJAAN", pageWidth - 14, 17, { align: 'right' })
+    doc.setFontSize(7)
+    doc.setTextColor(150)
+    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, pageWidth - 14, 21, { align: 'right' })
+    doc.setTextColor(0)
 
     const tableData = filteredActors.map((actor, index) => {
       const age = calculateAge(actor.pobDob || "")
