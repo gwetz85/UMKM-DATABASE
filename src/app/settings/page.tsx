@@ -568,7 +568,7 @@ export default function SettingsPage() {
                     {/* Sheet 1: 2024 */}
                     <div className="space-y-3">
                       <Label className="text-[11px] font-black uppercase text-emerald-600 flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5" /> Sheet 1: Data Pembanding 2024 (10 Menit)
+                        <Check className="w-3.5 h-3.5" /> Sheet 1: Data Pembanding 2024 (3 Menit)
                       </Label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="relative">

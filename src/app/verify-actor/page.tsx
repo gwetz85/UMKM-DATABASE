@@ -34,14 +34,14 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
   // Priority Logic (sesuai rules baru):
   // 1. Sheet 4 (Blacklist) -> 10 detik   -> Rejected
   // 2. Sheet 3 (2025)      -> Hold        -> Verifikasi Manual (24 jam)
-  // 3. Sheet 1 (2024)      -> 10 menit    -> Verified (Data Pelaku Usaha)
+  // 3. Sheet 1 (2024)      -> 3 menit     -> Verified (Data Pelaku Usaha)
   // 4. Sheet 2 (2023)      -> 1 menit     -> Verified (Data Pelaku Usaha)
   // 5. Tidak ada match     -> 45 detik    -> Verified (Verifikasi Manual/Verified)
   
   const hasAnyMatch = matches.hasBlacklist || matches.has2025 || matches.has2024 || matches.has2023;
   const targetMins = matches.hasBlacklist ? (10/60) : 
                      (matches.has2025 ? 1440 : 
-                     (matches.has2024 ? 10 : 
+                     (matches.has2024 ? 3 : 
                      (matches.has2023 ? 1 : 0.75))); 
   const isHold = !matches.hasBlacklist && matches.has2025;
 
