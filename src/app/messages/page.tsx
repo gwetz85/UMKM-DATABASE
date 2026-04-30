@@ -32,7 +32,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { format, isToday, isYesterday } from "date-fns"
+import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns"
 import { id as localeId } from "date-fns/locale"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useToast } from "@/hooks/use-toast"
@@ -142,6 +142,9 @@ export default function PesanPage() {
       u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       u.role?.toLowerCase().includes(searchQuery.toLowerCase())
     )
+
+  // Ambil data live untuk selected contact agar status online/offline terupdate real-time
+  const liveSelectedContact = (allUsers || []).find((u: any) => u.uid === selectedContact?.uid) || selectedContact
 
   const chatId = selectedContact
     ? [user?.uid, selectedContact.uid].sort().join("_")
@@ -336,7 +339,10 @@ export default function PesanPage() {
                         </AvatarFallback>
                       </Avatar>
                       {/* Status dot */}
-                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full" />
+                      <span className={cn(
+                        "absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white rounded-full transition-colors duration-300",
+                        contact.isOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
+                      )} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className={cn(
@@ -345,8 +351,24 @@ export default function PesanPage() {
                       )}>
                         {contact.fullName ?? "Pengguna"}
                       </p>
-                      <div className="mt-0.5">
+                      <div className="flex items-center gap-2 mt-0.5">
                         <RoleBadge role={contact.role} />
+                        {contact.isOnline ? (
+                          <span className={cn(
+                            "text-[8px] font-black uppercase tracking-tighter flex items-center gap-1",
+                            isActive ? "text-white/80" : "text-emerald-600"
+                          )}>
+                            <span className="w-1 h-1 bg-current rounded-full animate-pulse" />
+                            Online
+                          </span>
+                        ) : (
+                          <span className={cn(
+                            "text-[8px] font-black uppercase tracking-tighter flex items-center gap-1 opacity-60",
+                            isActive ? "text-white/70" : "text-slate-400"
+                          )}>
+                            Offline {contact.lastSeen && `• ${formatDistanceToNow(new Date(contact.lastSeen), { addSuffix: true, locale: localeId })}`}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </button>
@@ -371,10 +393,9 @@ export default function PesanPage() {
       <main
         className={cn(
           "flex-1 flex flex-col rounded-3xl bg-white border border-slate-200/80 shadow-xl overflow-hidden",
-          isMobile && !selectedContact && "hidden"
         )}
       >
-        {selectedContact ? (
+        {liveSelectedContact ? (
           <>
             {/* Header Chat */}
             <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3 bg-white/80 backdrop-blur-sm shrink-0">
@@ -389,21 +410,28 @@ export default function PesanPage() {
                 </Button>
               )}
               <Avatar className="w-10 h-10 border-2 border-primary/10 shrink-0">
-                <AvatarImage src={selectedContact.photoURL} />
+                <AvatarImage src={liveSelectedContact.photoURL} />
                 <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                  {selectedContact.fullName?.charAt(0)?.toUpperCase() ?? "?"}
+                  {liveSelectedContact.fullName?.charAt(0)?.toUpperCase() ?? "?"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <h2 className="font-black text-slate-800 text-sm leading-none truncate">
-                  {selectedContact.fullName}
+                  {liveSelectedContact.fullName}
                 </h2>
                 <div className="flex items-center gap-2 mt-1.5">
-                  <RoleBadge role={selectedContact.role} />
-                  <span className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse inline-block" />
-                    Online
-                  </span>
+                  <RoleBadge role={liveSelectedContact.role} />
+                  {liveSelectedContact.isOnline ? (
+                    <span className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold">
+                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse inline-block" />
+                      Online
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-[10px] text-slate-400 font-bold">
+                      <span className="w-1.5 h-1.5 bg-slate-300 rounded-full inline-block" />
+                      Offline {liveSelectedContact.lastSeen && `• ${formatDistanceToNow(new Date(liveSelectedContact.lastSeen), { addSuffix: true, locale: localeId })}`}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -508,7 +536,7 @@ export default function PesanPage() {
                   <div>
                     <p className="font-bold text-slate-600 text-sm">Belum Ada Pesan</p>
                     <p className="text-xs text-slate-400 mt-1">
-                      Mulai percakapan dengan {selectedContact.fullName}
+                      Mulai percakapan dengan {liveSelectedContact.fullName}
                     </p>
                   </div>
                 </div>
@@ -524,7 +552,7 @@ export default function PesanPage() {
                 <input
                   ref={inputRef}
                   type="text"
-                  placeholder={`Kirim pesan ke ${selectedContact.fullName}...`}
+                  placeholder={`Kirim pesan ke ${liveSelectedContact.fullName}...`}
                   className="flex-1 bg-transparent border-none outline-none text-sm text-slate-700 placeholder:text-slate-400"
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}

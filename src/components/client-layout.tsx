@@ -10,7 +10,7 @@ import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
 import { BackgroundMusic } from '@/components/BackgroundMusic';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
-import { ref } from 'firebase/database'
+import { ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
 import { User as UserIcon, Calendar } from 'lucide-react'
 import Link from 'next/link'
@@ -46,6 +46,36 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [database])
   const { data: eventInfo } = useObject(eventSettingsRef)
   const activeEvent = useActiveEvent(eventInfo)
+
+  React.useEffect(() => {
+    if (!database || !user) return;
+
+    // Presence logic
+    const userStatusRef = ref(database, `system_users/${profile?.id || user.uid}/isOnline`);
+    const lastSeenRef = ref(database, `system_users/${profile?.id || user.uid}/lastSeen`);
+    const connectedRef = ref(database, '.info/connected');
+
+    const unsubscribe = onValue(connectedRef, (snap) => {
+      if (snap.val() === true) {
+        // We're connected (or reconnected)!
+        // When I disconnect, update my status to offline
+        onDisconnect(userStatusRef).set(false);
+        onDisconnect(lastSeenRef).set(serverTimestamp());
+
+        // Also set status to online
+        set(userStatusRef, true);
+        set(lastSeenRef, serverTimestamp());
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      // If component unmounts, we should probably set offline too, 
+      // though onDisconnect covers most cases.
+      set(userStatusRef, false);
+      set(lastSeenRef, serverTimestamp());
+    };
+  }, [database, user, profile?.id]);
 
   React.useEffect(() => {
     // SECURITY FIX: Continuous verification
