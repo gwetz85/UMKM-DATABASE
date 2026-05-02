@@ -116,53 +116,76 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
 
       {/* Sub-Menu Dialog */}
       <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
-        <DialogContent className="max-w-md bg-white/95 backdrop-blur-xl border-none shadow-2xl rounded-[2.5rem] p-8 overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-xl border-none shadow-2xl rounded-[2.5rem] p-0 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-primary/20 to-transparent z-50" />
           
-          <DialogHeader className="mb-8">
-            <div className="flex items-center gap-4 mb-4">
-              <div 
-                className="p-4 rounded-2xl shadow-lg shadow-primary/10" 
-                style={{ backgroundColor: selectedItem?.color }}
-              >
-                {selectedItem && <selectedItem.icon className="w-6 h-6 text-white" />}
-              </div>
-              <div className="flex flex-col text-left">
-                <DialogTitle className="text-2xl font-black uppercase tracking-tight text-slate-800">
-                  {selectedItem?.name}
-                </DialogTitle>
-                <DialogDescription className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                  Pilih Sub-Menu Untuk Melanjutkan
-                </DialogDescription>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="grid gap-3">
-            {selectedItem?.items?.map((sub: any, idx: number) => (
-              <button
-                key={sub.name}
-                onClick={() => handleNavigate(sub.href)}
-                style={{ animationDelay: `${idx * 50}ms` }}
-                className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-primary text-slate-700 hover:text-white transition-all duration-300 border border-slate-100 hover:border-primary shadow-sm hover:shadow-xl hover:-translate-y-0.5 animate-in fade-in slide-in-from-right-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-white/50 flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                    <Building2 className="w-4 h-4 text-primary group-hover:text-white" />
-                  </div>
-                  <span className="font-black uppercase tracking-tight text-sm">{sub.name}</span>
+          <div className="p-8 pb-4">
+            <DialogHeader className="mb-4">
+              <div className="flex items-center gap-4">
+                <div 
+                  className="p-4 rounded-2xl shadow-lg shadow-primary/10" 
+                  style={{ backgroundColor: selectedItem?.color }}
+                >
+                  {selectedItem && <selectedItem.icon className="w-6 h-6 text-white" />}
                 </div>
-                <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
-              </button>
-            ))}
+                <div className="flex flex-col text-left">
+                  <DialogTitle className="text-2xl font-black uppercase tracking-tight text-slate-800">
+                    {selectedItem?.name}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                    Pilih Sub-Menu Untuk Melanjutkan
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
           </div>
 
-          <button 
-            onClick={() => setSelectedItem(null)}
-            className="w-full mt-8 py-3 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-primary transition-colors"
-          >
-            Tutup Menu
-          </button>
+          <div className="px-8 pb-8 overflow-y-auto custom-scrollbar flex-1">
+            <div className={cn(
+              "grid gap-3",
+              selectedItem?.items?.length > 6 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
+            )}>
+              {selectedItem?.items?.map((sub: any, idx: number) => (
+                <button
+                  key={sub.name}
+                  onClick={() => handleNavigate(sub.href)}
+                  style={{ animationDelay: `${idx * 50}ms` }}
+                  className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-primary text-slate-700 hover:text-white transition-all duration-300 border border-slate-100 hover:border-primary shadow-sm hover:shadow-xl hover:-translate-y-0.5 animate-in fade-in slide-in-from-right-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-white/50 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                      <Building2 className="w-4 h-4 text-primary group-hover:text-white" />
+                    </div>
+                    <span className="font-black uppercase tracking-tight text-sm">{sub.name}</span>
+                  </div>
+                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={() => setSelectedItem(null)}
+              className="w-full mt-8 py-3 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-primary transition-colors border-t border-slate-100"
+            >
+              Tutup Menu
+            </button>
+          </div>
+          
+          <style jsx global>{`
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 6px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background: #e2e8f0;
+              border-radius: 10px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+              background: #cbd5e1;
+            }
+          `}</style>
         </DialogContent>
       </Dialog>
 
