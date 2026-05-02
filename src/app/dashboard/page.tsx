@@ -489,7 +489,7 @@ export default function DashboardStatsPage() {
               <div className="p-2 bg-slate-50 border-t flex justify-center">
                 <Button 
                    variant="ghost" 
-                   size="xs" 
+                   size="sm" 
                    className="text-[9px] font-black text-primary uppercase tracking-widest hover:bg-primary/5 h-6"
                    onClick={() => router.push('/app-logs')}
                 >
