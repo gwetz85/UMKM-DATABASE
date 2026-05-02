@@ -148,7 +148,14 @@ export function useNavigation() {
       icon: CreditCard,
       show: !!user && !isDinas,
       color: "#475569", // slate-600
-      description: "Daftar Rekening Per Bank"
+      description: "Daftar Rekening Per Bank",
+      items: [
+        { name: "BCA", href: "/rekening-bank?bank=BCA" },
+        { name: "BNI", href: "/rekening-bank?bank=BNI" },
+        { name: "BRI", href: "/rekening-bank?bank=BRI" },
+        { name: "BRK", href: "/rekening-bank?bank=BRK" },
+        { name: "MANDIRI", href: "/rekening-bank?bank=MANDIRI" },
+      ]
     },
     {
       name: "LPJ",
@@ -181,6 +188,30 @@ export function useNavigation() {
       show: !!user,
       color: "#94a3b8", // slate-400
       description: "Konfigurasi Profil & Sistem"
+    },
+    {
+      name: "Pengaturan Teks",
+      href: "/settings-running-text",
+      icon: MessageSquare,
+      show: isAdmin,
+      color: "#ec4899", // pink-500
+      description: "Konfigurasi Teks Berjalan"
+    },
+    {
+      name: "Kuota KORLAP / DEWAN",
+      href: "/kuota-koordinator",
+      icon: BarChart3,
+      show: isAdmin,
+      color: "#f59e0b", // amber-500
+      description: "Manajemen Kuota"
+    },
+    {
+      name: "Pengaturan Event",
+      href: "/settings-event",
+      icon: Calendar,
+      show: isAdmin,
+      color: "#8b5cf6", // violet-500
+      description: "Manajemen Event & Jadwal"
     },
     {
       name: "LOG APLIKASI",

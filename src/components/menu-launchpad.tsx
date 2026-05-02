@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useSoundEffect } from "@/hooks/use-sound-effect"
 import { TrendingUp } from "lucide-react"
-import { useObject } from "@/firebase"
+import { useObject, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
 
 interface MenuLaunchpadProps {
@@ -18,7 +18,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
   const { navigation, userProfile } = useNavigation()
   const router = useRouter()
   const { playSound } = useSoundEffect()
-  const { database } = useNavigation() // Get database from the same hook or useDatabase
+  const database = useDatabase()
 
   // Fetch dynamic system config
   const systemConfigRef = database ? ref(database, 'settings/system_config') : null
@@ -42,8 +42,8 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {navigation.map((item, index) => (
-          <button
+        {navigation.map((item: any, index) => (
+          <div
             key={item.name}
             onClick={() => handleNavigate(item.href)}
             style={{ 
@@ -70,19 +70,37 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
             </div>
 
             {/* Title Section */}
-            <div className="mt-auto relative z-10">
-              <div className="text-xl md:text-2xl font-black text-white leading-tight uppercase tracking-tight mb-3 text-left">
+            <div className="mt-auto relative z-10 flex flex-col gap-3">
+              <div className="text-xl md:text-2xl font-black text-white leading-tight uppercase tracking-tight text-left">
                 {item.name}
               </div>
-              <div className="flex items-center gap-2 text-[10px] font-black text-white/80 uppercase tracking-widest bg-black/10 w-fit px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
-                <TrendingUp className="w-3 h-3 text-white" />
-                <span>Akses Modul</span>
-              </div>
+              
+              {item.items && item.items.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {item.items.map((sub: any) => (
+                    <button
+                      key={sub.name}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleNavigate(sub.href);
+                      }}
+                      className="bg-black/20 hover:bg-black/40 text-white text-[9px] font-black uppercase px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10 transition-colors"
+                    >
+                      {sub.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-[10px] font-black text-white/80 uppercase tracking-widest bg-black/10 w-fit px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
+                  <TrendingUp className="w-3 h-3 text-white" />
+                  <span>Akses Modul</span>
+                </div>
+              )}
             </div>
 
             {/* Decorative Light Effect */}
-            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
-          </button>
+            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000 pointer-events-none" />
+          </div>
         ))}
       </div>
 
