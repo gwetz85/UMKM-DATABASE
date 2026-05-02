@@ -93,7 +93,7 @@ export function AppSidebar() {
     setMounted(true)
   }, [])
 
-  const { navigation, isAdmin, isKoordinator, userProfile } = useNavigation()
+  const { navigation, isAdmin, isKoordinator, isMonitoring, isPetugas, isDinas, userProfile } = useNavigation()
 
   const copyUid = () => {
     if (user?.uid) {

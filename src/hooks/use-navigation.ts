@@ -204,6 +204,9 @@ export function useNavigation() {
     navigation: navigation.filter(item => item.show),
     isAdmin,
     isKoordinator,
+    isMonitoring,
+    isPetugas,
+    isDinas,
     userProfile
   }
 }
