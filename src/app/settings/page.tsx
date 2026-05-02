@@ -541,14 +541,12 @@ export default function SettingsPage() {
                 const formData = new FormData(e.currentTarget);
                 const version = formData.get('version') as string;
                 const copyright = formData.get('copyright') as string;
-                const runningText = formData.get('runningText') as string;
 
                 setLoading(true);
                 try {
                   await update(ref(database, 'settings/system_config'), {
                     version,
-                    copyright,
-                    runningText
+                    copyright
                   });
                   toast({ title: "Berhasil", description: "Konfigurasi sistem telah diperbarui." });
                 } catch (err) {
@@ -566,10 +564,6 @@ export default function SettingsPage() {
                     <Label htmlFor="copyright">Teks Hak Cipta</Label>
                     <Input id="copyright" name="copyright" defaultValue={systemConfig?.copyright || "© 2024 Dinas Koperasi & UKM"} placeholder="Contoh: © 2024 Nama Dinas" />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="runningText">Tulisan Berjalan (Marquee)</Label>
-                  <Input id="runningText" name="runningText" defaultValue={systemConfig?.runningText || "Selamat Datang di Aplikasi UMKM Database..."} placeholder="Teks yang akan muncul di bagian bawah aplikasi" />
                 </div>
                 <Button type="submit" disabled={loading} className="font-bold">
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <DatabaseZap className="w-4 h-4 mr-2" />}
