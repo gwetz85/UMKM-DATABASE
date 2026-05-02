@@ -94,19 +94,6 @@ export default function DashboardStatsPage() {
 
   const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery)
 
-  const logsRef = useMemoFirebase(() => {
-    if (!database) return null
-    return ref(database, 'activity_logs')
-  }, [database])
-  const { data: allLogs, isLoading: isLogsLoading } = useList<any>(logsRef)
-
-  const recentLogs = useMemo(() => {
-    if (!allLogs) return []
-    return [...allLogs]
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 10)
-  }, [allLogs])
-
   const activeData = useMemo(() => {
     return allData?.filter(d => {
       const status = d.status?.toLowerCase().trim() || "";
@@ -436,67 +423,9 @@ export default function DashboardStatsPage() {
             </CardContent>
           </Card>
           
-          {/* Row side-by-side: Music Player & Riwayat Aktivitas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+          {/* Music Player Section */}
+          <div className="grid grid-cols-1 gap-6 items-stretch">
             <MusicDashboardCard className="h-full" />
-            
-            <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none flex flex-col">
-              <CardHeader className="bg-slate-50/50 pb-2 border-b">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <History className="w-4 h-4 text-primary" /> Riwayat Aktivitas
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0 overflow-auto flex-1">
-                <Table>
-                  <TableHeader className="bg-slate-50/80">
-                    <TableRow>
-                      <TableHead className="text-[9px] font-black uppercase py-2 pl-4">Waktu</TableHead>
-                      <TableHead className="text-[9px] font-black uppercase py-2">User</TableHead>
-                      <TableHead className="text-[9px] font-black uppercase py-2 text-center">Hasil</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recentLogs.map((log, idx) => (
-                      <TableRow key={idx} className="hover:bg-primary/5 transition-colors">
-                        <TableCell className="text-[10px] font-bold py-2 pl-4">
-                          {new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                        </TableCell>
-                        <TableCell className="text-[10px] font-black uppercase py-2 max-w-[80px] truncate">
-                          {log.userId === 'Public' ? 'USER PUBLIK' : (log.userId?.split(' ')[0] || "User")}
-                        </TableCell>
-                        <TableCell className="text-center py-2 pr-4">
-                          <span className={cn(
-                            "text-[8px] font-black px-1.5 py-0.5 rounded-full border uppercase tracking-tighter",
-                            (log.results || "").toLowerCase().includes("tidak") || (log.results || "").toLowerCase().includes("gagal")
-                              ? "bg-rose-50 text-rose-600 border-rose-100" 
-                              : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                          )}>
-                            {log.results || "-"}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {recentLogs.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center py-10 text-[10px] font-bold text-slate-400">
-                          Belum ada riwayat.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-              <div className="p-2 bg-slate-50 border-t flex justify-center">
-                <Button 
-                   variant="ghost" 
-                   size="sm" 
-                   className="text-[9px] font-black text-primary uppercase tracking-widest hover:bg-primary/5 h-6"
-                   onClick={() => router.push('/app-logs')}
-                >
-                  Lihat Semua
-                </Button>
-              </div>
-            </Card>
           </div>
         </div>
 
