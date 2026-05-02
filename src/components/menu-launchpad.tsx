@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { useSoundEffect } from "@/hooks/use-sound-effect"
 import { TrendingUp } from "lucide-react"
+import { useObject } from "@/firebase"
+import { ref } from "firebase/database"
 
 interface MenuLaunchpadProps {
   onSelect?: () => void
@@ -13,9 +15,14 @@ interface MenuLaunchpadProps {
 }
 
 export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
-  const { navigation } = useNavigation()
+  const { navigation, userProfile } = useNavigation()
   const router = useRouter()
   const { playSound } = useSoundEffect()
+  const { database } = useNavigation() // Get database from the same hook or useDatabase
+
+  // Fetch dynamic system config
+  const systemConfigRef = database ? ref(database, 'settings/system_config') : null
+  const { data: systemConfig } = useObject(systemConfigRef)
 
   const handleNavigate = (href: string) => {
     playSound('click')
@@ -91,8 +98,8 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
           </div>
         </div>
         <div className="flex gap-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-           <span>v4.0.0 Stable</span>
-           <span>&copy; 2024 Dinas Koperasi & UKM</span>
+           <span>{systemConfig?.version || "v4.0.0 Stable"}</span>
+           <span>{systemConfig?.copyright || "© 2024 Dinas Koperasi & UKM"}</span>
         </div>
       </div>
     </div>

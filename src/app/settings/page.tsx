@@ -22,9 +22,9 @@ import {
   DatabaseZap,
   Check,
   XCircle,
-  Lock,
   Clock,
-  Key
+  Key,
+  Settings2
 } from "lucide-react"
 import { updatePassword } from "firebase/auth"
 import { useAuth, useList } from "@/firebase"
@@ -67,6 +67,9 @@ export default function SettingsPage() {
 
   const themeSettingsRef = database ? ref(database, 'chats/__system_settings/theme') : null
   const { data: themeSettings, error: themeError } = useObject(themeSettingsRef)
+
+  const systemConfigRef = database ? ref(database, 'settings/system_config') : null
+  const { data: systemConfig } = useObject(systemConfigRef)
 
   useEffect(() => {
     if (themeError) {
@@ -527,11 +530,56 @@ export default function SettingsPage() {
           <Card className="border-none shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <RefreshCcw className="w-5 h-5 text-primary" /> Manajemen Data
+                <Settings2 className="w-5 h-5 text-primary" /> Konfigurasi Sistem
               </CardTitle>
-              <CardDescription>Ekspor, impor, dan bersihkan data database.</CardDescription>
+              <CardDescription>Atur teks versi, hak cipta, dan tulisan berjalan.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const version = formData.get('version') as string;
+                const copyright = formData.get('copyright') as string;
+                const runningText = formData.get('runningText') as string;
+
+                setLoading(true);
+                try {
+                  await update(ref(database, 'settings/system_config'), {
+                    version,
+                    copyright,
+                    runningText
+                  });
+                  toast({ title: "Berhasil", description: "Konfigurasi sistem telah diperbarui." });
+                } catch (err) {
+                  toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat menyimpan konfigurasi." });
+                } finally {
+                  setLoading(false);
+                }
+              }} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="version">Versi Aplikasi</Label>
+                    <Input id="version" name="version" defaultValue={systemConfig?.version || "v4.0.0 Stable"} placeholder="Contoh: v4.0.1 Stable" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="copyright">Teks Hak Cipta</Label>
+                    <Input id="copyright" name="copyright" defaultValue={systemConfig?.copyright || "© 2024 Dinas Koperasi & UKM"} placeholder="Contoh: © 2024 Nama Dinas" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="runningText">Tulisan Berjalan (Marquee)</Label>
+                  <Input id="runningText" name="runningText" defaultValue={systemConfig?.runningText || "Selamat Datang di Aplikasi UMKM Database..."} placeholder="Teks yang akan muncul di bagian bawah aplikasi" />
+                </div>
+                <Button type="submit" disabled={loading} className="font-bold">
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <DatabaseZap className="w-4 h-4 mr-2" />}
+                  Simpan Konfigurasi
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {isAdmin && (
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-xl space-y-3">
                   <div className="flex items-center gap-2 font-bold text-sm">
