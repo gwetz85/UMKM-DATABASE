@@ -24,6 +24,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemePersistence } from '@/components/theme-persistence';
 import { RunningText } from './running-text';
 import { useSoundEffect } from '@/hooks/use-sound-effect';
+import { cn } from '@/lib/utils';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
