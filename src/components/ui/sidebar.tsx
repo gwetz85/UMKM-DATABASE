@@ -256,7 +256,7 @@ Sidebar.displayName = "Sidebar"
 const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
->>(({ className, onClick, ...props }, ref: React.Ref<HTMLButtonElement>) => {
+>(({ className, onClick, ...props }, ref: React.Ref<HTMLButtonElement>) => {
   return null
 })
 SidebarTrigger.displayName = "SidebarTrigger"
