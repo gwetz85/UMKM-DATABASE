@@ -26,7 +26,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
   return (
     <div className={cn("w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in zoom-in duration-500", className)}>
       <div className="flex flex-col mb-12 space-y-2">
-        <h2 className="text-4xl md:text-6xl font-black text-primary tracking-tighter uppercase">
+        <h2 className="text-4xl md:text-6xl font-black text-slate-800 tracking-tighter uppercase">
           Sistem Navigasi
         </h2>
         <p className="text-slate-500 font-bold text-sm md:text-base uppercase tracking-[0.3em]">
@@ -39,46 +39,48 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
           <button
             key={item.name}
             onClick={() => handleNavigate(item.href)}
-            style={{ animationDelay: `${index * 40}ms` }}
+            style={{ 
+              animationDelay: `${index * 40}ms`,
+              backgroundColor: item.color,
+              borderColor: `${item.color}44` // Add some transparency to border
+            }}
             className={cn(
-              "group relative flex flex-col p-6 rounded-3xl transition-all duration-500 overflow-hidden shadow-md border cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-4",
-              "hover:shadow-2xl hover:-translate-y-1.5",
-              item.color || "bg-primary",
-              item.hoverColor || "hover:bg-primary/90",
-              item.borderColor || "border-white/20"
+              "group relative flex flex-col p-6 rounded-[2rem] transition-all duration-500 overflow-hidden shadow-lg border cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-4",
+              "hover:shadow-2xl hover:-translate-y-1.5 hover:brightness-110"
             )}
           >
+            {/* Glossy Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+
             {/* Header Section */}
-            <div className="flex items-start justify-between mb-8">
-              <h3 className="text-xs md:text-sm font-black text-white/80 uppercase tracking-widest text-left max-w-[70%]">
-                {item.name}
+            <div className="flex items-start justify-between mb-10 relative z-10">
+              <h3 className="text-[10px] md:text-[11px] font-black text-white/70 uppercase tracking-[0.2em] text-left max-w-[75%] leading-relaxed">
+                Modul Aplikasi
               </h3>
-              <div className="bg-white/20 p-2.5 rounded-2xl group-hover:scale-110 transition-transform duration-300 shadow-inner">
+              <div className="bg-white/20 p-3 rounded-2xl group-hover:scale-110 transition-transform duration-500 shadow-xl backdrop-blur-sm">
                 <item.icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
             </div>
 
-            {/* Value/Content Section (Emulating Dashboard) */}
-            <div className="mt-auto">
-              <div className="text-xl md:text-2xl font-black text-white leading-tight uppercase tracking-tighter mb-2 text-left">
-                {item.name.split(' ').length > 2 
-                  ? item.name.split(' ').slice(0, 2).join(' ') 
-                  : item.name}
+            {/* Title Section */}
+            <div className="mt-auto relative z-10">
+              <div className="text-xl md:text-2xl font-black text-white leading-tight uppercase tracking-tight mb-3 text-left">
+                {item.name}
               </div>
-              <div className="flex items-center gap-1 text-[8px] md:text-[10px] font-black text-white/70 uppercase tracking-widest">
+              <div className="flex items-center gap-2 text-[10px] font-black text-white/80 uppercase tracking-widest bg-black/10 w-fit px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
                 <TrendingUp className="w-3 h-3 text-white" />
-                Akses Modul
+                <span>Akses Modul</span>
               </div>
             </div>
 
-            {/* Decorative Background Element */}
-            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
+            {/* Decorative Light Effect */}
+            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000" />
           </button>
         ))}
       </div>
 
       {/* Footer Info */}
-      <div className="mt-20 pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 opacity-40">
+      <div className="mt-20 pt-8 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 opacity-60">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-slate-100">
             <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
