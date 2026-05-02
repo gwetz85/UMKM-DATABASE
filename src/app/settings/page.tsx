@@ -25,9 +25,14 @@ import {
   Lock,
   Clock,
   Key,
-  Settings2
+  Settings2,
+  LogOut,
+  User as UserIcon,
+  Mail,
+  Shield,
+  CircleUser
 } from "lucide-react"
-import { updatePassword } from "firebase/auth"
+import { updatePassword, signOut } from "firebase/auth"
 import { useAuth, useList } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -35,6 +40,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import * as XLSX from 'xlsx'
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { useRouter } from "next/navigation"
 
 export default function SettingsPage() {
   const { user } = useUser()
@@ -358,6 +366,19 @@ export default function SettingsPage() {
     }
   }
 
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    if (!confirm("Apakah Anda yakin ingin keluar dari aplikasi?")) return
+    try {
+      await signOut(auth)
+      router.push('/login')
+      toast({ title: "Berhasil Keluar", description: "Sampai jumpa kembali!" })
+    } catch (err) {
+      toast({ variant: "destructive", title: "Gagal Keluar", description: "Terjadi kesalahan saat mencoba keluar." })
+    }
+  }
+
   if (isAdminLoading) {
     return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>
   }
@@ -384,6 +405,51 @@ export default function SettingsPage() {
       )}
 
       <div className="grid gap-6">
+        {/* Profile Card */}
+        <Card className="border-none shadow-sm overflow-hidden bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-950">
+          <div className="h-24 bg-primary/10 w-full relative">
+            <div className="absolute -bottom-10 left-8">
+              <Avatar className="w-20 h-20 border-4 border-white dark:border-slate-900 shadow-xl">
+                <AvatarImage src={user?.photoURL || ""} />
+                <AvatarFallback className="bg-primary text-white text-xl font-black">
+                  {userProfile?.fullName?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+          </div>
+          <CardContent className="pt-14 pb-8 px-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">
+                    {userProfile?.fullName || user?.displayName || "Pengguna Baru"}
+                  </h2>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold uppercase text-[10px] px-2 py-0">
+                    {userProfile?.role || (isAdmin ? "Admin" : "User")}
+                  </Badge>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                    <Mail className="w-3.5 h-3.5" /> {user?.email}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-500 font-medium">
+                    <Shield className="w-3.5 h-3.5" /> ID: <span className="font-mono text-[10px]">{user?.uid}</span>
+                  </div>
+                </div>
+              </div>
+
+              <Button 
+                variant="destructive" 
+                onClick={handleLogout}
+                className="h-12 px-6 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:scale-105 active:scale-95 transition-all gap-2"
+              >
+                <LogOut className="w-4 h-4" /> Keluar Akun
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+
         <Card className="border-none shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
