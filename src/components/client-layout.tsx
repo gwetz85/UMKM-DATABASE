@@ -3,7 +3,6 @@
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { AppSidebar } from '@/components/app-sidebar';
 import { InfoDialog } from '@/components/info-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
@@ -12,14 +11,10 @@ import { BackgroundMusic } from '@/components/BackgroundMusic';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
-import { User as UserIcon, Calendar } from 'lucide-react'
+import { User as UserIcon, LayoutGrid, Home } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
 import { useActiveEvent } from '@/hooks/use-active-event';
-import { MenuLaunchpad } from './menu-launchpad';
-import { LayoutGrid, Home } from 'lucide-react';
-
-
 import { Toaster } from '@/components/ui/toaster';
 import { ThemePersistence } from '@/components/theme-persistence';
 import { RunningText } from './running-text';
@@ -32,18 +27,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const auth = useAuth()
   const database = useDatabase();
-  const [isLaunchpadOpen, setIsLaunchpadOpen] = React.useState(false);
-
-  // Automatically open launchpad on root path if user just logged in or is at home
-  React.useEffect(() => {
-    if (pathname === '/' && !isUserLoading && user) {
-      const hasSeenLaunchpad = sessionStorage.getItem('hasSeenLaunchpad');
-      if (!hasSeenLaunchpad) {
-        setIsLaunchpadOpen(true);
-        sessionStorage.setItem('hasSeenLaunchpad', 'true');
-      }
-    }
-  }, [pathname, isUserLoading, user]);
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -52,7 +35,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   
   const { data: allUsers, isLoading: isUsersLoading } = useList(userProfileRef)
   const profile = allUsers?.find((u: any) => u.uid === user?.uid)
-  const isKoordinator = profile?.role === 'koordinator'
   const { playSound } = useSoundEffect();
 
   const eventSettingsRef = useMemoFirebase(() => {
@@ -65,7 +47,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!database || !user) return;
 
-    // Presence logic
     const userStatusRef = ref(database, `system_users/${profile?.id || user.uid}/isOnline`);
     const lastSeenRef = ref(database, `system_users/${profile?.id || user.uid}/lastSeen`);
     const connectedRef = ref(database, '.info/connected');
@@ -120,10 +101,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [playSound]);
 
   const isLoginPage = pathname === '/login'
+  const isRootPage = pathname === '/'
 
   const getPageTitle = (path: string) => {
     switch (path) {
-      case '/': return 'Dashboard';
+      case '/': return 'Menu Utama';
+      case '/dashboard': return 'Dashboard Statistik';
       case '/actor-data': return 'Data Pelaku Usaha';
       case '/finish': return 'Data Selesai';
       case '/rejected': return 'Data Ditolak';
@@ -134,8 +117,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       case '/profile': return 'Profil Saya';
       case '/settings': return 'Pengaturan';
       case '/users': return 'Manajemen User';
-      case '/chat-monitoring': return 'Monitoring Chat';
       case '/lpj': return 'LPJ';
+      case '/hasil-verifikasi': return 'Hasil Verifikasi';
       default: return '';
     }
   };
@@ -147,34 +130,31 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       <ThemePersistence />
       <SidebarProvider>
         <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-slate-50">
-          {/* Global Components */}
           <GlobalAutoVerifier />
           <BackgroundMusic className="hidden" />
           <Toaster />
 
-          {/* Unified Header */}
           {!isLoginPage && (
             <>
               <header className="sticky top-0 z-50 flex items-center justify-between px-4 md:px-8 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 shrink-0 print:hidden">
                 <div className="flex items-center gap-6">
-                  <div className="flex flex-col">
+                  <Link href="/" className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
                     <span className="text-3xl font-black tracking-tighter leading-none text-primary">
                       SIMPU
                     </span>
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sistem Manajemen UMKM</span>
-                  </div>
+                  </Link>
 
                   <div className="hidden md:flex h-8 w-px bg-slate-200 mx-2" />
 
-                  {currentTitle && !isLaunchpadOpen && (
+                  {currentTitle && (
                     <h1 className="hidden md:block text-2xl font-black text-slate-800 tracking-tight uppercase">
                       {currentTitle}
                     </h1>
                   )}
                 </div>
 
-                {/* Event Info - Center Area (Desktop) */}
-                {activeEvent && !isLaunchpadOpen && (
+                {activeEvent && (
                   <div className="hidden lg:flex flex-col items-center justify-center animate-in fade-in zoom-in duration-1000">
                     <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1">
                       {activeEvent.description || 'EVENT MENDATANG'}
@@ -184,18 +164,15 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 )}
 
                 <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => setIsLaunchpadOpen(!isLaunchpadOpen)}
-                    className={cn(
-                      "flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95",
-                      isLaunchpadOpen 
-                        ? "bg-rose-500 text-white shadow-rose-200" 
-                        : "bg-primary text-white shadow-primary/20 hover:bg-primary/90"
-                    )}
-                  >
-                    {isLaunchpadOpen ? <Home className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
-                    <span>{isLaunchpadOpen ? "Tutup" : "Menu Utama"}</span>
-                  </button>
+                  {!isRootPage && (
+                    <button
+                      onClick={() => router.push('/')}
+                      className="flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95 bg-primary text-white shadow-primary/20 hover:bg-primary/90"
+                    >
+                      <Home className="w-5 h-5" />
+                      <span>Kembali ke Menu</span>
+                    </button>
+                  )}
 
                   <div className="hidden sm:flex h-8 w-px bg-slate-200 mx-2" />
 
@@ -229,24 +206,15 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
               {!isLoginPage && <RunningText />}
               
-              <div key={pathname} className="w-full relative z-0 animate-in fade-in-up min-h-full">
-                {isLaunchpadOpen && !isLoginPage ? (
-                  <div className="absolute inset-0 z-[100] bg-slate-50/90 backdrop-blur-md overflow-auto py-12">
-                    <MenuLaunchpad onSelect={() => setIsLaunchpadOpen(false)} />
-                  </div>
-                ) : (
-                  <div className="p-4 md:p-8">
-                    {children}
-                  </div>
-                )}
+              <div key={pathname} className="w-full relative z-0 animate-in fade-in-up min-h-full p-4 md:p-8">
+                {children}
               </div>
             </main>
           </div>
 
-          {/* Mobile Floating Menu Button (Always visible on modules) */}
-          {!isLoginPage && !isLaunchpadOpen && (
+          {!isLoginPage && !isRootPage && (
             <button 
-              onClick={() => setIsLaunchpadOpen(true)}
+              onClick={() => router.push('/')}
               className="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-primary text-white shadow-2xl flex items-center justify-center z-50 animate-in slide-in-from-bottom-10 duration-500 border-4 border-white active:scale-90"
             >
               <LayoutGrid className="w-8 h-8" />
@@ -256,4 +224,4 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       </SidebarProvider>
     </>
   );
-}
+}

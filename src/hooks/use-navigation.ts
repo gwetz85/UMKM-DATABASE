@@ -47,8 +47,8 @@ export function useNavigation() {
 
   const navigation = React.useMemo(() => [
     {
-      name: "Dashboard",
-      href: "/",
+      name: "Dashboard Statistik",
+      href: "/dashboard",
       icon: LayoutDashboard,
       show: !!user && !isKoordinator,
       color: "#f59e0b", // amber-500
