@@ -155,6 +155,15 @@ export function useNavigation() {
         { name: "BRI", href: "/rekening-bank?bank=BRI" },
         { name: "BRK", href: "/rekening-bank?bank=BRK" },
         { name: "MANDIRI", href: "/rekening-bank?bank=MANDIRI" },
+        { name: "BSI", href: "/rekening-bank?bank=BSI" },
+        { name: "BTN", href: "/rekening-bank?bank=BTN" },
+        { name: "OCBC", href: "/rekening-bank?bank=OCBC" },
+        { name: "PANIN", href: "/rekening-bank?bank=PANIN" },
+        { name: "MUAMALAT", href: "/rekening-bank?bank=MUAMALAT" },
+        { name: "MAYBANK", href: "/rekening-bank?bank=MAYBANK" },
+        { name: "BUKOPIN", href: "/rekening-bank?bank=BUKOPIN" },
+        { name: "DANAMON", href: "/rekening-bank?bank=DANAMON" },
+        { name: "PERMATA", href: "/rekening-bank?bank=PERMATA" },
       ]
     },
     {
