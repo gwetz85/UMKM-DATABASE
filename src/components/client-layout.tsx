@@ -16,6 +16,8 @@ import { User as UserIcon, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
 import { useActiveEvent } from '@/hooks/use-active-event';
+import { MenuLaunchpad } from './menu-launchpad';
+import { LayoutGrid, Home } from 'lucide-react';
 
 
 import { Toaster } from '@/components/ui/toaster';
@@ -29,6 +31,22 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const auth = useAuth()
   const database = useDatabase();
+  const [isLaunchpadOpen, setIsLaunchpadOpen] = React.useState(false);
+
+  // Automatically open launchpad on root path if user just logged in or is at home
+  React.useEffect(() => {
+    if (pathname === '/' && !isUserLoading && user) {
+      // If we are at root, we might want to show launchpad by default 
+      // but let's allow a way to close it to see the dashboard.
+      // We'll use a sessionStorage flag to show it only once per session at root if desired,
+      // or just keep it as a toggle.
+      const hasSeenLaunchpad = sessionStorage.getItem('hasSeenLaunchpad');
+      if (!hasSeenLaunchpad) {
+        setIsLaunchpadOpen(true);
+        sessionStorage.setItem('hasSeenLaunchpad', 'true');
+      }
+    }
+  }, [pathname, isUserLoading, user]);
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -183,6 +201,16 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   </div>
                 </div>
 
+                {/* Mobile Launchpad Toggle */}
+                <button 
+                  onClick={() => setIsLaunchpadOpen(!isLaunchpadOpen)}
+                  className={cn(
+                    "absolute -bottom-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full border-4 border-white shadow-xl flex items-center justify-center transition-all z-[60]",
+                    isLaunchpadOpen ? "bg-rose-500 rotate-45" : "bg-accent"
+                  )}
+                >
+                  <LayoutGrid className="w-6 h-6 text-white" />
+                </button>
               </header>
               <ProfileStatusDialog />
               
@@ -231,6 +259,18 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   )}
 
                   <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => setIsLaunchpadOpen(!isLaunchpadOpen)}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
+                        isLaunchpadOpen 
+                          ? "bg-rose-500 text-white shadow-lg shadow-rose-200" 
+                          : "bg-primary/10 text-primary hover:bg-primary/20"
+                      )}
+                    >
+                      {isLaunchpadOpen ? <Home className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
+                      {isLaunchpadOpen ? "Tutup Menu" : "Menu Utama"}
+                    </button>
                     <div className="flex flex-col items-end gap-1.5 translate-y-2">
                        <OfficeHoursTimer />
                     </div>
@@ -254,9 +294,15 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 </div>
               )}
               <div key={pathname} className="w-full relative z-0 animate-in fade-in-up">
-              {children}
-            </div>
-          </main>
+                {isLaunchpadOpen && !isLoginPage ? (
+                  <div className="fixed inset-0 z-[100] bg-slate-50/80 backdrop-blur-md overflow-auto pt-20 md:pt-24">
+                     <MenuLaunchpad onSelect={() => setIsLaunchpadOpen(false)} />
+                  </div>
+                ) : (
+                  children
+                )}
+              </div>
+            </main>
           </div>
         </div>
       </SidebarProvider>
