@@ -37,10 +37,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   // Automatically open launchpad on root path if user just logged in or is at home
   React.useEffect(() => {
     if (pathname === '/' && !isUserLoading && user) {
-      // If we are at root, we might want to show launchpad by default 
-      // but let's allow a way to close it to see the dashboard.
-      // We'll use a sessionStorage flag to show it only once per session at root if desired,
-      // or just keep it as a toggle.
       const hasSeenLaunchpad = sessionStorage.getItem('hasSeenLaunchpad');
       if (!hasSeenLaunchpad) {
         setIsLaunchpadOpen(true);
@@ -76,12 +72,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
     const unsubscribe = onValue(connectedRef, (snap) => {
       if (snap.val() === true) {
-        // We're connected (or reconnected)!
-        // When I disconnect, update my status to offline
         onDisconnect(userStatusRef).set(false);
         onDisconnect(lastSeenRef).set(serverTimestamp());
-
-        // Also set status to online
         set(userStatusRef, true);
         set(lastSeenRef, serverTimestamp());
       }
@@ -89,16 +81,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
     return () => {
       unsubscribe();
-      // If component unmounts, we should probably set offline too, 
-      // though onDisconnect covers most cases.
       set(userStatusRef, false);
       set(lastSeenRef, serverTimestamp());
     };
   }, [database, user, profile?.id]);
 
   React.useEffect(() => {
-    // SECURITY FIX: Continuous verification
-    // Log out if user is active in Firebase Auth but no longer in our system_users database.
     if (!isUserLoading && user && !isUsersLoading && allUsers && pathname !== '/login') {
        if (!profile) {
           signOut(auth).then(() => {
@@ -111,8 +99,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      
-      // Expanded detection for any interactive or pointer-enabled element
       const isClickable = 
         target.closest('button') || 
         target.closest('a') || 
@@ -126,11 +112,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         window.getComputedStyle(target).cursor === 'pointer';
 
       if (isClickable) {
-        console.log('[SoundEffect] Click detected on:', target.tagName, target.className);
         playSound('click', 0.35);
       }
     };
-
     window.addEventListener('click', handleGlobalClick);
     return () => window.removeEventListener('click', handleGlobalClick);
   }, [playSound]);
@@ -162,149 +146,112 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     <>
       <ThemePersistence />
       <SidebarProvider>
-        <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-transparent">
+        <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-slate-50">
           {/* Global Components */}
           <GlobalAutoVerifier />
           <BackgroundMusic className="hidden" />
           <Toaster />
 
-          {/* Mobile Header - Hidden on Login */}
+          {/* Unified Header */}
           {!isLoginPage && (
             <>
-              <header className="sticky top-0 flex md:hidden items-center justify-between px-4 h-16 bg-primary text-white shrink-0 z-50 shadow-md print:hidden">
-                <div className="flex items-center gap-2">
-                  <SidebarTrigger className="text-white hover:bg-white/10 transition-colors" />
+              <header className="sticky top-0 z-50 flex items-center justify-between px-4 md:px-8 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 shrink-0 print:hidden">
+                <div className="flex items-center gap-6">
                   <div className="flex flex-col">
-                    <span className="text-2xl font-black tracking-tighter leading-none flex items-center gap-1">
+                    <span className="text-3xl font-black tracking-tighter leading-none text-primary">
                       SIMPU
                     </span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sistem Manajemen UMKM</span>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                   <InfoDialog>
-                    <button className="w-10 h-10 overflow-hidden rounded-full border border-white/20 shadow-lg outline-none bg-white flex items-center justify-center">
-                      <img 
-                        src="/logo.png" 
-                        alt="SIMPU" 
-                        className="w-full h-full object-contain p-1"
-                      />
-                    </button>
-                  </InfoDialog>
-                  <Link href="/profile" className="w-9 h-9 rounded-xl overflow-hidden border border-white/20 shadow-inner bg-white/10 flex items-center justify-center transition-transform active:scale-95">
-                    {profile?.photoURL ? (
-                      <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <UserIcon className="w-5 h-5 text-white" />
-                    )}
-                  </Link>
-                  <div className="flex flex-col items-end gap-1">
-                    <OfficeHoursTimer />
-                  </div>
+
+                  <div className="hidden md:flex h-8 w-px bg-slate-200 mx-2" />
+
+                  {currentTitle && !isLaunchpadOpen && (
+                    <h1 className="hidden md:block text-2xl font-black text-slate-800 tracking-tight uppercase">
+                      {currentTitle}
+                    </h1>
+                  )}
                 </div>
 
-                {/* Mobile Launchpad Toggle */}
-                <button 
-                  onClick={() => setIsLaunchpadOpen(!isLaunchpadOpen)}
-                  className={cn(
-                    "absolute -bottom-6 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full border-4 border-white shadow-xl flex items-center justify-center transition-all z-[60]",
-                    isLaunchpadOpen ? "bg-rose-500 rotate-45" : "bg-accent"
-                  )}
-                >
-                  <LayoutGrid className="w-6 h-6 text-white" />
-                </button>
+                {/* Event Info - Center Area (Desktop) */}
+                {activeEvent && !isLaunchpadOpen && (
+                  <div className="hidden lg:flex flex-col items-center justify-center animate-in fade-in zoom-in duration-1000">
+                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1">
+                      {activeEvent.description || 'EVENT MENDATANG'}
+                    </span>
+                    <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} size="sm" />
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setIsLaunchpadOpen(!isLaunchpadOpen)}
+                    className={cn(
+                      "flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95",
+                      isLaunchpadOpen 
+                        ? "bg-rose-500 text-white shadow-rose-200" 
+                        : "bg-primary text-white shadow-primary/20 hover:bg-primary/90"
+                    )}
+                  >
+                    {isLaunchpadOpen ? <Home className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
+                    <span>{isLaunchpadOpen ? "Tutup" : "Menu Utama"}</span>
+                  </button>
+
+                  <div className="hidden sm:flex h-8 w-px bg-slate-200 mx-2" />
+
+                  <div className="hidden sm:flex flex-col items-end gap-1 translate-y-1">
+                    <OfficeHoursTimer />
+                  </div>
+
+                  <Link 
+                    href="/profile" 
+                    className="flex items-center gap-3 group"
+                  >
+                    <div className="hidden md:flex flex-col items-end">
+                      <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Profil</span>
+                    </div>
+                    <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-100 flex items-center justify-center">
+                      {profile?.photoURL ? (
+                        <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <UserIcon className="w-5 h-5 text-primary/30" />
+                      )}
+                    </div>
+                  </Link>
+                </div>
               </header>
               <ProfileStatusDialog />
-              
-              {/* Mobile Event Banner */}
-              {activeEvent && (
-                <div key={activeEvent.id || activeEvent.description} className="md:hidden bg-gradient-to-b from-primary/10 to-transparent border-b border-primary/20 px-4 py-3 flex flex-col items-center justify-center animate-in fade-in zoom-in slide-in-from-top-2 duration-700 w-full">
-                  <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2 text-center text-balance drop-shadow-sm">
-                    {activeEvent.description || 'EVENT MENDATANG'}
-                  </span>
-                  <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} size="md" />
-                </div>
-              )}
             </>
           )}
 
-          <div className="flex flex-1 min-h-0 w-full overflow-hidden">
-            <AppSidebar />
-            <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate pb-12">
+          <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
+            <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
               {!isLoginPage && <RunningText />}
-              {/* Desktop Top Bar - Hidden on Login */}
-              {!isLoginPage && (
-                <div className="hidden md:flex p-4 items-center justify-between print:hidden sticky top-4 z-40 glass-panel border border-white/20 shadow-sm mx-4 mb-4 mt-4 rounded-2xl backdrop-blur-xl">
-                  <div className="flex items-center gap-4">
-                    <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors p-2 rounded-lg" />
-                    {currentTitle && (
-                      <h1 className="text-3xl md:text-4xl font-black text-primary tracking-tight uppercase">
-                        {currentTitle}
-                      </h1>
-                    )}
-                  </div>
-                  
-                  {/* Event Info - Center Area */}
-                  {activeEvent && (
-                    <div key={activeEvent.id || activeEvent.description} className="flex-1 flex flex-col items-center justify-center px-4 animate-in fade-in zoom-in duration-1000">
-                      <div className="flex flex-col items-center gap-1 group cursor-default">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1 w-8 md:w-12 bg-primary/20 rounded-full" />
-                          <span className="text-[9px] md:text-[10px] font-black text-primary uppercase tracking-[0.3em] text-center drop-shadow-sm group-hover:tracking-[0.4em] transition-all">
-                            {activeEvent.description || 'EVENT MENDATANG'}
-                          </span>
-                          <div className="h-1 w-8 md:w-12 bg-primary/20 rounded-full" />
-                        </div>
-                        <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} size="md" />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => setIsLaunchpadOpen(!isLaunchpadOpen)}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all",
-                        isLaunchpadOpen 
-                          ? "bg-rose-500 text-white shadow-lg shadow-rose-200" 
-                          : "bg-primary/10 text-primary hover:bg-primary/20"
-                      )}
-                    >
-                      {isLaunchpadOpen ? <Home className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
-                      {isLaunchpadOpen ? "Tutup Menu" : "Menu Utama"}
-                    </button>
-                    <div className="flex flex-col items-end gap-1.5 translate-y-2">
-                       <OfficeHoursTimer />
-                    </div>
-                    <Link 
-                      href="/profile" 
-                      className="flex items-center gap-3 pl-4 border-l border-slate-200 group"
-                    >
-                      <div className="flex flex-col items-end">
-                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Lihat Profil</span>
-                      </div>
-                      <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-50 flex items-center justify-center">
-                        {profile?.photoURL ? (
-                          <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                          <UserIcon className="w-5 h-5 text-primary/30" />
-                        )}
-                      </div>
-                    </Link>
-                  </div>
-                </div>
-              )}
-              <div key={pathname} className="w-full relative z-0 animate-in fade-in-up">
+              
+              <div key={pathname} className="w-full relative z-0 animate-in fade-in-up min-h-full">
                 {isLaunchpadOpen && !isLoginPage ? (
-                  <div className="fixed inset-0 z-[100] bg-slate-50/80 backdrop-blur-md overflow-auto pt-20 md:pt-24">
-                     <MenuLaunchpad onSelect={() => setIsLaunchpadOpen(false)} />
+                  <div className="absolute inset-0 z-[100] bg-slate-50/90 backdrop-blur-md overflow-auto py-12">
+                    <MenuLaunchpad onSelect={() => setIsLaunchpadOpen(false)} />
                   </div>
                 ) : (
-                  children
+                  <div className="p-4 md:p-8">
+                    {children}
+                  </div>
                 )}
               </div>
             </main>
           </div>
+
+          {/* Mobile Floating Menu Button (Always visible on modules) */}
+          {!isLoginPage && !isLaunchpadOpen && (
+            <button 
+              onClick={() => setIsLaunchpadOpen(true)}
+              className="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-primary text-white shadow-2xl flex items-center justify-center z-50 animate-in slide-in-from-bottom-10 duration-500 border-4 border-white active:scale-90"
+            >
+              <LayoutGrid className="w-8 h-8" />
+            </button>
+          )}
         </div>
       </SidebarProvider>
     </>

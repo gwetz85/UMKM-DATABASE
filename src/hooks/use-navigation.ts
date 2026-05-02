@@ -14,7 +14,6 @@ import {
   BarChart3,
   ClipboardCheck,
   ListChecks,
-  ShieldAlert,
   Calendar,
   Ban
 } from "lucide-react"
@@ -52,7 +51,9 @@ export function useNavigation() {
       href: "/",
       icon: LayoutDashboard,
       show: !!user && !isKoordinator,
-      color: "bg-blue-500",
+      color: "bg-amber-500",
+      hoverColor: "hover:bg-amber-600",
+      borderColor: "border-amber-400",
       description: "Statistik & Ringkasan Data"
     },
     {
@@ -60,7 +61,9 @@ export function useNavigation() {
       href: "/messages",
       icon: MessageSquare,
       show: !!user,
-      color: "bg-indigo-500",
+      color: "bg-indigo-600",
+      hoverColor: "hover:bg-indigo-700",
+      borderColor: "border-indigo-500",
       description: "Komunikasi Internal"
     },
     {
@@ -68,7 +71,9 @@ export function useNavigation() {
       href: "/check-data",
       icon: SearchCheck,
       show: isAdmin || isPetugas,
-      color: "bg-amber-500",
+      color: "bg-blue-600",
+      hoverColor: "hover:bg-blue-700",
+      borderColor: "border-blue-500",
       description: "Pencarian Data Pelaku Usaha"
     },
     {
@@ -76,7 +81,9 @@ export function useNavigation() {
       href: "/check-data-collective",
       icon: SearchCheck,
       show: isAdmin || isPetugas,
-      color: "bg-orange-500",
+      color: "bg-cyan-600",
+      hoverColor: "hover:bg-cyan-700",
+      borderColor: "border-cyan-500",
       description: "Verifikasi Data Massal"
     },
     {
@@ -84,7 +91,9 @@ export function useNavigation() {
       href: "/input",
       icon: UserPlus,
       show: !!user && !isKoordinator,
-      color: "bg-emerald-500",
+      color: "bg-emerald-600",
+      hoverColor: "hover:bg-emerald-700",
+      borderColor: "border-emerald-500",
       description: "Pendaftaran Pelaku Usaha Baru"
     },
     {
@@ -92,7 +101,9 @@ export function useNavigation() {
       href: "/verify-actor",
       icon: ShieldCheck,
       show: isAdmin || isMonitoring,
-      color: "bg-cyan-500",
+      color: "bg-violet-600",
+      hoverColor: "hover:bg-violet-700",
+      borderColor: "border-violet-500",
       description: "Persetujuan Data Pendaftar"
     },
     {
@@ -100,7 +111,9 @@ export function useNavigation() {
       href: "/actor-data",
       icon: Users,
       show: !!user && !isDinas,
-      color: "bg-sky-500",
+      color: "bg-sky-600",
+      hoverColor: "hover:bg-sky-700",
+      borderColor: "border-sky-500",
       description: "Database Seluruh Pelaku Usaha"
     },
     {
@@ -108,7 +121,9 @@ export function useNavigation() {
       href: "/bpjs",
       icon: ShieldCheck,
       show: !!user && !isDinas,
-      color: "bg-green-600",
+      color: "bg-green-700",
+      hoverColor: "hover:bg-green-800",
+      borderColor: "border-green-600",
       description: "Monitoring BPJS Peserta"
     },
     {
@@ -116,7 +131,9 @@ export function useNavigation() {
       href: "/rejected",
       icon: Ban,
       show: !!user && !isDinas && !isKoordinator,
-      color: "bg-rose-500",
+      color: "bg-orange-500",
+      hoverColor: "hover:bg-orange-600",
+      borderColor: "border-orange-400",
       description: "Arsip Data yang Tidak Disetujui"
     },
     {
@@ -124,7 +141,9 @@ export function useNavigation() {
       href: "/verify-bank",
       icon: CreditCard,
       show: isAdmin || isMonitoring,
-      color: "bg-violet-500",
+      color: "bg-rose-500",
+      hoverColor: "hover:bg-rose-600",
+      borderColor: "border-rose-400",
       description: "Validasi Rekening Bank"
     },
     {
@@ -132,7 +151,9 @@ export function useNavigation() {
       href: "/verifikasi-dinas",
       icon: ClipboardCheck,
       show: isAdmin || isDinas || isPetugas,
-      color: "bg-fuchsia-500",
+      color: "bg-fuchsia-600",
+      hoverColor: "hover:bg-fuchsia-700",
+      borderColor: "border-fuchsia-500",
       description: "Tahap Akhir Verifikasi Dinas"
     },
     {
@@ -140,7 +161,9 @@ export function useNavigation() {
       href: "/hasil-verifikasi",
       icon: ListChecks,
       show: (isAdmin || isPetugas || isKoordinator) && !isDinas,
-      color: "bg-teal-500",
+      color: "bg-teal-600",
+      hoverColor: "hover:bg-teal-700",
+      borderColor: "border-teal-500",
       description: "Laporan Hasil Verifikasi"
     },
     {
@@ -149,21 +172,18 @@ export function useNavigation() {
       icon: CreditCard,
       show: !!user && !isDinas,
       color: "bg-slate-600",
-      description: "Daftar Rekening Per Bank",
-      items: [
-        { name: "BCA", href: "/rekening-bank?bank=BCA" },
-        { name: "BNI", href: "/rekening-bank?bank=BNI" },
-        { name: "BRI", href: "/rekening-bank?bank=BRI" },
-        { name: "BRK", href: "/rekening-bank?bank=BRK" },
-        { name: "MANDIRI", href: "/rekening-bank?bank=MANDIRI" },
-      ]
+      hoverColor: "hover:bg-slate-700",
+      borderColor: "border-slate-500",
+      description: "Daftar Rekening Per Bank"
     },
     {
       name: "LPJ",
       href: "/lpj",
       icon: FileText,
       show: (isAdmin || isPetugas || isMonitoring) && !isKoordinator,
-      color: "bg-zinc-500",
+      color: "bg-zinc-600",
+      hoverColor: "hover:bg-zinc-700",
+      borderColor: "border-zinc-500",
       description: "Laporan Pertanggungjawaban"
     },
     {
@@ -172,6 +192,8 @@ export function useNavigation() {
       icon: CheckCircle2,
       show: !!user && !isDinas,
       color: "bg-blue-700",
+      hoverColor: "hover:bg-blue-800",
+      borderColor: "border-blue-600",
       description: "Data yang Telah Selesai Diproses"
     },
     {
@@ -180,6 +202,8 @@ export function useNavigation() {
       icon: UserCog,
       show: isAdmin,
       color: "bg-slate-800",
+      hoverColor: "hover:bg-slate-900",
+      borderColor: "border-slate-700",
       description: "Kelola Pengguna Sistem"
     },
     {
@@ -188,6 +212,8 @@ export function useNavigation() {
       icon: UserCog,
       show: !!user,
       color: "bg-slate-400",
+      hoverColor: "hover:bg-slate-500",
+      borderColor: "border-slate-300",
       description: "Konfigurasi Profil & Sistem"
     },
     {
@@ -196,6 +222,8 @@ export function useNavigation() {
       icon: History,
       show: isAdmin,
       color: "bg-black",
+      hoverColor: "hover:bg-zinc-900",
+      borderColor: "border-zinc-800",
       description: "Riwayat Aktivitas Sistem"
     },
   ], [user, isAdmin, isMonitoring, userProfile])
