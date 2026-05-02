@@ -71,7 +71,6 @@ export default function DashboardStatsPage() {
   }, [user, database])
   const { data: allUsersForDashboard } = useList(userProfileRef)
   const userProfile = allUsersForDashboard?.find((u: any) => u.uid === user?.uid)
-  const isKoordinator = userProfile?.role === 'koordinator'
   const [selectedFilter, setSelectedFilter] = useState<{name: string, filterType: string} | null>(null)
 
   useEffect(() => {
@@ -436,87 +435,119 @@ export default function DashboardStatsPage() {
               </div>
             </CardContent>
           </Card>
-          <MusicDashboardCard className="flex-1 h-full" />
+          
+          {/* Row side-by-side: Music Player & Riwayat Aktivitas */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+            <MusicDashboardCard className="h-full" />
+            
+            <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none flex flex-col">
+              <CardHeader className="bg-slate-50/50 pb-2 border-b">
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <History className="w-4 h-4 text-primary" /> Riwayat Aktivitas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0 overflow-auto flex-1">
+                <Table>
+                  <TableHeader className="bg-slate-50/80">
+                    <TableRow>
+                      <TableHead className="text-[9px] font-black uppercase py-2 pl-4">Waktu</TableHead>
+                      <TableHead className="text-[9px] font-black uppercase py-2">User</TableHead>
+                      <TableHead className="text-[9px] font-black uppercase py-2 text-center">Hasil</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentLogs.map((log, idx) => (
+                      <TableRow key={idx} className="hover:bg-primary/5 transition-colors">
+                        <TableCell className="text-[10px] font-bold py-2 pl-4">
+                          {new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                        </TableCell>
+                        <TableCell className="text-[10px] font-black uppercase py-2 max-w-[80px] truncate">
+                          {log.userId === 'Public' ? 'USER PUBLIK' : (log.userId?.split(' ')[0] || "User")}
+                        </TableCell>
+                        <TableCell className="text-center py-2 pr-4">
+                          <span className={cn(
+                            "text-[8px] font-black px-1.5 py-0.5 rounded-full border uppercase tracking-tighter",
+                            (log.results || "").toLowerCase().includes("tidak") || (log.results || "").toLowerCase().includes("gagal")
+                              ? "bg-rose-50 text-rose-600 border-rose-100" 
+                              : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                          )}>
+                            {log.results || "-"}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {recentLogs.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-10 text-[10px] font-bold text-slate-400">
+                          Belum ada riwayat.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+              <div className="p-2 bg-slate-50 border-t flex justify-center">
+                <Button 
+                   variant="ghost" 
+                   size="xs" 
+                   className="text-[9px] font-black text-primary uppercase tracking-widest hover:bg-primary/5 h-6"
+                   onClick={() => router.push('/app-logs')}
+                >
+                  Lihat Semua
+                </Button>
+              </div>
+            </Card>
+          </div>
         </div>
 
         <div className="space-y-6 flex flex-col">
-          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none">
-            <CardHeader className="border-b border-slate-200/50 pb-4">
-              <CardTitle className="text-base md:text-lg font-bold flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-primary" /> Sebaran per Kelurahan
-                </div>
+          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-full flex flex-col">
+            <CardHeader className="bg-slate-50/50 pb-4 border-b">
+              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary" /> Sebaran per Kelurahan
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 md:p-6">
-              <ChartContainer config={kelurahanChartConfig} className="min-h-[300px] w-full">
-                <BarChart
-                  accessibilityLayer
-                  data={kelurahanStats}
-                  layout="vertical"
-                  margin={{ left: 20, right: 40 }}
-                >
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                    tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 15)}...` : value}
-                    className="text-[10px] font-bold uppercase text-slate-500"
-                    width={100}
-                  />
-                  <XAxis type="number" hide />
-                  <ChartTooltip cursor={false} content={<ChartTooltipContent hideIndicator />} />
-                  <Bar 
-                    dataKey="count" 
-                    layout="vertical" 
-                    radius={5} 
-                    fill="var(--color-count)"
-                    onClick={(data) => setSelectedFilter({ name: data.name, filterType: "kelurahan" })}
-                    className="cursor-pointer hover:opacity-80 transition-opacity"
-                  >
-                    <LabelList dataKey="count" position="right" offset={12} className="fill-foreground font-black text-[10px]" />
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
+            <CardContent className="p-0 overflow-auto flex-1">
+              <Table>
+                <TableHeader className="bg-slate-100/50 sticky top-0 z-10">
+                  <TableRow>
+                    <TableHead className="w-[50px] text-center font-black text-[10px] uppercase">No</TableHead>
+                    <TableHead className="font-black text-[10px] uppercase">Nama Kelurahan</TableHead>
+                    <TableHead className="text-center font-black text-[10px] uppercase">Jumlah Pelaku</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {kelurahanStats.map((item, idx) => (
+                    <TableRow 
+                      key={item.name} 
+                      className="hover:bg-primary/5 cursor-pointer transition-colors group"
+                      onClick={() => setSelectedFilter({ name: item.name, filterType: "kelurahan" })}
+                    >
+                      <TableCell className="text-center font-bold text-xs text-slate-400">{idx + 1}</TableCell>
+                      <TableCell className="font-black text-xs text-slate-700 uppercase group-hover:text-primary transition-colors">
+                        {item.name}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-2 py-0.5 rounded-full min-w-[2.5rem] text-[10px] border border-slate-200 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
+                          {item.count}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow className="bg-slate-50/80 border-t-2">
+                    <TableCell colSpan={2} className="text-right font-black text-[10px] uppercase text-slate-500 py-3">Total Data Tersebar</TableCell>
+                    <TableCell className="text-center font-black text-primary text-xs">
+                      {kelurahanStats.reduce((acc, curr) => acc + curr.count, 0)}
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
             </CardContent>
           </Card>
         </div>
       </div>
-
-      {/* Riwayat Table Snippet */}
-      <Card className="glass overflow-hidden">
-        <CardHeader>
-          <CardTitle className="text-base font-bold flex items-center gap-2">
-            <History className="w-5 h-5 text-primary" /> Riwayat Aktivitas
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0 overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead className="text-[10px] font-black uppercase">Tanggal</TableHead>
-                <TableHead className="text-[10px] font-black uppercase">User</TableHead>
-                <TableHead className="text-[10px] font-black uppercase">Aktivitas</TableHead>
-                <TableHead className="text-[10px] font-black uppercase text-center">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recentLogs.map((log, idx) => (
-                <TableRow key={idx}>
-                  <TableCell className="text-[11px] font-bold">{new Date(log.timestamp).toLocaleString('id-ID')}</TableCell>
-                  <TableCell className="text-[11px] font-black uppercase">{log.userId === 'Public' ? 'USER PUBLIK' : log.userId}</TableCell>
-                  <TableCell className="text-[11px] font-bold text-primary truncate max-w-[200px]">{log.query || log.action || "-"}</TableCell>
-                  <TableCell className="text-center">
-                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100">{log.results || "-"}</span>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
 
       <Dialog open={!!selectedFilter} onOpenChange={(open) => !open && setSelectedFilter(null)}>
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">

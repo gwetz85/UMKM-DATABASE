@@ -138,12 +138,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             <>
               <header className="sticky top-0 z-50 flex items-center justify-between px-4 md:px-8 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 shrink-0 print:hidden">
                 <div className="flex items-center gap-6">
-                  <Link href="/" className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
-                    <span className="text-3xl font-black tracking-tighter leading-none text-primary">
-                      SIMPU
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sistem Manajemen UMKM</span>
-                  </Link>
+                  <InfoDialog>
+                    <div className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
+                      <span className="text-3xl font-black tracking-tighter leading-none text-primary">
+                        SIMPU
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sistem Manajemen UMKM</span>
+                    </div>
+                  </InfoDialog>
 
                   <div className="hidden md:flex h-8 w-px bg-slate-200 mx-2" />
 

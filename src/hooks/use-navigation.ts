@@ -50,7 +50,7 @@ export function useNavigation() {
       name: "Dashboard Statistik",
       href: "/dashboard",
       icon: LayoutDashboard,
-      show: !!user && !isKoordinator,
+      show: !!user,
       color: "#f59e0b", // amber-500
       description: "Statistik & Ringkasan Data"
     },
