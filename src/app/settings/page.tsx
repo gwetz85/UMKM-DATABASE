@@ -22,6 +22,7 @@ import {
   DatabaseZap,
   Check,
   XCircle,
+  Lock,
   Clock,
   Key,
   Settings2
