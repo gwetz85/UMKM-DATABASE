@@ -52,7 +52,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
         {navigation.map((item: any, index) => (
           <div
             key={item.name}
@@ -70,7 +70,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               borderColor: `${item.color}44`
             }}
             className={cn(
-              "group relative flex flex-col p-6 rounded-[2rem] transition-all duration-500 overflow-hidden shadow-lg border cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-4 h-[220px]",
+              "group relative flex flex-col p-4 md:p-5 rounded-[2rem] transition-all duration-500 overflow-hidden shadow-lg border cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-4 h-[160px] md:h-[180px]",
               "hover:shadow-2xl hover:-translate-y-1.5 hover:brightness-110"
             )}
           >
@@ -89,7 +89,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
 
             {/* Title Section */}
             <div className="mt-auto relative z-10 flex flex-col gap-3">
-              <div className="text-xl md:text-2xl font-black text-white leading-tight uppercase tracking-tight text-left">
+              <div className="text-lg md:text-xl font-black text-white leading-tight uppercase tracking-tight text-left">
                 {item.name}
               </div>
               
