@@ -15,7 +15,8 @@ import {
   ClipboardCheck,
   ListChecks,
   Calendar,
-  Ban
+  Ban,
+  Clock
 } from "lucide-react"
 import { useUser, useObject, useMemoFirebase, useList, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
@@ -221,6 +222,14 @@ export function useNavigation() {
       show: isAdmin,
       color: "#8b5cf6", // violet-500
       description: "Manajemen Event & Jadwal"
+    },
+    {
+      name: "Jam & Libur Kantor",
+      href: "/settings-office-hours",
+      icon: Clock,
+      show: isAdmin,
+      color: "#10b981", // emerald-500
+      description: "Pengaturan Jam Operasional & Libur"
     },
     {
       name: "LOG APLIKASI",

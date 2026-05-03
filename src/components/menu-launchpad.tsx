@@ -78,10 +78,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
             <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
 
             {/* Header Section */}
-            <div className="flex items-start justify-between mb-6 relative z-10">
-              <h3 className="text-[10px] md:text-[11px] font-black text-white/70 uppercase tracking-[0.2em] text-left max-w-[75%] leading-relaxed">
-                Modul Aplikasi
-              </h3>
+            <div className="flex items-start justify-end mb-6 relative z-10">
               <div className="bg-white/20 p-3 rounded-2xl group-hover:scale-110 transition-transform duration-300 ease-out shadow-xl backdrop-blur-sm">
                 <item.icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
@@ -93,19 +90,12 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
                 {item.name}
               </div>
               
-              <div className="flex items-center gap-2 text-[10px] font-black text-white/80 uppercase tracking-widest bg-black/10 w-fit px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
-                {item.items && item.items.length > 0 ? (
-                  <>
-                    <ChevronRight className="w-3 h-3 text-white" />
-                    <span>Pilih Sub-Menu</span>
-                  </>
-                ) : (
-                  <>
-                    <TrendingUp className="w-3 h-3 text-white" />
-                    <span>Akses Modul</span>
-                  </>
-                )}
-              </div>
+              {item.items && item.items.length > 0 && (
+                <div className="flex items-center gap-2 text-[10px] font-black text-white/80 uppercase tracking-widest bg-black/10 w-fit px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
+                  <ChevronRight className="w-3 h-3 text-white" />
+                  <span>Pilih Sub-Menu</span>
+                </div>
+              )}
             </div>
 
             {/* Decorative Light Effect */}

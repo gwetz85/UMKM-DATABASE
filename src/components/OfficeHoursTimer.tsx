@@ -57,23 +57,7 @@ export function OfficeHoursTimer({
             {status.isOpen ? 'Menuju Tutup' : 'Menuju Buka'}
           </span>
         </div>
-        {currentTime && (
-          <div className={`flex items-center gap-1.5 ${large ? "mt-1" : "mt-0.5"}`}>
-            {/* Tanggal */}
-            <span className={`${large ? "text-sm" : "text-[10px] md:text-[11px]"} font-mono font-black tracking-tight text-black leading-none`}>
-              {currentDate}
-            </span>
-            {/* Pemisah */}
-            <span className="text-black/30 font-black leading-none">·</span>
-            {/* Jam */}
-            <span className={`${large ? "text-xl" : "text-[12px] md:text-sm"} font-mono font-black tracking-tighter text-black leading-none`}>
-              {currentTime}
-            </span>
-            <span className={`${large ? "text-[9px]" : "text-[8px]"} font-black text-black/50 uppercase`}>
-              WIB
-            </span>
-          </div>
-        )}
+
       </div>
     </div>
   )
