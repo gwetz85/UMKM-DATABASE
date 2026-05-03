@@ -89,7 +89,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
 
             {/* Title Section */}
             <div className="mt-auto relative z-10 flex flex-col gap-3">
-              <div className="text-base md:text-lg font-black text-white leading-tight uppercase tracking-tight text-left break-words line-clamp-3 w-full">
+              <div className="text-sm md:text-base font-black text-white leading-tight uppercase tracking-tight text-left break-words line-clamp-2 w-full">
                 {item.name}
               </div>
               
