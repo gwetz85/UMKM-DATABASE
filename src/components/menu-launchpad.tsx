@@ -77,23 +77,23 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
             {/* Glossy Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
 
-            {/* Header Section */}
-            <div className="flex items-start justify-end mb-6 relative z-10">
+            {/* Icon Section */}
+            <div className="absolute top-4 right-4 md:top-5 md:right-5 z-10">
               <div className="bg-white/20 p-3 rounded-2xl group-hover:scale-110 transition-transform duration-300 ease-out shadow-xl backdrop-blur-sm">
                 <item.icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
             </div>
 
             {/* Title Section */}
-            <div className="mt-auto relative z-10 flex flex-col gap-3">
-              <div className="text-sm md:text-base font-black text-white leading-tight uppercase tracking-tight text-left break-words line-clamp-2 w-full">
+            <div className="flex-1 relative z-10 flex flex-col items-center justify-center gap-3">
+              <div className="text-sm md:text-base font-black text-white leading-tight uppercase tracking-tight text-center break-words line-clamp-2 w-full px-2">
                 {item.name}
               </div>
               
               {item.items && item.items.length > 0 && (
                 <div className="flex items-center gap-2 text-[10px] font-black text-white/80 uppercase tracking-widest bg-black/10 w-fit px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
                   <ChevronRight className="w-3 h-3 text-white" />
-                  <span>Pilih Sub-Menu</span>
+                  <span>Sub-Menu</span>
                 </div>
               )}
             </div>
