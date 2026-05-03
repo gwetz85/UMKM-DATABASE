@@ -70,7 +70,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               borderColor: `${item.color}44`
             }}
             className={cn(
-              "group relative flex flex-col p-4 md:p-5 rounded-[2rem] transition-all duration-500 overflow-hidden shadow-lg border cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-4 h-[160px] md:h-[180px]",
+              "group relative flex flex-col p-4 md:p-5 rounded-[2rem] transition-all duration-300 ease-out overflow-hidden shadow-lg border cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-4 h-[160px] md:h-[180px]",
               "hover:shadow-2xl hover:-translate-y-1.5 hover:brightness-110"
             )}
           >
@@ -82,7 +82,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               <h3 className="text-[10px] md:text-[11px] font-black text-white/70 uppercase tracking-[0.2em] text-left max-w-[75%] leading-relaxed">
                 Modul Aplikasi
               </h3>
-              <div className="bg-white/20 p-3 rounded-2xl group-hover:scale-110 transition-transform duration-500 shadow-xl backdrop-blur-sm">
+              <div className="bg-white/20 p-3 rounded-2xl group-hover:scale-110 transition-transform duration-300 ease-out shadow-xl backdrop-blur-sm">
                 <item.icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
             </div>

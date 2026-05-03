@@ -208,7 +208,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
               {!isLoginPage && <RunningText />}
               
-              <div key={pathname} className="w-full relative z-0 animate-in fade-in-up min-h-full p-4 md:p-8">
+              <div key={pathname} className="w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out min-h-full p-4 md:p-8">
                 {children}
               </div>
             </main>
