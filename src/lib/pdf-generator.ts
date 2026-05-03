@@ -143,6 +143,7 @@ export const generateCoordinatorReport = (coordinator: string, actors: BusinessA
     (actor.fullName || "").toUpperCase(),
     actor.nik || "-",
     actor.noKK || "-",
+    actor.phone || "-",
     (actor.address || "").toUpperCase(),
     (actor.businessName || "").toUpperCase(),
     (actor.businessLocation || "").toUpperCase(),
@@ -150,7 +151,7 @@ export const generateCoordinatorReport = (coordinator: string, actors: BusinessA
 
   autoTable(doc, {
     startY: 38,
-    head: [['NO', 'REGISTRASI', 'NAMA', 'NIK', 'NO KK', 'ALAMAT', 'USAHA', 'ALAMAT USAHA']],
+    head: [['NO', 'REG', 'NAMA', 'NIK', 'NO KK', 'PONSEL', 'ALAMAT', 'USAHA', 'ALAMAT USAHA']],
     body: tableData,
     theme: 'grid',
     headStyles: { 
@@ -158,7 +159,7 @@ export const generateCoordinatorReport = (coordinator: string, actors: BusinessA
       textColor: 255, 
       fontStyle: 'bold',
       halign: 'center',
-      fontSize: 7
+      fontSize: 6.5
     },
     styles: { 
       fontSize: 6.5, 
@@ -168,13 +169,14 @@ export const generateCoordinatorReport = (coordinator: string, actors: BusinessA
     },
     columnStyles: {
       0: { halign: 'center', cellWidth: 7 },
-      1: { halign: 'center', cellWidth: 18 },
-      2: { cellWidth: 28 },
-      3: { halign: 'center', cellWidth: 22 },
-      4: { halign: 'center', cellWidth: 22 },
-      5: { cellWidth: 32 },
+      1: { halign: 'center', cellWidth: 15 },
+      2: { cellWidth: 25 },
+      3: { halign: 'center', cellWidth: 21 },
+      4: { halign: 'center', cellWidth: 21 },
+      5: { halign: 'center', cellWidth: 19 },
       6: { cellWidth: 28 },
-      7: { cellWidth: 33 },
+      7: { cellWidth: 24 },
+      8: { cellWidth: 30 },
     },
     margin: { left: 10, right: 10 },
     didDrawPage: (data) => {
@@ -228,6 +230,7 @@ export const generateAllCoordinatorsReport = (groupedActors: Record<string, Busi
       (actor.fullName || "").toUpperCase(),
       actor.nik || "-",
       actor.noKK || "-",
+      actor.phone || "-",
       (actor.address || "").toUpperCase(),
       (actor.businessName || "").toUpperCase(),
       (actor.businessLocation || "").toUpperCase(),
@@ -235,7 +238,7 @@ export const generateAllCoordinatorsReport = (groupedActors: Record<string, Busi
 
     autoTable(doc, {
       startY: 38,
-      head: [['NO', 'REGISTRASI', 'NAMA', 'NIK', 'NO KK', 'ALAMAT', 'USAHA', 'ALAMAT USAHA']],
+      head: [['NO', 'REG', 'NAMA', 'NIK', 'NO KK', 'PONSEL', 'ALAMAT', 'USAHA', 'ALAMAT USAHA']],
       body: tableData,
       theme: 'grid',
       headStyles: { 
@@ -243,7 +246,7 @@ export const generateAllCoordinatorsReport = (groupedActors: Record<string, Busi
         textColor: 255, 
         fontStyle: 'bold',
         halign: 'center',
-        fontSize: 7
+        fontSize: 6.5
       },
       styles: { 
         fontSize: 6.5, 
@@ -253,13 +256,14 @@ export const generateAllCoordinatorsReport = (groupedActors: Record<string, Busi
       },
       columnStyles: {
         0: { halign: 'center', cellWidth: 7 },
-        1: { halign: 'center', cellWidth: 18 },
-        2: { cellWidth: 28 },
-        3: { halign: 'center', cellWidth: 22 },
-        4: { halign: 'center', cellWidth: 22 },
-        5: { cellWidth: 32 },
+        1: { halign: 'center', cellWidth: 15 },
+        2: { cellWidth: 25 },
+        3: { halign: 'center', cellWidth: 21 },
+        4: { halign: 'center', cellWidth: 21 },
+        5: { halign: 'center', cellWidth: 19 },
         6: { cellWidth: 28 },
-        7: { cellWidth: 33 },
+        7: { cellWidth: 24 },
+        8: { cellWidth: 30 },
       },
       margin: { left: 10, right: 10 },
       didDrawPage: (data) => {
