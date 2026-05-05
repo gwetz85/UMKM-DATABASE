@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useDatabase, useUser, useObject, useMemoFirebase } from "@/firebase"
+import { useDatabase, useUser, useObject, useMemoFirebase, useAuth, useList } from "@/firebase"
 import { ref, get, update, remove, push } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -33,7 +33,6 @@ import {
   CircleUser
 } from "lucide-react"
 import { updatePassword, signOut } from "firebase/auth"
-import { useAuth, useList } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -257,10 +256,19 @@ export default function SettingsPage() {
               continue
             }
 
-            if (cell.t === 'n') {
-              rowValues.push(BigInt(Math.floor(Number(cell.v))).toString())
+            if (cell.t === 'n' && cell.v !== undefined && cell.v !== null) {
+              const num = Number(cell.v)
+              if (!isNaN(num)) {
+                try {
+                  rowValues.push(BigInt(Math.floor(num)).toString())
+                } catch (e) {
+                  rowValues.push(cell.w || String(cell.v).trim())
+                }
+              } else {
+                rowValues.push(cell.w || String(cell.v).trim())
+              }
             } else {
-              rowValues.push(cell.w || (cell.v !== undefined ? String(cell.v).trim() : ""))
+              rowValues.push(cell.w || (cell.v !== undefined && cell.v !== null ? String(cell.v).trim() : ""))
             }
           }
 

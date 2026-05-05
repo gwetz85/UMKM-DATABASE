@@ -102,7 +102,8 @@ export async function GET(req: NextRequest) {
       const has2024 = checkMatch(data2024);
       const has2025 = checkMatch(data2025);
 
-      const createdAt = new Date(actor.createdAt).getTime();
+      const createdAtVal = actor.createdAt ? new Date(actor.createdAt).getTime() : now;
+      const createdAt = isNaN(createdAtVal) ? now : createdAtVal;
 
       // LOGIC PRIORITY (REFINED)
       // 1. Blacklist -> 30s -> rejected

@@ -72,7 +72,9 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
     }
 
 
-    const targetTime = new Date(createdAt).getTime() + (targetMins * 60000)
+    const createdAtTimestamp = new Date(createdAt).getTime()
+    const validCreatedAt = isNaN(createdAtTimestamp) ? Date.now() : createdAtTimestamp
+    const targetTime = validCreatedAt + (targetMins * 60000)
     
     const triggerProcess = () => {
       if (isAdmin && database) {

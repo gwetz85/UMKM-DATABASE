@@ -57,7 +57,7 @@ export default function NewBusinessPage() {
       
       toast({
         title: "Data Disimpan",
-        description: "Profil pelaku usaha berhasil ditambahkan ke Firebase Firestore."
+        description: "Profil pelaku usaha berhasil ditambahkan ke Firebase Realtime Database."
       })
       router.push("/business")
     } catch (error) {
