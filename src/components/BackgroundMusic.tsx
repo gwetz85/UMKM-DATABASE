@@ -27,6 +27,7 @@ export function BackgroundMusic({ className }: { className?: string }) {
   const [currentTitle, setCurrentTitle] = useState("");
   const [volume, setVolume] = useState(50);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const [playerWidth, setPlayerWidth] = useState<number>(0);
   const playerRef = useRef<any>(null);
@@ -407,7 +408,14 @@ export function BackgroundMusic({ className }: { className?: string }) {
   };
 
   return (
-    <div className={cn("fixed bottom-24 right-6 z-[1000] print:hidden grid justify-items-end gap-2", className)}>
+    <div 
+      className={cn("fixed bottom-24 right-6 z-[1000] print:hidden grid justify-items-end gap-2 transition-all duration-500", className)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setShowVolumeSlider(false);
+      }}
+    >
 
       {/* Invisible YouTube Player Container */}
       <div 
@@ -419,33 +427,98 @@ export function BackgroundMusic({ className }: { className?: string }) {
       <div 
         ref={playerContainerRef}
         className={`
-          flex items-center gap-1.5 p-1.5 rounded-full 
-          transition-all duration-700 ease-in-out
+          flex items-center p-1 rounded-full 
+          transition-all duration-500 ease-in-out
           ${isPlayerReady 
-            ? 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800/50 shadow-2xl' 
+            ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-800/50 shadow-2xl' 
             : 'bg-slate-100/50 dark:bg-slate-800/20 backdrop-blur-sm opacity-50'
           }
+          ${isHovered ? 'px-3 gap-2' : 'px-1 gap-0'}
         `}
       >
+        {/* Hidden Controls Area */}
+        <div className={cn(
+          "flex items-center gap-1 transition-all duration-500 overflow-hidden",
+          isHovered ? "max-w-md opacity-100 mr-2" : "max-w-0 opacity-0 mr-0"
+        )}>
+          {/* Previous Button */}
+          <button
+            onClick={handlePrevious}
+            disabled={!isPlayerReady}
+            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Sebelumnya"
+          >
+            <SkipBack size={14} fill="currentColor" />
+          </button>
 
-        {/* Previous Button */}
-        <button
-          onClick={handlePrevious}
-          disabled={!isPlayerReady}
-          className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Sebelumnya"
-        >
-          <SkipBack size={16} fill="currentColor" />
-        </button>
+          {/* Stop Button */}
+          <button
+            onClick={handleStop}
+            disabled={!isPlayerReady}
+            className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500 disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Berhenti"
+          >
+            <Square size={14} fill="currentColor" />
+          </button>
 
-        {/* Play/Pause Button */}
+          {/* Next Button */}
+          <button
+            onClick={handleNext}
+            disabled={!isPlayerReady}
+            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
+            title="Selanjutnya"
+          >
+            <SkipForward size={14} fill="currentColor" />
+          </button>
+
+          {/* Divider */}
+          <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1" />
+
+          {/* Mute Toggle & Volume Slider */}
+          <div 
+            className="relative flex items-center group/vol"
+            onMouseEnter={() => setShowVolumeSlider(true)}
+            onMouseLeave={() => setShowVolumeSlider(false)}
+          >
+            <div className={`
+              overflow-hidden transition-all duration-300 ease-in-out flex items-center
+              ${showVolumeSlider ? 'w-24 px-2 opacity-100' : 'w-0 opacity-0'}
+            `}>
+              <Slider
+                value={[volume]}
+                max={100}
+                step={1}
+                onValueChange={handleVolumeChange}
+                className="w-20"
+              />
+            </div>
+
+            <button
+              onClick={toggleMute}
+              disabled={!isPlayerReady}
+              className={`
+                p-2 rounded-full transition-all duration-300
+                ${isMuted 
+                  ? 'text-red-500 bg-red-50 dark:bg-red-900/20' 
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+                }
+                disabled:opacity-30 disabled:cursor-not-allowed
+              `}
+              title={isMuted ? "Aktifkan Musik" : "Senyap"}
+            >
+              {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Play/Pause Button (Main Anchor) */}
         <button
           onClick={togglePlayPause}
           disabled={!isPlayerReady}
           className={`
             relative flex items-center justify-center
             w-10 h-10 md:w-11 md:h-11 rounded-full 
-            transition-all duration-500 ease-out
+            transition-all duration-500 ease-out shrink-0
             ${!isPlayerReady 
               ? 'bg-slate-50 text-slate-200 cursor-not-allowed' 
               : isPlaying 
@@ -460,66 +533,6 @@ export function BackgroundMusic({ className }: { className?: string }) {
           )}
           {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
         </button>
-        
-        {/* Stop Button */}
-        <button
-          onClick={handleStop}
-          disabled={!isPlayerReady}
-          className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500 disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Berhenti"
-        >
-          <Square size={16} fill="currentColor" />
-        </button>
-
-        {/* Next Button */}
-        <button
-          onClick={handleNext}
-          disabled={!isPlayerReady}
-          className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Selanjutnya"
-        >
-          <SkipForward size={16} fill="currentColor" />
-        </button>
-
-        {/* Divider */}
-        <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-0.5" />
-
-        {/* Mute Toggle & Volume Slider */}
-        <div 
-          className="relative flex items-center group"
-          onMouseEnter={() => setShowVolumeSlider(true)}
-          onMouseLeave={() => setShowVolumeSlider(false)}
-        >
-          {/* Animated Volume Slider */}
-          <div className={`
-            overflow-hidden transition-all duration-300 ease-in-out flex items-center
-            ${showVolumeSlider ? 'w-24 px-2 opacity-100' : 'w-0 opacity-0'}
-          `}>
-            <Slider
-              value={[volume]}
-              max={100}
-              step={1}
-              onValueChange={handleVolumeChange}
-              className="w-20"
-            />
-          </div>
-
-          <button
-            onClick={toggleMute}
-            disabled={!isPlayerReady}
-            className={`
-              p-2 rounded-full transition-all duration-300
-              ${isMuted 
-                ? 'text-red-500 bg-red-50 dark:bg-red-900/20' 
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
-              }
-              disabled:opacity-30 disabled:cursor-not-allowed
-            `}
-            title={isMuted ? "Aktifkan Musik" : "Senyap"}
-          >
-            {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-          </button>
-        </div>
       </div>
 
 
