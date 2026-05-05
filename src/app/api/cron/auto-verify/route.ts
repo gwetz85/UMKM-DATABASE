@@ -105,16 +105,16 @@ export async function GET(req: NextRequest) {
       const createdAtVal = actor.createdAt ? new Date(actor.createdAt).getTime() : now;
       const createdAt = isNaN(createdAtVal) ? now : createdAtVal;
 
-      // LOGIC PRIORITY (REFINED)
-      // 1. Blacklist -> 30s -> rejected
+      // LOGIC PRIORITY (SYNCED WITH UI)
+      // 1. Blacklist -> 10s -> rejected
       if (hasBlacklist) {
-        const targetTime = createdAt + 30000;
+        const targetTime = createdAt + 10000;
         if (now >= targetTime) {
           updates[`businessActors/${actor.id}/status`] = 'rejected';
           updates[`businessActors/${actor.id}/rejectionReason`] = 'Ditolak Otomatis: Terdaftar di Data Blacklist (Sheet 4).';
           rejectedCount++;
         } else {
-          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting Blacklist timer (30s)" });
+          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting Blacklist timer (10s)" });
         }
         return;
       }
@@ -136,26 +136,34 @@ export async function GET(req: NextRequest) {
         return;
       }
 
-      // 3. 2024 -> 5m -> verified_actor  (prioritas lebih tinggi dari 2023 per rule 5)
+      // 3. 2024 -> 3m -> verified_actor
       if (has2024) {
-        const targetTime = createdAt + 300000; // 5 menit
+        const targetTime = createdAt + 180000; // 3 menit
         if (now >= targetTime) {
           updates[`businessActors/${actor.id}/status`] = 'verified_actor';
+          // Ensure registration code exists
+          if (!actor.registrationCode) {
+            updates[`businessActors/${actor.id}/registrationCode`] = Math.floor(10000000 + Math.random() * 90000000).toString();
+          }
           verifiedCount++;
         } else {
-          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2024 timer (5m)" });
+          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2024 timer (3m)" });
         }
         return;
       }
 
-      // 4. 2023 -> 5m -> verified_actor
+      // 4. 2023 -> 1m -> verified_actor
       if (has2023) {
-        const targetTime = createdAt + 300000; // 5 menit
+        const targetTime = createdAt + 60000; // 1 menit
         if (now >= targetTime) {
           updates[`businessActors/${actor.id}/status`] = 'verified_actor';
+          // Ensure registration code exists
+          if (!actor.registrationCode) {
+            updates[`businessActors/${actor.id}/registrationCode`] = Math.floor(10000000 + Math.random() * 90000000).toString();
+          }
           verifiedCount++;
         } else {
-          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2023 timer (5m)" });
+          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2023 timer (1m)" });
         }
         return;
       }
@@ -165,6 +173,10 @@ export async function GET(req: NextRequest) {
       if (now >= noMatchTargetTime) {
         if (actor.status !== 'verified_actor') {
           updates[`businessActors/${actor.id}/status`] = 'verified_actor';
+          // Ensure registration code exists
+          if (!actor.registrationCode) {
+            updates[`businessActors/${actor.id}/registrationCode`] = Math.floor(10000000 + Math.random() * 90000000).toString();
+          }
           verifiedCount++;
         }
       } else {
