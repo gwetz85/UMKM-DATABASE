@@ -371,9 +371,6 @@ function ActorDataContent() {
           <Button onClick={() => generateAllCoordinatorsReport(groupedActors)} className="bg-red-600 hover:bg-red-700 font-bold shadow-md w-full md:w-auto h-10">
             <Printer className="w-4 h-4 mr-2" /> CETAK PDF
           </Button>
-          <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto h-10 rounded-xl">
-            <Printer className="w-4 h-4 mr-2" /> PRINT HALAMAN
-          </Button>
         </div>
       </div>
 
