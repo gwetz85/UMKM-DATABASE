@@ -16,8 +16,12 @@ import {
   Clock, 
   Ban, 
   CheckCircle2,
-  ShieldAlert
+  ShieldAlert,
+  Printer,
+  ChevronRight,
+  Search
 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useState, useEffect, useMemo } from "react"
@@ -30,9 +34,12 @@ export default function LPJPage() {
   const { toast } = useToast()
   const database = useDatabase()
   const [mounted, setMounted] = useState(false)
+  const [filterCoordinator, setFilterCoordinator] = useState<string>("all")
+  const [printDate, setPrintDate] = useState<string>("")
 
   useEffect(() => {
     setMounted(true)
+    setPrintDate(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }))
   }, [])
 
   const userProfileRef = useMemoFirebase(() => {
@@ -45,6 +52,7 @@ export default function LPJPage() {
   const isAdmin = userProfile?.role === 'admin'
   const isPetugas = userProfile?.role === 'petugas'
   const isMonitoring = userProfile?.role === 'monitoring'
+  const isKoordinator = userProfile?.role === 'koordinator'
   const canAccess = isAdmin || isPetugas || isMonitoring
   const canModify = isAdmin || isPetugas
 
@@ -62,9 +70,31 @@ export default function LPJPage() {
         const noLpj = !a.lpjNominal;
         const isBlacklist = a.status === 'blacklist';
         
-        return (isFinish && isReady && noLpj) || isBlacklist;
+        const baseFilter = (isFinish && isReady && noLpj) || isBlacklist;
+        
+        if (!baseFilter) return false;
+
+        if (isKoordinator) {
+          return a.coordinator?.toLowerCase() === userProfile?.fullName?.toLowerCase();
+        }
+
+        if (filterCoordinator !== "all") {
+          return a.coordinator === filterCoordinator;
+        }
+
+        return true;
       }) || [];
       return filtered;
+  }, [allActorsRaw, isKoordinator, userProfile, filterCoordinator])
+
+  const coordinators = useMemo(() => {
+    if (!allActorsRaw) return [];
+    const unique = Array.from(new Set(allActorsRaw
+      .filter(a => (a.status === 'finish' && a.readyForLPJ && !a.lpjNominal) || a.status === 'blacklist')
+      .map(a => a.coordinator)
+      .filter(Boolean)
+    )).sort();
+    return unique;
   }, [allActorsRaw])
 
   const handleSaveLPJ = async (actorId: string, fullName: string, nominal: string) => {
@@ -137,7 +167,33 @@ export default function LPJPage() {
               <FileText className="w-8 h-8" /> Pelaporan LPJ
           </h1>
         </div>
-        <p className="text-muted-foreground font-medium">Catat laporan pertanggungjawaban dana yang telah diterima pelaku usaha.</p>
+        <p className="text-muted-foreground font-medium print:hidden">Catat laporan pertanggungjawaban dana yang telah diterima pelaku usaha.</p>
+      </div>
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
+        {isAdmin || isPetugas || isMonitoring ? (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
+            <Label className="text-[10px] font-black uppercase text-slate-400 shrink-0">Filter Koordinator</Label>
+            <Select value={filterCoordinator} onValueChange={setFilterCoordinator}>
+              <SelectTrigger className="w-full sm:w-[250px] h-10 rounded-xl border-primary/20 bg-white/50 backdrop-blur-sm font-bold text-xs">
+                <SelectValue placeholder="Pilih Koordinator" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="font-bold text-xs uppercase">Semua Koordinator</SelectItem>
+                {coordinators.map(c => (
+                  <SelectItem key={c} value={c} className="font-bold text-xs uppercase">{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : <div />}
+
+        <Button 
+          onClick={() => window.print()} 
+          className="bg-primary hover:bg-primary/90 font-black text-xs rounded-xl px-6 h-10 shadow-lg shadow-primary/20 gap-2 w-full md:w-auto"
+        >
+          <Printer className="w-4 h-4" /> CETAK REKAPAN LPJ
+        </Button>
       </div>
 
       <Card className="border-none shadow-xl bg-white/80 backdrop-blur-md rounded-3xl overflow-hidden">
@@ -285,6 +341,60 @@ export default function LPJPage() {
                     Hanya Administrator (Superadmin) yang dapat memulihkan data yang telah ter-blacklist karena keterlambatan LPJ.
                 </p>
             </div>
+        </div>
+      </div>
+
+      {/* PRINT SECTION */}
+      <div className="hidden print:block p-4">
+        <div className="text-center space-y-2 mb-8">
+          <h1 className="text-2xl font-black uppercase border-b-2 border-black pb-2">REKAPAN LPJ</h1>
+          <div className="flex justify-between items-center text-xs font-bold uppercase pt-2">
+            <span>Koordinator: {filterCoordinator === "all" ? "SEMUA" : filterCoordinator}</span>
+            <span>Tanggal: {printDate}</span>
+          </div>
+        </div>
+
+        <table className="w-full border-collapse border border-black text-[10px]">
+          <thead>
+            <tr className="bg-slate-100">
+              <th className="border border-black p-2 font-black uppercase text-center w-10">No</th>
+              <th className="border border-black p-2 font-black uppercase text-center">No. Registrasi</th>
+              <th className="border border-black p-2 font-black uppercase text-left">Nama Lengkap</th>
+              <th className="border border-black p-2 font-black uppercase text-center">NIK</th>
+              <th className="border border-black p-2 font-black uppercase text-center">No. KK</th>
+              <th className="border border-black p-2 font-black uppercase text-left">Koordinator</th>
+              <th className="border border-black p-2 font-black uppercase text-center w-32">Tanda Tangan</th>
+            </tr>
+          </thead>
+          <tbody>
+            {actors.map((actor, index) => (
+              <tr key={actor.id}>
+                <td className="border border-black p-2 text-center font-bold">{index + 1}</td>
+                <td className="border border-black p-2 text-center font-mono">{actor.registrationCode || "-"}</td>
+                <td className="border border-black p-2 font-black uppercase">{actor.fullName}</td>
+                <td className="border border-black p-2 text-center font-mono">{actor.nik}</td>
+                <td className="border border-black p-2 text-center font-mono">{actor.noKK}</td>
+                <td className="border border-black p-2 uppercase text-[9px]">{actor.coordinator || "-"}</td>
+                <td className="border border-black p-2 h-16 relative">
+                  <span className="absolute top-1 left-1 text-[8px] text-slate-300 font-bold">{index + 1}.</span>
+                </td>
+              </tr>
+            ))}
+            {actors.length === 0 && (
+              <tr>
+                <td colSpan={7} className="border border-black p-10 text-center font-bold uppercase italic">Tidak ada data untuk dicetak.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        <div className="mt-12 flex justify-end">
+          <div className="text-center space-y-16">
+            <p className="text-xs font-bold uppercase">Petugas Verifikasi,</p>
+            <div className="border-t border-black w-48 pt-2">
+              <p className="text-xs font-black uppercase">{userProfile?.fullName || user?.email?.split('@')[0] || "..........................."}</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
