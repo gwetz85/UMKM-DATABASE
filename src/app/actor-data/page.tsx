@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3 } from "lucide-react"
 import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -93,6 +93,9 @@ function ActorDataContent() {
   const { data: data2025 } = useList<any>(master2025Ref)
   const { data: dataBlacklist } = useList<any>(blacklistRef)
   
+  const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
+  const { data: kuotaData } = useList<any>(kuotaRef)
+
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     if (!a) return false;
     // Status filter - equivalent to previous orderByChild('status').equalTo('verified_actor')
@@ -102,9 +105,8 @@ function ActorDataContent() {
       if (!a.coordinator || !userProfile?.fullName) return false;
       return String(a.coordinator).toLowerCase() === String(userProfile.fullName).toLowerCase();
     }
-    if (filterCoordinator) {
-      return (a.coordinator || "") === filterCoordinator;
-    }
+    // Note: We remove the filterCoordinator from this main filter 
+    // to allow calculating stats for all coordinators while viewing one.
     return true;
   }) : undefined
 
@@ -131,6 +133,28 @@ function ActorDataContent() {
     })
     return groups
   }, [filteredActors])
+
+  const coordinatorStats = useMemo(() => {
+    if (!groupedActors || isKoordinator) return []
+    
+    return Object.entries(groupedActors).map(([name, actors]) => {
+      const quotaItem = kuotaData?.find((q: any) => 
+        (q.name || "").toUpperCase().trim() === name.toUpperCase().trim()
+      )
+      const quota = quotaItem?.quota || 0
+      const count = actors.length
+      const remaining = quota - count
+      const isFull = remaining <= 0
+      
+      return {
+        name,
+        count,
+        quota,
+        remaining,
+        isFull
+      }
+    }).sort((a, b) => a.name.localeCompare(b.name))
+  }, [groupedActors, kuotaData, isKoordinator])
 
 
 
@@ -382,8 +406,8 @@ function ActorDataContent() {
               <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
-        ) : (
-          <div className="space-y-12">
+        ) : isKoordinator ? (
+           <div className="space-y-12">
             {Object.entries(groupedActors).map(([coordinator, actors]) => (
               <div key={coordinator} className="space-y-4 break-after-page">
                 <div className="flex items-center justify-between border-l-4 border-primary pl-4 py-1 print:border-black">
@@ -391,164 +415,177 @@ function ActorDataContent() {
                     <h2 className="text-xl font-black text-primary uppercase tracking-tight print:text-black">{coordinator}</h2>
                     <Badge variant="secondary" className="font-bold print:hidden">{actors.length} DATA</Badge>
                   </div>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="print:hidden border-primary text-primary hover:bg-primary/10 font-bold h-8"
-                    onClick={() => generateCoordinatorReport(coordinator, actors)}
-                  >
-                    <Printer className="w-3.5 h-3.5 mr-2" /> CETAK PDF {coordinator.toUpperCase()}
-                  </Button>
                 </div>
-                {isKoordinator ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 print:flex print:flex-col print:gap-1">
-                    {actors.map((actor) => (
-                      <Card 
-                        key={actor.id} 
-                        className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group relative overflow-hidden print:shadow-none print:border-b print:rounded-none"
-                        onClick={() => {
-                          setViewingActor(actor)
-                          setIsEditMode(false)
-                        }}
-                      >
-                        <CardContent className="p-4 flex flex-col items-center text-center gap-3 print:flex-row print:justify-between print:text-left print:p-2">
-                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform print:hidden shrink-0">
-                            <CheckCircle2 className="w-6 h-6" />
-                          </div>
-                          <div className="space-y-1 w-full justify-center">
-                            <p className="font-bold text-[13px] md:text-sm line-clamp-2 uppercase leading-tight print:line-clamp-none text-primary/80" title={actor.businessName}>
-                              {actor.businessName || "NAMA USAHA KOSONG"}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground uppercase line-clamp-1 print:line-clamp-none font-bold flex items-center justify-center print:justify-start gap-1" title={actor.fullName}>
-                              <User className="w-3 h-3 print:hidden" /> {actor.fullName}
-                            </p>
-                            <p className="text-[9px] font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-sm print:hidden">
-                              Reg: {actor.registrationCode || "PROSES..."}
-                            </p>
-                            <p className="text-[9px] text-muted-foreground font-mono hidden print:block">
-                              NIK: {actor.nik} | Reg: {actor.registrationCode || "-"} | Koor: {actor.coordinator}
-                            </p>
-                            <div className="flex justify-center print:hidden">
-                              <CheckDataIndicator 
-                                actor={actor} 
-                                data2023={data2023}
-                                data2024={data2024}
-                                data2025={data2025}
-                                dataBlacklist={dataBlacklist}
-                                showText={false} 
-                              />
-                            </div>
-                          </div>
-                          <div className="text-[9px] font-black uppercase bg-primary text-white w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
-                            LIHAT DETAIL
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
-                    <Table>
-                      <TableHeader className="bg-muted/50 print:bg-slate-100">
-                        <TableRow>
-                          <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR KK</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">PONSEL</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
-                          <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {actors.map((actor, index) => (
-                          <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
-                            <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
-                            <TableCell className="py-4">
-                              <span className="font-bold text-slate-800 uppercase text-[13px] print:text-black">{actor.fullName}</span>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.nik}</span>
-                              <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm print:hidden inline-block mt-0.5">
-                                Reg: {actor.registrationCode || "..."}
-                              </span>
-                              <div className="print:hidden mt-0.5">
-                                <CheckDataIndicator 
-                                  actor={actor} 
-                                  data2023={data2023}
-                                  data2024={data2024}
-                                  data2025={data2025}
-                                  dataBlacklist={dataBlacklist}
-                                />
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <span className="font-mono text-[11px] text-slate-600 print:text-black">{actor.noKK}</span>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <span className="font-medium text-[11px] text-slate-600 print:text-black">{actor.phone || "-"}</span>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <div className="flex flex-col">
-                                <span className="font-black text-primary uppercase text-[12px] print:text-black">{actor.businessName}</span>
-                                <span className="text-[10px] text-slate-500 font-bold uppercase print:hidden">{actor.businessCategory}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-4 pr-6 text-right print:hidden">
-                              <div className="flex justify-end gap-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50 border border-transparent hover:border-blue-200"
-                                  onClick={() => {
-                                    setViewingActor(actor)
-                                    setIsEditMode(false)
-                                    setEditingBankMode(false)
-                                  }}
-                                  title="Detail"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50 border border-transparent hover:border-emerald-200"
-                                  onClick={() => handlePrintForm(actor)}
-                                  title="Cetak Formulir"
-                                >
-                                  <Printer className="w-4 h-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  className="h-8 w-8 p-0 text-purple-600 hover:bg-purple-50 border border-transparent hover:border-purple-200"
-                                  onClick={() => {
-                                    setViewingActor(actor)
-                                    setIsEditMode(false)
-                                    setEditingBankMode(true)
-                                  }}
-                                  title="Teruskan ke Verifikasi Data (Input Rekening)"
-                                >
-                                  <ChevronRight className="w-5 h-5" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 print:flex print:flex-col print:gap-1">
+                  {actors.map((actor) => (
+                    <Card 
+                      key={actor.id} 
+                      className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group relative overflow-hidden print:shadow-none print:border-b print:rounded-none"
+                      onClick={() => {
+                        setViewingActor(actor)
+                        setIsEditMode(false)
+                      }}
+                    >
+                      <CardContent className="p-4 flex flex-col items-center text-center gap-3 print:flex-row print:justify-between print:text-left print:p-2">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform print:hidden shrink-0">
+                          <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                        <div className="space-y-1 w-full justify-center">
+                          <p className="font-bold text-[13px] md:text-sm line-clamp-2 uppercase leading-tight print:line-clamp-none text-primary/80" title={actor.businessName}>
+                            {actor.businessName || "NAMA USAHA KOSONG"}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground uppercase line-clamp-1 print:line-clamp-none font-bold flex items-center justify-center print:justify-start gap-1" title={actor.fullName}>
+                            <User className="w-3 h-3 print:hidden" /> {actor.fullName}
+                          </p>
+                          <p className="text-[9px] font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-sm print:hidden">
+                            Reg: {actor.registrationCode || "PROSES..."}
+                          </p>
+                        </div>
+                        <div className="text-[9px] font-black uppercase bg-primary text-white w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
+                          LIHAT DETAIL
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
             ))}
-            {Object.keys(groupedActors).length === 0 && (
-              <div className="rounded-xl border bg-white shadow-sm p-20 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
-                <Search className="w-8 h-8 opacity-20" />
-                <p className="font-bold">Tidak ada data pelaku usaha ditemukan.</p>
-              </div>
+          </div>
+        ) : filterCoordinator ? (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 mb-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => router.push('/actor-data')}
+                className="font-bold border-primary text-primary hover:bg-primary/5"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" /> KEMBALI KE MODUL
+              </Button>
+              <h2 className="text-xl font-black text-primary uppercase tracking-tighter">DATA: {filterCoordinator}</h2>
+            </div>
+            
+            <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
+              <Table>
+                <TableHeader className="bg-muted/50 print:bg-slate-100">
+                  <TableRow>
+                    <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
+                    <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
+                    <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
+                    <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
+                    <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(groupedActors[filterCoordinator] || []).map((actor, index) => (
+                    <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
+                      <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
+                      <TableCell className="py-4">
+                        <span className="font-bold text-slate-800 uppercase text-[13px] print:text-black">{actor.fullName}</span>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.nik}</span>
+                        <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm print:hidden inline-block mt-0.5">
+                          Reg: {actor.registrationCode || "..."}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex flex-col">
+                          <span className="font-black text-primary uppercase text-[12px] print:text-black">{actor.businessName}</span>
+                          <span className="text-[10px] text-slate-500 font-bold uppercase print:hidden">{actor.businessCategory}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4 pr-6 text-right print:hidden">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                            onClick={() => {
+                              setViewingActor(actor)
+                              setIsEditMode(false)
+                              setEditingBankMode(false)
+                            }}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50"
+                            onClick={() => handlePrintForm(actor)}
+                          >
+                            <Printer className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {coordinatorStats.map((stat) => (
+              <Card 
+                key={stat.name}
+                onClick={() => router.push(`/actor-data?coordinator=${stat.name}`)}
+                className={cn(
+                  "cursor-pointer transition-all hover:scale-[1.03] active:scale-95 border-none shadow-xl overflow-hidden group relative",
+                  stat.isFull ? "bg-rose-600" : "bg-emerald-600"
+                )}
+              >
+                <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:scale-125 transition-transform">
+                  <BarChart3 className="w-12 h-12 text-white" />
+                </div>
+                <CardContent className="p-6 flex flex-col items-center text-center text-white gap-4 relative z-10">
+                  <div className="w-full border-b border-white/20 pb-3 mb-1">
+                    <h3 className="font-black uppercase text-[12px] tracking-widest leading-tight line-clamp-2 min-h-[2rem]" title={stat.name}>
+                      {stat.name}
+                    </h3>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-4xl font-black drop-shadow-md">{stat.count}</span>
+                    <span className="text-[10px] font-black uppercase tracking-tighter opacity-90">Data Terinput</span>
+                  </div>
+                  <div className="w-full mt-2">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2 flex justify-between items-center border border-white/10 shadow-inner">
+                      <div className="flex flex-col items-start">
+                        <span className="text-[8px] font-black uppercase tracking-widest opacity-70">Total Kuota</span>
+                        <span className="text-sm font-black">{stat.quota}</span>
+                      </div>
+                      <div className="h-8 w-px bg-white/10 mx-2" />
+                      <div className="flex flex-col items-end">
+                        <span className="text-[8px] font-black uppercase tracking-widest opacity-70">Sisa</span>
+                        <span className={cn(
+                          "text-sm font-black",
+                          stat.remaining <= 0 ? "text-rose-200" : "text-white"
+                        )}>{stat.remaining > 0 ? stat.remaining : 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-1.5 mt-2 overflow-hidden">
+                    <div 
+                      className="bg-white h-full transition-all duration-1000" 
+                      style={{ width: `${Math.min((stat.count / (stat.quota || 1)) * 100, 100)}%` }} 
+                    />
+                  </div>
+                  <div className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
+                    LIHAT DETAIL <ChevronRight className="w-3 h-3" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {coordinatorStats.length === 0 && (
+               <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 bg-white rounded-2xl border-2 border-dashed border-slate-200">
+                 <div className="p-4 bg-slate-50 rounded-full">
+                    <Search className="w-10 h-10 text-slate-300" />
+                 </div>
+                 <p className="font-black text-slate-400 uppercase tracking-widest">Belum ada data koordinator ditemukan</p>
+               </div>
             )}
           </div>
-
         )}
       </div>
 
