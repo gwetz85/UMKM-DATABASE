@@ -95,6 +95,7 @@ export default function BpjsPage() {
         "ALAMAT": (actor.address || "").toUpperCase(),
         "RT/RW": actor.rtRw || "-",
         "KELURAHAN": (actor.kelurahan || "").toUpperCase(),
+        "KOORDINATOR": (actor.coordinator || "").toUpperCase(),
         "NOTE": age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan"
       }
     })
@@ -106,7 +107,7 @@ export default function BpjsPage() {
     // Auto-width
     const wscols = [
       {wch: 30}, {wch: 20}, {wch: 20}, {wch: 25}, {wch: 10}, 
-      {wch: 15}, {wch: 40}, {wch: 10}, {wch: 20}, {wch: 25}
+      {wch: 15}, {wch: 40}, {wch: 10}, {wch: 20}, {wch: 20}, {wch: 25}
     ];
     worksheet['!cols'] = wscols;
 
@@ -136,27 +137,27 @@ export default function BpjsPage() {
       return [
         index + 1,
         (actor.fullName || "").toUpperCase(),
-        actor.nik || "-",
-        actor.pobDob || "-",
+        (actor.nik || "-"),
         age,
+        (actor.coordinator || "-").toUpperCase(),
         age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan"
       ]
     })
 
     autoTable(doc, {
       startY: 30,
-      head: [['NO', 'NAMA LENGKAP', 'NIK', 'TEMPAT/TGL LAHIR', 'USIA', 'KETERANGAN']],
+      head: [['NO', 'NAMA LENGKAP', 'NIK', 'USIA', 'KOORDINATOR', 'KETERANGAN']],
       body: tableData,
       theme: 'grid',
       headStyles: { fillColor: [15, 117, 188], textColor: 255, fontStyle: 'bold' },
-      styles: { fontSize: 8, cellPadding: 2 },
+      styles: { fontSize: 7, cellPadding: 2 },
       columnStyles: {
-        0: { cellWidth: 10, halign: 'center' },
-        1: { cellWidth: 50 },
-        2: { cellWidth: 35, halign: 'center' },
-        3: { cellWidth: 40, halign: 'center' },
-        4: { cellWidth: 15, halign: 'center' },
-        5: { cellWidth: 35, halign: 'center' }
+        0: { cellWidth: 8, halign: 'center' },
+        1: { cellWidth: 45 },
+        2: { cellWidth: 32, halign: 'center' },
+        3: { cellWidth: 12, halign: 'center' },
+        4: { cellWidth: 35, halign: 'center' },
+        5: { cellWidth: 48, halign: 'center' }
       }
     })
 
@@ -210,6 +211,7 @@ export default function BpjsPage() {
                   <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">NIK</TableHead>
                   <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">TEMPAT / TANGGAL LAHIR</TableHead>
                   <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">USIA</TableHead>
+                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">KOORDINATOR</TableHead>
                   <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">NOTE / KETERANGAN</TableHead>
                 </TableRow>
               </TableHeader>
@@ -238,6 +240,9 @@ export default function BpjsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="py-4 text-center">
+                         <span className="text-[11px] font-bold text-slate-600 uppercase">{actor.coordinator || "-"}</span>
+                      </TableCell>
+                      <TableCell className="py-4 text-center">
                         <Badge className={cn(
                           "font-black uppercase tracking-wider text-[9px] px-3 py-1.5 border shadow-sm",
                           age < 65 
@@ -252,7 +257,7 @@ export default function BpjsPage() {
                 })}
                 {filteredActors.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-24 text-center">
+                    <TableCell colSpan={7} className="py-24 text-center">
                       <div className="flex flex-col items-center gap-4">
                         <div className="bg-slate-100 p-4 rounded-full">
                           <Search className="w-10 h-10 text-slate-300" />
