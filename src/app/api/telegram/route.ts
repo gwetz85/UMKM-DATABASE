@@ -83,20 +83,31 @@ export async function POST(req: NextRequest) {
         await sendMessage(chatId, reply);
       } 
       else if (text.startsWith('/about')) {
-        const reply = `🏛️ *SIMPU v7.5*\n` +
-                      `_Sistem Informasi Manajemen Pelaku Usaha_\n\n` +
-                      `Update: 15/04/2026 10:42\n\n` +
-                      `"Aplikasi ini dikembangkan secara mandiri dan independen oleh Tim Admin. Hak Cipta sepenuhnya dimiliki oleh pencipta aplikasi."\n\n` +
+        // Fetch dynamic system config
+        const configRef = ref(database, 'settings/system_config');
+        const configSnap = await get(configRef);
+        const config = configSnap.exists() ? configSnap.val() : {};
+        
+        const currentVersion = config.version || "Versi 8.1";
+        const copyright = config.copyright || "AGUS SURIYADI";
+
+        const reply = `🏛️ *INFORMASI APLIKASI*\n` +
+                      `*${currentVersion.toUpperCase()}*\n\n` +
+                      `Selamat datang di Aplikasi *SIMPU*\n` +
+                      `_SISTEM INFORMASI MANAJEMEN PELAKU USAHA_\n\n` +
+                      `"Aplikasi ini dikembangkan secara Mandiri dan Independent oleh Tim Admin yang bekerja. Hak Cipta Sepenuhnya dimiliki oleh *${copyright}* sebagai Pembuat dan Pengembang Aplikasi."\n\n` +
                       `🚀 *Pembaruan Terbaru:*\n` +
-                      `▫️ Fitur Bot Telegram & Chat\n` +
-                      `▫️ Modul Rekening Bank\n` +
-                      `▫️ Sinkronisasi 4.045 data baru\n` +
-                      `▫️ Optimalisasi UI/UX\n\n` +
+                      `▫️ Penambahan Fitur Pesan\n` +
+                      `▫️ Penambahan Event Card\n` +
+                      `▫️ Penambahan Music Backsound\n` +
+                      `▫️ Penambahan Fitur Bot Telegram\n` +
+                      `▫️ Penambahan Fitur Cek Data Kolektif\n` +
+                      `▫️ Sinkronisasi 4.045 data baru\n\n` +
                       `✉️ *Kontak Pengembang:*\n` +
-                      `👤 *AGUS SURIYADI*\n` +
+                      `👤 *${copyright}*\n` +
                       `📧 agussuriyadipunya@gmail.com\n` +
                       `📱 [0817319885](https://wa.me/62817319885)\n\n` +
-                      `© 2026 SIMPU - All Rights Reserved`;
+                      `© ${new Date().getFullYear()} SIMPU - All Rights Reserved`;
         await sendMessage(chatId, reply);
       } 
       else if (text.startsWith('/stats')) {
