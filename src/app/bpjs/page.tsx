@@ -81,9 +81,10 @@ export default function BpjsPage() {
   }, [allActors, searchQuery])
 
   const handleExportExcel = () => {
-    if (filteredActors.length === 0) return
+    const eligibleActors = filteredActors.filter(a => calculateAge(a.pobDob || "") < 65)
+    if (eligibleActors.length === 0) return
     
-    const exportData = filteredActors.map(actor => {
+    const exportData = eligibleActors.map(actor => {
       const age = calculateAge(actor.pobDob || "")
       return {
         "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
@@ -115,7 +116,8 @@ export default function BpjsPage() {
   }
 
   const handlePrintPDF = () => {
-    if (filteredActors.length === 0) return
+    const eligibleActors = filteredActors.filter(a => calculateAge(a.pobDob || "") < 65)
+    if (eligibleActors.length === 0) return
 
     const doc = new jsPDF('p', 'mm', 'a4')
     const pageWidth = doc.internal.pageSize.getWidth()
@@ -132,7 +134,7 @@ export default function BpjsPage() {
     doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, pageWidth - 14, 21, { align: 'right' })
     doc.setTextColor(0)
 
-    const tableData = filteredActors.map((actor, index) => {
+    const tableData = eligibleActors.map((actor, index) => {
       const age = calculateAge(actor.pobDob || "")
       return [
         index + 1,
@@ -140,7 +142,7 @@ export default function BpjsPage() {
         (actor.nik || "-"),
         age,
         (actor.coordinator || "-").toUpperCase(),
-        age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan"
+        "Bisa Didaftarkan"
       ]
     })
 
