@@ -379,8 +379,9 @@ export default function LoginPage() {
               </div>
               <p className="text-sm font-black text-slate-800 leading-relaxed uppercase px-4 whitespace-pre-line text-center">
                 DATA PENDAFTARAN AKUN BARU KAMU TELAH BERHASIL.{"\n"}
-                SILAHKAN LOGIN SETELAH ADMIN MEMVERIFIKASI AKUN KAMU MAKSIMAL 1X24JAM.{"\n"}
-                HUBUNGI ADMIN JIKA SAMPAI BATAS WAKTU AKUN BELUM TERVERIFIKASI.
+                SILAKAN LOGIN DALAM WAKTU MAKSIMAL 24 JAM SETELAH PENDAFTARAN.{"\n"}
+                JIKA TIDAK LOGIN DALAM BATAS WAKTU TERSEBUT,{"\n"}
+                AKUN AKAN DIHAPUS OTOMATIS OLEH SISTEM UNTUK KEAMANAN.
               </p>
               <Button 
                 variant="outline" 
