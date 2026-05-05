@@ -536,25 +536,6 @@ export function BackgroundMusic({ className }: { className?: string }) {
       </div>
 
 
-      {/* Song Title Marquee - Positioned below play menu */}
-      {isPlaying && currentTitle && (
-        <div 
-          style={{ width: playerWidth > 0 ? `${playerWidth}px` : '100%' }}
-          className={`
-            overflow-hidden h-6 md:h-7 px-4 rounded-full
-            flex items-center
-            bg-white/80 dark:bg-slate-900/80 backdrop-blur-md 
-            border border-white/20 dark:border-slate-800/50 shadow-lg
-            animate-in fade-in slide-in-from-bottom-2 duration-700
-          `}
-        >
-
-          <div className="whitespace-nowrap animate-marquee text-[8px] md:text-[9px] font-bold uppercase tracking-wide text-primary dark:text-primary-foreground/90 w-max inline-block">
-            SEDANG DIPUTAR: {currentTitle}
-          </div>
-
-        </div>
-      )}
 
 
 
