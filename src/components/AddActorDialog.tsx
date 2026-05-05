@@ -156,6 +156,29 @@ export function AddActorDialog() {
         return
       }
 
+      // Tahap 2: Cek di Database Pembanding (Informasi)
+      const checkMaster = (data: any[] | null) => {
+        return (data || []).find((m: any) => (m.noKK && String(m.noKK).trim() === noKK) || (m.nik && String(m.nik).trim() === nik))
+      }
+      
+      const matchBlacklist = checkMaster(dataBlacklist)
+      const matchPrevious = checkMaster(data2025) || checkMaster(data2024) || checkMaster(data2023)
+
+      if (matchBlacklist) {
+        toast({
+          variant: "destructive",
+          title: "PERINGATAN BLACKLIST",
+          description: "NIK/KK ini terdeteksi dalam database BLACKLIST. Data tetap dapat disimpan namun akan otomatis ditolak oleh sistem verifikasi."
+        })
+      } else if (matchPrevious) {
+        toast({
+          title: "DATA PEMBANDING DITEMUKAN",
+          description: "NIK/KK ini terdeteksi sudah pernah terdaftar di tahun sebelumnya. Data akan diverifikasi lebih lanjut oleh Admin.",
+          className: "bg-amber-50 border-amber-200"
+        })
+      }
+
+      // Coordinator Quota Check (Safeguard)
       if (selectedCoordinator) {
         const coord = availableCoordinators.find(c => c.name === selectedCoordinator)
         if (!coord || coord.remaining <= 0) {
