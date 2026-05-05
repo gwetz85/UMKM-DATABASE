@@ -276,7 +276,7 @@ export function MusicDashboardCard({ className }: { className?: string }) {
                 {isSyncing ? "Syncing..." : "Update Playlist"}
               </Button>
             </div>
-            <ScrollArea className="flex-1 min-h-[300px] w-full rounded-xl border bg-slate-50/50 p-2">
+            <ScrollArea className="h-[550px] w-full rounded-xl border bg-slate-50/50 p-2">
               <div className="space-y-1">
                 {playlist.map((song, index) => {
                   const isCurrent = currentTitle.toLowerCase().includes(song.toLowerCase()) || 

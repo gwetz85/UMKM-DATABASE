@@ -41,7 +41,7 @@ export default function BusinessListPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-primary font-headline">Pelaku Usaha</h1>
-          <p className="text-muted-foreground">Kelola basis data pelaku usaha Anda melalui Firebase Firestore.</p>
+          <p className="text-muted-foreground">Kelola basis data pelaku usaha Anda melalui Firebase Realtime Database.</p>
         </div>
         <a href="/business/new">
           <Button className="bg-primary hover:bg-primary/90">
