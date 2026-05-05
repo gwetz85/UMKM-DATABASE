@@ -35,6 +35,105 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 
+function UserDeletionTimer({ 
+  userId, 
+  userUid, 
+  addedAt, 
+  database, 
+  isAdmin 
+}: { 
+  userId: string, 
+  userUid: string | null, 
+  addedAt: string, 
+  database: any,
+  isAdmin: boolean 
+}) {
+  const [timeLeft, setTimeLeft] = useState<number | null>(null)
+
+  useEffect(() => {
+    // Timer hanya berjalan jika user belum login (uid null) dan sudah ada addedAt
+    if (!addedAt || userUid || !isAdmin || !database) return
+
+    const addedAtTime = new Date(addedAt).getTime()
+    const targetTime = addedAtTime + (24 * 60 * 60 * 1000) // 24 jam
+
+    const calculateTimeLeft = () => {
+      const now = Date.now()
+      const diff = targetTime - now
+      return diff > 0 ? diff : 0
+    }
+
+    const initialDiff = calculateTimeLeft()
+    setTimeLeft(initialDiff)
+
+    if (initialDiff <= 0) {
+      deleteDocumentNonBlocking(ref(database, `system_users/${userId}`))
+      return
+    }
+
+    const interval = setInterval(() => {
+      const diff = calculateTimeLeft()
+      setTimeLeft(diff)
+      
+      if (diff <= 0) {
+        clearInterval(interval)
+        deleteDocumentNonBlocking(ref(database, `system_users/${userId}`))
+      }
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [addedAt, userId, userUid, isAdmin, database])
+
+  // Jika sudah login, tidak perlu timer
+  if (userUid) return null
+
+  // Jika tidak ada data addedAt (data lama), tampilkan status standar
+  if (!addedAt) {
+    return (
+      <span className="text-[9px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-black uppercase border border-amber-200">
+        Menunggu Login Pertama
+      </span>
+    )
+  }
+
+  if (timeLeft === null) {
+    return (
+      <div className="flex items-center gap-2">
+        <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
+        <span className="text-[9px] text-amber-600 font-bold uppercase">Menghitung...</span>
+      </div>
+    )
+  }
+
+  if (timeLeft === 0) {
+    return (
+      <div className="flex items-center gap-2">
+        <Loader2 className="w-3 h-3 animate-spin text-destructive" />
+        <span className="text-[9px] text-destructive font-bold uppercase animate-pulse">Dihapus...</span>
+      </div>
+    )
+  }
+
+  const hours = Math.floor(timeLeft / 3600000)
+  const minutes = Math.floor((timeLeft % 3600000) / 60000)
+  const seconds = Math.floor((timeLeft % 60000) / 1000)
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-[9px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-black uppercase border border-amber-200 w-fit">
+        Menunggu Login Pertama
+      </span>
+      <div className="flex items-center gap-1.5 text-[9px] font-mono text-amber-600 font-black bg-amber-50/50 px-2 py-1 rounded-lg border border-amber-200/50 w-fit shadow-sm">
+        <Clock className="w-3 h-3" />
+        <span className="tracking-tighter">HAPUS OTOMATIS: </span>
+        <span className="tracking-widest bg-amber-100 px-1 rounded">
+          {hours.toString().padStart(2, '0')}:{minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export default function UserManagementPage() {
   const [mounted, setMounted] = useState(false)
   const { user } = useUser()
@@ -311,7 +410,13 @@ export default function UserManagementPage() {
                           <span className="text-[8px] font-mono text-muted-foreground truncate max-w-[100px]">{u.uid}</span>
                         </div>
                       ) : (
-                        <span className="text-[9px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-black uppercase border border-amber-200">Menunggu Login Pertama</span>
+                        <UserDeletionTimer 
+                          userId={u.id} 
+                          userUid={u.uid} 
+                          addedAt={u.addedAt} 
+                          database={database} 
+                          isAdmin={isAdmin} 
+                        />
                       )}
                     </TableCell>
                     <TableCell className="text-right">
