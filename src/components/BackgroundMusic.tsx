@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, SkipBack, SkipForward, Play, Pause } from 'lucide-react';
+import { Volume2, VolumeX, SkipBack, SkipForward, Play, Pause, Square } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 
 
@@ -255,6 +255,7 @@ export function BackgroundMusic({ className }: { className?: string }) {
       switch(action) {
         case 'play': handleManualPlayPause(true); break;
         case 'pause': handleManualPlayPause(false); break;
+        case 'stop': handleStop(); break;
         case 'next': handleNext(); break;
         case 'previous': handlePrevious(); break;
         case 'volume': handleVolumeChange([value]); break;
@@ -380,6 +381,14 @@ export function BackgroundMusic({ className }: { className?: string }) {
       setIsPlaying(true);
     }
   };
+  
+  const handleStop = () => {
+    if (playerRef.current && isPlayerReadyRef.current) {
+      playerRef.current.stopVideo();
+      isPlayingRef.current = false;
+      setIsPlaying(false);
+    }
+  };
 
   const togglePlayPause = () => {
     if (playerRef.current && isPlayerReadyRef.current) {
@@ -398,7 +407,7 @@ export function BackgroundMusic({ className }: { className?: string }) {
   };
 
   return (
-    <div className={cn("z-[1000] print:hidden grid justify-items-end gap-1", className)}>
+    <div className={cn("fixed bottom-24 right-6 z-[1000] print:hidden grid justify-items-end gap-2", className)}>
 
       {/* Invisible YouTube Player Container */}
       <div 
@@ -450,6 +459,16 @@ export function BackgroundMusic({ className }: { className?: string }) {
             <span className="absolute inset-0 rounded-full animate-ping bg-primary opacity-20" />
           )}
           {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
+        </button>
+        
+        {/* Stop Button */}
+        <button
+          onClick={handleStop}
+          disabled={!isPlayerReady}
+          className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500 disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Berhenti"
+        >
+          <Square size={16} fill="currentColor" />
         </button>
 
         {/* Next Button */}
