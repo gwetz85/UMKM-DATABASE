@@ -135,7 +135,7 @@ function ActorDataContent() {
   }, [filteredActors])
 
   const coordinatorStats = useMemo(() => {
-    if (!groupedActors || isKoordinator) return []
+    if (!groupedActors) return []
     
     return Object.entries(groupedActors).map(([name, actors]) => {
       const quotaItem = kuotaData?.find((q: any) => 
@@ -154,7 +154,12 @@ function ActorDataContent() {
         isFull
       }
     }).sort((a, b) => a.name.localeCompare(b.name))
-  }, [groupedActors, kuotaData, isKoordinator])
+  }, [groupedActors, kuotaData])
+
+  const currentKoorStat = useMemo(() => {
+    if (!filterCoordinator) return null
+    return coordinatorStats.find(s => s.name === filterCoordinator)
+  }, [coordinatorStats, filterCoordinator])
 
 
 
@@ -291,13 +296,17 @@ function ActorDataContent() {
   }
 
   const handleExportExcel = () => {
-    if (!filteredActors || filteredActors.length === 0) {
-      toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })
-      return
-    }
-
     try {
-      const exportData = filteredActors.map((actor, index) => ({
+      const dataToExport = filterCoordinator 
+        ? (groupedActors[filterCoordinator] || [])
+        : (filteredActors || [])
+
+      if (dataToExport.length === 0) {
+        toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })
+        return
+      }
+
+      const exportData = dataToExport.map((actor, index) => ({
         "NO": index + 1,
         "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
         "JENIS KELAMIN": actor.gender || "-",
@@ -388,11 +397,20 @@ function ActorDataContent() {
               className="pl-9 h-10 border-primary/20 bg-white"
             />
           </div>
-          {(isAdmin || !isMonitoring) && <AddActorDialog />}
+          {(isAdmin || !isMonitoring) && (!filterCoordinator || !currentKoorStat?.isFull) && <AddActorDialog />}
           <Button onClick={handleExportExcel} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md w-full md:w-auto h-10 rounded-xl">
             <FileSpreadsheet className="w-4 h-4 mr-2" /> EKSPOR EXCEL
           </Button>
-          <Button onClick={() => generateAllCoordinatorsReport(groupedActors)} className="bg-red-600 hover:bg-red-700 font-bold shadow-md w-full md:w-auto h-10">
+          <Button 
+            onClick={() => {
+              if (filterCoordinator) {
+                generateCoordinatorReport(filterCoordinator, groupedActors[filterCoordinator] || [])
+              } else {
+                generateAllCoordinatorsReport(groupedActors)
+              }
+            }} 
+            className="bg-red-600 hover:bg-red-700 font-bold shadow-md w-full md:w-auto h-10"
+          >
             <Printer className="w-4 h-4 mr-2" /> CETAK PDF
           </Button>
         </div>
