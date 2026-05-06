@@ -22,7 +22,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { AddActorDialog } from "@/components/AddActorDialog"
+
 
 const normalizeGender = (g: string) => {
   const val = (g || "").toLowerCase().trim();
@@ -389,7 +389,7 @@ function ActorDataContent() {
               className="pl-9 h-10 border-primary/20 bg-white"
             />
           </div>
-          {(isAdmin || !isMonitoring) && (!filterCoordinator || !currentKoorStat?.isFull) && <AddActorDialog />}
+
           <Button onClick={handleExportExcel} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md w-full md:w-auto h-10 rounded-xl">
             <FileSpreadsheet className="w-4 h-4 mr-2" /> EKSPOR EXCEL
           </Button>
