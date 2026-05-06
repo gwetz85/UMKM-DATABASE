@@ -4,6 +4,7 @@ import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { InfoDialog } from '@/components/info-dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
@@ -11,7 +12,7 @@ import { BackgroundMusic } from '@/components/BackgroundMusic';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
-import { User as UserIcon, LayoutGrid, Home, LogOut } from 'lucide-react'
+import { User as UserIcon, LayoutGrid, Home, LogOut, Check, X as XIcon, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
 import { useActiveEvent } from '@/hooks/use-active-event';
@@ -27,6 +28,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
   const auth = useAuth()
   const database = useDatabase();
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = React.useState(false);
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -183,16 +185,50 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   </div>
 
                   <button
-                    onClick={() => {
-                      if (window.confirm('Apakah Anda yakin ingin keluar dari aplikasi?')) {
-                        signOut(auth).then(() => router.push('/login'));
-                      }
-                    }}
+                    onClick={() => setIsLogoutDialogOpen(true)}
                     className="hidden sm:flex w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 items-center justify-center hover:bg-rose-100 transition-all active:scale-90 border border-rose-100 shadow-sm group"
                     title="Logout / Keluar"
                   >
                     <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
                   </button>
+
+                  <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+                    <DialogContent className="max-w-[400px] border-none shadow-2xl p-0 overflow-hidden rounded-3xl bg-white animate-in zoom-in-95 duration-200">
+                      <div className="bg-rose-600 p-8 flex flex-col items-center justify-center text-white gap-4">
+                        <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md animate-pulse">
+                          <LogOut className="w-10 h-10 text-white" />
+                        </div>
+                        <h2 className="text-xl font-black uppercase tracking-tighter text-center">
+                          APAKAH ANDA YAKIN{"\n"}KELUAR APLIKASI?
+                        </h2>
+                      </div>
+                      
+                      <div className="p-6 grid grid-cols-2 gap-4">
+                        <button
+                          onClick={() => {
+                            setIsLogoutDialogOpen(false);
+                            signOut(auth).then(() => router.push('/login'));
+                          }}
+                          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all border-2 border-emerald-100 group active:scale-95"
+                        >
+                          <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-200 group-hover:scale-110 transition-transform">
+                            <Check className="w-6 h-6" />
+                          </div>
+                          <span className="font-black uppercase text-xs tracking-widest">IYA</span>
+                        </button>
+
+                        <button
+                          onClick={() => setIsLogoutDialogOpen(false)}
+                          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border-2 border-slate-100 group active:scale-95"
+                        >
+                          <div className="w-12 h-12 rounded-full bg-slate-600 text-white flex items-center justify-center shadow-lg shadow-slate-200 group-hover:scale-110 transition-transform">
+                            <XIcon className="w-6 h-6" />
+                          </div>
+                          <span className="font-black uppercase text-xs tracking-widest">TIDAK</span>
+                        </button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
 
                   <Link 
                     href="/profile" 
