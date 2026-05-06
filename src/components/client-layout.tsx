@@ -11,7 +11,7 @@ import { BackgroundMusic } from '@/components/BackgroundMusic';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
-import { User as UserIcon, LayoutGrid, Home } from 'lucide-react'
+import { User as UserIcon, LayoutGrid, Home, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
 import { useActiveEvent } from '@/hooks/use-active-event';
@@ -181,6 +181,18 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   <div className="hidden sm:flex flex-col items-end gap-1 translate-y-1">
                     <OfficeHoursTimer />
                   </div>
+
+                  <button
+                    onClick={() => {
+                      if (window.confirm('Apakah Anda yakin ingin keluar dari aplikasi?')) {
+                        signOut(auth).then(() => router.push('/login'));
+                      }
+                    }}
+                    className="hidden sm:flex w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 items-center justify-center hover:bg-rose-100 transition-all active:scale-90 border border-rose-100 shadow-sm group"
+                    title="Logout / Keluar"
+                  >
+                    <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
+                  </button>
 
                   <Link 
                     href="/profile" 
