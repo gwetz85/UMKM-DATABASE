@@ -378,14 +378,6 @@ function ActorDataContent() {
             <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Data Pelaku Usaha</h1>
           </div>
           <p className="text-xs md:text-sm text-muted-foreground">Data lolos verifikasi siap diisi rekening.</p>
-          {filterCoordinator && (
-            <div className="flex items-center gap-2 mt-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 w-fit">
-              <span className="text-[10px] font-black text-primary uppercase">Filter Koordinator: {filterCoordinator}</span>
-              <Link href="/actor-data" className="text-primary hover:text-primary/70 transition-transform active:scale-90">
-                <X className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          )}
         </div>
         <div className="flex flex-wrap gap-2 w-full md:w-auto print:hidden">
           <div className="relative w-full md:w-64">
