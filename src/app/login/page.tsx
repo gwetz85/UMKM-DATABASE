@@ -360,7 +360,7 @@ export default function LoginPage() {
                     placeholder="Username" 
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
-                    className="h-12 bg-black/20 backdrop-blur-xl border-white/10 text-white placeholder:text-white/30 rounded-2xl px-14 focus:ring-white/20 focus:border-white/30 transition-all font-bold"
+                    className="h-12 bg-white/5 backdrop-blur-2xl border-black/40 text-white placeholder:text-white/50 rounded-2xl px-14 focus:ring-white/20 focus:border-black transition-all font-bold"
                     required 
                   />
                 </div>
@@ -373,7 +373,7 @@ export default function LoginPage() {
                     placeholder="Kata Sandi" 
                     value={regPass}
                     onChange={(e) => setRegPass(e.target.value)}
-                    className="h-12 bg-black/20 backdrop-blur-xl border-white/10 text-white placeholder:text-white/30 rounded-2xl px-14 focus:ring-white/20 focus:border-white/30 transition-all font-bold"
+                    className="h-12 bg-white/5 backdrop-blur-2xl border-black/40 text-white placeholder:text-white/50 rounded-2xl px-14 focus:ring-white/20 focus:border-black transition-all font-bold"
                     required 
                   />
                 </div>
@@ -401,8 +401,8 @@ export default function LoginPage() {
             <form onSubmit={handleAuth} className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
               <div className="space-y-3">
                 <div className="relative group">
-                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
-                    <User className="w-4 h-4" />
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white group-focus-within:text-white transition-colors">
+                    <User className="w-5 h-5 drop-shadow-md" />
                   </div>
                   <Input
                     id="identifier"
@@ -410,13 +410,13 @@ export default function LoginPage() {
                     placeholder="Username"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    className="h-14 bg-black/20 backdrop-blur-3xl border-white/10 text-white placeholder:text-white/30 rounded-2xl px-14 focus:ring-white/20 focus:border-white/30 transition-all font-bold text-lg"
+                    className="h-14 bg-white/5 backdrop-blur-3xl border-black/40 text-white placeholder:text-white/50 rounded-2xl px-14 focus:ring-white/20 focus:border-black transition-all font-bold text-lg"
                     required
                   />
                 </div>
                 <div className="relative group">
-                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
-                    <Key className="w-4 h-4" />
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white group-focus-within:text-white transition-colors">
+                    <Key className="w-5 h-5 drop-shadow-md" />
                   </div>
                   <Input
                     id="password"
@@ -424,15 +424,15 @@ export default function LoginPage() {
                     placeholder="Kata Sandi"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-14 bg-black/20 backdrop-blur-3xl border-white/10 text-white placeholder:text-white/30 rounded-2xl px-14 focus:ring-white/20 focus:border-white/30 transition-all font-bold text-lg"
+                    className="h-14 bg-white/5 backdrop-blur-3xl border-black/40 text-white placeholder:text-white/50 rounded-2xl px-14 focus:ring-white/20 focus:border-black transition-all font-bold text-lg"
                     required
                   />
                   <button 
                     type="submit"
                     disabled={loading}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 hover:bg-white/40 text-white rounded-xl flex items-center justify-center transition-all active:scale-90 border border-white/10"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/60 text-white rounded-xl flex items-center justify-center transition-all active:scale-90 border border-white/20"
                   >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-6 h-6" />}
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-6 h-6 text-white" />}
                   </button>
                 </div>
               </div>
