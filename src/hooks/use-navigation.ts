@@ -104,6 +104,14 @@ export function useNavigation() {
       description: "Database Seluruh Pelaku Usaha"
     },
     {
+      name: "Rekapan Data",
+      href: "/rekapan-data",
+      icon: BarChart3,
+      show: isAdmin || isMonitoring || isPetugas,
+      color: "#d97706", // amber-600
+      description: "Rekap Data Per Wilayah"
+    },
+    {
       name: "BPJS Ketenagakerjaan",
       href: "/bpjs",
       icon: ShieldCheck,
