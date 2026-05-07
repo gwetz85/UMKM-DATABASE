@@ -78,7 +78,11 @@ export default function DashboardStatsPage() {
       router.push("/login")
       return
     }
-  }, [user, isUserLoading, router])
+
+    if (userProfile?.role === 'dinas') {
+      router.push("/verifikasi-dinas")
+    }
+  }, [user, isUserLoading, router, userProfile])
   
   const memoQuery = useMemoFirebase(() => {
     if (!database || !user) return null

@@ -5,16 +5,23 @@ import { useUser } from "@/firebase"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { Loader2 } from "lucide-react"
+import { useNavigation } from "@/hooks/use-navigation"
 
 export default function RootPage() {
   const { user, isUserLoading } = useUser()
+  const { isDinas } = useNavigation()
   const router = useRouter()
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push("/login")
+      return
     }
-  }, [user, isUserLoading, router])
+
+    if (isDinas) {
+      router.push("/verifikasi-dinas")
+    }
+  }, [user, isUserLoading, router, isDinas])
 
   if (isUserLoading) {
     return (

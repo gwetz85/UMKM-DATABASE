@@ -51,7 +51,7 @@ export function useNavigation() {
       name: "Dashboard Statistik",
       href: "/dashboard",
       icon: LayoutDashboard,
-      show: !!user,
+      show: !!user && !isDinas,
       color: "#f59e0b", // amber-500
       description: "Statistik & Ringkasan Data"
     },
@@ -59,7 +59,7 @@ export function useNavigation() {
       name: "Pesan Chat",
       href: "/messages",
       icon: MessageSquare,
-      show: !!user,
+      show: !!user && !isDinas,
       color: "#4f46e5", // indigo-600
       description: "Komunikasi Internal"
     },
@@ -67,7 +67,7 @@ export function useNavigation() {
       name: "Cek Data",
       href: "/check-data",
       icon: SearchCheck,
-      show: isAdmin || isPetugas,
+      show: (isAdmin || isPetugas) && !isDinas,
       color: "#2563eb", // blue-600
       description: "Pencarian Data Pelaku Usaha"
     },
@@ -75,7 +75,7 @@ export function useNavigation() {
       name: "Cek Data Kolektif",
       href: "/check-data-collective",
       icon: SearchCheck,
-      show: isAdmin || isPetugas,
+      show: (isAdmin || isPetugas) && !isDinas,
       color: "#0891b2", // cyan-600
       description: "Verifikasi Data Massal"
     },
@@ -83,7 +83,7 @@ export function useNavigation() {
       name: "Input Data",
       href: "/input",
       icon: UserPlus,
-      show: !!user && !isKoordinator,
+      show: !!user && !isKoordinator && !isDinas,
       color: "#059669", // emerald-600
       description: "Pendaftaran Pelaku Usaha Baru"
     },
@@ -91,7 +91,7 @@ export function useNavigation() {
       name: "Verifikasi Admin",
       href: "/verify-actor",
       icon: ShieldCheck,
-      show: isAdmin || isMonitoring,
+      show: (isAdmin || isMonitoring) && !isDinas,
       color: "#7c3aed", // violet-600
       description: "Persetujuan Data Pendaftar"
     },
@@ -131,7 +131,7 @@ export function useNavigation() {
       name: "Verifikasi Data",
       href: "/verify-bank",
       icon: CreditCard,
-      show: isAdmin || isMonitoring,
+      show: (isAdmin || isMonitoring) && !isDinas,
       color: "#f43f5e", // rose-500
       description: "Validasi Rekening Bank"
     },
@@ -179,7 +179,7 @@ export function useNavigation() {
       name: "LPJ",
       href: "/lpj",
       icon: FileText,
-      show: (isAdmin || isPetugas || isMonitoring) && !isKoordinator,
+      show: (isAdmin || isPetugas || isMonitoring) && !isKoordinator && !isDinas,
       color: "#52525b", // zinc-600
       description: "Laporan Pertanggungjawaban"
     },
@@ -203,7 +203,7 @@ export function useNavigation() {
       name: "Pengaturan",
       href: "/settings",
       icon: UserCog,
-      show: !!user,
+      show: !!user && !isDinas,
       color: "#94a3b8", // slate-400
       description: "Konfigurasi Profil & Sistem"
     },
