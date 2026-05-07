@@ -107,7 +107,7 @@ export function useNavigation() {
       name: "Rekapan Data",
       href: "/rekapan-data",
       icon: BarChart3,
-      show: isAdmin || isMonitoring || isPetugas,
+      show: !!user && !isDinas,
       color: "#d97706", // amber-600
       description: "Rekap Data Per Wilayah"
     },
