@@ -307,7 +307,8 @@ export default function VerifyActorPage() {
     );
   };
 
-  e.preventDefault()
+  const handleSaveAndVerify = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
   if (!editingActor || !database || !isAdmin) return
 
   // Ensure location has been captured
@@ -440,6 +441,7 @@ export default function VerifyActorPage() {
 
     setEditKelurahan(actor.kelurahan || "")
     setEditKecamatan(actor.kecamatan || "")
+    setLocation(null)
   }
 
   if (!isAdmin && !isMonitoring && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
@@ -869,6 +871,7 @@ export default function VerifyActorPage() {
                       {/* hidden fields for latitude/longitude */}
                       <Input type="hidden" name="latitude" value={location?.lat ?? ''} />
                       <Input type="hidden" name="longitude" value={location?.lon ?? ''} />
+                                    <Button type="submit" disabled={isVerifying} className="bg-primary font-bold min-w-[150px]">
                                       {isVerifying ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />} SIMPAN & VERIFIKASI
                                     </Button>
                                   </DialogFooter>
