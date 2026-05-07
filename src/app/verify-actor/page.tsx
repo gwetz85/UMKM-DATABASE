@@ -289,30 +289,54 @@ export default function VerifyActorPage() {
     else setEditKecamatan("")
   }, [editKelurahan])
 
-  const handleSaveAndVerify = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!editingActor || !database || !isAdmin) return
+  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
 
-    setIsVerifying(true)
-    const formData = new FormData(e.currentTarget)
-    const actorRef = ref(database, `businessActors/${editingActor.id}`)
-    updateDocumentNonBlocking(actorRef, {
-      fullName: formData.get("fullName"),
-      nik: formData.get("nik"),
-      noKK: formData.get("noKK"),
-      gender: formData.get("gender"),
-      pobDob: formData.get("pobDob"),
-      phone: formData.get("phone"),
-      address: formData.get("address"),
-      rtRw: formData.get("rtRw"),
-      kelurahan: editKelurahan,
-      kecamatan: editKecamatan,
-      businessCategory: formData.get("businessCategory"),
-      businessName: formData.get("businessName"),
-      businessLocation: formData.get("businessLocation"),
-      coordinator: formData.get("coordinator"),
-      status: 'verified_actor'
-    })
+  const fetchLocation = () => {
+    if (!navigator.geolocation) {
+      toast({ variant: "destructive", title: "Geolocation tidak didukung", description: "Browser tidak mendukung geolocation." });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        toast({ title: "Lokasi berhasil diambil", description: `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}` });
+      },
+      (err) => {
+        toast({ variant: "destructive", title: "Gagal ambil lokasi", description: err.message });
+      }
+    );
+  };
+
+  e.preventDefault()
+  if (!editingActor || !database || !isAdmin) return
+
+  // Ensure location has been captured
+  if (!location) {
+    toast({ variant: "destructive", title: "Lokasi belum diambil", description: "Harap ambil lokasi sebelum verifikasi." })
+    return;
+  }
+
+  setIsVerifying(true)
+  const formData = new FormData(e.currentTarget)
+  const actorRef = ref(database, `businessActors/${editingActor.id}`)
+  updateDocumentNonBlocking(actorRef, {
+    fullName: formData.get("fullName"),
+    nik: formData.get("nik"),
+    noKK: formData.get("noKK"),
+    gender: formData.get("gender"),
+    pobDob: formData.get("pobDob"),
+    phone: formData.get("phone"),
+    address: formData.get("address"),
+    rtRw: formData.get("rtRw"),
+    kelurahan: editKelurahan,
+    kecamatan: editKecamatan,
+    businessCategory: formData.get("businessCategory"),
+    businessName: formData.get("businessName"),
+    businessLocation: formData.get("businessLocation"),
+    coordinator: formData.get("coordinator"),
+    verificationLocation: { lat: location.lat, lon: location.lon },
+    status: 'verified_actor'
+  })
     
     logActivity({
       query: `VERIFIKASI ADMIN: ${editingActor.fullName} - DITERIMA`,
@@ -839,7 +863,12 @@ export default function VerifyActorPage() {
                                   </div>
                                   <DialogFooter className="gap-2">
                                     <Button type="button" variant="outline" onClick={() => setEditingActor(null)}>Batal</Button>
-                                    <Button type="submit" disabled={isVerifying} className="bg-primary font-bold min-w-[150px]">
+                                    <Button type="button" onClick={fetchLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white mr-2">
+                        Ambil Lokasi
+                      </Button>
+                      {/* hidden fields for latitude/longitude */}
+                      <Input type="hidden" name="latitude" value={location?.lat ?? ''} />
+                      <Input type="hidden" name="longitude" value={location?.lon ?? ''} />
                                       {isVerifying ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />} SIMPAN & VERIFIKASI
                                     </Button>
                                   </DialogFooter>
