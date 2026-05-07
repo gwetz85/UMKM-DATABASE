@@ -320,11 +320,13 @@ export default function LoginPage() {
         {/* Form Container */}
         <div className="w-full space-y-6">
           <div className="text-center space-y-1">
-            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight drop-shadow-lg">
-              {isRegistered ? "Pendaftaran Berhasil" : isRegisteringView ? "Daftar Akun Baru" : "SIMPU Tanjungpinang"}
+            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-2xl uppercase">
+              {isRegistered ? "Pendaftaran Berhasil" : isRegisteringView ? "Daftar Akun Baru" : "SIMPU"}
             </h1>
             {!isRegisteringView && !isRegistered && (
-              <p className="text-white/60 text-sm font-medium uppercase tracking-[0.2em]">Silakan Masuk</p>
+              <p className="text-white/80 text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] drop-shadow-lg">
+                ( Sistem Informasi Manajemen Pelaku Usaha )
+              </p>
             )}
           </div>
 
