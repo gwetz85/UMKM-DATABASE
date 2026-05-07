@@ -10,10 +10,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { 
-  Lock, 
-  Mail, 
+  Key, 
+  User, 
   Loader2, 
-  LogIn, 
+  ArrowRight, 
   MonitorOff, 
   SearchCheck, 
   UserPlus,
@@ -266,13 +266,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden font-sans bg-slate-950">
       {/* Background Image */}
-      <div className="absolute inset-0 z-0">
+      <div className="fixed inset-0 z-0">
         <img 
           src="/macos_vibrant_background_1778161218419.png" 
           alt="Background" 
-          className="w-full h-full object-cover scale-105 blur-sm"
+          className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/20" />
+        <div className="absolute inset-0 bg-black/10" />
       </div>
 
       {/* Top Right Widgets */}
@@ -351,21 +351,27 @@ export default function LoginPage() {
             <form onSubmit={handleRegister} className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
               <div className="space-y-3">
                 <div className="relative group">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
+                    <User className="w-4 h-4" />
+                  </div>
                   <Input 
                     placeholder="Username" 
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
-                    className="h-12 bg-black/20 backdrop-blur-xl border-white/10 text-white placeholder:text-white/30 rounded-2xl px-6 focus:ring-white/20 focus:border-white/30 transition-all text-center font-bold"
+                    className="h-12 bg-black/20 backdrop-blur-xl border-white/10 text-white placeholder:text-white/30 rounded-2xl px-14 focus:ring-white/20 focus:border-white/30 transition-all font-bold"
                     required 
                   />
                 </div>
                 <div className="relative group">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
+                    <Key className="w-4 h-4" />
+                  </div>
                   <Input 
                     type="password" 
                     placeholder="Kata Sandi" 
                     value={regPass}
                     onChange={(e) => setRegPass(e.target.value)}
-                    className="h-12 bg-black/20 backdrop-blur-xl border-white/10 text-white placeholder:text-white/30 rounded-2xl px-6 focus:ring-white/20 focus:border-white/30 transition-all text-center font-bold"
+                    className="h-12 bg-black/20 backdrop-blur-xl border-white/10 text-white placeholder:text-white/30 rounded-2xl px-14 focus:ring-white/20 focus:border-white/30 transition-all font-bold"
                     required 
                   />
                 </div>
@@ -394,7 +400,7 @@ export default function LoginPage() {
               <div className="space-y-3">
                 <div className="relative group">
                   <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
-                    <Mail className="w-4 h-4" />
+                    <User className="w-4 h-4" />
                   </div>
                   <Input
                     id="identifier"
@@ -408,7 +414,7 @@ export default function LoginPage() {
                 </div>
                 <div className="relative group">
                   <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
-                    <Lock className="w-4 h-4" />
+                    <Key className="w-4 h-4" />
                   </div>
                   <Input
                     id="password"
@@ -424,7 +430,7 @@ export default function LoginPage() {
                     disabled={loading}
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 hover:bg-white/40 text-white rounded-xl flex items-center justify-center transition-all active:scale-90 border border-white/10"
                   >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-6 h-6" />}
                   </button>
                 </div>
               </div>
@@ -450,14 +456,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Footer Info */}
-      <div className="absolute bottom-8 left-0 w-full flex justify-center z-10 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-500">
-        <div className="flex items-center gap-6 text-[9px] font-black text-white/30 uppercase tracking-[0.3em]">
-          <span>{eventInfo?.version || "SIMPU V4.0"}</span>
-          <div className="w-1 h-1 rounded-full bg-white/20" />
-          <span>© 2026 DINAS KOPERASI & UKM</span>
-        </div>
-      </div>
+      {/* Footer Removed */}
 
       {/* Modals & Dialogs */}
       <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
