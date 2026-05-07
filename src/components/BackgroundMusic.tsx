@@ -19,7 +19,11 @@ import { cn } from '@/lib/utils';
  * Plays a specific YouTube video in the background hidden from view.
  * Handles interaction-based autoplay and provides a global mute toggle.
  */
-export function BackgroundMusic({ className }: { className?: string }) {
+export function BackgroundMusic({ className, role }: { className?: string, role?: string }) {
+  if (role !== 'admin' && role !== 'petugas') {
+    return null;
+  }
+
   const [isMuted, setIsMuted] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);

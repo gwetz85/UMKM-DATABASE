@@ -32,7 +32,11 @@ const PLAYLIST_ITEMS_INITIAL = [
   "DJ Mardua Holong Remix Viral TikTok Terbaru 2024 Full Bass"
 ];
 
-export function MusicDashboardCard({ className }: { className?: string }) {
+export function MusicDashboardCard({ className, role }: { className?: string, role?: string }) {
+  if (role !== 'admin' && role !== 'petugas') {
+    return null;
+  }
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTitle, setCurrentTitle] = useState("");
   const [isReady, setIsReady] = useState(false);

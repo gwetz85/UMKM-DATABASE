@@ -429,7 +429,7 @@ export default function DashboardStatsPage() {
           
           {/* Music Player Section */}
           <div className="grid grid-cols-1 gap-6 items-stretch">
-            <MusicDashboardCard className="h-full" />
+            <MusicDashboardCard className="h-full" role={userProfile?.role} />
           </div>
         </div>
 

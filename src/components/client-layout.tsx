@@ -133,7 +133,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       <SidebarProvider>
         <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-transparent">
           <GlobalAutoVerifier />
-          <BackgroundMusic />
+          <BackgroundMusic role={profile?.role} />
           <Toaster />
 
           {!isLoginPage && (
