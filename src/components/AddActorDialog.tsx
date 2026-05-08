@@ -134,81 +134,88 @@ export function AddActorDialog() {
     }
   }, [kelurahan])
 
-  // Auto-fill logic based on NIK
+  // Auto-fill logic based on NIK (Debounced)
   useEffect(() => {
     const nik = formDataState.nik.trim();
     if (nik.length < 12) return; 
 
     const timer = setTimeout(() => {
-      // Collect all possible matches across all sheets
-      const allMasterData = [
-        ...(data2025 || []).map(m => ({ ...m, _s: "2025" })),
-        ...(data2024 || []).map(m => ({ ...m, _s: "2024" })),
-        ...(data2023 || []).map(m => ({ ...m, _s: "2023" })),
-        ...(dataBlacklist || []).map(m => ({ ...m, _s: "BLACKLIST" }))
-      ];
-
-      if (allMasterData.length === 0) return;
-
-      const cleanInputNik = nik.replace(/\D/g, "");
-      
-      // Find ALL matches for this NIK to merge data
-      const matches = allMasterData.filter(m => {
-        // Check various possible NIK property names
-        const mNikRaw = m.nik || m.NIK || m.Nik || m.noNik || m["No. NIK"] || "";
-        const mNik = String(mNikRaw).replace(/\D/g, "");
-        return mNik === cleanInputNik && mNik.length > 0;
-      });
-
-      if (matches.length > 0) {
-        console.log(`[AutoFill] Found ${matches.length} matches for NIK: ${nik}`);
-        
-        let mergedData: any = {};
-        
-        const priorityOrder = ["BLACKLIST", "2023", "2024", "2025"];
-        const sortedMatches = [...matches].sort((a, b) => 
-          priorityOrder.indexOf(a._s) - priorityOrder.indexOf(b._s)
-        );
-
-        sortedMatches.forEach(m => {
-          mergedData = {
-            ...mergedData,
-            fullName: m.nama || m.Nama || m.fullName || m.fullName || mergedData.fullName,
-            noKK: m.noKK || m.no_kk || m.noKk || m.NoKK || m.KK || mergedData.noKK,
-            pobDob: m.pobDob || m.ttl || m.tempat_tgl_lahir || m.tempatLahir || mergedData.pobDob,
-            phone: m.phone || m.noHp || m.nomorPonsel || m.no_hp || m.telp || mergedData.phone,
-            address: m.alamat || m.Alamat || m.address || m.domisili || mergedData.address,
-            rtRw: m.rtRw || m.rt_rw || m["rt/rw"] || m.rt || mergedData.rtRw,
-            gender: m.gender || m.jenisKelamin || m.jk || m.JenisKelamin || mergedData.gender,
-            kelurahan: m.kelurahan || m.Kelurahan || m.Kel || mergedData.kelurahan,
-            _sources: [...(mergedData._sources || []), m._s]
-          };
-        });
-
-        setFormDataState(prev => ({
-          ...prev,
-          fullName: mergedData.fullName || prev.fullName,
-          noKK: mergedData.noKK || prev.noKK,
-          pobDob: mergedData.pobDob || prev.pobDob,
-          phone: mergedData.phone || prev.phone,
-          address: mergedData.address || prev.address,
-          rtRw: mergedData.rtRw || prev.rtRw,
-          gender: mergedData.gender || prev.gender,
-        }));
-        
-        if (mergedData.kelurahan) setKelurahan(mergedData.kelurahan);
-        
-        const sourcesText = [...new Set(mergedData._sources)].join(", ");
-        toast({
-          title: "DATA NIK DITEMUKAN",
-          description: `Data NIK "${nik}" berhasil diambil dari [${sourcesText}] dan telah diisi otomatis.`,
-          className: "bg-indigo-600 border-none text-white font-black"
-        });
-      }
-    }, 300);
+      handleAutoFill(nik);
+    }, 600);
 
     return () => clearTimeout(timer);
   }, [formDataState.nik, data2023, data2024, data2025, dataBlacklist, toast]);
+
+  const handleAutoFill = (searchNik: string) => {
+    if (!searchNik) return;
+    
+    const cleanInputNik = searchNik.replace(/\D/g, "");
+    if (cleanInputNik.length < 12) return;
+
+    const allMasterData = [
+      ...(data2024 || []).map(m => ({ ...m, _s: "Sheet 1 (2024)" })),
+      ...(data2023 || []).map(m => ({ ...m, _s: "Sheet 2 (2023)" })),
+      ...(data2025 || []).map(m => ({ ...m, _s: "Sheet 3 (2025)" })),
+      ...(dataBlacklist || []).map(m => ({ ...m, _s: "Sheet 4 (Blacklist)" }))
+    ];
+
+    if (allMasterData.length === 0) return;
+
+    // Find ALL matches for this NIK to merge data
+    const matches = allMasterData.filter(m => {
+      // Check various possible NIK property names
+      const mNikRaw = m.nik || m.NIK || m.Nik || m.noNik || m["No. NIK"] || m.nomor_nik || "";
+      const mNik = String(mNikRaw).replace(/\D/g, "");
+      return mNik === cleanInputNik && mNik.length > 0;
+    });
+
+    if (matches.length > 0) {
+      let mergedData: any = {};
+      
+      // Priority: Sheet 2 (2023) -> Sheet 1 (2024) -> Sheet 3 (2025)
+      const priorityOrder = ["Sheet 4 (Blacklist)", "Sheet 2 (2023)", "Sheet 1 (2024)", "Sheet 3 (2025)"];
+      const sortedMatches = [...matches].sort((a, b) => 
+        priorityOrder.indexOf(a._s) - priorityOrder.indexOf(b._s)
+      );
+
+      sortedMatches.forEach(m => {
+        mergedData = {
+          ...mergedData,
+          fullName: m.nama || m.Nama || m.fullName || m.fullName || mergedData.fullName,
+          noKK: m.noKK || m.no_kk || m.noKk || m.NoKK || m.KK || mergedData.noKK,
+          pobDob: m.pobDob || m.ttl || m.tempat_tgl_lahir || m.tempatLahir || mergedData.pobDob,
+          phone: m.phone || m.noHp || m.nomorPonsel || m.no_hp || m.telp || mergedData.phone,
+          address: m.alamat || m.Alamat || m.address || m.domisili || mergedData.address,
+          rtRw: m.rtRw || m.rt_rw || m["rt/rw"] || m.rt || mergedData.rtRw,
+          gender: m.gender || m.jenisKelamin || m.jk || m.JenisKelamin || mergedData.gender,
+          kelurahan: m.kelurahan || m.Kelurahan || m.Kel || mergedData.kelurahan,
+          _sources: [...(mergedData._sources || []), m._s]
+        };
+      });
+
+      setFormDataState(prev => ({
+        ...prev,
+        fullName: mergedData.fullName || prev.fullName,
+        noKK: mergedData.noKK || prev.noKK,
+        pobDob: mergedData.pobDob || prev.pobDob,
+        phone: mergedData.phone || prev.phone,
+        address: mergedData.address || prev.address,
+        rtRw: mergedData.rtRw || prev.rtRw,
+        gender: mergedData.gender || prev.gender,
+      }));
+      
+      if (mergedData.kelurahan) setKelurahan(mergedData.kelurahan);
+      
+      const sourcesText = [...new Set(mergedData._sources)].join(", ");
+      toast({
+        title: "DATA BERHASIL TERISI",
+        description: `Ditemukan di [${sourcesText}]. Silakan periksa kembali data yang terisi.`,
+        className: "bg-indigo-600 border-none text-white font-black"
+      });
+      return true;
+    }
+    return false;
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -408,16 +415,36 @@ export function AddActorDialog() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="nik">NIK</Label>
-                    <Input 
-                      id="nik" 
-                      name="nik" 
-                      value={formDataState.nik}
-                      onChange={(e) => setFormDataState(prev => ({ ...prev, nik: e.target.value }))}
-                      maxLength={16} 
-                      placeholder="16 digit NIK..." 
-                      required 
-                      className="rounded-xl font-mono" 
-                    />
+                    <div className="flex gap-2">
+                      <Input 
+                        id="nik" 
+                        name="nik" 
+                        value={formDataState.nik}
+                        onChange={(e) => setFormDataState(prev => ({ ...prev, nik: e.target.value }))}
+                        maxLength={16} 
+                        placeholder="16 digit NIK..." 
+                        required 
+                        className="rounded-xl font-mono flex-1" 
+                      />
+                      <Button 
+                        type="button" 
+                        size="sm" 
+                        variant="secondary"
+                        onClick={() => {
+                          const success = handleAutoFill(formDataState.nik);
+                          if (!success) {
+                            toast({
+                              title: "TIDAK DITEMUKAN",
+                              description: "Data NIK ini tidak terdaftar di database master mana pun.",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
+                        className="rounded-xl font-bold px-3 h-10"
+                      >
+                        CEK MASTER
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="noKK">Nomor KK</Label>
@@ -569,18 +596,23 @@ export function AddActorDialog() {
                 </div>
               </section>
 
-              <div className="flex justify-end pt-4 border-t gap-3">
-                <Button type="button" variant="outline" onClick={() => setOpen(false)} className="rounded-xl font-bold">
-                  BATAL
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={loading || isMonitoring} 
-                  className="min-w-[150px] font-black bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg shadow-primary/20"
-                >
-                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                  SIMPAN DATA
-                </Button>
+              <div className="flex justify-between items-center pt-4 border-t gap-3">
+                <div className="text-[10px] font-bold text-slate-400 uppercase">
+                  Data Master (Sheet 1, 2, 3, 4): {(data2023 && data2024 && data2025) ? "Terhubung ✅" : "Menghubungkan... ⏳"}
+                </div>
+                <div className="flex gap-3">
+                  <Button type="button" variant="outline" onClick={() => setOpen(false)} className="rounded-xl font-bold">
+                    BATAL
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={loading || isMonitoring} 
+                    className="min-w-[150px] font-black bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg shadow-primary/20"
+                  >
+                    {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                    SIMPAN DATA
+                  </Button>
+                </div>
               </div>
             </form>
           </div>
