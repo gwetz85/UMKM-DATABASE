@@ -154,16 +154,17 @@ export function AddActorDialog() {
       
       // Find ALL matches for this NIK to merge data
       const matches = allMasterData.filter(m => {
-        const mNik = String(m.nik || "").replace(/\D/g, "");
+        // Check various possible NIK property names
+        const mNikRaw = m.nik || m.NIK || m.Nik || m.noNik || m["No. NIK"] || "";
+        const mNik = String(mNikRaw).replace(/\D/g, "");
         return mNik === cleanInputNik && mNik.length > 0;
       });
 
       if (matches.length > 0) {
-        // Merge strategy: Start with an empty object and fill from oldest to newest
-        // so that newer data overwrites older data, but gaps in newer data stay filled by older data.
+        console.log(`[AutoFill] Found ${matches.length} matches for NIK: ${nik}`);
+        
         let mergedData: any = {};
         
-        // Order by priority: Blacklist (low) -> 2023 -> 2024 -> 2025 (high)
         const priorityOrder = ["BLACKLIST", "2023", "2024", "2025"];
         const sortedMatches = [...matches].sort((a, b) => 
           priorityOrder.indexOf(a._s) - priorityOrder.indexOf(b._s)
@@ -172,14 +173,14 @@ export function AddActorDialog() {
         sortedMatches.forEach(m => {
           mergedData = {
             ...mergedData,
-            fullName: m.nama || m.fullName || mergedData.fullName,
-            noKK: m.noKK || mergedData.noKK,
-            pobDob: m.pobDob || m.ttl || mergedData.pobDob,
-            phone: m.phone || m.noHp || m.nomorPonsel || mergedData.phone,
-            address: m.alamat || m.address || mergedData.address,
-            rtRw: m.rtRw || mergedData.rtRw,
-            gender: m.gender || m.jenisKelamin || mergedData.gender,
-            kelurahan: m.kelurahan || mergedData.kelurahan,
+            fullName: m.nama || m.Nama || m.fullName || m.fullName || mergedData.fullName,
+            noKK: m.noKK || m.no_kk || m.noKk || m.NoKK || m.KK || mergedData.noKK,
+            pobDob: m.pobDob || m.ttl || m.tempat_tgl_lahir || m.tempatLahir || mergedData.pobDob,
+            phone: m.phone || m.noHp || m.nomorPonsel || m.no_hp || m.telp || mergedData.phone,
+            address: m.alamat || m.Alamat || m.address || m.domisili || mergedData.address,
+            rtRw: m.rtRw || m.rt_rw || m["rt/rw"] || m.rt || mergedData.rtRw,
+            gender: m.gender || m.jenisKelamin || m.jk || m.JenisKelamin || mergedData.gender,
+            kelurahan: m.kelurahan || m.Kelurahan || m.Kel || mergedData.kelurahan,
             _sources: [...(mergedData._sources || []), m._s]
           };
         });
@@ -199,9 +200,9 @@ export function AddActorDialog() {
         
         const sourcesText = [...new Set(mergedData._sources)].join(", ");
         toast({
-          title: "DATA DITEMUKAN",
-          description: `Data NIK "${nik}" ditemukan di [${sourcesText}]. Form telah diisi otomatis.`,
-          className: "bg-primary border-none text-white font-black"
+          title: "DATA NIK DITEMUKAN",
+          description: `Data NIK "${nik}" berhasil diambil dari [${sourcesText}] dan telah diisi otomatis.`,
+          className: "bg-indigo-600 border-none text-white font-black"
         });
       }
     }, 300);
