@@ -127,7 +127,7 @@ function ActorDataContent() {
     
     const groups: Record<string, BusinessActor[]> = {}
     sorted.forEach(actor => {
-      const key = String(actor.coordinator || "Tanpa Koordinator")
+      const key = String(actor.coordinator || "Tanpa Koordinator").toUpperCase().trim()
       if (!groups[key]) groups[key] = []
       groups[key].push(actor)
     })
@@ -487,7 +487,7 @@ function ActorDataContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(groupedActors[filterCoordinator] || []).map((actor, index) => (
+                  {(groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []).map((actor, index) => (
                     <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
                       <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
                       <TableCell className="py-4">
