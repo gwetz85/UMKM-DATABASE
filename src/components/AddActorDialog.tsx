@@ -40,19 +40,6 @@ export function AddActorDialog() {
   const [kelurahan, setKelurahan] = useState<string>("")
   const [kecamatan, setKecamatan] = useState<string>("")
   const [selectedCoordinator, setSelectedCoordinator] = useState<string>("")
-  const [formDataState, setFormDataState] = useState({
-    fullName: "",
-    nik: "",
-    noKK: "",
-    pobDob: "",
-    phone: "",
-    address: "",
-    rtRw: "",
-    gender: "",
-    businessCategory: "",
-    businessName: "",
-    businessLocation: ""
-  })
 
   // Fetch Quotas and All Actors for validation
   const quotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
@@ -134,89 +121,6 @@ export function AddActorDialog() {
     }
   }, [kelurahan])
 
-  // Auto-fill logic based on NIK (Debounced)
-  useEffect(() => {
-    const nik = formDataState.nik.trim();
-    if (nik.length < 12) return; 
-
-    const timer = setTimeout(() => {
-      handleAutoFill(nik);
-    }, 600);
-
-    return () => clearTimeout(timer);
-  }, [formDataState.nik, data2023, data2024, data2025, dataBlacklist, toast]);
-
-  const handleAutoFill = (searchNik: string) => {
-    if (!searchNik) return;
-    
-    const cleanInputNik = searchNik.replace(/\D/g, "");
-    if (cleanInputNik.length < 12) return;
-
-    const allMasterData = [
-      ...(data2024 || []).map(m => ({ ...m, _s: "Sheet 1 (2024)" })),
-      ...(data2023 || []).map(m => ({ ...m, _s: "Sheet 2 (2023)" })),
-      ...(data2025 || []).map(m => ({ ...m, _s: "Sheet 3 (2025)" })),
-      ...(dataBlacklist || []).map(m => ({ ...m, _s: "Sheet 4 (Blacklist)" }))
-    ];
-
-    if (allMasterData.length === 0) return;
-
-    // Find ALL matches for this NIK to merge data
-    const matches = allMasterData.filter(m => {
-      // Check various possible NIK property names
-      const mNikRaw = m.nik || m.NIK || m.Nik || m.noNik || m["No. NIK"] || m.nomor_nik || "";
-      const mNik = String(mNikRaw).replace(/\D/g, "");
-      return mNik === cleanInputNik && mNik.length > 0;
-    });
-
-    if (matches.length > 0) {
-      let mergedData: any = {};
-      
-      // Priority: Sheet 2 (2023) -> Sheet 1 (2024) -> Sheet 3 (2025)
-      const priorityOrder = ["Sheet 4 (Blacklist)", "Sheet 2 (2023)", "Sheet 1 (2024)", "Sheet 3 (2025)"];
-      const sortedMatches = [...matches].sort((a, b) => 
-        priorityOrder.indexOf(a._s) - priorityOrder.indexOf(b._s)
-      );
-
-      sortedMatches.forEach(m => {
-        mergedData = {
-          ...mergedData,
-          fullName: m.nama || m.Nama || m.fullName || m.fullName || mergedData.fullName,
-          noKK: m.noKK || m.no_kk || m.noKk || m.NoKK || m.KK || mergedData.noKK,
-          pobDob: m.pobDob || m.ttl || m.tempat_tgl_lahir || m.tempatLahir || mergedData.pobDob,
-          phone: m.phone || m.noHp || m.nomorPonsel || m.no_hp || m.telp || mergedData.phone,
-          address: m.alamat || m.Alamat || m.address || m.domisili || mergedData.address,
-          rtRw: m.rtRw || m.rt_rw || m["rt/rw"] || m.rt || mergedData.rtRw,
-          gender: m.gender || m.jenisKelamin || m.jk || m.JenisKelamin || mergedData.gender,
-          kelurahan: m.kelurahan || m.Kelurahan || m.Kel || mergedData.kelurahan,
-          _sources: [...(mergedData._sources || []), m._s]
-        };
-      });
-
-      setFormDataState(prev => ({
-        ...prev,
-        fullName: mergedData.fullName || prev.fullName,
-        noKK: mergedData.noKK || prev.noKK,
-        pobDob: mergedData.pobDob || prev.pobDob,
-        phone: mergedData.phone || prev.phone,
-        address: mergedData.address || prev.address,
-        rtRw: mergedData.rtRw || prev.rtRw,
-        gender: mergedData.gender || prev.gender,
-      }));
-      
-      if (mergedData.kelurahan) setKelurahan(mergedData.kelurahan);
-      
-      const sourcesText = [...new Set(mergedData._sources)].join(", ");
-      toast({
-        title: "DATA BERHASIL TERISI",
-        description: `Ditemukan di [${sourcesText}]. Silakan periksa kembali data yang terisi.`,
-        className: "bg-indigo-600 border-none text-white font-black"
-      });
-      return true;
-    }
-    return false;
-  }
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!user || !database) return
@@ -293,20 +197,20 @@ export function AddActorDialog() {
       const data = {
         ownerId: user.uid,
         createdBy: currentUserProfile?.fullName || user.email?.split('@')[0] || "Unknown",
-        fullName: formDataState.fullName,
-        nik: formDataState.nik,
-        noKK: formDataState.noKK,
+        fullName: formData.get("fullName"),
+        nik: nik,
+        noKK: noKK,
         registrationCode: registrationCode,
-        pobDob: formDataState.pobDob,
-        gender: formDataState.gender,
-        phone: formDataState.phone,
-        address: formDataState.address,
-        rtRw: formDataState.rtRw,
+        pobDob: formData.get("pobDob"),
+        gender: formData.get("gender"),
+        phone: formData.get("phone"),
+        address: formData.get("address"),
+        rtRw: formData.get("rtRw"),
         kelurahan: kelurahan,
         kecamatan: kecamatan,
-        businessCategory: formDataState.businessCategory,
-        businessName: formDataState.businessName,
-        businessLocation: formDataState.businessLocation,
+        businessCategory: formData.get("businessCategory"),
+        businessName: formData.get("businessName"),
+        businessLocation: formData.get("businessLocation"),
         coordinator: selectedCoordinator,
         status: "pending",
         createdAt: new Date().toISOString(),
@@ -327,19 +231,6 @@ export function AddActorDialog() {
       setOpen(false) // Close the main dialog
       
       formElement.reset()
-      setFormDataState({
-        fullName: "",
-        nik: "",
-        noKK: "",
-        pobDob: "",
-        phone: "",
-        address: "",
-        rtRw: "",
-        gender: "",
-        businessCategory: "",
-        businessName: "",
-        businessLocation: ""
-      })
       setKelurahan("")
       setKecamatan("")
       setSelectedCoordinator("")
@@ -389,23 +280,11 @@ export function AddActorDialog() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Nama Lengkap</Label>
-                    <Input 
-                      id="fullName" 
-                      name="fullName" 
-                      value={formDataState.fullName}
-                      onChange={(e) => setFormDataState(prev => ({ ...prev, fullName: e.target.value }))}
-                      required 
-                      className="rounded-xl" 
-                    />
+                    <Input id="fullName" name="fullName" required className="rounded-xl" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gender">Jenis Kelamin</Label>
-                    <Select 
-                      name="gender" 
-                      value={formDataState.gender}
-                      onValueChange={(val) => setFormDataState(prev => ({ ...prev, gender: val }))}
-                      required
-                    >
+                    <Select name="gender" required>
                       <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Laki-laki">Laki-laki</SelectItem>
@@ -415,72 +294,19 @@ export function AddActorDialog() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="nik">NIK</Label>
-                    <div className="flex gap-2">
-                      <Input 
-                        id="nik" 
-                        name="nik" 
-                        value={formDataState.nik}
-                        onChange={(e) => setFormDataState(prev => ({ ...prev, nik: e.target.value }))}
-                        maxLength={16} 
-                        placeholder="16 digit NIK..." 
-                        required 
-                        className="rounded-xl font-mono flex-1" 
-                      />
-                      <Button 
-                        type="button" 
-                        size="sm" 
-                        variant="secondary"
-                        onClick={() => {
-                          const success = handleAutoFill(formDataState.nik);
-                          if (!success) {
-                            toast({
-                              title: "TIDAK DITEMUKAN",
-                              description: "Data NIK ini tidak terdaftar di database master mana pun.",
-                              variant: "destructive"
-                            });
-                          }
-                        }}
-                        className="rounded-xl font-bold px-3 h-10"
-                      >
-                        CEK MASTER
-                      </Button>
-                    </div>
+                    <Input id="nik" name="nik" maxLength={16} placeholder="16 digit NIK..." required className="rounded-xl font-mono" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="noKK">Nomor KK</Label>
-                    <Input 
-                      id="noKK" 
-                      name="noKK" 
-                      value={formDataState.noKK}
-                      onChange={(e) => setFormDataState(prev => ({ ...prev, noKK: e.target.value }))}
-                      maxLength={16} 
-                      placeholder="16 digit Nomor KK..." 
-                      required 
-                      className="rounded-xl font-mono" 
-                    />
+                    <Input id="noKK" name="noKK" maxLength={16} placeholder="16 digit Nomor KK..." required className="rounded-xl font-mono" />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="pobDob">Tempat / Tanggal Lahir</Label>
-                    <Input 
-                      id="pobDob" 
-                      name="pobDob" 
-                      value={formDataState.pobDob}
-                      onChange={(e) => setFormDataState(prev => ({ ...prev, pobDob: e.target.value }))}
-                      placeholder="Contoh: Jakarta, 01-01-1990" 
-                      required 
-                      className="rounded-xl" 
-                    />
+                    <Input id="pobDob" name="pobDob" placeholder="Contoh: Jakarta, 01-01-1990" required className="rounded-xl" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Nomor HP</Label>
-                    <Input 
-                      id="phone" 
-                      name="phone" 
-                      value={formDataState.phone}
-                      onChange={(e) => setFormDataState(prev => ({ ...prev, phone: e.target.value }))}
-                      required 
-                      className="rounded-xl" 
-                    />
+                    <Input id="phone" name="phone" required className="rounded-xl" />
                   </div>
                 </div>
               </section>
@@ -492,26 +318,11 @@ export function AddActorDialog() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="address">Alamat Lengkap</Label>
-                    <Textarea 
-                      id="address" 
-                      name="address" 
-                      value={formDataState.address}
-                      onChange={(e) => setFormDataState(prev => ({ ...prev, address: e.target.value }))}
-                      required 
-                      className="rounded-xl" 
-                    />
+                    <Textarea id="address" name="address" required className="rounded-xl" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="rtRw">RT / RW</Label>
-                    <Input 
-                      id="rtRw" 
-                      name="rtRw" 
-                      value={formDataState.rtRw}
-                      onChange={(e) => setFormDataState(prev => ({ ...prev, rtRw: e.target.value }))}
-                      placeholder="001 / 002" 
-                      required 
-                      className="rounded-xl" 
-                    />
+                    <Input id="rtRw" name="rtRw" placeholder="001 / 002" required className="rounded-xl" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="kelurahan">Kelurahan</Label>
@@ -538,12 +349,7 @@ export function AddActorDialog() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="businessCategory">Jenis Usaha</Label>
-                    <Select 
-                      name="businessCategory" 
-                      value={formDataState.businessCategory}
-                      onValueChange={(val) => setFormDataState(prev => ({ ...prev, businessCategory: val }))}
-                      required
-                    >
+                    <Select name="businessCategory" required>
                       <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Kuliner">Kuliner</SelectItem>
@@ -553,25 +359,11 @@ export function AddActorDialog() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="businessName">Nama Usaha / Produk</Label>
-                    <Input 
-                      id="businessName" 
-                      name="businessName" 
-                      value={formDataState.businessName}
-                      onChange={(e) => setFormDataState(prev => ({ ...prev, businessName: e.target.value }))}
-                      required 
-                      className="rounded-xl" 
-                    />
+                    <Input id="businessName" name="businessName" required className="rounded-xl" />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="businessLocation">Lokasi Usaha</Label>
-                    <Input 
-                      id="businessLocation" 
-                      name="businessLocation" 
-                      value={formDataState.businessLocation}
-                      onChange={(e) => setFormDataState(prev => ({ ...prev, businessLocation: e.target.value }))}
-                      required 
-                      className="rounded-xl" 
-                    />
+                    <Input id="businessLocation" name="businessLocation" required className="rounded-xl" />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="coordinator">KORLAP / DEWAN AKTIF</Label>
@@ -596,23 +388,18 @@ export function AddActorDialog() {
                 </div>
               </section>
 
-              <div className="flex justify-between items-center pt-4 border-t gap-3">
-                <div className="text-[10px] font-bold text-slate-400 uppercase">
-                  Data Master (Sheet 1, 2, 3, 4): {(data2023 && data2024 && data2025) ? "Terhubung ✅" : "Menghubungkan... ⏳"}
-                </div>
-                <div className="flex gap-3">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)} className="rounded-xl font-bold">
-                    BATAL
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={loading || isMonitoring} 
-                    className="min-w-[150px] font-black bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg shadow-primary/20"
-                  >
-                    {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                    SIMPAN DATA
-                  </Button>
-                </div>
+              <div className="flex justify-end pt-4 border-t gap-3">
+                <Button type="button" variant="outline" onClick={() => setOpen(false)} className="rounded-xl font-bold">
+                  BATAL
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={loading || isMonitoring} 
+                  className="min-w-[150px] font-black bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg shadow-primary/20"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  SIMPAN DATA
+                </Button>
               </div>
             </form>
           </div>
