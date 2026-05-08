@@ -147,8 +147,16 @@ export function AddActorDialog() {
         ...(dataBlacklist || []).map(m => ({ ...m, _s: "BLACKLIST" }))
       ];
 
+      if (allMasterData.length === 0) return;
+
+      // Clean NIK for comparison (remove spaces, dots, etc)
+      const cleanInputNik = nik.replace(/\D/g, "");
+
       // Find first match by NIK
-      const match = allMasterData.find(m => m.nik && String(m.nik).trim() === nik);
+      const match = allMasterData.find(m => {
+        const mNik = String(m.nik || "").replace(/\D/g, "");
+        return mNik === cleanInputNik && mNik.length > 0;
+      });
 
       if (match) {
         setFormDataState(prev => ({
@@ -156,7 +164,7 @@ export function AddActorDialog() {
           fullName: match.nama || match.fullName || prev.fullName,
           noKK: match.noKK || prev.noKK,
           pobDob: match.pobDob || match.ttl || prev.pobDob,
-          phone: match.phone || match.noHp || prev.phone,
+          phone: match.phone || match.noHp || match.nomorPonsel || prev.phone,
           address: match.alamat || match.address || prev.address,
           rtRw: match.rtRw || prev.rtRw,
           gender: match.gender || match.jenisKelamin || prev.gender,
@@ -165,12 +173,12 @@ export function AddActorDialog() {
         if (match.kelurahan) setKelurahan(match.kelurahan);
         
         toast({
-          title: "Data NIK Ditemukan",
-          description: `Data untuk NIK "${nik}" terdeteksi pada database ${match._s} dan telah diisi otomatis.`,
-          className: "bg-primary border-none text-white font-bold"
+          title: "DATA DITEMUKAN",
+          description: `Data untuk NIK "${nik}" ditemukan di Database ${match._s}. Form telah diisi otomatis.`,
+          className: "bg-primary border-none text-white font-black"
         });
       }
-    }, 600);
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [formDataState.nik, data2023, data2024, data2025, dataBlacklist, toast]);
