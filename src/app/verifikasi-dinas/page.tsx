@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
 import { ref } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
@@ -79,6 +79,16 @@ export default function VerifikasiDinasPage() {
     actor.businessName.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const groupedActors = useMemo(() => {
+    if (!filteredActors) return {}
+    return filteredActors.reduce((acc, actor) => {
+      const kel = actor.kelurahan || "Lainnya"
+      if (!acc[kel]) acc[kel] = []
+      acc[kel].push(actor)
+      return acc
+    }, {} as Record<string, BusinessActor[]>)
+  }, [filteredActors])
+
   const handleVerifyDinas = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!verifyingActor || !database || (!isAdmin && !isDinas && !isPetugas)) return
@@ -138,225 +148,259 @@ export default function VerifikasiDinasPage() {
         </div>
       </div>
 
-      <Card className="border border-slate-200/60 shadow-md overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl">
-        <CardContent className="p-0">
-          {isLoading ? <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div> : (
-            <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow>
-                  <TableHead className="font-bold">Nama Lengkap</TableHead>
-                  <TableHead className="font-bold">NIK</TableHead>
-                  <TableHead className="font-bold">Kategori</TableHead>
-                  <TableHead className="font-bold">Usaha</TableHead>
-                  <TableHead className="text-right font-bold">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredActors?.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">Tidak ada data untuk diverifikasi Dinas.</TableCell>
-                  </TableRow>
-                ) : (
-                  filteredActors?.map((actor) => (
-                    <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors border-b border-slate-100">
-                      <TableCell className="font-bold text-slate-800">{actor.fullName}</TableCell>
-                      <TableCell className="font-mono text-xs text-slate-500">
-                        {actor.nik}
-                        <div className="print:hidden">
-                          <CheckDataIndicator 
-                            actor={actor} 
-                            data2023={data2023}
-                            data2024={data2024}
-                            data2025={data2025}
-                            dataBlacklist={dataBlacklist}
-                          />
+      {isLoading ? (
+        <div className="py-20 flex justify-center">
+          <Loader2 className="animate-spin text-primary w-10 h-10" />
+        </div>
+      ) : filteredActors?.length === 0 ? (
+        <Card className="border-dashed border-2 flex flex-col items-center justify-center py-20 text-muted-foreground bg-slate-50/50 rounded-3xl">
+          <ClipboardCheck className="w-12 h-12 mb-4 opacity-20" />
+          <p className="font-bold uppercase tracking-widest text-xs">Tidak ada data untuk diverifikasi Dinas</p>
+        </Card>
+      ) : (
+        <div className="space-y-12">
+          {Object.entries(groupedActors).sort().map(([kelurahan, actors]) => (
+            <div key={kelurahan} className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                <h2 className="text-sm font-black uppercase tracking-[0.3em] text-primary bg-primary/5 px-6 py-2 rounded-full border border-primary/10 shadow-sm">
+                  Kelurahan {kelurahan}
+                </h2>
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                <span className="text-[10px] font-bold text-muted-foreground bg-white border px-3 py-1 rounded-full shadow-sm">
+                  {actors.length} Data
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {actors.map((actor) => (
+                  <Card key={actor.id} className="group relative overflow-hidden border-slate-200/60 hover:border-primary/50 hover:shadow-2xl transition-all duration-500 rounded-[2rem] bg-white/80 backdrop-blur-sm">
+                    <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <CheckDataIndicator 
+                        actor={actor} 
+                        data2023={data2023}
+                        data2024={data2024}
+                        data2025={data2025}
+                        dataBlacklist={dataBlacklist}
+                      />
+                    </div>
+                    
+                    <CardContent className="p-6">
+                      <div className="flex flex-col h-full gap-4">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors duration-500">
+                            <User className="w-6 h-6" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-black text-slate-800 uppercase text-sm truncate" title={actor.fullName}>
+                              {actor.fullName}
+                            </h3>
+                            <p className="text-[10px] font-mono text-slate-500 mt-0.5 tracking-tighter">
+                              NIK: {actor.nik}
+                            </p>
+                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-md text-[10px] uppercase tracking-wider">
-                          {actor.businessCategory}
-                        </span>
-                      </TableCell>
-                      <TableCell className="font-medium text-slate-700">{actor.businessName}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1.5 opacity-90 hover:opacity-100 transition-opacity">
-                          
-                          {/* Viewer Dialog */}
-                          <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
-                            <DialogTrigger asChild>
-                              <Button size="icon" variant="outline" onClick={() => setViewingActor(actor)} className="h-8 w-8 border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg shadow-sm" title="Lihat Detail">
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                              {viewingActor && (
-                                <>
-                                  <DialogHeader>
-                                    <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
-                                      <FileText className="w-6 h-6" /> Detail Pelaku Usaha
-                                    </DialogTitle>
-                                    <DialogDescription className="sr-only">Detail Pelaku Usaha</DialogDescription>
-                                  </DialogHeader>
-                                  <div className="grid gap-6 py-4">
-                                    <section className="space-y-4">
-                                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
-                                        {[
-                                          { label: "Nama Lengkap", value: viewingActor.fullName },
-                                          { label: "NIK", value: viewingActor.nik },
-                                          { label: "Nomor KK", value: viewingActor.noKK },
-                                          { label: "Jenis Kelamin", value: viewingActor.gender },
-                                          { label: "Tempat/Tgl Lahir", value: viewingActor.pobDob },
-                                          { label: "Nomor HP", value: viewingActor.phone }
-                                        ].map((item, i) => (
-                                          <div key={i} className="space-y-1">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                            <p className="text-xs font-bold">{item.value || "-"}</p>
-                                          </div>
-                                        ))}
-                                        <div className="md:col-span-3 pt-2 border-t">
-                                          <CheckDataIndicator 
-                                            actor={viewingActor} 
-                                            data2023={data2023}
-                                            data2024={data2024}
-                                            data2025={data2025}
-                                            dataBlacklist={dataBlacklist}
-                                          />
-                                        </div>
-                                      </div>
-                                    </section>
-  
-                                    <section className="space-y-4">
-                                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
-                                        {[
-                                          { label: "Kecamatan", value: viewingActor.kecamatan },
-                                          { label: "Kelurahan", value: viewingActor.kelurahan },
-                                          { label: "RT/RW", value: viewingActor.rtRw },
-                                          { label: "Alamat", value: viewingActor.address, fullWidth: true }
-                                        ].map((item, i) => (
-                                          <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                            <p className="text-xs font-bold">{item.value || "-"}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </section>
-  
-                                    <section className="space-y-4">
-                                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
-                                        {[
-                                          { label: "Usaha", value: viewingActor.businessName },
-                                          { label: "Kategori Usaha", value: viewingActor.businessCategory },
-                                          { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                                          { label: "KORLAP / DEWAN AKTIF", value: viewingActor.coordinator }
-                                        ].map((item, i) => (
-                                          <div key={i} className="space-y-1">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                            <p className="text-xs font-bold">{item.value || "-"}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </section>
-  
-                                    <section className="space-y-4">
-                                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Informasi Perbankan</div>
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-primary/5 p-4 rounded-xl border border-primary/10">
-                                        {[
-                                          { label: "Nama Bank", value: viewingActor.bankName },
-                                          { label: "Nomor Rekening", value: viewingActor.bankNumber },
-                                          { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner }
-                                        ].map((item, i) => (
-                                          <div key={i} className="space-y-1">
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                            <p className="text-xs font-black text-primary">{item.value || "BELUM TERISI"}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </section>
-  
-                                    <section className="space-y-4">
-                                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem</div>
-                                      <div className="bg-slate-50 p-4 rounded-xl text-[10px] font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
-                                        <div className="space-y-1">
-                                          <p className="text-muted-foreground uppercase">Status</p>
-                                          <p className="text-primary">{(viewingActor.status || "").replace('_', ' ').toUpperCase()}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                          <p className="text-muted-foreground uppercase">Diinput Oleh</p>
-                                          <p>{viewingActor.createdBy || "System"}</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                          <p className="text-muted-foreground uppercase">Waktu Input</p>
-                                          <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
-                                        </div>
-                                      </div>
-                                    </section>
-                                  </div>
-                                </>
-                              )}
-                            </DialogContent>
-                          </Dialog>
-                          
-                          {/* Verifikasi Dinas Dialog */}
-                          {(isAdmin || isDinas || isPetugas) && (
-                            <Dialog open={!!verifyingActor && verifyingActor.id === actor.id} onOpenChange={(open) => !open && setVerifyingActor(null)}>
+
+                        <div className="grid grid-cols-2 gap-3 py-4 border-y border-slate-100">
+                          <div className="space-y-1">
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Usaha</span>
+                            <p className="text-[11px] font-black text-slate-700 truncate uppercase">{actor.businessName}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Kategori</span>
+                            <div className="flex">
+                              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase">
+                                {actor.businessCategory}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between mt-2 pt-2">
+                          <div className="flex flex-col">
+                            <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">Koordinator</span>
+                            <span className="text-[10px] font-black text-primary truncate max-w-[120px] uppercase">
+                              {actor.coordinator || "Tanpa Korlap"}
+                            </span>
+                          </div>
+
+                          <div className="flex gap-2">
+                            {/* Viewer Dialog */}
+                            <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
                               <DialogTrigger asChild>
-                                <Button size="icon" variant="outline" onClick={() => setVerifyingActor(actor)} className="h-8 w-8 border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg shadow-sm" title="Verifikasi Dinas">
-                                  <ClipboardCheck className="w-4 h-4" />
+                                <Button size="icon" variant="outline" onClick={() => setViewingActor(actor)} className="h-9 w-9 border-blue-100 text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-xl shadow-sm transition-all duration-300" title="Lihat Detail">
+                                  <Eye className="w-4 h-4" />
                                 </Button>
                               </DialogTrigger>
-                              <DialogContent>
-                                <form onSubmit={handleVerifyDinas}>
-                                  <DialogHeader>
-                                    <DialogTitle className="text-xl font-black text-emerald-600 uppercase">Verifikasi & Validasi Dinas</DialogTitle>
-                                    <DialogDescription>Lakukan verifikasi tingkat dinas untuk data pelaku usaha yang telah diloloskan Admin.</DialogDescription>
-                                  </DialogHeader>
-                                  <div className="py-6 space-y-4">
-                                    <div className="space-y-2">
-                                      <div className="text-sm font-semibold">Hasil Verifikasi</div>
-                                      <Select name="hasilVerifikasi" required>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Pilih Hasil Verifikasi" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="Lolos">Lolos</SelectItem>
-                                          <SelectItem value="Tidak Lolos">Tidak Lolos</SelectItem>
-                                        </SelectContent>
-                                      </Select>
+                              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                                {viewingActor && (
+                                  <>
+                                    <DialogHeader>
+                                      <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
+                                        <FileText className="w-6 h-6" /> Detail Pelaku Usaha
+                                      </DialogTitle>
+                                      <DialogDescription className="sr-only">Detail Pelaku Usaha</DialogDescription>
+                                    </DialogHeader>
+                                    <div className="grid gap-6 py-4">
+                                      <section className="space-y-4">
+                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
+                                          {[
+                                            { label: "Nama Lengkap", value: viewingActor.fullName },
+                                            { label: "NIK", value: viewingActor.nik },
+                                            { label: "Nomor KK", value: viewingActor.noKK },
+                                            { label: "Jenis Kelamin", value: viewingActor.gender },
+                                            { label: "Tempat/Tgl Lahir", value: viewingActor.pobDob },
+                                            { label: "Nomor HP", value: viewingActor.phone }
+                                          ].map((item, i) => (
+                                            <div key={i} className="space-y-1">
+                                              <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                              <p className="text-xs font-bold">{item.value || "-"}</p>
+                                            </div>
+                                          ))}
+                                          <div className="md:col-span-3 pt-2 border-t">
+                                            <CheckDataIndicator 
+                                              actor={viewingActor} 
+                                              data2023={data2023}
+                                              data2024={data2024}
+                                              data2025={data2025}
+                                              dataBlacklist={dataBlacklist}
+                                            />
+                                          </div>
+                                        </div>
+                                      </section>
+    
+                                      <section className="space-y-4">
+                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
+                                          {[
+                                            { label: "Kecamatan", value: viewingActor.kecamatan },
+                                            { label: "Kelurahan", value: viewingActor.kelurahan },
+                                            { label: "RT/RW", value: viewingActor.rtRw },
+                                            { label: "Alamat", value: viewingActor.address, fullWidth: true }
+                                          ].map((item, i) => (
+                                            <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
+                                              <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                              <p className="text-xs font-bold">{item.value || "-"}</p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </section>
+    
+                                      <section className="space-y-4">
+                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
+                                          {[
+                                            { label: "Usaha", value: viewingActor.businessName },
+                                            { label: "Kategori Usaha", value: viewingActor.businessCategory },
+                                            { label: "Lokasi Usaha", value: viewingActor.businessLocation },
+                                            { label: "KORLAP / DEWAN AKTIF", value: viewingActor.coordinator }
+                                          ].map((item, i) => (
+                                            <div key={i} className="space-y-1">
+                                              <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                              <p className="text-xs font-bold">{item.value || "-"}</p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </section>
+    
+                                      <section className="space-y-4">
+                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Informasi Perbankan</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-primary/5 p-4 rounded-xl border border-primary/10">
+                                          {[
+                                            { label: "Nama Bank", value: viewingActor.bankName },
+                                            { label: "Nomor Rekening", value: viewingActor.bankNumber },
+                                            { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner }
+                                          ].map((item, i) => (
+                                            <div key={i} className="space-y-1">
+                                              <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                              <p className="text-xs font-black text-primary">{item.value || "BELUM TERISI"}</p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </section>
+    
+                                      <section className="space-y-4">
+                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem</div>
+                                        <div className="bg-slate-50 p-4 rounded-xl text-[10px] font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
+                                          <div className="space-y-1">
+                                            <p className="text-muted-foreground uppercase">Status</p>
+                                            <p className="text-primary">{(viewingActor.status || "").replace('_', ' ').toUpperCase()}</p>
+                                          </div>
+                                          <div className="space-y-1">
+                                            <p className="text-muted-foreground uppercase">Diinput Oleh</p>
+                                            <p>{viewingActor.createdBy || "System"}</p>
+                                          </div>
+                                          <div className="space-y-1">
+                                            <p className="text-muted-foreground uppercase">Waktu Input</p>
+                                            <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
+                                          </div>
+                                        </div>
+                                      </section>
                                     </div>
-                                    <div className="space-y-2">
-                                      <div className="text-sm font-semibold">Keterangan / Alasan</div>
-                                      <Textarea 
-                                        name="keterangan" 
-                                        placeholder="Masukkan alasan..." 
-                                        className="min-h-[100px]" 
-                                        required 
-                                      />
-                                    </div>
-                                  </div>
-                                  <DialogFooter>
-                                    <Button type="button" variant="ghost" onClick={() => setVerifyingActor(null)}>Batal</Button>
-                                    <Button type="submit" disabled={isSubmitting} className="min-w-[150px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-                                      {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ClipboardCheck className="w-4 h-4 mr-2" />} Simpan Keputusan
-                                    </Button>
-                                  </DialogFooter>
-                                </form>
+                                  </>
+                                )}
                               </DialogContent>
                             </Dialog>
-                          )}
-  
+                            
+                            {/* Verifikasi Dinas Dialog */}
+                            {(isAdmin || isDinas || isPetugas) && (
+                              <Dialog open={!!verifyingActor && verifyingActor.id === actor.id} onOpenChange={(open) => !open && setVerifyingActor(null)}>
+                                <DialogTrigger asChild>
+                                  <Button size="icon" variant="outline" onClick={() => setVerifyingActor(actor)} className="h-9 w-9 border-emerald-100 text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl shadow-sm transition-all duration-300" title="Verifikasi Dinas">
+                                    <ClipboardCheck className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <form onSubmit={handleVerifyDinas}>
+                                    <DialogHeader>
+                                      <DialogTitle className="text-xl font-black text-emerald-600 uppercase">Verifikasi & Validasi Dinas</DialogTitle>
+                                      <DialogDescription>Lakukan verifikasi tingkat dinas untuk data pelaku usaha yang telah diloloskan Admin.</DialogDescription>
+                                    </DialogHeader>
+                                    <div className="py-6 space-y-4">
+                                      <div className="space-y-2">
+                                        <div className="text-sm font-semibold">Hasil Verifikasi</div>
+                                        <Select name="hasilVerifikasi" required>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Pilih Hasil Verifikasi" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="Lolos">Lolos</SelectItem>
+                                            <SelectItem value="Tidak Lolos">Tidak Lolos</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <div className="text-sm font-semibold">Keterangan / Alasan</div>
+                                        <Textarea 
+                                          name="keterangan" 
+                                          placeholder="Masukkan alasan..." 
+                                          className="min-h-[100px]" 
+                                          required 
+                                        />
+                                      </div>
+                                    </div>
+                                    <DialogFooter>
+                                      <Button type="button" variant="ghost" onClick={() => setVerifyingActor(null)}>Batal</Button>
+                                      <Button type="submit" disabled={isSubmitting} className="min-w-[150px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ClipboardCheck className="w-4 h-4 mr-2" />} Simpan Keputusan
+                                      </Button>
+                                    </DialogFooter>
+                                  </form>
+                                </DialogContent>
+                              </Dialog>
+                            )}
+                          </div>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
