@@ -40,6 +40,19 @@ export function AddActorDialog() {
   const [kelurahan, setKelurahan] = useState<string>("")
   const [kecamatan, setKecamatan] = useState<string>("")
   const [selectedCoordinator, setSelectedCoordinator] = useState<string>("")
+  const [formDataState, setFormDataState] = useState({
+    fullName: "",
+    nik: "",
+    noKK: "",
+    pobDob: "",
+    phone: "",
+    address: "",
+    rtRw: "",
+    gender: "",
+    businessCategory: "",
+    businessName: "",
+    businessLocation: ""
+  })
 
   // Fetch Quotas and All Actors for validation
   const quotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
@@ -121,6 +134,47 @@ export function AddActorDialog() {
     }
   }, [kelurahan])
 
+  // Auto-fill logic based on NIK
+  useEffect(() => {
+    const nik = formDataState.nik.trim();
+    if (nik.length < 12) return; // Wait for at least 12 digits
+
+    const timer = setTimeout(() => {
+      const allMasterData = [
+        ...(data2025 || []).map(m => ({ ...m, _s: "2025" })),
+        ...(data2024 || []).map(m => ({ ...m, _s: "2024" })),
+        ...(data2023 || []).map(m => ({ ...m, _s: "2023" })),
+        ...(dataBlacklist || []).map(m => ({ ...m, _s: "BLACKLIST" }))
+      ];
+
+      // Find first match by NIK
+      const match = allMasterData.find(m => m.nik && String(m.nik).trim() === nik);
+
+      if (match) {
+        setFormDataState(prev => ({
+          ...prev,
+          fullName: match.nama || match.fullName || prev.fullName,
+          noKK: match.noKK || prev.noKK,
+          pobDob: match.pobDob || match.ttl || prev.pobDob,
+          phone: match.phone || match.noHp || prev.phone,
+          address: match.alamat || match.address || prev.address,
+          rtRw: match.rtRw || prev.rtRw,
+          gender: match.gender || match.jenisKelamin || prev.gender,
+        }));
+        
+        if (match.kelurahan) setKelurahan(match.kelurahan);
+        
+        toast({
+          title: "Data NIK Ditemukan",
+          description: `Data untuk NIK "${nik}" terdeteksi pada database ${match._s} dan telah diisi otomatis.`,
+          className: "bg-primary border-none text-white font-bold"
+        });
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [formDataState.nik, data2023, data2024, data2025, dataBlacklist, toast]);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!user || !database) return
@@ -197,20 +251,20 @@ export function AddActorDialog() {
       const data = {
         ownerId: user.uid,
         createdBy: currentUserProfile?.fullName || user.email?.split('@')[0] || "Unknown",
-        fullName: formData.get("fullName"),
-        nik: nik,
-        noKK: noKK,
+        fullName: formDataState.fullName,
+        nik: formDataState.nik,
+        noKK: formDataState.noKK,
         registrationCode: registrationCode,
-        pobDob: formData.get("pobDob"),
-        gender: formData.get("gender"),
-        phone: formData.get("phone"),
-        address: formData.get("address"),
-        rtRw: formData.get("rtRw"),
+        pobDob: formDataState.pobDob,
+        gender: formDataState.gender,
+        phone: formDataState.phone,
+        address: formDataState.address,
+        rtRw: formDataState.rtRw,
         kelurahan: kelurahan,
         kecamatan: kecamatan,
-        businessCategory: formData.get("businessCategory"),
-        businessName: formData.get("businessName"),
-        businessLocation: formData.get("businessLocation"),
+        businessCategory: formDataState.businessCategory,
+        businessName: formDataState.businessName,
+        businessLocation: formDataState.businessLocation,
         coordinator: selectedCoordinator,
         status: "pending",
         createdAt: new Date().toISOString(),
@@ -231,6 +285,19 @@ export function AddActorDialog() {
       setOpen(false) // Close the main dialog
       
       formElement.reset()
+      setFormDataState({
+        fullName: "",
+        nik: "",
+        noKK: "",
+        pobDob: "",
+        phone: "",
+        address: "",
+        rtRw: "",
+        gender: "",
+        businessCategory: "",
+        businessName: "",
+        businessLocation: ""
+      })
       setKelurahan("")
       setKecamatan("")
       setSelectedCoordinator("")
@@ -280,11 +347,23 @@ export function AddActorDialog() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Nama Lengkap</Label>
-                    <Input id="fullName" name="fullName" required className="rounded-xl" />
+                    <Input 
+                      id="fullName" 
+                      name="fullName" 
+                      value={formDataState.fullName}
+                      onChange={(e) => setFormDataState(prev => ({ ...prev, fullName: e.target.value }))}
+                      required 
+                      className="rounded-xl" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gender">Jenis Kelamin</Label>
-                    <Select name="gender" required>
+                    <Select 
+                      name="gender" 
+                      value={formDataState.gender}
+                      onValueChange={(val) => setFormDataState(prev => ({ ...prev, gender: val }))}
+                      required
+                    >
                       <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Laki-laki">Laki-laki</SelectItem>
@@ -294,19 +373,52 @@ export function AddActorDialog() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="nik">NIK</Label>
-                    <Input id="nik" name="nik" maxLength={16} placeholder="16 digit NIK..." required className="rounded-xl font-mono" />
+                    <Input 
+                      id="nik" 
+                      name="nik" 
+                      value={formDataState.nik}
+                      onChange={(e) => setFormDataState(prev => ({ ...prev, nik: e.target.value }))}
+                      maxLength={16} 
+                      placeholder="16 digit NIK..." 
+                      required 
+                      className="rounded-xl font-mono" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="noKK">Nomor KK</Label>
-                    <Input id="noKK" name="noKK" maxLength={16} placeholder="16 digit Nomor KK..." required className="rounded-xl font-mono" />
+                    <Input 
+                      id="noKK" 
+                      name="noKK" 
+                      value={formDataState.noKK}
+                      onChange={(e) => setFormDataState(prev => ({ ...prev, noKK: e.target.value }))}
+                      maxLength={16} 
+                      placeholder="16 digit Nomor KK..." 
+                      required 
+                      className="rounded-xl font-mono" 
+                    />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="pobDob">Tempat / Tanggal Lahir</Label>
-                    <Input id="pobDob" name="pobDob" placeholder="Contoh: Jakarta, 01-01-1990" required className="rounded-xl" />
+                    <Input 
+                      id="pobDob" 
+                      name="pobDob" 
+                      value={formDataState.pobDob}
+                      onChange={(e) => setFormDataState(prev => ({ ...prev, pobDob: e.target.value }))}
+                      placeholder="Contoh: Jakarta, 01-01-1990" 
+                      required 
+                      className="rounded-xl" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Nomor HP</Label>
-                    <Input id="phone" name="phone" required className="rounded-xl" />
+                    <Input 
+                      id="phone" 
+                      name="phone" 
+                      value={formDataState.phone}
+                      onChange={(e) => setFormDataState(prev => ({ ...prev, phone: e.target.value }))}
+                      required 
+                      className="rounded-xl" 
+                    />
                   </div>
                 </div>
               </section>
@@ -318,11 +430,26 @@ export function AddActorDialog() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="address">Alamat Lengkap</Label>
-                    <Textarea id="address" name="address" required className="rounded-xl" />
+                    <Textarea 
+                      id="address" 
+                      name="address" 
+                      value={formDataState.address}
+                      onChange={(e) => setFormDataState(prev => ({ ...prev, address: e.target.value }))}
+                      required 
+                      className="rounded-xl" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="rtRw">RT / RW</Label>
-                    <Input id="rtRw" name="rtRw" placeholder="001 / 002" required className="rounded-xl" />
+                    <Input 
+                      id="rtRw" 
+                      name="rtRw" 
+                      value={formDataState.rtRw}
+                      onChange={(e) => setFormDataState(prev => ({ ...prev, rtRw: e.target.value }))}
+                      placeholder="001 / 002" 
+                      required 
+                      className="rounded-xl" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="kelurahan">Kelurahan</Label>
@@ -349,7 +476,12 @@ export function AddActorDialog() {
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="businessCategory">Jenis Usaha</Label>
-                    <Select name="businessCategory" required>
+                    <Select 
+                      name="businessCategory" 
+                      value={formDataState.businessCategory}
+                      onValueChange={(val) => setFormDataState(prev => ({ ...prev, businessCategory: val }))}
+                      required
+                    >
                       <SelectTrigger className="rounded-xl"><SelectValue placeholder="Pilih..." /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Kuliner">Kuliner</SelectItem>
@@ -359,11 +491,25 @@ export function AddActorDialog() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="businessName">Nama Usaha / Produk</Label>
-                    <Input id="businessName" name="businessName" required className="rounded-xl" />
+                    <Input 
+                      id="businessName" 
+                      name="businessName" 
+                      value={formDataState.businessName}
+                      onChange={(e) => setFormDataState(prev => ({ ...prev, businessName: e.target.value }))}
+                      required 
+                      className="rounded-xl" 
+                    />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="businessLocation">Lokasi Usaha</Label>
-                    <Input id="businessLocation" name="businessLocation" required className="rounded-xl" />
+                    <Input 
+                      id="businessLocation" 
+                      name="businessLocation" 
+                      value={formDataState.businessLocation}
+                      onChange={(e) => setFormDataState(prev => ({ ...prev, businessLocation: e.target.value }))}
+                      required 
+                      className="rounded-xl" 
+                    />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="coordinator">KORLAP / DEWAN AKTIF</Label>
