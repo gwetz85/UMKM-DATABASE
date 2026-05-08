@@ -303,8 +303,8 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Center Content */}
-      <div className="relative z-10 flex flex-col items-center gap-10 w-full max-w-sm px-6 animate-in zoom-in-95 fade-in duration-1000">
+      {/* Center Content: Logo & SIMPU */}
+      <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-sm px-6 animate-in zoom-in-95 fade-in duration-1000">
         {/* Logo */}
         <div className="group relative">
           <div className="absolute inset-0 bg-white/20 rounded-full blur-2xl group-hover:bg-white/30 transition-all duration-500" />
@@ -317,21 +317,22 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Form Container */}
-        <div className="w-full space-y-6">
-          <div className="text-center space-y-1">
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-2xl uppercase">
-              {isRegistered ? "Pendaftaran Berhasil" : isRegisteringView ? "Daftar Akun Baru" : "SIMPU"}
-            </h1>
-            {!isRegisteringView && !isRegistered && (
-              <p className="text-white/80 text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] drop-shadow-lg">
-                ( Sistem Informasi Manajemen Pelaku Usaha )
-              </p>
-            )}
-          </div>
+        <div className="text-center space-y-1">
+          <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-2xl uppercase">
+            SIMPU
+          </h1>
+          <p className="text-white/80 text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] drop-shadow-lg">
+            ( Sistem Informasi Manajemen Pelaku Usaha )
+          </p>
+        </div>
+      </div>
 
+      {/* Bottom Left Content: Auth Forms */}
+      <div className="absolute bottom-10 left-6 md:left-12 z-20 w-full max-w-sm px-6 animate-in slide-in-from-bottom-10 fade-in duration-1000">
+        <div className="w-full space-y-6">
           {isRegistered ? (
             <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] p-8 shadow-2xl space-y-6 animate-in slide-in-from-bottom-4 duration-500 text-center">
+              <h2 className="text-2xl font-black text-white uppercase tracking-tight">Pendaftaran Berhasil</h2>
               <div className="bg-emerald-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-emerald-500/30">
                 <CheckCircle2 className="w-8 h-8 text-emerald-400" />
               </div>
@@ -350,53 +351,56 @@ export default function LoginPage() {
               </Button>
             </div>
           ) : isRegisteringView ? (
-            <form onSubmit={handleRegister} className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-              <div className="space-y-3">
-                <div className="relative group">
-                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
-                    <User className="w-4 h-4" />
+            <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
+              <h2 className="text-2xl font-black text-white uppercase tracking-tight ml-2">Daftar Akun Baru</h2>
+              <form onSubmit={handleRegister} className="space-y-4">
+                <div className="space-y-3">
+                  <div className="relative group">
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <Input 
+                      placeholder="Username" 
+                      value={regName}
+                      onChange={(e) => setRegName(e.target.value)}
+                      className="h-12 bg-white/5 backdrop-blur-2xl border-black/40 text-white placeholder:text-white/50 rounded-2xl px-14 focus:ring-white/20 focus:border-black transition-all font-bold"
+                      required 
+                    />
                   </div>
-                  <Input 
-                    placeholder="Username" 
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
-                    className="h-12 bg-white/5 backdrop-blur-2xl border-black/40 text-white placeholder:text-white/50 rounded-2xl px-14 focus:ring-white/20 focus:border-black transition-all font-bold"
-                    required 
-                  />
-                </div>
-                <div className="relative group">
-                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
-                    <Key className="w-4 h-4" />
+                  <div className="relative group">
+                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
+                      <Key className="w-4 h-4" />
+                    </div>
+                    <Input 
+                      type="password" 
+                      placeholder="Kata Sandi" 
+                      value={regPass}
+                      onChange={(e) => setRegPass(e.target.value)}
+                      className="h-12 bg-white/5 backdrop-blur-2xl border-black/40 text-white placeholder:text-white/50 rounded-2xl px-14 focus:ring-white/20 focus:border-black transition-all font-bold"
+                      required 
+                    />
                   </div>
-                  <Input 
-                    type="password" 
-                    placeholder="Kata Sandi" 
-                    value={regPass}
-                    onChange={(e) => setRegPass(e.target.value)}
-                    className="h-12 bg-white/5 backdrop-blur-2xl border-black/40 text-white placeholder:text-white/50 rounded-2xl px-14 focus:ring-white/20 focus:border-black transition-all font-bold"
-                    required 
-                  />
                 </div>
-              </div>
 
-              <div className="flex flex-col gap-3 pt-2">
-                <Button 
-                  type="submit" 
-                  disabled={registering}
-                  className="w-full h-12 bg-white text-slate-900 hover:bg-white/90 rounded-2xl font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
-                >
-                  {registering ? <Loader2 className="w-5 h-5 animate-spin" /> : "SIMPAN PENDAFTARAN"}
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  type="button"
-                  className="w-full text-white/60 hover:text-white hover:bg-white/10 rounded-2xl font-bold"
-                  onClick={() => setIsRegisteringView(false)}
-                >
-                  BATAL
-                </Button>
-              </div>
-            </form>
+                <div className="flex flex-col gap-3 pt-2">
+                  <Button 
+                    type="submit" 
+                    disabled={registering}
+                    className="w-full h-12 bg-white text-slate-900 hover:bg-white/90 rounded-2xl font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all"
+                  >
+                    {registering ? <Loader2 className="w-5 h-5 animate-spin" /> : "SIMPAN PENDAFTARAN"}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    type="button"
+                    className="w-full text-white/60 hover:text-white hover:bg-white/10 rounded-2xl font-bold"
+                    onClick={() => setIsRegisteringView(false)}
+                  >
+                    BATAL
+                  </Button>
+                </div>
+              </form>
+            </div>
           ) : (
             <form onSubmit={handleAuth} className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
               <div className="space-y-3">
