@@ -137,9 +137,10 @@ export function AddActorDialog() {
   // Auto-fill logic based on NIK
   useEffect(() => {
     const nik = formDataState.nik.trim();
-    if (nik.length < 12) return; // Wait for at least 12 digits
+    if (nik.length < 12) return; 
 
     const timer = setTimeout(() => {
+      // Collect all possible matches across all sheets
       const allMasterData = [
         ...(data2025 || []).map(m => ({ ...m, _s: "2025" })),
         ...(data2024 || []).map(m => ({ ...m, _s: "2024" })),
@@ -149,36 +150,61 @@ export function AddActorDialog() {
 
       if (allMasterData.length === 0) return;
 
-      // Clean NIK for comparison (remove spaces, dots, etc)
       const cleanInputNik = nik.replace(/\D/g, "");
-
-      // Find first match by NIK
-      const match = allMasterData.find(m => {
+      
+      // Find ALL matches for this NIK to merge data
+      const matches = allMasterData.filter(m => {
         const mNik = String(m.nik || "").replace(/\D/g, "");
         return mNik === cleanInputNik && mNik.length > 0;
       });
 
-      if (match) {
+      if (matches.length > 0) {
+        // Merge strategy: Start with an empty object and fill from oldest to newest
+        // so that newer data overwrites older data, but gaps in newer data stay filled by older data.
+        let mergedData: any = {};
+        
+        // Order by priority: Blacklist (low) -> 2023 -> 2024 -> 2025 (high)
+        const priorityOrder = ["BLACKLIST", "2023", "2024", "2025"];
+        const sortedMatches = [...matches].sort((a, b) => 
+          priorityOrder.indexOf(a._s) - priorityOrder.indexOf(b._s)
+        );
+
+        sortedMatches.forEach(m => {
+          mergedData = {
+            ...mergedData,
+            fullName: m.nama || m.fullName || mergedData.fullName,
+            noKK: m.noKK || mergedData.noKK,
+            pobDob: m.pobDob || m.ttl || mergedData.pobDob,
+            phone: m.phone || m.noHp || m.nomorPonsel || mergedData.phone,
+            address: m.alamat || m.address || mergedData.address,
+            rtRw: m.rtRw || mergedData.rtRw,
+            gender: m.gender || m.jenisKelamin || mergedData.gender,
+            kelurahan: m.kelurahan || mergedData.kelurahan,
+            _sources: [...(mergedData._sources || []), m._s]
+          };
+        });
+
         setFormDataState(prev => ({
           ...prev,
-          fullName: match.nama || match.fullName || prev.fullName,
-          noKK: match.noKK || prev.noKK,
-          pobDob: match.pobDob || match.ttl || prev.pobDob,
-          phone: match.phone || match.noHp || match.nomorPonsel || prev.phone,
-          address: match.alamat || match.address || prev.address,
-          rtRw: match.rtRw || prev.rtRw,
-          gender: match.gender || match.jenisKelamin || prev.gender,
+          fullName: mergedData.fullName || prev.fullName,
+          noKK: mergedData.noKK || prev.noKK,
+          pobDob: mergedData.pobDob || prev.pobDob,
+          phone: mergedData.phone || prev.phone,
+          address: mergedData.address || prev.address,
+          rtRw: mergedData.rtRw || prev.rtRw,
+          gender: mergedData.gender || prev.gender,
         }));
         
-        if (match.kelurahan) setKelurahan(match.kelurahan);
+        if (mergedData.kelurahan) setKelurahan(mergedData.kelurahan);
         
+        const sourcesText = [...new Set(mergedData._sources)].join(", ");
         toast({
           title: "DATA DITEMUKAN",
-          description: `Data untuk NIK "${nik}" ditemukan di Database ${match._s}. Form telah diisi otomatis.`,
+          description: `Data NIK "${nik}" ditemukan di [${sourcesText}]. Form telah diisi otomatis.`,
           className: "bg-primary border-none text-white font-black"
         });
       }
-    }, 500);
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [formDataState.nik, data2023, data2024, data2025, dataBlacklist, toast]);
