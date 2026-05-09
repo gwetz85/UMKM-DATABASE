@@ -297,11 +297,31 @@ export default function VerifyActorPage() {
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   const fetchLocation = () => {
+    setIsFetchingLocation(true);
+
+    const fallbackToIP = async (reason: string) => {
+      try {
+        const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
+        if (!res.ok) throw new Error("API error");
+        const data = await res.json();
+        if (data.latitude && data.longitude) {
+          setLocation({ lat: parseFloat(data.latitude), lon: parseFloat(data.longitude) });
+          toast({ title: "Lokasi Estimasi Diambil", description: `GPS gagal. Menggunakan lokasi jaringan (IP).` });
+        } else {
+          throw new Error("Data invalid");
+        }
+      } catch (fallbackErr) {
+        toast({ variant: "destructive", title: "Gagal Total", description: "Gagal mengambil lokasi GPS maupun jaringan. Harap pastikan izin lokasi browser Anda aktif." });
+      } finally {
+        setIsFetchingLocation(false);
+      }
+    };
+
     if (!navigator.geolocation) {
-      toast({ variant: "destructive", title: "Geolocation tidak didukung", description: "Browser tidak mendukung geolocation." });
+      fallbackToIP("Browser tidak mendukung geolocation.");
       return;
     }
-    setIsFetchingLocation(true);
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
@@ -309,14 +329,10 @@ export default function VerifyActorPage() {
         toast({ title: "Lokasi berhasil diambil", description: `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}` });
       },
       (err) => {
-        setIsFetchingLocation(false);
-        let errorMsg = err.message;
-        if (err.code === err.PERMISSION_DENIED) errorMsg = "Izin akses lokasi ditolak oleh browser. Pastikan GPS aktif dan izinkan akses lokasi untuk situs ini.";
-        else if (err.code === err.POSITION_UNAVAILABLE) errorMsg = "Informasi lokasi tidak tersedia. Coba lagi di tempat yang lebih terbuka.";
-        else if (err.code === err.TIMEOUT) errorMsg = "Waktu permintaan lokasi habis (Timeout). Coba lagi.";
-        toast({ variant: "destructive", title: "Gagal ambil lokasi", description: errorMsg });
+        // Jika gagal karena timeout, permission, dll, gunakan fallback
+        fallbackToIP("Gagal mendapatkan sinyal GPS");
       },
-      { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 6000, maximumAge: Infinity }
     );
   };
 
