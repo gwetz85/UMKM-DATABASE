@@ -91,7 +91,7 @@ export function useNavigation() {
       name: "Verifikasi Admin",
       href: "/verify-actor",
       icon: ShieldCheck,
-      show: (isAdmin || isMonitoring) && !isDinas,
+      show: (isAdmin || isMonitoring || isPetugas) && !isDinas,
       color: "#7c3aed", // violet-600
       description: "Persetujuan Data Pendaftar"
     },
