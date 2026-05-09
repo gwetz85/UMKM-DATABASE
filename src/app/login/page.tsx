@@ -411,28 +411,28 @@ export default function LoginPage() {
               <h2 className="text-2xl font-black text-white uppercase tracking-tight ml-2">Daftar Akun Baru</h2>
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-3">
-                  <div className="relative group">
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
-                      <User className="w-4 h-4" />
+                  <div className="relative group flex items-center shadow-lg rounded-2xl bg-white/95 backdrop-blur-xl border border-white/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                    <div className="pl-6 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                      <User className="w-5 h-5" />
                     </div>
                     <Input 
                       placeholder="Username" 
                       value={regName}
                       onChange={(e) => setRegName(e.target.value)}
-                      className="h-12 bg-white/5 backdrop-blur-2xl border-black/40 text-white placeholder:text-white/50 rounded-2xl px-14 focus:ring-white/20 focus:border-black transition-all font-bold"
+                      className="h-14 border-0 bg-transparent text-slate-900 placeholder:text-slate-400 px-2 font-bold focus-visible:ring-0 focus-visible:ring-offset-0"
                       required 
                     />
                   </div>
-                  <div className="relative group">
-                    <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-white/60 transition-colors">
-                      <Key className="w-4 h-4" />
+                  <div className="relative group flex items-center shadow-lg rounded-2xl bg-white/95 backdrop-blur-xl border border-white/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                    <div className="pl-6 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                      <Key className="w-5 h-5" />
                     </div>
                     <Input 
                       type="password" 
                       placeholder="Kata Sandi" 
                       value={regPass}
                       onChange={(e) => setRegPass(e.target.value)}
-                      className="h-12 bg-white/5 backdrop-blur-2xl border-black/40 text-white placeholder:text-white/50 rounded-2xl px-14 focus:ring-white/20 focus:border-black transition-all font-bold"
+                      className="h-14 border-0 bg-transparent text-slate-900 placeholder:text-slate-400 px-2 font-bold focus-visible:ring-0 focus-visible:ring-offset-0"
                       required 
                     />
                   </div>
@@ -460,9 +460,9 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={handleAuth} className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
               <div className="space-y-3">
-                <div className="relative group">
-                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white group-focus-within:text-white transition-colors">
-                    <User className="w-5 h-5 drop-shadow-md" />
+                <div className="relative group flex items-center shadow-xl rounded-2xl bg-white/95 backdrop-blur-xl border border-white/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                  <div className="pl-6 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                    <User className="w-6 h-6" />
                   </div>
                   <Input
                     id="identifier"
@@ -470,13 +470,13 @@ export default function LoginPage() {
                     placeholder="Username"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    className="h-14 bg-white/5 backdrop-blur-3xl border-black/40 text-white placeholder:text-white/50 rounded-2xl px-14 focus:ring-white/20 focus:border-black transition-all font-bold text-lg"
+                    className="h-14 md:h-16 border-0 bg-transparent text-slate-900 placeholder:text-slate-400 px-2 font-bold text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
                     required
                   />
                 </div>
-                <div className="relative group">
-                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-white group-focus-within:text-white transition-colors">
-                    <Key className="w-5 h-5 drop-shadow-md" />
+                <div className="relative group flex items-center shadow-xl rounded-2xl bg-white/95 backdrop-blur-xl border border-white/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                  <div className="pl-6 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                    <Key className="w-6 h-6" />
                   </div>
                   <Input
                     id="password"
@@ -484,15 +484,15 @@ export default function LoginPage() {
                     placeholder="Kata Sandi"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-14 bg-white/5 backdrop-blur-3xl border-black/40 text-white placeholder:text-white/50 rounded-2xl px-14 focus:ring-white/20 focus:border-black transition-all font-bold text-lg"
+                    className="h-14 md:h-16 border-0 bg-transparent text-slate-900 placeholder:text-slate-400 px-2 font-bold text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
                     required
                   />
                   <button 
                     type="submit"
                     disabled={loading}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/40 hover:bg-black/60 text-white rounded-xl flex items-center justify-center transition-all active:scale-90 border border-white/20"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-primary hover:bg-primary/90 text-white rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-md"
                   >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-6 h-6 text-white" />}
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5 md:w-6 md:h-6 text-white" />}
                   </button>
                 </div>
               </div>
