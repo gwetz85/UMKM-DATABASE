@@ -24,7 +24,8 @@ import {
   Building2, 
   CreditCard, 
   History, 
-  ClipboardCheck 
+  ClipboardCheck,
+  Check
 } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
@@ -36,6 +37,23 @@ export default function VerifikasiDinasPage() {
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [verifyingActor, setVerifyingActor] = useState<BusinessActor | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
+
+  const fetchLocation = () => {
+    if (!navigator.geolocation) {
+      toast({ variant: "destructive", title: "Geolocation tidak didukung", description: "Browser tidak mendukung geolocation." });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        toast({ title: "Lokasi berhasil diambil", description: `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}` });
+      },
+      (err) => {
+        toast({ variant: "destructive", title: "Gagal ambil lokasi", description: err.message });
+      }
+    );
+  };
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -93,6 +111,11 @@ export default function VerifikasiDinasPage() {
     e.preventDefault()
     if (!verifyingActor || !database || (!isAdmin && !isDinas && !isPetugas)) return
 
+    if (!location) {
+      toast({ variant: "destructive", title: "Lokasi belum diambil", description: "Harap ambil lokasi sebelum menyimpan keputusan verifikasi." })
+      return;
+    }
+
     setIsSubmitting(true)
     const formData = new FormData(e.currentTarget)
     const hasilVerifikasi = formData.get("hasilVerifikasi") as string
@@ -102,7 +125,8 @@ export default function VerifikasiDinasPage() {
     updateDocumentNonBlocking(actorRef, {
       status: 'verified_dinas',
       hasilVerifikasiDinas: hasilVerifikasi,
-      keteranganDinas: keterangan || "Tanpa keterangan tambahan"
+      keteranganDinas: keterangan || "Tanpa keterangan tambahan",
+      verificationLocationDinas: { lat: location.lat, lon: location.lon }
     })
 
     logActivity({
@@ -347,7 +371,7 @@ export default function VerifikasiDinasPage() {
                             {(isAdmin || isDinas || isPetugas) && (
                               <Dialog open={!!verifyingActor && verifyingActor.id === actor.id} onOpenChange={(open) => !open && setVerifyingActor(null)}>
                                 <DialogTrigger asChild>
-                                  <Button size="icon" variant="outline" onClick={() => setVerifyingActor(actor)} className="h-9 w-9 border-emerald-100 text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl shadow-sm transition-all duration-300" title="Verifikasi Dinas">
+                                  <Button size="icon" variant="outline" onClick={() => { setVerifyingActor(actor); setLocation(null); }} className="h-9 w-9 border-emerald-100 text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl shadow-sm transition-all duration-300" title="Verifikasi Dinas">
                                     <ClipboardCheck className="w-4 h-4" />
                                   </Button>
                                 </DialogTrigger>
@@ -378,6 +402,38 @@ export default function VerifikasiDinasPage() {
                                           className="min-h-[100px]" 
                                           required 
                                         />
+                                      </div>
+                                      
+                                      <div className="space-y-3 pt-2">
+                                        <div className="text-sm font-semibold flex items-center gap-2 text-primary">
+                                          <MapPin className="w-4 h-4" /> Validasi Titik Lokasi (Wajib)
+                                        </div>
+                                        {location ? (
+                                           <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3">
+                                             <div className="flex items-center gap-3">
+                                               <div className="bg-emerald-100 p-2 rounded-lg">
+                                                 <Check className="w-5 h-5 text-emerald-600" />
+                                               </div>
+                                               <div className="space-y-1">
+                                                 <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Lokasi Tersimpan</p>
+                                                 <p className="text-[10px] text-emerald-600 font-mono bg-emerald-100/50 px-2 py-0.5 rounded w-fit">
+                                                   Lat: {location.lat.toFixed(6)}, Lon: {location.lon.toFixed(6)}
+                                                 </p>
+                                               </div>
+                                             </div>
+                                             <Button type="button" variant="outline" size="sm" onClick={fetchLocation} className="text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-100">
+                                               Ubah Titik
+                                             </Button>
+                                           </div>
+                                        ) : (
+                                          <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
+                                            <MapPin className="w-8 h-8 text-slate-400 mb-2" />
+                                            <p className="text-xs font-medium text-slate-500 mb-4 text-center">Data titik lokasi wajib diambil untuk proses verifikasi dinas. Tidak dapat dibypass.</p>
+                                            <Button type="button" onClick={fetchLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
+                                              Ambil Lokasi Sekarang
+                                            </Button>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                     <DialogFooter>

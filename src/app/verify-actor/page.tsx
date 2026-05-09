@@ -13,12 +13,13 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Building2, MapPin, History, Edit, XCircle, Clock } from "lucide-react"
+import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Building2, MapPin, History, Edit, XCircle, Clock, AlertTriangle } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { cn } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { Switch } from "@/components/ui/switch"
 
 function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, actor, dataReady }: { 
   actorId: string, 
@@ -207,6 +208,9 @@ export default function VerifyActorPage() {
   const [editingOnlyActor, setEditingOnlyActor] = useState<BusinessActor | null>(null)
   const [rejectingActor, setRejectingActor] = useState<BusinessActor | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
+  const [isBypassMode, setIsBypassMode] = useState(false)
+  const [bypassKeterangan, setBypassKeterangan] = useState("")
+  const [bypassFileBase64, setBypassFileBase64] = useState("")
 
   const [editKelurahan, setEditKelurahan] = useState<string>("")
   const [editKecamatan, setEditKecamatan] = useState<string>("")
@@ -311,16 +315,23 @@ export default function VerifyActorPage() {
     e.preventDefault()
   if (!editingActor || !database || !isAdmin) return
 
-  // Ensure location has been captured
-  if (!location) {
-    toast({ variant: "destructive", title: "Lokasi belum diambil", description: "Harap ambil lokasi sebelum verifikasi." })
-    return;
+  if (isBypassMode) {
+    if (!bypassKeterangan) {
+      toast({ variant: "destructive", title: "Gagal", description: "Keterangan bypass wajib diisi." })
+      return;
+    }
+  } else {
+    if (!location) {
+      toast({ variant: "destructive", title: "Lokasi belum diambil", description: "Harap ambil lokasi sebelum verifikasi." })
+      return;
+    }
   }
 
   setIsVerifying(true)
   const formData = new FormData(e.currentTarget)
   const actorRef = ref(database, `businessActors/${editingActor.id}`)
-  updateDocumentNonBlocking(actorRef, {
+  
+  const updatePayload: any = {
     fullName: formData.get("fullName"),
     nik: formData.get("nik"),
     noKK: formData.get("noKK"),
@@ -335,9 +346,22 @@ export default function VerifyActorPage() {
     businessName: formData.get("businessName"),
     businessLocation: formData.get("businessLocation"),
     coordinator: formData.get("coordinator"),
-    verificationLocation: { lat: location.lat, lon: location.lon },
     status: 'verified_actor'
-  })
+  }
+
+  if (isBypassMode) {
+    updatePayload.verificationBypass = {
+      isBypassed: true,
+      reason: bypassKeterangan,
+      fileBase64: bypassFileBase64 || null
+    }
+    updatePayload.verificationLocation = null
+  } else {
+    updatePayload.verificationLocation = { lat: location?.lat || 0, lon: location?.lon || 0 }
+    updatePayload.verificationBypass = null
+  }
+
+  updateDocumentNonBlocking(actorRef, updatePayload)
     
     logActivity({
       query: `VERIFIKASI ADMIN: ${editingActor.fullName} - DITERIMA`,
@@ -442,6 +466,9 @@ export default function VerifyActorPage() {
     setEditKelurahan(actor.kelurahan || "")
     setEditKecamatan(actor.kecamatan || "")
     setLocation(null)
+    setIsBypassMode(false)
+    setBypassKeterangan("")
+    setBypassFileBase64("")
   }
 
   if (!isAdmin && !isMonitoring && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
@@ -862,15 +889,87 @@ export default function VerifyActorPage() {
                                         <Input name="businessLocation" defaultValue={editingActor.businessLocation} required />
                                       </div>
                                     </div>
+                                    
+                                    {/* Location / Bypass Section */}
+                                    <div className="space-y-4 pt-4 border-t border-slate-100 md:col-span-2">
+                                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <Label className="font-bold text-primary flex items-center gap-2">
+                                          <MapPin className="w-4 h-4" /> Validasi Lokasi (Wajib)
+                                        </Label>
+                                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm w-fit">
+                                          <Label htmlFor="bypass-mode" className="text-xs font-bold text-slate-700 cursor-pointer">Bypass Lokasi</Label>
+                                          <Switch id="bypass-mode" checked={isBypassMode} onCheckedChange={setIsBypassMode} />
+                                        </div>
+                                      </div>
+                                      
+                                      {!isBypassMode ? (
+                                        <div className="flex flex-col gap-3">
+                                          {location ? (
+                                             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3">
+                                               <div className="flex items-center gap-3">
+                                                 <div className="bg-emerald-100 p-2 rounded-lg">
+                                                   <Check className="w-5 h-5 text-emerald-600" />
+                                                 </div>
+                                                 <div className="space-y-1">
+                                                   <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Lokasi Tersimpan</p>
+                                                   <p className="text-[10px] text-emerald-600 font-mono bg-emerald-100/50 px-2 py-0.5 rounded w-fit">
+                                                     Lat: {location.lat.toFixed(6)}, Lon: {location.lon.toFixed(6)}
+                                                   </p>
+                                                 </div>
+                                               </div>
+                                               <Button type="button" variant="outline" size="sm" onClick={fetchLocation} className="text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-100">
+                                                 Ubah Titik
+                                               </Button>
+                                             </div>
+                                          ) : (
+                                            <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
+                                              <MapPin className="w-8 h-8 text-slate-400 mb-2" />
+                                              <p className="text-xs font-medium text-slate-500 mb-4 text-center">Data titik lokasi tempat usaha wajib diambil untuk keperluan validasi.</p>
+                                              <Button type="button" onClick={fetchLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
+                                                Ambil Lokasi Sekarang
+                                              </Button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-xl animate-in fade-in zoom-in-95 duration-200">
+                                          <div className="flex items-center gap-2 text-amber-600 border-b border-amber-200/50 pb-2">
+                                            <AlertTriangle className="w-4 h-4" />
+                                            <span className="text-xs font-black uppercase tracking-wider">Bypass Validasi Lokasi Aktif</span>
+                                          </div>
+                                          <div className="grid gap-4 md:grid-cols-2">
+                                            <div className="space-y-2">
+                                              <Label className="text-xs font-bold text-slate-700">Upload Keterangan / Bukti (Opsional)</Label>
+                                              <Input type="file" accept="image/*, .pdf" className="bg-white" onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if(file) {
+                                                  const reader = new FileReader();
+                                                  reader.onload = (ev) => setBypassFileBase64(ev.target?.result as string);
+                                                  reader.readAsDataURL(file);
+                                                } else {
+                                                  setBypassFileBase64("");
+                                                }
+                                              }} />
+                                              <p className="text-[9px] text-muted-foreground">Format gambar atau PDF jika diperlukan.</p>
+                                            </div>
+                                            <div className="space-y-2">
+                                              <Label className="text-xs font-bold text-slate-700">Keterangan Bypass (Wajib)</Label>
+                                              <Textarea 
+                                                value={bypassKeterangan} 
+                                                onChange={e => setBypassKeterangan(e.target.value)} 
+                                                placeholder="Contoh: Titik lokasi sedang bermasalah / Usaha berpindah..." 
+                                                className="min-h-[80px] bg-white resize-none"
+                                                required={isBypassMode} 
+                                              />
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
-                                  <DialogFooter className="gap-2">
+                                  
+                                  <DialogFooter className="gap-2 pt-4 border-t">
                                     <Button type="button" variant="outline" onClick={() => setEditingActor(null)}>Batal</Button>
-                                    <Button type="button" onClick={fetchLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white mr-2">
-                        Ambil Lokasi
-                      </Button>
-                      {/* hidden fields for latitude/longitude */}
-                      <Input type="hidden" name="latitude" value={location?.lat ?? ''} />
-                      <Input type="hidden" name="longitude" value={location?.lon ?? ''} />
                                     <Button type="submit" disabled={isVerifying} className="bg-primary font-bold min-w-[150px]">
                                       {isVerifying ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />} SIMPAN & VERIFIKASI
                                     </Button>
