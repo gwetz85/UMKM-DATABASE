@@ -294,20 +294,29 @@ export default function VerifyActorPage() {
   }, [editKelurahan])
 
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   const fetchLocation = () => {
     if (!navigator.geolocation) {
       toast({ variant: "destructive", title: "Geolocation tidak didukung", description: "Browser tidak mendukung geolocation." });
       return;
     }
+    setIsFetchingLocation(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        setIsFetchingLocation(false);
         toast({ title: "Lokasi berhasil diambil", description: `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}` });
       },
       (err) => {
-        toast({ variant: "destructive", title: "Gagal ambil lokasi", description: err.message });
-      }
+        setIsFetchingLocation(false);
+        let errorMsg = err.message;
+        if (err.code === err.PERMISSION_DENIED) errorMsg = "Izin akses lokasi ditolak oleh browser. Pastikan GPS aktif dan izinkan akses lokasi untuk situs ini.";
+        else if (err.code === err.POSITION_UNAVAILABLE) errorMsg = "Informasi lokasi tidak tersedia. Coba lagi di tempat yang lebih terbuka.";
+        else if (err.code === err.TIMEOUT) errorMsg = "Waktu permintaan lokasi habis (Timeout). Coba lagi.";
+        toast({ variant: "destructive", title: "Gagal ambil lokasi", description: errorMsg });
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
@@ -917,16 +926,18 @@ export default function VerifyActorPage() {
                                                    </p>
                                                  </div>
                                                </div>
-                                               <Button type="button" variant="outline" size="sm" onClick={fetchLocation} className="text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-100">
-                                                 Ubah Titik
+                                               <Button type="button" variant="outline" size="sm" onClick={fetchLocation} disabled={isFetchingLocation} className="text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-100">
+                                                 {isFetchingLocation ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Ubah Titik
                                                </Button>
                                              </div>
                                           ) : (
                                             <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
                                               <MapPin className="w-8 h-8 text-slate-400 mb-2" />
                                               <p className="text-xs font-medium text-slate-500 mb-4 text-center">Data titik lokasi tempat usaha wajib diambil untuk keperluan validasi.</p>
-                                              <Button type="button" onClick={fetchLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
-                                                Ambil Lokasi Sekarang
+                                              <Button type="button" onClick={fetchLocation} disabled={isFetchingLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
+                                                {isFetchingLocation ? (
+                                                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sedang Mengambil...</>
+                                                ) : "Ambil Lokasi Sekarang"}
                                               </Button>
                                             </div>
                                           )}
