@@ -689,7 +689,10 @@ export default function VerifyActorPage() {
                                       {(viewingActor as any).verificationBypass?.isBypassed && (
                                         <div className="bg-amber-50 p-4 rounded-xl border border-amber-100">
                                           <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">Sumber: Verifikasi Admin (Bypass)</p>
-                                          <p className="text-xs text-amber-800 font-medium">Alasan: {(viewingActor as any).verificationBypass.reason}</p>
+                                          <p className="text-xs text-amber-800 font-medium mb-2">Alasan: {(viewingActor as any).verificationBypass.reason}</p>
+                                          {(viewingActor as any).verificationBypass.fileBase64 && (
+                                            <a href={(viewingActor as any).verificationBypass.fileBase64} target="_blank" rel="noreferrer" className="text-[10px] font-bold bg-amber-200 text-amber-800 px-3 py-1 rounded shadow-sm hover:bg-amber-300 transition-colors inline-block mt-1">Lihat Bukti Lampiran</a>
+                                          )}
                                         </div>
                                       )}
                                       {(viewingActor as any).verificationLocationDinas && (
@@ -989,9 +992,41 @@ export default function VerifyActorPage() {
                                               <Input type="file" accept="image/*, .pdf" className="bg-white" onChange={(e) => {
                                                 const file = e.target.files?.[0];
                                                 if(file) {
-                                                  const reader = new FileReader();
-                                                  reader.onload = (ev) => setBypassFileBase64(ev.target?.result as string);
-                                                  reader.readAsDataURL(file);
+                                                  if (file.type.startsWith('image/')) {
+                                                    const reader = new FileReader();
+                                                    reader.onload = (ev) => {
+                                                      const img = new Image();
+                                                      img.onload = () => {
+                                                        const canvas = document.createElement('canvas');
+                                                        let width = img.width;
+                                                        let height = img.height;
+                                                        const MAX_DIM = 800;
+                                                        if (width > height && width > MAX_DIM) {
+                                                          height *= MAX_DIM / width;
+                                                          width = MAX_DIM;
+                                                        } else if (height > MAX_DIM) {
+                                                          width *= MAX_DIM / height;
+                                                          height = MAX_DIM;
+                                                        }
+                                                        canvas.width = width;
+                                                        canvas.height = height;
+                                                        const ctx = canvas.getContext('2d');
+                                                        ctx?.drawImage(img, 0, 0, width, height);
+                                                        setBypassFileBase64(canvas.toDataURL('image/jpeg', 0.6));
+                                                      };
+                                                      img.src = ev.target?.result as string;
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                  } else {
+                                                    if (file.size > 2 * 1024 * 1024) {
+                                                      toast({ variant: "destructive", title: "File terlalu besar", description: "Ukuran maksimal PDF adalah 2MB." });
+                                                      e.target.value = '';
+                                                      return;
+                                                    }
+                                                    const reader = new FileReader();
+                                                    reader.onload = (ev) => setBypassFileBase64(ev.target?.result as string);
+                                                    reader.readAsDataURL(file);
+                                                  }
                                                 } else {
                                                   setBypassFileBase64("");
                                                 }

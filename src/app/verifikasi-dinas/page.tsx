@@ -370,7 +370,10 @@ export default function VerifikasiDinasPage() {
                                           {(viewingActor as any).verificationBypass?.isBypassed && (
                                             <div className="bg-amber-50 p-4 rounded-xl border border-amber-100">
                                               <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">Sumber: Verifikasi Admin (Bypass)</p>
-                                              <p className="text-xs text-amber-800 font-medium">Alasan: {(viewingActor as any).verificationBypass.reason}</p>
+                                              <p className="text-xs text-amber-800 font-medium mb-2">Alasan: {(viewingActor as any).verificationBypass.reason}</p>
+                                              {(viewingActor as any).verificationBypass.fileBase64 && (
+                                                <a href={(viewingActor as any).verificationBypass.fileBase64} target="_blank" rel="noreferrer" className="text-[10px] font-bold bg-amber-200 text-amber-800 px-3 py-1 rounded shadow-sm hover:bg-amber-300 transition-colors inline-block mt-1">Lihat Bukti Lampiran</a>
+                                              )}
                                             </div>
                                           )}
                                           {(viewingActor as any).verificationLocationDinas && (
