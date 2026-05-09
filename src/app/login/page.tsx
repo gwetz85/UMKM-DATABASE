@@ -294,9 +294,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden font-sans bg-slate-950">
+    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center relative overflow-x-hidden overflow-y-auto font-sans bg-slate-950 pb-20">
       {/* Background Image / Slideshow */}
-      <div className="fixed inset-0 z-0 bg-slate-950 overflow-hidden">
+      <div className="fixed inset-0 z-0 bg-slate-950 overflow-hidden pointer-events-none">
         {slides.length > 0 ? (
           slides.map((slide, idx) => (
             <div 
@@ -311,11 +311,11 @@ export default function LoginPage() {
                 alt="blur-bg"
                 className="absolute inset-0 w-full h-full object-cover opacity-40 blur-3xl scale-110"
               />
-              {/* Gambar utama yang pas (contain) tanpa terpotong */}
+              {/* Gambar utama yang pas (contain) pada desktop dan cover pada mobile */}
               <img 
                 src={slide.base64} 
                 alt={`Slide ${idx + 1}`} 
-                className={`relative z-10 w-full h-full object-contain object-center transition-transform duration-[12000ms] ease-linear drop-shadow-2xl ${
+                className={`relative z-10 w-full h-full object-cover md:object-contain object-center transition-transform duration-[12000ms] ease-linear drop-shadow-2xl ${
                   idx === currentSlideIndex ? 'scale-105' : 'scale-100'
                 }`}
               />
@@ -359,8 +359,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Center Content: Logo & SIMPU */}
-      <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-sm px-6 animate-in zoom-in-95 fade-in duration-1000">
+      <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-sm px-6 mt-20 md:mt-0 animate-in zoom-in-95 fade-in duration-1000">
         {/* Logo */}
         <div className="group relative">
           <div className="absolute inset-0 bg-white/20 rounded-full blur-2xl group-hover:bg-white/30 transition-all duration-500" />
@@ -384,7 +383,7 @@ export default function LoginPage() {
       </div>
 
       {/* Bottom Left Content: Auth Forms */}
-      <div className="absolute bottom-10 left-6 md:left-12 z-20 w-full max-w-sm px-6 animate-in slide-in-from-bottom-10 fade-in duration-1000">
+      <div className="relative md:absolute md:bottom-10 md:left-12 z-20 w-full max-w-sm px-6 mt-12 md:mt-0 animate-in slide-in-from-bottom-10 fade-in duration-1000">
         <div className="w-full space-y-6">
           {isRegistered ? (
             <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] p-8 shadow-2xl space-y-6 animate-in slide-in-from-bottom-4 duration-500 text-center">
