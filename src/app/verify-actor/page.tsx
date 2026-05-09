@@ -316,7 +316,7 @@ export default function VerifyActorPage() {
         else if (err.code === err.TIMEOUT) errorMsg = "Waktu permintaan lokasi habis (Timeout). Coba lagi.";
         toast({ variant: "destructive", title: "Gagal ambil lokasi", description: errorMsg });
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
     );
   };
 
