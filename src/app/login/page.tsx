@@ -294,7 +294,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center relative overflow-x-hidden overflow-y-auto font-sans bg-slate-950 pb-20">
+    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center relative overflow-x-hidden overflow-y-auto md:overflow-hidden font-sans bg-slate-950 pb-20 md:pb-0">
       {/* Background Image / Slideshow */}
       <div className="fixed inset-0 z-0 bg-slate-950 overflow-hidden pointer-events-none">
         {slides.length > 0 ? (
@@ -332,7 +332,7 @@ export default function LoginPage() {
       </div>
 
       {/* Top Right Widgets */}
-      <div className="absolute top-6 right-6 z-50 flex flex-col items-end gap-3 max-w-xs animate-in fade-in slide-in-from-right-8 duration-1000">
+      <div className="relative md:absolute md:top-6 md:right-6 z-50 flex flex-col items-center md:items-end gap-3 w-full px-6 pt-10 md:p-0 md:max-w-xs animate-in fade-in slide-in-from-top-4 md:slide-in-from-right-8 duration-1000">
         {activeEvent && (
           <div 
             className="group cursor-pointer pointer-events-auto"
@@ -359,7 +359,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-sm px-6 mt-20 md:mt-0 animate-in zoom-in-95 fade-in duration-1000">
+      <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-sm px-6 mt-10 md:mt-0 animate-in zoom-in-95 fade-in duration-1000">
         {/* Logo */}
         <div className="group relative">
           <div className="absolute inset-0 bg-white/20 rounded-full blur-2xl group-hover:bg-white/30 transition-all duration-500" />
