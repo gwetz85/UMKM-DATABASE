@@ -299,26 +299,9 @@ export default function VerifyActorPage() {
   const fetchLocation = () => {
     setIsFetchingLocation(true);
 
-    const fallbackToIP = async (reason: string) => {
-      try {
-        const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
-        if (!res.ok) throw new Error("API error");
-        const data = await res.json();
-        if (data.latitude && data.longitude) {
-          setLocation({ lat: parseFloat(data.latitude), lon: parseFloat(data.longitude) });
-          toast({ title: "Lokasi Estimasi Diambil", description: `GPS gagal. Menggunakan lokasi jaringan (IP).` });
-        } else {
-          throw new Error("Data invalid");
-        }
-      } catch (fallbackErr) {
-        toast({ variant: "destructive", title: "Gagal Total", description: "Gagal mengambil lokasi GPS maupun jaringan. Harap pastikan izin lokasi browser Anda aktif." });
-      } finally {
-        setIsFetchingLocation(false);
-      }
-    };
-
     if (!navigator.geolocation) {
-      fallbackToIP("Browser tidak mendukung geolocation.");
+      toast({ variant: "destructive", title: "Geolocation tidak didukung", description: "Browser Anda tidak mendukung fitur lokasi." });
+      setIsFetchingLocation(false);
       return;
     }
 
@@ -326,19 +309,24 @@ export default function VerifyActorPage() {
       (pos) => {
         setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
         setIsFetchingLocation(false);
-        toast({ title: "Lokasi berhasil diambil", description: `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}` });
+        toast({ title: "Lokasi berhasil diambil", description: `Akurasi: ${pos.coords.accuracy ? Math.round(pos.coords.accuracy) + ' meter' : 'Tinggi'}` });
       },
       (err) => {
-        // Jika gagal karena timeout, permission, dll, gunakan fallback
-        fallbackToIP("Gagal mendapatkan sinyal GPS");
+        setIsFetchingLocation(false);
+        let errorMsg = err.message;
+        if (err.code === err.PERMISSION_DENIED) errorMsg = "Izin akses lokasi ditolak. Izinkan akses lokasi di pengaturan browser Anda.";
+        else if (err.code === err.POSITION_UNAVAILABLE) errorMsg = "Sinyal GPS tidak ditemukan. Harap gunakan perangkat HP/Smartphone atau pastikan GPS aktif.";
+        else if (err.code === err.TIMEOUT) errorMsg = "Waktu habis mencari sinyal GPS. Harap gunakan perangkat HP/Smartphone di tempat terbuka.";
+        
+        toast({ variant: "destructive", title: "Gagal ambil lokasi akurat", description: errorMsg });
       },
-      { enableHighAccuracy: false, timeout: 6000, maximumAge: Infinity }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
   const handleSaveAndVerify = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-  if (!editingActor || !database || !isAdmin) return
+  if (!editingActor || !database || (!isAdmin && !isPetugas)) return
 
   if (isBypassMode) {
     if (!bypassKeterangan) {
@@ -404,7 +392,7 @@ export default function VerifyActorPage() {
 
   const handleSaveOnly = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!editingOnlyActor || !database || !isAdmin) return
+    if (!editingOnlyActor || !database || (!isAdmin && !isPetugas)) return
 
     setIsVerifying(true)
     const formData = new FormData(e.currentTarget)
@@ -442,7 +430,7 @@ export default function VerifyActorPage() {
 
   const handleReject = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!rejectingActor || !database || !isAdmin) return
+    if (!rejectingActor || !database || (!isAdmin && !isPetugas)) return
 
     const formData = new FormData(e.currentTarget)
     const reason = formData.get("rejectionReason") as string
@@ -467,7 +455,7 @@ export default function VerifyActorPage() {
   }
 
   const handleDelete = (actorId: string, fullName: string) => {
-    if (!isAdmin) return
+    if (!isAdmin && !isPetugas) return
     if (confirm(`Hapus data pending milik "${fullName}"?`)) {
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
       
@@ -496,7 +484,7 @@ export default function VerifyActorPage() {
     setBypassFileBase64("")
   }
 
-  if (!isAdmin && !isMonitoring && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
+  if (!isAdmin && !isMonitoring && !isPetugas && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -612,7 +600,7 @@ export default function VerifyActorPage() {
                             }
                           })()}
                           database={database}
-                          isAdmin={isAdmin}
+                          isAdmin={isAdmin || isPetugas}
                           actor={actor}
                           dataReady={dataReady}
                         />
@@ -711,7 +699,7 @@ export default function VerifyActorPage() {
                           </DialogContent>
                         </Dialog>
 
-                        {isAdmin && !isMonitoring && (
+                        {(isAdmin || isPetugas) && !isMonitoring && (
                           <Dialog open={!!editingOnlyActor && editingOnlyActor.id === actor.id} onOpenChange={(open) => !open && setEditingOnlyActor(null)}>
                             <DialogTrigger asChild>
                               <Button size="icon" variant="outline" onClick={() => openEditDialog(actor, 'edit')} className="h-8 w-8 border-amber-200 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm" title="Edit Data">
@@ -819,7 +807,7 @@ export default function VerifyActorPage() {
                           </Dialog>
                         )}
 
-                        {isAdmin && !isMonitoring && (
+                        {(isAdmin || isPetugas) && !isMonitoring && (
                           <Dialog open={!!editingActor && editingActor.id === actor.id} onOpenChange={(open) => !open && setEditingActor(null)}>
                             <DialogTrigger asChild>
                               <Button size="icon" variant="outline" onClick={() => openEditDialog(actor, 'verify')} className="h-8 w-8 border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg shadow-sm" title="Verifikasi">
@@ -1007,7 +995,7 @@ export default function VerifyActorPage() {
                           </Dialog>
                         )}
 
-                        {isAdmin && !isMonitoring && (
+                        {(isAdmin || isPetugas) && !isMonitoring && (
                           <Dialog open={!!rejectingActor && rejectingActor.id === actor.id} onOpenChange={(open) => !open && setRejectingActor(null)}>
                             <DialogTrigger asChild>
                               <Button size="icon" variant="outline" onClick={() => setRejectingActor(actor)} className="h-8 w-8 border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg shadow-sm" title="Tolak Data">
@@ -1038,7 +1026,7 @@ export default function VerifyActorPage() {
                           </Dialog>
                         )}
 
-                        {isAdmin && !isMonitoring && (
+                        {(isAdmin || isPetugas) && !isMonitoring && (
                           <Button size="icon" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)} className="h-8 w-8 bg-slate-100 text-red-500 hover:bg-red-500 hover:text-white border-0 shadow-sm" title="Hapus Permanen">
                             <Trash2 className="w-4 h-4" />
                           </Button>

@@ -43,26 +43,9 @@ export default function VerifikasiDinasPage() {
   const fetchLocation = () => {
     setIsFetchingLocation(true);
 
-    const fallbackToIP = async (reason: string) => {
-      try {
-        const res = await fetch('https://get.geojs.io/v1/ip/geo.json');
-        if (!res.ok) throw new Error("API error");
-        const data = await res.json();
-        if (data.latitude && data.longitude) {
-          setLocation({ lat: parseFloat(data.latitude), lon: parseFloat(data.longitude) });
-          toast({ title: "Lokasi Estimasi Diambil", description: `GPS gagal. Menggunakan lokasi jaringan (IP).` });
-        } else {
-          throw new Error("Data invalid");
-        }
-      } catch (fallbackErr) {
-        toast({ variant: "destructive", title: "Gagal Total", description: "Gagal mengambil lokasi GPS maupun jaringan. Harap pastikan izin lokasi browser Anda aktif." });
-      } finally {
-        setIsFetchingLocation(false);
-      }
-    };
-
     if (!navigator.geolocation) {
-      fallbackToIP("Browser tidak mendukung geolocation.");
+      toast({ variant: "destructive", title: "Geolocation tidak didukung", description: "Browser Anda tidak mendukung fitur lokasi." });
+      setIsFetchingLocation(false);
       return;
     }
 
@@ -70,12 +53,18 @@ export default function VerifikasiDinasPage() {
       (pos) => {
         setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
         setIsFetchingLocation(false);
-        toast({ title: "Lokasi berhasil diambil", description: `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}` });
+        toast({ title: "Lokasi berhasil diambil", description: `Akurasi: ${pos.coords.accuracy ? Math.round(pos.coords.accuracy) + ' meter' : 'Tinggi'}` });
       },
       (err) => {
-        fallbackToIP("Gagal mendapatkan sinyal GPS");
+        setIsFetchingLocation(false);
+        let errorMsg = err.message;
+        if (err.code === err.PERMISSION_DENIED) errorMsg = "Izin akses lokasi ditolak. Izinkan akses lokasi di pengaturan browser Anda.";
+        else if (err.code === err.POSITION_UNAVAILABLE) errorMsg = "Sinyal GPS tidak ditemukan. Harap gunakan perangkat HP/Smartphone atau pastikan GPS aktif.";
+        else if (err.code === err.TIMEOUT) errorMsg = "Waktu habis mencari sinyal GPS. Harap gunakan perangkat HP/Smartphone di tempat terbuka.";
+        
+        toast({ variant: "destructive", title: "Gagal ambil lokasi akurat", description: errorMsg });
       },
-      { enableHighAccuracy: false, timeout: 6000, maximumAge: Infinity }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
