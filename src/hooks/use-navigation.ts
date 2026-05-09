@@ -216,6 +216,14 @@ export function useNavigation() {
       description: "Konfigurasi Teks Berjalan"
     },
     {
+      name: "Pengaturan Slideshow",
+      href: "/settings-slideshow",
+      icon: Calendar,
+      show: isAdmin,
+      color: "#db2777", // pink-600
+      description: "Manajemen Slideshow Login"
+    },
+    {
       name: "Kuota KORLAP / DEWAN",
       href: "/kuota-koordinator",
       icon: BarChart3,

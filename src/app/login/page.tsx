@@ -63,6 +63,9 @@ export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
 
+  const [slides, setSlides] = useState<{ id: string, base64: string }[]>([])
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
+
   const [eventInfo, setEventInfo] = useState<any>(null)
   
   useEffect(() => {
@@ -73,7 +76,34 @@ export default function LoginPage() {
         setEventInfo(snap.val());
       }
     });
+
+    // Fetch Slideshow
+    const slidesRef = ref(database, 'settings/login_slideshow');
+    get(slidesRef).then(snap => {
+      if (snap.exists()) {
+        const data = snap.val();
+        let arr: any[] = [];
+        if (Array.isArray(data)) {
+           arr = data.filter(Boolean);
+        } else {
+           arr = Object.values(data);
+        }
+        if (arr.length > 0) {
+          setSlides(arr);
+        }
+      }
+    });
   }, [database]);
+
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentSlideIndex(prev => (prev + 1) % slides.length);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [slides]);
+  
+
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -265,14 +295,40 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center relative overflow-hidden font-sans bg-slate-950">
-      {/* Background Image */}
-      <div className="fixed inset-0 z-0">
-        <img 
-          src="/macos_vibrant_background_1778161218419.png" 
-          alt="Background" 
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/10" />
+      {/* Background Image / Slideshow */}
+      <div className="fixed inset-0 z-0 bg-slate-950 overflow-hidden">
+        {slides.length > 0 ? (
+          slides.map((slide, idx) => (
+            <div 
+              key={slide.id}
+              className={`absolute inset-0 transition-opacity duration-2000 ${
+                idx === currentSlideIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+              }`}
+            >
+              {/* Latar belakang blur agar tidak ada bar hitam jika aspek rasio berbeda */}
+              <img 
+                src={slide.base64} 
+                alt="blur-bg"
+                className="absolute inset-0 w-full h-full object-cover opacity-40 blur-3xl scale-110"
+              />
+              {/* Gambar utama yang pas (contain) tanpa terpotong */}
+              <img 
+                src={slide.base64} 
+                alt={`Slide ${idx + 1}`} 
+                className={`relative z-10 w-full h-full object-contain object-center transition-transform duration-[12000ms] ease-linear drop-shadow-2xl ${
+                  idx === currentSlideIndex ? 'scale-105' : 'scale-100'
+                }`}
+              />
+            </div>
+          ))
+        ) : (
+          <img 
+            src="/macos_vibrant_background_1778161218419.png" 
+            alt="Background" 
+            className="w-full h-full object-cover"
+          />
+        )}
+        <div className="absolute inset-0 bg-black/30 z-20" />
       </div>
 
       {/* Top Right Widgets */}
