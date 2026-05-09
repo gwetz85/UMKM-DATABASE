@@ -392,7 +392,7 @@ export default function VerifyActorPage() {
 
   const handleSaveOnly = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!editingOnlyActor || !database || (!isAdmin && !isPetugas)) return
+    if (!editingOnlyActor || !database || !isAdmin) return
 
     setIsVerifying(true)
     const formData = new FormData(e.currentTarget)
@@ -430,7 +430,7 @@ export default function VerifyActorPage() {
 
   const handleReject = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!rejectingActor || !database || (!isAdmin && !isPetugas)) return
+    if (!rejectingActor || !database || !isAdmin) return
 
     const formData = new FormData(e.currentTarget)
     const reason = formData.get("rejectionReason") as string
@@ -455,7 +455,7 @@ export default function VerifyActorPage() {
   }
 
   const handleDelete = (actorId: string, fullName: string) => {
-    if (!isAdmin && !isPetugas) return
+    if (!isAdmin) return
     if (confirm(`Hapus data pending milik "${fullName}"?`)) {
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
       
@@ -699,7 +699,7 @@ export default function VerifyActorPage() {
                           </DialogContent>
                         </Dialog>
 
-                        {(isAdmin || isPetugas) && !isMonitoring && (
+                        {isAdmin && !isMonitoring && (
                           <Dialog open={!!editingOnlyActor && editingOnlyActor.id === actor.id} onOpenChange={(open) => !open && setEditingOnlyActor(null)}>
                             <DialogTrigger asChild>
                               <Button size="icon" variant="outline" onClick={() => openEditDialog(actor, 'edit')} className="h-8 w-8 border-amber-200 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm" title="Edit Data">
@@ -995,7 +995,7 @@ export default function VerifyActorPage() {
                           </Dialog>
                         )}
 
-                        {(isAdmin || isPetugas) && !isMonitoring && (
+                        {isAdmin && !isMonitoring && (
                           <Dialog open={!!rejectingActor && rejectingActor.id === actor.id} onOpenChange={(open) => !open && setRejectingActor(null)}>
                             <DialogTrigger asChild>
                               <Button size="icon" variant="outline" onClick={() => setRejectingActor(actor)} className="h-8 w-8 border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg shadow-sm" title="Tolak Data">
@@ -1026,7 +1026,7 @@ export default function VerifyActorPage() {
                           </Dialog>
                         )}
 
-                        {(isAdmin || isPetugas) && !isMonitoring && (
+                        {isAdmin && !isMonitoring && (
                           <Button size="icon" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)} className="h-8 w-8 bg-slate-100 text-red-500 hover:bg-red-500 hover:text-white border-0 shadow-sm" title="Hapus Permanen">
                             <Trash2 className="w-4 h-4" />
                           </Button>
