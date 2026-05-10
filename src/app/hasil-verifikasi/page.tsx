@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
+import { VerificationBadge } from "@/components/verification-badge"
 import { cn } from "@/lib/utils"
 
 const BANK_LIST = [
@@ -190,6 +191,7 @@ export default function HasilVerifikasiPage() {
                             <p className="text-[10px] font-mono text-slate-500 mt-0.5 tracking-tighter">
                               NIK: {actor.nik}
                             </p>
+                            <VerificationBadge actor={actor} />
                           </div>
                         </div>
 

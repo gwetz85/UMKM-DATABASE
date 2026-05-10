@@ -17,6 +17,7 @@ import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Build
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
+import { VerificationBadge } from "@/components/verification-badge"
 import { cn } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Switch } from "@/components/ui/switch"
@@ -561,6 +562,7 @@ export default function VerifyActorPage() {
                     <TableCell className="font-mono text-xs text-slate-500">
                       <div className="font-semibold text-slate-700">{actor.nik}</div>
                       <div className="text-[10px] text-slate-400 mt-0.5">KK: {actor.noKK}</div>
+                      <VerificationBadge actor={actor} />
                       <CheckDataIndicator 
                         actor={actor} 
                         data2023={data2023}

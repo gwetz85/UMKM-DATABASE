@@ -21,6 +21,7 @@ import { BusinessActor } from "../lib/types"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
+import { VerificationBadge } from "@/components/verification-badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 
@@ -450,6 +451,7 @@ function ActorDataContent() {
                           <p className="text-[9px] font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-sm print:hidden">
                             Reg: {actor.registrationCode || "PROSES..."}
                           </p>
+                          <VerificationBadge actor={actor} />
                         </div>
                         <div className="text-[9px] font-black uppercase bg-primary text-white w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
                           LIHAT DETAIL
@@ -503,6 +505,7 @@ function ActorDataContent() {
                         <div className="flex flex-col">
                           <span className="font-black text-primary uppercase text-[12px] print:text-black">{actor.businessName}</span>
                           <span className="text-[10px] text-slate-500 font-bold uppercase print:hidden">{actor.businessCategory}</span>
+                          <VerificationBadge actor={actor} />
                         </div>
                       </TableCell>
                       <TableCell className="py-4 pr-6 text-right print:hidden">
