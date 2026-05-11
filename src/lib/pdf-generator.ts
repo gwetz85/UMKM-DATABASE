@@ -313,12 +313,14 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
     (actor.fullName || "").toUpperCase(),
     actor.nik || "-",
     (actor.address || "").toUpperCase(),
-    '' // Checklist column
+    '', // Tanggal
+    '', // Jam
+    ''  // Ceklist column
   ]);
 
   autoTable(doc, {
     startY: 60,
-    head: [['NO', 'REG ID', 'NAMA LENGKAP', 'NIK', 'ALAMAT', 'CEK']],
+    head: [['NO', 'REG ID', 'NAMA LENGKAP', 'NIK', 'ALAMAT', 'TANGGAL', 'JAM', 'CEK']],
     body: tableData,
     theme: 'grid',
     headStyles: { 
@@ -326,22 +328,24 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
       textColor: 255, 
       fontStyle: 'bold',
       halign: 'center',
-      fontSize: 8
+      fontSize: 7
     },
     styles: { 
-      fontSize: 8, 
-      cellPadding: 2,
+      fontSize: 7, 
+      cellPadding: 1.5,
       valign: 'middle',
     },
     columnStyles: {
-      0: { halign: 'center', cellWidth: 10 },
-      1: { halign: 'center', cellWidth: 20 },
-      2: { cellWidth: 40 },
-      3: { halign: 'center', cellWidth: 35 },
+      0: { halign: 'center', cellWidth: 8 },
+      1: { halign: 'center', cellWidth: 15 },
+      2: { cellWidth: 35 },
+      3: { halign: 'center', cellWidth: 28 },
       4: { cellWidth: 'auto' },
       5: { halign: 'center', cellWidth: 15 },
+      6: { halign: 'center', cellWidth: 12 },
+      7: { halign: 'center', cellWidth: 10 },
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: 10, right: 10 },
     didDrawPage: (data) => {
       // Footer
       doc.setFontSize(7);
@@ -354,6 +358,63 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
         { align: 'center' }
       );
     }
+  });
+
+  // --- SIGNATURE SECTION ---
+  const finalY = (doc as any).lastAutoTable.cursor.y + 15;
+  const currentHeight = doc.internal.pageSize.getHeight();
+
+  // Check if we need a new page for signatures
+  if (finalY + 40 > currentHeight) {
+    doc.addPage();
+    // No need to add header on signature-only page unless desired
+  }
+
+  const sigY = (doc as any).lastAutoTable.cursor.y + 20;
+
+  doc.setFontSize(10);
+  doc.setTextColor(0);
+  doc.setFont('helvetica', 'normal');
+  
+  // Left side: Coordinator
+  doc.text('Koordinator / Penyerah,', 30, sigY);
+  doc.text('( ............................................ )', 30, sigY + 25);
+  doc.setFont('helvetica', 'bold');
+  doc.text(coordinator.toUpperCase(), 30, sigY + 30);
+
+  // Right side: Verifier
+  doc.setFont('helvetica', 'normal');
+  doc.text('Tim Verifikator,', pageWidth - 30, sigY, { align: 'right' });
+  doc.text('( ............................................ )', pageWidth - 30, sigY + 25, { align: 'right' });
+  doc.setFont('helvetica', 'bold');
+  doc.text('SIMPU KEPRI', pageWidth - 30, sigY + 30, { align: 'right' });
+
+  // --- TERMS SECTION ---
+  const termY = sigY + 45;
+  
+  // Box for terms
+  doc.setDrawColor(200);
+  doc.setFillColor(250, 250, 250);
+  doc.roundedRect(10, termY, pageWidth - 20, 55, 3, 3, 'FD');
+
+  doc.setFontSize(9);
+  doc.setTextColor(0);
+  doc.setFont('helvetica', 'bold');
+  doc.text('KETENTUAN PENYERAHAN LPJ', 15, termY + 8);
+  
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  const terms = [
+    '1. Jumlah Total Nota dan LPJ = Rp. 1.001.000 ( minimal ) dan Rp. 2.500.000 ( maksimal )',
+    '2. LPJ diterima jika jumlah pelaku usaha pengajuan dan jumlah tidak ada Revisi / dikembalikan',
+    '3. Jika terdapat jumlah yang tidak sesuai maka, semua LPJ dan Nota dikembalikan kepada Koordinator',
+    '4. Untuk berkas yang diserahkan adalah LPJ dan Nota yang di Fotocopy ( tulisan harus jelas )',
+    '5. Batas akhir penyerahan LPJ adalah 14 hari dan masa perbaikan LPJ yang salah adalah 7 hari',
+    '6. Ketentuan ini bersifat mengikat dan wajib dilaksanakan tanpa terkecuali'
+  ];
+
+  terms.forEach((term, index) => {
+    doc.text(term, 15, termY + 16 + (index * 6));
   });
 
   const filename = `TANDA_TERIMA_LPJ_${coordinator.replace(/\s+/g, '_').toUpperCase()}_${new Date().toISOString().split('T')[0]}.pdf`;
