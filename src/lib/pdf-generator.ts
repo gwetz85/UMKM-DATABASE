@@ -360,17 +360,15 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
     }
   });
 
-  // --- SIGNATURE SECTION ---
-  const finalY = (doc as any).lastAutoTable.cursor.y + 15;
+  // --- SIGNATURE & TERMS SECTION ---
+  let sigY = (doc as any).lastAutoTable.cursor.y + 20;
   const currentHeight = doc.internal.pageSize.getHeight();
 
-  // Check if we need a new page for signatures
-  if (finalY + 40 > currentHeight) {
+  // Check if we need a new page for signatures + terms (approx 100mm total)
+  if (sigY + 100 > currentHeight) {
     doc.addPage();
-    // No need to add header on signature-only page unless desired
+    sigY = 20; // Start from top of new page
   }
-
-  const sigY = (doc as any).lastAutoTable.cursor.y + 20;
 
   doc.setFontSize(10);
   doc.setTextColor(0);
@@ -395,7 +393,7 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
   // Box for terms
   doc.setDrawColor(200);
   doc.setFillColor(250, 250, 250);
-  doc.roundedRect(10, termY, pageWidth - 20, 55, 3, 3, 'FD');
+  doc.rect(10, termY, pageWidth - 20, 55, 'FD');
 
   doc.setFontSize(9);
   doc.setTextColor(0);
