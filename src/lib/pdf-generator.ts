@@ -3,18 +3,19 @@ import autoTable from 'jspdf-autotable';
 import { BusinessActor } from '@/app/lib/types';
 import { generateBarcodeBase64 } from './barcode-utils';
 
-export const addTunasBangsaHeader = (doc: jsPDF) => {
+export const addTunasBangsaHeader = (doc: jsPDF, hasLogo = false) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
+  const textOffset = hasLogo ? 32 : 0;
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(37, 99, 235); // Primary Blue
-  doc.text('TUNAS BANGSA KEPULAUAN RIAU', margin, 17);
+  doc.text('TUNAS BANGSA KEPULAUAN RIAU', margin + textOffset, 17);
   
   doc.setFontSize(9);
   doc.setTextColor(100);
-  doc.text('PENGAJUAN BANTUAN UMKM TAHUN 2026', margin, 23);
+  doc.text('PENGAJUAN BANTUAN UMKM TAHUN 2026', margin + textOffset, 23);
   
   doc.setDrawColor(37, 99, 235);
   doc.setLineWidth(0.5);
@@ -43,7 +44,7 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
   
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  addTunasBangsaHeader(doc);
+  addTunasBangsaHeader(doc, true);
 
   // --- REGISTRATION CODE & BARCODE (TOP RIGHT) ---
   const regCode = actor.registrationCode || 'PENDING';
