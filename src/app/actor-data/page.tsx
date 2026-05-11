@@ -418,7 +418,6 @@ function ActorDataContent() {
               <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
-          </div>
         ) : (isKoordinator || isInspektorat) && !isInspektorat ? (
            <div className="space-y-12">
             {Object.entries(groupedActors).map(([coordinator, actors]) => (
@@ -464,7 +463,6 @@ function ActorDataContent() {
                 </div>
               </div>
             ))}
-          </div>
           </div>
         ) : (filterCoordinator || isInspektorat) ? (
           <div className="space-y-6">
