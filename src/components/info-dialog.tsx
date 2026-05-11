@@ -49,11 +49,17 @@ export function InfoDialog({ children }: InfoDialogProps) {
         
         <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
           <div className="space-y-3">
-            <p className="text-gray-700 leading-relaxed font-bold text-sm uppercase tracking-tight">
-              Selamat datang di Aplikasi **SIMPU** <br/>
-              <span className="text-[10px] text-muted-foreground font-black tracking-widest">- SISTEM INFORMASI MANAJEMEN PELAKU USAHA -</span> <br/>
+            <div className="text-gray-700 leading-relaxed font-bold text-sm uppercase tracking-tight">
+              {config?.welcomeText ? (
+                <div dangerouslySetInnerHTML={{ __html: config.welcomeText.replace(/\n/g, '<br/>') }} />
+              ) : (
+                <>Selamat datang di Aplikasi **SIMPU**</>
+              )}
+              <span className="text-[10px] text-muted-foreground font-black tracking-widest block mt-1">
+                - {config?.subText || "SISTEM INFORMASI MANAJEMEN PELAKU USAHA"} -
+              </span>
               <span className="text-primary mt-1 block">{currentVersion}</span>
-            </p>
+            </div>
             <div className="bg-blue-50 border-l-4 border-primary p-4 rounded-r-xl">
               <p className="text-sm text-blue-900 leading-relaxed italic">
                 "Aplikasi ini dikembangkan dan dibuat secara Mandiri dan Independent oleh Tim Admin yang bekerja. Hak Cipta Sepenuhnya dimiliki oleh AGUS SURIYADI sebagai Pembuat dan Pengembang Aplikasi"
@@ -66,21 +72,21 @@ export function InfoDialog({ children }: InfoDialogProps) {
               <Zap className="w-4 h-4" /> Pembaruan Aplikasi
             </h3>
             <div className="grid grid-cols-1 gap-2">
-              {[
-                { icon: Send, text: "Penambahan Fitur Pesan" },
-                { icon: Zap, text: "Penambahan Event Card" },
-                { icon: Zap, text: "Penambahan Music Backsound" },
-                { icon: Send, text: "Penambahan Fitur Bot Telegram" },
-                { icon: SearchCheck, text: "Penambahan Fitur Cek Data Kolektif" },
-                { icon: ShieldCheck, text: "Penambahan Menu Verifikasi Dinas" },
-                { icon: CreditCard, text: "Penambahan Halaman Bank" },
-                { icon: Database, text: "Penambahan Database 4.045 data" },
-                { icon: ShieldCheck, text: "Perbaikan di beberapa fitur tampilan" },
-                { icon: Zap, text: "Penambahan & perbaikan file system" }
-              ].map((item, i) => (
+              {(config?.appUpdates || [
+                "Penambahan Fitur Pesan",
+                "Penambahan Event Card",
+                "Penambahan Music Backsound",
+                "Penambahan Fitur Bot Telegram",
+                "Penambahan Fitur Cek Data Kolektif",
+                "Penambahan Menu Verifikasi Dinas",
+                "Penambahan Halaman Bank",
+                "Penambahan Database 4.045 data",
+                "Perbaikan di beberapa fitur tampilan",
+                "Penambahan & perbaikan file system"
+              ]).map((text: string, i: number) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-100/50 hover:bg-gray-100 transition-colors group">
-                  <item.icon className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-semibold text-gray-700">{item.text}</span>
+                  <Zap className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
+                  <span className="text-sm font-semibold text-gray-700">{text}</span>
                 </div>
               ))}
             </div>

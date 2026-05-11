@@ -261,6 +261,14 @@ export function useNavigation() {
       description: "Pengaturan Jam Operasional & Libur"
     },
     {
+      name: "Pengaturan Informasi",
+      href: "/settings-info",
+      icon: Info,
+      show: isAdmin,
+      color: "#64748b", // slate-500
+      description: "Kelola Konten Informasi Aplikasi"
+    },
+    {
       name: "LOG APLIKASI",
       href: "/app-logs",
       icon: History,
@@ -268,7 +276,7 @@ export function useNavigation() {
       color: "#000000", // black
       description: "Riwayat Aktivitas Sistem"
     },
-  ], [user, isAdmin, isMonitoring, userProfile])
+  ], [user, isAdmin, isMonitoring, userProfile, totalUnread])
 
   return {
     navigation: navigation.filter(item => item.show),
