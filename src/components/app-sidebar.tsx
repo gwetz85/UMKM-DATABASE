@@ -229,6 +229,11 @@ export function AppSidebar() {
                         <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
                           {item.name}
                         </span>
+                        {item.badge !== undefined && (
+                          <div className="ml-auto flex items-center justify-center bg-rose-500 text-white text-[10px] font-black min-w-[18px] h-[18px] rounded-full px-1 shadow-sm group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-1 group-data-[collapsible=icon]:right-1">
+                            {item.badge}
+                          </div>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   )}

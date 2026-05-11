@@ -7,6 +7,7 @@ export const SOUND_URLS = {
   select: "https://www.soundjay.com/buttons/sounds/button-3.mp3",
   success: "https://www.soundjay.com/buttons/sounds/button-4.mp3",
   error: "https://www.soundjay.com/buttons/sounds/button-10.mp3",
+  notification: "https://www.soundjay.com/communication/sounds/notification-sound-7062.mp3",
 }
 
 export function useSoundEffect() {

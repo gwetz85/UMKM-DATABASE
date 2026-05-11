@@ -21,6 +21,7 @@ import { ThemePersistence } from '@/components/theme-persistence';
 import { RunningText } from './running-text';
 import { useSoundEffect } from '@/hooks/use-sound-effect';
 import { cn } from '@/lib/utils';
+import { MessageNotification } from './MessageNotification';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -135,6 +136,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-transparent">
           <GlobalAutoVerifier />
           <BackgroundMusic role={profile?.role} />
+          <MessageNotification />
           <Toaster />
 
           {!isLoginPage && (

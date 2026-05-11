@@ -45,6 +45,18 @@ export function useNavigation() {
   const isKoordinator = userProfile?.role === 'koordinator'
   const isPetugas = userProfile?.role === 'petugas'
   const isDinas = userProfile?.role === 'dinas'
+  
+  // Real-time unread count
+  const chatsRef = useMemoFirebase(() => {
+    if (!user || !database) return null
+    return ref(database, `chats/${user.uid}`)
+  }, [user, database])
+  const { data: userChats } = useList(chatsRef)
+
+  const totalUnread = React.useMemo(() => {
+    if (!userChats) return 0
+    return userChats.filter((c: any) => c.unread === true).length
+  }, [userChats])
 
   const navigation = React.useMemo(() => [
     {
@@ -61,7 +73,8 @@ export function useNavigation() {
       icon: MessageSquare,
       show: !!user && !isDinas,
       color: "#4f46e5", // indigo-600
-      description: "Komunikasi Internal"
+      description: "Komunikasi Internal",
+      badge: totalUnread > 0 ? totalUnread : undefined
     },
     {
       name: "Cek Data",

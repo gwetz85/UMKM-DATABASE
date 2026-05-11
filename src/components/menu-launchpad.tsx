@@ -90,6 +90,13 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
                 {item.name}
               </div>
               
+              {item.badge !== undefined && (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-white/20 rounded-full backdrop-blur-md border border-white/20 animate-pulse shadow-xl">
+                  <span className="w-1.5 h-1.5 bg-white rounded-full" />
+                  <span className="text-[10px] font-black text-white uppercase tracking-wider">{item.badge} Pesan</span>
+                </div>
+              )}
+
               {item.items && item.items.length > 0 && (
                 <div className="flex items-center gap-2 text-[10px] font-black text-white/80 uppercase tracking-widest bg-black/10 w-fit px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
                   <ChevronRight className="w-3 h-3 text-white" />
