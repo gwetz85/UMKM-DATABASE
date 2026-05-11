@@ -64,8 +64,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
     return () => {
       unsubscribe();
-      set(userStatusRef, false);
-      set(lastSeenRef, serverTimestamp());
+      // NOTE: Do NOT manually set userStatusRef/lastSeenRef here.
+      // onDisconnect() already handles offline status server-side.
+      // Manually setting here causes false-offline glitches during HMR and re-renders.
     };
   }, [database, user, profile?.id]);
 

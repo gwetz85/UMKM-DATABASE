@@ -20,10 +20,6 @@ import { cn } from '@/lib/utils';
  * Handles interaction-based autoplay and provides a global mute toggle.
  */
 export function BackgroundMusic({ className, role }: { className?: string, role?: string }) {
-  if (role !== 'admin' && role !== 'petugas') {
-    return null;
-  }
-
   const [isMuted, setIsMuted] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
@@ -45,6 +41,9 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   const volumeRef = useRef(50);
   const currentTitleRef = useRef("");
 
+  // Role check: must be AFTER all hooks to comply with React Rules of Hooks
+  const isAllowedRole = role === 'admin' || role === 'petugas';
+
 
   // Configuration: YouTube Playlist
   // Playlist ID: PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7
@@ -52,6 +51,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   const useShuffle = false; // Disabled shuffle to follow playlist order
 
   useEffect(() => {
+    if (!isAllowedRole) return;
     // 1. Load the YouTube IFrame API script manually
     const loadYoutubeApi = () => {
       if (window.YT && window.YT.Player) {
@@ -171,7 +171,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
     // BackgroundMusic lives in the global layout and must persist across page navigations.
     // Destroying the player would stop music when navigating between pages.
     return () => {};
-  }, [playlistId]);
+  }, [playlistId, isAllowedRole]);
 
   useEffect(() => {
     // 2. Monitor player width to sync marquee width
@@ -197,7 +197,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
 
   // 3. Global Interaction Handler: Support autoplay by playing on first window click
   useEffect(() => {
-    if (!isPlayerReady || hasInteracted || isMuted) return;
+    if (!isAllowedRole || !isPlayerReady || hasInteracted || isMuted) return;
 
     const handleWindowClick = () => {
       if (playerRef.current && !hasInteracted) {
@@ -208,7 +208,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
 
     window.addEventListener('click', handleWindowClick, { once: true });
     return () => window.removeEventListener('click', handleWindowClick);
-  }, [isPlayerReady, hasInteracted, isMuted]);
+  }, [isAllowedRole, isPlayerReady, hasInteracted, isMuted]);
 
 
 
@@ -410,6 +410,9 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
       }
     }
   };
+
+  // Role guard: render nothing if not admin/petugas (placed after all hooks)
+  if (!isAllowedRole) return null;
 
   return (
     <div 
