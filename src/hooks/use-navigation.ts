@@ -199,6 +199,14 @@ export function useNavigation() {
       description: "Laporan Pertanggungjawaban"
     },
     {
+      name: "Tanda Terima LPJ",
+      href: "/lpj-receipt",
+      icon: FileText,
+      show: (isAdmin || isPetugas || isMonitoring) && !isDinas,
+      color: "#6366f1", // indigo-500
+      description: "Cetak Tanda Terima LPJ Koordinator"
+    },
+    {
       name: "Data Selesai",
       href: "/finish",
       icon: CheckCircle2,

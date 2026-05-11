@@ -285,3 +285,77 @@ export const generateAllCoordinatorsReport = (groupedActors: Record<string, Busi
   const filename = `LAPORAN_KOORDINATOR_LENGKAP_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(filename);
 };
+
+export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[]) => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  
+  // Header Tunas Bangsa
+  const startY = addTunasBangsaHeader(doc);
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('TANDA TERIMA PENYERAHAN LPJ', pageWidth / 2, 45, { align: 'center' });
+  doc.setFontSize(10);
+  doc.text(`KOORDINATOR: ${coordinator.toUpperCase()}`, pageWidth / 2, 51, { align: 'center' });
+  
+  doc.setLineWidth(0.3);
+  doc.line(pageWidth / 2 - 40, 53, pageWidth / 2 + 40, 53);
+
+  const tableData = actors.map((actor, index) => [
+    index + 1,
+    actor.registrationCode || '-',
+    (actor.fullName || "").toUpperCase(),
+    actor.nik || "-",
+    (actor.address || "").toUpperCase(),
+    '' // Checklist column
+  ]);
+
+  autoTable(doc, {
+    startY: 60,
+    head: [['NO', 'REG ID', 'NAMA LENGKAP', 'NIK', 'ALAMAT', 'CEK']],
+    body: tableData,
+    theme: 'grid',
+    headStyles: { 
+      fillColor: [37, 99, 235], 
+      textColor: 255, 
+      fontStyle: 'bold',
+      halign: 'center',
+      fontSize: 8
+    },
+    styles: { 
+      fontSize: 8, 
+      cellPadding: 2,
+      valign: 'middle',
+    },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 10 },
+      1: { halign: 'center', cellWidth: 20 },
+      2: { cellWidth: 40 },
+      3: { halign: 'center', cellWidth: 35 },
+      4: { cellWidth: 'auto' },
+      5: { halign: 'center', cellWidth: 15 },
+    },
+    margin: { left: 14, right: 14 },
+    didDrawPage: (data) => {
+      // Footer
+      doc.setFontSize(7);
+      doc.setTextColor(150);
+      doc.setFont('helvetica', 'italic');
+      doc.text(
+        `Halaman ${data.pageNumber} | Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 
+        pageWidth / 2, 
+        doc.internal.pageSize.getHeight() - 10, 
+        { align: 'center' }
+      );
+    }
+  });
+
+  const filename = `TANDA_TERIMA_LPJ_${coordinator.replace(/\s+/g, '_').toUpperCase()}_${new Date().toISOString().split('T')[0]}.pdf`;
+  doc.save(filename);
+};
