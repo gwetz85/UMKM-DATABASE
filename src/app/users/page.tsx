@@ -28,7 +28,8 @@ import {
   Phone,
   CreditCard,
   MapPin,
-  Building2
+  Building2,
+  ShieldCheck
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { SidebarTrigger } from "@/components/ui/sidebar"
