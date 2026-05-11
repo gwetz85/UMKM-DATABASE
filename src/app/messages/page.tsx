@@ -131,13 +131,23 @@ export default function PesanPage() {
     return ref(database, "system_users")
   }, [database])
   const { data: allUsers, isLoading: usersLoading } = useList(usersRef)
+  
+  const myChatsRef = useMemoFirebase(() => {
+    if (!user || !database) return null
+    return ref(database, `chats/${user.uid}`)
+  }, [user, database])
+  const { data: myChats } = useList(myChatsRef)
 
   // Cari profil user yang sedang login
   const myProfile = (allUsers || []).find((u: any) => u.uid === user?.uid)
 
   const contacts = (allUsers || [])
     .filter((u: any) => u.uid && u.uid !== user?.uid)
-    .filter((u: any) => u.isOnline) // Only show online users
+    .filter((u: any) => {
+      const chatInfo = myChats?.find((c: any) => c.id === u.uid)
+      const hasUnread = chatInfo?.unread === true
+      return u.isOnline || hasUnread // Show online users OR those with unread messages
+    })
     .filter((u: any) =>
       !searchQuery ||
       u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -382,6 +392,11 @@ export default function PesanPage() {
                         )}
                       </div>
                     </div>
+                    {myChats?.find((c: any) => c.id === contact.uid)?.unread === true && (
+                      <div className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-lg animate-bounce">
+                        1
+                      </div>
+                    )}
                   </button>
                 )
               })
