@@ -313,14 +313,12 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
     (actor.fullName || "").toUpperCase(),
     actor.nik || "-",
     (actor.address || "").toUpperCase(),
-    '', // Tanggal
-    '', // Jam
     ''  // Ceklist column
   ]);
 
   autoTable(doc, {
     startY: 60,
-    head: [['NO', 'REG ID', 'NAMA LENGKAP', 'NIK', 'ALAMAT', 'TANGGAL', 'JAM', 'CEK']],
+    head: [['NO', 'REG ID', 'NAMA LENGKAP', 'NIK', 'ALAMAT', 'CEK']],
     body: tableData,
     theme: 'grid',
     headStyles: { 
@@ -336,16 +334,14 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
       valign: 'middle',
     },
     columnStyles: {
-      0: { halign: 'center', cellWidth: 8 },
-      1: { halign: 'center', cellWidth: 15 },
-      2: { cellWidth: 35 },
-      3: { halign: 'center', cellWidth: 28 },
+      0: { halign: 'center', cellWidth: 10 },
+      1: { halign: 'center', cellWidth: 20 },
+      2: { cellWidth: 40 },
+      3: { halign: 'center', cellWidth: 35 },
       4: { cellWidth: 'auto' },
       5: { halign: 'center', cellWidth: 15 },
-      6: { halign: 'center', cellWidth: 12 },
-      7: { halign: 'center', cellWidth: 10 },
     },
-    margin: { left: 10, right: 10 },
+    margin: { left: 14, right: 14 },
     didDrawPage: (data) => {
       // Footer
       doc.setFontSize(7);
@@ -370,18 +366,25 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
     sigY = 20;
   }
 
+  // Auto-generated timestamp
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(100);
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  doc.text(`Dicetak otomatis pada: ${dateStr} pukul ${timeStr} WIB`, pageWidth - 14, sigY - 5, { align: 'right' });
+
   doc.setFontSize(10);
   doc.setTextColor(0);
   doc.setFont('helvetica', 'normal');
   
   doc.text('Koordinator / Penyerah,', 30, sigY);
-  doc.text('( ............................................ )', 30, sigY + 25);
   doc.setFont('helvetica', 'bold');
   doc.text(coordinator.toUpperCase(), 30, sigY + 30);
 
   doc.setFont('helvetica', 'normal');
   doc.text('Tim Verifikator,', pageWidth - 30, sigY, { align: 'right' });
-  doc.text('( ............................................ )', pageWidth - 30, sigY + 25, { align: 'right' });
   doc.setFont('helvetica', 'bold');
   doc.text('SIMPU KEPRI', pageWidth - 30, sigY + 30, { align: 'right' });
 

@@ -157,8 +157,6 @@ export default function LPJReceiptPage() {
                       <TableHead className="w-32 font-black text-slate-500 text-[10px] uppercase">Reg ID</TableHead>
                       <TableHead className="font-black text-slate-500 text-[10px] uppercase">Nama Lengkap</TableHead>
                       <TableHead className="w-40 font-black text-slate-500 text-[10px] uppercase">NIK</TableHead>
-                      <TableHead className="w-24 font-black text-slate-500 text-[10px] uppercase text-center">Tanggal</TableHead>
-                      <TableHead className="w-20 font-black text-slate-500 text-[10px] uppercase text-center">Jam</TableHead>
                       <TableHead className="font-black text-slate-500 text-[10px] uppercase text-center w-20">Cek</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -172,12 +170,6 @@ export default function LPJReceiptPage() {
                           <div className="text-[9px] text-muted-foreground uppercase">{actor.address?.substring(0, 40)}...</div>
                         </TableCell>
                         <TableCell className="font-mono text-slate-600 text-xs">{actor.nik}</TableCell>
-                        <TableCell className="text-center">
-                          <div className="w-16 h-6 border border-slate-200 rounded mx-auto bg-slate-50/50" />
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="w-12 h-6 border border-slate-200 rounded mx-auto bg-slate-50/50" />
-                        </TableCell>
                         <TableCell className="text-center">
                           <div className="w-6 h-6 border-2 border-slate-200 rounded-md mx-auto" />
                         </TableCell>
