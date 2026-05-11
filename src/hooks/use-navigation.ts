@@ -45,6 +45,7 @@ export function useNavigation() {
   const isKoordinator = userProfile?.role === 'koordinator'
   const isPetugas = userProfile?.role === 'petugas'
   const isDinas = userProfile?.role === 'dinas'
+  const isInspektorat = userProfile?.role === 'inspektorat'
   
   // Real-time unread count
   const chatsRef = useMemoFirebase(() => {
@@ -63,7 +64,7 @@ export function useNavigation() {
       name: "Dashboard Statistik",
       href: "/dashboard",
       icon: LayoutDashboard,
-      show: !!user && !isDinas,
+      show: !!user && !isDinas && !isInspektorat,
       color: "#f59e0b", // amber-500
       description: "Statistik & Ringkasan Data"
     },
@@ -71,7 +72,7 @@ export function useNavigation() {
       name: "Pesan Chat",
       href: "/messages",
       icon: MessageSquare,
-      show: !!user && !isDinas,
+      show: !!user && !isDinas && !isInspektorat,
       color: "#4f46e5", // indigo-600
       description: "Komunikasi Internal",
       badge: totalUnread > 0 ? totalUnread : undefined
@@ -112,7 +113,7 @@ export function useNavigation() {
       name: "Data Pelaku Usaha",
       href: "/actor-data",
       icon: Users,
-      show: !!user && !isDinas,
+      show: (!!user && !isDinas) || isInspektorat,
       color: "#0284c7", // sky-600
       description: "Database Seluruh Pelaku Usaha"
     },
@@ -120,7 +121,7 @@ export function useNavigation() {
       name: "Rekapan Data",
       href: "/rekapan-data",
       icon: BarChart3,
-      show: !!user && !isDinas,
+      show: !!user && !isDinas && !isInspektorat,
       color: "#d97706", // amber-600
       description: "Rekap Data Per Wilayah"
     },
@@ -128,7 +129,7 @@ export function useNavigation() {
       name: "BPJS Ketenagakerjaan",
       href: "/bpjs",
       icon: ShieldCheck,
-      show: !!user && !isDinas,
+      show: !!user && !isDinas && !isInspektorat,
       color: "#15803d", // green-700
       description: "Monitoring BPJS Peserta"
     },
@@ -168,7 +169,7 @@ export function useNavigation() {
       name: "Rekening Bank",
       href: "/rekening-bank",
       icon: CreditCard,
-      show: !!user && !isDinas,
+      show: !!user && !isDinas && !isInspektorat,
       color: "#475569", // slate-600
       description: "Daftar Rekening Per Bank",
       items: [
@@ -200,7 +201,7 @@ export function useNavigation() {
       name: "Data Selesai",
       href: "/finish",
       icon: CheckCircle2,
-      show: !!user && !isDinas,
+      show: !!user && !isDinas && !isInspektorat,
       color: "#1d4ed8", // blue-700
       description: "Data yang Telah Selesai Diproses"
     },
@@ -216,7 +217,7 @@ export function useNavigation() {
       name: "Pengaturan",
       href: "/settings",
       icon: UserCog,
-      show: !!user && !isDinas,
+      show: !!user && !isDinas && !isInspektorat,
       color: "#94a3b8", // slate-400
       description: "Konfigurasi Profil & Sistem"
     },
@@ -285,6 +286,7 @@ export function useNavigation() {
     isMonitoring,
     isPetugas,
     isDinas,
+    isInspektorat,
     userProfile
   }
 }

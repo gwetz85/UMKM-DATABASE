@@ -76,6 +76,7 @@ function ActorDataContent() {
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isMonitoring = userProfile?.role === 'monitoring'
   const isKoordinator = userProfile?.role === 'koordinator'
+  const isInspektorat = userProfile?.role === 'inspektorat'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
@@ -417,7 +418,8 @@ function ActorDataContent() {
               <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
-        ) : isKoordinator ? (
+          </div>
+        ) : (isKoordinator || isInspektorat) && !isInspektorat ? (
            <div className="space-y-12">
             {Object.entries(groupedActors).map(([coordinator, actors]) => (
               <div key={coordinator} className="space-y-4 break-after-page">
@@ -463,18 +465,23 @@ function ActorDataContent() {
               </div>
             ))}
           </div>
-        ) : filterCoordinator ? (
+          </div>
+        ) : (filterCoordinator || isInspektorat) ? (
           <div className="space-y-6">
             <div className="flex items-center gap-4 mb-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => router.push('/actor-data')}
-                className="font-bold border-primary text-primary hover:bg-primary/5"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" /> KEMBALI KE MODUL
-              </Button>
-              <h2 className="text-xl font-black text-primary uppercase tracking-tighter">DATA: {filterCoordinator}</h2>
+              {!isInspektorat && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => router.push('/actor-data')}
+                  className="font-bold border-primary text-primary hover:bg-primary/5"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" /> KEMBALI KE MODUL
+                </Button>
+              )}
+              <h2 className="text-xl font-black text-primary uppercase tracking-tighter">
+                {isInspektorat ? "DATABASE PELAKU USAHA" : `DATA: ${filterCoordinator}`}
+              </h2>
             </div>
             
             <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
@@ -489,7 +496,7 @@ function ActorDataContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []).map((actor, index) => (
+                  {(isInspektorat ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || [])).map((actor, index) => (
                     <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
                       <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
                       <TableCell className="py-4">
@@ -617,7 +624,7 @@ function ActorDataContent() {
                   {isEditMode ? "Edit Data Pelaku Usaha" : "Detail Pelaku Usaha"}
                 </DialogTitle>
                 <div className="flex flex-wrap gap-2">
-                  {!isEditMode && viewingActor && !isKoordinator && (
+                  {!isEditMode && viewingActor && !isKoordinator && !isInspektorat && (
                     <Button 
                       size="sm" 
                       onClick={() => handlePrintForm(viewingActor)}
@@ -767,7 +774,7 @@ function ActorDataContent() {
                         { label: "Usaha", value: viewingActor.businessName },
                         { label: "Kategori Usaha", value: viewingActor.businessCategory },
                         { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                        { label: "KORLAP / DEWAN AKTIF", value: viewingActor.coordinator }
+                        ...(!isInspektorat ? [{ label: "KORLAP / DEWAN AKTIF", value: viewingActor.coordinator }] : [])
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
