@@ -137,6 +137,7 @@ export default function PesanPage() {
 
   const contacts = (allUsers || [])
     .filter((u: any) => u.uid && u.uid !== user?.uid)
+    .filter((u: any) => u.isOnline) // Only show online users
     .filter((u: any) =>
       !searchQuery ||
       u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
