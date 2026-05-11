@@ -341,6 +341,7 @@ export default function UserManagementPage() {
                       <SelectItem value="admin">Administrator</SelectItem>
                       <SelectItem value="monitoring">Monitoring</SelectItem>
                       <SelectItem value="dinas">Dinas</SelectItem>
+                      <SelectItem value="inspektorat">Inspektorat</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -396,6 +397,10 @@ export default function UserManagementPage() {
                       ) : u.role === 'dinas' ? (
                         <Badge variant="outline" className="text-indigo-600 border-indigo-200 bg-indigo-50 font-black uppercase text-[9px] gap-1">
                           <Building2 className="w-3 h-3" /> Dinas
+                        </Badge>
+                      ) : u.role === 'inspektorat' ? (
+                        <Badge variant="outline" className="text-slate-600 border-slate-300 bg-slate-50 font-black uppercase text-[9px] gap-1">
+                          <ShieldCheck className="w-3 h-3" /> Inspektorat
                         </Badge>
                       ) : (
                         <Badge variant="destructive" className="animate-pulse font-black uppercase text-[9px] gap-1 bg-red-100 text-red-600 border-red-200">
@@ -461,6 +466,7 @@ export default function UserManagementPage() {
                                         <SelectItem value="admin">Administrator</SelectItem>
                                         <SelectItem value="monitoring">Monitoring</SelectItem>
                                         <SelectItem value="dinas">Dinas</SelectItem>
+                                        <SelectItem value="inspektorat">Inspektorat</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
