@@ -6,7 +6,7 @@ import { generateBarcodeBase64 } from './barcode-utils';
 export const addTunasBangsaHeader = (doc: jsPDF, hasLogo = false) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
-  const textOffset = hasLogo ? 32 : 0;
+  const textOffset = hasLogo ? 28 : 0;
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
@@ -37,7 +37,7 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
 
   // --- HEADER TUNAS BANGSA ---
   try {
-    doc.addImage('/logo-tunas-bangsa.png', 'PNG', margin, 12, 25, 25);
+    doc.addImage('/logo-tunas-bangsa.png', 'PNG', margin, 9, 20, 20);
   } catch (e) {
     console.error("Logo not found at /logo-tunas-bangsa.png");
   }
