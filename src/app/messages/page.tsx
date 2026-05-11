@@ -183,6 +183,15 @@ export default function PesanPage() {
     }
   }, [selectedContact])
 
+  // Mark as read when selected
+  useEffect(() => {
+    if (user && database && selectedContact && chatMeta?.unread) {
+      update(ref(database, `chats/${user.uid}/${selectedContact.uid}`), {
+        unread: false
+      }).catch(err => console.error("Failed to mark as read:", err))
+    }
+  }, [user, database, selectedContact, chatMeta?.unread])
+
   // ─── Handlers ──────────────────────────────────────────────────────────────
 
   const handleDeleteChat = async () => {
@@ -193,7 +202,8 @@ export default function PesanPage() {
       await update(ref(database, `chats/${user.uid}/${selectedContact.uid}`), {
         deletedAt: Date.now(),
         lastMessage: "Obrolan dihapus",
-        lastTimestamp: serverTimestamp()
+        lastTimestamp: serverTimestamp(),
+        unread: false
       })
       toast({ title: "Riwayat Dihapus", description: "Pesan-pesan lama telah disembunyikan dari perangkat ini." })
     } catch (error: any) {

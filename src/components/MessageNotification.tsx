@@ -14,6 +14,7 @@ export function MessageNotification() {
   const { playSound } = useSoundEffect()
   const pathname = usePathname()
   const prevUnreadRef = useRef<Record<string, boolean>>({})
+  const activeToastsRef = useRef<Record<string, { dismiss: () => void }>>({})
 
   const chatsRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -41,13 +42,24 @@ export function MessageNotification() {
       const wasUnread = !!prevUnreadRef.current[friendId]
 
       if (isUnread && !wasUnread) {
+        // Skip notification if the message is "Obrolan dihapus"
+        if (chat.lastMessage === "Obrolan dihapus") return
+
         // New unread message detected
         playSound("notification")
-        toast({
+        const newToast = toast({
           title: `Pesan Baru dari ${chat.friendName || "Pengguna"}`,
           description: chat.lastMessage || "Anda menerima pesan baru.",
           duration: 5000,
         })
+        
+        activeToastsRef.current[friendId] = newToast
+      } else if (!isUnread && wasUnread) {
+        // Message was read or deleted, dismiss existing toast if any
+        if (activeToastsRef.current[friendId]) {
+          activeToastsRef.current[friendId].dismiss()
+          delete activeToastsRef.current[friendId]
+        }
       }
     })
 
