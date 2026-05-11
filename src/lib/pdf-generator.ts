@@ -296,7 +296,7 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
   const pageWidth = doc.internal.pageSize.getWidth();
   
   // Header Tunas Bangsa
-  const startY = addTunasBangsaHeader(doc);
+  addTunasBangsaHeader(doc);
   
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
@@ -361,46 +361,41 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
   });
 
   // --- SIGNATURE & TERMS SECTION ---
-  let sigY = (doc as any).lastAutoTable.cursor.y + 20;
-  const currentHeight = doc.internal.pageSize.getHeight();
+  const finalTableY = (doc as any).lastAutoTable?.finalY || 60;
+  let sigY = finalTableY + 15;
+  const pageHeight = doc.internal.pageSize.getHeight();
 
-  // Check if we need a new page for signatures + terms (approx 100mm total)
-  if (sigY + 100 > currentHeight) {
+  if (sigY + 85 > pageHeight) {
     doc.addPage();
-    sigY = 20; // Start from top of new page
+    sigY = 20;
   }
 
   doc.setFontSize(10);
   doc.setTextColor(0);
   doc.setFont('helvetica', 'normal');
   
-  // Left side: Coordinator
   doc.text('Koordinator / Penyerah,', 30, sigY);
   doc.text('( ............................................ )', 30, sigY + 25);
   doc.setFont('helvetica', 'bold');
   doc.text(coordinator.toUpperCase(), 30, sigY + 30);
 
-  // Right side: Verifier
   doc.setFont('helvetica', 'normal');
   doc.text('Tim Verifikator,', pageWidth - 30, sigY, { align: 'right' });
   doc.text('( ............................................ )', pageWidth - 30, sigY + 25, { align: 'right' });
   doc.setFont('helvetica', 'bold');
   doc.text('SIMPU KEPRI', pageWidth - 30, sigY + 30, { align: 'right' });
 
-  // --- TERMS SECTION ---
   const termY = sigY + 45;
-  
-  // Box for terms
   doc.setDrawColor(200);
-  doc.setFillColor(250, 250, 250);
-  doc.rect(10, termY, pageWidth - 20, 55, 'FD');
+  doc.setFillColor(245, 245, 245);
+  doc.rect(10, termY, pageWidth - 20, 50, 'FD');
 
   doc.setFontSize(9);
   doc.setTextColor(0);
   doc.setFont('helvetica', 'bold');
   doc.text('KETENTUAN PENYERAHAN LPJ', 15, termY + 8);
   
-  doc.setFontSize(7.5);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   const terms = [
     '1. Jumlah Total Nota dan LPJ = Rp. 1.001.000 ( minimal ) dan Rp. 2.500.000 ( maksimal )',
@@ -412,9 +407,9 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
   ];
 
   terms.forEach((term, index) => {
-    doc.text(term, 15, termY + 16 + (index * 6));
+    doc.text(term, 15, termY + 15 + (index * 5.5));
   });
 
-  const filename = `TANDA_TERIMA_LPJ_${coordinator.replace(/\s+/g, '_').toUpperCase()}_${new Date().toISOString().split('T')[0]}.pdf`;
-  doc.save(filename);
+  const cleanName = coordinator.replace(/[^a-z0-9]/gi, '_').toUpperCase();
+  doc.save(`TANDA_TERIMA_LPJ_${cleanName}.pdf`);
 };

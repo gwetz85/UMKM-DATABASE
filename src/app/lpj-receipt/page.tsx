@@ -48,11 +48,20 @@ export default function LPJReceiptPage() {
   }, [allActors, selectedCoordinator, searchQuery])
 
   const handlePrint = () => {
-    if (filteredActors.length === 0) {
-      toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk dicetak." })
-      return
+    try {
+      if (filteredActors.length === 0) {
+        toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk dicetak." })
+        return
+      }
+      generateLPJReceipt(selectedCoordinator, filteredActors)
+    } catch (error) {
+      console.error("Print Error:", error)
+      toast({
+        variant: "destructive",
+        title: "Gagal Mencetak",
+        description: "Terjadi kesalahan saat memproses PDF."
+      })
     }
-    generateLPJReceipt(selectedCoordinator, filteredActors)
   }
 
   return (
