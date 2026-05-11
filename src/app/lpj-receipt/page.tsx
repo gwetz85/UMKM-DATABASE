@@ -38,7 +38,7 @@ export default function LPJReceiptPage() {
     if (!allActors || !selectedCoordinator) return []
     return allActors
       .filter(a => a.coordinator?.toUpperCase().trim() === selectedCoordinator)
-      .filter(a => (a.status === 'verified_actor' || a.status === 'bank_pending' || a.status === 'lpj_ready' || a.status === 'finished'))
+      .filter(a => (a.status === 'verified_actor' || a.status === 'bank_pending' || a.status === 'lpj_pending' || a.status === 'finish'))
       .filter(a => 
         (a.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         (a.nik || "").includes(searchQuery) ||
