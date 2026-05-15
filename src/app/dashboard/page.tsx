@@ -1,10 +1,10 @@
 "use client"
 
-import { useMemoFirebase, useList, useUser, useDatabase } from "@/firebase"
+import { useMemoFirebase, useList, useUser, useDatabase, useObject } from "@/firebase"
 import { ref, query } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
-import { Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Clock, History, MessageSquare } from "lucide-react"
+import { RefreshCw, Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Clock, History, MessageSquare } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { BusinessActor } from "../lib/types"
@@ -13,6 +13,7 @@ import { MusicDashboardCard } from "@/components/MusicDashboardCard"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/hooks/use-toast"
 import { 
   BarChart, 
   Bar, 
@@ -64,6 +65,7 @@ export default function DashboardStatsPage() {
   const { user, isUserLoading } = useUser()
   const database = useDatabase()
   const router = useRouter()
+  const { toast } = useToast()
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -84,12 +86,25 @@ export default function DashboardStatsPage() {
     }
   }, [user, isUserLoading, router, userProfile])
   
-  const memoQuery = useMemoFirebase(() => {
-    if (!database || !user) return null
-    return query(ref(database, 'businessActors'))
-  }, [database, user])
+  // Optimize: Fetch pre-calculated stats instead of all actors
+  const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
+  const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
 
-  const { data: allData, isLoading } = useList<BusinessActor>(memoQuery)
+  // On-demand fetch for modal data (only when a filter is selected)
+  const modalQuery = useMemoFirebase(() => {
+    if (!database || !selectedFilter) return null
+    const baseRef = ref(database, 'businessActors')
+    
+    // Applying filters at the query level where possible
+    if (selectedFilter.filterType === 'laki') return query(baseRef, orderByChild('gender'), equalTo('Laki-laki'))
+    if (selectedFilter.filterType === 'perempuan') return query(baseRef, orderByChild('gender'), equalTo('Perempuan'))
+    if (selectedFilter.filterType === 'rejected') return query(baseRef, orderByChild('status'), equalTo('rejected'))
+    // Note: Complex filters like 'verified' or 'kelurahan' might still need some client-side filtering 
+    // unless we optimize the database structure further.
+    return query(baseRef, limitToFirst(100)) // Limit initial modal data
+  }, [database, selectedFilter])
+
+  const { data: modalData, isLoading: isModalLoading } = useList(modalQuery)
 
   const kuotaQuery = useMemoFirebase(() => {
     if (!database) return null
@@ -98,34 +113,81 @@ export default function DashboardStatsPage() {
 
   const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery)
 
-  const activeData = useMemo(() => {
-    return allData?.filter(d => {
-      const status = d.status?.toLowerCase().trim() || "";
-      return status !== 'rejected' && status !== 'blacklist';
-    }) || []
-  }, [allData])
+  // Use systemStats if available, otherwise fallback to 0 or calculate (one-time)
+  const statsValues = useMemo(() => {
+    if (systemStats) {
+      return {
+        total: systemStats.totalActors || 0,
+        laki: systemStats.gender?.laki || 0,
+        perempuan: systemStats.gender?.perempuan || 0,
+        verified: systemStats.status?.verified || 0,
+        rejected: systemStats.status?.rejected || 0
+      }
+    }
+    return { total: 0, laki: 0, perempuan: 0, verified: 0, rejected: 0 }
+  }, [systemStats])
+
+  const [isSyncing, setIsSyncing] = useState(false)
+  const handleSyncStats = async () => {
+    if (!database || isSyncing) return
+    setIsSyncing(true)
+    try {
+      const { get, ref } = await import("firebase/database")
+      const snap = await get(ref(database, 'businessActors'))
+      if (snap.exists()) {
+        const actors = Object.values(snap.val())
+        const stats = {
+          totalActors: actors.length,
+          gender: {
+            laki: actors.filter((a: any) => ['laki-laki', 'l'].includes((a.gender || "").toLowerCase())).length,
+            perempuan: actors.filter((a: any) => ['perempuan', 'p'].includes((a.gender || "").toLowerCase())).length,
+            unknown: 0
+          },
+          status: {
+            pending: actors.filter((a: any) => (a.status || 'pending') === 'pending').length,
+            verified: actors.filter((a: any) => ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending'].includes(a.status)).length,
+            rejected: actors.filter((a: any) => a.status === 'rejected').length,
+            finish: actors.filter((a: any) => a.status === 'finish').length,
+          },
+          kelurahan: {},
+          coordinator: {},
+          lastUpdated: new Date().toISOString()
+        } as any
+
+        actors.forEach((a: any) => {
+          if (a.kelurahan) {
+            const k = a.kelurahan.toUpperCase().trim()
+            stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
+          }
+          if (a.coordinator) {
+            const c = a.coordinator.toUpperCase().trim()
+            stats.coordinator[c] = (stats.coordinator[c] || 0) + 1
+          }
+        })
+        
+        const { set } = await import("firebase/database")
+        await set(ref(database, 'system_stats'), stats)
+        toast({ title: "Sinkronisasi Berhasil", description: "Statistik sistem telah diperbarui." })
+      }
+    } catch (err) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal Sinkronisasi", description: "Terjadi kesalahan saat menghitung ulang statistik." })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
   const coordinatorStats = useMemo(() => {
-    if (!activeData) return []
-    const counts: Record<string, number> = {}
-    activeData.forEach(d => {
-      if (d.coordinator) {
-        const name = d.coordinator.toUpperCase().trim()
-        counts[name] = (counts[name] || 0) + 1
-      }
-    })
-    return Object.entries(counts)
+    if (!systemStats?.coordinator) return []
+    return Object.entries(systemStats.coordinator)
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
-  }, [activeData])
+  }, [systemStats])
 
   const combinedKuotaData = useMemo(() => {
     if (!kuotaData) return []
     
-    const achievedMap: Record<string, number> = {}
-    coordinatorStats.forEach(stat => {
-      achievedMap[stat.name] = stat.count
-    })
+    const achievedMap = systemStats?.coordinator || {}
 
     return kuotaData.map((item: any) => {
       const quota = item.quota || 0
@@ -143,7 +205,7 @@ export default function DashboardStatsPage() {
       const nameB = (b.name || "").toLowerCase()
       return nameA.localeCompare(nameB)
     })
-  }, [kuotaData, coordinatorStats])
+  }, [kuotaData, systemStats])
 
   const totalKuotaDashboard = useMemo(() => {
     return combinedKuotaData.reduce((acc, curr) => acc + curr.quota, 0)
@@ -154,89 +216,33 @@ export default function DashboardStatsPage() {
   }, [combinedKuotaData])
 
   const kelurahanStats = useMemo(() => {
-    const listMap = new Set(KELURAHAN_LIST.map(k => k.toLowerCase().trim()));
-    const knownStats = KELURAHAN_LIST.map(k => ({
-      name: k,
-      count: activeData.filter(d => d.kelurahan?.toLowerCase().trim() === k.toLowerCase().trim()).length
-    })).filter(item => item.count > 0);
-    
-    const otherCount = activeData.filter(d => {
-      const k = d.kelurahan?.toLowerCase().trim() || "";
-      return k !== "" && !listMap.has(k);
-    }).length;
-
-    const emptyCount = activeData.filter(d => !d.kelurahan?.trim()).length;
-    
-    if (otherCount + emptyCount > 0) {
-      knownStats.push({ name: "Lainnya / Kosong", count: otherCount + emptyCount });
-    }
-    
-    return knownStats.sort((a, b) => b.count - a.count);
-  }, [activeData])
-
-  const genderStats = useMemo(() => {
-    const laki = (allData || []).filter(d => {
-      const g = (d.gender || "").toLowerCase().trim();
-      return g === "laki-laki" || g === "l";
-    }).length;
-    
-    const perempuan = (allData || []).filter(d => {
-      const g = (d.gender || "").toLowerCase().trim();
-      return g === "perempuan" || g === "p";
-    }).length;
-
-    const unknown = (allData?.length ?? 0) - (laki + perempuan);
-    return { laki, perempuan, unknown };
-  }, [allData])
-
-
-  const categoryStats = useMemo(() => {
-    const kuliner = (allData || []).filter(d => (d.businessCategory || "").toLowerCase().trim() === "kuliner").length;
-    const bukanKuliner = (allData || []).filter(d => (d.businessCategory || "").toLowerCase().trim() === "bukan kuliner").length;
-    const unknown = (allData?.length ?? 0) - (kuliner + bukanKuliner);
-    return { kuliner, bukanKuliner, unknown };
-  }, [allData])
+    if (!systemStats?.kelurahan) return []
+    const stats = Object.entries(systemStats.kelurahan).map(([name, count]) => ({
+      name,
+      count
+    }))
+    return stats.sort((a, b) => b.count - a.count);
+  }, [systemStats])
 
   const filteredModalData = useMemo(() => {
-    if (!selectedFilter || !allData) return []
+    if (!selectedFilter || !modalData) return []
+    // Since we fetch modalData on demand based on the filter, 
+    // we might still need some refinement here if the query was generic.
     const type = selectedFilter.filterType
-    if (type === "total") return allData
-    if (type === "laki") return allData.filter(d => {
-      const g = (d.gender || "").toLowerCase().trim();
-      return g === "laki-laki" || g === "l";
-    })
-    if (type === "perempuan") return allData.filter(d => {
-      const g = (d.gender || "").toLowerCase().trim();
-      return g === "perempuan" || g === "p";
-    })
-    if (type === "verified") return allData.filter(d => {
+    if (type === "total") return modalData
+    if (type === "verified") return modalData.filter(d => {
       const s = d.status || "";
       return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
     })
-    if (type === "rejected") return allData.filter(d => d.status?.toLowerCase().trim() === "rejected")
     if (type === "kelurahan") {
-      return activeData.filter(d => {
+      return modalData.filter(d => {
         const k = d.kelurahan?.toLowerCase().trim() || "";
         const targetK = selectedFilter.name.toLowerCase().trim();
-        if (targetK === "lainnya / kosong") {
-          const listMap = new Set(KELURAHAN_LIST.map(item => item.toLowerCase().trim()));
-          return k === "" || !listMap.has(k);
-        }
         return k === targetK;
       })
     }
-    if (type === "kategori") {
-      return allData.filter(d => {
-        const k = (d.businessCategory || "").toLowerCase().trim();
-        const targetK = selectedFilter.name.toLowerCase().trim();
-        if (targetK === "lainnya / kosong") {
-          return k !== "kuliner" && k !== "bukan kuliner";
-        }
-        return k === targetK;
-      })
-    }
-    return []
-  }, [allData, activeData, selectedFilter])
+    return modalData
+  }, [modalData, selectedFilter])
 
   if (isUserLoading) {
     return (
@@ -251,7 +257,7 @@ export default function DashboardStatsPage() {
   const stats = [
     { 
       name: "Total Pelaku Usaha", 
-      value: allData?.length ?? 0, 
+      value: statsValues.total, 
       icon: Building2, 
       color: "text-white", 
       bg: "bg-white/20",
@@ -262,7 +268,7 @@ export default function DashboardStatsPage() {
     },
     { 
       name: "Pelaku Laki-laki", 
-      value: genderStats.laki, 
+      value: statsValues.laki, 
       icon: Users, 
       color: "text-white", 
       bg: "bg-white/20",
@@ -273,7 +279,7 @@ export default function DashboardStatsPage() {
     },
     { 
       name: "Pelaku Perempuan", 
-      value: genderStats.perempuan, 
+      value: statsValues.perempuan, 
       icon: Users, 
       color: "text-white", 
       bg: "bg-white/20",
@@ -284,10 +290,7 @@ export default function DashboardStatsPage() {
     },
     { 
       name: "Data Terverifikasi", 
-      value: (allData || []).filter(d => {
-        const s = d.status || "";
-        return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
-      }).length, 
+      value: statsValues.verified, 
       icon: UserCheck, 
       color: "text-white", 
       bg: "bg-white/20",
@@ -298,7 +301,7 @@ export default function DashboardStatsPage() {
     },
     { 
       name: "Data Ditolak", 
-      value: allData?.filter(d => d.status?.toLowerCase().trim() === "rejected").length || 0, 
+      value: statsValues.rejected, 
       icon: UserX, 
       color: "text-white", 
       bg: "bg-white/20",
@@ -320,11 +323,25 @@ export default function DashboardStatsPage() {
             Monitor dan kelola pendaftaran pelaku usaha secara real-time.
           </p>
         </div>
-        <div className="glass-panel px-3 py-1.5 md:px-4 md:py-2 rounded-xl flex items-center gap-2 md:gap-3 hover:shadow-lg transition-all">
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest">
-            Sistem: <span className="text-emerald-600">AKTIF</span>
-          </span>
+        <div className="flex items-center gap-3">
+          {userProfile?.role === 'admin' && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleSyncStats} 
+              disabled={isSyncing}
+              className="glass-panel border-primary/20 text-primary hover:bg-primary/5 font-bold text-[10px] md:text-xs h-8 md:h-10"
+            >
+              {isSyncing ? <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin mr-2" /> : <RefreshCw className="w-3 h-3 md:w-4 md:h-4 mr-2" />}
+              SYNC STATS
+            </Button>
+          )}
+          <div className="glass-panel px-3 py-1.5 md:px-4 md:py-2 rounded-xl flex items-center gap-2 md:gap-3 hover:shadow-lg transition-all">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest">
+              Sistem: <span className="text-emerald-600">AKTIF</span>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -348,7 +365,7 @@ export default function DashboardStatsPage() {
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-              <div className="text-xl md:text-3xl font-black text-white">{isLoading ? "..." : stat.value}</div>
+              <div className="text-xl md:text-3xl font-black text-white">{isStatsLoading ? "..." : stat.value}</div>
               <div className="flex items-center gap-1 mt-1 text-[8px] md:text-[10px] font-bold text-white/70 uppercase">
                 <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
                 DATA TERKINI
@@ -490,30 +507,34 @@ export default function DashboardStatsPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-auto rounded-xl border">
-            <Table>
-              <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
-                <TableRow>
-                  <TableHead className="w-[50px] text-center font-black text-slate-800 text-xs">No</TableHead>
-                  <TableHead className="font-black text-slate-800 text-xs">Nama Lengkap</TableHead>
-                  <TableHead className="font-black text-slate-800 text-xs">NIK</TableHead>
-                  <TableHead className="font-black text-slate-800 text-xs text-center">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredModalData.map((d, i) => (
-                  <TableRow key={d.id}>
-                    <TableCell className="text-center font-bold text-slate-600 text-xs">{i + 1}</TableCell>
-                    <TableCell className="font-black text-slate-800 text-xs uppercase">{d.fullName || "-"}</TableCell>
-                    <TableCell className="font-mono text-slate-600 text-xs">{d.nik || "-"}</TableCell>
-                    <TableCell className="text-center">
-                       <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full border bg-slate-100 text-slate-600">
-                         {(d.status || "PENDING").replace(/_/g, " ")}
-                       </span>
-                    </TableCell>
+            {isModalLoading ? (
+              <div className="p-8 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+            ) : (
+              <Table>
+                <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
+                  <TableRow>
+                    <TableHead className="w-[50px] text-center font-black text-slate-800 text-xs">No</TableHead>
+                    <TableHead className="font-black text-slate-800 text-xs">Nama Lengkap</TableHead>
+                    <TableHead className="font-black text-slate-800 text-xs">NIK</TableHead>
+                    <TableHead className="font-black text-slate-800 text-xs text-center">Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredModalData.map((d, i) => (
+                    <TableRow key={d.id}>
+                      <TableCell className="text-center font-bold text-slate-600 text-xs">{i + 1}</TableCell>
+                      <TableCell className="font-black text-slate-800 text-xs uppercase">{d.fullName || "-"}</TableCell>
+                      <TableCell className="font-mono text-slate-600 text-xs">{d.nik || "-"}</TableCell>
+                      <TableCell className="text-center">
+                         <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full border bg-slate-100 text-slate-600">
+                           {(d.status || "PENDING").replace(/_/g, " ")}
+                         </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </DialogContent>
       </Dialog>

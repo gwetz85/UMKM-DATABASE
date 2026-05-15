@@ -3,8 +3,13 @@
 import { useState, useEffect } from 'react';
 import { Query, DatabaseReference, onValue } from 'firebase/database';
 
+export interface UseListOptions {
+  once?: boolean;
+}
+
 export function useList<T = any>(
-  memoizedRefOrQuery: DatabaseReference | Query | null | undefined
+  memoizedRefOrQuery: DatabaseReference | Query | null | undefined,
+  options: UseListOptions = {}
 ) {
   const [data, setData] = useState<T[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(!!memoizedRefOrQuery);
@@ -20,22 +25,35 @@ export function useList<T = any>(
     }
     
     setIsLoading(true);
-    
-    // Typecast to any to avoid generic union issues across RTDB versions in onValue
-    const unsubscribe = onValue(memoizedRefOrQuery as any, (snapshot) => {
+
+    const handleSnapshot = (snapshot: any) => {
       const results: any[] = [];
-      snapshot.forEach((childSnap) => {
+      snapshot.forEach((childSnap: any) => {
         results.push({ ...childSnap.val(), id: childSnap.key });
       });
       setData(results);
       setIsLoading(false);
-    }, (err) => {
+    };
+
+    const handleError = (err: Error) => {
       setError(err);
       setIsLoading(false);
-    });
+    };
+    
+    if (options.once) {
+      import('firebase/database').then(({ get }) => {
+        get(memoizedRefOrQuery as any)
+          .then(handleSnapshot)
+          .catch(handleError);
+      });
+      return;
+    }
+
+    // Typecast to any to avoid generic union issues across RTDB versions in onValue
+    const unsubscribe = onValue(memoizedRefOrQuery as any, handleSnapshot, handleError);
 
     return () => unsubscribe();
-  }, [refKey]); // Use refKey string to ensure stability
+  }, [refKey, options.once]); // Include options.once in deps
 
   return { data, isLoading, error };
 }

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, Suspense, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
-import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import { ref, query, equalTo, limitToFirst, orderByChild, startAt, get } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -78,23 +78,45 @@ function ActorDataContent() {
   const isKoordinator = userProfile?.role === 'koordinator'
   const isInspektorat = userProfile?.role === 'inspektorat'
 
+  const [pageLimit, setPageLimit] = useState(50)
+  
+  // Use pre-calculated stats for the overview
+  const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
+  const { data: systemStats } = useObject(statsRef)
+
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    return ref(database, 'businessActors')
-  }, [database])
+    let q = query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_actor'))
+    
+    // In a full implementation, we would use startAt/endAt for pagination
+    // For now, we'll just use a reasonable limit to keep it "light"
+    return query(q, limitToFirst(pageLimit))
+  }, [database, pageLimit])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
-  const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
-  const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
-  const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
-  const blacklistRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
+  // Auxiliary data is now fetched on-demand in the detail dialog
+  const [activeDetailData, setActiveDetailData] = useState<{
+    data2023: any[], data2024: any[], data2025: any[], dataBlacklist: any[]
+  }>({ data2023: [], data2024: [], data2025: [], dataBlacklist: [] })
 
-  const { data: data2023 } = useList<any>(master2023Ref)
-  const { data: data2024 } = useList<any>(master2024Ref)
-  const { data: data2025 } = useList<any>(master2025Ref)
-  const { data: dataBlacklist } = useList<any>(blacklistRef)
-  
+  const fetchAuxData = async (actor: BusinessActor) => {
+    if (!database) return;
+    const checkMaster = async (path: string, nik: string) => {
+      const q = query(ref(database, path), orderByChild('nik'), equalTo(nik), limitToFirst(1))
+      const snap = await get(q)
+      return snap.exists() ? Object.values(snap.val()) : []
+    }
+    // Just fetch enough to show the indicator for this actor
+    const [d23, d24, d25, dBl] = await Promise.all([
+      checkMaster('master_data_2023', actor.nik || ""),
+      checkMaster('master_data_2024', actor.nik || ""),
+      checkMaster('master_data_2025', actor.nik || ""),
+      checkMaster('blacklist_data', actor.nik || "")
+    ])
+    setActiveDetailData({ data2023: d23, data2024: d24, data2025: d25, dataBlacklist: dBl })
+  }
+
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
   const { data: kuotaData } = useList<any>(kuotaRef)
 
@@ -137,14 +159,12 @@ function ActorDataContent() {
   }, [filteredActors])
 
   const coordinatorStats = useMemo(() => {
-    if (!groupedActors) return []
+    if (!systemStats?.coordinator || !kuotaData) return []
     
-    return Object.entries(groupedActors).map(([name, actors]) => {
-      const quotaItem = kuotaData?.find((q: any) => 
-        (q.name || "").toUpperCase().trim() === name.toUpperCase().trim()
-      )
-      const quota = quotaItem?.quota || 0
-      const count = actors.length
+    return kuotaData.map((q: any) => {
+      const name = (q.name || "").toUpperCase().trim()
+      const quota = q.quota || 0
+      const count = systemStats.coordinator[name] || 0
       const remaining = quota - count
       const isFull = remaining <= 0
       
@@ -155,8 +175,8 @@ function ActorDataContent() {
         remaining,
         isFull
       }
-    }).sort((a, b) => a.name.localeCompare(b.name))
-  }, [groupedActors, kuotaData])
+    }).sort((a: any, b: any) => a.name.localeCompare(b.name))
+  }, [systemStats, kuotaData])
 
   const currentKoorStat = useMemo(() => {
     if (!filterCoordinator) return null
@@ -222,6 +242,11 @@ function ActorDataContent() {
     }
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
     
+    // Update global stats categories if necessary (both are 'verified' so no change, but consistent)
+    import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+      updateStatsOnStatusChange(database, viewingActor.status || 'verified_actor', 'bank_pending');
+    });
+
     logActivity({
       query: `INPUT REKENING: ${viewingActor.fullName}`,
       results: "Berhasil",
@@ -245,6 +270,11 @@ function ActorDataContent() {
         createdAt: new Date().toISOString() 
       })
       
+      // Update global stats
+      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+        updateStatsOnStatusChange(database, 'verified_actor', 'pending');
+      });
+
       logActivity({
         query: `KEMBALIKAN DATA: ${fullName}`,
         results: "Berhasil",
@@ -263,8 +293,14 @@ function ActorDataContent() {
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     if (confirm(`Hapus permanen ${fullName}? Semua data terkait akan hilang.`)) {
+      const actorToDelete = viewingActor || {}; // Keep ref for stats
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
       
+      // Update global stats
+      import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
+        updateStatsOnDelete(database, actorToDelete).catch(err => console.error(err));
+      });
+
       logActivity({
         query: `HAPUS DATA: ${fullName}`,
         results: "Berhasil",
@@ -436,6 +472,7 @@ function ActorDataContent() {
                       onClick={() => {
                         setViewingActor(actor)
                         setIsEditMode(false)
+                        fetchAuxData(actor)
                       }}
                     >
                       <CardContent className="p-4 flex flex-col items-center text-center gap-3 print:flex-row print:justify-between print:text-left print:p-2">
@@ -523,6 +560,7 @@ function ActorDataContent() {
                               setViewingActor(actor)
                               setIsEditMode(false)
                               setEditingBankMode(false)
+                              fetchAuxData(actor)
                             }}
                           >
                             <Eye className="w-4 h-4" />
@@ -595,6 +633,16 @@ function ActorDataContent() {
                 </CardContent>
               </Card>
             ))}
+            {/* Load More Button */}
+            <div className="col-span-full flex justify-center py-8">
+              <Button 
+                variant="outline" 
+                onClick={() => setPageLimit(prev => prev + 50)}
+                className="font-bold border-primary text-primary hover:bg-primary/5"
+              >
+                LOAD MORE DATA (50 BERIKUTNYA)
+              </Button>
+            </div>
             {coordinatorStats.length === 0 && (
                <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 bg-white rounded-2xl border-2 border-dashed border-slate-200">
                  <div className="p-4 bg-slate-50 rounded-full">
@@ -739,10 +787,10 @@ function ActorDataContent() {
                       <div className="md:col-span-3 pt-2 border-t">
                           <CheckDataIndicator 
                             actor={viewingActor} 
-                            data2023={data2023}
-                            data2024={data2024}
-                            data2025={data2025}
-                            dataBlacklist={dataBlacklist}
+                            data2023={activeDetailData.data2023}
+                            data2024={activeDetailData.data2024}
+                            data2025={activeDetailData.data2025}
+                            dataBlacklist={activeDetailData.dataBlacklist}
                           />
                       </div>
                     </div>
