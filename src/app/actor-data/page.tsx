@@ -159,9 +159,8 @@ function ActorDataContent() {
   }, [filteredActors])
 
   const coordinatorStats = useMemo(() => {
-    if (!systemStats?.coordinator) return []
-    
-    const activeNames = Object.keys(systemStats.coordinator)
+    // Collect all known coordinator names from live data
+    const activeNames = Object.keys(groupedActors || {})
     
     // Also include names from kuotaData that might not have data yet
     const allNames = new Set(activeNames)
@@ -174,7 +173,9 @@ function ActorDataContent() {
     return Array.from(allNames).map(name => {
       const quotaObj = (kuotaData || []).find((q: any) => (q.name || "").toUpperCase().trim() === name)
       const quota = quotaObj?.quota || 0
-      const count = systemStats.coordinator[name] || 0
+      
+      // Use live count from groupedActors
+      const count = groupedActors[name]?.length || 0
       const remaining = quota - count
       const isFull = quota > 0 && remaining <= 0
       
@@ -186,7 +187,7 @@ function ActorDataContent() {
         isFull
       }
     }).sort((a: any, b: any) => a.name.localeCompare(b.name))
-  }, [systemStats, kuotaData])
+  }, [groupedActors, kuotaData])
 
   const currentKoorStat = useMemo(() => {
     if (!filterCoordinator) return null
