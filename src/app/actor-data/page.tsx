@@ -454,7 +454,7 @@ function ActorDataContent() {
               <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
-        ) : (isKoordinator || isInspektorat) && !isInspektorat ? (
+        ) : isInspektorat ? (
            <div className="space-y-12">
             {Object.entries(groupedActors).map(([coordinator, actors]) => (
               <div key={coordinator} className="space-y-4 break-after-page">
@@ -501,10 +501,10 @@ function ActorDataContent() {
               </div>
             ))}
           </div>
-        ) : (filterCoordinator || isInspektorat) ? (
+        ) : (isKoordinator || filterCoordinator || isInspektorat) ? (
           <div className="space-y-6">
             <div className="flex items-center gap-4 mb-2">
-              {!isInspektorat && (
+              {!isInspektorat && !isKoordinator && (
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -515,7 +515,7 @@ function ActorDataContent() {
                 </Button>
               )}
               <h2 className="text-xl font-black text-primary uppercase tracking-tighter">
-                {isInspektorat ? "DATABASE PELAKU USAHA" : `DATA: ${filterCoordinator}`}
+                {isInspektorat ? "DATABASE PELAKU USAHA" : isKoordinator ? `DATA: ${userProfile?.fullName}` : `DATA: ${filterCoordinator}`}
               </h2>
             </div>
             
@@ -531,7 +531,7 @@ function ActorDataContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(isInspektorat ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || [])).map((actor, index) => (
+                  {(isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || [])).map((actor, index) => (
                     <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
                       <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
                       <TableCell className="py-4">

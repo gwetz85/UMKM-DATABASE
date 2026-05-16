@@ -84,6 +84,10 @@ export default function DashboardStatsPage() {
     if (userProfile?.role === 'dinas') {
       router.push("/verifikasi-dinas")
     }
+
+    if (userProfile?.role === 'koordinator') {
+      router.push("/actor-data")
+    }
   }, [user, isUserLoading, router, userProfile])
   
   // Optimize: Fetch pre-calculated stats instead of all actors

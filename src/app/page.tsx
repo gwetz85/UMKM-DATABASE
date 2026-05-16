@@ -21,7 +21,11 @@ export default function RootPage() {
     if (isDinas) {
       router.push("/verifikasi-dinas")
     }
-  }, [user, isUserLoading, router, isDinas])
+
+    if (isKoordinator) {
+      router.push("/actor-data")
+    }
+  }, [user, isUserLoading, router, isDinas, isKoordinator])
 
   if (isUserLoading) {
     return (

@@ -171,7 +171,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 )}
 
                 <div className="flex items-center gap-4">
-                  {!isRootPage && (
+                  {!isRootPage && !isKoordinator && (
                     <button
                       onClick={() => router.push('/')}
                       className="flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95 bg-primary text-white shadow-primary/20 hover:bg-primary/90"
@@ -233,22 +233,24 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     </DialogContent>
                   </Dialog>
 
-                  <Link 
-                    href="/profile" 
-                    className="flex items-center gap-3 group"
-                  >
-                    <div className="hidden md:flex flex-col items-end">
-                      <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
-                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Profil</span>
-                    </div>
-                    <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-100 flex items-center justify-center">
-                      {profile?.photoURL ? (
-                        <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
-                      ) : (
-                        <UserIcon className="w-5 h-5 text-primary/30" />
-                      )}
-                    </div>
-                  </Link>
+                  {!isKoordinator && (
+                    <Link 
+                      href="/profile" 
+                      className="flex items-center gap-3 group"
+                    >
+                      <div className="hidden md:flex flex-col items-end">
+                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Profil</span>
+                      </div>
+                      <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-100 flex items-center justify-center">
+                        {profile?.photoURL ? (
+                          <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <UserIcon className="w-5 h-5 text-primary/30" />
+                        )}
+                      </div>
+                    </Link>
+                  )}
                 </div>
               </header>
               <ProfileStatusDialog />
@@ -265,7 +267,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             </main>
           </div>
 
-          {!isLoginPage && !isRootPage && (
+          {!isLoginPage && !isRootPage && !isKoordinator && (
             <button 
               onClick={() => router.push('/')}
               className="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-primary text-white shadow-2xl flex items-center justify-center z-50 animate-in slide-in-from-bottom-10 duration-500 border-4 border-white active:scale-90"
