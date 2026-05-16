@@ -87,12 +87,11 @@ function ActorDataContent() {
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
     
-    // If we have a filterCoordinator or are a Koordinator, fetch specifically for that coordinator
+    // Fetch all verified actors and filter on the client side
+    // This solves the case-sensitivity issue in Firebase queries
+    // where 'Ahmad Senggarang' != 'AHMAD SENGGARANG'
     if (filterCoordinator || isKoordinator) {
-      const coordName = filterCoordinator || userProfile?.fullName
-      if (coordName) {
-        return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(coordName))
-      }
+       return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_actor'))
     }
 
     // Default: fetch verified actors with a limit for general overview
