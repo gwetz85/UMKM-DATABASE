@@ -59,6 +59,9 @@ export default function AdminSyncPage() {
       }
 
       let count = 0
+      let fixCount = 0
+      const updates: Record<string, any> = {}
+
       snapshot.forEach((child) => {
         const actor = child.val()
         stats.total++
@@ -79,6 +82,12 @@ export default function AdminSyncPage() {
         if (s === 'verified_actor' && actor.coordinator) {
           const coord = actor.coordinator.toUpperCase().trim()
           stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
+          
+          // Auto-fix case in database if needed
+          if (actor.coordinator !== coord) {
+            updates[`${child.key}/coordinator`] = coord
+            fixCount++
+          }
         }
         
         count++
@@ -86,6 +95,12 @@ export default function AdminSyncPage() {
 
       addLog(`Berhasil memproses ${count} data.`)
       setResults(stats)
+
+      if (fixCount > 0) {
+        addLog(`Memperbaiki format nama koordinator pada ${fixCount} data...`)
+        const { update } = await import("firebase/database")
+        await update(actorsRef, updates)
+      }
 
       addLog("Memperbarui node 'system_stats'...")
       await set(ref(database, 'system_stats'), stats)
