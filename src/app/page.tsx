@@ -9,7 +9,7 @@ import { useNavigation } from "@/hooks/use-navigation"
 
 export default function RootPage() {
   const { user, isUserLoading } = useUser()
-  const { isDinas } = useNavigation()
+  const { isDinas, isKoordinator } = useNavigation()
   const router = useRouter()
 
   useEffect(() => {
