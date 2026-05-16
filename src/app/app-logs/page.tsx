@@ -149,6 +149,15 @@ function AppLogsContent() {
           <Button 
             variant="outline" 
             size="sm" 
+            onClick={() => window.location.href = '/admin-sync'}
+            className="font-bold text-[10px] h-11 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+          >
+            <RefreshCcw className="w-4 h-4 mr-2" />
+            SINKRONISASI DATA
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
             onClick={handleClearAllLogs}
             className="font-bold text-[10px] h-11 border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
             disabled={isDeleting || filteredLogs.length === 0}
