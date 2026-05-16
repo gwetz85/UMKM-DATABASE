@@ -613,7 +613,7 @@ function ActorDataContent() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            {coordinatorStats.map((stat) => (
+            {coordinatorStats.filter(stat => stat.count > 0).map((stat) => (
               <Card 
                 key={stat.name}
                 onClick={() => router.push(`/actor-data?coordinator=${stat.name}`)}
@@ -673,7 +673,7 @@ function ActorDataContent() {
                 LOAD MORE DATA (50 BERIKUTNYA)
               </Button>
             </div>
-            {coordinatorStats.length === 0 && (
+            {coordinatorStats.filter(stat => stat.count > 0).length === 0 && (
                <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 bg-white rounded-2xl border-2 border-dashed border-slate-200">
                  <div className="p-4 bg-slate-50 rounded-full">
                     <Search className="w-10 h-10 text-slate-300" />
