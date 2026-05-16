@@ -75,6 +75,10 @@
       ".read": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
       ".write": "true",
       ".indexOn": ["timestamp"]
+    },
+    "system_stats": {
+      ".read": "true",
+      ".write": "auth != null"
     }
   }
 }
