@@ -123,8 +123,9 @@ function ActorDataContent() {
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     if (!a) return false;
     // Status filter - must match the statuses counted in handleSyncStats for coordinator
+    // Status filter - match the dashboard's "Total Data" (Verified + Rejected)
     const s = a.status || ""
-    if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)) return false;
+    if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'rejected'].includes(s)) return false;
 
     if (isKoordinator) {
       if (!a.coordinator || !userProfile?.fullName) return false;
@@ -229,8 +230,12 @@ function ActorDataContent() {
           stats.totalActors++
           
           const s = actor.status || 'pending'
-          if (['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)) {
-            stats.status.verified++
+          const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)
+          const isRejected = s === 'rejected'
+          
+          if (isVerified || isRejected) {
+            stats.status[isVerified ? 'verified' : 'rejected']++
+            
             if (actor.coordinator) {
               const coord = actor.coordinator.toUpperCase().trim()
               stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
@@ -244,16 +249,13 @@ function ActorDataContent() {
                const k = actor.kelurahan.toUpperCase().trim()
                stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
             }
-          } else if (s === 'pending') {
+          } else {
             stats.status.pending++
-          } else if (s === 'rejected') {
-            stats.status.rejected++
-          } else if (s === 'finish') {
-            stats.status.finish++
           }
 
-          const gender = actor.gender === 'Perempuan' ? 'Perempuan' : 'Laki-laki'
-          stats.gender[gender]++
+          const g = (actor.gender || "").toLowerCase().trim()
+          const genderKey = (g === 'perempuan' || g === 'p') ? 'Perempuan' : 'Laki-laki'
+          stats.gender[genderKey]++
         })
 
         if (fixCount > 0) {
