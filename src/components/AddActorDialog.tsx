@@ -359,7 +359,7 @@ export function AddActorDialog() {
                         <SelectValue placeholder="Pilih Korlap/Dewan Aktif..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {availableCoordinators.map((c) => (
+                        {availableCoordinators.filter(c => c.remaining > 0).map((c) => (
                           <SelectItem key={c.id} value={c.name}>
                             <div className="flex justify-between items-center w-full min-w-[300px]">
                               <span className="font-bold">{c.name}</span>
