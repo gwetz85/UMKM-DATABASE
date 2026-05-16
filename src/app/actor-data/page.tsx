@@ -87,13 +87,11 @@ function ActorDataContent() {
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
     
-    // Use coordinator exact match for performance. 
-    // Casing issues are now handled by the SYNC DATA auto-fix.
+    // Fetch all actors to do robust client-side filtering.
+    // This allows case-insensitive matching AND multiple status filtering 
+    // (verified_actor, bank_pending, dll) which Firebase query cannot do.
     if (filterCoordinator || isKoordinator) {
-      const coordName = filterCoordinator || userProfile?.fullName
-      if (coordName) {
-        return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(coordName))
-      }
+      return query(ref(database, 'businessActors'))
     }
 
     // Default: fetch verified actors with a limit for general overview
