@@ -120,16 +120,19 @@ export async function POST(req: NextRequest) {
           const data = snapshot.val();
           const actors = Object.values(data) as any[];
           
-          let total = actors.length;
-          let verified = actors.filter(a => a.status === 'verified_actor').length;
-          let pending = actors.filter(a => a.status === 'pending').length;
+          const isVerifiedStatus = (s: string) => ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
+          
+          let verified = actors.filter(a => isVerifiedStatus(a.status)).length;
           let rejected = actors.filter(a => a.status === 'rejected').length;
+          let total = verified + rejected;
+          let pending = actors.filter(a => !isVerifiedStatus(a.status) && a.status !== 'rejected').length;
           
           const reply = `📈 *STATISTIK DATA UMKM*\n\n` +
-                        `📊 Total Data: *${total}*\n\n` +
+                        `📊 Total Data: *${total}*\n` +
+                        `_(Verified + Cancell)_\n\n` +
                         `✅ Terverifikasi: *${verified}*\n` +
-                        `⏳ Menunggu: *${pending}*\n` +
-                        `❌ Ditolak/Batal: *${rejected}*\n`;
+                        `❌ Cancell/Ditolak: *${rejected}*\n` +
+                        `⏳ Pending/Lainnya: *${pending}*\n`;
           await sendMessage(chatId, reply);
 
           // Log Activity
@@ -467,7 +470,9 @@ export async function POST(req: NextRequest) {
               if (snapshot.exists()) {
                 snapshot.forEach((child) => {
                   const val = child.val();
-                  if (val.status !== 'rejected' && val.status !== 'blacklist' && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
+                  const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(val.status);
+                  const isRejected = val.status === 'rejected';
+                  if ((isVerified || isRejected) && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
                     achieved++;
                   }
                 });
@@ -502,6 +507,34 @@ export async function POST(req: NextRequest) {
           };
           const newActorRef = push(actorsRef);
           await set(newActorRef, newData);
+          
+          // Update stats automatically (Server-side implementation of stats-service logic)
+          const statsRef = ref(database, 'system_stats');
+          const { runTransaction } = await import("firebase/database");
+          await runTransaction(statsRef, (current: any) => {
+            if (!current) return current;
+            const s = newData.status || 'pending';
+            const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
+            const isRejected = s === 'rejected';
+            
+            if (isVerified || isRejected) {
+              current.totalActors = (current.totalActors || 0) + 1;
+              const g = (newData.gender || "").toLowerCase().trim();
+              const genderKey = (g === 'perempuan' || g === 'p') ? 'perempuan' : 'laki';
+              current.gender[genderKey] = (current.gender[genderKey] || 0) + 1;
+            }
+            
+            const catMap: Record<string, string> = {
+              'verified_actor': 'verified', 'verified_dinas': 'verified', 'bank_pending': 'verified', 'lpj_pending': 'verified', 'finish': 'verified',
+              'rejected': 'rejected', 'pending': 'pending'
+            };
+            const cat = catMap[s] || 'pending';
+            current.status[cat] = (current.status[cat] || 0) + 1;
+            
+            current.lastUpdated = new Date().toISOString();
+            return current;
+          });
+
           await sendMessage(chatId, `✅ *DATA BERHASIL DIINPUT*\n\n` +
                                    `👤 Nama: *${parsedData.fullName}*\n` +
                                    `🆔 NIK: \`${parsedData.nik}\`\n` +
@@ -532,7 +565,9 @@ export async function POST(req: NextRequest) {
 
         const usageMap = new Map<string, number>();
         actors.forEach(actor => {
-            if (actor.coordinator && actor.status !== 'rejected' && actor.status !== 'blacklist') {
+            const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(actor.status);
+            const isRejected = actor.status === 'rejected';
+            if (actor.coordinator && (isVerified || isRejected)) {
                 const coordinatorName = (actor.coordinator || "").toUpperCase().trim();
                 usageMap.set(coordinatorName, (usageMap.get(coordinatorName) || 0) + 1);
             }

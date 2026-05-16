@@ -129,7 +129,7 @@ export default function DashboardStatsPage() {
   const statsValues = useMemo(() => {
     if (systemStats) {
       return {
-        total: systemStats.totalActors || 0,
+        total: (systemStats.status?.verified || 0) + (systemStats.status?.rejected || 0),
         laki: systemStats.gender?.['Laki-laki'] || systemStats.gender?.laki || 0,
         perempuan: systemStats.gender?.['Perempuan'] || systemStats.gender?.perempuan || 0,
         verified: systemStats.status?.verified || 0,
@@ -151,7 +151,7 @@ export default function DashboardStatsPage() {
         const actors = Object.values(snap.val())
         const stats = {
           totalActors: 0,
-          gender: { 'Laki-laki': 0, 'Perempuan': 0, unknown: 0 },
+          gender: { laki: 0, perempuan: 0, unknown: 0 },
           status: { pending: 0, verified: 0, rejected: 0, finish: 0 },
           kelurahan: {},
           coordinator: {},
@@ -163,11 +163,20 @@ export default function DashboardStatsPage() {
 
         snap.forEach((child) => {
           const actor = child.val()
-          stats.totalActors++
-          
           const s = actor.status || 'pending'
-          if (['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)) {
-            stats.status.verified++
+          const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)
+          const isRejected = s === 'rejected'
+          
+          if (isVerified || isRejected) {
+            stats.totalActors++
+            const g = (actor.gender || "").toLowerCase().trim()
+            const gender = (g === 'perempuan' || g === 'p') ? 'perempuan' : 'laki'
+            stats.gender[gender]++
+          }
+          
+          if (isVerified || isRejected) {
+            stats.status[isVerified ? 'verified' : 'rejected']++
+            
             if (actor.coordinator) {
               const coord = actor.coordinator.toUpperCase().trim()
               stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
@@ -181,14 +190,9 @@ export default function DashboardStatsPage() {
                const k = actor.kelurahan.toUpperCase().trim()
                stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
             }
-          } else if (s === 'pending') {
+          } else {
             stats.status.pending++
-          } else if (s === 'rejected') {
-            stats.status.rejected++
           }
-
-          const gender = actor.gender === 'Perempuan' ? 'Perempuan' : 'Laki-laki'
-          stats.gender[gender]++
         })
 
         if (fixCount > 0) {

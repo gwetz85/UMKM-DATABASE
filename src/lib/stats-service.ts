@@ -34,6 +34,13 @@ const getCategory = (s: string) => {
   return null;
 };
 
+// Helper to determine if an actor is "Processed" (Verified or Rejected)
+// Only processed actors are counted in Total Data and Gender stats
+const isProcessed = (s: string) => {
+  const cat = getCategory(s);
+  return cat === 'verified' || cat === 'rejected';
+};
+
 // Helper to normalize gender
 const normGender = (g: string) => {
   const val = (g || "").toLowerCase().trim();
@@ -57,13 +64,14 @@ export async function updateStatsOnNewActor(database: Database, actorData: any) 
       };
     }
     
-    currentStats.totalActors += 1;
+    // Update total and gender counts ONLY if processed
+    if (isProcessed(actorData.status || 'pending')) {
+      currentStats.totalActors += 1;
+      const g = normGender(actorData.gender);
+      currentStats.gender[g] = (currentStats.gender[g] || 0) + 1;
+    }
     
-    // Update gender stats
-    const g = normGender(actorData.gender);
-    currentStats.gender[g] = (currentStats.gender[g] || 0) + 1;
-    
-    // Update status stats
+    // Update status stats (always update these)
     const cat = getCategory(actorData.status || 'pending');
     if (cat) {
       currentStats.status[cat as keyof typeof currentStats.status] = (currentStats.status[cat as keyof typeof currentStats.status] || 0) + 1;
@@ -107,29 +115,41 @@ export async function updateStatsOnStatusChange(database: Database, oldStatus: s
       currentStats.status[newCat as keyof typeof currentStats.status] = (currentStats.status[newCat as keyof typeof currentStats.status] || 0) + 1;
     }
 
-    // Handle Kelurahan & Coordinator stats (only for verified)
-    const wasVerified = isVerifiedStatus(oldStatus);
-    const isVerified = isVerifiedStatus(newStatus);
+    // Handle Total Actors and Gender counts (only for processed)
+    const wasProcessed = isProcessed(oldStatus);
+    const isProcessedNow = isProcessed(newStatus);
 
-    if (!wasVerified && isVerified) {
-      // Adding to verified stats
+    if (!wasProcessed && isProcessedNow) {
+      currentStats.totalActors += 1;
+      const g = normGender(actorData.gender);
+      currentStats.gender[g] = (currentStats.gender[g] || 0) + 1;
+    } else if (wasProcessed && !isProcessedNow) {
+      currentStats.totalActors = Math.max(0, currentStats.totalActors - 1);
+      const g = normGender(actorData.gender);
+      currentStats.gender[g] = Math.max(0, (currentStats.gender[g] || 0) - 1);
+    }
+
+    // Handle Kelurahan & Coordinator stats (only for processed: verified + rejected)
+    const wasProcessed_KC = isProcessed(oldStatus);
+    const isProcessedNow_KC = isProcessed(newStatus);
+    
+    if (!wasProcessed_KC && isProcessedNow_KC) {
       if (actorData.kelurahan) {
         const kel = actorData.kelurahan.toUpperCase().trim();
         currentStats.kelurahan[kel] = (currentStats.kelurahan[kel] || 0) + 1;
       }
       if (actorData.coordinator) {
-        const coord = actorData.coordinator.toUpperCase().trim();
-        currentStats.coordinator[coord] = (currentStats.coordinator[coord] || 0) + 1;
+        const coor = actorData.coordinator.toUpperCase().trim();
+        currentStats.coordinator[coor] = (currentStats.coordinator[coor] || 0) + 1;
       }
-    } else if (wasVerified && !isVerified) {
-      // Removing from verified stats
+    } else if (wasProcessed_KC && !isProcessedNow_KC) {
       if (actorData.kelurahan) {
         const kel = actorData.kelurahan.toUpperCase().trim();
         currentStats.kelurahan[kel] = Math.max(0, (currentStats.kelurahan[kel] || 0) - 1);
       }
       if (actorData.coordinator) {
-        const coord = actorData.coordinator.toUpperCase().trim();
-        currentStats.coordinator[coord] = Math.max(0, (currentStats.coordinator[coord] || 0) - 1);
+        const coor = actorData.coordinator.toUpperCase().trim();
+        currentStats.coordinator[coor] = Math.max(0, (currentStats.coordinator[coor] || 0) - 1);
       }
     }
     
@@ -144,12 +164,15 @@ export async function updateStatsOnEdit(database: Database, oldData: any, newDat
   await runTransaction(statsRef, (currentStats: SystemStats | null) => {
     if (!currentStats) return currentStats;
 
-    // Update gender if changed (affects total regardless of status)
-    const oldGen = normGender(oldData.gender);
-    const newGen = normGender(newData.gender);
-    if (oldGen !== newGen) {
-      currentStats.gender[oldGen] = Math.max(0, (currentStats.gender[oldGen] || 0) - 1);
-      currentStats.gender[newGen] = (currentStats.gender[newGen] || 0) + 1;
+    // Update gender if changed (ONLY if processed)
+    const processed = isProcessed(newData.status || oldData.status);
+    if (processed) {
+      const oldGen = normGender(oldData.gender);
+      const newGen = normGender(newData.gender);
+      if (oldGen !== newGen) {
+        currentStats.gender[oldGen] = Math.max(0, (currentStats.gender[oldGen] || 0) - 1);
+        currentStats.gender[newGen] = (currentStats.gender[newGen] || 0) + 1;
+      }
     }
 
     // Kelurahan & Coordinator updates only matter if the actor is verified
@@ -183,11 +206,12 @@ export async function updateStatsOnDelete(database: Database, actorData: any) {
   await runTransaction(statsRef, (currentStats: SystemStats | null) => {
     if (!currentStats) return currentStats;
     
-    currentStats.totalActors = Math.max(0, currentStats.totalActors - 1);
-    
-    // Update gender stats
-    const g = normGender(actorData.gender);
-    currentStats.gender[g] = Math.max(0, (currentStats.gender[g] || 0) - 1);
+    // Update total and gender counts (ONLY if processed)
+    if (isProcessed(actorData.status || "pending")) {
+      currentStats.totalActors = Math.max(0, currentStats.totalActors - 1);
+      const g = normGender(actorData.gender);
+      currentStats.gender[g] = Math.max(0, (currentStats.gender[g] || 0) - 1);
+    }
     
     // Update status stats
     const cat = getCategory(actorData.status || "pending");

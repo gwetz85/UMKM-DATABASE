@@ -121,7 +121,15 @@ function FinishContent() {
   const handleRevert = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
+      const actorObj = allActorsRaw?.find(a => a.id === actorId);
       updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
+      
+      if (actorObj) {
+        import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+          updateStatsOnStatusChange(database, 'finish', 'pending', actorObj).catch(e => console.error(e));
+        });
+      }
+
       toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
       setViewingActor(null)
     }
@@ -130,7 +138,15 @@ function FinishContent() {
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     if (confirm(`HAPUS PERMANEN data ${fullName}? Tindakan ini tidak dapat dibatalkan.`)) {
+      const actorObj = allActorsRaw?.find(a => a.id === actorId);
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
+      
+      if (actorObj) {
+        import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
+          updateStatsOnDelete(database, actorObj).catch(e => console.error(e));
+        });
+      }
+
       toast({ title: "Data Dihapus", description: `Data ${fullName} telah dihapus dari sistem.` })
       setViewingActor(null)
     }

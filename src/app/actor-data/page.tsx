@@ -124,7 +124,7 @@ function ActorDataContent() {
     if (!a) return false;
     // Status filter - must match the statuses counted in handleSyncStats for coordinator
     const s = a.status || ""
-    if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending'].includes(s)) return false;
+    if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)) return false;
 
     if (isKoordinator) {
       if (!a.coordinator || !userProfile?.fullName) return false;
@@ -229,7 +229,7 @@ function ActorDataContent() {
           stats.totalActors++
           
           const s = actor.status || 'pending'
-          if (['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending'].includes(s)) {
+          if (['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)) {
             stats.status.verified++
             if (actor.coordinator) {
               const coord = actor.coordinator.toUpperCase().trim()
@@ -729,7 +729,7 @@ function ActorDataContent() {
                         <span className={cn(
                           "text-sm font-black",
                           stat.remaining <= 0 ? "text-rose-200" : "text-white"
-                        )}>{stat.remaining > 0 ? stat.remaining : 0}</span>
+                        )}>{stat.remaining}</span>
                       </div>
                     </div>
                   </div>

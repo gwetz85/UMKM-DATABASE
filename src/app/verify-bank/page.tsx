@@ -43,10 +43,17 @@ export default function VerifyBankPage() {
   const handleFinalVerify = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     const actorRef = ref(database, `businessActors/${actorId}`)
+    const actorObj = actors?.find(a => a.id === actorId);
     updateDocumentNonBlocking(actorRef, { 
       status: 'lpj_pending',
       lpjEntryDate: new Date().toISOString()
     })
+
+    if (actorObj) {
+      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+        updateStatsOnStatusChange(database, 'bank_pending', 'lpj_pending', actorObj).catch(e => console.error(e));
+      });
+    }
     
     logActivity({
       query: `VERIFIKASI BANK: ${fullName} - DITERIMA`,
@@ -63,8 +70,15 @@ export default function VerifyBankPage() {
   const handleRevert = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
+      const actorObj = actors?.find(a => a.id === actorId);
       const actorRef = ref(database, `businessActors/${actorId}`)
       updateDocumentNonBlocking(actorRef, { status: 'pending' })
+
+      if (actorObj) {
+        import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+          updateStatsOnStatusChange(database, 'bank_pending', 'pending', actorObj).catch(e => console.error(e));
+        });
+      }
       
       logActivity({
         query: `KEMBALIKAN DATA DARI BANK: ${fullName}`,
@@ -82,8 +96,15 @@ export default function VerifyBankPage() {
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     if (confirm(`Hapus permanen ${fullName}? Semua data terkait akan hilang.`)) {
+      const actorObj = actors?.find(a => a.id === actorId);
       const actorRef = ref(database, `businessActors/${actorId}`)
       deleteDocumentNonBlocking(actorRef)
+
+      if (actorObj) {
+        import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
+          updateStatsOnDelete(database, actorObj).catch(e => console.error(e));
+        });
+      }
       
       logActivity({
         query: `HAPUS DATA BANK: ${fullName}`,

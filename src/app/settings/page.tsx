@@ -218,7 +218,10 @@ export default function SettingsPage() {
           await update(ref(database), updates)
         }
         
-        toast({ title: "Restore Berhasil", description: `${data.length} data telah dipulihkan.` })
+        // Reset stats node so dashboard will re-sync
+        await remove(ref(database, "system_stats"))
+        
+        toast({ title: "Restore Berhasil", description: `${data.length} data telah dipulihkan. Dashboard akan mensinkronisasi ulang statistik secara otomatis.` })
       } catch (error) {
         toast({ variant: "destructive", title: "Restore Gagal", description: "Pastikan format file backup benar." })
       } finally {
@@ -338,8 +341,9 @@ export default function SettingsPage() {
     setLoading(true)
     try {
       await remove(ref(database, "businessActors"))
+      await remove(ref(database, "system_stats"))
       
-      toast({ title: "Reset Berhasil", description: "Seluruh data pelaku usaha telah dihapus." })
+      toast({ title: "Reset Berhasil", description: "Seluruh data pelaku usaha dan statistik telah dihapus." })
     } catch (error) {
       toast({ variant: "destructive", title: "Reset Gagal", description: "Terjadi kesalahan saat menghapus data." })
     } finally {
