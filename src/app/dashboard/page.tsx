@@ -184,7 +184,7 @@ export default function DashboardStatsPage() {
   const coordinatorStats = useMemo(() => {
     if (!systemStats?.coordinator) return []
     return Object.entries(systemStats.coordinator)
-      .map(([name, count]) => ({ name, count }))
+      .map(([name, count]) => ({ name, count: count as number }))
       .sort((a, b) => b.count - a.count)
   }, [systemStats])
 
@@ -223,7 +223,7 @@ export default function DashboardStatsPage() {
     if (!systemStats?.kelurahan) return []
     const stats = Object.entries(systemStats.kelurahan).map(([name, count]) => ({
       name,
-      count
+      count: count as number
     }))
     return stats.sort((a, b) => b.count - a.count);
   }, [systemStats])
