@@ -86,12 +86,18 @@ function ActorDataContent() {
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    let q = query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_actor'))
     
-    // In a full implementation, we would use startAt/endAt for pagination
-    // For now, we'll just use a reasonable limit to keep it "light"
-    return query(q, limitToFirst(pageLimit))
-  }, [database, pageLimit])
+    // If we have a filterCoordinator or are a Koordinator, fetch specifically for that coordinator
+    if (filterCoordinator || isKoordinator) {
+      const coordName = filterCoordinator || userProfile?.fullName
+      if (coordName) {
+        return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(coordName))
+      }
+    }
+
+    // Default: fetch verified actors with a limit for general overview
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_actor'), limitToFirst(pageLimit))
+  }, [database, pageLimit, filterCoordinator, isKoordinator, userProfile?.fullName])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
@@ -159,23 +165,24 @@ function ActorDataContent() {
   }, [filteredActors])
 
   const coordinatorStats = useMemo(() => {
-    // Collect all known coordinator names from live data
-    const activeNames = Object.keys(groupedActors || {})
-    
-    // Also include names from kuotaData that might not have data yet
-    const allNames = new Set(activeNames)
+    // 1. Get all known coordinator names from kuotaData
+    const allNames = new Set<string>()
     if (kuotaData) {
       kuotaData.forEach((q: any) => {
         if (q.name) allNames.add(q.name.toUpperCase().trim())
       })
     }
 
+    // 2. Add names from live data if any (just in case they aren't in kuotaData)
+    Object.keys(groupedActors).forEach(name => allNames.add(name))
+
     return Array.from(allNames).map(name => {
       const quotaObj = (kuotaData || []).find((q: any) => (q.name || "").toUpperCase().trim() === name)
       const quota = quotaObj?.quota || 0
       
-      // Use live count from groupedActors
-      const count = groupedActors[name]?.length || 0
+      // CRITICAL FIX: Use system_stats for accurate counts instead of groupedActors (which is paginated)
+      // Only fallback to groupedActors if system_stats is not yet available or doesn't have the entry
+      const count = (systemStats as any)?.coordinator?.[name] || groupedActors[name]?.length || 0
       const remaining = quota - count
       const isFull = quota > 0 && remaining <= 0
       
@@ -187,7 +194,7 @@ function ActorDataContent() {
         isFull
       }
     }).sort((a: any, b: any) => a.name.localeCompare(b.name))
-  }, [groupedActors, kuotaData])
+  }, [groupedActors, kuotaData, systemStats])
 
   const currentKoorStat = useMemo(() => {
     if (!filterCoordinator) return null

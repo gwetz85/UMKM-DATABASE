@@ -377,6 +377,11 @@ export default function VerifyActorPage() {
 
   updateDocumentNonBlocking(actorRef, updatePayload)
     
+    // Update global stats
+    import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+      updateStatsOnStatusChange(database, editingActor.status || 'pending', 'verified_actor');
+    });
+
     logActivity({
       query: `VERIFIKASI ADMIN: ${editingActor.fullName} - DITERIMA`,
       results: "Berhasil",
@@ -441,6 +446,11 @@ export default function VerifyActorPage() {
       status: 'rejected',
       rejectionReason: reason || "Tanpa keterangan"
     })
+
+    // Update global stats
+    import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+      updateStatsOnStatusChange(database, rejectingActor.status || 'pending', 'rejected');
+    });
 
     logActivity({
       query: `VERIFIKASI ADMIN: ${rejectingActor.fullName} - DITOLAK`,
