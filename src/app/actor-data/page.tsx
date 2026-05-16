@@ -90,13 +90,8 @@ function ActorDataContent() {
     // Fetch all actors to do robust client-side filtering.
     // This allows case-insensitive matching AND multiple status filtering 
     // (verified_actor, bank_pending, dll) which Firebase query cannot do.
-    if (filterCoordinator || isKoordinator) {
-      return query(ref(database, 'businessActors'))
-    }
-
-    // Default: fetch verified actors with a limit for general overview
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_actor'), limitToFirst(pageLimit))
-  }, [database, pageLimit, filterCoordinator, isKoordinator, userProfile?.fullName])
+    return ref(database, 'businessActors')
+  }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
@@ -630,7 +625,7 @@ function ActorDataContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || [])).map((actor, index) => (
+                  {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
                     <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
                       <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
                       <TableCell className="py-4">
