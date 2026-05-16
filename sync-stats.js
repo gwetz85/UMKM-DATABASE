@@ -25,35 +25,49 @@ async function syncStats() {
         }
 
         const stats = {
-            total: 0,
-            pending: 0,
-            verified: 0,
-            rejected: 0,
+            totalActors: 0,
             gender: {
                 "Laki-laki": 0,
-                "Perempuan": 0
+                "Perempuan": 0,
+                "unknown": 0
             },
-            coordinator: {}
+            status: {
+                pending: 0,
+                verified: 0,
+                rejected: 0,
+                finish: 0
+            },
+            kelurahan: {},
+            coordinator: {},
+            lastUpdated: new Date().toISOString()
         };
 
         snapshot.forEach((child) => {
             const actor = child.val();
-            stats.total++;
+            stats.totalActors++;
             
             // Status counts
-            if (actor.status === 'pending') stats.pending++;
-            else if (actor.status === 'verified_actor') stats.verified++;
-            else if (actor.status === 'rejected') stats.rejected++;
+            const s = actor.status || 'pending';
+            if (['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)) {
+                stats.status.verified++;
+                
+                if (actor.coordinator) {
+                    const coord = actor.coordinator.toUpperCase().trim();
+                    stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1;
+                }
+                if (actor.kelurahan) {
+                    const k = actor.kelurahan.toUpperCase().trim();
+                    stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1;
+                }
+            } else if (s === 'pending') {
+                stats.status.pending++;
+            } else if (s === 'rejected') {
+                stats.status.rejected++;
+            }
 
             // Gender counts
             const gender = actor.gender === 'Perempuan' ? 'Perempuan' : 'Laki-laki';
             stats.gender[gender]++;
-
-            // Coordinator counts (Verified only)
-            if (actor.status === 'verified_actor' && actor.coordinator) {
-                const coord = actor.coordinator.toUpperCase().trim();
-                stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1;
-            }
         });
 
         console.log("Statistik Baru:", stats);

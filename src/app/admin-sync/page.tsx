@@ -45,17 +45,12 @@ export default function AdminSyncPage() {
       }
 
       const stats = {
-        total: 0,
-        pending: 0,
-        hold: 0,
-        verifikasi_manual: 0,
-        verified_actor: 0,
-        rejected: 0,
-        gender: {
-          "Laki-laki": 0,
-          "Perempuan": 0
-        },
-        coordinator: {} as Record<string, number>
+        totalActors: 0,
+        gender: { 'Laki-laki': 0, 'Perempuan': 0, unknown: 0 },
+        status: { pending: 0, verified: 0, rejected: 0, finish: 0 },
+        kelurahan: {} as Record<string, number>,
+        coordinator: {} as Record<string, number>,
+        lastUpdated: new Date().toISOString()
       }
 
       let count = 0
@@ -64,31 +59,36 @@ export default function AdminSyncPage() {
 
       snapshot.forEach((child) => {
         const actor = child.val()
-        stats.total++
+        stats.totalActors++
         
         // Status counts
         const s = actor.status || 'pending'
-        if (s === 'pending') stats.pending++
-        else if (s === 'hold') stats.hold++
-        else if (s === 'verifikasi_manual') stats.verifikasi_manual++
-        else if (s === 'verified_actor') stats.verified_actor++
-        else if (s === 'rejected') stats.rejected++
+        if (['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)) {
+          stats.status.verified++
+          
+          if (actor.coordinator) {
+            const coord = actor.coordinator.toUpperCase().trim()
+            stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
+            
+            if (actor.coordinator !== coord) {
+              updates[`${child.key}/coordinator`] = coord
+              fixCount++
+            }
+          }
+
+          if (actor.kelurahan) {
+            const k = actor.kelurahan.toUpperCase().trim()
+            stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
+          }
+        } else if (s === 'pending') {
+          stats.status.pending++
+        } else if (s === 'rejected') {
+          stats.status.rejected++
+        }
 
         // Gender counts
         const gender = actor.gender === 'Perempuan' ? 'Perempuan' : 'Laki-laki'
         stats.gender[gender]++
-
-        // Coordinator counts (Hanya untuk yang sudah verified_actor)
-        if (s === 'verified_actor' && actor.coordinator) {
-          const coord = actor.coordinator.toUpperCase().trim()
-          stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
-          
-          // Auto-fix case in database if needed
-          if (actor.coordinator !== coord) {
-            updates[`${child.key}/coordinator`] = coord
-            fixCount++
-          }
-        }
         
         count++
       })

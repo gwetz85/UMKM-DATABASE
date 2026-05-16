@@ -103,6 +103,7 @@ export default function DashboardStatsPage() {
     if (selectedFilter.filterType === 'laki') return query(baseRef, orderByChild('gender'), equalTo('Laki-laki'))
     if (selectedFilter.filterType === 'perempuan') return query(baseRef, orderByChild('gender'), equalTo('Perempuan'))
     if (selectedFilter.filterType === 'rejected') return query(baseRef, orderByChild('status'), equalTo('rejected'))
+    if (selectedFilter.filterType === 'pending') return query(baseRef, orderByChild('status'), equalTo('pending'))
     // Note: Complex filters like 'verified' or 'kelurahan' might still need some client-side filtering 
     // unless we optimize the database structure further.
     return query(baseRef, limitToFirst(100)) // Limit initial modal data
@@ -125,10 +126,11 @@ export default function DashboardStatsPage() {
         laki: systemStats.gender?.['Laki-laki'] || systemStats.gender?.laki || 0,
         perempuan: systemStats.gender?.['Perempuan'] || systemStats.gender?.perempuan || 0,
         verified: systemStats.status?.verified || 0,
-        rejected: systemStats.status?.rejected || 0
+        rejected: systemStats.status?.rejected || 0,
+        pending: systemStats.status?.pending || 0
       }
     }
-    return { total: 0, laki: 0, perempuan: 0, verified: 0, rejected: 0 }
+    return { total: 0, laki: 0, perempuan: 0, verified: 0, rejected: 0, pending: 0 }
   }, [systemStats])
 
   const [isSyncing, setIsSyncing] = useState(false)
@@ -157,7 +159,7 @@ export default function DashboardStatsPage() {
           stats.totalActors++
           
           const s = actor.status || 'pending'
-          if (['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending'].includes(s)) {
+          if (['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)) {
             stats.status.verified++
             if (actor.coordinator) {
               const coord = actor.coordinator.toUpperCase().trim()
@@ -176,8 +178,6 @@ export default function DashboardStatsPage() {
             stats.status.pending++
           } else if (s === 'rejected') {
             stats.status.rejected++
-          } else if (s === 'finish') {
-            stats.status.finish++
           }
 
           const gender = actor.gender === 'Perempuan' ? 'Perempuan' : 'Laki-laki'
@@ -258,6 +258,8 @@ export default function DashboardStatsPage() {
       const s = d.status || "";
       return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
     })
+    if (type === "pending") return modalData.filter(d => (d.status || 'pending') === 'pending')
+    if (type === "rejected") return modalData.filter(d => d.status === 'rejected')
     if (type === "kelurahan") {
       return modalData.filter(d => {
         const k = d.kelurahan?.toLowerCase().trim() || "";
@@ -324,6 +326,17 @@ export default function DashboardStatsPage() {
       filterType: "verified"
     },
     { 
+      name: "Data Dalam Proses", 
+      value: statsValues.pending, 
+      icon: Clock, 
+      color: "text-white", 
+      bg: "bg-white/20",
+      cardBg: "bg-indigo-500",
+      hoverBg: "hover:bg-indigo-600",
+      border: "border-indigo-400",
+      filterType: "pending"
+    },
+    { 
       name: "Data Ditolak", 
       value: statsValues.rejected, 
       icon: UserX, 
@@ -369,7 +382,7 @@ export default function DashboardStatsPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+      <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => (
           <Card 
             key={stat.name} 
