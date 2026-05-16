@@ -739,16 +739,7 @@ function ActorDataContent() {
                 </CardContent>
               </Card>
             ))}
-            {/* Load More Button */}
-            <div className="col-span-full flex justify-center py-8">
-              <Button 
-                variant="outline" 
-                onClick={() => setPageLimit(prev => prev + 50)}
-                className="font-bold border-primary text-primary hover:bg-primary/5"
-              >
-                LOAD MORE DATA (50 BERIKUTNYA)
-              </Button>
-            </div>
+
             {coordinatorStats.filter(stat => stat.count > 0).length === 0 && (
                <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 bg-white rounded-2xl border-2 border-dashed border-slate-200">
                  <div className="p-4 bg-slate-50 rounded-full">
