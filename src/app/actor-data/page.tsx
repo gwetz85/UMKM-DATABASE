@@ -159,14 +159,24 @@ function ActorDataContent() {
   }, [filteredActors])
 
   const coordinatorStats = useMemo(() => {
-    if (!systemStats?.coordinator || !kuotaData) return []
+    if (!systemStats?.coordinator) return []
     
-    return kuotaData.map((q: any) => {
-      const name = (q.name || "").toUpperCase().trim()
-      const quota = q.quota || 0
+    const activeNames = Object.keys(systemStats.coordinator)
+    
+    // Also include names from kuotaData that might not have data yet
+    const allNames = new Set(activeNames)
+    if (kuotaData) {
+      kuotaData.forEach((q: any) => {
+        if (q.name) allNames.add(q.name.toUpperCase().trim())
+      })
+    }
+
+    return Array.from(allNames).map(name => {
+      const quotaObj = (kuotaData || []).find((q: any) => (q.name || "").toUpperCase().trim() === name)
+      const quota = quotaObj?.quota || 0
       const count = systemStats.coordinator[name] || 0
       const remaining = quota - count
-      const isFull = remaining <= 0
+      const isFull = quota > 0 && remaining <= 0
       
       return {
         name,
