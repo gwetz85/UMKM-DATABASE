@@ -111,6 +111,13 @@ export default function LPJPage() {
       lpjNominal: numNominal,
       lpjDoneAt: new Date().toISOString()
     })
+
+    // Update global stats
+    import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+      // Find actor for metadata
+      const actorObj = { id: actorId, status: 'lpj_pending' }; // Minimal fallback
+      updateStatsOnStatusChange(database, 'lpj_pending', 'finish', actorObj).catch(e => console.error(e));
+    });
     
     logActivity({
       query: `SIMPAN LPJ: ${fullName} (Rp${numNominal})`,
@@ -132,6 +139,16 @@ export default function LPJPage() {
             status: 'finish',
             lpjEntryDate: new Date().toISOString() // Reset entry date to give another 14 days
         })
+        
+        // Update global stats (Moving back from whatever it was, though Blacklist in this context is finish-with-flag)
+        // Actually if it's already finish, no status change in DB terms, but if status was 'blacklist_lpj' or similar:
+        // Let's assume it was status: 'finish' but now we just reset date.
+        // If status changes from 'rejected' (blacklist) to 'finish':
+        /*
+        import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+            updateStatsOnStatusChange(database, 'rejected', 'finish', { id: actorId });
+        });
+        */
         
         logActivity({
           query: `PULIHKAN DARI BLACKLIST (LPJ): ${fullName}`,

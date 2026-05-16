@@ -144,6 +144,11 @@ function RejectedContent() {
     if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
       updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
       
+      // Update global stats
+      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+        updateStatsOnStatusChange(database, 'rejected', 'pending', { id: actorId }).catch(e => console.error(e));
+      });
+      
       logActivity({
         query: `KEMBALIKAN DATA DITOLAK: ${fullName}`,
         results: "Berhasil",
@@ -161,7 +166,13 @@ function RejectedContent() {
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     if (confirm(`Hapus permanen ${fullName}? Semua data terkait akan hilang.`)) {
+      const actorToDelete = { id: actorId, status: 'rejected' }; // Minimal fallback
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
+      
+      // Update global stats
+      import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
+        updateStatsOnDelete(database, actorToDelete).catch(err => console.error(err));
+      });
       
       logActivity({
         query: `HAPUS DATA DITOLAK: ${fullName}`,

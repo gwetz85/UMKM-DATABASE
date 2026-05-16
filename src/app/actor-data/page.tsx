@@ -299,6 +299,11 @@ function ActorDataContent() {
 
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
     
+    // Update global stats
+    import("@/lib/stats-service").then(({ updateStatsOnEdit }) => {
+      updateStatsOnEdit(database, viewingActor, { ...viewingActor, ...updates }).catch(e => console.error(e));
+    });
+    
     logActivity({
       query: `EDIT DATA: ${viewingActor.fullName}`,
       results: "Berhasil",
@@ -327,7 +332,7 @@ function ActorDataContent() {
     
     // Update global stats categories if necessary (both are 'verified' so no change, but consistent)
     import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-      updateStatsOnStatusChange(database, viewingActor.status || 'verified_actor', 'bank_pending');
+      updateStatsOnStatusChange(database, viewingActor.status || 'verified_actor', 'bank_pending', viewingActor);
     });
 
     logActivity({
@@ -355,7 +360,8 @@ function ActorDataContent() {
       
       // Update global stats
       import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-        updateStatsOnStatusChange(database, 'verified_actor', 'pending');
+        const actorObj = actors?.find(a => a.id === actorId) || { id: actorId, status: 'verified_actor' };
+        updateStatsOnStatusChange(database, 'verified_actor', 'pending', actorObj);
       });
 
       logActivity({

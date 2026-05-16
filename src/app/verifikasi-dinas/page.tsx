@@ -142,6 +142,11 @@ export default function VerifikasiDinasPage() {
       verificationLocationDinas: { lat: location.lat, lon: location.lon }
     })
 
+    // Update global stats
+    import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+      updateStatsOnStatusChange(database, verifyingActor.status || 'lpj_pending', 'verified_dinas', verifyingActor).catch(e => console.error(e));
+    });
+
     logActivity({
       query: `VERIFIKASI DINAS: ${verifyingActor.fullName} - ${hasilVerifikasi.toUpperCase()}`,
       results: "Berhasil",

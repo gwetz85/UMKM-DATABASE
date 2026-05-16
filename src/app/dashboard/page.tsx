@@ -89,6 +89,13 @@ export default function DashboardStatsPage() {
       router.push("/actor-data")
     }
   }, [user, isUserLoading, router, userProfile])
+
+  // Auto-sync on mount for Admins
+  useEffect(() => {
+    if (userProfile?.role === 'admin' && !isSyncing && database) {
+      handleSyncStats();
+    }
+  }, [userProfile, database]);
   
   // Optimize: Fetch pre-calculated stats instead of all actors
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
@@ -282,7 +289,7 @@ export default function DashboardStatsPage() {
 
   const stats = [
     { 
-      name: "Total Pelaku Usaha", 
+      name: "Total Data", 
       value: statsValues.total, 
       icon: Building2, 
       color: "text-white", 
@@ -293,7 +300,7 @@ export default function DashboardStatsPage() {
       filterType: "total"
     },
     { 
-      name: "Pelaku Laki-laki", 
+      name: "Laki-Laki", 
       value: statsValues.laki, 
       icon: Users, 
       color: "text-white", 
@@ -304,7 +311,7 @@ export default function DashboardStatsPage() {
       filterType: "laki"
     },
     { 
-      name: "Pelaku Perempuan", 
+      name: "Perempuan", 
       value: statsValues.perempuan, 
       icon: Users, 
       color: "text-white", 
@@ -326,18 +333,7 @@ export default function DashboardStatsPage() {
       filterType: "verified"
     },
     { 
-      name: "Data Dalam Proses", 
-      value: statsValues.pending, 
-      icon: Clock, 
-      color: "text-white", 
-      bg: "bg-white/20",
-      cardBg: "bg-indigo-500",
-      hoverBg: "hover:bg-indigo-600",
-      border: "border-indigo-400",
-      filterType: "pending"
-    },
-    { 
-      name: "Data Ditolak", 
+      name: "Cancell", 
       value: statsValues.rejected, 
       icon: UserX, 
       color: "text-white", 
@@ -346,7 +342,7 @@ export default function DashboardStatsPage() {
       hoverBg: "hover:bg-orange-600",
       border: "border-orange-400",
       filterType: "rejected"
-    },
+    }
   ]
 
   return (
@@ -382,7 +378,7 @@ export default function DashboardStatsPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-5">
         {stats.map((stat) => (
           <Card 
             key={stat.name} 

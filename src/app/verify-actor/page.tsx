@@ -80,27 +80,36 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
     
     const triggerProcess = () => {
       if (isAdmin && database) {
+        const oldStatus = actor.status || 'pending';
+        let newStatus = '';
+        
         if (matches.hasBlacklist) {
-          // Rule 1: Blacklist -> Rejected
+          newStatus = 'rejected';
           updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
-            status: 'rejected',
+            status: newStatus,
             rejectionReason: 'Ditolak Otomatis: Terdaftar di Data Blacklist (Sheet 4).'
           })
         } else if (matches.has2025) {
-          // Rule 2: Sheet 3 (2025) -> sudah Hold, pindah ke Verifikasi Manual setelah 24h
+          newStatus = 'verifikasi_manual';
           updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
-            status: 'verifikasi_manual'
+            status: newStatus
           })
         } else if (matches.has2024 || matches.has2023) {
-          // Rule 3 & 4: Sheet 1 (2024) atau Sheet 2 (2023) -> Verified
+          newStatus = 'verified_actor';
           updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
-            status: 'verified_actor'
+            status: newStatus
           })
         } else {
-          // Rule 5: Tidak ada match -> 45 detik -> Pelaku Usaha (Verified)
+          newStatus = 'verified_actor';
           updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
-            status: 'verified_actor'
+            status: newStatus
           })
+        }
+
+        if (newStatus && oldStatus !== newStatus) {
+          import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+            updateStatsOnStatusChange(database, oldStatus, newStatus, actor).catch(e => console.error(e));
+          });
         }
       }
     }
@@ -379,7 +388,7 @@ export default function VerifyActorPage() {
     
     // Update global stats
     import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-      updateStatsOnStatusChange(database, editingActor.status || 'pending', 'verified_actor');
+      updateStatsOnStatusChange(database, editingActor.status || 'pending', 'verified_actor', editingActor);
     });
 
     logActivity({
@@ -449,7 +458,7 @@ export default function VerifyActorPage() {
 
     // Update global stats
     import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-      updateStatsOnStatusChange(database, rejectingActor.status || 'pending', 'rejected');
+      updateStatsOnStatusChange(database, rejectingActor.status || 'pending', 'rejected', rejectingActor);
     });
 
     logActivity({
@@ -468,7 +477,15 @@ export default function VerifyActorPage() {
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin) return
     if (confirm(`Hapus data pending milik "${fullName}"?`)) {
+      const actorToDelete = filteredActors?.find(a => a.id === actorId);
       deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
+      
+      // Update global stats
+      if (actorToDelete) {
+        import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
+          updateStatsOnDelete(database, actorToDelete).catch(err => console.error(err));
+        });
+      }
       
       logActivity({
         query: `HAPUS DATA PENDING: ${fullName}`,
