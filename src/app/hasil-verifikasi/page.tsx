@@ -320,6 +320,40 @@ export default function HasilVerifikasiPage() {
                                       </section>
 
                                       <section className="space-y-4">
+                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Data Titik Lokasi Verifikasi</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          {(viewingActor as any).verificationLocation && (
+                                            <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                                              <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Sumber: Verifikasi Admin</p>
+                                              <p className="text-xs font-mono text-emerald-800 font-semibold">{(viewingActor as any).verificationLocation.lat}, {(viewingActor as any).verificationLocation.lon}</p>
+                                              <a href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocation.lat},${(viewingActor as any).verificationLocation.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline mt-2 inline-block">Lihat di Peta</a>
+                                            </div>
+                                          )}
+                                          {(viewingActor as any).verificationBypass?.isBypassed && (
+                                            <div className="bg-amber-50 p-4 rounded-xl border border-amber-100">
+                                              <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">Sumber: Verifikasi Admin (Bypass)</p>
+                                              <p className="text-xs text-amber-800 font-medium mb-2">Alasan: {(viewingActor as any).verificationBypass.reason}</p>
+                                              {(viewingActor as any).verificationBypass.fileBase64 && (
+                                                <a href={(viewingActor as any).verificationBypass.fileBase64} target="_blank" rel="noreferrer" className="text-[10px] font-bold bg-amber-200 text-amber-800 px-3 py-1 rounded shadow-sm hover:bg-amber-300 transition-colors inline-block mt-1">Lihat Bukti Lampiran</a>
+                                              )}
+                                            </div>
+                                          )}
+                                          {(viewingActor as any).verificationLocationDinas && (
+                                            <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                                              <p className="text-[10px] font-bold text-indigo-600 uppercase mb-1">Sumber: Verifikasi Dinas</p>
+                                              <p className="text-xs font-mono text-indigo-800 font-semibold">{(viewingActor as any).verificationLocationDinas.lat}, {(viewingActor as any).verificationLocationDinas.lon}</p>
+                                              <a href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocationDinas.lat},${(viewingActor as any).verificationLocationDinas.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline mt-2 inline-block">Lihat di Peta</a>
+                                            </div>
+                                          )}
+                                          {!(viewingActor as any).verificationLocation && !(viewingActor as any).verificationLocationDinas && !(viewingActor as any).verificationBypass?.isBypassed && (
+                                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 col-span-full">
+                                              <p className="text-xs font-medium text-slate-500 text-center">Belum ada titik lokasi yang direkam.</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </section>
+
+                                      <section className="space-y-4">
                                         <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem</div>
                                         <div className="bg-slate-50 p-4 rounded-xl text-[10px] font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
                                           <div className="space-y-1">
