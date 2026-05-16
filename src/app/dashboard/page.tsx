@@ -122,8 +122,8 @@ export default function DashboardStatsPage() {
     if (systemStats) {
       return {
         total: systemStats.totalActors || 0,
-        laki: systemStats.gender?.laki || 0,
-        perempuan: systemStats.gender?.perempuan || 0,
+        laki: systemStats.gender?.['Laki-laki'] || systemStats.gender?.laki || 0,
+        perempuan: systemStats.gender?.['Perempuan'] || systemStats.gender?.perempuan || 0,
         verified: systemStats.status?.verified || 0,
         rejected: systemStats.status?.rejected || 0
       }
@@ -141,33 +141,53 @@ export default function DashboardStatsPage() {
       if (snap.exists()) {
         const actors = Object.values(snap.val())
         const stats = {
-          totalActors: actors.length,
-          gender: {
-            laki: actors.filter((a: any) => ['laki-laki', 'l'].includes((a.gender || "").toLowerCase())).length,
-            perempuan: actors.filter((a: any) => ['perempuan', 'p'].includes((a.gender || "").toLowerCase())).length,
-            unknown: 0
-          },
-          status: {
-            pending: actors.filter((a: any) => (a.status || 'pending') === 'pending').length,
-            verified: actors.filter((a: any) => ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending'].includes(a.status)).length,
-            rejected: actors.filter((a: any) => a.status === 'rejected').length,
-            finish: actors.filter((a: any) => a.status === 'finish').length,
-          },
+          totalActors: 0,
+          gender: { 'Laki-laki': 0, 'Perempuan': 0, unknown: 0 },
+          status: { pending: 0, verified: 0, rejected: 0, finish: 0 },
           kelurahan: {},
           coordinator: {},
           lastUpdated: new Date().toISOString()
         } as any
 
-        actors.forEach((a: any) => {
-          if (a.kelurahan) {
-            const k = a.kelurahan.toUpperCase().trim()
-            stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
+        let fixCount = 0
+        const updates: Record<string, any> = {}
+
+        snap.forEach((child) => {
+          const actor = child.val()
+          stats.totalActors++
+          
+          const s = actor.status || 'pending'
+          if (['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending'].includes(s)) {
+            stats.status.verified++
+            if (actor.coordinator) {
+              const coord = actor.coordinator.toUpperCase().trim()
+              stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
+              
+              if (actor.coordinator !== coord) {
+                updates[`${child.key}/coordinator`] = coord
+                fixCount++
+              }
+            }
+            if (actor.kelurahan) {
+               const k = actor.kelurahan.toUpperCase().trim()
+               stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
+            }
+          } else if (s === 'pending') {
+            stats.status.pending++
+          } else if (s === 'rejected') {
+            stats.status.rejected++
+          } else if (s === 'finish') {
+            stats.status.finish++
           }
-          if (a.coordinator) {
-            const c = a.coordinator.toUpperCase().trim()
-            stats.coordinator[c] = (stats.coordinator[c] || 0) + 1
-          }
+
+          const gender = actor.gender === 'Perempuan' ? 'Perempuan' : 'Laki-laki'
+          stats.gender[gender]++
         })
+
+        if (fixCount > 0) {
+          const { update } = await import("firebase/database")
+          await update(ref(database, 'businessActors'), updates)
+        }
         
         const { set } = await import("firebase/database")
         await set(ref(database, 'system_stats'), stats)
