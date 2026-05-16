@@ -177,18 +177,20 @@ export default function DashboardStatsPage() {
           if (isVerified || isRejected) {
             stats.status[isVerified ? 'verified' : 'rejected']++
             
-            if (actor.coordinator) {
-              const coord = actor.coordinator.toUpperCase().trim()
-              stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
-              
-              if (actor.coordinator !== coord) {
-                updates[`${child.key}/coordinator`] = coord
-                fixCount++
+            if (isVerified) {
+              if (actor.coordinator) {
+                const coord = actor.coordinator.toUpperCase().trim()
+                stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
+                
+                if (actor.coordinator !== coord) {
+                  updates[`${child.key}/coordinator`] = coord
+                  fixCount++
+                }
               }
-            }
-            if (actor.kelurahan) {
-               const k = actor.kelurahan.toUpperCase().trim()
-               stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
+              if (actor.kelurahan) {
+                 const k = actor.kelurahan.toUpperCase().trim()
+                 stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
+              }
             }
           } else {
             stats.status.pending++

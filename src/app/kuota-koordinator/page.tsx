@@ -65,8 +65,8 @@ export default function KuotaKorlapDewanAktifPage() {
     const counts: Record<string, number> = {}
     if (allData) {
       allData.forEach((d: any) => {
-        // Include rejected/cancelled in the count to match Dashboard's "Total Data"
-        const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'rejected'];
+        // Only count Verified data (Cancell does not reduce quota)
+        const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'];
         if (!activeStatuses.includes(d.status)) return;
         if (d.coordinator) {
           const name = d.coordinator.toUpperCase().trim()

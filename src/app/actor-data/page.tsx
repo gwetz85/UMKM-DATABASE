@@ -123,9 +123,9 @@ function ActorDataContent() {
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     if (!a) return false;
     // Status filter - must match the statuses counted in handleSyncStats for coordinator
-    // Status filter - match the dashboard's "Total Data" (Verified + Rejected)
+    // Status filter - EXCLUDE rejected for the active processing list (as requested)
     const s = a.status || ""
-    if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'rejected'].includes(s)) return false;
+    if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)) return false;
 
     if (isKoordinator) {
       if (!a.coordinator || !userProfile?.fullName) return false;
@@ -176,15 +176,22 @@ function ActorDataContent() {
       const quotaObj = (kuotaData || []).find((q: any) => (q.name || "").toUpperCase().trim() === name)
       const quota = quotaObj?.quota || 0
       
-      // AUTOMATIC SYNC: Prioritize the live count from groupedActors (real-time listener)
-      // This ensures the card always matches the data visible in the module.
-      const count = (groupedActors[name] || []).length || (systemStats as any)?.coordinator?.[name] || 0
-      const remaining = quota - count
+      // Verified count is now the primary metric for quota usage (Usage = Verified)
+      const verifiedCount = (groupedActors[name] || []).length
+      
+      // Rejected count is for statistics only
+      const totalCount_Global = (systemStats as any)?.coordinator?.[name] || verifiedCount
+      const rejectedCount = Math.max(0, totalCount_Global - verifiedCount)
+      
+      const remaining = quota - verifiedCount
       const isFull = quota > 0 && remaining <= 0
       
       return {
         name,
-        count,
+        count: verifiedCount, // Primary count is now Verified only
+        verifiedCount,
+        rejectedCount,
+        totalInput: verifiedCount + rejectedCount,
         quota,
         remaining,
         isFull
@@ -236,18 +243,20 @@ function ActorDataContent() {
           if (isVerified || isRejected) {
             stats.status[isVerified ? 'verified' : 'rejected']++
             
-            if (actor.coordinator) {
-              const coord = actor.coordinator.toUpperCase().trim()
-              stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
-              
-              if (actor.coordinator !== coord) {
-                updates[`${child.key}/coordinator`] = coord
-                fixCount++
+            if (isVerified) {
+              if (actor.coordinator) {
+                const coord = actor.coordinator.toUpperCase().trim()
+                stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
+                
+                if (actor.coordinator !== coord) {
+                  updates[`${child.key}/coordinator`] = coord
+                  fixCount++
+                }
               }
-            }
-            if (actor.kelurahan) {
-               const k = actor.kelurahan.toUpperCase().trim()
-               stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
+              if (actor.kelurahan) {
+                 const k = actor.kelurahan.toUpperCase().trim()
+                 stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
+              }
             }
           } else {
             stats.status.pending++
@@ -715,9 +724,15 @@ function ActorDataContent() {
                       {stat.name}
                     </h3>
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-0.5">
                     <span className="text-4xl font-black drop-shadow-md">{stat.count}</span>
-                    <span className="text-[10px] font-black uppercase tracking-tighter opacity-90">Data Terinput</span>
+                    <span className="text-[10px] font-black uppercase tracking-tighter opacity-90">Data Terinput (Aktif)</span>
+                    <div className="flex items-center justify-center gap-2 mt-0.5">
+                       <span className="text-[8px] font-bold bg-white/20 px-1.5 py-0.5 rounded-full">Total: {stat.totalInput}</span>
+                       {stat.rejectedCount > 0 && (
+                         <span className="text-[8px] font-bold bg-rose-500/40 px-1.5 py-0.5 rounded-full">{stat.rejectedCount} Cancell</span>
+                       )}
+                    </div>
                   </div>
                   <div className="w-full mt-2">
                     <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-4 py-2 flex justify-between items-center border border-white/10 shadow-inner">

@@ -129,11 +129,11 @@ export async function updateStatsOnStatusChange(database: Database, oldStatus: s
       currentStats.gender[g] = Math.max(0, (currentStats.gender[g] || 0) - 1);
     }
 
-    // Handle Kelurahan & Coordinator stats (only for processed: verified + rejected)
-    const wasProcessed_KC = isProcessed(oldStatus);
-    const isProcessedNow_KC = isProcessed(newStatus);
+    // Handle Kelurahan & Coordinator stats (only for verified - as requested: cancell doesn't reduce quota)
+    const wasVerified_KC = isVerifiedStatus(oldStatus);
+    const isVerifiedNow_KC = isVerifiedStatus(newStatus);
     
-    if (!wasProcessed_KC && isProcessedNow_KC) {
+    if (!wasVerified_KC && isVerifiedNow_KC) {
       if (actorData.kelurahan) {
         const kel = actorData.kelurahan.toUpperCase().trim();
         currentStats.kelurahan[kel] = (currentStats.kelurahan[kel] || 0) + 1;
@@ -142,7 +142,7 @@ export async function updateStatsOnStatusChange(database: Database, oldStatus: s
         const coor = actorData.coordinator.toUpperCase().trim();
         currentStats.coordinator[coor] = (currentStats.coordinator[coor] || 0) + 1;
       }
-    } else if (wasProcessed_KC && !isProcessedNow_KC) {
+    } else if (wasVerified_KC && !isVerifiedNow_KC) {
       if (actorData.kelurahan) {
         const kel = actorData.kelurahan.toUpperCase().trim();
         currentStats.kelurahan[kel] = Math.max(0, (currentStats.kelurahan[kel] || 0) - 1);

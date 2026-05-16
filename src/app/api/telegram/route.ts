@@ -471,8 +471,7 @@ export async function POST(req: NextRequest) {
                 snapshot.forEach((child) => {
                   const val = child.val();
                   const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(val.status);
-                  const isRejected = val.status === 'rejected';
-                  if ((isVerified || isRejected) && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
+                  if (isVerified && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
                     achieved++;
                   }
                 });
@@ -566,8 +565,7 @@ export async function POST(req: NextRequest) {
         const usageMap = new Map<string, number>();
         actors.forEach(actor => {
             const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(actor.status);
-            const isRejected = actor.status === 'rejected';
-            if (actor.coordinator && (isVerified || isRejected)) {
+            if (actor.coordinator && isVerified) {
                 const coordinatorName = (actor.coordinator || "").toUpperCase().trim();
                 usageMap.set(coordinatorName, (usageMap.get(coordinatorName) || 0) + 1);
             }
