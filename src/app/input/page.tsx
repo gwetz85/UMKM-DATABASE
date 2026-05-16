@@ -113,10 +113,14 @@ export default function InputDataPage() {
       // We fetch all to avoid Firebase index requirement errors since nik/noKK are not indexed
       const snap = await get(actorsRef)
       let duplicateInActors: any = null
+      let currentCoordCount = 0
       
       if (snap.exists()) {
         const allActors = Object.values(snap.val()) as any[]
         duplicateInActors = allActors.find(a => a.nik === nik || a.noKK === noKK)
+        if (selectedCoordinator) {
+          currentCoordCount = allActors.filter(a => a.coordinator === selectedCoordinator).length
+        }
       }
 
       if (duplicateInActors) {
@@ -144,15 +148,9 @@ export default function InputDataPage() {
       }
 
       // Coordinator Quota Check (Safeguard)
-      // Note: In high traffic, we should use a transaction on the quota node instead of this client-side check.
       if (selectedCoordinator) {
-        // Simplified check for now. Ideally, we query the count of actors for this coordinator.
-        const coordQuery = query(actorsRef, orderByChild('coordinator'), equalTo(selectedCoordinator))
-        const coordSnap = await get(coordQuery)
-        const currentCount = coordSnap.exists() ? Object.keys(coordSnap.val()).length : 0
-        
         const quotaItem = rawQuotaData?.find((q: any) => q.name === selectedCoordinator)
-        if (quotaItem && currentCount >= quotaItem.quota) {
+        if (quotaItem && currentCoordCount >= quotaItem.quota) {
           toast({
             variant: "destructive",
             title: "KUOTA HABIS",
@@ -212,12 +210,12 @@ export default function InputDataPage() {
       setKelurahan("")
       setKecamatan("")
       setSelectedCoordinator("")
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
       toast({
         variant: "destructive",
         title: "Terjadi Kesalahan",
-        description: "Gagal melakukan validasi data. Silakan coba lagi."
+        description: `Gagal menyimpan data: ${error.message || "Silakan coba lagi."}`
       })
     } finally {
       setLoading(false)
