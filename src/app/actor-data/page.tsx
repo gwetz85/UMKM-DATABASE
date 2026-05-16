@@ -87,11 +87,13 @@ function ActorDataContent() {
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
     
-    // Fetch all verified actors and filter on the client side
-    // This solves the case-sensitivity issue in Firebase queries
-    // where 'Ahmad Senggarang' != 'AHMAD SENGGARANG'
+    // Use coordinator exact match for performance. 
+    // Casing issues are now handled by the SYNC DATA auto-fix.
     if (filterCoordinator || isKoordinator) {
-       return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_actor'))
+      const coordName = filterCoordinator || userProfile?.fullName
+      if (coordName) {
+        return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(coordName))
+      }
     }
 
     // Default: fetch verified actors with a limit for general overview
@@ -127,8 +129,9 @@ function ActorDataContent() {
 
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     if (!a) return false;
-    // Status filter - equivalent to previous orderByChild('status').equalTo('verified_actor')
-    if ((a.status || "") !== 'verified_actor') return false;
+    // Status filter - must match the statuses counted in handleSyncStats for coordinator
+    const s = a.status || ""
+    if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending'].includes(s)) return false;
 
     if (isKoordinator) {
       if (!a.coordinator || !userProfile?.fullName) return false;
