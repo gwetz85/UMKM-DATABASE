@@ -53,7 +53,7 @@ export default function LPJPage() {
   const isPetugas = userProfile?.role === 'petugas'
   const isMonitoring = userProfile?.role === 'monitoring'
   const isKoordinator = userProfile?.role === 'koordinator'
-  const canAccess = isAdmin || isPetugas || isMonitoring
+  const canAccess = isAdmin || isPetugas || isMonitoring || isKoordinator
   const canModify = isAdmin || isPetugas
 
   const memoQuery = useMemoFirebase(() => {
@@ -185,6 +185,11 @@ export default function LPJPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        ) : isKoordinator ? (
+          <div className="flex items-center gap-3 px-4 py-2 bg-primary/5 rounded-2xl border border-primary/10">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+            <span className="text-[10px] font-black uppercase text-primary tracking-widest">KOORDINATOR: {userProfile?.fullName}</span>
           </div>
         ) : <div />}
 

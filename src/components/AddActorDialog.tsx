@@ -41,51 +41,31 @@ export function AddActorDialog() {
   const [kecamatan, setKecamatan] = useState<string>("")
   const [selectedCoordinator, setSelectedCoordinator] = useState<string>("")
 
-  // Fetch Quotas and All Actors for validation
+  // Fetch Quotas
   const quotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
-  const actorsRef = useMemoFirebase(() => database ? ref(database, 'businessActors') : null, [database])
-  
   const { data: rawQuotaData } = useList<any>(quotaRef)
-  const { data: rawActorsData } = useList<any>(actorsRef)
-
-  // Fetch Master Data for auto-verification
-  const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
-  const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
-  const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
-  const blacklistRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
-
-  const { data: data2023 } = useList<any>(master2023Ref)
-  const { data: data2024 } = useList<any>(master2024Ref)
-  const { data: data2025 } = useList<any>(master2025Ref)
-  const { data: dataBlacklist } = useList<any>(blacklistRef)
+  
+  // Fetch System Stats for efficient usage calculation
+  const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
+  const { data: systemStats } = useObject(statsRef)
 
   const availableCoordinators = useMemo(() => {
     if (!rawQuotaData) return []
     
-    // Calculate current usage for each coordinator
-    const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'];
-    const usageCounts: Record<string, number> = {}
-    
-    if (rawActorsData) {
-      rawActorsData.forEach((actor: any) => {
-        if (activeStatuses.includes(actor.status) && actor.coordinator) {
-          const name = actor.coordinator.toUpperCase().trim()
-          usageCounts[name] = (usageCounts[name] || 0) + 1
-        }
-      })
-    }
+    // Use pre-calculated stats for usage calculation
+    const usageStats = (systemStats as any)?.coordinator || {}
 
     return rawQuotaData
       .map((q: any) => {
         const nameUpper = (q.name || "").toUpperCase().trim()
         const quota = q.quota || 0
-        const used = usageCounts[nameUpper] || 0
+        const used = usageStats[nameUpper] || 0
         const remaining = quota - used
         return { ...q, remaining }
       })
       .filter((q: any) => q.remaining > 0)
       .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))
-  }, [rawQuotaData, rawActorsData])
+  }, [rawQuotaData, systemStats])
 
   // Get current user profile to record who created the entry
   const userProfileRef = useMemoFirebase(() => {
@@ -134,17 +114,14 @@ export function AddActorDialog() {
     try {
       const actorsRef = ref(database, 'businessActors')
       
-      const actorsSnapshot = await get(actorsRef)
-      let duplicateInActors: any = null
-      
-      if (actorsSnapshot.exists()) {
-        actorsSnapshot.forEach((child) => {
-          const val = child.val()
-          if (val.nik === nik || val.noKK === noKK) {
-            duplicateInActors = val
-          }
-        })
+      // Tahap 1: Cek duplikasi di Database Aktif secara efisien
+      const checkDuplicate = async (field: string, value: string) => {
+        const q = query(actorsRef, orderByChild(field), equalTo(value), limitToFirst(1))
+        const snap = await get(q)
+        return snap.exists() ? Object.values(snap.val())[0] : null
       }
+
+      const duplicateInActors = await checkDuplicate('nik', nik) || await checkDuplicate('noKK', noKK)
 
       if (duplicateInActors) {
         toast({ 
@@ -156,13 +133,17 @@ export function AddActorDialog() {
         return
       }
 
-      // Tahap 2: Cek di Database Pembanding (Informasi)
-      const checkMaster = (data: any[] | null) => {
-        return (data || []).find((m: any) => (m.noKK && String(m.noKK).trim() === noKK) || (m.nik && String(m.nik).trim() === nik))
+      // Tahap 2: Cek di Database Pembanding (Informasi) secara efisien
+      const checkInMaster = async (path: string, field: string, value: string) => {
+        const q = query(ref(database, path), orderByChild(field), equalTo(value), limitToFirst(1))
+        const snap = await get(q)
+        return snap.exists()
       }
       
-      const matchBlacklist = checkMaster(dataBlacklist)
-      const matchPrevious = checkMaster(data2025) || checkMaster(data2024) || checkMaster(data2023)
+      const matchBlacklist = await checkInMaster('blacklist_data', 'nik', nik) || await checkInMaster('blacklist_data', 'noKK', noKK)
+      const matchPrevious = await checkInMaster('master_data_2025', 'nik', nik) || 
+                            await checkInMaster('master_data_2024', 'nik', nik) || 
+                            await checkInMaster('master_data_2023', 'nik', nik)
 
       if (matchBlacklist) {
         toast({
@@ -218,6 +199,11 @@ export function AddActorDialog() {
 
       addDocumentNonBlocking(actorsRef, data)
       
+      // Update global stats for dashboard
+      import("@/lib/stats-service").then(({ updateStatsOnNewActor }) => {
+        updateStatsOnNewActor(database, data).catch(err => console.error("Stats update error:", err));
+      });
+
       await logActivity({
         query: `INPUT (DIRECT): ${data.fullName} (${nik})`,
         results: "Berhasil Simpan",

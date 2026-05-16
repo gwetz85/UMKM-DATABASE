@@ -65,7 +65,7 @@ export function useNavigation() {
       name: "Dashboard Statistik",
       href: "/dashboard",
       icon: LayoutDashboard,
-      show: !!user && !isDinas && !isInspektorat,
+      show: !!user && !isDinas && !isInspektorat && !isKoordinator,
       color: "#f59e0b", // amber-500
       description: "Statistik & Ringkasan Data"
     },
@@ -73,7 +73,7 @@ export function useNavigation() {
       name: "Pesan Chat",
       href: "/messages",
       icon: MessageSquare,
-      show: !!user && !isDinas && !isInspektorat,
+      show: !!user && !isDinas && !isInspektorat && !isKoordinator,
       color: "#4f46e5", // indigo-600
       description: "Komunikasi Internal",
       badge: totalUnread > 0 ? totalUnread : undefined
@@ -122,7 +122,7 @@ export function useNavigation() {
       name: "Rekapan Data",
       href: "/rekapan-data",
       icon: BarChart3,
-      show: !!user && !isDinas && !isInspektorat,
+      show: !!user && !isDinas && !isInspektorat && !isKoordinator,
       color: "#d97706", // amber-600
       description: "Rekap Data Per Wilayah"
     },
@@ -130,7 +130,7 @@ export function useNavigation() {
       name: "BPJS Ketenagakerjaan",
       href: "/bpjs",
       icon: ShieldCheck,
-      show: !!user && !isDinas && !isInspektorat,
+      show: !!user && !isDinas && !isInspektorat && !isKoordinator,
       color: "#15803d", // green-700
       description: "Monitoring BPJS Peserta"
     },
@@ -162,7 +162,7 @@ export function useNavigation() {
       name: "HASIL VERIFIKASI",
       href: "/hasil-verifikasi",
       icon: ListChecks,
-      show: (isAdmin || isPetugas || isKoordinator) && !isDinas,
+      show: (isAdmin || isPetugas) && !isDinas,
       color: "#0d9488", // teal-600
       description: "Laporan Hasil Verifikasi"
     },
@@ -194,7 +194,7 @@ export function useNavigation() {
       name: "LPJ",
       href: "/lpj",
       icon: FileText,
-      show: (isAdmin || isPetugas || isMonitoring) && !isKoordinator && !isDinas,
+      show: (isAdmin || isPetugas || isMonitoring || isKoordinator) && !isDinas,
       color: "#52525b", // zinc-600
       description: "Laporan Pertanggungjawaban"
     },
@@ -210,7 +210,7 @@ export function useNavigation() {
       name: "Data Selesai",
       href: "/finish",
       icon: CheckCircle2,
-      show: !!user && !isDinas && !isInspektorat,
+      show: !!user && !isDinas && !isInspektorat && !isKoordinator,
       color: "#1d4ed8", // blue-700
       description: "Data yang Telah Selesai Diproses"
     },
@@ -226,7 +226,7 @@ export function useNavigation() {
       name: "Pengaturan",
       href: "/settings",
       icon: UserCog,
-      show: !!user && !isDinas && !isInspektorat,
+      show: !!user && !isDinas && !isInspektorat && !isKoordinator,
       color: "#94a3b8", // slate-400
       description: "Konfigurasi Profil & Sistem"
     },

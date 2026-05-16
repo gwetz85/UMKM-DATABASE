@@ -86,12 +86,18 @@ function ActorDataContent() {
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    let q = query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_actor'))
     
-    // In a full implementation, we would use startAt/endAt for pagination
-    // For now, we'll just use a reasonable limit to keep it "light"
-    return query(q, limitToFirst(pageLimit))
-  }, [database, pageLimit])
+    // If we have a filterCoordinator or are a Koordinator, fetch specifically for that coordinator
+    if (filterCoordinator || isKoordinator) {
+      const coordName = filterCoordinator || userProfile?.fullName
+      if (coordName) {
+        return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(coordName))
+      }
+    }
+
+    // Default: fetch verified actors with a limit for general overview
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_actor'), limitToFirst(pageLimit))
+  }, [database, pageLimit, filterCoordinator, isKoordinator, userProfile?.fullName])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
@@ -159,14 +165,26 @@ function ActorDataContent() {
   }, [filteredActors])
 
   const coordinatorStats = useMemo(() => {
-    if (!systemStats?.coordinator || !kuotaData) return []
-    
-    return kuotaData.map((q: any) => {
-      const name = (q.name || "").toUpperCase().trim()
-      const quota = q.quota || 0
-      const count = systemStats.coordinator[name] || 0
+    // 1. Get all known coordinator names from kuotaData
+    const allNames = new Set<string>()
+    if (kuotaData) {
+      kuotaData.forEach((q: any) => {
+        if (q.name) allNames.add(q.name.toUpperCase().trim())
+      })
+    }
+
+    // 2. Add names from live data if any (just in case they aren't in kuotaData)
+    Object.keys(groupedActors).forEach(name => allNames.add(name))
+
+    return Array.from(allNames).map(name => {
+      const quotaObj = (kuotaData || []).find((q: any) => (q.name || "").toUpperCase().trim() === name)
+      const quota = quotaObj?.quota || 0
+      
+      // CRITICAL FIX: Use system_stats for accurate counts instead of groupedActors (which is paginated)
+      // Only fallback to groupedActors if system_stats is not yet available or doesn't have the entry
+      const count = (systemStats as any)?.coordinator?.[name] || groupedActors[name]?.length || 0
       const remaining = quota - count
-      const isFull = remaining <= 0
+      const isFull = quota > 0 && remaining <= 0
       
       return {
         name,
@@ -176,7 +194,7 @@ function ActorDataContent() {
         isFull
       }
     }).sort((a: any, b: any) => a.name.localeCompare(b.name))
-  }, [systemStats, kuotaData])
+  }, [groupedActors, kuotaData, systemStats])
 
   const currentKoorStat = useMemo(() => {
     if (!filterCoordinator) return null
@@ -454,7 +472,7 @@ function ActorDataContent() {
               <Skeleton key={i} className="h-12 w-full rounded-lg" />
             ))}
           </div>
-        ) : (isKoordinator || isInspektorat) && !isInspektorat ? (
+        ) : isInspektorat ? (
            <div className="space-y-12">
             {Object.entries(groupedActors).map(([coordinator, actors]) => (
               <div key={coordinator} className="space-y-4 break-after-page">
@@ -501,10 +519,10 @@ function ActorDataContent() {
               </div>
             ))}
           </div>
-        ) : (filterCoordinator || isInspektorat) ? (
+        ) : (isKoordinator || filterCoordinator || isInspektorat) ? (
           <div className="space-y-6">
             <div className="flex items-center gap-4 mb-2">
-              {!isInspektorat && (
+              {!isInspektorat && !isKoordinator && (
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -515,7 +533,7 @@ function ActorDataContent() {
                 </Button>
               )}
               <h2 className="text-xl font-black text-primary uppercase tracking-tighter">
-                {isInspektorat ? "DATABASE PELAKU USAHA" : `DATA: ${filterCoordinator}`}
+                {isInspektorat ? "DATABASE PELAKU USAHA" : isKoordinator ? `DATA: ${userProfile?.fullName}` : `DATA: ${filterCoordinator}`}
               </h2>
             </div>
             
@@ -531,11 +549,23 @@ function ActorDataContent() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(isInspektorat ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || [])).map((actor, index) => (
+                  {(isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || [])).map((actor, index) => (
                     <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
                       <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
                       <TableCell className="py-4">
-                        <span className="font-bold text-slate-800 uppercase text-[13px] print:text-black">{actor.fullName}</span>
+                        <div className="flex flex-col items-start gap-2">
+                          {isKoordinator && (
+                            <div className={cn(
+                              "flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 shadow-sm border print:hidden",
+                              normalizeGender(actor.gender) === 'Perempuan' 
+                                ? "bg-pink-100 border-pink-200 text-pink-600" 
+                                : "bg-blue-100 border-blue-200 text-blue-600"
+                            )}>
+                              <span className="text-lg">{normalizeGender(actor.gender) === 'Perempuan' ? '👧' : '👦'}</span>
+                            </div>
+                          )}
+                          <span className="font-bold text-slate-800 uppercase text-[13px] leading-tight print:text-black">{actor.fullName}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="py-4">
                         <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.nik}</span>

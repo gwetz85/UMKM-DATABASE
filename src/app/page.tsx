@@ -9,7 +9,7 @@ import { useNavigation } from "@/hooks/use-navigation"
 
 export default function RootPage() {
   const { user, isUserLoading } = useUser()
-  const { isDinas } = useNavigation()
+  const { isDinas, isKoordinator } = useNavigation()
   const router = useRouter()
 
   useEffect(() => {
@@ -21,7 +21,11 @@ export default function RootPage() {
     if (isDinas) {
       router.push("/verifikasi-dinas")
     }
-  }, [user, isUserLoading, router, isDinas])
+
+    if (isKoordinator) {
+      router.push("/actor-data")
+    }
+  }, [user, isUserLoading, router, isDinas, isKoordinator])
 
   if (isUserLoading) {
     return (

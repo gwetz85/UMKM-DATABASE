@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemoFirebase, useList, useUser, useDatabase, useObject } from "@/firebase"
-import { ref, query } from "firebase/database"
+import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { RefreshCw, Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Clock, History, MessageSquare } from "lucide-react"
@@ -83,6 +83,10 @@ export default function DashboardStatsPage() {
 
     if (userProfile?.role === 'dinas') {
       router.push("/verifikasi-dinas")
+    }
+
+    if (userProfile?.role === 'koordinator') {
+      router.push("/actor-data")
     }
   }, [user, isUserLoading, router, userProfile])
   
@@ -180,7 +184,7 @@ export default function DashboardStatsPage() {
   const coordinatorStats = useMemo(() => {
     if (!systemStats?.coordinator) return []
     return Object.entries(systemStats.coordinator)
-      .map(([name, count]) => ({ name, count }))
+      .map(([name, count]) => ({ name, count: count as number }))
       .sort((a, b) => b.count - a.count)
   }, [systemStats])
 
@@ -219,7 +223,7 @@ export default function DashboardStatsPage() {
     if (!systemStats?.kelurahan) return []
     const stats = Object.entries(systemStats.kelurahan).map(([name, count]) => ({
       name,
-      count
+      count: count as number
     }))
     return stats.sort((a, b) => b.count - a.count);
   }, [systemStats])
