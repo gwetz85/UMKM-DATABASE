@@ -535,7 +535,19 @@ function ActorDataContent() {
                     <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
                       <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
                       <TableCell className="py-4">
-                        <span className="font-bold text-slate-800 uppercase text-[13px] print:text-black">{actor.fullName}</span>
+                        <div className="flex flex-col items-start gap-2">
+                          {isKoordinator && (
+                            <div className={cn(
+                              "flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 shadow-sm border print:hidden",
+                              normalizeGender(actor.gender) === 'Perempuan' 
+                                ? "bg-pink-100 border-pink-200 text-pink-600" 
+                                : "bg-blue-100 border-blue-200 text-blue-600"
+                            )}>
+                              <span className="text-lg">{normalizeGender(actor.gender) === 'Perempuan' ? '👧' : '👦'}</span>
+                            </div>
+                          )}
+                          <span className="font-bold text-slate-800 uppercase text-[13px] leading-tight print:text-black">{actor.fullName}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="py-4">
                         <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.nik}</span>
