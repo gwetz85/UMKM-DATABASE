@@ -109,17 +109,14 @@ export default function InputDataPage() {
     try {
       const actorsRef = ref(database, 'businessActors')
       
-      // Tahap 1: Cek duplikasi di Database Aktif (businessActors) secara efisien
-      const duplicateNikQuery = query(actorsRef, orderByChild('nik'), equalTo(nik), limitToFirst(1))
-      const duplicateNoKKQuery = query(actorsRef, orderByChild('noKK'), equalTo(noKK), limitToFirst(1))
-      
-      const [nikSnap, noKKSnap] = await Promise.all([get(duplicateNikQuery), get(duplicateNoKKQuery)])
-      
+      // Tahap 1: Cek duplikasi di Database Aktif (businessActors)
+      // We fetch all to avoid Firebase index requirement errors since nik/noKK are not indexed
+      const snap = await get(actorsRef)
       let duplicateInActors: any = null
-      if (nikSnap.exists()) {
-        duplicateInActors = Object.values(nikSnap.val())[0]
-      } else if (noKKSnap.exists()) {
-        duplicateInActors = Object.values(noKKSnap.val())[0]
+      
+      if (snap.exists()) {
+        const allActors = Object.values(snap.val()) as any[]
+        duplicateInActors = allActors.find(a => a.nik === nik || a.noKK === noKK)
       }
 
       if (duplicateInActors) {

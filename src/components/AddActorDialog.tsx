@@ -114,14 +114,15 @@ export function AddActorDialog() {
     try {
       const actorsRef = ref(database, 'businessActors')
       
-      // Tahap 1: Cek duplikasi di Database Aktif secara efisien
-      const checkDuplicate = async (field: string, value: string) => {
-        const q = query(actorsRef, orderByChild(field), equalTo(value), limitToFirst(1))
-        const snap = await get(q)
-        return snap.exists() ? Object.values(snap.val())[0] : null
+      // Tahap 1: Cek duplikasi di Database Aktif
+      // Fetch all to avoid Firebase index requirement errors since nik/noKK are not indexed
+      const snap = await get(actorsRef)
+      let duplicateInActors: any = null
+      
+      if (snap.exists()) {
+        const allActors = Object.values(snap.val()) as any[]
+        duplicateInActors = allActors.find(a => a.nik === nik || a.noKK === noKK)
       }
-
-      const duplicateInActors = await checkDuplicate('nik', nik) || await checkDuplicate('noKK', noKK)
 
       if (duplicateInActors) {
         const actor = duplicateInActors as any
