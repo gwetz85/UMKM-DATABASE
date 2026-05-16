@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useDatabase, useUser, addDocumentNonBlocking, useMemoFirebase, useList, useObject } from "@/firebase"
-import { ref, get } from "firebase/database"
+import { ref, get, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
