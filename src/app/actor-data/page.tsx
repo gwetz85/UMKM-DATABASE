@@ -176,9 +176,9 @@ function ActorDataContent() {
       const quotaObj = (kuotaData || []).find((q: any) => (q.name || "").toUpperCase().trim() === name)
       const quota = quotaObj?.quota || 0
       
-      // CRITICAL FIX: Use system_stats for accurate counts instead of groupedActors (which is paginated)
-      // Only fallback to groupedActors if system_stats is not yet available or doesn't have the entry
-      const count = (systemStats as any)?.coordinator?.[name] || groupedActors[name]?.length || 0
+      // AUTOMATIC SYNC: Prioritize the live count from groupedActors (real-time listener)
+      // This ensures the card always matches the data visible in the module.
+      const count = (groupedActors[name] || []).length || (systemStats as any)?.coordinator?.[name] || 0
       const remaining = quota - count
       const isFull = quota > 0 && remaining <= 0
       
