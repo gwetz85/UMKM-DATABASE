@@ -58,10 +58,10 @@ export function AddActorDialog() {
     return rawQuotaData
       .map((q: any) => {
         const nameUpper = (q.name || "").toUpperCase().trim()
-        const quota = q.quota || 0
         const used = usageStats[nameUpper] || 0
-        const remaining = quota - used
-        return { ...q, remaining }
+        const rawQuota = parseInt(String(q.quota)) || 0
+        const remaining = rawQuota - used
+        return { ...q, remaining: Math.max(0, remaining) }
       })
       .filter((q: any) => q.remaining > 0)
       .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))

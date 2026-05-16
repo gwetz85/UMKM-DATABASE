@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { useDatabase, useUser, addDocumentNonBlocking, useMemoFirebase, useList } from "@/firebase"
+import { useDatabase, useUser, addDocumentNonBlocking, useMemoFirebase, useList, useObject } from "@/firebase"
 import { ref, query, equalTo, get, limitToFirst, orderByChild } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -42,15 +42,25 @@ export default function InputDataPage() {
   // NOTE: Removed full fetching of businessActors and master_data to improve performance.
   // Duplicate checks and auto-verification will now use targeted queries.
 
+  // Fetch System Stats for efficient usage calculation
+  const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
+  const { data: systemStats } = useObject<any>(statsRef)
+
   const availableCoordinators = useMemo(() => {
     if (!rawQuotaData) return []
     
-    // For now, we keep the quota list as is. 
-    // In a high-traffic scenario, we should store 'currentUsage' inside the quota node itself.
+    const usageStats = (systemStats as any)?.coordinator || {}
+
     return rawQuotaData
-      .map((q: any) => ({ ...q, remaining: q.quota || 0 })) // Simplified for now
+      .map((q: any) => {
+        const nameUpper = (q.name || "").toUpperCase().trim()
+        const used = usageStats[nameUpper] || 0
+        const rawQuota = parseInt(String(q.quota)) || 0
+        const remaining = rawQuota - used
+        return { ...q, remaining: Math.max(0, remaining) }
+      })
       .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))
-  }, [rawQuotaData])
+  }, [rawQuotaData, systemStats])
 
   // Get current user profile to record who created the entry
   const userProfileRef = useMemoFirebase(() => {
