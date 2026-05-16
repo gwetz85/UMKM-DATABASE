@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3 } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw } from "lucide-react"
 import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -205,6 +205,76 @@ function ActorDataContent() {
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingBankMode, setEditingBankMode] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+
+  const handleSyncStats = async () => {
+    if (!database || isSyncing || !isAdmin) return
+    setIsSyncing(true)
+    try {
+      const { get, ref, update, set } = await import("firebase/database")
+      const actorsRef = ref(database, 'businessActors')
+      const snap = await get(actorsRef)
+      
+      if (snap.exists()) {
+        const stats = {
+          totalActors: 0,
+          gender: { 'Laki-laki': 0, 'Perempuan': 0, unknown: 0 },
+          status: { pending: 0, verified: 0, rejected: 0, finish: 0 },
+          kelurahan: {},
+          coordinator: {},
+          lastUpdated: new Date().toISOString()
+        } as any
+
+        let fixCount = 0
+        const updates: Record<string, any> = {}
+
+        snap.forEach((child) => {
+          const actor = child.val()
+          stats.totalActors++
+          
+          const s = actor.status || 'pending'
+          if (['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending'].includes(s)) {
+            stats.status.verified++
+            if (actor.coordinator) {
+              const coord = actor.coordinator.toUpperCase().trim()
+              stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
+              
+              if (actor.coordinator !== coord) {
+                updates[`${child.key}/coordinator`] = coord
+                fixCount++
+              }
+            }
+            if (actor.kelurahan) {
+               const k = actor.kelurahan.toUpperCase().trim()
+               stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
+            }
+          } else if (s === 'pending') {
+            stats.status.pending++
+          } else if (s === 'rejected') {
+            stats.status.rejected++
+          } else if (s === 'finish') {
+            stats.status.finish++
+          }
+
+          const gender = actor.gender === 'Perempuan' ? 'Perempuan' : 'Laki-laki'
+          stats.gender[gender]++
+        })
+
+        if (fixCount > 0) {
+          await update(actorsRef, updates)
+          toast({ title: "Auto-Fix Berhasil", description: `${fixCount} data koordinator berhasil diseragamkan.` })
+        }
+
+        await set(ref(database, 'system_stats'), stats)
+        toast({ title: "Sinkronisasi Selesai", description: "Statistik sistem telah berhasil diperbarui." })
+      }
+    } catch (err) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal Sinkronisasi", description: "Terjadi kesalahan saat menghitung ulang statistik." })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
 
   const handleSaveFullEdit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -444,6 +514,17 @@ function ActorDataContent() {
               className="pl-9 h-10 border-primary/20 bg-white"
             />
           </div>
+
+          {isAdmin && (
+            <Button 
+              onClick={handleSyncStats} 
+              disabled={isSyncing}
+              className="bg-primary hover:bg-primary/90 font-bold shadow-md w-full md:w-auto h-10 rounded-xl"
+            >
+              {isSyncing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+              SYNC DATA
+            </Button>
+          )}
 
           <Button onClick={handleExportExcel} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md w-full md:w-auto h-10 rounded-xl">
             <FileSpreadsheet className="w-4 h-4 mr-2" /> EKSPOR EXCEL
