@@ -124,10 +124,11 @@ export function AddActorDialog() {
       const duplicateInActors = await checkDuplicate('nik', nik) || await checkDuplicate('noKK', noKK)
 
       if (duplicateInActors) {
+        const actor = duplicateInActors as any
         toast({ 
           variant: "destructive", 
           title: "DATA TELAH DI INPUT", 
-          description: `NIK atau Nomor KK ini sudah terdaftar dengan Nomor Registrasi: ${duplicateInActors.registrationCode || '-'} dan Koordinator: ${duplicateInActors.coordinator || '-'}` 
+          description: `NIK atau Nomor KK ini sudah terdaftar dengan Nomor Registrasi: ${actor.registrationCode || '-'} dan Koordinator: ${actor.coordinator || '-'}` 
         })
         setLoading(false)
         return
