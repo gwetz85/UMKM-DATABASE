@@ -576,20 +576,76 @@ export async function POST(req: NextRequest) {
 
         if (quotaSnap.exists()) {
           const quotaData = Object.values(quotaSnap.val()) as any[];
-          let reply = `📊 *KUOTA & PENGGUNAAN*\n\n`;
-          reply += `_Format: Nama (Terpakai / Total)_\n\n`;
           
-          quotaData.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-
-          quotaData.forEach((q: any) => {
+          const combined = quotaData.map((q: any) => {
             const name = q.name || "Unnamed";
             const nameUpper = name.toUpperCase().trim();
-            const limit = q.quota ?? 0;
+            const limit = Number(q.quota ?? 0);
             const used = usageMap.get(nameUpper) || 0;
-            const emoji = used >= limit ? '🔴' : '🟢';
-            reply += `${emoji} *${name}:* ${used} / ${limit}\n`;
-          });
-          
+            const remaining = limit - used;
+            return {
+              name,
+              limit,
+              used,
+              remaining
+            };
+          }).sort((a, b) => a.name.localeCompare(b.name));
+
+          const habis = combined.filter(c => c.remaining <= 0);
+          const belumHabis = combined.filter(c => c.remaining > 0 && c.used > 0);
+          const belumTerinput = combined.filter(c => c.remaining > 0 && c.used === 0);
+
+          const now = new Date();
+          const optionsHari = { weekday: 'long' as const, timeZone: 'Asia/Jakarta' };
+          const optionsTanggal = { day: 'numeric' as const, month: 'long' as const, year: 'numeric' as const, timeZone: 'Asia/Jakarta' };
+          const optionsJam = { hour: '2-digit' as const, minute: '2-digit' as const, second: '2-digit' as const, hour12: false, timeZone: 'Asia/Jakarta' };
+
+          const hari = now.toLocaleDateString('id-ID', optionsHari);
+          const tanggal = now.toLocaleDateString('id-ID', optionsTanggal);
+          const jam = now.toLocaleTimeString('id-ID', optionsJam).replace(/\./g, ':') + ' WIB';
+
+          let reply = `*PENGECEKKAN DATA*\n` +
+                      `Hari : ${hari}\n` +
+                      `Tanggal : ${tanggal}\n` +
+                      `Jam : ${jam}\n\n`;
+
+          reply += `*Koordinator Yang Kuotanya Habis*\n`;
+          if (habis.length > 0) {
+            habis.forEach((c) => {
+              reply += `- ${c.name} (Total Kuota: ${c.limit})\n`;
+            });
+            const totalHabisQuota = habis.reduce((acc, c) => acc + c.limit, 0);
+            reply += `*Total Koordinator: ${habis.length}*\n` +
+                     `*Total Kuota: ${totalHabisQuota}*\n\n`;
+          } else {
+            reply += `_Tidak ada_\n\n`;
+          }
+
+          reply += `*Koordinator Yang Kuotanya Belum Habis*\n`;
+          if (belumHabis.length > 0) {
+            belumHabis.forEach((c) => {
+              reply += `- ${c.name} (Terpakai: ${c.used} / Total Kuota: ${c.limit})\n`;
+            });
+            const totalBelumHabisUsed = belumHabis.reduce((acc, c) => acc + c.used, 0);
+            const totalBelumHabisQuota = belumHabis.reduce((acc, c) => acc + c.limit, 0);
+            reply += `*Total Koordinator: ${belumHabis.length}*\n` +
+                     `*Total Kuota Terpakai: ${totalBelumHabisUsed} / ${totalBelumHabisQuota}*\n\n`;
+          } else {
+            reply += `_Tidak ada_\n\n`;
+          }
+
+          reply += `*Koordinator Yang Belum Terinput*\n`;
+          if (belumTerinput.length > 0) {
+            belumTerinput.forEach((c) => {
+              reply += `- ${c.name} (Total Kuota: ${c.limit})\n`;
+            });
+            const totalBelumTerinputQuota = belumTerinput.reduce((acc, c) => acc + c.limit, 0);
+            reply += `*Total Koordinator: ${belumTerinput.length}*\n` +
+                     `*Total Kuota: ${totalBelumTerinputQuota}*\n`;
+          } else {
+            reply += `_Tidak ada_\n`;
+          }
+
           await sendMessage(chatId, reply);
 
           // Log Activity
