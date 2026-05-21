@@ -725,25 +725,45 @@ function ActorDataContent() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
             {coordinatorStats.filter(stat => stat.count > 0).map((stat) => (
               <div 
                 key={stat.name}
                 onClick={() => router.push(`/actor-data?coordinator=${stat.name}`)}
                 className={cn(
-                  "cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] rounded-xl overflow-hidden group flex flex-col items-center justify-center text-center px-4 py-3 shadow-sm border",
+                  "group relative flex flex-col p-4 md:p-5 rounded-[2rem] transition-all duration-300 ease-out overflow-hidden shadow-lg border cursor-pointer active:scale-95 h-[130px] md:h-[150px] justify-center items-center animate-in fade-in slide-in-from-bottom-4",
+                  "hover:shadow-2xl hover:-translate-y-1.5 hover:brightness-110",
                   stat.isFull 
-                    ? "bg-rose-50 border-rose-200 hover:bg-rose-100 hover:border-rose-300" 
-                    : "bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300"
+                    ? "bg-gradient-to-br from-rose-500 to-rose-600 border-rose-400/20" 
+                    : "bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/20"
                 )}
               >
-                <h3 className="font-black uppercase text-[11px] tracking-wide text-slate-800 truncate max-w-full" title={stat.name}>
-                  {stat.name}
-                </h3>
-                <span className={cn(
-                  "text-[10px] font-bold mt-0.5",
-                  stat.isFull ? "text-rose-500" : "text-emerald-600"
-                )}>{stat.count} Berkas</span>
+                {/* Glossy Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+
+                {/* Icon Section */}
+                <div className="absolute top-3 right-3 md:top-4 md:right-4 z-10">
+                  <div className="bg-white/20 p-2 rounded-xl group-hover:scale-110 transition-transform duration-300 ease-out shadow-xl backdrop-blur-sm">
+                    <User className="w-3.5 h-3.5 md:w-4.5 md:h-4.5 text-white" />
+                  </div>
+                </div>
+
+                {/* Title Section */}
+                <div className="flex-1 relative z-10 flex flex-col items-center justify-center gap-2 mt-4 w-full text-center">
+                  <h3 
+                    className="text-[11px] md:text-sm font-black text-white leading-tight uppercase tracking-tight text-center break-words line-clamp-2 w-full px-1" 
+                    title={stat.name}
+                  >
+                    {stat.name}
+                  </h3>
+                  
+                  <div className="flex items-center gap-1.5 px-3 py-0.5 bg-white/20 rounded-full backdrop-blur-md border border-white/20 shadow-md">
+                    <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-wider">{stat.count} Berkas</span>
+                  </div>
+                </div>
+
+                {/* Decorative Light Effect */}
+                <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000 pointer-events-none" />
               </div>
             ))}
 
