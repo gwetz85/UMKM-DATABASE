@@ -578,7 +578,7 @@ function ActorDataContent() {
       </div>
 
 
-      <div className="bg-card print:bg-transparent">
+      <div className="bg-transparent print:bg-transparent">
         {isLoading ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
