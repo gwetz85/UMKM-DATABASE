@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Building2, MapPin, History, Edit, XCircle, Clock, AlertTriangle } from "lucide-react"
+import { Check, ShieldAlert, Loader2, Trash2, Eye, Search, User, FileText, Building2, MapPin, History, Edit, XCircle, Clock, AlertTriangle, Camera } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
@@ -314,6 +314,33 @@ export default function VerifyActorPage() {
     else setEditKecamatan("")
   }, [editKelurahan])
 
+  // Background check: otomatis pindahkan data HOLD ke Verifikasi Manual jika waktu (24 jam) habis
+  useEffect(() => {
+    if (!isAdmin || !database || !allActorsRaw) return;
+
+    const checkHolds = () => {
+      const now = Date.now();
+      allActorsRaw.forEach(actor => {
+        if (actor.status === 'hold') {
+          const createdAtTimestamp = new Date(actor.createdAt).getTime();
+          const validCreatedAt = isNaN(createdAtTimestamp) ? now : createdAtTimestamp;
+          // 24 jam = 1440 menit = 86400000 ms
+          const targetTime = validCreatedAt + 86400000;
+          
+          if (now >= targetTime) {
+            updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), {
+              status: 'verifikasi_manual'
+            });
+          }
+        }
+      });
+    };
+
+    checkHolds();
+    const interval = setInterval(checkHolds, 60000); // Cek setiap 1 menit
+    return () => clearInterval(interval);
+  }, [allActorsRaw, isAdmin, database]);
+
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
@@ -349,7 +376,13 @@ export default function VerifyActorPage() {
     e.preventDefault()
   if (!editingActor || !database || (!isAdmin && !isPetugas)) return
 
-  if (isBypassMode) {
+  // Validasi khusus untuk Verifikasi Manual: foto pembanding WAJIB
+  if (editingActor.status === 'verifikasi_manual') {
+    if (!bypassFileBase64) {
+      toast({ variant: "destructive", title: "Foto Pembanding Wajib", description: "Upload foto perbandingan (pengajuan tahun sebelumnya vs tahun ini) sebelum melanjutkan verifikasi manual." })
+      return;
+    }
+  } else if (isBypassMode) {
     if (!bypassKeterangan) {
       toast({ variant: "destructive", title: "Gagal", description: "Keterangan bypass wajib diisi." })
       return;
@@ -365,36 +398,51 @@ export default function VerifyActorPage() {
   const formData = new FormData(e.currentTarget)
   const actorRef = ref(database, `businessActors/${editingActor.id}`)
   
-  const updatePayload: any = {
-    fullName: formData.get("fullName"),
-    nik: editNik,
-    noKK: formData.get("noKK"),
-    gender: formData.get("gender"),
-    pobDob: `${editPob}, ${editDob}`,
-    pob: editPob,
-    dob: editDob,
-    phone: formData.get("phone"),
-    address: formData.get("address"),
-    rtRw: formData.get("rtRw"),
-    kelurahan: editKelurahan,
-    kecamatan: editKecamatan,
-    businessCategory: formData.get("businessCategory"),
-    businessName: formData.get("businessName"),
-    businessLocation: formData.get("businessLocation"),
-    coordinator: formData.get("coordinator"),
-    status: 'verified_actor'
-  }
+  let updatePayload: any = {};
 
-  if (isBypassMode) {
-    updatePayload.verificationBypass = {
-      isBypassed: true,
-      reason: bypassKeterangan,
-      fileBase64: bypassFileBase64 || null
-    }
-    updatePayload.verificationLocation = null
+  if (editingActor.status === 'verifikasi_manual') {
+    updatePayload = {
+      status: 'verified_actor',
+      comparisonPhotoUrl: bypassFileBase64 || null,
+      verificationBypass: {
+        isBypassed: true,
+        reason: 'Verifikasi Manual - Foto Pembanding',
+        fileBase64: bypassFileBase64 || null
+      },
+      verificationLocation: null
+    };
   } else {
-    updatePayload.verificationLocation = { lat: location?.lat || 0, lon: location?.lon || 0 }
-    updatePayload.verificationBypass = null
+    updatePayload = {
+      fullName: formData.get("fullName"),
+      nik: editNik,
+      noKK: formData.get("noKK"),
+      gender: formData.get("gender"),
+      pobDob: `${editPob}, ${editDob}`,
+      pob: editPob,
+      dob: editDob,
+      phone: formData.get("phone"),
+      address: formData.get("address"),
+      rtRw: formData.get("rtRw"),
+      kelurahan: editKelurahan,
+      kecamatan: editKecamatan,
+      businessCategory: formData.get("businessCategory"),
+      businessName: formData.get("businessName"),
+      businessLocation: formData.get("businessLocation"),
+      coordinator: formData.get("coordinator"),
+      status: 'verified_actor'
+    }
+
+    if (isBypassMode) {
+      updatePayload.verificationBypass = {
+        isBypassed: true,
+        reason: bypassKeterangan,
+        fileBase64: bypassFileBase64 || null
+      }
+      updatePayload.verificationLocation = null
+    } else {
+      updatePayload.verificationLocation = { lat: location?.lat || 0, lon: location?.lon || 0 }
+      updatePayload.verificationBypass = null
+    }
   }
 
   updateDocumentNonBlocking(actorRef, updatePayload)
@@ -405,7 +453,7 @@ export default function VerifyActorPage() {
     });
 
     logActivity({
-      query: `VERIFIKASI ADMIN: ${editingActor.fullName} - DITERIMA`,
+      query: `VERIFIKASI ADMIN: ${editingActor.fullName} - DITERIMA${editingActor.status === 'verifikasi_manual' ? ' (MANUAL)' : ''}`,
       results: "Berhasil",
       device: getDeviceType(navigator.userAgent),
       source: 'Web',
@@ -413,7 +461,7 @@ export default function VerifyActorPage() {
       userId: user?.email || user?.uid || 'Admin'
     })
     
-    toast({ title: "Berhasil diverifikasi", description: "Data pelaku telah diverifikasi oleh Admin." })
+    toast({ title: "Berhasil diverifikasi", description: editingActor.status === 'verifikasi_manual' ? "Data verifikasi manual telah disetujui dan dipindahkan ke Pelaku Usaha." : "Data pelaku telah diverifikasi oleh Admin." })
     setEditingActor(null)
     setIsVerifying(false)
   }
@@ -526,7 +574,8 @@ export default function VerifyActorPage() {
     setEditPob(parsed.pob || actor.pob || "")
     setEditDob(parsed.dob || actor.dob || "")
     setLocation(null)
-    setIsBypassMode(false)
+    // Untuk verifikasi manual, otomatis aktifkan bypass mode (tidak perlu lokasi, tapi wajib foto)
+    setIsBypassMode(actor.status === 'verifikasi_manual')
     setBypassKeterangan("")
     setBypassFileBase64("")
   }
@@ -656,14 +705,15 @@ export default function VerifyActorPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1.5 opacity-90 hover:opacity-100 transition-opacity">
-                        <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
-                          <DialogTrigger asChild>
-                            <Button size="icon" variant="outline" onClick={() => setViewingActor(actor)} className="h-8 w-8 border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg shadow-sm" title="Lihat Detail">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                            {viewingActor && (
+                        {actor.status !== 'verifikasi_manual' && (
+                          <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
+                            <DialogTrigger asChild>
+                              <Button size="icon" variant="outline" onClick={() => setViewingActor(actor)} className="h-8 w-8 border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg shadow-sm" title="Lihat Detail">
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                              {viewingActor && (
                               <>
                                 <DialogHeader>
                                   <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
@@ -781,8 +831,9 @@ export default function VerifyActorPage() {
                             )}
                           </DialogContent>
                         </Dialog>
+                        )}
 
-                        {isAdmin && !isMonitoring && (
+                        {isAdmin && !isMonitoring && actor.status !== 'verifikasi_manual' && (
                           <Dialog open={!!editingOnlyActor && editingOnlyActor.id === actor.id} onOpenChange={(open) => !open && setEditingOnlyActor(null)}>
                             <DialogTrigger asChild>
                               <Button size="icon" variant="outline" onClick={() => openEditDialog(actor, 'edit')} className="h-8 w-8 border-amber-200 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg shadow-sm" title="Edit Data">
@@ -925,12 +976,88 @@ export default function VerifyActorPage() {
                         {(isAdmin || isPetugas) && !isMonitoring && (
                           <Dialog open={!!editingActor && editingActor.id === actor.id} onOpenChange={(open) => !open && setEditingActor(null)}>
                             <DialogTrigger asChild>
-                              <Button size="icon" variant="outline" onClick={() => openEditDialog(actor, 'verify')} className="h-8 w-8 border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg shadow-sm" title="Verifikasi">
-                                <Check className="w-4 h-4" />
+                              <Button size="icon" variant="outline" onClick={() => openEditDialog(actor, 'verify')} className={actor.status === 'verifikasi_manual' ? "w-auto px-3 border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg shadow-sm font-bold text-[10px] uppercase" : "h-8 w-8 border-emerald-200 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg shadow-sm"} title={actor.status === 'verifikasi_manual' ? "Upload Fhoto Pembanding" : "Verifikasi"}>
+                                {actor.status === 'verifikasi_manual' ? <><Camera className="w-4 h-4 mr-1.5" /> Upload Fhoto</> : <Check className="w-4 h-4" />}
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                              {editingActor && (
+                              {editingActor && editingActor.status === 'verifikasi_manual' ? (
+                                <form onSubmit={handleSaveAndVerify}>
+                                  <DialogHeader>
+                                    <DialogTitle className="text-2xl font-black text-rose-600 uppercase flex items-center gap-2">
+                                      <Camera className="w-6 h-6" /> Upload Foto Pembanding
+                                    </DialogTitle>
+                                  </DialogHeader>
+                                  <div className="py-6">
+                                    <div className="mb-4 bg-rose-50 p-4 border border-rose-200 rounded-xl">
+                                      <p className="text-[10px] font-bold text-rose-600 uppercase mb-1">Nama Pelaku Usaha</p>
+                                      <p className="font-bold text-slate-800">{editingActor.fullName}</p>
+                                      <p className="text-xs text-slate-600 mt-1">NIK: {editingActor.nik}</p>
+                                    </div>
+                                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                                      <div className="flex items-center gap-2 text-primary mb-3">
+                                        <Camera className="w-5 h-5" />
+                                        <span className="text-sm font-black uppercase tracking-wider">Upload Foto (WAJIB)</span>
+                                      </div>
+                                      <p className="text-xs text-slate-600 mb-4 leading-relaxed">
+                                        Upload foto perbandingan antara <strong>pengajuan tahun sebelumnya</strong> dengan <strong>pengajuan tahun ini</strong>. 
+                                      </p>
+                                      <Input type="file" accept="image/*" className="bg-white" onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if(file) {
+                                          if (file.type.startsWith('image/')) {
+                                            const reader = new FileReader();
+                                            reader.onload = (ev) => {
+                                              const img = new Image();
+                                              img.onload = () => {
+                                                const canvas = document.createElement('canvas');
+                                                let width = img.width;
+                                                let height = img.height;
+                                                const MAX_DIM = 800;
+                                                if (width > height && width > MAX_DIM) {
+                                                  height *= MAX_DIM / width;
+                                                  width = MAX_DIM;
+                                                } else if (height > MAX_DIM) {
+                                                  width *= MAX_DIM / height;
+                                                  height = MAX_DIM;
+                                                }
+                                                canvas.width = width;
+                                                canvas.height = height;
+                                                const ctx = canvas.getContext('2d');
+                                                ctx?.drawImage(img, 0, 0, width, height);
+                                                setBypassFileBase64(canvas.toDataURL('image/jpeg', 0.6));
+                                              };
+                                              img.src = ev.target?.result as string;
+                                            };
+                                            reader.readAsDataURL(file);
+                                          } else {
+                                            toast({ variant: "destructive", title: "Format tidak didukung", description: "Hanya file gambar yang diperbolehkan." });
+                                            e.target.value = '';
+                                          }
+                                        } else {
+                                          setBypassFileBase64("");
+                                        }
+                                      }} />
+                                      {bypassFileBase64 && (
+                                        <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
+                                          <div className="bg-emerald-100 p-2 rounded-full"><Check className="w-4 h-4 text-emerald-600" /></div>
+                                          <div className="flex-1">
+                                            <span className="text-xs font-bold text-emerald-800 block">Foto siap diupload</span>
+                                            <span className="text-[10px] text-emerald-600">Klik Simpan untuk melanjutkan</span>
+                                          </div>
+                                          <img src={bypassFileBase64} alt="Preview" className="w-16 h-16 object-cover rounded-lg border-2 border-emerald-200 shadow-sm" />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <DialogFooter className="gap-2 pt-4 border-t">
+                                    <Button type="button" variant="outline" onClick={() => setEditingActor(null)}>Batal</Button>
+                                    <Button type="submit" disabled={isVerifying} className="bg-primary font-bold min-w-[150px]">
+                                      {isVerifying ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />} SIMPAN & LANJUTKAN
+                                    </Button>
+                                  </DialogFooter>
+                                </form>
+                              ) : editingActor && (
                                 <form onSubmit={handleSaveAndVerify}>
                                   <DialogHeader>
                                     <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
@@ -1044,122 +1171,119 @@ export default function VerifyActorPage() {
                                         <Label className="font-bold">Usaha</Label>
                                         <Input name="businessName" defaultValue={editingActor.businessName} required />
                                       </div>
-                                      <div className="space-y-2 md:col-span-2">
-                                        <Label className="font-bold">Lokasi Usaha</Label>
-                                        <Input name="businessLocation" defaultValue={editingActor.businessLocation} required />
-                                      </div>
-                                    </div>
-                                    
-                                    {/* Location / Bypass Section */}
-                                    <div className="space-y-4 pt-4 border-t border-slate-100 md:col-span-2">
-                                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                        <Label className="font-bold text-primary flex items-center gap-2">
-                                          <MapPin className="w-4 h-4" /> Validasi Lokasi (Wajib)
-                                        </Label>
-                                        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm w-fit">
-                                          <Label htmlFor="bypass-mode" className="text-xs font-bold text-slate-700 cursor-pointer">Bypass Lokasi</Label>
-                                          <Switch id="bypass-mode" checked={isBypassMode} onCheckedChange={setIsBypassMode} />
-                                        </div>
-                                      </div>
-                                      
-                                      {!isBypassMode ? (
-                                        <div className="flex flex-col gap-3">
-                                          {location ? (
-                                             <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3">
-                                               <div className="flex items-center gap-3">
-                                                 <div className="bg-emerald-100 p-2 rounded-lg">
-                                                   <Check className="w-5 h-5 text-emerald-600" />
-                                                 </div>
-                                                 <div className="space-y-1">
-                                                   <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Lokasi Tersimpan</p>
-                                                   <p className="text-[10px] text-emerald-600 font-mono bg-emerald-100/50 px-2 py-0.5 rounded w-fit">
-                                                     Lat: {location.lat.toFixed(6)}, Lon: {location.lon.toFixed(6)}
-                                                   </p>
-                                                 </div>
-                                               </div>
-                                               <Button type="button" variant="outline" size="sm" onClick={fetchLocation} disabled={isFetchingLocation} className="text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-100">
-                                                 {isFetchingLocation ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Ubah Titik
+
+                                     {/* Location / Bypass Section (hidden for verifikasi_manual) */}
+                                     {editingActor?.status !== 'verifikasi_manual' && (
+                                     <div className="space-y-4 pt-4 border-t border-slate-100 md:col-span-2">
+                                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                         <Label className="font-bold text-primary flex items-center gap-2">
+                                           <MapPin className="w-4 h-4" /> Validasi Lokasi (Wajib)
+                                         </Label>
+                                         <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm w-fit">
+                                           <Label htmlFor="bypass-mode" className="text-xs font-bold text-slate-700 cursor-pointer">Bypass Lokasi</Label>
+                                           <Switch id="bypass-mode" checked={isBypassMode} onCheckedChange={setIsBypassMode} />
+                                         </div>
+                                       </div>
+                                       
+                                       {!isBypassMode ? (
+                                         <div className="flex flex-col gap-3">
+                                           {location ? (
+                                              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3">
+                                                <div className="flex items-center gap-3">
+                                                  <div className="bg-emerald-100 p-2 rounded-lg">
+                                                    <Check className="w-5 h-5 text-emerald-600" />
+                                                  </div>
+                                                  <div className="space-y-1">
+                                                    <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Lokasi Tersimpan</p>
+                                                    <p className="text-[10px] text-emerald-600 font-mono bg-emerald-100/50 px-2 py-0.5 rounded w-fit">
+                                                      Lat: {location.lat.toFixed(6)}, Lon: {location.lon.toFixed(6)}
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <Button type="button" variant="outline" size="sm" onClick={fetchLocation} disabled={isFetchingLocation} className="text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-100">
+                                                  {isFetchingLocation ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Ubah Titik
+                                                </Button>
+                                              </div>
+                                           ) : (
+                                             <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
+                                               <MapPin className="w-8 h-8 text-slate-400 mb-2" />
+                                               <p className="text-xs font-medium text-slate-500 mb-4 text-center">Data titik lokasi tempat usaha wajib diambil untuk keperluan validasi.</p>
+                                               <Button type="button" onClick={fetchLocation} disabled={isFetchingLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
+                                                 {isFetchingLocation ? (
+                                                   <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sedang Mengambil...</>
+                                                 ) : "Ambil Lokasi Sekarang"}
                                                </Button>
                                              </div>
-                                          ) : (
-                                            <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
-                                              <MapPin className="w-8 h-8 text-slate-400 mb-2" />
-                                              <p className="text-xs font-medium text-slate-500 mb-4 text-center">Data titik lokasi tempat usaha wajib diambil untuk keperluan validasi.</p>
-                                              <Button type="button" onClick={fetchLocation} disabled={isFetchingLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
-                                                {isFetchingLocation ? (
-                                                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sedang Mengambil...</>
-                                                ) : "Ambil Lokasi Sekarang"}
-                                              </Button>
-                                            </div>
-                                          )}
-                                        </div>
-                                      ) : (
-                                        <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-xl animate-in fade-in zoom-in-95 duration-200">
-                                          <div className="flex items-center gap-2 text-amber-600 border-b border-amber-200/50 pb-2">
-                                            <AlertTriangle className="w-4 h-4" />
-                                            <span className="text-xs font-black uppercase tracking-wider">Bypass Validasi Lokasi Aktif</span>
-                                          </div>
-                                          <div className="grid gap-4 md:grid-cols-2">
-                                            <div className="space-y-2">
-                                              <Label className="text-xs font-bold text-slate-700">Upload Keterangan / Bukti (Opsional)</Label>
-                                              <Input type="file" accept="image/*, .pdf" className="bg-white" onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if(file) {
-                                                  if (file.type.startsWith('image/')) {
-                                                    const reader = new FileReader();
-                                                    reader.onload = (ev) => {
-                                                      const img = new Image();
-                                                      img.onload = () => {
-                                                        const canvas = document.createElement('canvas');
-                                                        let width = img.width;
-                                                        let height = img.height;
-                                                        const MAX_DIM = 800;
-                                                        if (width > height && width > MAX_DIM) {
-                                                          height *= MAX_DIM / width;
-                                                          width = MAX_DIM;
-                                                        } else if (height > MAX_DIM) {
-                                                          width *= MAX_DIM / height;
-                                                          height = MAX_DIM;
-                                                        }
-                                                        canvas.width = width;
-                                                        canvas.height = height;
-                                                        const ctx = canvas.getContext('2d');
-                                                        ctx?.drawImage(img, 0, 0, width, height);
-                                                        setBypassFileBase64(canvas.toDataURL('image/jpeg', 0.6));
-                                                      };
-                                                      img.src = ev.target?.result as string;
-                                                    };
-                                                    reader.readAsDataURL(file);
-                                                  } else {
-                                                    if (file.size > 2 * 1024 * 1024) {
-                                                      toast({ variant: "destructive", title: "File terlalu besar", description: "Ukuran maksimal PDF adalah 2MB." });
-                                                      e.target.value = '';
-                                                      return;
-                                                    }
-                                                    const reader = new FileReader();
-                                                    reader.onload = (ev) => setBypassFileBase64(ev.target?.result as string);
-                                                    reader.readAsDataURL(file);
-                                                  }
-                                                } else {
-                                                  setBypassFileBase64("");
-                                                }
-                                              }} />
-                                              <p className="text-[9px] text-muted-foreground">Format gambar atau PDF jika diperlukan.</p>
-                                            </div>
-                                            <div className="space-y-2">
-                                              <Label className="text-xs font-bold text-slate-700">Keterangan Bypass (Wajib)</Label>
-                                              <Textarea 
-                                                value={bypassKeterangan} 
-                                                onChange={e => setBypassKeterangan(e.target.value)} 
-                                                placeholder="Contoh: Titik lokasi sedang bermasalah / Usaha berpindah..." 
-                                                className="min-h-[80px] bg-white resize-none"
-                                                required={isBypassMode} 
-                                              />
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
+                                           )}
+                                         </div>
+                                       ) : (
+                                         <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-xl animate-in fade-in zoom-in-95 duration-200">
+                                           <div className="flex items-center gap-2 text-amber-600 border-b border-amber-200/50 pb-2">
+                                             <AlertTriangle className="w-4 h-4" />
+                                             <span className="text-xs font-black uppercase tracking-wider">Bypass Validasi Lokasi Aktif</span>
+                                           </div>
+                                           <div className="grid gap-4 md:grid-cols-2">
+                                             <div className="space-y-2">
+                                               <Label className="text-xs font-bold text-slate-700">Upload Keterangan / Bukti (Opsional)</Label>
+                                               <Input type="file" accept="image/*, .pdf" className="bg-white" onChange={(e) => {
+                                                 const file = e.target.files?.[0];
+                                                 if(file) {
+                                                   if (file.type.startsWith('image/')) {
+                                                     const reader = new FileReader();
+                                                     reader.onload = (ev) => {
+                                                       const img = new Image();
+                                                       img.onload = () => {
+                                                         const canvas = document.createElement('canvas');
+                                                         let width = img.width;
+                                                         let height = img.height;
+                                                         const MAX_DIM = 800;
+                                                         if (width > height && width > MAX_DIM) {
+                                                           height *= MAX_DIM / width;
+                                                           width = MAX_DIM;
+                                                         } else if (height > MAX_DIM) {
+                                                           width *= MAX_DIM / height;
+                                                           height = MAX_DIM;
+                                                         }
+                                                         canvas.width = width;
+                                                         canvas.height = height;
+                                                         const ctx = canvas.getContext('2d');
+                                                         ctx?.drawImage(img, 0, 0, width, height);
+                                                         setBypassFileBase64(canvas.toDataURL('image/jpeg', 0.6));
+                                                       };
+                                                       img.src = ev.target?.result as string;
+                                                     };
+                                                     reader.readAsDataURL(file);
+                                                   } else {
+                                                     if (file.size > 2 * 1024 * 1024) {
+                                                       toast({ variant: "destructive", title: "File terlalu besar", description: "Ukuran maksimal PDF adalah 2MB." });
+                                                       e.target.value = '';
+                                                       return;
+                                                     }
+                                                     const reader = new FileReader();
+                                                     reader.onload = (ev) => setBypassFileBase64(ev.target?.result as string);
+                                                     reader.readAsDataURL(file);
+                                                   }
+                                                 } else {
+                                                   setBypassFileBase64("");
+                                                 }
+                                               }} />
+                                               <p className="text-[9px] text-muted-foreground">Format gambar atau PDF jika diperlukan.</p>
+                                             </div>
+                                             <div className="space-y-2">
+                                               <Label className="text-xs font-bold text-slate-700">Keterangan Bypass (Wajib)</Label>
+                                               <Textarea 
+                                                 value={bypassKeterangan} 
+                                                 onChange={e => setBypassKeterangan(e.target.value)} 
+                                                 placeholder="Contoh: Titik lokasi sedang bermasalah / Usaha berpindah..." 
+                                                 className="min-h-[80px] bg-white resize-none"
+                                                 required={isBypassMode} 
+                                               />
+                                             </div>
+                                           </div>
+                                         </div>
+                                       )}
+                                     </div>
+                                     )}        </div>
                                   </div>
                                   
                                   <DialogFooter className="gap-2 pt-4 border-t">
@@ -1177,8 +1301,8 @@ export default function VerifyActorPage() {
                         {isAdmin && !isMonitoring && (
                           <Dialog open={!!rejectingActor && rejectingActor.id === actor.id} onOpenChange={(open) => !open && setRejectingActor(null)}>
                             <DialogTrigger asChild>
-                              <Button size="icon" variant="outline" onClick={() => setRejectingActor(actor)} className="h-8 w-8 border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg shadow-sm" title="Tolak Data">
-                                <XCircle className="w-4 h-4" />
+                              <Button size="icon" variant="outline" onClick={() => setRejectingActor(actor)} className={actor.status === 'verifikasi_manual' ? "w-auto px-3 border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg shadow-sm font-bold text-[10px] uppercase" : "h-8 w-8 border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg shadow-sm"} title={actor.status === 'verifikasi_manual' ? "Cancell" : "Tolak Data"}>
+                                {actor.status === 'verifikasi_manual' ? <><XCircle className="w-4 h-4 mr-1.5" /> Cancell</> : <XCircle className="w-4 h-4" />}
                               </Button>
                             </DialogTrigger>
                             <DialogContent>
@@ -1205,7 +1329,7 @@ export default function VerifyActorPage() {
                           </Dialog>
                         )}
 
-                        {isAdmin && !isMonitoring && (
+                        {isAdmin && !isMonitoring && actor.status !== 'verifikasi_manual' && (
                           <Button size="icon" variant="destructive" onClick={() => handleDelete(actor.id, actor.fullName)} className="h-8 w-8 bg-slate-100 text-red-500 hover:bg-red-500 hover:text-white border-0 shadow-sm" title="Hapus Permanen">
                             <Trash2 className="w-4 h-4" />
                           </Button>

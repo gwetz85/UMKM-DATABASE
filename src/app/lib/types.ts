@@ -26,6 +26,7 @@ export interface BusinessActor {
   kkUri?: string;
   nibUri?: string;
   photoUsahaUri?: string;
+  comparisonPhotoUrl?: string;
   status: BusinessActorStatus;
   rejectionReason?: string;
   createdAt: string;
