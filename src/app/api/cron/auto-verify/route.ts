@@ -119,9 +119,9 @@ export async function GET(req: NextRequest) {
         return;
       }
 
-      // 2. 2025 -> instant -> hold (moves to manual after 24h)
+      // 2. 2025 -> instant -> hold (moves to manual after 30m)
       if (has2025) {
-        const holdTargetTime = createdAt + (24 * 60 * 60 * 1000); 
+        const holdTargetTime = createdAt + (30 * 60 * 1000); 
         if (now >= holdTargetTime) {
           if (actor.status !== 'verifikasi_manual') {
             updates[`businessActors/${actor.id}/status`] = 'verifikasi_manual';
@@ -131,7 +131,7 @@ export async function GET(req: NextRequest) {
             updates[`businessActors/${actor.id}/status`] = 'hold';
             holdCount++;
           }
-          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2025/HOLD timer (24h)" });
+          skipped.push({ id: actor.id, name: actor.fullName, reason: "Waiting 2025/HOLD timer (30m)" });
         }
         return;
       }

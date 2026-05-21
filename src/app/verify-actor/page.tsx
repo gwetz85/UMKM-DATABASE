@@ -378,8 +378,8 @@ export default function VerifyActorPage() {
 
   // Validasi khusus untuk Verifikasi Manual: foto pembanding WAJIB
   if (editingActor.status === 'verifikasi_manual') {
-    if (!bypassFileBase64) {
-      toast({ variant: "destructive", title: "Foto Pembanding Wajib", description: "Upload foto perbandingan (pengajuan tahun sebelumnya vs tahun ini) sebelum melanjutkan verifikasi manual." })
+    if (!bypassFileBase64 && !bypassKeterangan) {
+      toast({ variant: "destructive", title: "Foto Pembanding / Pernyataan Wajib", description: "Upload foto perbandingan atau isi pernyataan bypass (khusus Admin) sebelum melanjutkan verifikasi manual." })
       return;
     }
   } else if (isBypassMode) {
@@ -406,7 +406,7 @@ export default function VerifyActorPage() {
       comparisonPhotoUrl: bypassFileBase64 || null,
       verificationBypass: {
         isBypassed: true,
-        reason: 'Verifikasi Manual - Foto Pembanding',
+        reason: bypassKeterangan ? `Bypass Admin: ${bypassKeterangan}` : 'Verifikasi Manual - Foto Pembanding',
         fileBase64: bypassFileBase64 || null
       },
       verificationLocation: null
@@ -1046,6 +1046,20 @@ export default function VerifyActorPage() {
                                             <span className="text-[10px] text-emerald-600">Klik Simpan untuk melanjutkan</span>
                                           </div>
                                           <img src={bypassFileBase64} alt="Preview" className="w-16 h-16 object-cover rounded-lg border-2 border-emerald-200 shadow-sm" />
+                                        </div>
+                                      )}
+                                      {isAdmin && (
+                                        <div className="mt-6 border-t pt-4">
+                                          <div className="flex flex-col space-y-2">
+                                            <Label className="text-sm font-black uppercase text-amber-600">Atau Bypass dengan Pernyataan (Khusus Admin)</Label>
+                                            <Textarea 
+                                              placeholder="Tulis alasan / pernyataan bypass disini..." 
+                                              value={bypassKeterangan} 
+                                              onChange={(e) => setBypassKeterangan(e.target.value)}
+                                              className="bg-white border-amber-200 focus-visible:ring-amber-500"
+                                            />
+                                            <p className="text-[10px] text-amber-600">Jika Anda mengisi pernyataan di atas, foto pembanding tidak lagi wajib diupload.</p>
+                                          </div>
                                         </div>
                                       )}
                                     </div>

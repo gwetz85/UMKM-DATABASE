@@ -37,6 +37,7 @@ export default function InputDataPage() {
   const [nik, setNik] = useState("")
   const [pob, setPob] = useState("")
   const [dob, setDob] = useState("")
+  const [formKey, setFormKey] = useState(0)
 
   // Fetch Quotas - still needed for selection, but we'll optimize the usage calculation
   const quotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
@@ -218,6 +219,7 @@ export default function InputDataPage() {
       setNik("")
       setPob("")
       setDob("")
+      setFormKey(prev => prev + 1)
     } catch (error: any) {
       console.error(error)
       toast({
@@ -262,7 +264,7 @@ export default function InputDataPage() {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form key={formKey} onSubmit={handleSubmit} className="space-y-6">
         <Card className="border-none shadow-sm bg-card text-card-foreground">
           <CardHeader>
             <CardTitle className="text-lg">Biodata Pribadi</CardTitle>
