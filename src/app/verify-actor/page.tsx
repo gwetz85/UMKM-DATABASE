@@ -642,7 +642,7 @@ export default function VerifyActorPage() {
                   <TableHead className="font-bold">Kategori</TableHead>
                    <TableHead className="font-bold">Usaha</TableHead>
                    <TableHead className="font-bold">Koordinator</TableHead>
-                   <TableHead className="font-bold text-center">Countdown</TableHead>
+                   {activeTab !== 'manual' && <TableHead className="font-bold text-center">Countdown</TableHead>}
                    <TableHead className="text-right font-bold">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -677,6 +677,7 @@ export default function VerifyActorPage() {
                         {actor.coordinator || "-"}
                       </span>
                     </TableCell>
+                    {activeTab !== 'manual' && (
                      <TableCell>
                       <div className="flex justify-center">
                          <VerificationTimer 
@@ -703,6 +704,7 @@ export default function VerifyActorPage() {
                         />
                       </div>
                     </TableCell>
+                    )}
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1.5 opacity-90 hover:opacity-100 transition-opacity">
                         {actor.status !== 'verifikasi_manual' && (
