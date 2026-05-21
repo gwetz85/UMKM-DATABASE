@@ -15,7 +15,7 @@ import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { BusinessActor } from "../lib/types"
-import { cn } from "@/lib/utils"
+import { cn, parsePobDob } from "@/lib/utils"
 
 const calculateAge = (dobString: string) => {
   if (!dobString || dobString === "-") return 0;
@@ -86,11 +86,13 @@ export default function BpjsPage() {
     
     const exportData = eligibleActors.map(actor => {
       const age = calculateAge(actor.pobDob || "")
+      const parsed = parsePobDob(actor.pobDob || "")
       return {
         "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
         "NIK": actor.nik || "-",
         "NOMOR KK": actor.noKK || "-",
-        "TANGGAL LAHIR": actor.pobDob || "-",
+        "TEMPAT LAHIR": (actor.pob || parsed.pob || "-").toUpperCase(),
+        "TANGGAL LAHIR": actor.dob || parsed.dob || "-",
         "USIA": age,
         "NOMOR PONSEL": actor.phone || "-",
         "ALAMAT": (actor.address || "").toUpperCase(),
@@ -107,7 +109,7 @@ export default function BpjsPage() {
     
     // Auto-width
     const wscols = [
-      {wch: 30}, {wch: 20}, {wch: 20}, {wch: 25}, {wch: 10}, 
+      {wch: 30}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 10}, 
       {wch: 15}, {wch: 40}, {wch: 10}, {wch: 20}, {wch: 20}, {wch: 25}
     ];
     worksheet['!cols'] = wscols;
@@ -211,7 +213,8 @@ export default function BpjsPage() {
                   <TableHead className="font-black text-primary py-4 pl-6 w-12 text-center uppercase text-[10px]">NO</TableHead>
                   <TableHead className="font-black text-primary py-4 uppercase text-[10px]">NAMA LENGKAP</TableHead>
                   <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">NIK</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">TEMPAT / TANGGAL LAHIR</TableHead>
+                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">TEMPAT LAHIR</TableHead>
+                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">TANGGAL LAHIR</TableHead>
                   <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">USIA</TableHead>
                   <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">KOORDINATOR</TableHead>
                   <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">NOTE / KETERANGAN</TableHead>
@@ -233,7 +236,10 @@ export default function BpjsPage() {
                         <span className="font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">{actor.nik}</span>
                       </TableCell>
                       <TableCell className="py-4 text-center">
-                        <span className="text-[11px] font-bold text-slate-600 uppercase">{actor.pobDob || "-"}</span>
+                        <span className="text-[11px] font-bold text-slate-600 uppercase">{actor.pob || parsePobDob(actor.pobDob || "").pob || "-"}</span>
+                      </TableCell>
+                      <TableCell className="py-4 text-center">
+                        <span className="text-[11px] font-bold text-slate-600 uppercase">{actor.dob || parsePobDob(actor.pobDob || "").dob || "-"}</span>
                       </TableCell>
                       <TableCell className="py-4 text-center">
                         <div className="flex flex-col items-center">
@@ -259,7 +265,7 @@ export default function BpjsPage() {
                 })}
                 {filteredActors.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-24 text-center">
+                    <TableCell colSpan={8} className="py-24 text-center">
                       <div className="flex flex-col items-center gap-4">
                         <div className="bg-slate-100 p-4 rounded-full">
                           <Search className="w-10 h-10 text-slate-300" />

@@ -7,6 +7,8 @@ export interface BusinessActor {
   nik: string;
   noKK: string;
   pobDob: string;
+  pob?: string;
+  dob?: string;
   gender: 'Laki-laki' | 'Perempuan';
   phone: string;
   address: string;

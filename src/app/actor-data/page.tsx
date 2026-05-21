@@ -33,7 +33,7 @@ const normalizeGender = (g: string) => {
 };
 
 
-import { cn } from "@/lib/utils"
+import { cn, extractDobFromNik, parsePobDob } from "@/lib/utils"
 import { generateRegistrationForm, generateCoordinatorReport, generateAllCoordinatorsReport } from "@/lib/pdf-generator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -210,6 +210,23 @@ function ActorDataContent() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingBankMode, setEditingBankMode] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [editNik, setEditNik] = useState("")
+  const [editPob, setEditPob] = useState("")
+  const [editDob, setEditDob] = useState("")
+
+  useEffect(() => {
+    if (viewingActor) {
+      const parsed = parsePobDob(viewingActor.pobDob || "")
+      setEditNik(viewingActor.nik || "")
+      setEditPob(parsed.pob || viewingActor.pob || "")
+      setEditDob(parsed.dob || viewingActor.dob || "")
+    } else {
+      setEditNik("")
+      setEditPob("")
+      setEditDob("")
+      setIsEditMode(false)
+    }
+  }, [viewingActor, isEditMode])
 
   const handleSyncStats = async () => {
     if (!database || isSyncing || !isAdmin) return
@@ -290,10 +307,12 @@ function ActorDataContent() {
     
     const updates: Partial<BusinessActor> = {
       fullName: formData.get('fullName') as string,
-      nik: formData.get('nik') as string,
+      nik: editNik,
       noKK: formData.get('noKK') as string,
       gender: formData.get('gender') as "Laki-laki" | "Perempuan",
-      pobDob: formData.get('pobDob') as string,
+      pobDob: `${editPob}, ${editDob}`,
+      pob: editPob,
+      dob: editDob,
       phone: formData.get('phone') as string,
       kecamatan: formData.get('kecamatan') as string,
       kelurahan: formData.get('kelurahan') as string,
@@ -450,7 +469,8 @@ function ActorDataContent() {
         "JENIS KELAMIN": actor.gender || "-",
         "NIK": actor.nik || "-",
         "NOMOR KK": actor.noKK || "-",
-        "TEMPAT / TANGGAL LAHIR": actor.pobDob || "-",
+        "TEMPAT LAHIR": actor.pob || parsePobDob(actor.pobDob || "").pob || "-",
+        "TANGGAL LAHIR": actor.dob || parsePobDob(actor.pobDob || "").dob || "-",
         "NOMOR HP": actor.phone || "-",
         "ALAMAT": (actor.address || "").toUpperCase(),
         "RT/RW": actor.rtRw || "-",
@@ -838,7 +858,26 @@ function ActorDataContent() {
                     <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi (Edit)</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Lengkap</Label><Input name="fullName" defaultValue={viewingActor.fullName} required /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">NIK</Label><Input name="nik" defaultValue={viewingActor.nik} required /></div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-bold uppercase">NIK</Label>
+                        <Input 
+                          name="nik" 
+                          value={editNik} 
+                          required 
+                          onChange={(e) => {
+                            const cleanNik = e.target.value.replace(/[^0-9]/g, "");
+                            setEditNik(cleanNik);
+                            if (cleanNik.length >= 12) {
+                              const extracted = extractDobFromNik(cleanNik);
+                              if (extracted) {
+                                setEditDob(extracted);
+                              }
+                            } else {
+                              setEditDob("");
+                            }
+                          }}
+                        />
+                      </div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor KK</Label><Input name="noKK" defaultValue={viewingActor.noKK} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Jenis Kelamin</Label>
                         <select name="gender" defaultValue={normalizeGender(viewingActor.gender || "")} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
@@ -846,7 +885,23 @@ function ActorDataContent() {
                           <option value="Perempuan">Perempuan</option>
                         </select>
                       </div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Tempat/Tgl Lahir</Label><Input name="pobDob" defaultValue={viewingActor.pobDob} /></div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-bold uppercase">Tempat Lahir</Label>
+                        <Input 
+                          name="pob" 
+                          value={editPob} 
+                          onChange={(e) => setEditPob(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-bold uppercase">Tanggal Lahir (Otomatis)</Label>
+                        <Input 
+                          name="dob" 
+                          value={editDob} 
+                          readOnly 
+                          className="bg-muted font-semibold"
+                        />
+                      </div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor HP</Label><Input name="phone" defaultValue={viewingActor.phone} /></div>
                     </div>
                   </section>
@@ -896,7 +951,8 @@ function ActorDataContent() {
                         { label: "NIK", value: viewingActor.nik },
                         { label: "Nomor KK", value: viewingActor.noKK },
                         { label: "Jenis Kelamin", value: viewingActor.gender },
-                        { label: "Tempat/Tgl Lahir", value: viewingActor.pobDob },
+                        { label: "Tempat Lahir", value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob },
+                        { label: "Tanggal Lahir", value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob },
                         { label: "Nomor HP", value: viewingActor.phone }
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">

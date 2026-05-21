@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Save, CheckCircle2, UserPlus } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, extractDobFromNik } from "@/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -40,6 +40,9 @@ export function AddActorDialog() {
   const [kelurahan, setKelurahan] = useState<string>("")
   const [kecamatan, setKecamatan] = useState<string>("")
   const [selectedCoordinator, setSelectedCoordinator] = useState<string>("")
+  const [nik, setNik] = useState("")
+  const [pob, setPob] = useState("")
+  const [dob, setDob] = useState("")
 
   // Fetch Quotas
   const quotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
@@ -184,7 +187,9 @@ export function AddActorDialog() {
         nik: nik,
         noKK: noKK,
         registrationCode: registrationCode,
-        pobDob: formData.get("pobDob"),
+        pobDob: `${pob}, ${dob}`,
+        pob: pob,
+        dob: dob,
         gender: formData.get("gender"),
         phone: formData.get("phone"),
         address: formData.get("address"),
@@ -222,6 +227,9 @@ export function AddActorDialog() {
       setKelurahan("")
       setKecamatan("")
       setSelectedCoordinator("")
+      setNik("")
+      setPob("")
+      setDob("")
     } catch (error) {
       console.error(error)
       toast({
@@ -282,15 +290,55 @@ export function AddActorDialog() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="nik">NIK</Label>
-                    <Input id="nik" name="nik" maxLength={16} placeholder="16 digit NIK..." required className="rounded-xl font-mono" />
+                    <Input 
+                      id="nik" 
+                      name="nik" 
+                      maxLength={16} 
+                      placeholder="16 digit NIK..." 
+                      required 
+                      className="rounded-xl font-mono" 
+                      value={nik}
+                      onChange={(e) => {
+                        const cleanNik = e.target.value.replace(/[^0-9]/g, "");
+                        setNik(cleanNik);
+                        if (cleanNik.length >= 12) {
+                          const extracted = extractDobFromNik(cleanNik);
+                          if (extracted) {
+                            setDob(extracted);
+                          }
+                        } else {
+                          setDob("");
+                        }
+                      }}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="noKK">Nomor KK</Label>
                     <Input id="noKK" name="noKK" maxLength={16} placeholder="16 digit Nomor KK..." required className="rounded-xl font-mono" />
                   </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="pobDob">Tempat / Tanggal Lahir</Label>
-                    <Input id="pobDob" name="pobDob" placeholder="Contoh: Jakarta, 01-01-1990" required className="rounded-xl" />
+                  <div className="space-y-2">
+                    <Label htmlFor="pob">Tempat Lahir</Label>
+                    <Input 
+                      id="pob" 
+                      name="pob" 
+                      placeholder="Masukkan tempat lahir..." 
+                      required 
+                      className="rounded-xl" 
+                      value={pob}
+                      onChange={(e) => setPob(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="dob">Tanggal Lahir (Otomatis)</Label>
+                    <Input 
+                      id="dob" 
+                      name="dob" 
+                      placeholder="Terisi otomatis dari NIK" 
+                      readOnly 
+                      required 
+                      className="rounded-xl bg-muted font-semibold" 
+                      value={dob}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Nomor HP</Label>

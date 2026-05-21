@@ -18,7 +18,7 @@ import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { VerificationBadge } from "@/components/verification-badge"
-import { cn } from "@/lib/utils"
+import { cn, extractDobFromNik, parsePobDob } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Switch } from "@/components/ui/switch"
 
@@ -224,6 +224,17 @@ export default function VerifyActorPage() {
 
   const [editKelurahan, setEditKelurahan] = useState<string>("")
   const [editKecamatan, setEditKecamatan] = useState<string>("")
+  const [editNik, setEditNik] = useState("")
+  const [editPob, setEditPob] = useState("")
+  const [editDob, setEditDob] = useState("")
+
+  useEffect(() => {
+    if (!editingActor && !editingOnlyActor) {
+      setEditNik("")
+      setEditPob("")
+      setEditDob("")
+    }
+  }, [editingActor, editingOnlyActor])
 
   const [activeTab, setActiveTab] = useState<'pending' | 'hold' | 'manual'>('pending')
 
@@ -356,10 +367,12 @@ export default function VerifyActorPage() {
   
   const updatePayload: any = {
     fullName: formData.get("fullName"),
-    nik: formData.get("nik"),
+    nik: editNik,
     noKK: formData.get("noKK"),
     gender: formData.get("gender"),
-    pobDob: formData.get("pobDob"),
+    pobDob: `${editPob}, ${editDob}`,
+    pob: editPob,
+    dob: editDob,
     phone: formData.get("phone"),
     address: formData.get("address"),
     rtRw: formData.get("rtRw"),
@@ -414,10 +427,12 @@ export default function VerifyActorPage() {
     const actorRef = ref(database, `businessActors/${editingOnlyActor.id}`)
     updateDocumentNonBlocking(actorRef, {
       fullName: formData.get("fullName"),
-      nik: formData.get("nik"),
+      nik: editNik,
       noKK: formData.get("noKK"),
       gender: formData.get("gender"),
-      pobDob: formData.get("pobDob"),
+      pobDob: `${editPob}, ${editDob}`,
+      pob: editPob,
+      dob: editDob,
       phone: formData.get("phone"),
       address: formData.get("address"),
       rtRw: formData.get("rtRw"),
@@ -506,6 +521,10 @@ export default function VerifyActorPage() {
 
     setEditKelurahan(actor.kelurahan || "")
     setEditKecamatan(actor.kecamatan || "")
+    const parsed = parsePobDob(actor.pobDob || "")
+    setEditNik(actor.nik || "")
+    setEditPob(parsed.pob || actor.pob || "")
+    setEditDob(parsed.dob || actor.dob || "")
     setLocation(null)
     setIsBypassMode(false)
     setBypassKeterangan("")
@@ -660,7 +679,8 @@ export default function VerifyActorPage() {
                                         { label: "NIK", value: viewingActor.nik },
                                         { label: "Nomor KK", value: viewingActor.noKK },
                                         { label: "Jenis Kelamin", value: viewingActor.gender },
-                                        { label: "Tempat/Tgl Lahir", value: viewingActor.pobDob },
+                                        { label: "Tempat Lahir", value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob },
+                                        { label: "Tanggal Lahir", value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob },
                                         { label: "Nomor HP", value: viewingActor.phone }
                                       ].map((item, i) => (
                                         <div key={i} className="space-y-1">
@@ -785,7 +805,24 @@ export default function VerifyActorPage() {
                                       </div>
                                       <div className="space-y-2">
                                         <Label className="font-bold">NIK (16 Digit)</Label>
-                                        <Input name="nik" defaultValue={editingOnlyActor.nik} maxLength={16} required />
+                                        <Input 
+                                          name="nik" 
+                                          value={editNik} 
+                                          maxLength={16} 
+                                          required 
+                                          onChange={(e) => {
+                                            const cleanNik = e.target.value.replace(/[^0-9]/g, "");
+                                            setEditNik(cleanNik);
+                                            if (cleanNik.length >= 12) {
+                                              const extracted = extractDobFromNik(cleanNik);
+                                              if (extracted) {
+                                                setEditDob(extracted);
+                                              }
+                                            } else {
+                                              setEditDob("");
+                                            }
+                                          }}
+                                        />
                                       </div>
                                       <div className="space-y-2">
                                         <Label className="font-bold">No. KK (16 Digit)</Label>
@@ -802,8 +839,23 @@ export default function VerifyActorPage() {
                                         </Select>
                                       </div>
                                       <div className="space-y-2">
-                                        <Label className="font-bold">Tempat/Tgl Lahir</Label>
-                                        <Input name="pobDob" defaultValue={editingOnlyActor.pobDob} required />
+                                        <Label className="font-bold">Tempat Lahir</Label>
+                                        <Input 
+                                          name="pob" 
+                                          value={editPob} 
+                                          required 
+                                          onChange={(e) => setEditPob(e.target.value)}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="font-bold">Tanggal Lahir (Otomatis)</Label>
+                                        <Input 
+                                          name="dob" 
+                                          value={editDob} 
+                                          readOnly 
+                                          required 
+                                          className="bg-muted font-semibold"
+                                        />
                                       </div>
                                       <div className="space-y-2">
                                         <Label className="font-bold">No. HP</Label>
@@ -893,7 +945,24 @@ export default function VerifyActorPage() {
                                       </div>
                                       <div className="space-y-2">
                                         <Label className="font-bold">NIK (16 Digit)</Label>
-                                        <Input name="nik" defaultValue={editingActor.nik} maxLength={16} required />
+                                        <Input 
+                                          name="nik" 
+                                          value={editNik} 
+                                          maxLength={16} 
+                                          required 
+                                          onChange={(e) => {
+                                            const cleanNik = e.target.value.replace(/[^0-9]/g, "");
+                                            setEditNik(cleanNik);
+                                            if (cleanNik.length >= 12) {
+                                              const extracted = extractDobFromNik(cleanNik);
+                                              if (extracted) {
+                                                setEditDob(extracted);
+                                              }
+                                            } else {
+                                              setEditDob("");
+                                            }
+                                          }}
+                                        />
                                       </div>
                                       <div className="space-y-2">
                                         <Label className="font-bold">No. KK (16 Digit)</Label>
@@ -910,8 +979,23 @@ export default function VerifyActorPage() {
                                         </Select>
                                       </div>
                                       <div className="space-y-2">
-                                        <Label className="font-bold">Tempat/Tgl Lahir</Label>
-                                        <Input name="pobDob" defaultValue={editingActor.pobDob} required />
+                                        <Label className="font-bold">Tempat Lahir</Label>
+                                        <Input 
+                                          name="pob" 
+                                          value={editPob} 
+                                          required 
+                                          onChange={(e) => setEditPob(e.target.value)}
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="font-bold">Tanggal Lahir (Otomatis)</Label>
+                                        <Input 
+                                          name="dob" 
+                                          value={editDob} 
+                                          readOnly 
+                                          required 
+                                          className="bg-muted font-semibold"
+                                        />
                                       </div>
                                       <div className="space-y-2">
                                         <Label className="font-bold">No. HP</Label>

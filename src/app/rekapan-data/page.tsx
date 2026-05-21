@@ -4,6 +4,7 @@ import { useState, useMemo, Suspense } from "react"
 import { useMemoFirebase, useList, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
 import { BusinessActor } from "../lib/types"
+import { parsePobDob } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -142,23 +143,27 @@ function RekapanDataContent() {
       toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })
       return
     }
-    const rows = filtered.map((a, i) => ({
-      "NO": i + 1,
-      "NAMA LENGKAP": (a.fullName || "").toUpperCase(),
-      "NIK": a.nik || "-",
-      "NOMOR KK": a.noKK || "-",
-      "JENIS KELAMIN": a.gender || "-",
-      "TEMPAT/TGL LAHIR": a.pobDob || "-",
-      "NOMOR HP": a.phone || "-",
-      "ALAMAT": (a.address || "").toUpperCase(),
-      "RT/RW": a.rtRw || "-",
-      "KELURAHAN": (a.kelurahan || "").toUpperCase(),
-      "KECAMATAN": (a.kecamatan || "").toUpperCase(),
-      "NAMA USAHA": (a.businessName || "").toUpperCase(),
-      "JENIS USAHA": (a.businessCategory || "").toUpperCase(),
-      "LOKASI USAHA": (a.businessLocation || "").toUpperCase(),
-      "KOORDINATOR": (a.coordinator || "").toUpperCase(),
-    }))
+    const rows = filtered.map((a, i) => {
+      const parsed = parsePobDob(a.pobDob || "")
+      return {
+        "NO": i + 1,
+        "NAMA LENGKAP": (a.fullName || "").toUpperCase(),
+        "NIK": a.nik || "-",
+        "NOMOR KK": a.noKK || "-",
+        "JENIS KELAMIN": a.gender || "-",
+        "TEMPAT LAHIR": (a.pob || parsed.pob || "-").toUpperCase(),
+        "TANGGAL LAHIR": a.dob || parsed.dob || "-",
+        "NOMOR HP": a.phone || "-",
+        "ALAMAT": (a.address || "").toUpperCase(),
+        "RT/RW": a.rtRw || "-",
+        "KELURAHAN": (a.kelurahan || "").toUpperCase(),
+        "KECAMATAN": (a.kecamatan || "").toUpperCase(),
+        "NAMA USAHA": (a.businessName || "").toUpperCase(),
+        "JENIS USAHA": (a.businessCategory || "").toUpperCase(),
+        "LOKASI USAHA": (a.businessLocation || "").toUpperCase(),
+        "KOORDINATOR": (a.coordinator || "").toUpperCase(),
+      }
+    })
     const ws = XLSX.utils.json_to_sheet(rows)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "Rekapan Data")

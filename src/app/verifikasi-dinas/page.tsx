@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
 import { ref } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
@@ -287,14 +288,18 @@ export default function VerifikasiDinasPage() {
                                       <section className="space-y-4">
                                         <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
-                                          {[
-                                            { label: "Nama Lengkap", value: viewingActor.fullName },
-                                            { label: "NIK", value: viewingActor.nik },
-                                            { label: "Nomor KK", value: viewingActor.noKK },
-                                            { label: "Jenis Kelamin", value: viewingActor.gender },
-                                            { label: "Tempat/Tgl Lahir", value: viewingActor.pobDob },
-                                            { label: "Nomor HP", value: viewingActor.phone }
-                                          ].map((item, i) => (
+                                          {(() => {
+                                            const parsed = parsePobDob(viewingActor.pobDob || "")
+                                            return [
+                                              { label: "Nama Lengkap", value: viewingActor.fullName },
+                                              { label: "NIK", value: viewingActor.nik },
+                                              { label: "Nomor KK", value: viewingActor.noKK },
+                                              { label: "Jenis Kelamin", value: viewingActor.gender },
+                                              { label: "Tempat Lahir", value: viewingActor.pob || parsed.pob || "-" },
+                                              { label: "Tanggal Lahir", value: viewingActor.dob || parsed.dob || "-" },
+                                              { label: "Nomor HP", value: viewingActor.phone }
+                                            ]
+                                          })().map((item, i) => (
                                             <div key={i} className="space-y-1">
                                               <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
                                               <p className="text-xs font-bold">{item.value || "-"}</p>

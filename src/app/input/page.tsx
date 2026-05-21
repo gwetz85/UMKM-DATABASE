@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Save, CheckCircle2 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, extractDobFromNik } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
   AlertDialog,
@@ -34,6 +34,9 @@ export default function InputDataPage() {
   const [kelurahan, setKelurahan] = useState<string>("")
   const [kecamatan, setKecamatan] = useState<string>("")
   const [selectedCoordinator, setSelectedCoordinator] = useState<string>("")
+  const [nik, setNik] = useState("")
+  const [pob, setPob] = useState("")
+  const [dob, setDob] = useState("")
 
   // Fetch Quotas - still needed for selection, but we'll optimize the usage calculation
   const quotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
@@ -170,7 +173,9 @@ export default function InputDataPage() {
         nik: nik,
         noKK: noKK,
         registrationCode: registrationCode,
-        pobDob: formData.get("pobDob"),
+        pobDob: `${pob}, ${dob}`,
+        pob: pob,
+        dob: dob,
         gender: formData.get("gender"),
         phone: formData.get("phone"),
         address: formData.get("address"),
@@ -210,6 +215,9 @@ export default function InputDataPage() {
       setKelurahan("")
       setKecamatan("")
       setSelectedCoordinator("")
+      setNik("")
+      setPob("")
+      setDob("")
     } catch (error: any) {
       console.error(error)
       toast({
@@ -276,15 +284,53 @@ export default function InputDataPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="nik">NIK</Label>
-              <Input id="nik" name="nik" maxLength={16} placeholder="Masukkan 16 digit NIK..." required />
+              <Input 
+                id="nik" 
+                name="nik" 
+                maxLength={16} 
+                placeholder="Masukkan 16 digit NIK..." 
+                required 
+                value={nik}
+                onChange={(e) => {
+                  const cleanNik = e.target.value.replace(/[^0-9]/g, "");
+                  setNik(cleanNik);
+                  if (cleanNik.length >= 12) {
+                    const extracted = extractDobFromNik(cleanNik);
+                    if (extracted) {
+                      setDob(extracted);
+                    }
+                  } else {
+                    setDob("");
+                  }
+                }}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="noKK">Nomor KK</Label>
               <Input id="noKK" name="noKK" maxLength={16} placeholder="Masukkan 16 digit Nomor KK..." required />
             </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="pobDob">Tempat / Tanggal Lahir</Label>
-              <Input id="pobDob" name="pobDob" placeholder="Contoh: Jakarta, 01-01-1990" required />
+            <div className="space-y-2">
+              <Label htmlFor="pob">Tempat Lahir</Label>
+              <Input 
+                id="pob" 
+                name="pob" 
+                placeholder="Masukkan tempat lahir..." 
+                required 
+                value={pob}
+                onChange={(e) => setPob(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dob">Tanggal Lahir (Otomatis)</Label>
+              <Input 
+                id="dob" 
+                name="dob" 
+                placeholder="Terisi otomatis dari NIK" 
+                readOnly 
+                required 
+                value={dob}
+                className="bg-muted font-semibold"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Nomor HP</Label>

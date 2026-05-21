@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { BusinessActor } from '@/app/lib/types';
 import { generateBarcodeBase64 } from './barcode-utils';
+import { parsePobDob } from './utils';
 
 export const addTunasBangsaHeader = (doc: jsPDF, hasLogo = false) => {
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -76,7 +77,8 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
     ['NIK (NOMOR INDUK KEPENDUDUKAN)', `: ${actor.nik || '-'}`],
     ['NOMOR KARTU KELUARGA', `: ${actor.noKK || '-'}`],
     ['JENIS KELAMIN', `: ${actor.gender || '-'}`],
-    ['TEMPAT, TANGGAL LAHIR', `: ${actor.pobDob || '-'}`],
+    ['TEMPAT LAHIR', `: ${actor.pob || parsePobDob(actor.pobDob || '').pob || '-'}`],
+    ['TANGGAL LAHIR', `: ${actor.dob || parsePobDob(actor.pobDob || '').dob || '-'}`],
     ['NOMOR HP / WHATSAPP', `: ${actor.phone || '-'}`],
     ['KECAMATAN / KELURAHAN', `: ${actor.kecamatan || '-'} / ${actor.kelurahan || '-'}`],
     ['ALAMAT DOMISILI', `: ${actor.address || '-'}`],

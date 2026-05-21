@@ -16,3 +16,56 @@ export function formatCurrency(value: any): string {
     minimumFractionDigits: 0,
   }).format(num);
 }
+
+export function extractDobFromNik(nik: string): string {
+  if (!nik) return "";
+  const cleanNik = nik.replace(/[^0-9]/g, "");
+  if (cleanNik.length < 12) return "";
+
+  // Angka ke 7 dan 8 itu merupakan tanggal lahir
+  let dayVal = parseInt(cleanNik.substring(6, 8), 10);
+  if (isNaN(dayVal)) return "";
+
+  // Ketentuan:
+  // - apabila angka ke 7 >= 4 (yaitu 40-79), maka dikurangi 40
+  // - apabila <= 31, tetap
+  if (dayVal > 40) {
+    dayVal = dayVal - 40;
+  }
+  
+  const dayStr = String(dayVal).padStart(2, "0");
+
+  // Angka ke 9 dan 10 adalah bulan lahir
+  const monthStr = cleanNik.substring(8, 10);
+  const monthVal = parseInt(monthStr, 10);
+  if (isNaN(monthVal) || monthVal < 1 || monthVal > 12) return "";
+
+  // Angka ke 11 dan 12 adalah tahun lahir (format: yy)
+  const year2DigitStr = cleanNik.substring(10, 12);
+  const year2Digit = parseInt(year2DigitStr, 10);
+  if (isNaN(year2Digit)) return "";
+
+  // Ketentuan tahun:
+  // - apabila yy <= currentYear2Digit (tahun sekarang, misal 26), maka tahunnya 2000 + yy
+  // - jika tidak, maka tahunnya 1900 + yy
+  const currentYear = new Date().getFullYear();
+  const currentYear2Digit = currentYear % 100;
+  let year = 1900 + year2Digit;
+  if (year2Digit <= currentYear2Digit) {
+    year = 2000 + year2Digit;
+  }
+
+  return `${dayStr}-${monthStr}-${year}`;
+}
+
+export function parsePobDob(pobDob: string): { pob: string; dob: string } {
+  if (!pobDob || pobDob === "-") return { pob: "", dob: "" };
+  const parts = pobDob.split(",");
+  if (parts.length >= 2) {
+    const dob = parts.pop()?.trim() || "";
+    const pob = parts.join(",").trim();
+    return { pob, dob };
+  }
+  return { pob: "", dob: pobDob.trim() };
+}
+
