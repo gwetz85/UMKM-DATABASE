@@ -85,17 +85,23 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
+      if (!target) return;
+
       const isClickable = 
         target.closest('button') || 
         target.closest('a') || 
         target.closest('[role="button"]') ||
         target.closest('[role="tab"]') ||
+        target.closest('[role="menuitem"]') ||
+        target.closest('[role="checkbox"]') ||
+        target.closest('[role="switch"]') ||
+        target.closest('[role="radio"]') ||
         target.closest('label') ||
         target.closest('summary') ||
         target.closest('input') ||
         target.closest('select') ||
-        target.closest('.cursor-pointer') ||
-        window.getComputedStyle(target).cursor === 'pointer';
+        target.closest('textarea') ||
+        target.closest('.cursor-pointer');
 
       if (isClickable) {
         playSound('click', 0.35);

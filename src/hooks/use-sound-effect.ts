@@ -10,16 +10,33 @@ export const SOUND_URLS = {
   notification: "https://www.soundjay.com/communication/sounds/notification-sound-7062.mp3",
 }
 
+// Module-level cache for Audio objects to avoid dynamic instantiation overhead
+const audioCache: Record<string, HTMLAudioElement> = {}
+
+const getCachedAudio = (key: keyof typeof SOUND_URLS): HTMLAudioElement | null => {
+  if (typeof window === 'undefined') return null;
+
+  if (!audioCache[key]) {
+    const audio = new Audio(SOUND_URLS[key]);
+    audio.preload = "auto";
+    audioCache[key] = audio;
+  }
+  return audioCache[key];
+}
+
 export function useSoundEffect() {
   const playSound = useCallback((key: keyof typeof SOUND_URLS, volume = 0.45) => {
     if (typeof window === 'undefined') return;
 
     try {
-      const audio = new Audio(SOUND_URLS[key]);
-      audio.volume = volume;
-      audio.play().catch((err) => {
-        // console.warn("Audio playback failed:", err);
-      });
+      const audio = getCachedAudio(key);
+      if (audio) {
+        audio.currentTime = 0; // Reset playback to start to allow rapid, successive playbacks
+        audio.volume = volume;
+        audio.play().catch((err) => {
+          // console.warn("Audio playback failed:", err);
+        });
+      }
     } catch (error) {
       // console.error("Sound effect error:", error);
     }
