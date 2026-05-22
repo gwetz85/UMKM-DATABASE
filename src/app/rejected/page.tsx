@@ -638,13 +638,7 @@ function RejectedContent() {
       {/* SECTION CETAK FORMULIR PENDAFTARAN - HANYA DI TAMPILAN PRINT */}
       {actorToPrint && (
         <div className="hidden print:block w-full bg-white text-black p-4 font-sans text-[11px] leading-snug">
-          {/* Kop Surat Resmi */}
-          <div className="flex flex-col items-center text-center border-b-[3px] border-black pb-3 mb-4">
-            <h1 className="text-[15px] font-black uppercase tracking-wide leading-tight">PEMERINTAH KOTA KEDIRI</h1>
-            <h2 className="text-[13px] font-bold uppercase tracking-wide leading-tight">DINAS KOPERASI, USAHA MIKRO DAN TENAGA KERJA</h2>
-            <p className="text-[9px] font-normal italic mt-0.5">Jl. Hasanudin No. 21 Kediri, Telp (0354) 682955</p>
-            <div className="w-full border-t border-black mt-1"></div>
-          </div>
+
 
           {/* Judul Formulir */}
           <div className="text-center mb-4">
