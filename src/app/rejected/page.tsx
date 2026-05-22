@@ -786,7 +786,7 @@ function RejectedContent() {
           {/* Lembar Tanda Tangan */}
           <div className="mt-6">
             <p className="text-right text-[10px] mb-6 font-medium">Tanjungpinang, {printDate || new Date().toLocaleString('id-ID')}</p>
-            <div className="grid grid-cols-3 gap-4 text-center text-[10px]">
+            <div className="grid grid-cols-2 gap-4 text-center text-[10px]">
               <div>
                 <p className="font-bold uppercase mb-16">Pelaku Usaha,</p>
                 <p className="font-black uppercase border-b border-black inline-block px-4 pb-0.5">{actorToPrint.fullName}</p>
@@ -794,11 +794,6 @@ function RejectedContent() {
               <div>
                 <p className="font-bold uppercase mb-16">Koordinator / Korlap,</p>
                 <p className="font-black uppercase border-b border-black inline-block px-4 pb-0.5">{actorToPrint.coordinator || "........................................"}</p>
-              </div>
-              <div>
-                <p className="font-bold uppercase mb-16">Mengetahui,</p>
-                <p className="font-black uppercase border-b border-black inline-block px-4 pb-0.5">{user?.displayName || userProfile?.fullName || "........................................"}</p>
-                <p className="text-[7px] mt-0.5 text-slate-500">Dinas Koperasi, Usaha Mikro & Tenaga Kerja</p>
               </div>
             </div>
           </div>
