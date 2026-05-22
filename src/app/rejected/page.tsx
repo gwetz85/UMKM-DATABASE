@@ -635,189 +635,159 @@ function RejectedContent() {
       </Dialog>
       </div>
 
-      {/* SECTION CETAK FORM TUNGGAL - HANYA DI TAMPILAN PRINT */}
+      {/* SECTION CETAK FORMULIR PENDAFTARAN - HANYA DI TAMPILAN PRINT */}
       {actorToPrint && (
-        <div className="hidden print:block w-full bg-white text-black p-6 font-sans text-xs leading-relaxed">
-          {/* Header Surat Resmi */}
-          <div className="flex flex-col items-center text-center border-b-4 border-double border-black pb-4 mb-6">
-            <h1 className="text-lg font-black uppercase tracking-wider">PEMERINTAH KOTA KEDIRI</h1>
-            <h2 className="text-md font-bold uppercase tracking-wider">DINAS KOPERASI, USAHA MIKRO DAN TENAGA KERJA</h2>
-            <p className="text-[10px] font-medium italic">Jl. Hasanudin No. 21 Kediri, Telp (0354) 682955</p>
+        <div className="hidden print:block w-full bg-white text-black p-4 font-sans text-[11px] leading-snug">
+          {/* Kop Surat Resmi */}
+          <div className="flex flex-col items-center text-center border-b-[3px] border-black pb-3 mb-4">
+            <h1 className="text-[15px] font-black uppercase tracking-wide leading-tight">PEMERINTAH KOTA KEDIRI</h1>
+            <h2 className="text-[13px] font-bold uppercase tracking-wide leading-tight">DINAS KOPERASI, USAHA MIKRO DAN TENAGA KERJA</h2>
+            <p className="text-[9px] font-normal italic mt-0.5">Jl. Hasanudin No. 21 Kediri, Telp (0354) 682955</p>
             <div className="w-full border-t border-black mt-1"></div>
           </div>
 
-          <div className="text-center mb-6">
-            <h3 className="text-sm font-black uppercase underline decoration-2">FORMULIR INFORMASI PEMBATALAN PELAKU USAHA</h3>
-            <p className="text-[9px] font-mono mt-1 text-slate-500">ID Registrasi: {actorToPrint.id}</p>
+          {/* Judul Formulir */}
+          <div className="text-center mb-4">
+            <h3 className="text-[13px] font-black uppercase underline underline-offset-4 decoration-2">FORMULIR PENDAFTARAN PELAKU USAHA MIKRO</h3>
+            <p className="text-[8px] font-normal mt-1 text-slate-500">Sistem Informasi Manajemen Pelaku Usaha (SIMPU)</p>
           </div>
 
-          {/* Section 1: Data Lengkap Pelaku Usaha */}
-          <div className="mb-6">
-            <h4 className="text-xs font-black uppercase border-b border-black pb-1 mb-3 flex items-center bg-slate-100 px-2 py-0.5">
-              I. DATA LENGKAP PELAKU USAHA
-            </h4>
-            <table className="w-full border-collapse">
-              <tbody>
-                <tr className="border-b border-slate-200">
-                  <td className="w-1/3 py-1.5 font-bold uppercase text-[10px]">Nama Lengkap</td>
-                  <td className="w-2/3 py-1.5 uppercase font-semibold">{actorToPrint.fullName || "-"}</td>
-                </tr>
-                <tr className="border-b border-slate-200">
-                  <td className="py-1.5 font-bold uppercase text-[10px]">Nomor Induk Kependudukan (NIK)</td>
-                  <td className="py-1.5 font-mono font-semibold">{actorToPrint.nik || "-"}</td>
-                </tr>
-                <tr className="border-b border-slate-200">
-                  <td className="py-1.5 font-bold uppercase text-[10px]">Nomor Kartu Keluarga (KK)</td>
-                  <td className="py-1.5 font-mono font-semibold">{actorToPrint.noKK || "-"}</td>
-                </tr>
-                <tr className="border-b border-slate-200">
-                  <td className="py-1.5 font-bold uppercase text-[10px]">Jenis Kelamin</td>
-                  <td className="py-1.5 font-semibold">{actorToPrint.gender || "-"}</td>
-                </tr>
-                <tr className="border-b border-slate-200">
-                  <td className="py-1.5 font-bold uppercase text-[10px]">Tempat / Tanggal Lahir</td>
-                  <td className="py-1.5 uppercase font-semibold">{actorToPrint.pobDob || `${actorToPrint.pob || "-"}, ${actorToPrint.dob || "-"}`}</td>
-                </tr>
-                <tr className="border-b border-slate-200">
-                  <td className="py-1.5 font-bold uppercase text-[10px]">Nomor Handphone (HP)</td>
-                  <td className="py-1.5 font-semibold">{actorToPrint.phone || "-"}</td>
-                </tr>
-                <tr className="border-b border-slate-200">
-                  <td className="py-1.5 font-bold uppercase text-[10px]">Alamat Lengkap</td>
-                  <td className="py-1.5 uppercase font-semibold">
-                    {actorToPrint.address || "-"}
-                    {actorToPrint.rtRw ? ` RT/RW ${actorToPrint.rtRw}` : ""}
-                    {actorToPrint.kelurahan ? `, Kel. ${actorToPrint.kelurahan}` : ""}
-                    {actorToPrint.kecamatan ? `, Kec. ${actorToPrint.kecamatan}` : ""}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          {/* FORMULIR UTAMA - BORDERED TABLE */}
+          <table className="w-full border-collapse border border-black mb-3">
+            {/* Section A: Data Pribadi */}
+            <tbody>
+              <tr className="bg-gray-200">
+                <td colSpan={4} className="border border-black px-2 py-1 font-black uppercase text-[10px] tracking-wider">
+                  A. DATA PRIBADI
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] w-[30%] bg-gray-50">1. Nama Lengkap</td>
+                <td colSpan={3} className="border border-black px-2 py-1.5 uppercase font-semibold">{actorToPrint.fullName || ""}</td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">2. NIK</td>
+                <td colSpan={3} className="border border-black px-2 py-1.5 font-mono font-semibold tracking-wider">{actorToPrint.nik || ""}</td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">3. No. Kartu Keluarga</td>
+                <td colSpan={3} className="border border-black px-2 py-1.5 font-mono font-semibold tracking-wider">{actorToPrint.noKK || ""}</td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">4. Jenis Kelamin</td>
+                <td colSpan={3} className="border border-black px-2 py-1.5 font-semibold">{actorToPrint.gender || ""}</td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">5. Tempat Lahir</td>
+                <td className="border border-black px-2 py-1.5 font-semibold uppercase w-[20%]">{actorToPrint.pob || (actorToPrint.pobDob ? actorToPrint.pobDob.split(',')[0]?.trim() : "") || ""}</td>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50 w-[18%]">6. Tanggal Lahir</td>
+                <td className="border border-black px-2 py-1.5 font-semibold">{actorToPrint.dob || (actorToPrint.pobDob ? actorToPrint.pobDob.split(',')[1]?.trim() : "") || ""}</td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">7. Nomor HP / WhatsApp</td>
+                <td colSpan={3} className="border border-black px-2 py-1.5 font-semibold">{actorToPrint.phone || ""}</td>
+              </tr>
+
+              {/* Section B: Alamat */}
+              <tr className="bg-gray-200">
+                <td colSpan={4} className="border border-black px-2 py-1 font-black uppercase text-[10px] tracking-wider">
+                  B. ALAMAT DOMISILI
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">8. Alamat / Jalan</td>
+                <td colSpan={3} className="border border-black px-2 py-1.5 uppercase font-semibold">{actorToPrint.address || ""}</td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">9. RT / RW</td>
+                <td className="border border-black px-2 py-1.5 font-semibold">{actorToPrint.rtRw || ""}</td>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">10. Kelurahan</td>
+                <td className="border border-black px-2 py-1.5 font-semibold uppercase">{actorToPrint.kelurahan || ""}</td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">11. Kecamatan</td>
+                <td className="border border-black px-2 py-1.5 font-semibold uppercase">{actorToPrint.kecamatan || ""}</td>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">12. Kota</td>
+                <td className="border border-black px-2 py-1.5 font-semibold uppercase">KEDIRI</td>
+              </tr>
+
+              {/* Section C: Informasi Usaha */}
+              <tr className="bg-gray-200">
+                <td colSpan={4} className="border border-black px-2 py-1 font-black uppercase text-[10px] tracking-wider">
+                  C. INFORMASI USAHA
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">13. Nama Usaha</td>
+                <td colSpan={3} className="border border-black px-2 py-1.5 uppercase font-semibold">{actorToPrint.businessName || ""}</td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">14. Kategori Usaha</td>
+                <td className="border border-black px-2 py-1.5 uppercase font-semibold">{actorToPrint.businessCategory || ""}</td>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">15. Lokasi Usaha</td>
+                <td className="border border-black px-2 py-1.5 uppercase font-semibold">{actorToPrint.businessLocation || ""}</td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">16. Koordinator</td>
+                <td colSpan={3} className="border border-black px-2 py-1.5 uppercase font-semibold">{actorToPrint.coordinator || ""}</td>
+              </tr>
+
+              {/* Section D: Data Perbankan */}
+              <tr className="bg-gray-200">
+                <td colSpan={4} className="border border-black px-2 py-1 font-black uppercase text-[10px] tracking-wider">
+                  D. DATA PERBANKAN
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">17. Nama Bank</td>
+                <td className="border border-black px-2 py-1.5 uppercase font-semibold">{actorToPrint.bankName || ""}</td>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">18. No. Rekening</td>
+                <td className="border border-black px-2 py-1.5 font-mono font-semibold">{actorToPrint.bankNumber || ""}</td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">19. Atas Nama Rekening</td>
+                <td colSpan={3} className="border border-black px-2 py-1.5 uppercase font-semibold">{actorToPrint.bankOwner || ""}</td>
+              </tr>
+
+              {/* Section E: Alasan Pembatalan */}
+              <tr className="bg-gray-200">
+                <td colSpan={4} className="border border-black px-2 py-1 font-black uppercase text-[10px] tracking-wider">
+                  E. STATUS & KETERANGAN
+                </td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">20. Status</td>
+                <td colSpan={3} className="border border-black px-2 py-1.5 font-black uppercase text-red-700">DIBATALKAN / DITOLAK</td>
+              </tr>
+              <tr>
+                <td className="border border-black px-2 py-2 font-bold text-[10px] bg-gray-50 align-top">21. Alasan Pembatalan</td>
+                <td colSpan={3} className="border border-black px-2 py-2 font-semibold italic leading-relaxed">{actorToPrint.rejectionReason || "Tidak ada keterangan spesifik dari Administrator."}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Catatan Kaki */}
+          <div className="border border-black px-3 py-2 mb-4 bg-gray-50 text-[8px]">
+            <p className="font-black uppercase mb-1">Catatan:</p>
+            <p className="leading-relaxed">Formulir ini dicetak secara otomatis dari Sistem Informasi Manajemen Pelaku Usaha (SIMPU). Data yang tercantum bersifat resmi dan telah terverifikasi oleh Dinas Koperasi, Usaha Mikro dan Tenaga Kerja Kota Kediri.</p>
           </div>
 
-          {/* Section 2: Informasi Usaha & Perbankan */}
-          <div className="grid grid-cols-2 gap-6 mb-6">
-            <div>
-              <h4 className="text-xs font-black uppercase border-b border-black pb-1 mb-3 bg-slate-100 px-2 py-0.5">
-                II. INFORMASI USAHA
-              </h4>
-              <table className="w-full border-collapse">
-                <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="w-5/12 py-1 font-bold uppercase text-[9px]">Nama Usaha</td>
-                    <td className="w-7/12 py-1 uppercase font-semibold">{actorToPrint.businessName || "-"}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="py-1 font-bold uppercase text-[9px]">Kategori Usaha</td>
-                    <td className="py-1 uppercase font-semibold">{actorToPrint.businessCategory || "-"}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="py-1 font-bold uppercase text-[9px]">Lokasi Usaha</td>
-                    <td className="py-1 uppercase font-semibold">{actorToPrint.businessLocation || "-"}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="py-1 font-bold uppercase text-[9px]">Koordinator / Dewan</td>
-                    <td className="py-1 uppercase font-semibold">{actorToPrint.coordinator || "-"}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div>
-              <h4 className="text-xs font-black uppercase border-b border-black pb-1 mb-3 bg-slate-100 px-2 py-0.5">
-                III. DATA PERBANKAN
-              </h4>
-              <table className="w-full border-collapse">
-                <tbody>
-                  <tr className="border-b border-slate-200">
-                    <td className="w-5/12 py-1 font-bold uppercase text-[9px]">Nama Bank</td>
-                    <td className="w-7/12 py-1 uppercase font-semibold">{actorToPrint.bankName || "-"}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="py-1 font-bold uppercase text-[9px]">Nomor Rekening</td>
-                    <td className="py-1 font-mono font-semibold">{actorToPrint.bankNumber || "-"}</td>
-                  </tr>
-                  <tr className="border-b border-slate-200">
-                    <td className="py-1 font-bold uppercase text-[9px]">Pemilik Rekening</td>
-                    <td className="py-1 uppercase font-semibold">{actorToPrint.bankOwner || "-"}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Section 3: ALASAN PEMBATALAN / CANCEL */}
-          <div className="mb-6">
-            <h4 className="text-xs font-black uppercase border-b border-black pb-1 mb-2 bg-slate-100 px-2 py-0.5">
-              IV. ALASAN DI-CANCEL / DITOLAK
-            </h4>
-            <div className="border border-black p-3 bg-slate-50 font-bold italic text-slate-800 text-[11px] leading-relaxed uppercase">
-              "{actorToPrint.rejectionReason || "ADMINISTRATOR TIDAK MEMBERIKAN ALASAN SPESIFIK."}"
-            </div>
-          </div>
-
-          {/* Section 4: DATA BLACKLIST PEMBANDING */}
-          <div className="mb-8">
-            <h4 className="text-xs font-black uppercase border-b border-black pb-1 mb-3 bg-slate-100 px-2 py-0.5">
-              V. DATA HISTORI / BLACKLIST PEMBANDING
-            </h4>
-            {blacklistMatches && blacklistMatches.length > 0 ? (
-              <div className="border border-black rounded overflow-hidden">
-                <table className="w-full border-collapse text-[9px]">
-                  <thead>
-                    <tr className="bg-slate-200 border-b border-black">
-                      <th className="border-r border-black p-1 text-center font-black uppercase">No</th>
-                      <th className="border-r border-black p-1 text-left font-black uppercase">Nama Pembanding</th>
-                      <th className="border-r border-black p-1 text-center font-black uppercase">NIK / KK</th>
-                      <th className="border-r border-black p-1 text-left font-black uppercase">Sektor Usaha</th>
-                      <th className="border-r border-black p-1 text-center font-black uppercase">Tahun</th>
-                      <th className="border-r border-black p-1 text-right font-black uppercase">Nominal</th>
-                      <th className="border-r border-black p-1 text-center font-black uppercase">Status</th>
-                      <th className="p-1 text-left font-black uppercase">Keterangan Sumber</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {blacklistMatches.map((match: any, idx: number) => (
-                      <tr key={idx} className="border-b border-slate-300 last:border-b-0">
-                        <td className="border-r border-black p-1 text-center font-bold">{idx + 1}</td>
-                        <td className="border-r border-black p-1 uppercase font-semibold">{match.nama || "-"}</td>
-                        <td className="border-r border-black p-1 font-mono">{match.nik || match.noKK || "-"}</td>
-                        <td className="border-r border-black p-1 uppercase">{match.usaha || "-"}</td>
-                        <td className="border-r border-black p-1 text-center font-semibold">{match.tahunPengajuan || "-"}</td>
-                        <td className="border-r border-black p-1 text-right font-mono font-semibold">
-                          {match.nominal ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(match.nominal) : "-"}
-                        </td>
-                        <td className="border-r border-black p-1 text-center uppercase font-bold text-red-600">{match.status || "REJECT / BLACKLIST"}</td>
-                        <td className="p-1 uppercase text-[8px] font-medium">{match.source || "SHEET 4 (BLACKLIST - REJECT)"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="border border-dashed border-slate-400 p-4 text-center font-black uppercase text-[10px] text-emerald-600 tracking-wider bg-emerald-50/50 rounded">
-                ✓ BERSIH - TIDAK ADA DATA PADA SHEET BLACKLIST PEMBANDING
-              </div>
-            )}
-          </div>
-
-          {/* Section 5: Lembar Pengesahan */}
-          <div className="mt-12">
-            <p className="text-right text-[10px] mb-8 font-medium">Kediri, {printDate || new Date().toLocaleString('id-ID')}</p>
+          {/* Lembar Tanda Tangan */}
+          <div className="mt-6">
+            <p className="text-right text-[10px] mb-6 font-medium">Kediri, {printDate || new Date().toLocaleString('id-ID')}</p>
             <div className="grid grid-cols-3 gap-4 text-center text-[10px]">
               <div>
-                <p className="font-bold uppercase mb-16">Pelaku Usaha</p>
-                <p className="font-black uppercase underline">({actorToPrint.fullName})</p>
-                <p className="text-[8px] text-slate-500">Tanda Tangan & Nama Terang</p>
+                <p className="font-bold uppercase mb-16">Pelaku Usaha,</p>
+                <p className="font-black uppercase border-b border-black inline-block px-4 pb-0.5">{actorToPrint.fullName}</p>
               </div>
               <div>
-                <p className="font-bold uppercase mb-16">Koordinator / Korlap</p>
-                <p className="font-black uppercase underline">({actorToPrint.coordinator || "........................................"})</p>
-                <p className="text-[8px] text-slate-500">Tanda Tangan & Nama Terang</p>
+                <p className="font-bold uppercase mb-16">Koordinator / Korlap,</p>
+                <p className="font-black uppercase border-b border-black inline-block px-4 pb-0.5">{actorToPrint.coordinator || "........................................"}</p>
               </div>
               <div>
-                <p className="font-bold uppercase mb-16">Petugas Verifikasi / Admin</p>
-                <p className="font-black uppercase underline">({user?.displayName || userProfile?.fullName || "........................................"})</p>
-                <p className="text-[8px] text-slate-500">Dinas Koperasi, Usaha Mikro & Tenaga Kerja</p>
+                <p className="font-bold uppercase mb-16">Mengetahui,</p>
+                <p className="font-black uppercase border-b border-black inline-block px-4 pb-0.5">{user?.displayName || userProfile?.fullName || "........................................"}</p>
+                <p className="text-[7px] mt-0.5 text-slate-500">Dinas Koperasi, Usaha Mikro & Tenaga Kerja</p>
               </div>
             </div>
           </div>
