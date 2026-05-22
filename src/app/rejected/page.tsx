@@ -702,7 +702,7 @@ function RejectedContent() {
                 <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">11. Kecamatan</td>
                 <td className="border border-black px-2 py-1.5 font-semibold uppercase">{actorToPrint.kecamatan || ""}</td>
                 <td className="border border-black px-2 py-1.5 font-bold text-[10px] bg-gray-50">12. Kota</td>
-                <td className="border border-black px-2 py-1.5 font-semibold uppercase">KEDIRI</td>
+                <td className="border border-black px-2 py-1.5 font-semibold uppercase">TANJUNGPINANG</td>
               </tr>
 
               {/* Section C: Informasi Usaha */}
@@ -762,13 +762,30 @@ function RejectedContent() {
 
           {/* Catatan Kaki */}
           <div className="border border-black px-3 py-2 mb-4 bg-gray-50 text-[8px]">
-            <p className="font-black uppercase mb-1">Catatan:</p>
-            <p className="leading-relaxed">Formulir ini dicetak secara otomatis dari Sistem Informasi Manajemen Pelaku Usaha (SIMPU). Data yang tercantum bersifat resmi dan telah terverifikasi oleh Dinas Koperasi, Usaha Mikro dan Tenaga Kerja Kota Kediri.</p>
+            <p className="font-black uppercase mb-1">DATA DI SHEET BLACKLIST YANG MENYEBABKAN DATA DITOLAK:</p>
+            {blacklistMatches && blacklistMatches.length > 0 ? (
+              <div className="space-y-1 mt-1 font-mono text-[7px] leading-tight">
+                {blacklistMatches.map((match: any, index: number) => (
+                  <div key={index} className="border-t border-dotted border-gray-400 pt-1 first:border-t-0 first:pt-0">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 font-semibold">
+                      <div><span className="font-bold">NAMA DI BLACKLIST:</span> {match.nama || "-"}</div>
+                      <div><span className="font-bold">NIK / KK:</span> {match.nik || "-"} / {match.noKK || "-"}</div>
+                      <div><span className="font-bold">SEKTOR USAHA:</span> {match.usaha || "-"} ({match.nomor || "-"})</div>
+                      <div><span className="font-bold">TAHUN / NOMINAL:</span> {match.tahunPengajuan || "-"} / {match.nominal ? `Rp ${Number(match.nominal).toLocaleString('id-ID')}` : "-"}</div>
+                      <div><span className="font-bold">STATUS / LPJ:</span> <span className="text-red-700 font-bold">{match.status || "-"}</span> / <span className="text-amber-700 font-bold">{match.statusLpj || "-"}</span></div>
+                      <div><span className="font-bold">ALAMAT:</span> {match.alamat || "-"}, {match.kelurahan || "-"}, {match.kecamatan || "-"}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="leading-relaxed italic text-red-600 font-semibold">Formulir ini dicetak secara otomatis dari Sistem Informasi Manajemen Pelaku Usaha (SIMPU). Data terindikasi terdaftar di database blacklist pembanding.</p>
+            )}
           </div>
 
           {/* Lembar Tanda Tangan */}
           <div className="mt-6">
-            <p className="text-right text-[10px] mb-6 font-medium">Kediri, {printDate || new Date().toLocaleString('id-ID')}</p>
+            <p className="text-right text-[10px] mb-6 font-medium">Tanjungpinang, {printDate || new Date().toLocaleString('id-ID')}</p>
             <div className="grid grid-cols-3 gap-4 text-center text-[10px]">
               <div>
                 <p className="font-bold uppercase mb-16">Pelaku Usaha,</p>
