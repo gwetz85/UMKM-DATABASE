@@ -37,6 +37,7 @@ export default function InputDataPage() {
   const [nik, setNik] = useState("")
   const [pob, setPob] = useState("")
   const [dob, setDob] = useState("")
+  const [isEditingDob, setIsEditingDob] = useState(false)
   const [formKey, setFormKey] = useState(0)
 
   // Fetch Quotas - still needed for selection, but we'll optimize the usage calculation
@@ -323,15 +324,25 @@ export default function InputDataPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="dob">Tanggal Lahir (Otomatis)</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="dob">Tanggal Lahir {isEditingDob ? "(Manual)" : "(Otomatis)"}</Label>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingDob(!isEditingDob)}
+                  className="text-xs text-primary font-bold hover:underline"
+                >
+                  {isEditingDob ? "Kunci" : "Edit Manual"}
+                </button>
+              </div>
               <Input 
                 id="dob" 
                 name="dob" 
                 placeholder="Terisi otomatis dari NIK" 
-                readOnly 
+                readOnly={!isEditingDob}
                 required 
                 value={dob}
-                className="bg-muted font-semibold"
+                onChange={(e) => setDob(e.target.value)}
+                className={cn("font-semibold", !isEditingDob && "bg-muted")}
               />
             </div>
             <div className="space-y-2">

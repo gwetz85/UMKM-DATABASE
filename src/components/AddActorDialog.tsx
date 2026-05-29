@@ -43,6 +43,7 @@ export function AddActorDialog() {
   const [nik, setNik] = useState("")
   const [pob, setPob] = useState("")
   const [dob, setDob] = useState("")
+  const [isEditingDob, setIsEditingDob] = useState(false)
 
   // Fetch Quotas
   const quotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
@@ -329,15 +330,25 @@ export function AddActorDialog() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dob">Tanggal Lahir (Otomatis)</Label>
+                    <div className="flex justify-between items-center">
+                      <Label htmlFor="dob">Tanggal Lahir {isEditingDob ? "(Manual)" : "(Otomatis)"}</Label>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingDob(!isEditingDob)}
+                        className="text-xs text-primary font-bold hover:underline"
+                      >
+                        {isEditingDob ? "Kunci" : "Edit Manual"}
+                      </button>
+                    </div>
                     <Input 
                       id="dob" 
                       name="dob" 
                       placeholder="Terisi otomatis dari NIK" 
-                      readOnly 
+                      readOnly={!isEditingDob}
                       required 
-                      className="rounded-xl bg-muted font-semibold" 
+                      className={cn("rounded-xl font-semibold", !isEditingDob && "bg-muted")}
                       value={dob}
+                      onChange={(e) => setDob(e.target.value)}
                     />
                   </div>
                   <div className="space-y-2">
