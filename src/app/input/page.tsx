@@ -169,7 +169,11 @@ export default function InputDataPage() {
         const allActors = Object.values(snap.val()) as any[]
         duplicateInActors = allActors.find(a => a.nik === nik || a.noKK === noKK)
         if (selectedCoordinator) {
-          currentCoordCount = allActors.filter(a => a.coordinator === selectedCoordinator).length
+          const verifiedStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'];
+          currentCoordCount = allActors.filter(a => 
+            a.coordinator === selectedCoordinator && 
+            verifiedStatuses.includes((a.status || "pending").toLowerCase())
+          ).length
         }
       }
 
@@ -504,7 +508,7 @@ export default function InputDataPage() {
                     <SelectItem key={c.id} value={c.name}>
                       <div className="flex justify-between items-center w-full min-w-[300px]">
                         <span className="font-bold">{c.name}</span>
-                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full whitespace-nowrap">
                           Sisa Kuota: {c.remaining}
                         </span>
                       </div>
