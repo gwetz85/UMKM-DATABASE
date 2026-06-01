@@ -51,25 +51,35 @@ export default function InputDataPage() {
   // NOTE: Removed full fetching of businessActors and master_data to improve performance.
   // Duplicate checks and auto-verification will now use targeted queries.
 
-  // Fetch System Stats for efficient usage calculation
-  const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
-  const { data: systemStats } = useObject<any>(statsRef)
+  // Fetch all actors for accurate quota calculation, mirroring kuota-koordinator
+  const actorsQueryRef = useMemoFirebase(() => database ? query(ref(database, 'businessActors')) : null, [database])
+  const { data: allActorsData } = useList<any>(actorsQueryRef)
 
   const availableCoordinators = useMemo(() => {
     if (!rawQuotaData) return []
     
-    const usageStats = (systemStats as any)?.coordinator || {}
+    const counts: Record<string, number> = {}
+    if (allActorsData) {
+      const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish']
+      allActorsData.forEach((d: any) => {
+        if (!activeStatuses.includes((d.status || 'pending').toLowerCase())) return
+        if (d.coordinator) {
+          const name = d.coordinator.toUpperCase().trim()
+          counts[name] = (counts[name] || 0) + 1
+        }
+      })
+    }
 
     return rawQuotaData
       .map((q: any) => {
         const nameUpper = (q.name || "").toUpperCase().trim()
-        const used = usageStats[nameUpper] || 0
+        const used = counts[nameUpper] || 0
         const rawQuota = parseInt(String(q.quota)) || 0
         const remaining = rawQuota - used
         return { ...q, remaining: Math.max(0, remaining) }
       })
       .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))
-  }, [rawQuotaData, systemStats])
+  }, [rawQuotaData, allActorsData])
 
   // Get current user profile to record who created the entry
   const userProfileRef = useMemoFirebase(() => {
