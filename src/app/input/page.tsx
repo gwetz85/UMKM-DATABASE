@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, Save, CheckCircle2 } from "lucide-react"
+import { Loader2, Save, CheckCircle2, ShieldAlert } from "lucide-react"
 import { cn, extractDobFromNik } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
@@ -35,10 +35,14 @@ export default function InputDataPage() {
   const [kecamatan, setKecamatan] = useState<string>("")
   const [selectedCoordinator, setSelectedCoordinator] = useState<string>("")
   const [nik, setNik] = useState("")
+  const [noKK, setNoKK] = useState("")
   const [pob, setPob] = useState("")
   const [dob, setDob] = useState("")
   const [isEditingDob, setIsEditingDob] = useState(false)
   const [formKey, setFormKey] = useState(0)
+  
+  const [kkCheckResults, setKkCheckResults] = useState<any[]>([])
+  const [isCheckingKk, setIsCheckingKk] = useState(false)
 
   // Fetch Quotas - still needed for selection, but we'll optimize the usage calculation
   const quotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
@@ -100,6 +104,47 @@ export default function InputDataPage() {
       setKecamatan("")
     }
   }, [kelurahan])
+
+  useEffect(() => {
+    if (!noKK || noKK.length < 16) {
+      setKkCheckResults([]);
+      setIsCheckingKk(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsCheckingKk(true);
+      try {
+        const results: any[] = [];
+        
+        const checkSheet = async (sheetName: string, label: string) => {
+          if (!database) return;
+          const q = query(ref(database, sheetName), orderByChild('noKK'), equalTo(noKK));
+          const snap = await get(q);
+          if (snap.exists()) {
+            Object.values(snap.val()).forEach((item: any) => {
+              results.push({ ...item, _source: label });
+            });
+          }
+        };
+
+        await Promise.all([
+          checkSheet('master_data_2023', 'SHEET 2 (2023)'),
+          checkSheet('master_data_2024', 'SHEET 1 (2024)'),
+          checkSheet('master_data_2025', 'SHEET 3 (2025 - HOLD)'),
+          checkSheet('blacklist_data', 'DATA BLACKLIST (REJECT)')
+        ]);
+
+        setKkCheckResults(results);
+      } catch (error) {
+        console.error("Error checking KK:", error);
+      } finally {
+        setIsCheckingKk(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [noKK, database]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -218,6 +263,7 @@ export default function InputDataPage() {
       setKecamatan("")
       setSelectedCoordinator("")
       setNik("")
+      setNoKK("")
       setPob("")
       setDob("")
       setFormKey(prev => prev + 1)
@@ -310,7 +356,48 @@ export default function InputDataPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="noKK">Nomor KK</Label>
-              <Input id="noKK" name="noKK" maxLength={16} placeholder="Masukkan 16 digit Nomor KK..." required />
+              <Input 
+                id="noKK" 
+                name="noKK" 
+                maxLength={16} 
+                placeholder="Masukkan 16 digit Nomor KK..." 
+                required 
+                value={noKK}
+                onChange={(e) => setNoKK(e.target.value.replace(/[^0-9]/g, ""))}
+              />
+              {isCheckingKk && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Sedang mengecek Nomor KK...
+                </div>
+              )}
+              {!isCheckingKk && kkCheckResults.length > 0 && (
+                <div className="mt-2 flex flex-col gap-2 bg-slate-50 p-3 rounded-lg border animate-in fade-in slide-in-from-top-2">
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5"><ShieldAlert className="w-3.5 h-3.5 text-amber-600"/> HASIL PENGECEKAN (DITEMUKAN {kkCheckResults.length} DATA)</span>
+                  {kkCheckResults.map((res, i) => (
+                    <div key={i} className={cn(
+                      "p-2 rounded-md border text-xs shadow-sm",
+                      res._source.includes("BLACKLIST") ? "bg-red-50 border-red-200 text-red-800" :
+                      res._source.includes("2025") ? "bg-blue-50 border-blue-200 text-blue-800" :
+                      "bg-amber-50 border-amber-200 text-amber-800"
+                    )}>
+                      <div className="font-bold mb-1 flex items-center justify-between border-b pb-1 border-black/10">
+                        <span>{res._source}</span>
+                        <span className="opacity-70 text-[10px] bg-black/5 px-1.5 py-0.5 rounded-full">{res.tahunPengajuan || "-"}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5 text-[10px] mt-1.5">
+                        <div><span className="font-semibold opacity-70">Nama:</span> <br/>{res.nama || res.fullName || "-"}</div>
+                        <div><span className="font-semibold opacity-70">Status:</span> <br/>{res.status || "-"}</div>
+                        <div className="col-span-2"><span className="font-semibold opacity-70">Usaha:</span> {res.usaha || res.businessName || "-"}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!isCheckingKk && noKK.length === 16 && kkCheckResults.length === 0 && (
+                <div className="flex items-center gap-1.5 text-xs text-emerald-700 mt-1 font-bold bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 animate-in fade-in slide-in-from-top-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Nomor KK Aman (Tidak Ditemukan di Database Pembanding)
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="pob">Tempat Lahir</Label>
