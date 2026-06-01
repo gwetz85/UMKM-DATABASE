@@ -361,7 +361,7 @@ export default function DashboardStatsPage() {
       hoverBg: "hover:bg-orange-600",
       border: "border-orange-400",
       filterType: "rejected",
-      percentage: getPercentage(statsValues.rejected, statsValues.total),
+      percentage: getPercentage(statsValues.rejected, totalKuotaDashboard),
       detail: "DATA TERKINI"
     }
   ]
