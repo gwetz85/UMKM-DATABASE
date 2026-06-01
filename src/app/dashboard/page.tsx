@@ -293,6 +293,11 @@ export default function DashboardStatsPage() {
 
   if (!user) return null
 
+  const getPercentage = (value: number, total: number) => {
+    if (total === 0) return 0;
+    return ((value / total) * 100).toFixed(1);
+  };
+
   const stats = [
     { 
       name: "Total Data", 
@@ -303,7 +308,8 @@ export default function DashboardStatsPage() {
       cardBg: "bg-amber-500",
       hoverBg: "hover:bg-amber-600",
       border: "border-amber-400",
-      filterType: "total"
+      filterType: "total",
+      detail: "DATA TERKINI"
     },
     { 
       name: "Laki-Laki", 
@@ -314,7 +320,8 @@ export default function DashboardStatsPage() {
       cardBg: "bg-blue-600",
       hoverBg: "hover:bg-blue-700",
       border: "border-blue-500",
-      filterType: "laki"
+      filterType: "laki",
+      detail: `${getPercentage(statsValues.laki, statsValues.total)}% DARI TOTAL DATA`
     },
     { 
       name: "Perempuan", 
@@ -325,7 +332,8 @@ export default function DashboardStatsPage() {
       cardBg: "bg-rose-500",
       hoverBg: "hover:bg-rose-600",
       border: "border-rose-400",
-      filterType: "perempuan"
+      filterType: "perempuan",
+      detail: `${getPercentage(statsValues.perempuan, statsValues.total)}% DARI TOTAL DATA`
     },
     { 
       name: "Data Terverifikasi", 
@@ -336,7 +344,8 @@ export default function DashboardStatsPage() {
       cardBg: "bg-emerald-600",
       hoverBg: "hover:bg-emerald-700",
       border: "border-emerald-500",
-      filterType: "verified"
+      filterType: "verified",
+      detail: `${getPercentage(statsValues.verified, totalKuotaDashboard)}% DARI TOTAL KUOTA`
     },
     { 
       name: "Cancell", 
@@ -347,7 +356,8 @@ export default function DashboardStatsPage() {
       cardBg: "bg-orange-500",
       hoverBg: "hover:bg-orange-600",
       border: "border-orange-400",
-      filterType: "rejected"
+      filterType: "rejected",
+      detail: `${getPercentage(statsValues.rejected, statsValues.total)}% DARI TOTAL DATA`
     }
   ]
 
@@ -407,7 +417,7 @@ export default function DashboardStatsPage() {
               <div className="text-xl md:text-3xl font-black text-white">{isStatsLoading ? "..." : stat.value}</div>
               <div className="flex items-center gap-1 mt-1 text-[8px] md:text-[10px] font-bold text-white/70 uppercase">
                 <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
-                DATA TERKINI
+                {stat.detail}
               </div>
             </CardContent>
           </Card>
