@@ -309,6 +309,7 @@ export default function DashboardStatsPage() {
       hoverBg: "hover:bg-amber-600",
       border: "border-amber-400",
       filterType: "total",
+      percentage: null,
       detail: "DATA TERKINI"
     },
     { 
@@ -321,7 +322,8 @@ export default function DashboardStatsPage() {
       hoverBg: "hover:bg-blue-700",
       border: "border-blue-500",
       filterType: "laki",
-      detail: `${getPercentage(statsValues.laki, statsValues.total)}% DARI TOTAL DATA`
+      percentage: getPercentage(statsValues.laki, statsValues.total),
+      detail: "DATA TERKINI"
     },
     { 
       name: "Perempuan", 
@@ -333,7 +335,8 @@ export default function DashboardStatsPage() {
       hoverBg: "hover:bg-rose-600",
       border: "border-rose-400",
       filterType: "perempuan",
-      detail: `${getPercentage(statsValues.perempuan, statsValues.total)}% DARI TOTAL DATA`
+      percentage: getPercentage(statsValues.perempuan, statsValues.total),
+      detail: "DATA TERKINI"
     },
     { 
       name: "Data Terverifikasi", 
@@ -345,7 +348,8 @@ export default function DashboardStatsPage() {
       hoverBg: "hover:bg-emerald-700",
       border: "border-emerald-500",
       filterType: "verified",
-      detail: `${getPercentage(statsValues.verified, totalKuotaDashboard)}% DARI TOTAL KUOTA`
+      percentage: getPercentage(statsValues.verified, totalKuotaDashboard),
+      detail: "DATA TERKINI"
     },
     { 
       name: "Cancell", 
@@ -357,7 +361,8 @@ export default function DashboardStatsPage() {
       hoverBg: "hover:bg-orange-600",
       border: "border-orange-400",
       filterType: "rejected",
-      detail: `${getPercentage(statsValues.rejected, statsValues.total)}% DARI TOTAL DATA`
+      percentage: getPercentage(statsValues.rejected, statsValues.total),
+      detail: "DATA TERKINI"
     }
   ]
 
@@ -407,10 +412,17 @@ export default function DashboardStatsPage() {
               stat.border
             )}
           >
-            <CardHeader className="flex flex-row items-center justify-between p-4 pb-2">
-              <CardTitle className="text-[10px] md:text-xs font-bold text-white/80 uppercase tracking-wider truncate mr-2">{stat.name}</CardTitle>
-              <div className={cn(stat.bg, "p-1.5 md:p-2.5 rounded-lg md:rounded-xl group-hover:scale-110 transition-transform duration-300 shrink-0")}>
-                <stat.icon className={cn("w-4 h-4 md:w-5 md:h-5", stat.color)} />
+            <CardHeader className="flex flex-row items-start justify-between p-4 pb-2">
+              <CardTitle className="text-[10px] md:text-xs font-bold text-white/80 uppercase tracking-wider truncate mr-2 pt-1.5">{stat.name}</CardTitle>
+              <div className="flex flex-col items-center gap-1.5">
+                <div className={cn(stat.bg, "p-1.5 md:p-2.5 rounded-lg md:rounded-xl group-hover:scale-110 transition-transform duration-300 shrink-0")}>
+                  <stat.icon className={cn("w-4 h-4 md:w-5 md:h-5", stat.color)} />
+                </div>
+                {stat.percentage && (
+                  <div className="text-[10px] md:text-xs font-black text-white bg-white/20 px-2 py-0.5 rounded-full">
+                    {stat.percentage}%
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-0">
