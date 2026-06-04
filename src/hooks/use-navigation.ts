@@ -143,14 +143,6 @@ export function useNavigation() {
       description: "Arsip Data yang Tidak Disetujui"
     },
     {
-      name: "Verifikasi Data",
-      href: "/verify-bank",
-      icon: CreditCard,
-      show: (isAdmin || isMonitoring) && !isDinas,
-      color: "#f43f5e", // rose-500
-      description: "Validasi Rekening Bank"
-    },
-    {
       name: "Verifikasi & Validasi Dinas",
       href: "/verifikasi-dinas",
       icon: ClipboardCheck,
