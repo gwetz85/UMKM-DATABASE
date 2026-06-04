@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck } from "lucide-react"
 import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -434,6 +434,32 @@ function ActorDataContent() {
     }
   }
 
+  const handleLanjutDinas = (actorId: string, fullName: string) => {
+    if (!isAdmin || !database) return
+    if (confirm(`Lanjutkan data ${fullName} ke Verifikasi Dinas?`)) {
+      updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { 
+        status: 'lpj_pending'
+      })
+      
+      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+        const actorObj = actors?.find(a => a.id === actorId) || { id: actorId, status: 'verified_actor' };
+        updateStatsOnStatusChange(database, actorObj.status || 'verified_actor', 'lpj_pending', actorObj);
+      });
+
+      logActivity({
+        query: `LANJUT VERIFIKASI DINAS: ${fullName}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'DATA PELAKU USAHA',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
+      toast({ title: "Berhasil", description: "Data dilanjutkan ke Verifikasi Dinas." })
+      setViewingActor(null)
+    }
+  }
+
   const handlePrintForm = (actor: BusinessActor) => {
     if (!database) return
 
@@ -825,6 +851,9 @@ function ActorDataContent() {
                   )}
                   {isAdmin && !isEditMode && (
                     <>
+                      <Button size="sm" onClick={() => handleLanjutDinas(viewingActor.id, viewingActor.fullName)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" title="Lanjut ke Verifikasi Dinas">
+                        <ClipboardCheck className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Lanjut Dinas</span>
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 font-bold" title="Kembalikan ke antrean awal (Pending)">
                         <RotateCcw className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Revert</span>
                       </Button>
