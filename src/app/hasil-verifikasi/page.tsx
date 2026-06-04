@@ -436,6 +436,7 @@ export default function HasilVerifikasiPage() {
             </Table>
           </div>
         </div>
+      )}
     </div>
   )
 }
