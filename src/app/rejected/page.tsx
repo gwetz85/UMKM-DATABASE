@@ -90,8 +90,9 @@ function RejectedContent() {
   }, [actorToPrint, dataBlacklist])
   
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
-    // Status filter - equivalent to previous orderByChild('status').equalTo('rejected')
-    if (a.status !== 'rejected') return false;
+    const isRejected = a.status === 'rejected';
+    const isDinasFailed = a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos';
+    if (!isRejected && !isDinasFailed) return false;
 
     const matchesSearch = 
       a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -348,8 +349,8 @@ function RejectedContent() {
                         <span className="text-[10px] font-bold text-slate-600 uppercase">{actor.coordinator || "-"}</span>
                       </TableCell>
                       <TableCell>
-                        <p className="text-[10px] italic text-red-500 line-clamp-2 max-w-[200px] leading-relaxed" title={actor.rejectionReason}>
-                           {actor.rejectionReason || "Tidak ada alasan spesifik."}
+                        <p className="text-[10px] italic text-red-500 line-clamp-2 max-w-[200px] leading-relaxed" title={actor.rejectionReason || actor.keteranganDinas}>
+                           {actor.rejectionReason || actor.keteranganDinas || "Tidak ada alasan spesifik."}
                         </p>
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -446,7 +447,7 @@ function RejectedContent() {
                 <form onSubmit={handleSaveFullEdit} className="grid gap-6 py-4">
                   <section className="p-4 bg-red-50 border border-red-200 rounded-2xl relative">
                     <p className="text-[10px] font-black text-red-600 uppercase mb-2 tracking-widest flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Alasan Penolakan (Edit)</p>
-                    <Input name="rejectionReason" defaultValue={viewingActor.rejectionReason} className="font-bold text-red-700 bg-white" placeholder="Masukkan alasan penolakan" required />
+                    <Input name="rejectionReason" defaultValue={viewingActor.rejectionReason || viewingActor.keteranganDinas} className="font-bold text-red-700 bg-white" placeholder="Masukkan alasan penolakan" required />
                   </section>
                   
                   <section className="space-y-4">
@@ -506,7 +507,7 @@ function RejectedContent() {
                   <section className="p-4 bg-red-50 border border-red-200 rounded-2xl">
                     <p className="text-[10px] font-black text-red-600 uppercase mb-2 tracking-widest flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Alasan Penolakan:</p>
                     <p className="text-sm font-black text-red-700 leading-relaxed italic">
-                      "{viewingActor.rejectionReason || "Administrator tidak memberikan alasan spesifik."}"
+                      "{viewingActor.rejectionReason || viewingActor.keteranganDinas || "Tidak ada alasan spesifik."}"
                     </p>
                   </section>
                   
@@ -615,7 +616,7 @@ function RejectedContent() {
                     <div className="bg-slate-50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
                       <div className="space-y-1">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Terakhir</p>
-                        <p className="capitalize text-red-600">Ditolak / Batal</p>
+                        <p className="capitalize text-red-600">{viewingActor.status === 'verified_dinas' ? 'Ditolak Dinas' : 'Ditolak / Batal'}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Input</p>

@@ -67,7 +67,7 @@ export default function HasilVerifikasiPage() {
   const { data: dataBlacklist } = useList<any>(blacklistRef)
 
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
-    if (a.status !== 'verified_dinas') return false;
+    if (a.status !== 'verified_dinas' || a.hasilVerifikasiDinas !== 'Lolos') return false;
     if (isKoordinator) {
       if (!a.coordinator || !userProfile?.fullName) return false;
       return a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase();
