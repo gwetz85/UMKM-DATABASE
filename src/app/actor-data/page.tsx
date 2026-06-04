@@ -210,6 +210,7 @@ function ActorDataContent() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingBankMode, setEditingBankMode] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isLanjutDinasBatching, setIsLanjutDinasBatching] = useState(false)
   const [editNik, setEditNik] = useState("")
   const [editPob, setEditPob] = useState("")
   const [editDob, setEditDob] = useState("")
@@ -434,29 +435,43 @@ function ActorDataContent() {
     }
   }
 
-  const handleLanjutDinas = (actorId: string, fullName: string) => {
+  const handleLanjutDinasBatch = async (coordinator: string, coordinatorActors: BusinessActor[]) => {
     if (!isAdmin || !database) return
-    if (confirm(`Lanjutkan data ${fullName} ke Verifikasi Dinas?`)) {
-      updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { 
-        status: 'lpj_pending'
-      })
-      
-      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-        const actorObj = actors?.find(a => a.id === actorId) || { id: actorId, status: 'verified_actor' };
-        updateStatsOnStatusChange(database, actorObj.status || 'verified_actor', 'lpj_pending', actorObj);
-      });
+    const eligibleActors = coordinatorActors.filter(a => a.status === 'verified_actor')
+    
+    if (eligibleActors.length === 0) {
+      toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data pelaku usaha yang berstatus Terverifikasi untuk dilanjutkan ke Dinas." })
+      return
+    }
 
-      logActivity({
-        query: `LANJUT VERIFIKASI DINAS: ${fullName}`,
-        results: "Berhasil",
-        device: getDeviceType(navigator.userAgent),
-        source: 'Web',
-        method: 'DATA PELAKU USAHA',
-        userId: user?.email || user?.uid || 'Admin'
-      })
-      
-      toast({ title: "Berhasil", description: "Data dilanjutkan ke Verifikasi Dinas." })
-      setViewingActor(null)
+    if (confirm(`Lanjutkan ${eligibleActors.length} data pelaku usaha (Koordinator: ${coordinator}) ke Verifikasi Dinas?`)) {
+      setIsLanjutDinasBatching(true)
+      try {
+        const { updateStatsOnStatusChange } = await import("@/lib/stats-service")
+        
+        for (const actor of eligibleActors) {
+          updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), { 
+            status: 'lpj_pending'
+          })
+          await updateStatsOnStatusChange(database, 'verified_actor', 'lpj_pending', actor)
+        }
+
+        logActivity({
+          query: `LANJUT VERIFIKASI DINAS BATCH: ${coordinator} (${eligibleActors.length} data)`,
+          results: "Berhasil",
+          device: getDeviceType(navigator.userAgent),
+          source: 'Web',
+          method: 'DATA PELAKU USAHA',
+          userId: user?.email || user?.uid || 'Admin'
+        })
+        
+        toast({ title: "Berhasil", description: `${eligibleActors.length} data dilanjutkan ke Verifikasi Dinas.` })
+      } catch (error) {
+        console.error("Batch update error:", error)
+        toast({ variant: "destructive", title: "Error", description: "Terjadi kesalahan sistem." })
+      } finally {
+        setIsLanjutDinasBatching(false)
+      }
     }
   }
 
@@ -674,6 +689,19 @@ function ActorDataContent() {
               <h2 className="text-xl font-black text-primary uppercase tracking-tighter">
                 {isInspektorat ? "DATABASE PELAKU USAHA" : isKoordinator ? `DATA: ${userProfile?.fullName}` : `DATA: ${filterCoordinator}`}
               </h2>
+              {isAdmin && filterCoordinator && !isKoordinator && !isInspektorat && (
+                <Button 
+                  size="sm" 
+                  disabled={isLanjutDinasBatching}
+                  onClick={() => handleLanjutDinasBatch(filterCoordinator, groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || [])} 
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold ml-auto shadow-sm" 
+                  title="Lanjut ke Verifikasi Dinas"
+                >
+                  {isLanjutDinasBatching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ClipboardCheck className="w-4 h-4 mr-2" />}
+                  <span className="hidden md:inline">Lanjut Dinas (Koordinator)</span>
+                  <span className="md:hidden">Lanjut Dinas</span>
+                </Button>
+              )}
             </div>
             
             <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
@@ -851,9 +879,6 @@ function ActorDataContent() {
                   )}
                   {isAdmin && !isEditMode && (
                     <>
-                      <Button size="sm" onClick={() => handleLanjutDinas(viewingActor.id, viewingActor.fullName)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold" title="Lanjut ke Verifikasi Dinas">
-                        <ClipboardCheck className="w-4 h-4 md:mr-2" /> <span className="hidden md:inline">Lanjut Dinas</span>
-                      </Button>
                       <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 font-bold" title="Kembalikan ke antrean awal (Pending)">
                         <RotateCcw className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Revert</span>
                       </Button>
