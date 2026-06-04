@@ -49,10 +49,10 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const activeEvent = useActiveEvent(eventInfo)
 
   React.useEffect(() => {
-    if (!database || !user) return;
+    if (!database || !user || !profile?.id) return;
 
-    const userStatusRef = ref(database, `system_users/${profile?.id || user.uid}/isOnline`);
-    const lastSeenRef = ref(database, `system_users/${profile?.id || user.uid}/lastSeen`);
+    const userStatusRef = ref(database, `system_users/${profile.id}/isOnline`);
+    const lastSeenRef = ref(database, `system_users/${profile.id}/lastSeen`);
     const connectedRef = ref(database, '.info/connected');
 
     const unsubscribe = onValue(connectedRef, (snap) => {
