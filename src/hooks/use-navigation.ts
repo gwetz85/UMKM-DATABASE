@@ -127,14 +127,6 @@ export function useNavigation() {
       description: "Rekap Data Per Wilayah"
     },
     {
-      name: "BPJS Ketenagakerjaan",
-      href: "/bpjs",
-      icon: ShieldCheck,
-      show: !!user && !isDinas && !isInspektorat && !isKoordinator,
-      color: "#15803d", // green-700
-      description: "Monitoring BPJS Peserta"
-    },
-    {
       name: "Data Ditolak",
       href: "/rejected",
       icon: Ban,
@@ -157,6 +149,14 @@ export function useNavigation() {
       show: (isAdmin || isPetugas) && !isDinas,
       color: "#0d9488", // teal-600
       description: "Laporan Hasil Verifikasi"
+    },
+    {
+      name: "BPJS Ketenagakerjaan",
+      href: "/bpjs",
+      icon: ShieldCheck,
+      show: !!user && !isDinas && !isInspektorat && !isKoordinator,
+      color: "#15803d", // green-700
+      description: "Monitoring BPJS Peserta"
     },
     {
       name: "Rekening Bank",

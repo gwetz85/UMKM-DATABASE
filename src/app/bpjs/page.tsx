@@ -73,7 +73,7 @@ export default function BpjsPage() {
     if (!allActors) return []
     return allActors
       .filter(a => 
-        (a.status === 'verified_actor' || a.status === 'finish' || a.status === 'bank_pending' || a.status === 'lpj_pending' || a.status === 'verified_dinas') &&
+        (a.hasilVerifikasiDinas === 'Lolos' && (a.status === 'verified_dinas' || a.status === 'finish')) &&
         ((a.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         (a.nik || "").includes(searchQuery))
       )
