@@ -119,14 +119,6 @@ export function useNavigation() {
       description: "Database Seluruh Pelaku Usaha"
     },
     {
-      name: "Rekapan Data",
-      href: "/rekapan-data",
-      icon: BarChart3,
-      show: !!user && !isDinas && !isInspektorat && !isKoordinator,
-      color: "#d97706", // amber-600
-      description: "Rekap Data Per Wilayah"
-    },
-    {
       name: "Data Ditolak",
       href: "/rejected",
       icon: Ban,
@@ -143,12 +135,20 @@ export function useNavigation() {
       description: "Tahap Akhir Verifikasi Dinas"
     },
     {
-      name: "HASIL VERIFIKASI",
+      name: "Hasil Verifikasi",
       href: "/hasil-verifikasi",
       icon: ListChecks,
       show: (isAdmin || isPetugas) && !isDinas,
       color: "#0d9488", // teal-600
       description: "Laporan Hasil Verifikasi"
+    },
+    {
+      name: "Rekapan Data",
+      href: "/rekapan-data",
+      icon: BarChart3,
+      show: !!user && !isDinas && !isInspektorat && !isKoordinator,
+      color: "#d97706", // amber-600
+      description: "Rekap Semua Data Input (Per Wilayah)"
     },
     {
       name: "BPJS Ketenagakerjaan",
