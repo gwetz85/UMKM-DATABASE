@@ -265,19 +265,21 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
-            <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
-              {!isLoginPage && <RunningText />}
-              
-              {!isLoginPage && (
-                <div className="absolute top-4 right-4 md:top-6 md:right-8 z-10 hidden sm:block">
+            {!isLoginPage && (
+              <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50 hidden sm:block pointer-events-none">
+                <div className="pointer-events-auto">
                   <RealtimeClock 
                     className="bg-white/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200 shadow-sm hover:bg-white/80 transition-colors" 
                     timeClassName="text-lg md:text-xl text-slate-700" 
                     dateClassName="text-[8px] md:text-[10px]" 
                   />
                 </div>
-              )}
+              </div>
+            )}
 
+            <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
+              {!isLoginPage && <RunningText />}
+              
               <div key={pathname} className="w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out min-h-full p-4 md:p-8">
                 {children}
               </div>
