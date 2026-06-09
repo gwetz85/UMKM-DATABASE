@@ -8,6 +8,7 @@ import { useSoundEffect } from "@/hooks/use-sound-effect"
 import { TrendingUp } from "lucide-react"
 import { useObject, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
+import { RealtimeClock } from "@/components/realtime-clock"
 
 import { 
   Dialog, 
@@ -44,12 +45,17 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
   return (
     <div className={cn("w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in zoom-in duration-500", className)}>
       <div className="flex flex-col mb-12 space-y-2">
-        <h2 className="text-4xl md:text-6xl font-black text-slate-800 tracking-tighter uppercase">
-          Sistem Navigasi
-        </h2>
-        <p className="text-slate-500 font-bold text-sm md:text-base uppercase tracking-[0.3em]">
-          Pilih Modul Untuk Melanjutkan
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div className="flex flex-col space-y-2">
+            <h2 className="text-4xl md:text-6xl font-black text-slate-800 tracking-tighter uppercase">
+              Sistem Navigasi
+            </h2>
+            <p className="text-slate-500 font-bold text-sm md:text-base uppercase tracking-[0.3em]">
+              Pilih Modul Untuk Melanjutkan
+            </p>
+          </div>
+          <RealtimeClock />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
