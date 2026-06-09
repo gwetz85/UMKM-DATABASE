@@ -1,8 +1,15 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
+import { cn } from "@/lib/utils"
 
-export function RealtimeClock() {
+interface RealtimeClockProps {
+  className?: string;
+  timeClassName?: string;
+  dateClassName?: string;
+}
+
+export function RealtimeClock({ className, timeClassName, dateClassName }: RealtimeClockProps) {
   const [time, setTime] = useState<Date | null>(null)
 
   useEffect(() => {
@@ -30,11 +37,11 @@ export function RealtimeClock() {
   })
 
   return (
-    <div className="flex flex-col items-end text-right">
-      <span className="text-2xl md:text-3xl font-black text-slate-800 tracking-tighter">
+    <div className={cn("flex flex-col items-end text-right", className)}>
+      <span className={cn("text-2xl md:text-3xl font-black text-slate-800 tracking-tighter", timeClassName)}>
         {formattedTime}
       </span>
-      <span className="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">
+      <span className={cn("text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest", dateClassName)}>
         {formattedDate}
       </span>
     </div>
