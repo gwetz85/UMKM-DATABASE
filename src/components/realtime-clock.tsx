@@ -38,10 +38,10 @@ export function RealtimeClock({ className, timeClassName, dateClassName }: Realt
 
   return (
     <div className={cn("flex flex-col items-end text-right", className)}>
-      <span className={cn("text-2xl md:text-3xl font-black text-slate-800 tracking-tighter", timeClassName)}>
+      <span className={cn("text-4xl md:text-5xl font-black text-slate-800 tracking-tighter", timeClassName)}>
         {formattedTime}
       </span>
-      <span className={cn("text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-widest", dateClassName)}>
+      <span className={cn("text-sm md:text-base font-bold text-slate-500 uppercase tracking-widest", dateClassName)}>
         {formattedDate}
       </span>
     </div>
