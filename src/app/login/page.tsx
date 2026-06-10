@@ -213,7 +213,7 @@ export default function LoginPage() {
                 addedAt: new Date().toISOString()
               })
 
-              if (preRegisteredData.role === 'admin') {
+              if (preRegisteredData.role === 'admin' || preRegisteredData.role === 'superadmin') {
                 const roleRef = ref(database, `roles_admin/${user.uid}`)
                 await set(roleRef, { admin: true })
               }

@@ -220,7 +220,7 @@ export default function UserManagementPage() {
     })
 
     // Jika diupdate jadi admin, pastikan masuk ke roles_admin kalau UID sudah ada
-    if (role === 'admin' && editingUser.uid) {
+    if ((role === 'admin' || role === 'superadmin') && editingUser.uid) {
       const roleRef = ref(database, `roles_admin/${editingUser.uid}`)
       setDocumentNonBlocking(roleRef, { admin: true })
     }
