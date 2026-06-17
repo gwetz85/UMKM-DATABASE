@@ -326,9 +326,10 @@ export default function LoginPage() {
               <img 
                 src={slide.base64} 
                 alt={`Slide ${idx + 1}`} 
-                className={`relative z-10 w-full h-full object-cover md:object-contain object-center transition-transform duration-[12000ms] ease-linear drop-shadow-2xl ${
+                className={`relative z-10 w-full h-full object-cover md:object-contain object-center transition-transform ease-linear drop-shadow-2xl ${
                   idx === currentSlideIndex ? 'scale-105' : 'scale-100'
                 }`}
+                style={{ transitionDuration: '12000ms' }}
               />
             </div>
           ))
