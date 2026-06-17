@@ -709,30 +709,32 @@ function ActorDataContent() {
             </div>
             
             {isMonitoring ? (
-  <Table>
-    <TableHeader className="bg-muted/50 print:bg-slate-100">
-      <TableRow>
-        <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
-        <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
-        <TableHead className="font-bold text-primary py-4 print:text-black">JENIS USAHA</TableHead>
-        <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
-        <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT</TableHead>
-        <TableHead className="font-bold text-primary py-4 print:text-black">KOORDINATOR</TableHead>
-      </TableRow>
-    </TableHeader>
-    <TableBody>
-      {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
-        <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
-          <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
-          <TableCell className="py-4">{actor.fullName}</TableCell>
-          <TableCell className="py-4">{actor.businessCategory}</TableCell>
-          <TableCell className="py-4">{actor.phone}</TableCell>
-          <TableCell className="py-4">{actor.address}</TableCell>
-          <TableCell className="py-4">{actor.coordinator}</TableCell>
+  <div className="rounded-xl border bg-white/95 backdrop-blur-md shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
+    <Table>
+      <TableHeader className="bg-muted/50 print:bg-slate-100">
+        <TableRow>
+          <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">JENIS USAHA</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">KOORDINATOR</TableHead>
         </TableRow>
-      ))}
-    </TableBody>
-  </Table>
+      </TableHeader>
+      <TableBody>
+        {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
+          <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
+            <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
+            <TableCell className="py-4 font-bold text-slate-800">{actor.fullName}</TableCell>
+            <TableCell className="py-4">{actor.businessCategory}</TableCell>
+            <TableCell className="py-4">{actor.phone}</TableCell>
+            <TableCell className="py-4">{actor.address}</TableCell>
+            <TableCell className="py-4 font-black text-primary">{actor.coordinator}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
 ) : (
   <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
     <Table>
