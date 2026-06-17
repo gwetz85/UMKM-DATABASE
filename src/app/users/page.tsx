@@ -179,7 +179,8 @@ export default function UserManagementPage() {
       password,
       role,
       uid: null,
-      addedAt: new Date().toISOString()
+      addedAt: new Date().toISOString(),
+      status: 'active'
     })
 
     logActivity({
@@ -236,25 +237,21 @@ export default function UserManagementPage() {
 
     toast({ title: "Akses Diperbarui", description: `Hak akses ${editingUser.fullName} telah diubah.` })
     setEditingUser(null)
-  }
-
-  const handleResetUID = (id: string, fullName: string) => {
-    if (!database) return
-    if (confirm(`Reset penguncian perangkat untuk ${fullName}?`)) {
-      const userRef = ref(database, `system_users/${id}`)
-      updateDocumentNonBlocking(userRef, { uid: null })
-      
+    const handleDeactivate = (id: string) => {
+      if (!database) return;
+      if (!confirm('Nonaktifkan user ini?')) return;
+      const userRef = ref(database, `system_users/${id}`);
+      updateDocumentNonBlocking(userRef, { status: 'inactive' });
       logActivity({
-        query: `RESET PERANGKAT: ${fullName}`,
+        query: `NONAKTIFKAN USER: ${id}`,
         results: "Berhasil",
         device: getDeviceType(navigator.userAgent),
         source: 'Web',
         method: 'MANAJEMEN USER',
         userId: user?.email || user?.uid || 'Admin'
-      })
-      
-      toast({ title: "Perangkat Direset", description: `Penguncian perangkat ${fullName} telah dihapus.` })
-    }
+      });
+      toast({ title: 'User Dinonaktifkan', description: `Pengguna ${id} tidak dapat login.` });
+    };
   }
 
   const handleDelete = (id: string, fullName: string, userUid: string | null) => {
@@ -364,7 +361,8 @@ export default function UserManagementPage() {
               <TableHeader className="bg-muted/30">
                 <TableRow>
                   <TableHead className="font-bold uppercase text-[10px]">Nama User</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px]">Status / Role</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px]">Status</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px]">Role</TableHead>
                   <TableHead className="font-bold uppercase text-[10px]">Keamanan Perangkat</TableHead>
                   <TableHead className="text-right font-bold uppercase text-[10px]">Aksi</TableHead>
                 </TableRow>
@@ -377,6 +375,13 @@ export default function UserManagementPage() {
                         <span>{u.fullName}</span>
                         <span className="text-[10px] text-muted-foreground font-mono">{u.id}</span>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {u.status === 'inactive' ? (
+                        <Badge variant="destructive" className="font-black uppercase text-[9px] gap-1 bg-red-100 text-red-600 border-red-200">Nonaktif</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="font-black uppercase text-[9px] bg-green-100 text-green-700 border-green-200">Aktif</Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       {u.role === 'admin' ? (
@@ -427,6 +432,11 @@ export default function UserManagementPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        {isAdmin && u.status === 'active' && (
+                          <Button variant="destructive" size="sm" onClick={() => handleDeactivate(u.id)} className="h-8 text-[10px] font-bold">
+                            Nonaktifkan
+                          </Button>
+                        )}
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button variant="outline" size="sm" onClick={() => setEditingUser(u)} className="h-8 text-[10px] font-bold border-primary/20 hover:bg-primary/5 text-primary">

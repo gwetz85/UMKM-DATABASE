@@ -135,6 +135,17 @@ export default function LoginPage() {
         if (userSnap.exists()) {
           const userData = userSnap.val()
           
+          if (userData.status === 'inactive') {
+            await signOut(auth)
+            toast({
+              variant: "destructive",
+              title: "Akun Dinonaktifkan",
+              description: "User ini telah dinonaktifkan oleh Administrator."
+            })
+            setLoading(false)
+            return
+          }
+
           if (userData.role === 'pending') {
             await signOut(auth)
             toast({ 
