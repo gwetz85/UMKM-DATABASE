@@ -38,4 +38,5 @@ export interface BusinessActor {
   keteranganDinas?: string;
   readyForLPJ?: boolean;
   registrationCode?: string;
+  filingNote?: string;
 }
