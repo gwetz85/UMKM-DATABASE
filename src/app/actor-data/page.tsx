@@ -600,21 +600,25 @@ function ActorDataContent() {
             </Button>
           )}
 
+          {!isMonitoring && (
           <Button onClick={handleExportExcel} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md w-full md:w-auto h-10 rounded-xl">
             <FileSpreadsheet className="w-4 h-4 mr-2" /> EKSPOR EXCEL
           </Button>
-          <Button 
+        )}
+          {!isMonitoring && (
+          <Button
             onClick={() => {
               if (filterCoordinator) {
                 generateCoordinatorReport(filterCoordinator, groupedActors[filterCoordinator] || [])
               } else {
                 generateAllCoordinatorsReport(groupedActors)
               }
-            }} 
+            }}
             className="bg-red-600 hover:bg-red-700 font-bold shadow-md w-full md:w-auto h-10"
           >
             <Printer className="w-4 h-4 mr-2" /> CETAK PDF
           </Button>
+        )}
         </div>
       </div>
 
@@ -704,79 +708,108 @@ function ActorDataContent() {
               )}
             </div>
             
-            <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
-              <Table>
-                <TableHeader className="bg-muted/50 print:bg-slate-100">
-                  <TableRow>
-                    <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
-                    <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
-                    <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
-                    <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
-                    <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
-                    <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
-                      <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
-                      <TableCell className="py-4">
-                        <div className="flex flex-col items-start gap-2">
-                          {isKoordinator && (
-                            <div className={cn(
-                              "flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 shadow-sm border print:hidden",
-                              normalizeGender(actor.gender) === 'Perempuan' 
-                                ? "bg-pink-100 border-pink-200 text-pink-600" 
-                                : "bg-blue-100 border-blue-200 text-blue-600"
-                            )}>
-                              <span className="text-lg">{normalizeGender(actor.gender) === 'Perempuan' ? '👧' : '👦'}</span>
-                            </div>
-                          )}
-                          <span className="font-bold text-slate-800 uppercase text-[13px] leading-tight print:text-black">{actor.fullName}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.nik}</span>
-                        <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm print:hidden inline-block mt-0.5">
-                          Reg: {actor.registrationCode || "..."}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <div className="flex flex-col">
-                          <span className="font-black text-primary uppercase text-[12px] print:text-black">{actor.businessName}</span>
-                          <span className="text-[10px] text-slate-500 font-bold uppercase print:hidden">{actor.businessCategory}</span>
-                          <VerificationBadge actor={actor} />
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4 pr-6 text-right print:hidden">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
-                            onClick={() => {
-                              setViewingActor(actor)
-                              setIsEditMode(false)
-                              setEditingBankMode(false)
-                              fetchAuxData(actor)
-                            }}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="ghost" 
-                            className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50"
-                            onClick={() => handlePrintForm(actor)}
-                          >
-                            <Printer className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            {isMonitoring ? (
+  <Table>
+    <TableHeader className="bg-muted/50 print:bg-slate-100">
+      <TableRow>
+        <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
+        <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
+        <TableHead className="font-bold text-primary py-4 print:text-black">JENIS USAHA</TableHead>
+        <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
+        <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT</TableHead>
+        <TableHead className="font-bold text-primary py-4 print:text-black">KOORDINATOR</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
+        <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
+          <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
+          <TableCell className="py-4">{actor.fullName}</TableCell>
+          <TableCell className="py-4">{actor.businessCategory}</TableCell>
+          <TableCell className="py-4">{actor.phone}</TableCell>
+          <TableCell className="py-4">{actor.address}</TableCell>
+          <TableCell className="py-4">{actor.coordinator}</TableCell>
+        </TableRow>
+      ))}
+    </TableBody>
+  </Table>
+) : (
+  <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
+    <Table>
+      <TableHeader className="bg-muted/50 print:bg-slate-100">
+        <TableRow>
+          <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
+          {!isMonitoring && <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
+          <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
+            <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
+            <TableCell className="py-4">
+              <div className="flex flex-col items-start gap-2">
+                {isKoordinator && (
+                  <div className={cn(
+                    "flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 shadow-sm border print:hidden",
+                    normalizeGender(actor.gender) === 'Perempuan'
+                      ? "bg-pink-100 border-pink-200 text-pink-600"
+                      : "bg-blue-100 border-blue-200 text-blue-600"
+                  )}>
+                    <span className="text-lg">{normalizeGender(actor.gender) === 'Perempuan' ? '👧' : '👦'}</span>
+                  </div>
+                )}
+                <span className="font-bold text-slate-800 uppercase text-[13px] leading-tight print:text-black">{actor.fullName}</span>
+              </div>
+            </TableCell>
+            <TableCell className="py-4">
+              <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.nik}</span>
+              <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm print:hidden inline-block mt-0.5">
+                Reg: {actor.registrationCode || "..."}
+              </span>
+            </TableCell>
+            <TableCell className="py-4">
+              <div className="flex flex-col">
+                <span className="font-black text-primary uppercase text-[12px] print:text-black">{actor.businessName}</span>
+                <span className="text-[10px] text-slate-500 font-bold uppercase print:hidden">{actor.businessCategory}</span>
+                <VerificationBadge actor={actor} />
+              </div>
+            </TableCell>
+            {!isMonitoring && (
+              <TableCell className="py-4 pr-6 text-right print:hidden">
+                <div className="flex justify-end gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                    onClick={() => {
+                      setViewingActor(actor);
+                      setIsEditMode(false);
+                      setEditingBankMode(false);
+                      fetchAuxData(actor);
+                    }}
+                  >
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50"
+                    onClick={() => handlePrintForm(actor)}
+                  >
+                    <Printer className="w-4 h-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            )}
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
+)}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
