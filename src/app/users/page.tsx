@@ -212,13 +212,24 @@ export default function UserManagementPage() {
     
     const userRef = ref(database, `system_users/${editingUser.id}`)
 
-    updateDocumentNonBlocking(userRef, { 
+    const newPassword = formData.get("newPassword") as string
+    
+    const updates: any = { 
       role,
       fullName,
       phoneNumber,
       nik,
       address
-    })
+    }
+
+    if (newPassword && newPassword.trim() !== '') {
+      updates.password = newPassword.trim()
+      updates.pwdVersion = (editingUser.pwdVersion || 0) + 1
+      updates.uid = null
+      updates.addedAt = new Date().toISOString()
+    }
+
+    updateDocumentNonBlocking(userRef, updates)
 
     // Jika diupdate jadi admin, pastikan masuk ke roles_admin kalau UID sudah ada
     if ((role === 'admin' || role === 'superadmin') && editingUser.uid) {
@@ -506,6 +517,13 @@ export default function UserManagementPage() {
                                   <div className="space-y-2">
                                     <Label className="font-bold">Alamat Lengkap</Label>
                                     <Textarea name="address" defaultValue={u.address} />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="font-bold text-amber-600">Reset Kata Sandi</Label>
+                                    <Input name="newPassword" placeholder="Biarkan kosong jika tidak ingin mengubah" />
+                                    <p className="text-[10px] text-muted-foreground mt-1">
+                                      Jika diisi, kata sandi lama akan hangus dan perangkat pengguna akan direset (logout otomatis).
+                                    </p>
                                   </div>
                                   <div className="space-y-2">
                                     <Label className="font-bold">Peranan / Jabatan</Label>

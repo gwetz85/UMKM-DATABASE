@@ -135,6 +135,10 @@ export default function LoginPage() {
         if (userSnap.exists()) {
           const userData = userSnap.val()
           
+          if (userData.password && userData.password !== password) {
+             throw new Error("auth/password-changed-by-admin")
+          }
+          
           if (userData.status === 'inactive') {
             await signOut(auth)
             toast({
@@ -198,7 +202,7 @@ export default function LoginPage() {
         
         toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
       } catch (loginError: any) {
-        if (loginError.code === 'auth/user-not-found' || loginError.code === 'auth/invalid-credential' || loginError.code === 'auth/invalid-email') {
+        if (loginError.code === 'auth/user-not-found' || loginError.code === 'auth/invalid-credential' || loginError.code === 'auth/invalid-email' || loginError.message === 'auth/password-changed-by-admin') {
           const tempUserRef = ref(database, `system_users/${username}`)
           const tempUserSnap = await get(tempUserRef)
 
@@ -216,7 +220,19 @@ export default function LoginPage() {
             }
 
             if (preRegisteredData.password === password) {
-              const newUserCred = await createUserWithEmailAndPassword(auth, email, password)
+              const versionSuffix = preRegisteredData.pwdVersion ? `_v${preRegisteredData.pwdVersion}` : '';
+              const actualEmail = `${username}${versionSuffix}@umkm.id`;
+              
+              let newUserCred;
+              try {
+                newUserCred = await signInWithEmailAndPassword(auth, actualEmail, password)
+              } catch (e: any) {
+                if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+                  newUserCred = await createUserWithEmailAndPassword(auth, actualEmail, password)
+                } else {
+                  throw e;
+                }
+              }
               user = newUserCred.user
 
               await update(tempUserRef, {
