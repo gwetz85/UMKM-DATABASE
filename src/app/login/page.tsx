@@ -335,7 +335,7 @@ export default function LoginPage() {
           ))
         ) : (
           <img 
-            src="/macos_vibrant_background_1778161218419.png" 
+            src="/bg-umkm-animasi.png" 
             alt="Background" 
             className="w-full h-full object-cover"
           />
