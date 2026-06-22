@@ -63,7 +63,7 @@
   }
   body {
     @apply text-foreground font-body antialiased;
-    background-image: url('/bg-app.png');
+    background-image: url('/macos_vibrant_background_1778161218419.png');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;

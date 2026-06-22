@@ -176,7 +176,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
       <div className="mt-20 pt-8 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 opacity-60">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-slate-100">
-            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+            <img src="/icon-512.png" alt="Logo" className="w-8 h-8 object-contain" />
           </div>
           <div className="flex flex-col">
             <span className="text-xs font-black uppercase tracking-widest text-slate-900">SIMPU TANJUNGPINANG</span>
