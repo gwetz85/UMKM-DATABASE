@@ -742,7 +742,7 @@ function ActorDataContent() {
         <TableRow>
           <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
-          <TableHead className="font-bold text-primary py-4 print:text-black">CATATAN PEMBERKASAN</TableHead>
+
           <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
           {!isMonitoring && <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>}
@@ -767,38 +767,7 @@ function ActorDataContent() {
                 <span className="font-bold text-slate-800 uppercase text-[13px] leading-tight print:text-black">{actor.fullName}</span>
               </div>
             </TableCell>
-            <TableCell className="py-4 align-top">
-              {isAdmin ? (
-                <div className="flex items-center gap-2 w-[180px]">
-                  <Input 
-                    defaultValue={actor.filingNote || ""}
-                    placeholder="Catatan perbaikan..."
-                    className="h-8 text-xs border-red-200 text-red-600 font-bold placeholder:text-red-300 focus-visible:ring-red-500 bg-red-50/50"
-                    onBlur={(e) => {
-                      if (e.target.value !== (actor.filingNote || "")) {
-                         if (!database) return;
-                         updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), {
-                            filingNote: e.target.value
-                         });
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.currentTarget.blur();
-                      }
-                    }}
-                  />
-                </div>
-              ) : (
-                actor.filingNote && (
-                  <div className="w-[180px]">
-                    <p className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1.5 rounded-md border border-red-100 whitespace-pre-wrap leading-tight shadow-sm">
-                      * {actor.filingNote}
-                    </p>
-                  </div>
-                )
-              )}
-            </TableCell>
+
             <TableCell className="py-4">
               <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.nik}</span>
               <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm print:hidden inline-block mt-0.5">
