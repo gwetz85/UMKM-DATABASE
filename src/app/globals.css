@@ -63,7 +63,7 @@
   }
   body {
     @apply text-foreground font-body antialiased;
-    background-image: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)), url('/bg-app.png');
+    background-image: url('/bg-app.png');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
