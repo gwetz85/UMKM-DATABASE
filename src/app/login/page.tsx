@@ -379,7 +379,7 @@ export default function LoginPage() {
             <img 
               src="/icon-512.png" 
               alt="Logo" 
-              className="w-[80%] h-[80%] object-contain"
+              className="w-[110%] h-[110%] object-cover"
             />
           </div>
         </div>
