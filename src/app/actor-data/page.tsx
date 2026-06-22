@@ -777,7 +777,7 @@ function ActorDataContent() {
               </span>
             </TableCell>
             <TableCell className="py-4">
-              <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.phone || "-"}</span>
+              <span className="font-bold text-slate-800 text-[13px] print:text-black block">{actor.phone || "-"}</span>
             </TableCell>
             <TableCell className="py-4">
               <span className="text-[10px] text-slate-600 print:text-black block leading-tight max-w-[200px]">{actor.address || "-"}</span>
