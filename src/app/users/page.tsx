@@ -239,20 +239,32 @@ export default function UserManagementPage() {
     setEditingUser(null)
   }
 
-  const handleDeactivate = (id: string) => {
+  const handleToggleStatus = (id: string, currentStatus: string) => {
     if (!database) return;
-    if (!confirm('Nonaktifkan user ini?')) return;
+    const isCurrentlyActive = currentStatus !== 'inactive';
+    const newStatus = isCurrentlyActive ? 'inactive' : 'active';
+    const confirmMessage = isCurrentlyActive 
+      ? 'Nonaktifkan user ini? User tidak akan bisa login.' 
+      : 'Aktifkan user ini? User akan bisa login kembali.';
+      
+    if (!confirm(confirmMessage)) return;
+    
     const userRef = ref(database, `system_users/${id}`);
-    updateDocumentNonBlocking(userRef, { status: 'inactive' });
+    updateDocumentNonBlocking(userRef, { status: newStatus });
+    
     logActivity({
-      query: `NONAKTIFKAN USER: ${id}`,
+      query: `${isCurrentlyActive ? 'NONAKTIFKAN' : 'AKTIFKAN'} USER: ${id}`,
       results: "Berhasil",
       device: getDeviceType(navigator.userAgent),
       source: 'Web',
       method: 'MANAJEMEN USER',
       userId: user?.email || user?.uid || 'Admin'
     });
-    toast({ title: 'User Dinonaktifkan', description: `Pengguna ${id} tidak dapat login.` });
+    
+    toast({ 
+      title: isCurrentlyActive ? 'User Dinonaktifkan' : 'User Diaktifkan', 
+      description: isCurrentlyActive ? `Pengguna ${id} tidak dapat login.` : `Pengguna ${id} kini dapat login kembali.` 
+    });
   };
 
   const handleResetUID = (id: string, fullName: string) => {
@@ -452,9 +464,14 @@ export default function UserManagementPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        {isAdmin && u.status === 'active' && (
-                          <Button variant="destructive" size="sm" onClick={() => handleDeactivate(u.id)} className="h-8 text-[10px] font-bold">
-                            Nonaktifkan
+                        {isAdmin && (
+                          <Button 
+                            variant={u.status === 'inactive' ? "secondary" : "destructive"} 
+                            size="sm" 
+                            onClick={() => handleToggleStatus(u.id, u.status)} 
+                            className={`h-8 text-[10px] font-bold ${u.status === 'inactive' ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200' : ''}`}
+                          >
+                            {u.status === 'inactive' ? 'Aktifkan' : 'Nonaktifkan'}
                           </Button>
                         )}
                         <Dialog>
