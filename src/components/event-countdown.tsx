@@ -92,6 +92,8 @@ export function EventCountdown({ targetDate, startDate, size = 'lg' }: EventCoun
     }
   }[size]
 
+  const isUrgent = timeLeft.days < 10;
+
   if (size === 'lg') {
     return (
       <div className="flex flex-col items-center gap-4">
@@ -161,25 +163,29 @@ export function EventCountdown({ targetDate, startDate, size = 'lg' }: EventCoun
           {timeLeft.isStarted ? "Berakhir Dalam" : "Dimulai Dalam"}
         </span>
       )}
-      <div className={cn("flex items-center", config.container)}>
+      <div className={cn(
+        "flex items-center transition-all duration-1000", 
+        config.container,
+        isUrgent ? "border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)] ring-2 ring-red-500/20" : ""
+      )}>
         <div className={cn("flex flex-col items-center", config.unit)}>
-          <span className={cn(config.number, "font-black text-primary leading-none")}>{timeLeft.days}</span>
-          <span className={cn(config.label, "font-bold text-slate-500 uppercase tracking-tighter")}>Hari</span>
+          <span className={cn(config.number, "font-black leading-none", isUrgent ? "text-red-600" : "text-primary")}>{timeLeft.days}</span>
+          <span className={cn(config.label, "font-bold uppercase tracking-tighter", isUrgent ? "text-red-500/80" : "text-slate-500")}>Hari</span>
         </div>
-        <span className={cn(config.colon, "text-primary font-black opacity-30")}>:</span>
+        <span className={cn(config.colon, "font-black opacity-30", isUrgent ? "text-red-600" : "text-primary")}>:</span>
         <div className={cn("flex flex-col items-center", config.unit)}>
-          <span className={cn(config.number, "font-black text-primary leading-none")}>{timeLeft.hours.toString().padStart(2, '0')}</span>
-          <span className={cn(config.label, "font-bold text-slate-500 uppercase tracking-tighter")}>Jam</span>
+          <span className={cn(config.number, "font-black leading-none", isUrgent ? "text-red-600" : "text-primary")}>{timeLeft.hours.toString().padStart(2, '0')}</span>
+          <span className={cn(config.label, "font-bold uppercase tracking-tighter", isUrgent ? "text-red-500/80" : "text-slate-500")}>Jam</span>
         </div>
-        <span className={cn(config.colon, "text-primary font-black opacity-30")}>:</span>
+        <span className={cn(config.colon, "font-black opacity-30", isUrgent ? "text-red-600" : "text-primary")}>:</span>
         <div className={cn("flex flex-col items-center", config.unit)}>
-          <span className={cn(config.number, "font-black text-primary leading-none")}>{timeLeft.minutes.toString().padStart(2, '0')}</span>
-          <span className={cn(config.label, "font-bold text-slate-500 uppercase tracking-tighter")}>Menit</span>
+          <span className={cn(config.number, "font-black leading-none", isUrgent ? "text-red-600" : "text-primary")}>{timeLeft.minutes.toString().padStart(2, '0')}</span>
+          <span className={cn(config.label, "font-bold uppercase tracking-tighter", isUrgent ? "text-red-500/80" : "text-slate-500")}>Menit</span>
         </div>
-        <span className={cn(config.colon, "text-primary font-black opacity-30")}>:</span>
+        <span className={cn(config.colon, "font-black opacity-30", isUrgent ? "text-red-600" : "text-primary")}>:</span>
         <div className={cn("flex flex-col items-center", config.unit)}>
-          <span className={cn(config.number, "font-black text-primary leading-none")}>{timeLeft.seconds.toString().padStart(2, '0')}</span>
-          <span className={cn(config.label, "font-bold text-slate-500 uppercase tracking-tighter")}>Detik</span>
+          <span className={cn(config.number, "font-black leading-none", isUrgent ? "text-red-600" : "text-primary")}>{timeLeft.seconds.toString().padStart(2, '0')}</span>
+          <span className={cn(config.label, "font-bold uppercase tracking-tighter", isUrgent ? "text-red-500/80" : "text-slate-500")}>Detik</span>
         </div>
       </div>
     </div>
