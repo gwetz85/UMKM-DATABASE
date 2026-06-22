@@ -744,6 +744,8 @@ function ActorDataContent() {
           <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
 
           <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT LENGKAP</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
           {!isMonitoring && <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>}
         </TableRow>
@@ -773,6 +775,12 @@ function ActorDataContent() {
               <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm print:hidden inline-block mt-0.5">
                 Reg: {actor.registrationCode || "..."}
               </span>
+            </TableCell>
+            <TableCell className="py-4">
+              <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.phone || "-"}</span>
+            </TableCell>
+            <TableCell className="py-4">
+              <span className="text-[10px] text-slate-600 print:text-black block leading-tight max-w-[200px]">{actor.address || "-"}</span>
             </TableCell>
             <TableCell className="py-4">
               <div className="flex flex-col">
