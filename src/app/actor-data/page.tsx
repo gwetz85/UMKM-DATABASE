@@ -709,30 +709,32 @@ function ActorDataContent() {
             </div>
             
             {isMonitoring ? (
-  <Table>
-    <TableHeader className="bg-muted/50 print:bg-slate-100">
-      <TableRow>
-        <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
-        <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
-        <TableHead className="font-bold text-primary py-4 print:text-black">JENIS USAHA</TableHead>
-        <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
-        <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT</TableHead>
-        <TableHead className="font-bold text-primary py-4 print:text-black">KOORDINATOR</TableHead>
-      </TableRow>
-    </TableHeader>
-    <TableBody>
-      {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
-        <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
-          <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
-          <TableCell className="py-4">{actor.fullName}</TableCell>
-          <TableCell className="py-4">{actor.businessCategory}</TableCell>
-          <TableCell className="py-4">{actor.phone}</TableCell>
-          <TableCell className="py-4">{actor.address}</TableCell>
-          <TableCell className="py-4">{actor.coordinator}</TableCell>
+  <div className="rounded-xl border bg-white/95 backdrop-blur-md shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
+    <Table>
+      <TableHeader className="bg-muted/50 print:bg-slate-100">
+        <TableRow>
+          <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">JENIS USAHA</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">KOORDINATOR</TableHead>
         </TableRow>
-      ))}
-    </TableBody>
-  </Table>
+      </TableHeader>
+      <TableBody>
+        {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
+          <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
+            <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
+            <TableCell className="py-4 font-bold text-slate-800">{actor.fullName}</TableCell>
+            <TableCell className="py-4">{actor.businessCategory}</TableCell>
+            <TableCell className="py-4">{actor.phone}</TableCell>
+            <TableCell className="py-4">{actor.address}</TableCell>
+            <TableCell className="py-4 font-black text-primary">{actor.coordinator}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
 ) : (
   <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
     <Table>
@@ -740,6 +742,7 @@ function ActorDataContent() {
         <TableRow>
           <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">CATATAN PEMBERKASAN</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
           {!isMonitoring && <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>}
@@ -763,6 +766,38 @@ function ActorDataContent() {
                 )}
                 <span className="font-bold text-slate-800 uppercase text-[13px] leading-tight print:text-black">{actor.fullName}</span>
               </div>
+            </TableCell>
+            <TableCell className="py-4 align-top">
+              {isAdmin ? (
+                <div className="flex items-center gap-2 w-[180px]">
+                  <Input 
+                    defaultValue={actor.filingNote || ""}
+                    placeholder="Catatan perbaikan..."
+                    className="h-8 text-xs border-red-200 text-red-600 font-bold placeholder:text-red-300 focus-visible:ring-red-500 bg-red-50/50"
+                    onBlur={(e) => {
+                      if (e.target.value !== (actor.filingNote || "")) {
+                         if (!database) return;
+                         updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), {
+                            filingNote: e.target.value
+                         });
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.currentTarget.blur();
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                actor.filingNote && (
+                  <div className="w-[180px]">
+                    <p className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1.5 rounded-md border border-red-100 whitespace-pre-wrap leading-tight shadow-sm">
+                      * {actor.filingNote}
+                    </p>
+                  </div>
+                )
+              )}
             </TableCell>
             <TableCell className="py-4">
               <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.nik}</span>

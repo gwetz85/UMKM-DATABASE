@@ -237,21 +237,41 @@ export default function UserManagementPage() {
 
     toast({ title: "Akses Diperbarui", description: `Hak akses ${editingUser.fullName} telah diubah.` })
     setEditingUser(null)
-    const handleDeactivate = (id: string) => {
-      if (!database) return;
-      if (!confirm('Nonaktifkan user ini?')) return;
-      const userRef = ref(database, `system_users/${id}`);
-      updateDocumentNonBlocking(userRef, { status: 'inactive' });
+  }
+
+  const handleDeactivate = (id: string) => {
+    if (!database) return;
+    if (!confirm('Nonaktifkan user ini?')) return;
+    const userRef = ref(database, `system_users/${id}`);
+    updateDocumentNonBlocking(userRef, { status: 'inactive' });
+    logActivity({
+      query: `NONAKTIFKAN USER: ${id}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'MANAJEMEN USER',
+      userId: user?.email || user?.uid || 'Admin'
+    });
+    toast({ title: 'User Dinonaktifkan', description: `Pengguna ${id} tidak dapat login.` });
+  };
+
+  const handleResetUID = (id: string, fullName: string) => {
+    if (!database) return
+    if (confirm(`Reset penguncian perangkat untuk ${fullName}?`)) {
+      const userRef = ref(database, `system_users/${id}`)
+      updateDocumentNonBlocking(userRef, { uid: null })
+      
       logActivity({
-        query: `NONAKTIFKAN USER: ${id}`,
+        query: `RESET PERANGKAT: ${fullName}`,
         results: "Berhasil",
         device: getDeviceType(navigator.userAgent),
         source: 'Web',
         method: 'MANAJEMEN USER',
         userId: user?.email || user?.uid || 'Admin'
-      });
-      toast({ title: 'User Dinonaktifkan', description: `Pengguna ${id} tidak dapat login.` });
-    };
+      })
+      
+      toast({ title: "Perangkat Direset", description: `Penguncian perangkat ${fullName} telah dihapus.` })
+    }
   }
 
   const handleDelete = (id: string, fullName: string, userUid: string | null) => {
