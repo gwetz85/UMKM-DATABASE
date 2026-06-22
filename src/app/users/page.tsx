@@ -271,7 +271,10 @@ export default function UserManagementPage() {
     if (!database) return
     if (confirm(`Reset penguncian perangkat untuk ${fullName}?`)) {
       const userRef = ref(database, `system_users/${id}`)
-      updateDocumentNonBlocking(userRef, { uid: null })
+      updateDocumentNonBlocking(userRef, { 
+        uid: null,
+        addedAt: new Date().toISOString() 
+      })
       
       logActivity({
         query: `RESET PERANGKAT: ${fullName}`,
@@ -282,7 +285,7 @@ export default function UserManagementPage() {
         userId: user?.email || user?.uid || 'Admin'
       })
       
-      toast({ title: "Perangkat Direset", description: `Penguncian perangkat ${fullName} telah dihapus.` })
+      toast({ title: "Perangkat Direset", description: `Penguncian perangkat ${fullName} telah dihapus dan memiliki 24 jam untuk login kembali.` })
     }
   }
 
