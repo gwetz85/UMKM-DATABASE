@@ -33,7 +33,7 @@ const normalizeGender = (g: string) => {
 };
 
 
-import { cn, extractDobFromNik, parsePobDob } from "@/lib/utils"
+import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { generateRegistrationForm, generateCoordinatorReport, generateAllCoordinatorsReport } from "@/lib/pdf-generator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -725,7 +725,14 @@ function ActorDataContent() {
         {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
           <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
             <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
-            <TableCell className="py-4 font-bold text-slate-800">{actor.fullName}</TableCell>
+            <TableCell className="py-4 font-bold text-slate-800">
+              <div className="flex flex-col">
+                <span>{actor.fullName}</span>
+                <span className="text-[10px] font-normal text-slate-500 mt-0.5">
+                  Usia: {calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}
+                </span>
+              </div>
+            </TableCell>
             <TableCell className="py-4">{actor.businessCategory}</TableCell>
             <TableCell className="py-4">{actor.phone}</TableCell>
             <TableCell className="py-4">{actor.address}</TableCell>
@@ -766,7 +773,12 @@ function ActorDataContent() {
                     <span className="text-lg">{normalizeGender(actor.gender) === 'Perempuan' ? '👧' : '👦'}</span>
                   </div>
                 )}
-                <span className="font-bold text-slate-800 uppercase text-[13px] leading-tight print:text-black">{actor.fullName}</span>
+                <div className="flex flex-col">
+                  <span className="font-bold text-slate-800 uppercase text-[13px] leading-tight print:text-black">{actor.fullName}</span>
+                  <span className="text-[10px] font-medium text-slate-500 mt-1">
+                    Usia: {calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}
+                  </span>
+                </div>
               </div>
             </TableCell>
 
@@ -1036,6 +1048,7 @@ function ActorDataContent() {
                         { label: "Jenis Kelamin", value: viewingActor.gender },
                         { label: "Tempat Lahir", value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob },
                         { label: "Tanggal Lahir", value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob },
+                        { label: "Usia", value: calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")) },
                         { label: "Nomor HP", value: viewingActor.phone }
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">

@@ -15,7 +15,7 @@ import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { cn, extractDobFromNik, parsePobDob } from "@/lib/utils"
+import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 function FinishContent() {
@@ -422,6 +422,7 @@ function FinishContent() {
                         { label: "Jenis Kelamin", value: viewingActor.gender },
                         { label: "Tempat Lahir", value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob },
                         { label: "Tanggal Lahir", value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob },
+                        { label: "Usia", value: calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")) },
                         { label: "Nomor HP", value: viewingActor.phone }
                       ].map((item, i) => (
                          <div key={i} className="space-y-1">

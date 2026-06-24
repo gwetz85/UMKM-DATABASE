@@ -69,3 +69,52 @@ export function parsePobDob(pobDob: string): { pob: string; dob: string } {
   return { pob: "", dob: pobDob.trim() };
 }
 
+export function calculateAge(dobStr: string): string {
+  if (!dobStr || dobStr === "-") return "-";
+  
+  let day: number, month: number, year: number;
+
+  if (dobStr.includes("-")) {
+    const parts = dobStr.split("-");
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10) - 1;
+        day = parseInt(parts[2], 10);
+      } else {
+        day = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10) - 1;
+        year = parseInt(parts[2], 10);
+      }
+    } else return "-";
+  } else if (dobStr.includes("/")) {
+    const parts = dobStr.split("/");
+    if (parts.length === 3) {
+      if (parts[2].length === 4) {
+          day = parseInt(parts[0], 10);
+          month = parseInt(parts[1], 10) - 1;
+          year = parseInt(parts[2], 10);
+      } else {
+          year = parseInt(parts[0], 10);
+          month = parseInt(parts[1], 10) - 1;
+          day = parseInt(parts[2], 10);
+      }
+    } else return "-";
+  } else {
+    return "-";
+  }
+
+  if (isNaN(day) || isNaN(month) || isNaN(year)) return "-";
+
+  const dob = new Date(year, month, day);
+  const today = new Date();
+  
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  
+  return `${age} Tahun`;
+}
+
