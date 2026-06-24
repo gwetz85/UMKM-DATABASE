@@ -145,8 +145,8 @@ function ActorDataContent() {
   ).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || "")) : undefined
 
 
-  const groupedActors = useMemo(() => {
-    if (!filteredActors) return {}
+  const { groupedActors, globalIndexMap } = useMemo(() => {
+    if (!filteredActors) return { groupedActors: {}, globalIndexMap: new Map<string, number>() }
     const sorted = [...filteredActors].sort((a, b) => {
       const coordA = String(a.coordinator || "Tanpa Koordinator");
       const coordB = String(b.coordinator || "Tanpa Koordinator");
@@ -156,12 +156,15 @@ function ActorDataContent() {
     });
     
     const groups: Record<string, BusinessActor[]> = {}
-    sorted.forEach(actor => {
+    const indexMap = new Map<string, number>()
+    
+    sorted.forEach((actor, index) => {
+      indexMap.set(actor.id, index + 1)
       const key = String(actor.coordinator || "Tanpa Koordinator").toUpperCase().trim()
       if (!groups[key]) groups[key] = []
       groups[key].push(actor)
     })
-    return groups
+    return { groupedActors: groups, globalIndexMap: indexMap }
   }, [filteredActors])
 
   const coordinatorStats = useMemo(() => {
