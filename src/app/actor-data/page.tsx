@@ -716,9 +716,10 @@ function ActorDataContent() {
             </div>
             
             {isMonitoring ? (
-  <div className="rounded-xl border bg-white/95 backdrop-blur-md shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
+  <div className="rounded-xl border bg-white/95 backdrop-blur-md shadow-sm overflow-hidden print:border-black print:rounded-none">
+    <div className="max-h-[calc(100vh-280px)] overflow-auto print:max-h-none print:overflow-visible">
     <Table>
-      <TableHeader className="bg-muted/50 print:bg-slate-100">
+      <TableHeader className="bg-muted/50 print:bg-slate-100 sticky top-0 z-10">
         <TableRow>
           <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
@@ -743,11 +744,13 @@ function ActorDataContent() {
         ))}
       </TableBody>
     </Table>
+    </div>
   </div>
 ) : (
-  <div className="rounded-xl border bg-white shadow-sm overflow-hidden overflow-x-auto print:border-black print:rounded-none">
+  <div className="rounded-xl border bg-white shadow-sm overflow-hidden print:border-black print:rounded-none">
+    <div className="max-h-[calc(100vh-280px)] overflow-auto print:max-h-none print:overflow-visible">
     <Table>
-      <TableHeader className="bg-muted/50 print:bg-slate-100">
+      <TableHeader className="bg-muted/50 print:bg-slate-100 sticky top-0 z-10">
         <TableRow>
           <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
@@ -835,6 +838,7 @@ function ActorDataContent() {
         ))}
       </TableBody>
     </Table>
+    </div>
   </div>
 )}
           </div>
