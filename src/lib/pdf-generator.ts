@@ -209,6 +209,7 @@ export const generateAllCoordinatorsReport = (groupedActors: Record<string, Busi
 
   const pageWidth = doc.internal.pageSize.getWidth();
   let isFirstPage = true;
+  let globalIndex = 1;
 
   Object.entries(groupedActors).forEach(([coordinator, actors]) => {
     if (!isFirstPage) {
@@ -227,8 +228,8 @@ export const generateAllCoordinatorsReport = (groupedActors: Record<string, Busi
     doc.setLineWidth(0.5);
     doc.line(10, 32, pageWidth - 10, 32);
 
-    const tableData = actors.map((actor, index) => [
-      index + 1,
+    const tableData = actors.map((actor) => [
+      globalIndex++,
       actor.registrationCode || '-',
       (actor.fullName || "").toUpperCase(),
       actor.nik || "-",
