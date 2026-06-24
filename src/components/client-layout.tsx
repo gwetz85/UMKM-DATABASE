@@ -203,38 +203,41 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   </button>
 
                   <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-                    <DialogContent className="max-w-[400px] border-none shadow-2xl p-0 overflow-hidden rounded-3xl bg-white animate-in zoom-in-95 duration-200">
-                      <div className="bg-rose-600 p-8 flex flex-col items-center justify-center text-white gap-4">
-                        <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-md animate-pulse">
-                          <LogOut className="w-10 h-10 text-white" />
+                    <DialogContent className="max-w-[420px] border border-slate-200 shadow-2xl p-0 overflow-hidden rounded-3xl bg-white animate-in zoom-in-95 duration-200">
+                      <div className="flex flex-col items-center pt-10 pb-6 px-8">
+                        {/* Question Icon */}
+                        <div className="w-20 h-20 rounded-full border-[3px] border-slate-300 flex items-center justify-center mb-6">
+                          <AlertCircle className="w-10 h-10 text-slate-400" />
                         </div>
-                        <h2 className="text-xl font-black uppercase tracking-tighter text-center">
-                          APAKAH ANDA YAKIN{"\n"}KELUAR APLIKASI?
+                        
+                        {/* Title */}
+                        <h2 className="text-xl font-black text-slate-800 text-center mb-2">
+                          Keluar dari Aplikasi?
                         </h2>
+                        
+                        {/* Subtitle */}
+                        <p className="text-sm text-slate-400 text-center">
+                          Anda akan keluar dari sesi ini.
+                        </p>
                       </div>
                       
-                      <div className="p-6 grid grid-cols-2 gap-4">
+                      {/* Buttons */}
+                      <div className="px-8 pb-8 flex items-center justify-center gap-3">
+                        <button
+                          onClick={() => setIsLogoutDialogOpen(false)}
+                          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all font-bold text-sm active:scale-95"
+                        >
+                          Batal
+                        </button>
                         <button
                           onClick={() => {
                             setIsLogoutDialogOpen(false);
                             signOut(auth).then(() => router.push('/login'));
                           }}
-                          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-all border-2 border-emerald-100 group active:scale-95"
+                          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition-all font-bold text-sm shadow-lg shadow-rose-200 active:scale-95"
                         >
-                          <div className="w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-200 group-hover:scale-110 transition-transform">
-                            <Check className="w-6 h-6" />
-                          </div>
-                          <span className="font-black uppercase text-xs tracking-widest">IYA</span>
-                        </button>
-
-                        <button
-                          onClick={() => setIsLogoutDialogOpen(false)}
-                          className="flex flex-col items-center justify-center gap-2 p-4 rounded-2xl bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all border-2 border-slate-100 group active:scale-95"
-                        >
-                          <div className="w-12 h-12 rounded-full bg-slate-600 text-white flex items-center justify-center shadow-lg shadow-slate-200 group-hover:scale-110 transition-transform">
-                            <XIcon className="w-6 h-6" />
-                          </div>
-                          <span className="font-black uppercase text-xs tracking-widest">TIDAK</span>
+                          <LogOut className="w-4 h-4" />
+                          Keluar
                         </button>
                       </div>
                     </DialogContent>
