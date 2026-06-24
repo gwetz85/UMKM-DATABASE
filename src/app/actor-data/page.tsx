@@ -715,6 +715,7 @@ function ActorDataContent() {
         <TableRow>
           <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">USIA</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">JENIS USAHA</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT</TableHead>
@@ -725,14 +726,8 @@ function ActorDataContent() {
         {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
           <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
             <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
-            <TableCell className="py-4 font-bold text-slate-800">
-              <div className="flex flex-col">
-                <span>{actor.fullName}</span>
-                <span className="text-[10px] font-normal text-slate-500 mt-0.5">
-                  Usia: {calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}
-                </span>
-              </div>
-            </TableCell>
+            <TableCell className="py-4 font-bold text-slate-800">{actor.fullName}</TableCell>
+            <TableCell className="py-4 text-[13px] font-bold text-slate-700">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</TableCell>
             <TableCell className="py-4">{actor.businessCategory}</TableCell>
             <TableCell className="py-4">{actor.phone}</TableCell>
             <TableCell className="py-4">{actor.address}</TableCell>
@@ -751,6 +746,7 @@ function ActorDataContent() {
           <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
 
           <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
+          <TableHead className="font-bold text-primary py-4 print:text-black">USIA</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT LENGKAP</TableHead>
           <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
@@ -775,9 +771,6 @@ function ActorDataContent() {
                 )}
                 <div className="flex flex-col">
                   <span className="font-bold text-slate-800 uppercase text-[13px] leading-tight print:text-black">{actor.fullName}</span>
-                  <span className="text-[10px] font-medium text-slate-500 mt-1">
-                    Usia: {calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}
-                  </span>
                 </div>
               </div>
             </TableCell>
@@ -787,6 +780,9 @@ function ActorDataContent() {
               <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm print:hidden inline-block mt-0.5">
                 Reg: {actor.registrationCode || "..."}
               </span>
+            </TableCell>
+            <TableCell className="py-4">
+              <span className="font-bold text-slate-700 text-[13px] print:text-black block">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</span>
             </TableCell>
             <TableCell className="py-4">
               <span className="font-bold text-slate-800 text-[13px] print:text-black block">{actor.phone || "-"}</span>
