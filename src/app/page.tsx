@@ -38,8 +38,8 @@ export default function RootPage() {
   if (!user) return null
 
   return (
-    <div className="min-h-full py-8 md:py-12">
-      <MenuLaunchpad />
+    <div className="flex-1 min-h-0 flex flex-col pt-2 md:pt-4">
+      <MenuLaunchpad className="flex-1 min-h-0" />
     </div>
   )
 }

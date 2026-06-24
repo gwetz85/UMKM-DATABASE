@@ -277,10 +277,16 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            <main className="flex-1 overflow-auto bg-transparent print:bg-white relative z-0 isolate">
+            <main className={cn(
+              "flex-1 bg-transparent print:bg-white relative z-0 isolate flex flex-col",
+              isRootPage ? "overflow-hidden" : "overflow-auto"
+            )}>
               {!isLoginPage && <RunningText />}
               
-              <div key={pathname} className="w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out min-h-full p-4 md:p-8">
+              <div key={pathname} className={cn(
+                "w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out p-4 md:p-8",
+                isRootPage ? "flex-1 flex flex-col min-h-0 overflow-hidden" : "min-h-full"
+              )}>
                 {children}
               </div>
             </main>

@@ -42,8 +42,8 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
   }
 
   return (
-    <div className={cn("w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in zoom-in duration-500", className)}>
-      <div className="flex flex-col mb-12 space-y-2">
+    <div className={cn("w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in zoom-in duration-500 flex flex-col", className)}>
+      <div className="flex flex-col mb-6 space-y-2 shrink-0">
         <h2 className="text-4xl md:text-6xl font-black text-slate-800 tracking-tighter uppercase">
           Sistem Navigasi
         </h2>
@@ -52,7 +52,8 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 custom-scrollbar">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 pb-4">
         {navigation.map((item: any, index) => (
           <div
             key={item.name}
@@ -109,6 +110,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
             <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000 pointer-events-none" />
           </div>
         ))}
+        </div>
       </div>
 
       {/* Sub-Menu Dialog */}
@@ -171,23 +173,6 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
 
         </DialogContent>
       </Dialog>
-
-      {/* Footer Info */}
-      <div className="mt-20 pt-8 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6 opacity-60">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-slate-100">
-            <img src="/icon-512.png" alt="Logo" className="w-8 h-8 object-contain" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs font-black uppercase tracking-widest text-slate-900">SIMPU TANJUNGPINANG</span>
-            <span className="text-[10px] font-bold uppercase tracking-tighter text-slate-500">Sistem Informasi Manajemen Pelaku Usaha</span>
-          </div>
-        </div>
-        <div className="flex gap-8 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-           <span>{systemConfig?.version || "v4.0.0 Stable"}</span>
-           <span>{systemConfig?.copyright || "© 2024 Dinas Koperasi & UKM"}</span>
-        </div>
-      </div>
     </div>
   )
 }
