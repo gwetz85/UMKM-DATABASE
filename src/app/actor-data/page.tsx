@@ -726,7 +726,7 @@ function ActorDataContent() {
         {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
           <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
             <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{index + 1}</TableCell>
-            <TableCell className="py-4 font-bold text-slate-800">{actor.fullName}</TableCell>
+            <TableCell className={cn("py-4 font-bold", normalizeGender(actor.gender) === 'Perempuan' ? "text-red-600" : "text-blue-600")}>{actor.fullName}</TableCell>
             <TableCell className="py-4 text-[13px] font-bold text-slate-700">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</TableCell>
             <TableCell className="py-4">{actor.businessCategory}</TableCell>
             <TableCell className="py-4">{actor.phone}</TableCell>
@@ -770,7 +770,7 @@ function ActorDataContent() {
                   </div>
                 )}
                 <div className="flex flex-col">
-                  <span className="font-bold text-slate-800 uppercase text-[13px] leading-tight print:text-black">{actor.fullName}</span>
+                  <span className={cn("font-bold uppercase text-[13px] leading-tight print:text-black", normalizeGender(actor.gender) === 'Perempuan' ? "text-red-600" : "text-blue-600")}>{actor.fullName}</span>
                 </div>
               </div>
             </TableCell>
