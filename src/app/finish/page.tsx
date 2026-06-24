@@ -79,7 +79,7 @@ function FinishContent() {
       return matchesSearch && matchesCategory && matchesKoor;
     }
     return matchesSearch && matchesCategory;
-  }) : undefined
+  }).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || "")) : undefined
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [editNik, setEditNik] = useState("")

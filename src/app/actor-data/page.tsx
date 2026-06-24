@@ -142,14 +142,18 @@ function ActorDataContent() {
     (a.nik || "").includes(searchQuery) ||
     (a.businessName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
     (a.address || "").toLowerCase().includes(searchQuery.toLowerCase())
-  ) : undefined
+  ).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || "")) : undefined
 
 
   const groupedActors = useMemo(() => {
     if (!filteredActors) return {}
-    const sorted = [...filteredActors].sort((a, b) => 
-      String(a.coordinator || "Tanpa Koordinator").localeCompare(String(b.coordinator || "Tanpa Koordinator"))
-    )
+    const sorted = [...filteredActors].sort((a, b) => {
+      const coordA = String(a.coordinator || "Tanpa Koordinator");
+      const coordB = String(b.coordinator || "Tanpa Koordinator");
+      const coordCompare = coordA.localeCompare(coordB);
+      if (coordCompare !== 0) return coordCompare;
+      return String(a.fullName || "").localeCompare(String(b.fullName || ""));
+    });
     
     const groups: Record<string, BusinessActor[]> = {}
     sorted.forEach(actor => {
