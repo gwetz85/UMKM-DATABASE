@@ -852,8 +852,8 @@ function ActorDataContent() {
                   "group relative flex flex-col p-4 md:p-5 rounded-[2rem] transition-all duration-300 ease-out overflow-hidden shadow-lg border cursor-pointer active:scale-95 h-[130px] md:h-[150px] justify-center items-center animate-in fade-in slide-in-from-bottom-4",
                   "hover:shadow-2xl hover:-translate-y-1.5 hover:brightness-110",
                   stat.isFull 
-                    ? "bg-gradient-to-br from-rose-500 to-rose-600 border-rose-400/20" 
-                    : "bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/20"
+                    ? "bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/20" 
+                    : "bg-gradient-to-br from-rose-500 to-rose-600 border-rose-400/20"
                 )}
               >
                 {/* Glossy Overlay */}
