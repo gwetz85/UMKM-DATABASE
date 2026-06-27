@@ -264,8 +264,8 @@ export default function UserManagementPage() {
 
   const handleToggleStatus = (id: string, currentStatus: string) => {
     if (!database) return;
-    setToggleStatusPending({ id, currentStatus })
-    setShowToggleStatusDialog(true)
+    setStatusTarget({ id, status: currentStatus })
+    setShowStatusDialog(true)
   };
 
   const executeToggleStatus = () => {
