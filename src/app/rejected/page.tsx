@@ -21,6 +21,7 @@ import { CheckDataIndicator } from "@/components/check-data-indicator"
 
 import { cn, extractDobFromNik, parsePobDob } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 
 function RejectedContent() {
   const { user } = useUser()
@@ -113,6 +114,12 @@ function RejectedContent() {
   }) : undefined
 
   const [isEditMode, setIsEditMode] = useState(false)
+
+  // ConfirmDialog states
+  const [showRevertDialog, setShowRevertDialog] = useState(false)
+  const [revertPending, setRevertPending] = useState<{actorId: string, fullName: string} | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deletePending, setDeletePending] = useState<{actorId: string, fullName: string} | null>(null)
   const [editNik, setEditNik] = useState("")
   const [editPob, setEditPob] = useState("")
   const [editDob, setEditDob] = useState("")
@@ -177,51 +184,65 @@ function RejectedContent() {
 
   const handleRevert = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
-      updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
-      
-      // Update global stats
-      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-        updateStatsOnStatusChange(database, 'rejected', 'pending', { id: actorId }).catch(e => console.error(e));
-      });
-      
-      logActivity({
-        query: `KEMBALIKAN DATA DITOLAK: ${fullName}`,
-        results: "Berhasil",
-        device: getDeviceType(navigator.userAgent),
-        source: 'Web',
-        method: 'DATA DITOLAK',
-        userId: user?.email || user?.uid || 'Admin'
-      })
-      
-      toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
-      setViewingActor(null)
-    }
+    setRevertPending({ actorId, fullName })
+    setShowRevertDialog(true)
+  }
+
+  const executeRevert = () => {
+    if (!revertPending || !database) return
+    const { actorId, fullName } = revertPending
+    updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
+    
+    // Update global stats
+    import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+      updateStatsOnStatusChange(database, 'rejected', 'pending', { id: actorId }).catch(e => console.error(e));
+    });
+    
+    logActivity({
+      query: `KEMBALIKAN DATA DITOLAK: ${fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'DATA DITOLAK',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
+    toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
+    setViewingActor(null)
+    setShowRevertDialog(false)
+    setRevertPending(null)
   }
 
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm(`Hapus permanen ${fullName}? Semua data terkait akan hilang.`)) {
-      const actorToDelete = { id: actorId, status: 'rejected' }; // Minimal fallback
-      deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
-      
-      // Update global stats
-      import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
-        updateStatsOnDelete(database, actorToDelete).catch(err => console.error(err));
-      });
-      
-      logActivity({
-        query: `HAPUS DATA DITOLAK: ${fullName}`,
-        results: "Berhasil",
-        device: getDeviceType(navigator.userAgent),
-        source: 'Web',
-        method: 'DATA DITOLAK',
-        userId: user?.email || user?.uid || 'Admin'
-      })
-      
-      toast({ variant: "destructive", title: "Terhapus", description: "Data dihapus permanen." })
-      setViewingActor(null)
-    }
+    setDeletePending({ actorId, fullName })
+    setShowDeleteDialog(true)
+  }
+
+  const executeDelete = () => {
+    if (!deletePending || !database) return
+    const { actorId, fullName } = deletePending
+    const actorToDelete = { id: actorId, status: 'rejected' }; // Minimal fallback
+    deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
+    
+    // Update global stats
+    import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
+      updateStatsOnDelete(database, actorToDelete).catch(err => console.error(err));
+    });
+    
+    logActivity({
+      query: `HAPUS DATA DITOLAK: ${fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'DATA DITOLAK',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
+    toast({ variant: "destructive", title: "Terhapus", description: "Data dihapus permanen." })
+    setViewingActor(null)
+    setShowDeleteDialog(false)
+    setDeletePending(null)
   }
 
   return (
@@ -634,6 +655,37 @@ function RejectedContent() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Dialogs */}
+      <ConfirmDialog
+        open={showRevertDialog}
+        onOpenChange={(open) => {
+          setShowRevertDialog(open)
+          if (!open) setRevertPending(null)
+        }}
+        icon={<RotateCcw className="w-6 h-6" />}
+        title="Kembalikan ke Pending?"
+        description={`Kembalikan ${revertPending?.fullName || ''} ke antrean awal (Pending)?`}
+        confirmText="Ya, Kembalikan"
+        confirmIcon={<RotateCcw className="w-4 h-4" />}
+        variant="default"
+        onConfirm={executeRevert}
+      />
+
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={(open) => {
+          setShowDeleteDialog(open)
+          if (!open) setDeletePending(null)
+        }}
+        icon={<Trash2 className="w-6 h-6" />}
+        title="Hapus Permanen?"
+        description={`Hapus permanen ${deletePending?.fullName || ''}? Semua data terkait akan hilang.`}
+        confirmText="Ya, Hapus"
+        confirmIcon={<Trash2 className="w-4 h-4" />}
+        variant="destructive"
+        onConfirm={executeDelete}
+      />
       </div>
 
       {/* SECTION CETAK FORMULIR PENDAFTARAN - HANYA DI TAMPILAN PRINT */}

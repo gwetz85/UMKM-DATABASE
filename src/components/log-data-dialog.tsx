@@ -82,17 +82,17 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
   return (
     <Dialog open={!!searchTerm} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto p-0 border-none shadow-2xl rounded-3xl">
-        <div className="bg-primary p-6 text-white sticky top-0 z-10">
+        <div className="bg-primary p-4 sm:p-6 text-white sticky top-0 z-10">
           <DialogHeader>
             <div className="flex items-center gap-4">
-              <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
-                <Search className="w-6 h-6 text-white" />
+              <div className="bg-white/20 p-2.5 sm:p-3 rounded-2xl backdrop-blur-md">
+                <Search className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <DialogTitle className="text-xl font-black uppercase tracking-tight text-white">
+                <DialogTitle className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">
                   Detail Data Pencarian
                 </DialogTitle>
-                <DialogDescription className="text-white/70 font-bold text-[10px] uppercase tracking-widest mt-0.5">
+                <DialogDescription className="text-white/70 font-bold text-[9px] sm:text-[10px] uppercase tracking-widest mt-0.5">
                   Menampilkan hasil untuk: "{searchTerm}"
                 </DialogDescription>
               </div>
@@ -100,7 +100,7 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
           </DialogHeader>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {isLoading ? (
             <div className="py-20 flex flex-col items-center justify-center gap-4">
               <Loader2 className="w-10 h-10 text-primary animate-spin" />
@@ -111,7 +111,7 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
           ) : results.length > 0 ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                <span className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                   Ditemukan {results.length} record data
                 </span>
               </div>
@@ -123,7 +123,7 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
                       res._sourceType?.includes('Registration') ? "bg-emerald-500" :
                       res._sourceType?.includes('Master') ? "bg-blue-500" : "bg-red-500"
                     )} />
-                    <CardContent className="p-5">
+                    <CardContent className="p-4 sm:p-5">
                       <div className="flex flex-col md:flex-row justify-between gap-4">
                         <div className="space-y-3 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
@@ -142,7 +142,7 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
                           </div>
                           
                           <div className="space-y-1">
-                            <h4 className="font-black text-slate-800 uppercase text-lg leading-tight">
+                            <h4 className="font-black text-slate-800 uppercase text-base sm:text-lg leading-tight">
                               {res.fullName || res.nama || "TANPA NAMA"}
                             </h4>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-bold text-slate-500">
@@ -206,8 +206,8 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
                 <XCircle className="w-8 h-8 text-slate-300" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-lg font-black text-slate-400 uppercase tracking-tight">Data Tidak Ditemukan</h3>
-                <p className="text-xs font-bold text-slate-400 uppercase max-w-[280px] leading-relaxed">
+                <h3 className="text-base sm:text-lg font-black text-slate-400 uppercase tracking-tight">Data Tidak Ditemukan</h3>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase max-w-[280px] leading-relaxed mx-auto">
                   Tidak ditemukan record data yang cocok dengan kriteria "{searchTerm}" di server pendaftaran, master, maupun blacklist.
                 </p>
               </div>
@@ -215,8 +215,8 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
           )}
         </div>
 
-        <div className="bg-slate-50 p-6 flex justify-center border-t border-slate-100 mt-auto">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center italic">
+        <div className="bg-slate-50 p-4 sm:p-6 flex justify-center border-t border-slate-100 mt-auto">
+          <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center italic">
             &copy; {new Date().getFullYear()} SIMPU - Sistem Informasi Manajemen Pelaku Usaha
           </p>
         </div>

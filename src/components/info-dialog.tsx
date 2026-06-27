@@ -32,14 +32,14 @@ export function InfoDialog({ children }: InfoDialogProps) {
         {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] border-none bg-gradient-to-br from-white to-gray-50 p-0 overflow-hidden shadow-2xl rounded-3xl">
-        <div className="bg-primary p-8 text-white relative overflow-hidden">
+        <div className="bg-primary p-5 sm:p-8 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
           <div className="relative z-10 flex items-center gap-4">
-            <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
-              <Info className="w-8 h-8 text-white" />
+            <div className="bg-white/20 p-2.5 sm:p-3 rounded-2xl backdrop-blur-md">
+              <Info className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-2xl font-black tracking-tight text-white mb-1">
+              <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-white mb-1">
                 Informasi Aplikasi
               </DialogTitle>
               <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] px-0.5">{currentVersion}</p>
@@ -47,7 +47,7 @@ export function InfoDialog({ children }: InfoDialogProps) {
           </div>
         </div>
         
-        <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+        <div className="p-5 sm:p-8 space-y-4 sm:space-y-6 max-h-[65vh] sm:max-h-[70vh] overflow-y-auto custom-scrollbar">
           <div className="space-y-3">
             <div className="text-gray-700 leading-relaxed font-bold text-sm uppercase tracking-tight">
               {config?.welcomeText ? (
@@ -60,8 +60,8 @@ export function InfoDialog({ children }: InfoDialogProps) {
               </span>
               <span className="text-primary mt-1 block">{currentVersion}</span>
             </div>
-            <div className="bg-blue-50 border-l-4 border-primary p-4 rounded-r-xl">
-              <p className="text-sm text-blue-900 leading-relaxed italic">
+            <div className="bg-blue-50 border-l-4 border-primary p-3 sm:p-4 rounded-r-xl">
+              <p className="text-xs sm:text-sm text-blue-900 leading-relaxed italic">
                 "Aplikasi ini dikembangkan dan dibuat secara Mandiri dan Independent oleh Tim Admin yang bekerja. Hak Cipta Sepenuhnya dimiliki oleh AGUS SURIYADI sebagai Pembuat dan Pengembang Aplikasi"
               </p>
             </div>
@@ -84,9 +84,9 @@ export function InfoDialog({ children }: InfoDialogProps) {
                 "Perbaikan di beberapa fitur tampilan",
                 "Penambahan & perbaikan file system"
               ]).map((text: string, i: number) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-100/50 hover:bg-gray-100 transition-colors group">
-                  <Zap className="w-4 h-4 text-primary group-hover:scale-110 transition-transform" />
-                  <span className="text-sm font-semibold text-gray-700">{text}</span>
+                <div key={i} className="flex items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl bg-gray-100/50 hover:bg-gray-100 transition-colors group">
+                  <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary group-hover:scale-110 transition-transform shrink-0" />
+                  <span className="text-xs sm:text-sm font-semibold text-gray-700">{text}</span>
                 </div>
               ))}
             </div>
@@ -96,7 +96,7 @@ export function InfoDialog({ children }: InfoDialogProps) {
             <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
               <Mail className="w-4 h-4" /> Kontak & Saran
             </h3>
-            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm space-y-4">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm space-y-3 sm:space-y-4">
               <div className="flex flex-col">
                 <span className="text-xs font-bold text-gray-400 uppercase mb-1">Pengembang</span>
                 <span className="text-lg font-black text-primary">AGUS SURIYADI</span>
@@ -121,7 +121,7 @@ export function InfoDialog({ children }: InfoDialogProps) {
           </div>
         </div>
 
-        <div className="bg-gray-50 p-6 flex justify-center border-t border-gray-100">
+        <div className="bg-gray-50 p-4 sm:p-6 flex justify-center border-t border-gray-100">
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">
             &copy; {new Date().getFullYear()} SIMPU - All Rights Reserved
           </p>

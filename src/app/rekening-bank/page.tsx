@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 
 const BANK_LIST = [
   "BCA", "BNI", "BRI", "BRK", "MANDIRI", "PANIN", "OCBC", "DANAMON", "BUKOPIN", "BTN"
@@ -39,6 +40,8 @@ function RekeningBankContent() {
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
   const [isForwarding, setIsForwarding] = useState<string | null>(null)
+  const [showForwardDialog, setShowForwardDialog] = useState(false)
+  const [forwardPending, setForwardPending] = useState<{ bankName: string; actors: BusinessActor[] } | null>(null)
   const searchParams = useSearchParams()
   const selectedBank = searchParams.get('bank')
 
@@ -112,32 +115,39 @@ function RekeningBankContent() {
       return
     }
 
-    if (confirm(`Teruskan ${targetActors.length} data dari ${bankName} ke menu LPJ?`)) {
-      setIsForwarding(bankName)
-      
-      const now = new Date().toISOString()
-      targetActors.forEach(actor => {
-        const actorRef = ref(database, `businessActors/${actor.id}`)
-        updateDocumentNonBlocking(actorRef, {
-          readyForLPJ: true,
-          lpjEntryDate: now,
-          lpjNominal: null,
-          lpjDoneAt: null
-        })
-      })
+    setForwardPending({ bankName, actors: targetActors })
+    setShowForwardDialog(true)
+  }
 
-      logActivity({
-        query: `TERUSKAN KE LPJ: ${bankName} (${targetActors.length} DATA)`,
-        results: "Berhasil",
-        device: getDeviceType(navigator.userAgent),
-        source: 'Web',
-        method: 'REKENING BANK',
-        userId: user?.email || user?.uid || 'Admin'
-      })
+  const confirmForwardToLPJ = () => {
+    if (!database || !forwardPending) return
+    const { bankName, actors: targetActors } = forwardPending
 
-      toast({ title: "Berhasil Diteruskan", description: `${targetActors.length} data dikirim ke antrean LPJ.` })
-      setTimeout(() => setIsForwarding(null), 1000)
-    }
+    setIsForwarding(bankName)
+    
+    const now = new Date().toISOString()
+    targetActors.forEach(actor => {
+      const actorRef = ref(database, `businessActors/${actor.id}`)
+      updateDocumentNonBlocking(actorRef, {
+        readyForLPJ: true,
+        lpjEntryDate: now,
+        lpjNominal: null,
+        lpjDoneAt: null
+      })
+    })
+
+    logActivity({
+      query: `TERUSKAN KE LPJ: ${bankName} (${targetActors.length} DATA)`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'REKENING BANK',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+
+    toast({ title: "Berhasil Diteruskan", description: `${targetActors.length} data dikirim ke antrean LPJ.` })
+    setTimeout(() => setIsForwarding(null), 1000)
+    setForwardPending(null)
   }
 
   const handlePrint = () => {
@@ -304,6 +314,18 @@ function RekeningBankContent() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={showForwardDialog}
+        onOpenChange={setShowForwardDialog}
+        icon={<Send className="w-6 h-6" />}
+        title="Teruskan ke LPJ"
+        description={`Teruskan ${forwardPending?.actors.length ?? 0} data dari ${forwardPending?.bankName ?? ""} ke menu LPJ?`}
+        confirmText="Ya, Lanjutkan"
+        confirmIcon={<Send className="w-4 h-4" />}
+        variant="default"
+        onConfirm={confirmForwardToLPJ}
+      />
     </div>
   )
 }

@@ -36,6 +36,7 @@ import { format, isToday, isYesterday, formatDistanceToNow } from "date-fns"
 import { id as localeId } from "date-fns/locale"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useToast } from "@/hooks/use-toast"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,6 +113,7 @@ export default function PesanPage() {
   const [isMobile, setIsMobile] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [isSending, setIsSending] = useState(false)
+  const [showDeleteChatDialog, setShowDeleteChatDialog] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -205,10 +207,13 @@ export default function PesanPage() {
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleDeleteChat = async () => {
+  const handleDeleteChat = () => {
     if (!user || !selectedContact || !database) return
-    if (!confirm("Apakah Anda yakin ingin menghapus seluruh riwayat chat ini dari perangkat Anda? Lawan bicara Anda masih tetap dapat melihat pesan-pesan tersebut.")) return
+    setShowDeleteChatDialog(true)
+  }
 
+  const confirmDeleteChat = async () => {
+    if (!user || !selectedContact || !database) return
     try {
       await update(ref(database, `chats/${user.uid}/${selectedContact.uid}`), {
         deletedAt: Date.now(),
@@ -637,6 +642,18 @@ export default function PesanPage() {
           </div>
         )}
       </main>
+
+      <ConfirmDialog
+        open={showDeleteChatDialog}
+        onOpenChange={setShowDeleteChatDialog}
+        icon={<Trash2 className="w-6 h-6" />}
+        title="Hapus Riwayat Chat"
+        description="Apakah Anda yakin ingin menghapus seluruh riwayat chat ini dari perangkat Anda? Lawan bicara Anda masih tetap dapat melihat pesan-pesan tersebut."
+        confirmText="Ya, Lanjutkan"
+        confirmIcon={<Trash2 className="w-4 h-4" />}
+        variant="destructive"
+        onConfirm={confirmDeleteChat}
+      />
     </div>
   )
 }

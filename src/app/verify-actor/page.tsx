@@ -21,6 +21,7 @@ import { VerificationBadge } from "@/components/verification-badge"
 import { cn, extractDobFromNik, parsePobDob } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Switch } from "@/components/ui/switch"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 
 function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, actor, dataReady }: { 
   actorId: string, 
@@ -220,6 +221,10 @@ export default function VerifyActorPage() {
   const [isVerifying, setIsVerifying] = useState(false)
   const [isBypassMode, setIsBypassMode] = useState(false)
   const [bypassKeterangan, setBypassKeterangan] = useState("")
+
+  // ConfirmDialog states
+  const [showDeletePendingDialog, setShowDeletePendingDialog] = useState(false)
+  const [deletePendingData, setDeletePendingData] = useState<{ actorId: string; fullName: string } | null>(null)
   const [bypassFileBase64, setBypassFileBase64] = useState("")
 
   const [editKelurahan, setEditKelurahan] = useState<string>("")
@@ -539,28 +544,36 @@ export default function VerifyActorPage() {
 
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin) return
-    if (confirm(`Hapus data pending milik "${fullName}"?`)) {
-      const actorToDelete = filteredActors?.find(a => a.id === actorId);
-      deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
-      
-      // Update global stats
-      if (actorToDelete) {
-        import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
-          updateStatsOnDelete(database, actorToDelete).catch(err => console.error(err));
-        });
-      }
-      
-      logActivity({
-        query: `HAPUS DATA PENDING: ${fullName}`,
-        results: "Berhasil",
-        device: getDeviceType(navigator.userAgent),
-        source: 'Web',
-        method: 'VERIFIKASI ADMIN',
-        userId: user?.email || user?.uid || 'Admin'
-      })
-      
-      toast({ variant: "destructive", title: "Data Dibatalkan", description: "Data telah dihapus." })
+    setDeletePendingData({ actorId, fullName })
+    setShowDeletePendingDialog(true)
+  }
+
+  const executeDeletePending = () => {
+    if (!deletePendingData || !database) return;
+    const { actorId, fullName } = deletePendingData;
+    setShowDeletePendingDialog(false)
+    setDeletePendingData(null)
+
+    const actorToDelete = filteredActors?.find(a => a.id === actorId);
+    deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
+    
+    // Update global stats
+    if (actorToDelete) {
+      import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
+        updateStatsOnDelete(database, actorToDelete).catch(err => console.error(err));
+      });
     }
+    
+    logActivity({
+      query: `HAPUS DATA PENDING: ${fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'VERIFIKASI ADMIN',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
+    toast({ variant: "destructive", title: "Data Dibatalkan", description: "Data telah dihapus." })
   }
 
   const openEditDialog = (actor: BusinessActor, type: 'verify' | 'edit') => {
@@ -1359,6 +1372,21 @@ export default function VerifyActorPage() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={showDeletePendingDialog}
+        onOpenChange={(open) => {
+          setShowDeletePendingDialog(open)
+          if (!open) setDeletePendingData(null)
+        }}
+        icon={<Trash2 className="w-6 h-6" />}
+        title="Hapus Data Pending?"
+        description={`Hapus data pending milik "${deletePendingData?.fullName || ''}"?`}
+        confirmText="Ya, Hapus"
+        confirmIcon={<Trash2 className="w-4 h-4" />}
+        variant="destructive"
+        onConfirm={executeDeletePending}
+      />
     </div>
   )
 }

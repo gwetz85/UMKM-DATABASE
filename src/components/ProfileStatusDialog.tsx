@@ -71,22 +71,22 @@ export function ProfileStatusDialog() {
       setIsOpen(open)
       if (!open) setTimeout(() => setStep('profile'), 300) // Reset after animation
     }}>
-      <DialogContent className={`${step === 'info' ? 'sm:max-w-2xl' : 'sm:max-w-md'} border-none shadow-2xl bg-gradient-to-br from-white to-slate-50 overflow-hidden transition-all duration-300`}>
+      <DialogContent className={`${step === 'info' ? 'sm:max-w-2xl' : 'sm:max-w-md'} border-none shadow-2xl bg-gradient-to-br from-white to-slate-50 overflow-hidden transition-all duration-300 p-0`}>
         {step === 'profile' ? (
-          <>
+          <div className="p-4 sm:p-6">
             <DialogHeader>
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <User className="w-8 h-8 text-primary" />
+              <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-primary/10 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+                <User className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
               </div>
-              <DialogTitle className="text-center text-2xl font-black text-slate-800 uppercase tracking-tight">
+              <DialogTitle className="text-center text-xl sm:text-2xl font-black text-slate-800 uppercase tracking-tight">
                 Selamat Datang Kembali!
               </DialogTitle>
-              <DialogDescription className="text-center font-medium text-slate-500">
+              <DialogDescription className="text-center font-medium text-slate-500 text-xs sm:text-sm">
                 Berikut adalah ringkasan profil Anda di sistem SIMPU.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
+            <div className="space-y-3 sm:space-y-4 py-3 sm:py-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
               <div className="glass-panel p-4 rounded-2xl border border-slate-100 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-50 rounded-lg">
@@ -151,9 +151,9 @@ export function ProfileStatusDialog() {
                 </Button>
               )}
             </DialogFooter>
-          </>
+          </div>
         ) : (
-          <div className="max-h-[80vh] overflow-y-auto custom-scrollbar pr-2 -mr-2">
+          <div className="max-h-[80vh] overflow-y-auto custom-scrollbar p-4 sm:p-6">
             <DialogHeader className="mb-6">
               <div className="mx-auto w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-3 rotate-3">
                 <Info className="w-6 h-6 text-indigo-600 -rotate-3" />

@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, setDocumentNonBlocking, deleteDocumentNonBlocking, useObject, updateDocumentNonBlocking } from "@/firebase"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { ref, query } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -29,12 +30,16 @@ import {
   CreditCard,
   MapPin,
   Building2,
-  ShieldCheck
+  ShieldCheck,
+  AlertCircle,
+  RotateCcw
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
+import { ConfirmDialog } from "@/components/confirm-dialog"
+import { AlertCircle, RotateCcw } from "lucide-react"
 
 function UserDeletionTimer({ 
   userId, 
@@ -142,6 +147,15 @@ export default function UserManagementPage() {
   const database = useDatabase()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<any>(null)
+
+  const [showStatusDialog, setShowStatusDialog] = useState(false)
+  const [statusTarget, setStatusTarget] = useState<{id: string, status: string} | null>(null)
+  
+  const [showResetDialog, setShowResetDialog] = useState(false)
+  const [resetTarget, setResetTarget] = useState<{id: string, fullName: string} | null>(null)
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{id: string, fullName: string, userUid: string | null} | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -252,13 +266,18 @@ export default function UserManagementPage() {
 
   const handleToggleStatus = (id: string, currentStatus: string) => {
     if (!database) return;
+    setToggleStatusPending({ id, currentStatus })
+    setShowToggleStatusDialog(true)
+  };
+
+  const executeToggleStatus = () => {
+    if (!database || !statusTarget) return;
+    const { id, status: currentStatus } = statusTarget
+    setShowStatusDialog(false)
+    setStatusTarget(null)
+
     const isCurrentlyActive = currentStatus !== 'inactive';
     const newStatus = isCurrentlyActive ? 'inactive' : 'active';
-    const confirmMessage = isCurrentlyActive 
-      ? 'Nonaktifkan user ini? User tidak akan bisa login.' 
-      : 'Aktifkan user ini? User akan bisa login kembali.';
-      
-    if (!confirm(confirmMessage)) return;
     
     const userRef = ref(database, `system_users/${id}`);
     updateDocumentNonBlocking(userRef, { status: newStatus });
@@ -279,25 +298,32 @@ export default function UserManagementPage() {
   };
 
   const handleResetUID = (id: string, fullName: string) => {
-    if (!database) return
-    if (confirm(`Reset penguncian perangkat untuk ${fullName}?`)) {
-      const userRef = ref(database, `system_users/${id}`)
-      updateDocumentNonBlocking(userRef, { 
-        uid: null,
-        addedAt: new Date().toISOString() 
-      })
-      
-      logActivity({
-        query: `RESET PERANGKAT: ${fullName}`,
-        results: "Berhasil",
-        device: getDeviceType(navigator.userAgent),
-        source: 'Web',
-        method: 'MANAJEMEN USER',
-        userId: user?.email || user?.uid || 'Admin'
-      })
-      
-      toast({ title: "Perangkat Direset", description: `Penguncian perangkat ${fullName} telah dihapus dan memiliki 24 jam untuk login kembali.` })
-    }
+    setResetTarget({id, fullName})
+    setShowResetDialog(true)
+  }
+
+  const executeResetUID = () => {
+    if (!database || !resetTarget) return
+    const { id, fullName } = resetTarget
+    setShowResetDialog(false)
+    setResetTarget(null)
+
+    const userRef = ref(database, `system_users/${id}`)
+    updateDocumentNonBlocking(userRef, { 
+      uid: null,
+      addedAt: new Date().toISOString() 
+    })
+    
+    logActivity({
+      query: `RESET PERANGKAT: ${fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'MANAJEMEN USER',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
+    toast({ title: "Perangkat Direset", description: `Penguncian perangkat ${fullName} telah dihapus dan memiliki 24 jam untuk login kembali.` })
   }
 
   const handleDelete = (id: string, fullName: string, userUid: string | null) => {
@@ -306,23 +332,31 @@ export default function UserManagementPage() {
       return
     }
 
-    if (confirm(`Hapus akses sistem untuk ${fullName} secara permanen?`)) {
-      deleteDocumentNonBlocking(ref(database, `system_users/${id}`))
-      if (userUid) {
-        deleteDocumentNonBlocking(ref(database, `roles_admin/${userUid}`))
-      }
-      
-      logActivity({
-        query: `HAPUS USER: ${fullName}`,
-        results: "Berhasil",
-        device: getDeviceType(navigator.userAgent),
-        source: 'Web',
-        method: 'MANAJEMEN USER',
-        userId: user?.email || user?.uid || 'Admin'
-      })
-      
-      toast({ title: "Terhapus", description: "Akses pengguna telah dicabut." })
+    setDeleteTarget({id, fullName, userUid})
+    setShowDeleteDialog(true)
+  }
+
+  const executeDelete = () => {
+    if (!deleteTarget) return
+    const { id, fullName, userUid } = deleteTarget
+    setShowDeleteDialog(false)
+    setDeleteTarget(null)
+
+    deleteDocumentNonBlocking(ref(database, `system_users/${id}`))
+    if (userUid) {
+      deleteDocumentNonBlocking(ref(database, `roles_admin/${userUid}`))
     }
+    
+    logActivity({
+      query: `HAPUS USER: ${fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'MANAJEMEN USER',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
+    toast({ title: "Terhapus", description: "Akses pengguna telah dicabut." })
   }
 
   if (!mounted) return null
@@ -583,6 +617,40 @@ export default function UserManagementPage() {
           )}
         </CardContent>
       </Card>
+      <ConfirmDialog
+        open={showStatusDialog}
+        onOpenChange={setShowStatusDialog}
+        title={statusTarget?.status === 'inactive' ? 'Aktifkan User' : 'Nonaktifkan User'}
+        description={statusTarget?.status === 'inactive' 
+          ? 'Aktifkan user ini? User akan bisa login kembali.' 
+          : 'Nonaktifkan user ini? User tidak akan bisa login.'}
+        onConfirm={executeToggleStatus}
+        variant={statusTarget?.status === 'inactive' ? 'default' : 'destructive'}
+        icon={AlertCircle}
+        confirmText={statusTarget?.status === 'inactive' ? 'Ya, Aktifkan' : 'Ya, Nonaktifkan'}
+      />
+
+      <ConfirmDialog
+        open={showResetDialog}
+        onOpenChange={setShowResetDialog}
+        title="Reset Perangkat"
+        description={`Reset penguncian perangkat untuk ${resetTarget?.fullName}?`}
+        onConfirm={executeResetUID}
+        variant="default"
+        icon={RotateCcw}
+        confirmText="Ya, Reset"
+      />
+
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Hapus Akses Sistem"
+        description={`Hapus akses sistem untuk ${deleteTarget?.fullName} secara permanen?`}
+        onConfirm={executeDelete}
+        variant="destructive"
+        icon={Trash2}
+        confirmText="Ya, Hapus"
+      />
     </div>
   )
 }

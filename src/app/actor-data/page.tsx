@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send } from "lucide-react"
 import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -23,6 +23,7 @@ import Link from "next/link"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { VerificationBadge } from "@/components/verification-badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 
 
 const normalizeGender = (g: string) => {
@@ -218,6 +219,14 @@ function ActorDataContent() {
   const [editingBankMode, setEditingBankMode] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [isLanjutDinasBatching, setIsLanjutDinasBatching] = useState(false)
+
+  // ConfirmDialog states
+  const [showRevertDialog, setShowRevertDialog] = useState(false)
+  const [revertPending, setRevertPending] = useState<{actorId: string, fullName: string} | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deletePending, setDeletePending] = useState<{actorId: string, fullName: string} | null>(null)
+  const [showLanjutDinasDialog, setShowLanjutDinasDialog] = useState(false)
+  const [lanjutDinasPending, setLanjutDinasPending] = useState<{coordinator: string, eligibleActors: BusinessActor[]} | null>(null)
   const [editNik, setEditNik] = useState("")
   const [editPob, setEditPob] = useState("")
   const [editDob, setEditDob] = useState("")
@@ -389,57 +398,71 @@ function ActorDataContent() {
 
   const handleRevert = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm(`Kembalikan status ${fullName} ke Pending?`)) {
-      // Reset status and creation time to ensure fresh auto-verification countdown
-      updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { 
-        status: 'pending',
-        createdAt: new Date().toISOString() 
-      })
-      
-      // Update global stats
-      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-        const actorObj = actors?.find(a => a.id === actorId) || { id: actorId, status: 'verified_actor' };
-        updateStatsOnStatusChange(database, 'verified_actor', 'pending', actorObj);
-      });
+    setRevertPending({ actorId, fullName })
+    setShowRevertDialog(true)
+  }
 
-      logActivity({
-        query: `KEMBALIKAN DATA: ${fullName}`,
-        results: "Berhasil",
-        device: getDeviceType(navigator.userAgent),
-        source: 'Web',
-        method: 'DATA PELAKU USAHA',
-        userId: user?.email || user?.uid || 'Admin'
-      })
-      
-      toast({ title: "Berhasil", description: "Status dikembalikan ke antrean Verifikasi Admin." })
-      setViewingActor(null)
-    }
+  const executeRevert = () => {
+    if (!revertPending || !database) return
+    const { actorId, fullName } = revertPending
+    // Reset status and creation time to ensure fresh auto-verification countdown
+    updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { 
+      status: 'pending',
+      createdAt: new Date().toISOString() 
+    })
+    
+    // Update global stats
+    import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+      const actorObj = actors?.find(a => a.id === actorId) || { id: actorId, status: 'verified_actor' };
+      updateStatsOnStatusChange(database, 'verified_actor', 'pending', actorObj);
+    });
+
+    logActivity({
+      query: `KEMBALIKAN DATA: ${fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'DATA PELAKU USAHA',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
+    toast({ title: "Berhasil", description: "Status dikembalikan ke antrean Verifikasi Admin." })
+    setViewingActor(null)
+    setShowRevertDialog(false)
+    setRevertPending(null)
   }
 
 
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm(`Hapus permanen ${fullName}? Semua data terkait akan hilang.`)) {
-      const actorToDelete = viewingActor || {}; // Keep ref for stats
-      deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
-      
-      // Update global stats
-      import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
-        updateStatsOnDelete(database, actorToDelete).catch(err => console.error(err));
-      });
+    setDeletePending({ actorId, fullName })
+    setShowDeleteDialog(true)
+  }
 
-      logActivity({
-        query: `HAPUS DATA: ${fullName}`,
-        results: "Berhasil",
-        device: getDeviceType(navigator.userAgent),
-        source: 'Web',
-        method: 'DATA PELAKU USAHA',
-        userId: user?.email || user?.uid || 'Admin'
-      })
-      
-      toast({ variant: "destructive", title: "Terhapus", description: "Data dihapus permanen." })
-      setViewingActor(null)
-    }
+  const executeDelete = () => {
+    if (!deletePending || !database) return
+    const { actorId, fullName } = deletePending
+    const actorToDelete = viewingActor || {}; // Keep ref for stats
+    deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
+    
+    // Update global stats
+    import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
+      updateStatsOnDelete(database, actorToDelete).catch(err => console.error(err));
+    });
+
+    logActivity({
+      query: `HAPUS DATA: ${fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'DATA PELAKU USAHA',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
+    toast({ variant: "destructive", title: "Terhapus", description: "Data dihapus permanen." })
+    setViewingActor(null)
+    setShowDeleteDialog(false)
+    setDeletePending(null)
   }
 
   const handleLanjutDinasBatch = async (coordinator: string, coordinatorActors: BusinessActor[]) => {
@@ -451,34 +474,41 @@ function ActorDataContent() {
       return
     }
 
-    if (confirm(`Lanjutkan ${eligibleActors.length} data pelaku usaha (Koordinator: ${coordinator}) ke Verifikasi Dinas?`)) {
-      setIsLanjutDinasBatching(true)
-      try {
-        const { updateStatsOnStatusChange } = await import("@/lib/stats-service")
-        
-        for (const actor of eligibleActors) {
-          updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), { 
-            status: 'lpj_pending'
-          })
-          await updateStatsOnStatusChange(database, 'verified_actor', 'lpj_pending', actor)
-        }
+    setLanjutDinasPending({ coordinator, eligibleActors })
+    setShowLanjutDinasDialog(true)
+  }
 
-        logActivity({
-          query: `LANJUT VERIFIKASI DINAS BATCH: ${coordinator} (${eligibleActors.length} data)`,
-          results: "Berhasil",
-          device: getDeviceType(navigator.userAgent),
-          source: 'Web',
-          method: 'DATA PELAKU USAHA',
-          userId: user?.email || user?.uid || 'Admin'
+  const executeLanjutDinas = async () => {
+    if (!lanjutDinasPending || !database) return
+    const { coordinator, eligibleActors } = lanjutDinasPending
+    setShowLanjutDinasDialog(false)
+    setIsLanjutDinasBatching(true)
+    try {
+      const { updateStatsOnStatusChange } = await import("@/lib/stats-service")
+      
+      for (const actor of eligibleActors) {
+        updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), { 
+          status: 'lpj_pending'
         })
-        
-        toast({ title: "Berhasil", description: `${eligibleActors.length} data dilanjutkan ke Verifikasi Dinas.` })
-      } catch (error) {
-        console.error("Batch update error:", error)
-        toast({ variant: "destructive", title: "Error", description: "Terjadi kesalahan sistem." })
-      } finally {
-        setIsLanjutDinasBatching(false)
+        await updateStatsOnStatusChange(database, 'verified_actor', 'lpj_pending', actor)
       }
+
+      logActivity({
+        query: `LANJUT VERIFIKASI DINAS BATCH: ${coordinator} (${eligibleActors.length} data)`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'DATA PELAKU USAHA',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
+      toast({ title: "Berhasil", description: `${eligibleActors.length} data dilanjutkan ke Verifikasi Dinas.` })
+    } catch (error) {
+      console.error("Batch update error:", error)
+      toast({ variant: "destructive", title: "Error", description: "Terjadi kesalahan sistem." })
+    } finally {
+      setIsLanjutDinasBatching(false)
+      setLanjutDinasPending(null)
     }
   }
 
@@ -1221,6 +1251,52 @@ function ActorDataContent() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Dialogs */}
+      <ConfirmDialog
+        open={showRevertDialog}
+        onOpenChange={(open) => {
+          setShowRevertDialog(open)
+          if (!open) setRevertPending(null)
+        }}
+        icon={<RotateCcw className="w-6 h-6" />}
+        title="Kembalikan ke Pending?"
+        description={`Kembalikan status ${revertPending?.fullName || ''} ke Pending?`}
+        confirmText="Ya, Kembalikan"
+        confirmIcon={<RotateCcw className="w-4 h-4" />}
+        variant="default"
+        onConfirm={executeRevert}
+      />
+
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={(open) => {
+          setShowDeleteDialog(open)
+          if (!open) setDeletePending(null)
+        }}
+        icon={<Trash2 className="w-6 h-6" />}
+        title="Hapus Permanen?"
+        description={`Hapus permanen ${deletePending?.fullName || ''}? Semua data terkait akan hilang.`}
+        confirmText="Ya, Hapus"
+        confirmIcon={<Trash2 className="w-4 h-4" />}
+        variant="destructive"
+        onConfirm={executeDelete}
+      />
+
+      <ConfirmDialog
+        open={showLanjutDinasDialog}
+        onOpenChange={(open) => {
+          setShowLanjutDinasDialog(open)
+          if (!open) setLanjutDinasPending(null)
+        }}
+        icon={<Send className="w-6 h-6" />}
+        title="Lanjutkan ke Verifikasi Dinas?"
+        description={`Lanjutkan ${lanjutDinasPending?.eligibleActors.length || 0} data pelaku usaha (Koordinator: ${lanjutDinasPending?.coordinator || ''}) ke Verifikasi Dinas?`}
+        confirmText="Ya, Lanjutkan"
+        confirmIcon={<Send className="w-4 h-4" />}
+        variant="default"
+        onConfirm={executeLanjutDinas}
+      />
     </div>
   )
 }

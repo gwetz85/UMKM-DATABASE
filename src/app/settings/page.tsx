@@ -42,6 +42,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 
 export default function SettingsPage() {
   const { user } = useUser()
@@ -52,6 +53,12 @@ export default function SettingsPage() {
   const [changingPassword, setChangingPassword] = useState(false)
   const [uploadingExcel, setUploadingExcel] = useState(false)
   const [theme, setTheme] = useState<"light" | "dark">("light")
+
+  const [showResetDialog, setShowResetDialog] = useState(false)
+  const [showResetSheetDialog, setShowResetSheetDialog] = useState(false)
+  const [resetSheetTarget, setResetSheetTarget] = useState<'2023' | '2024' | '2025' | 'blacklist' | null>(null)
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false)
+
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -336,8 +343,11 @@ export default function SettingsPage() {
   }
 
   const handleReset = async () => {
-    if (!confirm("PERINGATAN! Semua data pelaku usaha akan dihapus permanen. Lanjutkan?")) return
+    setShowResetDialog(true)
+  }
 
+  const executeReset = async () => {
+    setShowResetDialog(false)
     setLoading(true)
     try {
       await remove(ref(database, "businessActors"))
@@ -365,8 +375,6 @@ export default function SettingsPage() {
       'blacklist': 'blacklist_data'
     }
 
-    if (!confirm(`Hapus semua data ${labels[target]}? Tindakan ini tidak dapat dibatalkan.`)) return
-
     setLoading(true)
     try {
       await remove(ref(database, paths[target]))
@@ -375,13 +383,18 @@ export default function SettingsPage() {
       toast({ variant: "destructive", title: "Gagal Hapus", description: "Terjadi kesalahan saat menghapus data." })
     } finally {
       setLoading(false)
+      setResetSheetTarget(null)
     }
   }
 
   const router = useRouter()
 
   const handleLogout = async () => {
-    if (!confirm("Apakah Anda yakin ingin keluar dari aplikasi?")) return
+    setShowLogoutDialog(true)
+  }
+
+  const executeLogout = async () => {
+    setShowLogoutDialog(false)
     try {
       await signOut(auth)
       router.push('/login')
@@ -452,7 +465,7 @@ export default function SettingsPage() {
 
               <Button 
                 variant="destructive" 
-                onClick={handleLogout}
+                onClick={() => setShowLogoutDialog(true)}
                 className="h-12 px-6 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-rose-500/20 hover:scale-105 active:scale-95 transition-all gap-2"
               >
                 <LogOut className="w-4 h-4" /> Keluar Akun
@@ -711,7 +724,7 @@ export default function SettingsPage() {
                             </Button>
                           </Label>
                         </div>
-                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => handleResetSheet('2024')} disabled={loading}>
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => { setResetSheetTarget('2024'); setShowResetSheetDialog(true); }} disabled={loading}>
                           <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 1
                         </Button>
                       </div>
@@ -734,7 +747,7 @@ export default function SettingsPage() {
                             </Button>
                           </Label>
                         </div>
-                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => handleResetSheet('2023')} disabled={loading}>
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => { setResetSheetTarget('2023'); setShowResetSheetDialog(true); }} disabled={loading}>
                           <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 2
                         </Button>
                       </div>
@@ -757,7 +770,7 @@ export default function SettingsPage() {
                             </Button>
                           </Label>
                         </div>
-                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => handleResetSheet('2025')} disabled={loading}>
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => { setResetSheetTarget('2025'); setShowResetSheetDialog(true); }} disabled={loading}>
                           <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 3
                         </Button>
                       </div>
@@ -780,7 +793,7 @@ export default function SettingsPage() {
                             </Button>
                           </Label>
                         </div>
-                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => handleResetSheet('blacklist')} disabled={loading}>
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => { setResetSheetTarget('blacklist'); setShowResetSheetDialog(true); }} disabled={loading}>
                           <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 4
                         </Button>
                       </div>
@@ -795,7 +808,7 @@ export default function SettingsPage() {
                   <AlertTitle className="font-bold">Zona Bahaya</AlertTitle>
                   <AlertDescription className="flex flex-col gap-3">
                     <span className="text-xs">Hapus SEMUA data pelaku usaha secara permanen. Tindakan ini tidak berpengaruh pada data Master/Pembanding.</span>
-                    <Button variant="destructive" size="sm" onClick={handleReset} disabled={loading} className="w-fit font-bold">
+                    <Button variant="destructive" size="sm" onClick={() => setShowResetDialog(true)} disabled={loading} className="w-fit font-bold">
                       <Trash2 className="w-4 h-4 mr-2" /> Reset Seluruh Data Pelaku
                     </Button>
                   </AlertDescription>
@@ -805,6 +818,82 @@ export default function SettingsPage() {
           </Card>
         )}
       </div>
+
+      <ConfirmDialog
+        open={showResetDialog}
+        onOpenChange={setShowResetDialog}
+        icon={<Trash2 className="w-6 h-6" />}
+        title="Hapus Semua Data Pelaku Usaha?"
+        description="PERINGATAN! Semua data pelaku usaha akan dihapus permanen. Tindakan ini tidak dapat dibatalkan."
+        confirmText="Ya, Hapus Semua"
+        confirmIcon={<Trash2 className="w-4 h-4" />}
+        variant="destructive"
+        onConfirm={executeReset}
+      />
+
+      <ConfirmDialog
+        open={showResetSheetDialog}
+        onOpenChange={(open) => {
+          setShowResetSheetDialog(open)
+          if (!open) setResetSheetPending(null)
+        }}
+        icon={<Trash2 className="w-6 h-6" />}
+        title={`Hapus Data ${resetSheetPending ? sheetLabels[resetSheetPending] : ''}?`}
+        description={`Hapus semua data ${resetSheetPending ? sheetLabels[resetSheetPending] : ''}? Tindakan ini tidak dapat dibatalkan.`}
+        confirmText="Ya, Hapus"
+        confirmIcon={<Trash2 className="w-4 h-4" />}
+        variant="destructive"
+        onConfirm={executeResetSheet}
+      />
+
+      <ConfirmDialog
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+        icon={<LogOut className="w-6 h-6" />}
+        title="Keluar dari Aplikasi?"
+        description="Apakah Anda yakin ingin keluar dari aplikasi?"
+        confirmText="Ya, Keluar"
+        confirmIcon={<LogOut className="w-4 h-4" />}
+        variant="destructive"
+        onConfirm={executeLogout}
+      />
+      <ConfirmDialog
+        open={showResetDialog}
+        onOpenChange={setShowResetDialog}
+        title="Reset Seluruh Data"
+        description="PERINGATAN! Semua data pelaku usaha akan dihapus permanen. Lanjutkan?"
+        onConfirm={handleReset}
+        variant="destructive"
+        icon={AlertTriangle}
+        confirmText="Ya, Hapus Semua"
+      />
+
+      <ConfirmDialog
+        open={showResetSheetDialog}
+        onOpenChange={setShowResetSheetDialog}
+        title="Hapus Data Sheet"
+        description={`Hapus semua data ${
+          resetSheetTarget === '2023' ? 'Sheet 2 (Data Pembanding 2023)' :
+          resetSheetTarget === '2024' ? 'Sheet 1 (Data Pembanding 2024)' :
+          resetSheetTarget === '2025' ? 'Sheet 3 (Data Pembanding 2025)' :
+          'Sheet 4 (Data Blacklist)'
+        }? Tindakan ini tidak dapat dibatalkan.`}
+        onConfirm={() => resetSheetTarget && handleResetSheet(resetSheetTarget)}
+        variant="destructive"
+        icon={Trash2}
+        confirmText="Hapus Data"
+      />
+
+      <ConfirmDialog
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+        title="Keluar Aplikasi"
+        description="Apakah Anda yakin ingin keluar dari aplikasi?"
+        onConfirm={handleLogout}
+        variant="destructive"
+        icon={LogOut}
+        confirmText="Keluar"
+      />
     </div>
   )
 }

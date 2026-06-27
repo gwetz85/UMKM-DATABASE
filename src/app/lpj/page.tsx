@@ -19,7 +19,8 @@ import {
   ShieldAlert,
   Printer,
   ChevronRight,
-  Search
+  Search,
+  RotateCcw
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BusinessActor } from "../lib/types"
@@ -28,6 +29,7 @@ import { useState, useEffect, useMemo } from "react"
 import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 
 export default function LPJPage() {
   const { user } = useUser()
@@ -36,6 +38,8 @@ export default function LPJPage() {
   const [mounted, setMounted] = useState(false)
   const [filterCoordinator, setFilterCoordinator] = useState<string>("all")
   const [printDate, setPrintDate] = useState<string>("")
+  const [showUnblacklistDialog, setShowUnblacklistDialog] = useState(false)
+  const [unblacklistPending, setUnblacklistPending] = useState<{ id: string; fullName: string } | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -131,36 +135,41 @@ export default function LPJPage() {
     toast({ title: "LPJ Berhasil Disimpan", description: "Data telah dipindahkan ke folder Selesai." })
   }
 
-  const handleUnblacklist = async (actorId: string, fullName: string) => {
+  const handleUnblacklist = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm("Kembalikan data ini dari Blacklist ke antrean LPJ?")) {
-        const actorRef = ref(database, `businessActors/${actorId}`)
-        await updateDocumentNonBlocking(actorRef, { 
-            status: 'finish',
-            lpjEntryDate: new Date().toISOString() // Reset entry date to give another 14 days
-        })
-        
-        // Update global stats (Moving back from whatever it was, though Blacklist in this context is finish-with-flag)
-        // Actually if it's already finish, no status change in DB terms, but if status was 'blacklist_lpj' or similar:
-        // Let's assume it was status: 'finish' but now we just reset date.
-        // If status changes from 'rejected' (blacklist) to 'finish':
-        /*
-        import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-            updateStatsOnStatusChange(database, 'rejected', 'finish', { id: actorId });
-        });
-        */
-        
-        logActivity({
-          query: `PULIHKAN DARI BLACKLIST (LPJ): ${fullName}`,
-          results: "Berhasil",
-          device: getDeviceType(navigator.userAgent),
-          source: 'Web',
-          method: 'DATA LPJ',
-          userId: user?.email || user?.uid || 'Admin'
-        })
-        
-        toast({ title: "Status Dikembalikan", description: "Data kini kembali di antrean LPJ." })
-    }
+    setUnblacklistPending({ id: actorId, fullName })
+    setShowUnblacklistDialog(true)
+  }
+
+  const confirmUnblacklist = async () => {
+    if (!isAdmin || !database || !unblacklistPending) return
+    const actorRef = ref(database, `businessActors/${unblacklistPending.id}`)
+    await updateDocumentNonBlocking(actorRef, { 
+        status: 'finish',
+        lpjEntryDate: new Date().toISOString() // Reset entry date to give another 14 days
+    })
+    
+    // Update global stats (Moving back from whatever it was, though Blacklist in this context is finish-with-flag)
+    // Actually if it's already finish, no status change in DB terms, but if status was 'blacklist_lpj' or similar:
+    // Let's assume it was status: 'finish' but now we just reset date.
+    // If status changes from 'rejected' (blacklist) to 'finish':
+    /*
+    import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+        updateStatsOnStatusChange(database, 'rejected', 'finish', { id: unblacklistPending.id });
+    });
+    */
+    
+    logActivity({
+      query: `PULIHKAN DARI BLACKLIST (LPJ): ${unblacklistPending.fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'DATA LPJ',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
+    toast({ title: "Status Dikembalikan", description: "Data kini kembali di antrean LPJ." })
+    setUnblacklistPending(null)
   }
 
   if (!mounted) return null
@@ -419,6 +428,18 @@ export default function LPJPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showUnblacklistDialog}
+        onOpenChange={setShowUnblacklistDialog}
+        icon={<RotateCcw className="w-6 h-6" />}
+        title="Pulihkan dari Blacklist"
+        description="Kembalikan data ini dari Blacklist ke antrean LPJ?"
+        confirmText="Ya, Lanjutkan"
+        confirmIcon={<RotateCcw className="w-4 h-4" />}
+        variant="default"
+        onConfirm={confirmUnblacklist}
+      />
     </div>
   )
 }

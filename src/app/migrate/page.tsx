@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import { useFirebase, useUser } from '@/firebase';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { ref, set } from 'firebase/database';
-import { Loader2, Database, ArrowRight, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Loader2, Database, ArrowRight, CheckCircle2, ShieldAlert, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export default function MigrationPage() {
   const { firebaseApp, database } = useFirebase();
@@ -13,13 +14,15 @@ export default function MigrationPage() {
   const [isMigrating, setIsMigrating] = useState(false);
   const [progress, setProgress] = useState<string[]>([]);
   const [status, setStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
+  const [showMigrateDialog, setShowMigrateDialog] = useState(false);
 
-  const startMigration = async () => {
+  const startMigration = () => {
     if (!firebaseApp || !database) return;
-    
-    if (!window.confirm("Yakin ingin memulai penyedotan data dari database lama (Firestore) ke baru (RTDB)? Operasi ini mungkin menimpa data yang ada di RTDB Anda saat ini.")) {
-      return;
-    }
+    setShowMigrateDialog(true);
+  };
+
+  const confirmStartMigration = async () => {
+    if (!firebaseApp || !database) return;
 
     setIsMigrating(true);
     setStatus('running');
@@ -138,6 +141,19 @@ export default function MigrationPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={showMigrateDialog}
+        onOpenChange={setShowMigrateDialog}
+        icon={<AlertCircle className="w-6 h-6" />}
+        title="Konfirmasi Migrasi Data"
+        description="Yakin ingin memulai penyedotan data dari database lama (Firestore) ke baru (RTDB)? Operasi ini mungkin menimpa data yang ada di RTDB Anda saat ini."
+        confirmText="Ya, Mulai Migrasi"
+        confirmIcon={<AlertCircle className="w-4 h-4" />}
+        variant="destructive"
+        onConfirm={confirmStartMigration}
+        isLoading={isMigrating}
+      />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { useToast } from "@/hooks/use-toast"
 import { ShieldAlert, Loader2, BarChart3, UserPlus, Edit, Trash2, FileDown } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 
 export default function KuotaKorlapDewanAktifPage() {
   const [mounted, setMounted] = useState(false)
@@ -23,6 +24,8 @@ export default function KuotaKorlapDewanAktifPage() {
   const database = useDatabase()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingData, setEditingData] = useState<any>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deletePending, setDeletePending] = useState<{ id: string; name: string } | null>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -175,20 +178,25 @@ export default function KuotaKorlapDewanAktifPage() {
 
   const handleDelete = (id: string, name: string) => {
     if (!database) return
-    if (confirm(`Hapus koordinator ${name}?`)) {
-      deleteDocumentNonBlocking(ref(database, `koordinator_kuotas/${id}`))
-      
-      logActivity({
-        query: `HAPUS KUOTA KORLAP: ${name}`,
-        results: "Berhasil",
-        device: getDeviceType(navigator.userAgent),
-        source: 'Web',
-        method: 'KUOTA KOORDINATOR',
-        userId: user?.email || user?.uid || 'Admin'
-      })
-      
-      toast({ title: "Berhasil Dihapus", description: "Data telah dihapus dari sistem." })
-    }
+    setDeletePending({ id, name })
+    setShowDeleteDialog(true)
+  }
+
+  const confirmDelete = () => {
+    if (!database || !deletePending) return
+    deleteDocumentNonBlocking(ref(database, `koordinator_kuotas/${deletePending.id}`))
+    
+    logActivity({
+      query: `HAPUS KUOTA KORLAP: ${deletePending.name}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'KUOTA KOORDINATOR',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
+    toast({ title: "Berhasil Dihapus", description: "Data telah dihapus dari sistem." })
+    setDeletePending(null)
   }
 
   const handleExportPDF = () => {
@@ -479,6 +487,18 @@ export default function KuotaKorlapDewanAktifPage() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        icon={<Trash2 className="w-6 h-6" />}
+        title="Hapus Koordinator"
+        description={`Hapus koordinator ${deletePending?.name ?? ""}?`}
+        confirmText="Ya, Lanjutkan"
+        confirmIcon={<Trash2 className="w-4 h-4" />}
+        variant="destructive"
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }

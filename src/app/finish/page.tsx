@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Printer, Edit3, Loader2, Save, RotateCcw, Eye, User, CreditCard, History, X, Building2, MapPin, BadgeCheck, FileText, Search, Trash2 } from "lucide-react"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
@@ -82,6 +83,12 @@ function FinishContent() {
   }).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || "")) : undefined
 
   const [isEditMode, setIsEditMode] = useState(false)
+
+  // ConfirmDialog states
+  const [showRevertDialog, setShowRevertDialog] = useState(false)
+  const [revertPending, setRevertPending] = useState<{actorId: string, fullName: string} | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deletePending, setDeletePending] = useState<{actorId: string, fullName: string} | null>(null)
   const [editNik, setEditNik] = useState("")
   const [editPob, setEditPob] = useState("")
   const [editDob, setEditDob] = useState("")
@@ -139,36 +146,50 @@ function FinishContent() {
 
   const handleRevert = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm(`Kembalikan ${fullName} ke antrean awal (Pending)?`)) {
-      const actorObj = allActorsRaw?.find(a => a.id === actorId);
-      updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
-      
-      if (actorObj) {
-        import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-          updateStatsOnStatusChange(database, 'finish', 'pending', actorObj).catch(e => console.error(e));
-        });
-      }
+    setRevertPending({ actorId, fullName })
+    setShowRevertDialog(true)
+  }
 
-      toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
-      setViewingActor(null)
+  const executeRevert = () => {
+    if (!revertPending || !database) return
+    const { actorId, fullName } = revertPending
+    const actorObj = allActorsRaw?.find(a => a.id === actorId);
+    updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
+    
+    if (actorObj) {
+      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+        updateStatsOnStatusChange(database, 'finish', 'pending', actorObj).catch(e => console.error(e));
+      });
     }
+
+    toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
+    setViewingActor(null)
+    setShowRevertDialog(false)
+    setRevertPending(null)
   }
   
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
-    if (confirm(`HAPUS PERMANEN data ${fullName}? Tindakan ini tidak dapat dibatalkan.`)) {
-      const actorObj = allActorsRaw?.find(a => a.id === actorId);
-      deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
-      
-      if (actorObj) {
-        import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
-          updateStatsOnDelete(database, actorObj).catch(e => console.error(e));
-        });
-      }
+    setDeletePending({ actorId, fullName })
+    setShowDeleteDialog(true)
+  }
 
-      toast({ title: "Data Dihapus", description: `Data ${fullName} telah dihapus dari sistem.` })
-      setViewingActor(null)
+  const executeDelete = () => {
+    if (!deletePending || !database) return
+    const { actorId, fullName } = deletePending
+    const actorObj = allActorsRaw?.find(a => a.id === actorId);
+    deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
+    
+    if (actorObj) {
+      import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
+        updateStatsOnDelete(database, actorObj).catch(e => console.error(e));
+      });
     }
+
+    toast({ title: "Data Dihapus", description: `Data ${fullName} telah dihapus dari sistem.` })
+    setViewingActor(null)
+    setShowDeleteDialog(false)
+    setDeletePending(null)
   }
 
   return (
@@ -558,6 +579,37 @@ function FinishContent() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Confirm Dialogs */}
+      <ConfirmDialog
+        open={showRevertDialog}
+        onOpenChange={(open) => {
+          setShowRevertDialog(open)
+          if (!open) setRevertPending(null)
+        }}
+        icon={<RotateCcw className="w-6 h-6" />}
+        title="Kembalikan ke Pending?"
+        description={`Kembalikan ${revertPending?.fullName || ''} ke antrean awal (Pending)?`}
+        confirmText="Ya, Kembalikan"
+        confirmIcon={<RotateCcw className="w-4 h-4" />}
+        variant="default"
+        onConfirm={executeRevert}
+      />
+
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={(open) => {
+          setShowDeleteDialog(open)
+          if (!open) setDeletePending(null)
+        }}
+        icon={<Trash2 className="w-6 h-6" />}
+        title="Hapus Permanen?"
+        description={`HAPUS PERMANEN data ${deletePending?.fullName || ''}? Tindakan ini tidak dapat dibatalkan.`}
+        confirmText="Ya, Hapus"
+        confirmIcon={<Trash2 className="w-4 h-4" />}
+        variant="destructive"
+        onConfirm={executeDelete}
+      />
     </div>
   )
 }

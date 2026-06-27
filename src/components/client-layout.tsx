@@ -4,7 +4,7 @@ import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { InfoDialog } from '@/components/info-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
@@ -202,46 +202,21 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
                   </button>
 
-                  <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-                    <DialogContent className="max-w-[420px] border border-slate-200 shadow-2xl p-0 overflow-hidden rounded-3xl bg-white animate-in zoom-in-95 duration-200">
-                      <div className="flex flex-col items-center pt-10 pb-6 px-8">
-                        {/* Question Icon */}
-                        <div className="w-20 h-20 rounded-full border-[3px] border-slate-300 flex items-center justify-center mb-6">
-                          <AlertCircle className="w-10 h-10 text-slate-400" />
-                        </div>
-                        
-                        {/* Title */}
-                        <h2 className="text-xl font-black text-slate-800 text-center mb-2">
-                          Keluar dari Aplikasi?
-                        </h2>
-                        
-                        {/* Subtitle */}
-                        <p className="text-sm text-slate-400 text-center">
-                          Anda akan keluar dari sesi ini.
-                        </p>
-                      </div>
-                      
-                      {/* Buttons */}
-                      <div className="px-8 pb-8 flex items-center justify-center gap-3">
-                        <button
-                          onClick={() => setIsLogoutDialogOpen(false)}
-                          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all font-bold text-sm active:scale-95"
-                        >
-                          Batal
-                        </button>
-                        <button
-                          onClick={() => {
-                            setIsLogoutDialogOpen(false);
-                            signOut(auth).then(() => router.push('/login'));
-                          }}
-                          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-rose-500 text-white hover:bg-rose-600 transition-all font-bold text-sm shadow-lg shadow-rose-200 active:scale-95"
-                        >
-                          <LogOut className="w-4 h-4" />
-                          Keluar
-                        </button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <ConfirmDialog
+                    open={isLogoutDialogOpen}
+                    onOpenChange={setIsLogoutDialogOpen}
+                    icon={<AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />}
+                    title="Keluar dari Aplikasi?"
+                    description="Anda akan keluar dari sesi ini."
+                    cancelText="Batal"
+                    confirmText="Keluar"
+                    confirmIcon={<LogOut className="w-4 h-4" />}
+                    variant="destructive"
+                    onConfirm={() => {
+                      setIsLogoutDialogOpen(false);
+                      signOut(auth).then(() => router.push('/login'));
+                    }}
+                  />
 
                   {!isKoordinator && (
                     <Link 

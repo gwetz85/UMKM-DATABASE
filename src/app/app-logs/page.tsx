@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils"
 import { logActivity } from "@/lib/logger"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { LogDataDialog } from "@/components/log-data-dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 
 function AppLogsContent() {
   const { user } = useUser()
@@ -21,6 +22,9 @@ function AppLogsContent() {
   const [isTesting, setIsTesting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [selectedQuery, setSelectedQuery] = useState<string | null>(null)
+  const [showClearAllDialog, setShowClearAllDialog] = useState(false)
+  const [showDeleteLogDialog, setShowDeleteLogDialog] = useState(false)
+  const [deleteLogPending, setDeleteLogPending] = useState<string | null>(null)
 
   // Admin Check
   const adminRef = useMemoFirebase(() => {
@@ -90,8 +94,13 @@ function AppLogsContent() {
     }
   }
 
-  const handleClearAllLogs = async () => {
-    if (!logsRef || !window.confirm("Apakah Anda yakin ingin menghapus SEMUA data log? Tindakan ini tidak dapat dibatalkan.")) return
+  const handleClearAllLogs = () => {
+    if (!logsRef) return
+    setShowClearAllDialog(true)
+  }
+
+  const confirmClearAllLogs = async () => {
+    if (!logsRef) return
     setIsDeleting(true)
     try {
       await remove(logsRef)
@@ -102,12 +111,20 @@ function AppLogsContent() {
     }
   }
 
-  const handleDeleteLog = async (logId: string) => {
-    if (!database || !logId || !window.confirm("Hapus log ini?")) return
+  const handleDeleteLog = (logId: string) => {
+    if (!database || !logId) return
+    setDeleteLogPending(logId)
+    setShowDeleteLogDialog(true)
+  }
+
+  const confirmDeleteLog = async () => {
+    if (!database || !deleteLogPending) return
     try {
-      await remove(ref(database, `activity_logs/${logId}`))
+      await remove(ref(database, `activity_logs/${deleteLogPending}`))
     } catch (err) {
       alert("Gagal menghapus log: " + String(err))
+    } finally {
+      setDeleteLogPending(null)
     }
   }
 
@@ -317,6 +334,31 @@ function AppLogsContent() {
       <LogDataDialog 
         query={selectedQuery} 
         onClose={() => setSelectedQuery(null)} 
+      />
+
+      <ConfirmDialog
+        open={showClearAllDialog}
+        onOpenChange={setShowClearAllDialog}
+        icon={<Trash2 className="w-6 h-6" />}
+        title="Hapus Semua Log"
+        description="Apakah Anda yakin ingin menghapus SEMUA data log? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Ya, Hapus Semua"
+        confirmIcon={<Trash2 className="w-4 h-4" />}
+        variant="destructive"
+        onConfirm={confirmClearAllLogs}
+        isLoading={isDeleting}
+      />
+
+      <ConfirmDialog
+        open={showDeleteLogDialog}
+        onOpenChange={setShowDeleteLogDialog}
+        icon={<Trash2 className="w-6 h-6" />}
+        title="Hapus Log"
+        description="Hapus log ini?"
+        confirmText="Ya, Lanjutkan"
+        confirmIcon={<Trash2 className="w-4 h-4" />}
+        variant="destructive"
+        onConfirm={confirmDeleteLog}
       />
     </div>
   )
