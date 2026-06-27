@@ -864,7 +864,7 @@ export default function SettingsPage() {
         description="PERINGATAN! Semua data pelaku usaha akan dihapus permanen. Lanjutkan?"
         onConfirm={handleReset}
         variant="destructive"
-        icon={AlertTriangle}
+        icon={<AlertTriangle className="w-6 h-6" />}
         confirmText="Ya, Hapus Semua"
       />
 
@@ -880,7 +880,7 @@ export default function SettingsPage() {
         }? Tindakan ini tidak dapat dibatalkan.`}
         onConfirm={() => resetSheetTarget && handleResetSheet(resetSheetTarget)}
         variant="destructive"
-        icon={Trash2}
+        icon={<Trash2 className="w-6 h-6" />}
         confirmText="Hapus Data"
       />
 
@@ -891,7 +891,7 @@ export default function SettingsPage() {
         description="Apakah Anda yakin ingin keluar dari aplikasi?"
         onConfirm={handleLogout}
         variant="destructive"
-        icon={LogOut}
+        icon={<LogOut className="w-6 h-6" />}
         confirmText="Keluar"
       />
     </div>

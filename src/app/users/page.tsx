@@ -38,8 +38,6 @@ import { useToast } from "@/hooks/use-toast"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { ConfirmDialog } from "@/components/confirm-dialog"
-import { AlertCircle, RotateCcw } from "lucide-react"
 
 function UserDeletionTimer({ 
   userId, 
@@ -626,7 +624,7 @@ export default function UserManagementPage() {
           : 'Nonaktifkan user ini? User tidak akan bisa login.'}
         onConfirm={executeToggleStatus}
         variant={statusTarget?.status === 'inactive' ? 'default' : 'destructive'}
-        icon={AlertCircle}
+        icon={<AlertCircle className="w-6 h-6" />}
         confirmText={statusTarget?.status === 'inactive' ? 'Ya, Aktifkan' : 'Ya, Nonaktifkan'}
       />
 
@@ -637,7 +635,7 @@ export default function UserManagementPage() {
         description={`Reset penguncian perangkat untuk ${resetTarget?.fullName}?`}
         onConfirm={executeResetUID}
         variant="default"
-        icon={RotateCcw}
+        icon={<RotateCcw className="w-6 h-6" />}
         confirmText="Ya, Reset"
       />
 
@@ -648,7 +646,7 @@ export default function UserManagementPage() {
         description={`Hapus akses sistem untuk ${deleteTarget?.fullName} secara permanen?`}
         onConfirm={executeDelete}
         variant="destructive"
-        icon={Trash2}
+        icon={<Trash2 className="w-6 h-6" />}
         confirmText="Ya, Hapus"
       />
     </div>
