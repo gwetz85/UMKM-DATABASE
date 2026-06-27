@@ -532,17 +532,27 @@ function ActorDataContent() {
 
   const handleExportExcel = () => {
     try {
-      const dataToExport = filterCoordinator 
-        ? (groupedActors[filterCoordinator] || [])
-        : (filteredActors || [])
+      // Use the exact same data source as the displayed table
+      const dataToExport = (isInspektorat || isKoordinator)
+        ? (filteredActors || [])
+        : filterCoordinator
+          ? (groupedActors[String(filterCoordinator).toUpperCase().trim()] || [])
+          : (filteredActors || [])
 
       if (dataToExport.length === 0) {
         toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })
         return
       }
 
-      const exportData = dataToExport.map((actor, index) => ({
-        "NO": globalIndexMap.get(actor.id) || index + 1,
+      // Sort by the same globalIndexMap order displayed in the table
+      const sortedData = [...dataToExport].sort((a, b) => {
+        const indexA = globalIndexMap.get(a.id) || 0
+        const indexB = globalIndexMap.get(b.id) || 0
+        return indexA - indexB
+      })
+
+      const exportData = sortedData.map((actor) => ({
+        "NO": globalIndexMap.get(actor.id) || 0,
         "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
         "JENIS KELAMIN": actor.gender || "-",
         "NIK": actor.nik || "-",
