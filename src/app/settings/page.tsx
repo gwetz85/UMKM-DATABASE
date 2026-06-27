@@ -362,6 +362,7 @@ export default function SettingsPage() {
   }
 
   const handleResetSheet = async (target: '2023' | '2024' | '2025' | 'blacklist') => {
+    setShowResetSheetDialog(false)
     const labels = {
       '2023': 'Sheet 2 (Data Pembanding 2023)',
       '2024': 'Sheet 1 (Data Pembanding 2024)',
@@ -822,50 +823,13 @@ export default function SettingsPage() {
       <ConfirmDialog
         open={showResetDialog}
         onOpenChange={setShowResetDialog}
-        icon={<Trash2 className="w-6 h-6" />}
         title="Hapus Semua Data Pelaku Usaha?"
         description="PERINGATAN! Semua data pelaku usaha akan dihapus permanen. Tindakan ini tidak dapat dibatalkan."
         confirmText="Ya, Hapus Semua"
         confirmIcon={<Trash2 className="w-4 h-4" />}
         variant="destructive"
         onConfirm={executeReset}
-      />
-
-      <ConfirmDialog
-        open={showResetSheetDialog}
-        onOpenChange={(open) => {
-          setShowResetSheetDialog(open)
-          if (!open) setResetSheetPending(null)
-        }}
-        icon={<Trash2 className="w-6 h-6" />}
-        title={`Hapus Data ${resetSheetPending ? sheetLabels[resetSheetPending] : ''}?`}
-        description={`Hapus semua data ${resetSheetPending ? sheetLabels[resetSheetPending] : ''}? Tindakan ini tidak dapat dibatalkan.`}
-        confirmText="Ya, Hapus"
-        confirmIcon={<Trash2 className="w-4 h-4" />}
-        variant="destructive"
-        onConfirm={executeResetSheet}
-      />
-
-      <ConfirmDialog
-        open={showLogoutDialog}
-        onOpenChange={setShowLogoutDialog}
-        icon={<LogOut className="w-6 h-6" />}
-        title="Keluar dari Aplikasi?"
-        description="Apakah Anda yakin ingin keluar dari aplikasi?"
-        confirmText="Ya, Keluar"
-        confirmIcon={<LogOut className="w-4 h-4" />}
-        variant="destructive"
-        onConfirm={executeLogout}
-      />
-      <ConfirmDialog
-        open={showResetDialog}
-        onOpenChange={setShowResetDialog}
-        title="Reset Seluruh Data"
-        description="PERINGATAN! Semua data pelaku usaha akan dihapus permanen. Lanjutkan?"
-        onConfirm={handleReset}
-        variant="destructive"
         icon={<AlertTriangle className="w-6 h-6" />}
-        confirmText="Ya, Hapus Semua"
       />
 
       <ConfirmDialog
@@ -878,21 +842,23 @@ export default function SettingsPage() {
           resetSheetTarget === '2025' ? 'Sheet 3 (Data Pembanding 2025)' :
           'Sheet 4 (Data Blacklist)'
         }? Tindakan ini tidak dapat dibatalkan.`}
-        onConfirm={() => resetSheetTarget && handleResetSheet(resetSheetTarget)}
+        confirmText="Ya, Hapus"
+        confirmIcon={<Trash2 className="w-4 h-4" />}
         variant="destructive"
+        onConfirm={() => resetSheetTarget && handleResetSheet(resetSheetTarget)}
         icon={<Trash2 className="w-6 h-6" />}
-        confirmText="Hapus Data"
       />
 
       <ConfirmDialog
         open={showLogoutDialog}
         onOpenChange={setShowLogoutDialog}
-        title="Keluar Aplikasi"
+        title="Keluar dari Aplikasi?"
         description="Apakah Anda yakin ingin keluar dari aplikasi?"
-        onConfirm={handleLogout}
+        confirmText="Ya, Keluar"
+        confirmIcon={<LogOut className="w-4 h-4" />}
         variant="destructive"
+        onConfirm={executeLogout}
         icon={<LogOut className="w-6 h-6" />}
-        confirmText="Keluar"
       />
     </div>
   )
