@@ -46,8 +46,8 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
 
 
   // Configuration: YouTube Playlist
-  // Playlist ID: PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7
-  const playlistId = "PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7";
+  // Playlist ID: PLBDzcTxWPOhA
+  const playlistId = "PLBDzcTxWPOhA";
   const useShuffle = false; // Disabled shuffle to follow playlist order
 
   useEffect(() => {
