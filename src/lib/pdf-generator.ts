@@ -64,68 +64,87 @@ export const generateRegistrationForm = async (actor: BusinessActor, sequenceNum
 
   // --- DOCUMENT TITLE ---
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
-  doc.setTextColor(0);
+  doc.setFontSize(15);
+  doc.setTextColor(15, 23, 42); // slate-900
   doc.text('FORMULIR BIODATA PELAKU USAHA', pageWidth / 2, 50, { align: 'center' });
   
   if (sequenceNumber !== undefined) {
     const seqText = `NO: ${sequenceNumber}`;
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     const textWidth = doc.getTextWidth(seqText);
-    const boxWidth = textWidth + 10;
-    const boxHeight = 7;
+    const boxWidth = textWidth + 12;
+    const boxHeight = 6.5;
     const boxX = pageWidth - margin - boxWidth;
-    const boxY = 44.5;
+    const boxY = 45;
     
     doc.setFillColor(37, 99, 235); // Primary Blue
-    doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 2, 2, 'F');
+    doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 3, 3, 'F');
     
     doc.setTextColor(255, 255, 255); // White text
-    doc.text(seqText, boxX + boxWidth / 2, boxY + 5, { align: 'center' });
+    doc.text(seqText, boxX + boxWidth / 2, boxY + 4.5, { align: 'center' });
     
     doc.setTextColor(0); // Reset
   }
 
-  doc.setLineWidth(0.5);
-  doc.line(pageWidth / 2 - 40, 52, pageWidth / 2 + 40, 52);
+  // Modern subtle underline for title
+  doc.setDrawColor(37, 99, 235);
+  doc.setLineWidth(1.2);
+  doc.line(pageWidth / 2 - 25, 54, pageWidth / 2 + 25, 54);
 
   // --- ACTOR DATA TABLE ---
+  const sectionStyle = { 
+    fillColor: [239, 246, 255], // blue-50
+    textColor: [30, 64, 175], // blue-800
+    fontStyle: 'bold' as any,
+    halign: 'left' as any
+  };
+
   const tableData = [
-    [{ content: 'I. DATA PRIBADI', colSpan: 2, styles: { fillColor: [245, 245, 245], fontStyle: 'bold' as any } }],
-    ['NAMA LENGKAP', `: ${actor.fullName || '-'}`],
-    ['NIK (NOMOR INDUK KEPENDUDUKAN)', `: ${actor.nik || '-'}`],
-    ['NOMOR KARTU KELUARGA', `: ${actor.noKK || '-'}`],
-    ['JENIS KELAMIN', `: ${actor.gender || '-'}`],
-    ['TEMPAT LAHIR', `: ${actor.pob || parsePobDob(actor.pobDob || '').pob || '-'}`],
-    ['TANGGAL LAHIR', `: ${actor.dob || parsePobDob(actor.pobDob || '').dob || '-'}`],
-    ['NOMOR HP / WHATSAPP', `: ${actor.phone || '-'}`],
-    ['KECAMATAN / KELURAHAN', `: ${actor.kecamatan || '-'} / ${actor.kelurahan || '-'}`],
-    ['ALAMAT DOMISILI', `: ${actor.address || '-'}`],
-    [{ content: 'II. INFORMASI USAHA', colSpan: 2, styles: { fillColor: [245, 245, 245], fontStyle: 'bold' as any } }],
-    ['NAMA USAHA', `: ${actor.businessName || '-'}`],
-    ['KATEGORI USAHA', `: ${actor.businessCategory || '-'}`],
-    ['LOKASI USAHA', `: ${actor.businessLocation || '-'}`],
-    ['KORLAP / KOORDINATOR', `: ${actor.coordinator || '-'}`],
-    [{ content: 'III. DATA PERBANKAN', colSpan: 2, styles: { fillColor: [245, 245, 245], fontStyle: 'bold' as any } }],
-    ['NAMA BANK', `: ${actor.bankName || '-'}`],
-    ['NOMOR REKENING', `: ${actor.bankNumber || '-'}`],
-    ['NAMA PEMILIK REKENING', `: ${actor.bankOwner || '-'}`],
+    [{ content: 'I. DATA PRIBADI', colSpan: 2, styles: sectionStyle }],
+    ['Nama Lengkap', `:  ${actor.fullName || '-'}`],
+    ['NIK (Nomor Induk Kependudukan)', `:  ${actor.nik || '-'}`],
+    ['Nomor Kartu Keluarga', `:  ${actor.noKK || '-'}`],
+    ['Jenis Kelamin', `:  ${actor.gender || '-'}`],
+    ['Tempat Lahir', `:  ${actor.pob || parsePobDob(actor.pobDob || '').pob || '-'}`],
+    ['Tanggal Lahir', `:  ${actor.dob || parsePobDob(actor.pobDob || '').dob || '-'}`],
+    ['Nomor HP / WhatsApp', `:  ${actor.phone || '-'}`],
+    ['Kecamatan / Kelurahan', `:  ${actor.kecamatan || '-'} / ${actor.kelurahan || '-'}`],
+    ['Alamat Domisili', `:  ${actor.address || '-'}`],
+    [{ content: 'II. INFORMASI USAHA', colSpan: 2, styles: sectionStyle }],
+    ['Nama Usaha', `:  ${actor.businessName || '-'}`],
+    ['Kategori Usaha', `:  ${actor.businessCategory || '-'}`],
+    ['Lokasi Usaha', `:  ${actor.businessLocation || '-'}`],
+    ['Korlap / Koordinator', `:  ${actor.coordinator || '-'}`],
+    [{ content: 'III. DATA PERBANKAN', colSpan: 2, styles: sectionStyle }],
+    ['Nama Bank', `:  ${actor.bankName || '-'}`],
+    ['Nomor Rekening', `:  ${actor.bankNumber || '-'}`],
+    ['Nama Pemilik Rekening', `:  ${actor.bankOwner || '-'}`],
   ];
 
   autoTable(doc, {
-    startY: 65,
+    startY: 62,
     body: tableData as any,
     theme: 'plain',
     styles: {
-      fontSize: 10,
-      cellPadding: 3,
+      fontSize: 9.5,
+      cellPadding: { top: 3.5, right: 4, bottom: 3.5, left: 4 },
       font: 'helvetica',
+      textColor: [51, 65, 85], // slate-700
     },
     columnStyles: {
-      0: { fontStyle: 'bold', cellWidth: 60 },
-      1: { cellWidth: 'auto' },
+      0: { fontStyle: 'bold', textColor: [15, 23, 42], cellWidth: 75 }, // slate-900
+      1: { cellWidth: 'auto', textColor: [71, 85, 105] }, // slate-600
     },
     margin: { left: margin, right: margin },
+    didDrawCell: (data) => {
+      // Draw modern subtle bottom border for normal rows
+      const isSection = data.row.raw[0] && typeof data.row.raw[0] === 'object' && (data.row.raw[0] as any).content;
+      if (!isSection) {
+        doc.setDrawColor(226, 232, 240); // slate-200
+        doc.setLineWidth(0.1);
+        doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
+      }
+    }
   });
 
   // --- QR CODE ---
