@@ -132,21 +132,22 @@ export const generateRegistrationForm = async (actor: BusinessActor, sequenceNum
   const qrData = `Nomor Registrasi: ${regCode}\nNama Pelaku Usaha: ${actor.fullName || '-'}\nJenis Usaha: ${actor.businessCategory || '-'}\nKontak: ${actor.phone || '-'}\nAlamat: ${actor.address || '-'}`;
   const qrBase64 = await generateQRCodeBase64(qrData);
   if (qrBase64) {
-    const qrY = 250;
-    doc.addImage(qrBase64, 'PNG', margin, qrY, 25, 25);
-    
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0);
-    doc.text('INFORMASI DIGITAL', margin + 30, qrY + 5);
+    const qrY = 265;
+    const qrSize = 20; // Slightly smaller to fit nicely
+    doc.addImage(qrBase64, 'PNG', margin, qrY, qrSize, qrSize);
     
     doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0);
+    doc.text('INFORMASI DIGITAL', margin + qrSize + 4, qrY + 4);
+    
+    doc.setFontSize(6);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(80);
+    doc.setTextColor(100);
     doc.text(
-      `Scan QR Code ini untuk melihat data digital:\n- ${regCode}\n- ${actor.fullName || '-'}\n- ${actor.businessCategory || '-'}\n- ${actor.phone || '-'}`, 
-      margin + 30, 
-      qrY + 10
+      `Scan untuk melihat data:\n- ${regCode}\n- ${actor.fullName || '-'}\n- ${actor.businessCategory || '-'}`, 
+      margin + qrSize + 4, 
+      qrY + 9
     );
   }
 
