@@ -11,26 +11,7 @@ import { Loader2, RefreshCw } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 
 
-const PLAYLIST_ITEMS_INITIAL = [
-  "REMIX HOREG VERSION - GEMOY DJ GEMOY - INGKAR JANJI - [ OFICIAL MUSIC VIDEO ]",
-  "BAGAIKAN LANGIT DAN BUMI REMIX ELEKTRO KOPLO X DJ GEMOY AND CREATIVE TEAM",
-  "JUDUL JUDULAN [ KAWIN KAWINAN ] COVER ELEKTRO KOPLO X DJ GEMOY",
-  "MARDUA HOLONG - MANYASA DENAI - RUNTAH - RUNGKAD - CINDAI (VILOID edit) | BKB",
-  "DJ JEDAG JEDUG GHOST (DJ IMUT REMIX)",
-  "Yeni Inka - FINALLY I FOUND YOU | Live OJING (Official Music Yi Production)",
-  "KOYO JOGJA ISTIMEWA - NDARBOY GENK | Cover by Nabila Maharani With NM Boys",
-  "Niken Salindry - KISINAN ( Official Music Video ANEKA SAFARI)",
-  "TABOLA BALE - NDARBOY GENK x WITA SOFI x ONCHO FLASH (Official Live Music) Silet Open Up",
-  "PICA PICA - NDARBOY GENK x JUAN REZA x JACSON ZERAN x WITA SOFI (Official Live Music)",
-  "UBUR UBUR IKAN LELE - NDARBOY GENK x JUAN REZA x JACSON ZERAN x WITA SOFI (Official Live Music)",
-  "KOTAK - Haters (Official Music Video)",
-  "KOTAK - Sendiri (Lirik)",
-  "BAYANGAN - U'CAMP ( LIRIK )",
-  "YANK - WALI | Cover by Nabila Maharani with NM Boys",
-  "SEPARUH NAFAS - DEWA | Cover by Nabila Maharani with NM Boys",
-  "One Piece Ending 1 - Memories - SLS Piano Cover",
-  "DJ Mardua Holong Remix Viral TikTok Terbaru 2024 Full Bass"
-];
+const PLAYLIST_ITEMS_INITIAL: string[] = [];
 
 export function MusicDashboardCard({ className, role }: { className?: string, role?: string }) {
   if (role !== 'admin' && role !== 'petugas') {
@@ -43,24 +24,20 @@ export function MusicDashboardCard({ className, role }: { className?: string, ro
   const [isMuted, setIsMuted] = useState(false);
   const [playlist, setPlaylist] = useState<string[]>(PLAYLIST_ITEMS_INITIAL);
 
-  // Persistence: Load playlist from localStorage on mount
+  // Auto-sync playlist once when ready
+  const hasAutoSynced = React.useRef(false);
   useEffect(() => {
-    const savedPlaylist = localStorage.getItem('music-dashboard-playlist');
-    if (savedPlaylist) {
-      try {
-        const parsed = JSON.parse(savedPlaylist);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setPlaylist(parsed);
-        }
-      } catch (e) {
-        console.error("Error loading playlist from storage:", e);
-      }
+    if (isReady && !hasAutoSynced.current) {
+      hasAutoSynced.current = true;
+      window.dispatchEvent(new CustomEvent('music-remote-control', { 
+        detail: { action: 'get-playlist' } 
+      }));
     }
-  }, []);
+  }, [isReady]);
 
   // Persistence: Save playlist to localStorage whenever it changes
   useEffect(() => {
-    if (playlist && playlist !== PLAYLIST_ITEMS_INITIAL) {
+    if (playlist && playlist.length > 0) {
       localStorage.setItem('music-dashboard-playlist', JSON.stringify(playlist));
     }
   }, [playlist]);
