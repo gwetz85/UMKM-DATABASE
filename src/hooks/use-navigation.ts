@@ -17,7 +17,8 @@ import {
   Calendar,
   Ban,
   Clock,
-  Info
+  Info,
+  ShieldAlert
 } from "lucide-react"
 import { useUser, useObject, useMemoFirebase, useList, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
