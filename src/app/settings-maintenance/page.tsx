@@ -41,6 +41,8 @@ export default function SettingsMaintenance() {
   const { data: currentData, isLoading: dataLoading } = useObject(maintenanceRef);
 
   useEffect(() => {
+    if (dataLoading) return; // Tunggu sampai data selesai di-load dari Firebase
+
     if (currentData && !isLoadedRef.current) {
       setEnabled(currentData.enabled || false);
       const msg = currentData.message || 'Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.';
@@ -57,7 +59,7 @@ export default function SettingsMaintenance() {
       }
       isLoadedRef.current = true;
     }
-  }, [currentData]);
+  }, [currentData, dataLoading]);
 
   const handleEditorInput = useCallback(() => {
     if (editorRef.current) {
