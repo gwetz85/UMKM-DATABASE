@@ -263,6 +263,14 @@ export function useNavigation() {
       description: "Pengaturan Jam Operasional & Libur"
     },
     {
+      name: "Maintenance Setting",
+      href: "/settings-maintenance",
+      icon: ShieldAlert,
+      show: isAdmin,
+      color: "#ef4444", // red-500
+      description: "Pengaturan Mode Perbaikan Aplikasi"
+    },
+    {
       name: "Pengaturan Informasi",
       href: "/settings-info",
       icon: Info,

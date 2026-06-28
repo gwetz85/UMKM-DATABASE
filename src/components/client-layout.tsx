@@ -49,6 +49,25 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const { data: eventInfo } = useObject(eventSettingsRef)
   const activeEvent = useActiveEvent(eventInfo)
 
+  const maintenanceRef = useMemoFirebase(() => {
+    if (!database) return null;
+    return ref(database, 'settings/maintenance');
+  }, [database]);
+  const { data: maintenanceData } = useObject(maintenanceRef);
+
+  const isAdmin = profile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
+
+  React.useEffect(() => {
+    if (maintenanceData && typeof maintenanceData === 'object' && user && profile) {
+      const isMaintenanceMode = maintenanceData.enabled === true;
+      if (isMaintenanceMode && !isAdmin && pathname !== '/maintenance' && pathname !== '/login') {
+        router.replace('/maintenance');
+      } else if (!isMaintenanceMode && pathname === '/maintenance') {
+        router.replace('/');
+      }
+    }
+  }, [maintenanceData, isAdmin, pathname, router, user, profile]);
+
   React.useEffect(() => {
     if (!database || !user || !profile?.id) return;
 
