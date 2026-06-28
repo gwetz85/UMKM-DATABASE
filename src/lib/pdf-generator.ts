@@ -137,6 +137,7 @@ export const generateRegistrationForm = async (actor: BusinessActor, sequenceNum
     },
     margin: { left: margin, right: margin },
     didDrawCell: (data) => {
+      // Draw modern subtle bottom border for normal rows
       const rawRow = data.row.raw as any[];
       const isSection = Array.isArray(rawRow) && rawRow[0] && typeof rawRow[0] === 'object' && rawRow[0].content;
       if (!isSection) {
@@ -147,12 +148,18 @@ export const generateRegistrationForm = async (actor: BusinessActor, sequenceNum
     }
   });
 
+  const finalY = (doc as any).lastAutoTable.finalY;
+
   // --- QR CODE ---
   const qrData = `Nomor Registrasi: ${regCode}\nNama Pelaku Usaha: ${actor.fullName || '-'}\nJenis Usaha: ${actor.businessCategory || '-'}\nKontak: ${actor.phone || '-'}\nAlamat: ${actor.address || '-'}`;
   const qrBase64 = await generateQRCodeBase64(qrData);
+  
+  // Calculate dynamic QR Y position (start 7mm below the table, but max out near the bottom so it doesn't get cut off if table is too long)
+  // We prefer it to sit at 260 if possible, but if table is longer, push it down.
+  const qrY = Math.max(finalY + 7, 260); 
+  
   if (qrBase64) {
-    const qrY = 265;
-    const qrSize = 20; // Slightly smaller to fit nicely
+    const qrSize = 18; // Slightly smaller to ensure fit
     doc.addImage(qrBase64, 'PNG', margin, qrY, qrSize, qrSize);
     
     doc.setFontSize(7);
@@ -166,15 +173,17 @@ export const generateRegistrationForm = async (actor: BusinessActor, sequenceNum
     doc.text(
       `Scan untuk melihat data:\n- ${regCode}\n- ${actor.fullName || '-'}\n- ${actor.businessCategory || '-'}`, 
       margin + qrSize + 4, 
-      qrY + 9
+      qrY + 8
     );
   }
 
   // --- FOOTER ---
+  // Ensure footer is always below QR Code
+  const footerY = Math.max(qrY + 22, 285);
   doc.setFontSize(7);
   doc.setTextColor(150);
   doc.setFont('helvetica', 'italic');
-  doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, 285, { align: 'center' });
+  doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, footerY, { align: 'center' });
 
   // Save the PDF
   const filename = `FORMULIR_${regCode}_${actor.fullName.replace(/\s+/g, '_').toUpperCase()}.pdf`;
