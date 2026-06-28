@@ -41,8 +41,9 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   const volumeRef = useRef(50);
   const currentTitleRef = useRef("");
 
-  // Role check: must be AFTER all hooks to comply with React Rules of Hooks
-  const isAllowedRole = role === 'admin' || role === 'petugas';
+  // Role check: Only admin and petugas can access
+  const normalizedRole = role?.toLowerCase();
+  const isAllowedRole = normalizedRole === 'admin' || normalizedRole === 'petugas';
 
 
   // Configuration: YouTube Playlist

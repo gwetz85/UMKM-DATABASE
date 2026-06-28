@@ -14,7 +14,8 @@ import { Slider } from '@/components/ui/slider';
 const PLAYLIST_ITEMS_INITIAL: string[] = [];
 
 export function MusicDashboardCard({ className, role }: { className?: string, role?: string }) {
-  if (role !== 'admin' && role !== 'petugas') {
+  const normalizedRole = role?.toLowerCase();
+  if (normalizedRole !== 'admin' && normalizedRole !== 'petugas') {
     return null;
   }
 
