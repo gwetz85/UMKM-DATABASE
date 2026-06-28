@@ -69,10 +69,21 @@ export const generateRegistrationForm = (actor: BusinessActor, sequenceNumber?: 
   doc.text('FORMULIR BIODATA PELAKU USAHA', pageWidth / 2, 50, { align: 'center' });
   
   if (sequenceNumber !== undefined) {
-    doc.setFontSize(12);
-    doc.setTextColor(37, 99, 235); // Primary Blue
-    doc.text(`NO: ${sequenceNumber}`, margin, 50, { align: 'left' });
-    doc.setTextColor(0);
+    const seqText = `NO: ${sequenceNumber}`;
+    doc.setFontSize(10);
+    const textWidth = doc.getTextWidth(seqText);
+    const boxWidth = textWidth + 10;
+    const boxHeight = 7;
+    const boxX = pageWidth - margin - boxWidth;
+    const boxY = 44.5;
+    
+    doc.setFillColor(37, 99, 235); // Primary Blue
+    doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 2, 2, 'F');
+    
+    doc.setTextColor(255, 255, 255); // White text
+    doc.text(seqText, boxX + boxWidth / 2, boxY + 5, { align: 'center' });
+    
+    doc.setTextColor(0); // Reset
   }
 
   doc.setLineWidth(0.5);
