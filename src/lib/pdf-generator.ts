@@ -178,12 +178,12 @@ export const generateRegistrationForm = async (actor: BusinessActor, sequenceNum
   }
 
   // --- FOOTER ---
-  // Ensure footer is always below QR Code
-  const footerY = Math.max(qrY + 22, 285);
+  // Place footer parallel to the QR code on the right side
+  const footerY = qrY + 16; // Align near the bottom of the QR code
   doc.setFontSize(7);
   doc.setTextColor(150);
   doc.setFont('helvetica', 'italic');
-  doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, pageWidth / 2, footerY, { align: 'center' });
+  doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, pageWidth - margin, footerY, { align: 'right' });
 
   // Save the PDF
   const filename = `FORMULIR_${regCode}_${actor.fullName.replace(/\s+/g, '_').toUpperCase()}.pdf`;
