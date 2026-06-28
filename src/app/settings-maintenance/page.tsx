@@ -246,7 +246,6 @@ export default function SettingsMaintenance() {
                   onInput={handleEditorInput}
                   className="min-h-[180px] p-4 text-base outline-none bg-white"
                   style={{ lineHeight: 1.75 }}
-                  dangerouslySetInnerHTML={{ __html: message }}
                 />
               </div>
             ) : (
