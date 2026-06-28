@@ -24,16 +24,8 @@ export function MusicDashboardCard({ className, role }: { className?: string, ro
   const [isMuted, setIsMuted] = useState(false);
   const [playlist, setPlaylist] = useState<string[]>(PLAYLIST_ITEMS_INITIAL);
 
-  // Auto-sync playlist once when ready
+  // Auto-sync playlist once when first video starts and title is known
   const hasAutoSynced = React.useRef(false);
-  useEffect(() => {
-    if (isReady && !hasAutoSynced.current) {
-      hasAutoSynced.current = true;
-      window.dispatchEvent(new CustomEvent('music-remote-control', { 
-        detail: { action: 'get-playlist' } 
-      }));
-    }
-  }, [isReady]);
 
   // Persistence: Save playlist to localStorage whenever it changes
   useEffect(() => {
@@ -68,6 +60,13 @@ export function MusicDashboardCard({ className, role }: { className?: string, ro
 
       // Dynamic Sync: Refined duplicate detection
       if (currentTitle) {
+        if (!hasAutoSynced.current) {
+          hasAutoSynced.current = true;
+          window.dispatchEvent(new CustomEvent('music-remote-control', { 
+            detail: { action: 'get-playlist' } 
+          }));
+        }
+
         const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
         const normalizedCurrent = normalize(currentTitle);
         
