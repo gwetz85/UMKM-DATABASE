@@ -512,7 +512,7 @@ function ActorDataContent() {
     }
   }
 
-  const handlePrintForm = (actor: BusinessActor) => {
+  const handlePrintForm = async (actor: BusinessActor) => {
     if (!database) return
 
     let actorToPrint = { ...actor }
@@ -527,7 +527,7 @@ function ActorDataContent() {
       toast({ title: "Kode Registrasi Di-generate", description: `Kode baru: ${randomCode} telah disimpan.` })
     }
     const sequenceNumber = globalIndexMap.get(actor.id)
-    generateRegistrationForm(actorToPrint, sequenceNumber)
+    await generateRegistrationForm(actorToPrint, sequenceNumber)
   }
 
   const handleExportExcel = () => {

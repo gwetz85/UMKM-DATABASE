@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { BusinessActor } from '@/app/lib/types';
-import { generateBarcodeBase64 } from './barcode-utils';
+import { generateBarcodeBase64, generateQRCodeBase64 } from './barcode-utils';
 import { parsePobDob } from './utils';
 
 export const addTunasBangsaHeader = (doc: jsPDF, hasLogo = false) => {
@@ -26,7 +26,7 @@ export const addTunasBangsaHeader = (doc: jsPDF, hasLogo = false) => {
   return 38; // Return the next Y position
 };
 
-export const generateRegistrationForm = (actor: BusinessActor, sequenceNumber?: number) => {
+export const generateRegistrationForm = async (actor: BusinessActor, sequenceNumber?: number) => {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -127,6 +127,28 @@ export const generateRegistrationForm = (actor: BusinessActor, sequenceNumber?: 
     },
     margin: { left: margin, right: margin },
   });
+
+  // --- QR CODE ---
+  const qrData = `Nomor Registrasi: ${regCode}\nNama Pelaku Usaha: ${actor.fullName || '-'}\nJenis Usaha: ${actor.businessCategory || '-'}\nKontak: ${actor.phone || '-'}\nAlamat: ${actor.address || '-'}`;
+  const qrBase64 = await generateQRCodeBase64(qrData);
+  if (qrBase64) {
+    const qrY = 250;
+    doc.addImage(qrBase64, 'PNG', margin, qrY, 25, 25);
+    
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0);
+    doc.text('INFORMASI DIGITAL', margin + 30, qrY + 5);
+    
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80);
+    doc.text(
+      `Scan QR Code ini untuk melihat data digital:\n- ${regCode}\n- ${actor.fullName || '-'}\n- ${actor.businessCategory || '-'}\n- ${actor.phone || '-'}`, 
+      margin + 30, 
+      qrY + 10
+    );
+  }
 
   // --- FOOTER ---
   doc.setFontSize(7);
