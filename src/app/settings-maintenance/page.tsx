@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useDatabase, useObject, useMemoFirebase, useUser, useList } from '@/firebase';
 import { ref, set } from 'firebase/database';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ShieldAlert, Save } from 'lucide-react';
+import { Loader2, ShieldAlert, Save, Bold, Italic, Type, Underline, AlignLeft, AlignCenter, AlignRight, Eye } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
 export default function SettingsMaintenance() {
   const database = useDatabase();
@@ -20,6 +20,9 @@ export default function SettingsMaintenance() {
   const [enabled, setEnabled] = useState(false);
   const [message, setMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const isLoadedRef = useRef(false);
 
   // Cek Role Admin
   const usersRef = useMemoFirebase(() => {
@@ -38,13 +41,35 @@ export default function SettingsMaintenance() {
   const { data: currentData, isLoading: dataLoading } = useObject(maintenanceRef);
 
   useEffect(() => {
-    if (currentData) {
+    if (currentData && !isLoadedRef.current) {
       setEnabled(currentData.enabled || false);
-      setMessage(currentData.message || 'Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.');
-    } else if (currentData === null) {
-      setMessage('Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.');
+      const msg = currentData.message || 'Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.';
+      setMessage(msg);
+      if (editorRef.current) {
+        editorRef.current.innerHTML = msg;
+      }
+      isLoadedRef.current = true;
+    } else if (currentData === null && !isLoadedRef.current) {
+      const defaultMsg = 'Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.';
+      setMessage(defaultMsg);
+      if (editorRef.current) {
+        editorRef.current.innerHTML = defaultMsg;
+      }
+      isLoadedRef.current = true;
     }
   }, [currentData]);
+
+  const handleEditorInput = useCallback(() => {
+    if (editorRef.current) {
+      setMessage(editorRef.current.innerHTML);
+    }
+  }, []);
+
+  const execCommand = (command: string, value?: string) => {
+    editorRef.current?.focus();
+    document.execCommand(command, false, value || '');
+    handleEditorInput();
+  };
 
   if (usersLoading || dataLoading) {
     return (
@@ -65,7 +90,10 @@ export default function SettingsMaintenance() {
   }
 
   const handleSave = async () => {
-    if (enabled && !message.trim()) {
+    const currentMessage = editorRef.current?.innerHTML || message;
+    const textOnly = editorRef.current?.textContent || '';
+
+    if (enabled && !textOnly.trim()) {
       toast({ variant: 'destructive', title: 'Kesalahan', description: 'Pesan maintenance tidak boleh kosong.' });
       return;
     }
@@ -74,7 +102,7 @@ export default function SettingsMaintenance() {
     try {
       await set(ref(database!, 'settings/maintenance'), {
         enabled,
-        message,
+        message: currentMessage,
         updatedAt: Date.now(),
         updatedBy: user?.uid
       });
@@ -115,14 +143,139 @@ export default function SettingsMaintenance() {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-bold">Pesan Peringatan (Opsional)</h3>
-            <p className="text-sm text-muted-foreground">Tuliskan pesan yang akan dibaca oleh user saat mereka mengunjungi aplikasi.</p>
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Contoh: Kami sedang melakukan perbaikan server..."
-              className="min-h-[150px] p-4 text-base rounded-2xl resize-none shadow-sm focus-visible:ring-red-500"
-            />
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold">Pesan Peringatan</h3>
+                <p className="text-sm text-muted-foreground">Tuliskan pesan dengan format teks. Gunakan toolbar untuk menebalkan atau memiringkan huruf.</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPreview(!showPreview)}
+                className="rounded-xl gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                {showPreview ? 'Editor' : 'Preview'}
+              </Button>
+            </div>
+            
+            {!showPreview ? (
+              <div className="border rounded-2xl overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-red-500/50 transition-all">
+                {/* Toolbar */}
+                <div className="flex items-center gap-1 px-3 py-2 bg-slate-100 border-b flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => execCommand('bold')}
+                    className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-600 hover:text-slate-900"
+                    title="Tebal (Bold)"
+                  >
+                    <Bold className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => execCommand('italic')}
+                    className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-600 hover:text-slate-900"
+                    title="Miring (Italic)"
+                  >
+                    <Italic className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => execCommand('underline')}
+                    className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-600 hover:text-slate-900"
+                    title="Garis Bawah (Underline)"
+                  >
+                    <Underline className="w-4 h-4" />
+                  </button>
+
+                  <div className="w-px h-6 bg-slate-300 mx-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => execCommand('justifyLeft')}
+                    className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-600 hover:text-slate-900"
+                    title="Rata Kiri"
+                  >
+                    <AlignLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => execCommand('justifyCenter')}
+                    className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-600 hover:text-slate-900"
+                    title="Rata Tengah"
+                  >
+                    <AlignCenter className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => execCommand('justifyRight')}
+                    className="p-2 rounded-lg hover:bg-white hover:shadow-sm transition-all text-slate-600 hover:text-slate-900"
+                    title="Rata Kanan"
+                  >
+                    <AlignRight className="w-4 h-4" />
+                  </button>
+
+                  <div className="w-px h-6 bg-slate-300 mx-1" />
+
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        execCommand('fontSize', e.target.value);
+                      }
+                    }}
+                    defaultValue=""
+                    className="px-2 py-1.5 rounded-lg bg-white border text-sm text-slate-600 hover:border-slate-400 transition-all cursor-pointer"
+                    title="Ukuran Font"
+                  >
+                    <option value="" disabled>Ukuran</option>
+                    <option value="1">Sangat Kecil</option>
+                    <option value="2">Kecil</option>
+                    <option value="3">Normal</option>
+                    <option value="4">Sedang</option>
+                    <option value="5">Besar</option>
+                    <option value="6">Sangat Besar</option>
+                    <option value="7">Judul</option>
+                  </select>
+                </div>
+
+                {/* Editor Area */}
+                <div
+                  ref={editorRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={handleEditorInput}
+                  className="min-h-[180px] p-4 text-base outline-none bg-white"
+                  style={{ lineHeight: 1.75 }}
+                  dangerouslySetInnerHTML={{ __html: message }}
+                />
+              </div>
+            ) : (
+              /* Preview Mode */
+              <div className="border rounded-2xl overflow-hidden shadow-sm">
+                <div className="px-3 py-2 bg-slate-100 border-b">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Preview Tampilan</span>
+                </div>
+                <div 
+                  className="min-h-[180px] p-6 bg-white"
+                  style={{ lineHeight: 1.75, color: '#cbd5e1' }}
+                >
+                  <div 
+                    style={{
+                      background: 'rgba(30, 41, 59, 0.95)',
+                      borderRadius: '18px',
+                      padding: '24px',
+                      border: '1px solid rgba(148, 163, 184, 0.15)',
+                    }}
+                    dangerouslySetInnerHTML={{ __html: message }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <Type className="w-3.5 h-3.5" />
+              Seleksi teks lalu klik tombol <strong>B</strong> untuk tebal, <em>I</em> untuk miring, atau <u>U</u> untuk garis bawah.
+            </p>
           </div>
         </CardContent>
 
