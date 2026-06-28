@@ -26,7 +26,7 @@ export const addTunasBangsaHeader = (doc: jsPDF, hasLogo = false) => {
   return 38; // Return the next Y position
 };
 
-export const generateRegistrationForm = (actor: BusinessActor) => {
+export const generateRegistrationForm = (actor: BusinessActor, sequenceNumber?: number) => {
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -67,6 +67,14 @@ export const generateRegistrationForm = (actor: BusinessActor) => {
   doc.setFontSize(14);
   doc.setTextColor(0);
   doc.text('FORMULIR BIODATA PELAKU USAHA', pageWidth / 2, 50, { align: 'center' });
+  
+  if (sequenceNumber !== undefined) {
+    doc.setFontSize(12);
+    doc.setTextColor(37, 99, 235); // Primary Blue
+    doc.text(`NO: ${sequenceNumber}`, margin, 50, { align: 'left' });
+    doc.setTextColor(0);
+  }
+
   doc.setLineWidth(0.5);
   doc.line(pageWidth / 2 - 40, 52, pageWidth / 2 + 40, 52);
 

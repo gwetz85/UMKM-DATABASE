@@ -526,8 +526,8 @@ function ActorDataContent() {
       actorToPrint.registrationCode = randomCode
       toast({ title: "Kode Registrasi Di-generate", description: `Kode baru: ${randomCode} telah disimpan.` })
     }
-
-    generateRegistrationForm(actorToPrint)
+    const sequenceNumber = globalIndexMap.get(actor.id)
+    generateRegistrationForm(actorToPrint, sequenceNumber)
   }
 
   const handleExportExcel = () => {
