@@ -101,12 +101,12 @@ export default function MaintenancePage() {
             animation: 'gradientShift 3s ease infinite',
           }} />
 
-          <div style={{ padding: '48px 36px 40px' }}>
+          <div className="p-6 md:p-10">
             {/* Animated Icon */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
               <div style={{
                 position: 'relative',
-                width: '100px', height: '100px',
+                width: '80px', height: '80px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {/* Rotating ring */}
@@ -126,31 +126,31 @@ export default function MaintenancePage() {
                   animation: 'pulse 2s ease-in-out infinite',
                 }} />
                 {/* Gear icon */}
-                <Wrench style={{ width: '40px', height: '40px', color: '#60a5fa', animation: 'pulse 2s ease-in-out infinite' }} />
+                <Wrench style={{ width: '32px', height: '32px', color: '#60a5fa', animation: 'pulse 2s ease-in-out infinite' }} />
               </div>
             </div>
 
             {/* Title */}
             <h1 style={{
               textAlign: 'center',
-              fontSize: '28px',
+              fontSize: '24px',
               fontWeight: 900,
               letterSpacing: '-0.02em',
               background: 'linear-gradient(135deg, #e2e8f0, #ffffff, #93c5fd)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              marginBottom: '8px',
+              marginBottom: '4px',
             }}>
               Sedang Maintenance
             </h1>
             <p style={{
               textAlign: 'center',
-              fontSize: '13px',
+              fontSize: '12px',
               color: '#64748b',
               textTransform: 'uppercase',
-              letterSpacing: '3px',
+              letterSpacing: '2px',
               fontWeight: 600,
-              marginBottom: '28px',
+              marginBottom: '20px',
             }}>
               Sistem dalam perbaikan
             </p>
@@ -159,19 +159,21 @@ export default function MaintenancePage() {
             <div style={{
               background: 'rgba(30, 41, 59, 0.6)',
               border: '1px solid rgba(148, 163, 184, 0.08)',
-              borderRadius: '18px',
-              padding: '24px',
-              marginBottom: '28px',
+              borderRadius: '16px',
+              padding: '16px 20px',
+              marginBottom: '20px',
+              maxHeight: '30vh',
+              overflowY: 'auto'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                <ShieldAlert style={{ width: '16px', height: '16px', color: '#f59e0b' }} />
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                <ShieldAlert style={{ width: '14px', height: '14px', color: '#f59e0b' }} />
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '1px' }}>
                   Informasi
                 </span>
               </div>
               <div style={{
-                fontSize: '15px',
-                lineHeight: 1.75,
+                fontSize: '14px',
+                lineHeight: 1.6,
                 color: '#cbd5e1',
                 margin: 0,
               }}
@@ -184,69 +186,69 @@ export default function MaintenancePage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '20px',
-              marginBottom: '32px',
+              gap: '12px',
+              marginBottom: '20px',
               flexWrap: 'wrap',
             }}>
               <div style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
+                display: 'flex', alignItems: 'center', gap: '6px',
                 background: 'rgba(239, 68, 68, 0.1)',
                 border: '1px solid rgba(239, 68, 68, 0.2)',
-                borderRadius: '100px', padding: '8px 16px',
+                borderRadius: '100px', padding: '6px 12px',
               }}>
                 <div style={{
-                  width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444',
+                  width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444',
                   boxShadow: '0 0 8px rgba(239,68,68,0.6)',
                   animation: 'pulse 1.5s ease-in-out infinite',
                 }} />
-                <span style={{ fontSize: '12px', fontWeight: 600, color: '#fca5a5' }}>Offline</span>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#fca5a5' }}>Offline</span>
               </div>
               <div style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
+                display: 'flex', alignItems: 'center', gap: '6px',
                 background: 'rgba(148, 163, 184, 0.08)',
                 border: '1px solid rgba(148, 163, 184, 0.12)',
-                borderRadius: '100px', padding: '8px 16px',
+                borderRadius: '100px', padding: '6px 12px',
               }}>
-                <Clock style={{ width: '14px', height: '14px', color: '#94a3b8' }} />
-                <span style={{ fontSize: '12px', fontWeight: 600, color: '#94a3b8', fontVariantNumeric: 'tabular-nums' }}>{formattedTime}</span>
+                <Clock style={{ width: '12px', height: '12px', color: '#94a3b8' }} />
+                <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', fontVariantNumeric: 'tabular-nums' }}>{formattedTime}</span>
               </div>
             </div>
 
             {/* Date */}
-            <p style={{ textAlign: 'center', fontSize: '13px', color: '#475569', marginBottom: '32px' }}>
+            <p style={{ textAlign: 'center', fontSize: '12px', color: '#475569', marginBottom: '20px' }}>
               {formattedDate}
             </p>
 
             {/* Buttons */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <button
                 onClick={() => window.location.reload()}
                 style={{
-                  width: '100%', padding: '14px 24px',
+                  width: '100%', padding: '12px 20px',
                   background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
                   color: '#ffffff',
-                  border: 'none', borderRadius: '14px',
-                  fontSize: '15px', fontWeight: 700,
+                  border: 'none', borderRadius: '12px',
+                  fontSize: '14px', fontWeight: 700,
                   cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                   transition: 'all 0.2s ease',
                   boxShadow: '0 4px 16px rgba(59,130,246,0.3)',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(59,130,246,0.4)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(59,130,246,0.3)'; }}
               >
-                <RefreshCw style={{ width: '18px', height: '18px' }} />
+                <RefreshCw style={{ width: '16px', height: '16px' }} />
                 Muat Ulang Halaman
               </button>
               <button
                 onClick={handleLogout}
                 style={{
-                  width: '100%', padding: '14px 24px',
+                  width: '100%', padding: '12px 20px',
                   background: 'transparent',
                   color: '#64748b',
                   border: '1px solid rgba(148, 163, 184, 0.15)',
-                  borderRadius: '14px',
-                  fontSize: '14px', fontWeight: 600,
+                  borderRadius: '12px',
+                  fontSize: '13px', fontWeight: 600,
                   cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
                   transition: 'all 0.2s ease',
