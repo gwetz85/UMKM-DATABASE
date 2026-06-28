@@ -137,8 +137,8 @@ export const generateRegistrationForm = async (actor: BusinessActor, sequenceNum
     },
     margin: { left: margin, right: margin },
     didDrawCell: (data) => {
-      // Draw modern subtle bottom border for normal rows
-      const isSection = data.row.raw[0] && typeof data.row.raw[0] === 'object' && (data.row.raw[0] as any).content;
+      const rawRow = data.row.raw as any[];
+      const isSection = Array.isArray(rawRow) && rawRow[0] && typeof rawRow[0] === 'object' && rawRow[0].content;
       if (!isSection) {
         doc.setDrawColor(226, 232, 240); // slate-200
         doc.setLineWidth(0.1);
