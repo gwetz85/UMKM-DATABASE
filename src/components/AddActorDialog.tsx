@@ -67,7 +67,13 @@ export function AddActorDialog() {
         const remaining = rawQuota - used
         return { ...q, remaining: Math.max(0, remaining) }
       })
-      .filter((q: any) => q.remaining > 0)
+      .filter((q: any) => {
+        const nameUpper = (q.name || "").toUpperCase()
+        const isDeleted = nameUpper.includes('( PERBAIKKAN )') || 
+                          nameUpper.includes('( PERBAIKAN )') || 
+                          nameUpper.includes('( DIHAPUS )')
+        return q.remaining > 0 && !isDeleted
+      })
       .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))
   }, [rawQuotaData, systemStats])
 

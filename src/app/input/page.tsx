@@ -78,6 +78,12 @@ export default function InputDataPage() {
         const remaining = rawQuota - used
         return { ...q, remaining: Math.max(0, remaining) }
       })
+      .filter((q: any) => {
+        const nameUpper = (q.name || "").toUpperCase()
+        return !nameUpper.includes('( PERBAIKKAN )') && 
+               !nameUpper.includes('( PERBAIKAN )') && 
+               !nameUpper.includes('( DIHAPUS )')
+      })
       .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))
   }, [rawQuotaData, allActorsData])
 
