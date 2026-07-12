@@ -553,29 +553,48 @@ function ActorDataContent() {
     await generateRegistrationForm(actorToPrint, sequenceNumber)
   }
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     try {
       // Use the exact same data source as the displayed table
-      const dataToExport = (isInspektorat || isKoordinator)
+      let dataToExport = (isInspektorat || isKoordinator)
         ? (filteredActors || [])
         : filterCoordinator
           ? (groupedActors[String(filterCoordinator).toUpperCase().trim()] || [])
           : (filteredActors || [])
+
+      if (dataToExport.length === 0 && !filterCoordinator && isAdmin) {
+        toast({ title: "Mengambil data...", description: "Mohon tunggu sebentar." })
+        const { get, ref } = await import("firebase/database")
+        if (!database) {
+          toast({ variant: "destructive", title: "Error", description: "Database belum siap." })
+          return
+        }
+        const snap = await get(ref(database, 'businessActors'))
+        if (snap.exists()) {
+          const allActors = Object.values(snap.val()) as BusinessActor[]
+          dataToExport = allActors.filter(a => ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(a.status || ""))
+        }
+      }
 
       if (dataToExport.length === 0) {
         toast({ variant: "destructive", title: "Gagal", description: "Tidak ada data untuk diekspor." })
         return
       }
 
-      // Sort by the same globalIndexMap order displayed in the table
+      // Sort by the same globalIndexMap order displayed in the table, or fallback for all data
       const sortedData = [...dataToExport].sort((a, b) => {
-        const indexA = globalIndexMap.get(a.id) || 0
-        const indexB = globalIndexMap.get(b.id) || 0
-        return indexA - indexB
+        const indexA = globalIndexMap.get(a.id)
+        const indexB = globalIndexMap.get(b.id)
+        if (indexA !== undefined && indexB !== undefined) return indexA - indexB
+        const coordA = String(a.coordinator || "Tanpa Koordinator")
+        const coordB = String(b.coordinator || "Tanpa Koordinator")
+        const coordCompare = coordA.localeCompare(coordB)
+        if (coordCompare !== 0) return coordCompare
+        return String(a.fullName || "").localeCompare(String(b.fullName || ""))
       })
 
-      const exportData = sortedData.map((actor) => ({
-        "NO": globalIndexMap.get(actor.id) || 0,
+      const exportData = sortedData.map((actor, index) => ({
+        "NO": globalIndexMap.get(actor.id) || (index + 1),
         "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
         "JENIS KELAMIN": actor.gender || "-",
         "NIK": actor.nik || "-",
