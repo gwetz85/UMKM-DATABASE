@@ -88,11 +88,30 @@ function ActorDataContent() {
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
     
-    // Fetch all actors to do robust client-side filtering.
-    // This allows case-insensitive matching AND multiple status filtering 
-    // (verified_actor, bank_pending, dll) which Firebase query cannot do.
-    return ref(database, 'businessActors')
-  }, [database])
+    // Optimize: Only fetch what's needed instead of the entire collection
+    if (isKoordinator && userProfile?.fullName) {
+      return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(userProfile.fullName.toUpperCase().trim()))
+    }
+    
+    if (filterCoordinator) {
+      return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(filterCoordinator.toUpperCase().trim()))
+    }
+    
+    if (isInspektorat || isMonitoring) {
+      return ref(database, 'businessActors') // Inspektorat/Monitoring need to see all
+    }
+    
+    // For Admin overview page, we don't need to fetch any actors initially.
+    // We can rely on systemStats for the quota counts.
+    // If they type a search query, we could potentially fetch, but RTDB doesn't support 
+    // text search well. For now, we only fetch if there's a specific filter.
+    if (searchQuery.length > 0) {
+      // If searching, we unfortunately have to fetch all to filter client-side
+      return ref(database, 'businessActors')
+    }
+
+    return null
+  }, [database, isKoordinator, userProfile?.fullName, filterCoordinator, isInspektorat, isMonitoring, searchQuery])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
@@ -185,7 +204,11 @@ function ActorDataContent() {
       const quota = quotaObj?.quota || 0
       
       // Verified count is now the primary metric for quota usage (Usage = Verified)
-      const verifiedCount = (groupedActors[name] || []).length
+      // Fallback to systemStats if we haven't fetched allActorsRaw
+      let verifiedCount = (groupedActors[name] || []).length;
+      if (!allActorsRaw && systemStats) {
+        verifiedCount = (systemStats as any)?.coordinator?.[name] || 0;
+      }
       
       // Rejected count is for statistics only
       const totalCount_Global = (systemStats as any)?.coordinator?.[name] || verifiedCount
