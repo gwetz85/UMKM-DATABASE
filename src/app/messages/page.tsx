@@ -291,7 +291,7 @@ export default function PesanPage() {
   if (!mounted) return null
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] p-2 md:p-4 gap-3 overflow-hidden">
+    <div className="flex h-[calc(100dvh-10rem)] md:h-[calc(100dvh-12rem)] min-h-[500px] w-full max-w-6xl mx-auto gap-3 overflow-hidden">
 
       {/* ── Daftar Kontak ─────────────────────────────────────────────────── */}
       <aside
