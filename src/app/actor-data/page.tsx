@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useState, useEffect, Suspense, useMemo } from "react"
+import { useState, useEffect, Suspense, useMemo, useRef } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
 import { ref, query, equalTo, limitToFirst, orderByChild, startAt, get } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
@@ -164,10 +164,13 @@ function ActorDataContent() {
     (a.address || "").toLowerCase().includes(searchQuery.toLowerCase())
   ).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || "")) : undefined
 
+  const hasAutoOpened = useRef(false)
+
   useEffect(() => {
-    if (viewId && actors && !viewingActor) {
+    if (viewId && actors && !viewingActor && !hasAutoOpened.current) {
       const actorToView = actors.find(a => a.id === viewId)
       if (actorToView) {
+        hasAutoOpened.current = true;
         setViewingActor(actorToView)
         fetchAuxData(actorToView)
       }
