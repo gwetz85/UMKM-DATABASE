@@ -111,8 +111,12 @@ export default function DashboardStatsPage() {
     if (selectedFilter.filterType === 'perempuan') return query(baseRef, orderByChild('gender'), equalTo('Perempuan'))
     if (selectedFilter.filterType === 'rejected') return query(baseRef, orderByChild('status'), equalTo('rejected'))
     if (selectedFilter.filterType === 'pending') return query(baseRef, orderByChild('status'), equalTo('pending'))
-    // Note: Complex filters like 'verified' or 'kelurahan' might still need some client-side filtering 
-    // unless we optimize the database structure further.
+    
+    // For filters that require client-side processing, fetch all.
+    if (selectedFilter.filterType === 'kelurahan' || selectedFilter.filterType === 'verified' || selectedFilter.filterType === 'total') {
+      return baseRef;
+    }
+
     return query(baseRef, limitToFirst(100)) // Limit initial modal data
   }, [database, selectedFilter])
 
@@ -277,7 +281,9 @@ export default function DashboardStatsPage() {
       return modalData.filter(d => {
         const k = d.kelurahan?.toLowerCase().trim() || "";
         const targetK = selectedFilter.name.toLowerCase().trim();
-        return k === targetK;
+        const s = d.status || "pending";
+        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
+        return k === targetK && isVerified;
       })
     }
     return modalData
