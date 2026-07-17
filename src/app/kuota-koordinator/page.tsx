@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, deleteDocumentNonBlocking, useObject, updateDocumentNonBlocking } from "@/firebase"
-import { ref, push, set, query } from "firebase/database"
+import { ref, push, set, query, update } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { addTunasBangsaHeader } from "@/lib/pdf-generator"
 import { cn } from "@/lib/utils"
@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
-import { ShieldAlert, Loader2, BarChart3, UserPlus, Edit, Trash2, FileDown } from "lucide-react"
+import { ShieldAlert, Loader2, BarChart3, UserPlus, Edit, Trash2, FileDown, RefreshCw } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 
@@ -26,6 +26,14 @@ export default function KuotaKorlapDewanAktifPage() {
   const [editingData, setEditingData] = useState<any>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deletePending, setDeletePending] = useState<{ id: string; name: string } | null>(null)
+  const [renamePending, setRenamePending] = useState<{
+    oldName: string
+    newName: string
+    quota: number
+    affectedCount: number
+  } | null>(null)
+  const [showRenameConfirm, setShowRenameConfirm] = useState(false)
+  const [isRenaming, setIsRenaming] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -137,20 +145,10 @@ export default function KuotaKorlapDewanAktifPage() {
     })
   }
 
-  const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const performUpdate = (name: string, quota: number) => {
     if (!editingData || !database) return
-
-    const formData = new FormData(e.currentTarget)
-    const name = formData.get("name") as string
-    const quotaStr = formData.get("quota") as string
-    const quota = parseInt(quotaStr, 10)
-    
-    if (!name || isNaN(quota)) return
-
     const dataRef = ref(database, `koordinator_kuotas/${editingData.id}`)
-
-    set(dataRef, { 
+    set(dataRef, {
       name,
       quota,
       addedAt: editingData.addedAt || new Date().toISOString()
@@ -163,7 +161,6 @@ export default function KuotaKorlapDewanAktifPage() {
         method: 'KUOTA KOORDINATOR',
         userId: user?.email || user?.uid || 'Admin'
       })
-      
       toast({ title: "Berhasil Diperbarui", description: `Ubah target kuota untuk ${name}.` })
       setEditingData(null)
     }).catch((error) => {
@@ -174,6 +171,90 @@ export default function KuotaKorlapDewanAktifPage() {
         description: error.message || "Terjadi kesalahan sistem."
       })
     })
+  }
+
+  const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!editingData || !database) return
+
+    const formData = new FormData(e.currentTarget)
+    const name = formData.get("name") as string
+    const quotaStr = formData.get("quota") as string
+    const quota = parseInt(quotaStr, 10)
+
+    if (!name || isNaN(quota)) return
+
+    const oldName = editingData.name || ''
+    const nameChanged = name.toUpperCase().trim() !== oldName.toUpperCase().trim()
+
+    if (nameChanged) {
+      // Count how many businessActors use the old name
+      const affectedCount = (allData || []).filter((actor: any) =>
+        (actor.coordinator || '').toUpperCase().trim() === oldName.toUpperCase().trim()
+      ).length
+      setRenamePending({ oldName, newName: name, quota, affectedCount })
+      setShowRenameConfirm(true)
+      return
+    }
+
+    // Only quota changed – no batch update needed
+    performUpdate(name, quota)
+  }
+
+  const confirmRenameUpdate = async () => {
+    if (!renamePending || !editingData || !database) return
+    setIsRenaming(true)
+    try {
+      const { oldName, newName, quota } = renamePending
+
+      // 1. Update the kuota entry
+      const dataRef = ref(database, `koordinator_kuotas/${editingData.id}`)
+      await set(dataRef, {
+        name: newName,
+        quota,
+        addedAt: editingData.addedAt || new Date().toISOString()
+      })
+
+      // 2. Batch-update all matching businessActors
+      const updates: Record<string, any> = {}
+      ;(allData || []).forEach((actor: any) => {
+        if ((actor.coordinator || '').toUpperCase().trim() === oldName.toUpperCase().trim()) {
+          updates[`businessActors/${actor.id}/coordinator`] = newName
+        }
+      })
+
+      if (Object.keys(updates).length > 0) {
+        await update(ref(database), updates)
+      }
+
+      const updatedCount = Object.keys(updates).length
+      logActivity({
+        query: `UBAH NAMA KORLAP: "${oldName}" → "${newName}" (${updatedCount} data diperbarui)`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'KUOTA KOORDINATOR',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+
+      toast({
+        title: "Berhasil Diperbarui",
+        description: `Nama koordinator diubah ke "${newName}". ${updatedCount} data pelaku usaha ikut diperbarui.`
+      })
+
+      setShowRenameConfirm(false)
+      setRenamePending(null)
+      setEditingData(null)
+    } catch (error: any) {
+      console.error("Firebase Error (Rename):", error)
+      toast({
+        variant: "destructive",
+        title: "Gagal Update Data",
+        description: error.message || "Terjadi kesalahan sistem."
+      })
+    } finally {
+      setIsRenaming(false)
+    }
   }
 
   const handleDelete = (id: string, name: string) => {
@@ -499,6 +580,61 @@ export default function KuotaKorlapDewanAktifPage() {
         variant="destructive"
         onConfirm={confirmDelete}
       />
+
+      {/* Rename Confirmation Dialog */}
+      <Dialog open={showRenameConfirm} onOpenChange={(open) => { if (!isRenaming) setShowRenameConfirm(open) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600 font-black uppercase">
+              <RefreshCw className="w-5 h-5" />
+              Konfirmasi Perubahan Nama
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 font-semibold w-20 shrink-0">Nama Lama</span>
+                <span className="font-black text-red-600 line-through">{renamePending?.oldName}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500 font-semibold w-20 shrink-0">Nama Baru</span>
+                <span className="font-black text-emerald-600">{renamePending?.newName}</span>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Perubahan nama ini akan memperbarui nama koordinator di{" "}
+              <span className="font-black text-primary">{renamePending?.affectedCount ?? 0} data pelaku usaha</span>{" "}
+              yang terdaftar atas nama koordinator ini secara otomatis.
+            </p>
+            {renamePending?.affectedCount === 0 && (
+              <p className="text-xs text-muted-foreground italic">
+                Tidak ada data pelaku usaha yang terdaftar atas nama koordinator ini.
+              </p>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowRenameConfirm(false)}
+              disabled={isRenaming}
+              className="font-bold"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={confirmRenameUpdate}
+              disabled={isRenaming}
+              className="font-bold bg-amber-500 hover:bg-amber-600 text-white"
+            >
+              {isRenaming ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memperbarui...</>
+              ) : (
+                <><RefreshCw className="w-4 h-4 mr-2" /> Ya, Perbarui Semua</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
