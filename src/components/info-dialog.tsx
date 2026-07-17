@@ -60,11 +60,6 @@ export function InfoDialog({ children }: InfoDialogProps) {
               </span>
               <span className="text-primary mt-1 block">{currentVersion}</span>
             </div>
-            <div className="bg-blue-50 border-l-4 border-primary p-3 sm:p-4 rounded-r-xl">
-              <p className="text-xs sm:text-sm text-blue-900 leading-relaxed italic">
-                "Aplikasi ini dikembangkan dan dibuat secara Mandiri dan Independent oleh Tim Admin yang bekerja. Hak Cipta Sepenuhnya dimiliki oleh AGUS SURIYADI sebagai Pembuat dan Pengembang Aplikasi"
-              </p>
-            </div>
           </div>
 
           <div className="space-y-4 pt-2">
@@ -92,33 +87,6 @@ export function InfoDialog({ children }: InfoDialogProps) {
             </div>
           </div>
 
-          <div className="pt-4 border-t border-gray-100">
-            <h3 className="text-sm font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-              <Mail className="w-4 h-4" /> Kontak & Saran
-            </h3>
-            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm space-y-3 sm:space-y-4">
-              <div className="flex flex-col">
-                <span className="text-xs font-bold text-gray-400 uppercase mb-1">Pengembang</span>
-                <span className="text-lg font-black text-primary">AGUS SURIYADI</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <Mail className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Email</span>
-                  </div>
-                  <p className="text-[13px] font-bold text-gray-700 break-all underline decoration-primary/30">agussuriyadipunya@gmail.com</p>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-gray-400">
-                    <Phone className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider">Whatsapp</span>
-                  </div>
-                  <p className="text-[13px] font-bold text-gray-700">0817319885</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="bg-gray-50 p-4 sm:p-6 flex justify-center border-t border-gray-100">
