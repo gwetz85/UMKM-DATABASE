@@ -588,7 +588,11 @@ export default function DashboardStatsPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredModalData.map((d, i) => (
-                    <TableRow key={d.id}>
+                    <TableRow 
+                      key={d.id}
+                      className="cursor-pointer hover:bg-slate-100 transition-colors"
+                      onClick={() => router.push(`/actor-data?search=${encodeURIComponent(d.nik || d.fullName || '')}&viewId=${d.id}`)}
+                    >
                       <TableCell className="text-center font-bold text-slate-600 text-xs">{i + 1}</TableCell>
                       <TableCell className="font-black text-slate-800 text-xs uppercase">{d.fullName || "-"}</TableCell>
                       <TableCell className="font-mono text-slate-600 text-xs">{d.nik || "-"}</TableCell>

@@ -54,8 +54,8 @@ function ActorDataContent() {
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [printDate, setPrintDate] = useState<string>("")
-  const [searchQuery, setSearchQuery] = useState("")
-
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || "")
+  const viewId = searchParams.get('viewId')
 
   useEffect(() => {
     setPrintDate(new Date().toLocaleString('id-ID'))
@@ -163,6 +163,16 @@ function ActorDataContent() {
     (a.businessName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
     (a.address || "").toLowerCase().includes(searchQuery.toLowerCase())
   ).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || "")) : undefined
+
+  useEffect(() => {
+    if (viewId && actors && !viewingActor) {
+      const actorToView = actors.find(a => a.id === viewId)
+      if (actorToView) {
+        setViewingActor(actorToView)
+        fetchAuxData(actorToView)
+      }
+    }
+  }, [viewId, actors, viewingActor])
 
 
   const { groupedActors, globalIndexMap } = useMemo(() => {
