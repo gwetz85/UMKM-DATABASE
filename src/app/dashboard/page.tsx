@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { RefreshCw, Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Clock, History, MessageSquare } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { BusinessActor } from "../lib/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MusicDashboardCard } from "@/components/MusicDashboardCard"
@@ -74,6 +74,7 @@ export default function DashboardStatsPage() {
   const { data: allUsersForDashboard } = useList(userProfileRef)
   const userProfile = allUsersForDashboard?.find((u: any) => u.uid === user?.uid)
   const [selectedFilter, setSelectedFilter] = useState<{name: string, filterType: string} | null>(null)
+  const [expandedActorId, setExpandedActorId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -566,7 +567,12 @@ export default function DashboardStatsPage() {
         </div>
       </div>
 
-      <Dialog open={!!selectedFilter} onOpenChange={(open) => !open && setSelectedFilter(null)}>
+      <Dialog open={!!selectedFilter} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedFilter(null)
+          setExpandedActorId(null)
+        }
+      }}>
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle className="text-xl font-black uppercase text-primary">
@@ -588,20 +594,52 @@ export default function DashboardStatsPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredModalData.map((d, i) => (
-                    <TableRow 
-                      key={d.id}
-                      className="cursor-pointer hover:bg-slate-100 transition-colors"
-                      onClick={() => router.push(`/actor-data?search=${encodeURIComponent(d.nik || d.fullName || '')}&viewId=${d.id}`)}
-                    >
-                      <TableCell className="text-center font-bold text-slate-600 text-xs">{i + 1}</TableCell>
-                      <TableCell className="font-black text-slate-800 text-xs uppercase">{d.fullName || "-"}</TableCell>
-                      <TableCell className="font-mono text-slate-600 text-xs">{d.nik || "-"}</TableCell>
-                      <TableCell className="text-center">
-                         <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full border bg-slate-100 text-slate-600">
-                           {(d.status || "PENDING").replace(/_/g, " ")}
-                         </span>
-                      </TableCell>
-                    </TableRow>
+                    <React.Fragment key={d.id}>
+                      <TableRow 
+                        className="cursor-pointer hover:bg-slate-100 transition-colors"
+                        onClick={() => setExpandedActorId(prev => prev === d.id ? null : d.id)}
+                      >
+                        <TableCell className="text-center font-bold text-slate-600 text-xs">{i + 1}</TableCell>
+                        <TableCell className="font-black text-slate-800 text-xs uppercase">{d.fullName || "-"}</TableCell>
+                        <TableCell className="font-mono text-slate-600 text-xs">{d.nik || "-"}</TableCell>
+                        <TableCell className="text-center">
+                           <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full border bg-slate-100 text-slate-600">
+                             {(d.status || "PENDING").replace(/_/g, " ")}
+                           </span>
+                        </TableCell>
+                      </TableRow>
+                      {expandedActorId === d.id && (
+                        <TableRow className="bg-slate-50 hover:bg-slate-50">
+                          <TableCell colSpan={4} className="p-0 border-b">
+                            <div className="p-4 animate-in slide-in-from-top-2 duration-200">
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                                <div>
+                                  <p className="font-bold text-slate-400 mb-1">USAHA</p>
+                                  <p className="font-black text-primary uppercase">{d.businessName || "-"}</p>
+                                  <p className="text-[10px] font-bold text-slate-500 uppercase">{d.businessCategory || "-"}</p>
+                                </div>
+                                <div>
+                                  <p className="font-bold text-slate-400 mb-1">NO. HP</p>
+                                  <p className="font-bold text-slate-700">{d.phone || "-"}</p>
+                                </div>
+                                <div>
+                                  <p className="font-bold text-slate-400 mb-1">GENDER</p>
+                                  <p className="font-bold text-slate-700 uppercase">{d.gender || "-"}</p>
+                                </div>
+                                <div>
+                                  <p className="font-bold text-slate-400 mb-1">KOORDINATOR</p>
+                                  <p className="font-bold text-slate-700 uppercase">{d.coordinator || "-"}</p>
+                                </div>
+                                <div className="col-span-2 md:col-span-4 border-t pt-2 mt-2">
+                                  <p className="font-bold text-slate-400 mb-1">ALAMAT LENGKAP</p>
+                                  <p className="font-bold text-slate-700 uppercase">{d.address || "-"} RT/RW {d.rtRw || "-"}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
                   ))}
                 </TableBody>
               </Table>
