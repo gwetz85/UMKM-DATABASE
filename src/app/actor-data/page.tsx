@@ -614,6 +614,7 @@ function ActorDataContent() {
         "NOMOR KK": actor.noKK || "-",
         "TEMPAT LAHIR": actor.pob || parsePobDob(actor.pobDob || "").pob || "-",
         "TANGGAL LAHIR": actor.dob || parsePobDob(actor.pobDob || "").dob || "-",
+        "UMUR": calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || "")),
         "NOMOR HP": actor.phone || "-",
         "ALAMAT": (actor.address || "").toUpperCase(),
         "RT/RW": actor.rtRw || "-",
