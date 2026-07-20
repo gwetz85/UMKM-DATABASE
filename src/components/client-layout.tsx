@@ -23,6 +23,7 @@ import { useSoundEffect } from '@/hooks/use-sound-effect';
 import { cn } from '@/lib/utils';
 import { MessageNotification } from './MessageNotification';
 import { RealtimeClock } from './realtime-clock';
+import { WeatherWidget } from './weather-widget';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -264,12 +265,13 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
             {!isLoginPage && (
               <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50 hidden sm:block pointer-events-none">
-                <div className="pointer-events-auto">
+                <div className="pointer-events-auto flex flex-col items-end gap-3">
                   <RealtimeClock 
                     className="bg-white/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200 shadow-sm hover:bg-white/80 transition-colors" 
                     timeClassName="text-lg md:text-xl text-slate-700" 
                     dateClassName="text-[8px] md:text-[10px]" 
                   />
+                  <WeatherWidget className="w-[280px]" />
                 </div>
               </div>
             )}
