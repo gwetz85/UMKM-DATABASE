@@ -487,10 +487,10 @@ export default function LoginPage() {
             </div>
           ) : (
             <form onSubmit={handleAuth} className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
-              <div className="space-y-3">
-                <div className="relative group flex items-center shadow-xl rounded-2xl bg-white/95 backdrop-blur-xl border border-white/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
-                  <div className="pl-6 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
-                    <User className="w-6 h-6" />
+              <div className="space-y-0 relative">
+                <div className="relative group flex items-center shadow-xl rounded-2xl bg-white/95 backdrop-blur-xl border border-white/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all z-20">
+                  <div className="pl-5 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                    <User className="w-5 h-5" />
                   </div>
                   <Input
                     id="identifier"
@@ -498,30 +498,38 @@ export default function LoginPage() {
                     placeholder="Username"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    className="h-14 md:h-16 border-0 bg-transparent text-slate-900 placeholder:text-slate-400 px-2 font-bold text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="h-12 md:h-14 border-0 bg-transparent text-slate-900 placeholder:text-slate-400 px-2 font-bold text-base focus-visible:ring-0 focus-visible:ring-offset-0"
                     required
                   />
                 </div>
-                <div className="relative group flex items-center shadow-xl rounded-2xl bg-white/95 backdrop-blur-xl border border-white/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
-                  <div className="pl-6 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
-                    <Key className="w-6 h-6" />
+                
+                <div className={cn(
+                  "grid transition-all duration-500 ease-in-out",
+                  identifier.trim().length > 0 ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                )}>
+                  <div className="overflow-hidden">
+                    <div className="relative group flex items-center mt-3 shadow-xl rounded-2xl bg-white/95 backdrop-blur-xl border border-white/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                      <div className="pl-5 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                        <Key className="w-5 h-5" />
+                      </div>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Kata Sandi"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-12 md:h-14 border-0 bg-transparent text-slate-900 placeholder:text-slate-400 px-2 font-bold text-base focus-visible:ring-0 focus-visible:ring-offset-0 pr-14"
+                        required={identifier.trim().length > 0}
+                      />
+                      <button 
+                        type="submit"
+                        disabled={loading || identifier.trim().length === 0}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 bg-primary hover:bg-primary/90 text-white rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-white" />}
+                      </button>
+                    </div>
                   </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Kata Sandi"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="h-14 md:h-16 border-0 bg-transparent text-slate-900 placeholder:text-slate-400 px-2 font-bold text-lg focus-visible:ring-0 focus-visible:ring-offset-0"
-                    required
-                  />
-                  <button 
-                    type="submit"
-                    disabled={loading}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-primary hover:bg-primary/90 text-white rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-md"
-                  >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5 md:w-6 md:h-6 text-white" />}
-                  </button>
                 </div>
               </div>
 
