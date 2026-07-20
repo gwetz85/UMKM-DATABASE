@@ -63,7 +63,7 @@
   }
   body {
     @apply text-foreground font-body antialiased;
-    background-image: url('/bg-umkm-animasi.png');
+    background-image: url('/bg-baru.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
