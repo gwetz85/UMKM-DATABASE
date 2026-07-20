@@ -272,37 +272,37 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     dateClassName="text-[8px] md:text-[10px]" 
                   />
                   <WeatherWidget className="w-72" />
-                  <div className="w-72 bg-white/60 backdrop-blur-md rounded-2xl border border-white/40 shadow-lg overflow-hidden flex flex-col transition-all hover:shadow-xl hover:bg-white/80">
-                    <div className="p-4 border-b border-slate-200/50">
+                  <div className="w-72 bg-white/80 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg overflow-hidden flex flex-col transition-all hover:shadow-xl hover:bg-white">
+                    <div className="p-4 border-b border-slate-300/50">
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center justify-between w-full">
-                          <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Aplikasi</span>
-                          <span className="text-xs font-black text-primary uppercase">SIMPU</span>
+                          <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Aplikasi</span>
+                          <span className="text-xs font-black text-blue-700 uppercase drop-shadow-sm">SIMPU</span>
                         </div>
                         <div className="flex items-center justify-between w-full">
-                          <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Versi</span>
-                          <span className="text-xs font-black text-slate-700 bg-slate-200/50 px-2 py-1 rounded-md uppercase tracking-wider">8.2.5 PRO</span>
+                          <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Versi</span>
+                          <span className="text-xs font-black text-slate-800 bg-slate-200/80 border border-slate-300 px-2 py-1 rounded-md uppercase tracking-wider shadow-sm">8.2.5 PRO</span>
                         </div>
                         <div className="flex items-center justify-between w-full">
-                          <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Pengguna</span>
-                          <span className="text-xs font-black text-slate-700 truncate max-w-[140px] text-right uppercase">
+                          <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Pengguna</span>
+                          <span className="text-xs font-black text-slate-900 truncate max-w-[140px] text-right uppercase drop-shadow-sm">
                             {profile?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div className="p-4 bg-slate-50/50 flex flex-col gap-3">
-                      <span className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
+                    <div className="p-4 bg-slate-100/80 flex flex-col gap-3">
+                      <span className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 drop-shadow-sm">
+                        <div className="w-2 h-2 bg-blue-600 rounded-full shadow-sm"></div>
                         Kontak Admin
                       </span>
                       <a href="mailto:simputeam@gmail.com" className="flex items-center justify-between w-full group">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider group-hover:text-primary transition-colors">Email</span>
-                        <span className="text-xs font-bold text-slate-700 group-hover:text-primary transition-colors">simputeam@gmail.com</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase tracking-wider group-hover:text-blue-700 transition-colors">Email</span>
+                        <span className="text-xs font-bold text-slate-800 group-hover:text-blue-700 transition-colors">simputeam@gmail.com</span>
                       </a>
                       <a href="https://wa.me/62817319885" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full group">
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider group-hover:text-emerald-600 transition-colors">WhatsApp</span>
-                        <span className="text-xs font-black text-emerald-600 group-hover:text-emerald-700 transition-colors">wa.me/62817319885</span>
+                        <span className="text-xs font-bold text-slate-600 uppercase tracking-wider group-hover:text-emerald-700 transition-colors">WhatsApp</span>
+                        <span className="text-xs font-black text-emerald-700 group-hover:text-emerald-800 transition-colors">wa.me/62817319885</span>
                       </a>
                     </div>
                   </div>
