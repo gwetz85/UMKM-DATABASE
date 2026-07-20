@@ -96,13 +96,14 @@ export const generateRegistrationForm = async (actor: BusinessActor, sequenceNum
     fillColor: [239, 246, 255], // blue-50
     textColor: [30, 64, 175], // blue-800
     fontStyle: 'bold' as any,
-    halign: 'left' as any
+    halign: 'left' as any,
+    fontSize: 8.5,
   };
 
   const tableData = [
     [{ content: 'I. DATA PRIBADI', colSpan: 2, styles: sectionStyle }],
     ['Nama Lengkap', `:  ${actor.fullName || '-'}`],
-    ['NIK (Nomor Induk Kependudukan)', `:  ${actor.nik || '-'}`],
+    ['NIK', `:  ${actor.nik || '-'}`],
     ['Nomor Kartu Keluarga', `:  ${actor.noKK || '-'}`],
     ['Jenis Kelamin', `:  ${actor.gender || '-'}`],
     ['Tempat Lahir', `:  ${actor.pob || parsePobDob(actor.pobDob || '').pob || '-'}`],
@@ -122,17 +123,17 @@ export const generateRegistrationForm = async (actor: BusinessActor, sequenceNum
   ];
 
   autoTable(doc, {
-    startY: 62,
+    startY: 60,
     body: tableData as any,
     theme: 'plain',
     styles: {
-      fontSize: 9.5,
-      cellPadding: { top: 3.5, right: 4, bottom: 3.5, left: 4 },
+      fontSize: 8.5,
+      cellPadding: { top: 2.5, right: 3, bottom: 2.5, left: 4 },
       font: 'helvetica',
       textColor: [51, 65, 85], // slate-700
     },
     columnStyles: {
-      0: { fontStyle: 'bold', textColor: [15, 23, 42], cellWidth: 75 }, // slate-900
+      0: { fontStyle: 'bold', textColor: [15, 23, 42], cellWidth: 60 }, // slate-900
       1: { cellWidth: 'auto', textColor: [71, 85, 105] }, // slate-600
     },
     margin: { left: margin, right: margin },
@@ -149,17 +150,27 @@ export const generateRegistrationForm = async (actor: BusinessActor, sequenceNum
   });
 
   const finalY = (doc as any).lastAutoTable.finalY;
+  const pageHeight = doc.internal.pageSize.getHeight();
 
   // --- QR CODE ---
   const qrData = `Nomor Registrasi: ${regCode}\nNama Pelaku Usaha: ${actor.fullName || '-'}\nJenis Usaha: ${actor.businessCategory || '-'}\nKontak: ${actor.phone || '-'}\nAlamat: ${actor.address || '-'}`;
   const qrBase64 = await generateQRCodeBase64(qrData);
   
-  // Calculate dynamic QR Y position (start 7mm below the table, but max out near the bottom so it doesn't get cut off if table is too long)
-  // We prefer it to sit at 260 if possible, but if table is longer, push it down.
-  const qrY = Math.max(finalY + 7, 260); 
+  // QR section needs ~25mm of space (18mm QR + some padding)
+  const qrSectionHeight = 25;
+  let qrY: number;
+
+  if (finalY + 7 + qrSectionHeight > pageHeight - 10) {
+    // Not enough space on this page, add a new page
+    doc.addPage();
+    qrY = 20;
+  } else {
+    // Enough space: place QR right below the table, but prefer bottom of page for aesthetics
+    qrY = Math.max(finalY + 7, pageHeight - 10 - qrSectionHeight);
+  }
   
   if (qrBase64) {
-    const qrSize = 18; // Slightly smaller to ensure fit
+    const qrSize = 18;
     doc.addImage(qrBase64, 'PNG', margin, qrY, qrSize, qrSize);
     
     doc.setFontSize(7);
