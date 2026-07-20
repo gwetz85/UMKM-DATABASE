@@ -272,6 +272,40 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     dateClassName="text-[8px] md:text-[10px]" 
                   />
                   <WeatherWidget className="w-[280px]" />
+                  <div className="w-[280px] bg-white/60 backdrop-blur-md rounded-2xl border border-white/40 shadow-lg overflow-hidden flex flex-col transition-all hover:shadow-xl hover:bg-white/80">
+                    <div className="p-3.5 border-b border-slate-200/50">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Aplikasi</span>
+                          <span className="text-[10px] font-black text-primary uppercase">SIMPU</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Versi</span>
+                          <span className="text-[9px] font-black text-slate-600 bg-slate-200/50 px-2 py-0.5 rounded-full uppercase tracking-wider">8.2.5 PRO</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Pengguna</span>
+                          <span className="text-[10px] font-black text-slate-700 truncate max-w-[130px] text-right uppercase">
+                            {profile?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-3.5 bg-slate-50/50 flex flex-col gap-2">
+                      <span className="text-[9px] font-black text-slate-800 uppercase tracking-widest mb-0.5 flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                        Kontak Admin
+                      </span>
+                      <a href="mailto:simputeam@gmail.com" className="flex items-center justify-between group">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-primary transition-colors">Email</span>
+                        <span className="text-[10px] font-bold text-slate-700 group-hover:text-primary transition-colors">simputeam@gmail.com</span>
+                      </a>
+                      <a href="https://wa.me/62817319885" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between group">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-emerald-600 transition-colors">WhatsApp</span>
+                        <span className="text-[10px] font-black text-emerald-600 group-hover:text-emerald-700 transition-colors">wa.me/62817319885</span>
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
