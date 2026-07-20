@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth, useDatabase } from "@/firebase"
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth"
@@ -24,7 +24,8 @@ import {
   MapPin, 
   Building2, 
   Code2,
-  X
+  X,
+  Lock
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -53,7 +54,8 @@ export default function LoginPage() {
   const [regPass, setRegPass] = useState("")
   const [isRegisteringView, setIsRegisteringView] = useState(false)
   const [isRegistered, setIsRegistered] = useState(false)
-  const [showForm, setShowForm] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(true)
+  const formRef = useRef<HTMLDivElement>(null)
   const [showInfoModal, setShowInfoModal] = useState(false)
   const [showCheckDataModal, setShowCheckDataModal] = useState(false)
   const [showFullEvent, setShowFullEvent] = useState(false)
@@ -109,8 +111,17 @@ export default function LoginPage() {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") setShowFullEvent(false);
     };
+    const handleClickOutside = (e: MouseEvent) => {
+      if (formRef.current && !formRef.current.contains(e.target as Node)) {
+        setIsFormOpen(false);
+      }
+    };
     window.addEventListener("keydown", handleEsc);
-    return () => window.removeEventListener("keydown", handleEsc);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      window.removeEventListener("keydown", handleEsc);
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
   }, []);
 
   const activeEvent = useActiveEvent(eventInfo);
@@ -412,9 +423,24 @@ export default function LoginPage() {
       </div>
 
       {/* Bottom Left Content: Auth Forms */}
-      <div className="absolute bottom-6 left-6 md:bottom-10 md:left-12 z-20 w-full max-w-sm animate-in slide-in-from-bottom-10 fade-in duration-1000">
-        <div className="w-full space-y-6">
-          {isRegistered ? (
+      <div 
+        ref={formRef}
+        className="absolute bottom-6 left-6 md:bottom-10 md:left-12 z-20 max-w-sm animate-in slide-in-from-bottom-10 fade-in duration-1000"
+      >
+        {!isFormOpen ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsFormOpen(true)
+            }}
+            className="w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl flex items-center justify-center hover:bg-white/20 transition-all active:scale-95 group animate-in zoom-in-95 duration-300"
+            title="Buka Form Login"
+          >
+            <Lock className="w-6 h-6 text-white/80 group-hover:text-white transition-colors" />
+          </button>
+        ) : (
+          <div className="w-full space-y-6 min-w-[280px] sm:min-w-[320px] animate-in slide-in-from-bottom-2 fade-in duration-300">
+            {isRegistered ? (
             <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] p-8 shadow-2xl space-y-6 animate-in slide-in-from-bottom-4 duration-500 text-center">
               <h2 className="text-2xl font-black text-white uppercase tracking-tight">Pendaftaran Berhasil</h2>
               <div className="bg-emerald-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-emerald-500/30">
@@ -552,6 +578,7 @@ export default function LoginPage() {
             </form>
           )}
         </div>
+        )}
       </div>
 
       {/* Footer Removed */}
