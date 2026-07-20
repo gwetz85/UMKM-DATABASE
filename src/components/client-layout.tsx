@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { InfoDialog } from '@/components/info-dialog';
