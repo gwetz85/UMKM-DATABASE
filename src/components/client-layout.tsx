@@ -162,7 +162,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       <SidebarProvider>
         <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-transparent">
           <GlobalAutoVerifier />
-          <BackgroundMusic role={profile?.role} />
           <MessageNotification />
           <Toaster />
 
@@ -264,48 +263,53 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
             {!isLoginPage && (
-              <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50 hidden lg:block pointer-events-none">
+              <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50 pointer-events-none">
                 <div className="pointer-events-auto flex flex-col items-end gap-3">
-                  <RealtimeClock 
-                    className="bg-white/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200 shadow-sm hover:bg-white/80 transition-colors" 
-                    timeClassName="text-lg md:text-xl text-slate-700" 
-                    dateClassName="text-[8px] md:text-[10px]" 
-                  />
-                  <WeatherWidget className="w-72" />
-                  <div className="w-72 bg-white/80 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg overflow-hidden flex flex-col transition-all hover:shadow-xl hover:bg-white">
-                    <div className="p-4 border-b border-slate-300/50">
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-center justify-between w-full">
-                          <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Aplikasi</span>
-                          <span className="text-xs font-black text-blue-700 uppercase drop-shadow-sm">SIMPU</span>
-                        </div>
-                        <div className="flex items-center justify-between w-full">
-                          <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Versi</span>
-                          <span className="text-xs font-black text-slate-800 bg-slate-200/80 border border-slate-300 px-2 py-1 rounded-md uppercase tracking-wider shadow-sm">8.2.5 PRO</span>
-                        </div>
-                        <div className="flex items-center justify-between w-full">
-                          <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Pengguna</span>
-                          <span className="text-xs font-black text-slate-900 truncate max-w-[140px] text-right uppercase drop-shadow-sm">
-                            {profile?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}
-                          </span>
+                  <div className="hidden sm:block">
+                    <RealtimeClock 
+                      className="bg-white/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200 shadow-sm hover:bg-white/80 transition-colors" 
+                      timeClassName="text-lg md:text-xl text-slate-700" 
+                      dateClassName="text-[8px] md:text-[10px]" 
+                    />
+                  </div>
+                  <div className="hidden lg:flex flex-col gap-3">
+                    <WeatherWidget className="w-72" />
+                    <div className="w-72 bg-white/80 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg overflow-hidden flex flex-col transition-all hover:shadow-xl hover:bg-white">
+                      <div className="p-4 border-b border-slate-300/50">
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center justify-between w-full">
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Aplikasi</span>
+                            <span className="text-xs font-black text-blue-700 uppercase drop-shadow-sm">SIMPU</span>
+                          </div>
+                          <div className="flex items-center justify-between w-full">
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Versi</span>
+                            <span className="text-xs font-black text-slate-800 bg-slate-200/80 border border-slate-300 px-2 py-1 rounded-md uppercase tracking-wider shadow-sm">8.2.5 PRO</span>
+                          </div>
+                          <div className="flex items-center justify-between w-full">
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Pengguna</span>
+                            <span className="text-xs font-black text-slate-900 truncate max-w-[140px] text-right uppercase drop-shadow-sm">
+                              {profile?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="p-4 bg-slate-100/80 flex flex-col gap-3">
-                      <span className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 drop-shadow-sm">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full shadow-sm"></div>
-                        Kontak Admin
-                      </span>
-                      <a href="mailto:simputeam@gmail.com" className="flex items-center justify-between w-full group">
-                        <span className="text-xs font-bold text-slate-600 uppercase tracking-wider group-hover:text-blue-700 transition-colors">Email</span>
-                        <span className="text-xs font-bold text-slate-800 group-hover:text-blue-700 transition-colors">simputeam@gmail.com</span>
-                      </a>
-                      <a href="https://wa.me/62817319885" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full group">
-                        <span className="text-xs font-bold text-slate-600 uppercase tracking-wider group-hover:text-emerald-700 transition-colors">WhatsApp</span>
-                        <span className="text-xs font-black text-emerald-700 group-hover:text-emerald-800 transition-colors">wa.me/62817319885</span>
-                      </a>
+                      <div className="p-4 bg-slate-100/80 flex flex-col gap-3">
+                        <span className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 drop-shadow-sm">
+                          <div className="w-2 h-2 bg-blue-600 rounded-full shadow-sm"></div>
+                          Kontak Admin
+                        </span>
+                        <a href="mailto:simputeam@gmail.com" className="flex items-center justify-between w-full group">
+                          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider group-hover:text-blue-700 transition-colors">Email</span>
+                          <span className="text-xs font-bold text-slate-800 group-hover:text-blue-700 transition-colors">simputeam@gmail.com</span>
+                        </a>
+                        <a href="https://wa.me/62817319885" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full group">
+                          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider group-hover:text-emerald-700 transition-colors">WhatsApp</span>
+                          <span className="text-xs font-black text-emerald-700 group-hover:text-emerald-800 transition-colors">wa.me/62817319885</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
+                  <BackgroundMusic role={profile?.role} className="lg:static" />
                 </div>
               </div>
             )}
