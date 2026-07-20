@@ -271,7 +271,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     timeClassName="text-lg md:text-xl text-slate-700" 
                     dateClassName="text-[8px] md:text-[10px]" 
                   />
-                  {isRootPage && <WeatherWidget className="w-[280px]" />}
+                  <WeatherWidget className="w-[280px]" />
                 </div>
               </div>
             )}
@@ -284,7 +284,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               
               <div key={pathname} className={cn(
                 "w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out p-4 md:p-8",
-                isRootPage ? "flex-1 flex flex-col min-h-0 overflow-hidden lg:pr-[320px]" : "min-h-full"
+                isRootPage ? "flex-1 flex flex-col min-h-0 overflow-hidden lg:pr-[320px]" : "min-h-full lg:pr-[320px]"
               )}>
                 {children}
               </div>
