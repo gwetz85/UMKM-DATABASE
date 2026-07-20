@@ -63,12 +63,14 @@
   }
   body {
     @apply text-foreground font-body antialiased;
+    min-height: 100vh;
+  }
+  body.app-bg {
     background-image: url('/bg-baru.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
     background-repeat: no-repeat;
-    min-height: 100vh;
   }
 }
 

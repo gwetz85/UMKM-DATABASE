@@ -135,6 +135,18 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const isLoginPage = pathname === '/login'
   const isRootPage = pathname === '/'
 
+  // Toggle body background class — login page has its own background
+  useEffect(() => {
+    if (isLoginPage) {
+      document.body.classList.remove('app-bg');
+    } else {
+      document.body.classList.add('app-bg');
+    }
+    return () => {
+      document.body.classList.remove('app-bg');
+    };
+  }, [isLoginPage]);
+
   const getPageTitle = (path: string) => {
     switch (path) {
       case '/': return 'Menu Utama';
