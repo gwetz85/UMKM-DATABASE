@@ -321,7 +321,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center relative overflow-x-hidden overflow-y-auto md:overflow-hidden font-sans bg-slate-950 pb-20 md:pb-0">
+    <div className="h-[100dvh] w-full flex flex-col items-center justify-center relative overflow-hidden font-sans bg-slate-950">
       {/* Background Image / Slideshow */}
       <div className="fixed inset-0 z-0 bg-slate-950 overflow-hidden pointer-events-none">
         {slides.length > 0 ? (
@@ -359,8 +359,8 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-black/30 z-20" />
       </div>
 
-      {/* Top Right Widgets */}
-      <div className="relative md:absolute md:top-6 md:right-6 z-50 flex flex-col items-center md:items-end gap-3 w-full px-6 pt-10 md:p-0 md:max-w-xs animate-in fade-in slide-in-from-top-4 md:slide-in-from-right-8 duration-1000">
+      {/* Top Right Widgets — Event Countdown & Office Hours */}
+      <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50 flex flex-col items-end gap-3 max-w-xs animate-in fade-in slide-in-from-right-8 duration-1000">
         {activeEvent && (
           <div 
             className="group cursor-pointer pointer-events-auto"
@@ -387,11 +387,12 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-sm px-6 mt-10 md:mt-0 animate-in zoom-in-95 fade-in duration-1000">
+      {/* Center — Logo & Title */}
+      <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-sm px-6 animate-in zoom-in-95 fade-in duration-1000">
         {/* Logo */}
         <div className="group relative">
           <div className="absolute inset-0 bg-white/20 rounded-full blur-2xl group-hover:bg-white/30 transition-all duration-500" />
-          <div className="relative w-40 h-40 md:w-48 md:h-48 rounded-full border-[10px] border-white/20 bg-white/10 backdrop-blur-md shadow-2xl overflow-hidden hover:scale-105 transition-transform duration-500 flex items-center justify-center">
+          <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-[10px] border-white/20 bg-white/10 backdrop-blur-md shadow-2xl overflow-hidden hover:scale-105 transition-transform duration-500 flex items-center justify-center">
             <img 
               src="/icon-512.png" 
               alt="Logo" 
@@ -401,7 +402,7 @@ export default function LoginPage() {
         </div>
 
         <div className="text-center space-y-1">
-          <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter drop-shadow-2xl uppercase">
+          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-2xl uppercase">
             SIMPU
           </h1>
           <p className="text-white/80 text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] drop-shadow-lg">
@@ -411,7 +412,7 @@ export default function LoginPage() {
       </div>
 
       {/* Bottom Left Content: Auth Forms */}
-      <div className="relative md:absolute md:bottom-10 md:left-12 z-20 w-full max-w-sm px-6 mt-12 md:mt-0 animate-in slide-in-from-bottom-10 fade-in duration-1000">
+      <div className="absolute bottom-6 left-6 md:bottom-10 md:left-12 z-20 w-full max-w-sm animate-in slide-in-from-bottom-10 fade-in duration-1000">
         <div className="w-full space-y-6">
           {isRegistered ? (
             <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] p-8 shadow-2xl space-y-6 animate-in slide-in-from-bottom-4 duration-500 text-center">
