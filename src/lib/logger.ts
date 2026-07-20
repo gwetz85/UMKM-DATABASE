@@ -1,5 +1,5 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getDatabase, ref, push, set, Database } from 'firebase/database';
+import { getDatabase, ref, push, set, Database, query, orderByChild, endAt, get, update } from 'firebase/database';
 import { firebaseConfig } from '@/firebase/config';
 
 // Safe initialization for both Client and Server environments
@@ -24,6 +24,34 @@ export interface ActivityLog {
 }
 
 /**
+ * Automatically cleans up logs older than 7 days
+ */
+async function cleanOldLogs(providedDb?: Database) {
+  try {
+    const database = getDbInstance(providedDb);
+    const logsRef = ref(database, 'activity_logs');
+    
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const cutoffTimestamp = sevenDaysAgo.toISOString();
+
+    const logsQuery = query(logsRef, orderByChild('timestamp'), endAt(cutoffTimestamp));
+    const snapshot = await get(logsQuery);
+
+    if (snapshot.exists()) {
+      const updates: Record<string, null> = {};
+      snapshot.forEach((child) => {
+        updates[child.key as string] = null;
+      });
+      await update(logsRef, updates);
+      console.log(`Deleted ${Object.keys(updates).length} old logs (older than 7 days).`);
+    }
+  } catch (error) {
+    console.error("Failed to clean old logs:", error);
+  }
+}
+
+/**
  * Logs an activity to the Firebase Realtime Database.
  * @param log The activity data to log
  * @param providedDb Optional database instance to use
@@ -41,6 +69,10 @@ export async function logActivity(log: Omit<ActivityLog, 'timestamp'>, providedD
     
     console.log("Logging activity:", logData);
     await set(newLogRef, logData);
+    
+    // Auto-cleanup old logs (fire and forget)
+    cleanOldLogs(database).catch(console.error);
+
     return true;
   } catch (error) {
     console.error("Failed to log activity:", error);
