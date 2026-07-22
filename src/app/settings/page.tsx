@@ -86,6 +86,16 @@ export default function SettingsPage() {
   const systemConfigRef = database ? ref(database, 'settings/system_config') : null
   const { data: systemConfig } = useObject(systemConfigRef)
 
+  const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
+  const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
+  const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
+  const blacklistDataRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
+
+  const { data: data2024, isLoading: is2024Loading } = useList(master2024Ref)
+  const { data: data2023, isLoading: is2023Loading } = useList(master2023Ref)
+  const { data: data2025, isLoading: is2025Loading } = useList(master2025Ref)
+  const { data: blacklistData, isLoading: isBlacklistLoading } = useList(blacklistDataRef)
+
   useEffect(() => {
     if (themeError) {
       console.error('Theme Settings Error:', themeError)
@@ -734,9 +744,15 @@ export default function SettingsPage() {
                   <div className="space-y-6">
                     {/* Sheet 1: 2024 */}
                     <div className="space-y-3">
-                      <Label className="text-[11px] font-black uppercase text-emerald-600 flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5" /> Sheet 1: Data Pembanding 2024 (3 Menit)
-                      </Label>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <Label className="text-[11px] font-black uppercase text-emerald-600 flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5" /> Sheet 1: Data Pembanding 2024 (3 Menit)
+                        </Label>
+                        <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-sm">
+                          {is2024Loading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                          Total: {(data2024?.length || 0).toLocaleString('id-ID')} Data
+                        </Badge>
+                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="relative">
                           <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'master_2024')} className="hidden" id="excel-2024-upload" disabled={uploadingExcel} />
@@ -757,9 +773,15 @@ export default function SettingsPage() {
 
                     {/* Sheet 2: 2023 */}
                     <div className="space-y-3 pt-4 border-t border-dashed">
-                      <Label className="text-[11px] font-black uppercase text-blue-600 flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5" /> Sheet 2: Data Pembanding 2023 (1 Menit)
-                      </Label>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <Label className="text-[11px] font-black uppercase text-blue-600 flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5" /> Sheet 2: Data Pembanding 2023 (1 Menit)
+                        </Label>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-sm">
+                          {is2023Loading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                          Total: {(data2023?.length || 0).toLocaleString('id-ID')} Data
+                        </Badge>
+                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="relative">
                           <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'master_2023')} className="hidden" id="excel-2023-upload" disabled={uploadingExcel} />
@@ -780,9 +802,15 @@ export default function SettingsPage() {
 
                     {/* Sheet 3: 2025 */}
                     <div className="space-y-3 pt-4 border-t border-dashed">
-                      <Label className="text-[11px] font-black uppercase text-amber-600 flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5" /> Sheet 3: Data Pembanding 2025 (HOLD)
-                      </Label>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <Label className="text-[11px] font-black uppercase text-amber-600 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5" /> Sheet 3: Data Pembanding 2025 (HOLD)
+                        </Label>
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-sm">
+                          {is2025Loading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                          Total: {(data2025?.length || 0).toLocaleString('id-ID')} Data
+                        </Badge>
+                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="relative">
                           <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'master_2025')} className="hidden" id="excel-2025-upload" disabled={uploadingExcel} />
@@ -803,9 +831,15 @@ export default function SettingsPage() {
 
                     {/* Sheet 4: Blacklist */}
                     <div className="space-y-3 pt-4 border-t border-dashed">
-                      <Label className="text-[11px] font-black uppercase text-rose-600 flex items-center gap-1.5">
-                        <XCircle className="w-3.5 h-3.5" /> Sheet 4: Data Blacklist (30s Reject)
-                      </Label>
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <Label className="text-[11px] font-black uppercase text-rose-600 flex items-center gap-1.5">
+                          <XCircle className="w-3.5 h-3.5" /> Sheet 4: Data Blacklist (30s Reject)
+                        </Label>
+                        <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-300 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-sm">
+                          {isBlacklistLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                          Total: {(blacklistData?.length || 0).toLocaleString('id-ID')} Data
+                        </Badge>
+                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="relative">
                           <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'blacklist')} className="hidden" id="excel-blacklist-upload" disabled={uploadingExcel} />
