@@ -24,6 +24,7 @@ export default function SettingsInfoPage() {
   // Form State
   const [appName, setAppName] = useState("SIMPU")
   const [version, setVersion] = useState("8.2.5 PRO")
+  const [totalPembanding, setTotalPembanding] = useState("15.000 Data")
   const [adminEmail, setAdminEmail] = useState("simputeam@gmail.com")
   const [adminWhatsapp, setAdminWhatsapp] = useState("wa.me/62817319885")
   const [copyright, setCopyright] = useState("")
@@ -51,6 +52,7 @@ export default function SettingsInfoPage() {
           const data = snap.val()
           setAppName(data.appName || "SIMPU")
           setVersion(data.version || "8.2.5 PRO")
+          setTotalPembanding(data.totalPembanding || "15.000 Data")
           setAdminEmail(data.adminEmail || "simputeam@gmail.com")
           setAdminWhatsapp(data.adminWhatsapp || "wa.me/62817319885")
           setCopyright(data.copyright || "")
@@ -80,6 +82,7 @@ export default function SettingsInfoPage() {
       await update(ref(database, 'settings/system_config'), {
         appName,
         version,
+        totalPembanding,
         adminEmail,
         adminWhatsapp,
         copyright,
@@ -137,6 +140,15 @@ export default function SettingsInfoPage() {
                 value={version} 
                 onChange={(e) => setVersion(e.target.value)}
                 placeholder="Contoh: 8.2.5 PRO"
+                className="font-bold focus-visible:ring-primary/30"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label className="text-xs font-bold uppercase tracking-widest text-slate-500">Total Data Pembanding</Label>
+              <Input 
+                value={totalPembanding} 
+                onChange={(e) => setTotalPembanding(e.target.value)}
+                placeholder="Contoh: 15.000 Data"
                 className="font-bold focus-visible:ring-primary/30"
               />
             </div>

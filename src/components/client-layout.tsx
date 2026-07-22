@@ -309,6 +309,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                               {profile?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}
                             </span>
                           </div>
+                          <div className="flex items-center justify-between w-full pt-1 border-t border-slate-200/50">
+                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Data Pembanding</span>
+                            <span className="text-xs font-black text-indigo-700 uppercase drop-shadow-sm">
+                              {systemConfig?.totalPembanding || '0 Data'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div className="p-4 bg-slate-100/80 flex flex-col gap-3">

@@ -633,6 +633,7 @@ export default function SettingsPage() {
                 const formData = new FormData(e.currentTarget);
                 const appName = formData.get('appName') as string;
                 const version = formData.get('version') as string;
+                const totalPembanding = formData.get('totalPembanding') as string;
                 const adminEmail = formData.get('adminEmail') as string;
                 const adminWhatsapp = formData.get('adminWhatsapp') as string;
                 const copyright = formData.get('copyright') as string;
@@ -642,6 +643,7 @@ export default function SettingsPage() {
                   await update(ref(database, 'settings/system_config'), {
                     appName,
                     version,
+                    totalPembanding,
                     adminEmail,
                     adminWhatsapp,
                     copyright
@@ -661,6 +663,10 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="version">Versi Aplikasi</Label>
                     <Input id="version" name="version" defaultValue={systemConfig?.version || "8.2.5 PRO"} placeholder="Contoh: 8.2.5 PRO" />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="totalPembanding">Total Data Pembanding</Label>
+                    <Input id="totalPembanding" name="totalPembanding" defaultValue={systemConfig?.totalPembanding || "15.000 Data"} placeholder="Contoh: 15.000 Data" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="adminEmail">Email Kontak Admin</Label>
