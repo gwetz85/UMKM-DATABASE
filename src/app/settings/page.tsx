@@ -623,21 +623,27 @@ export default function SettingsPage() {
           <Card className="border-none shadow-sm">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Settings2 className="w-5 h-5 text-primary" /> Konfigurasi Sistem
+                <Settings2 className="w-5 h-5 text-primary" /> Konfigurasi Sistem & Kontak Admin
               </CardTitle>
-              <CardDescription>Atur teks versi, hak cipta, dan tulisan berjalan.</CardDescription>
+              <CardDescription>Atur nama aplikasi, versi, kontak admin (Email & WhatsApp), dan teks hak cipta.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
+                const appName = formData.get('appName') as string;
                 const version = formData.get('version') as string;
+                const adminEmail = formData.get('adminEmail') as string;
+                const adminWhatsapp = formData.get('adminWhatsapp') as string;
                 const copyright = formData.get('copyright') as string;
 
                 setLoading(true);
                 try {
                   await update(ref(database, 'settings/system_config'), {
+                    appName,
                     version,
+                    adminEmail,
+                    adminWhatsapp,
                     copyright
                   });
                   toast({ title: "Berhasil", description: "Konfigurasi sistem telah diperbarui." });
@@ -649,10 +655,22 @@ export default function SettingsPage() {
               }} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="version">Versi Aplikasi</Label>
-                    <Input id="version" name="version" defaultValue={systemConfig?.version || "v4.0.0 Stable"} placeholder="Contoh: v4.0.1 Stable" />
+                    <Label htmlFor="appName">Nama Aplikasi</Label>
+                    <Input id="appName" name="appName" defaultValue={systemConfig?.appName || "SIMPU"} placeholder="Contoh: SIMPU" />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="version">Versi Aplikasi</Label>
+                    <Input id="version" name="version" defaultValue={systemConfig?.version || "8.2.5 PRO"} placeholder="Contoh: 8.2.5 PRO" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="adminEmail">Email Kontak Admin</Label>
+                    <Input id="adminEmail" name="adminEmail" defaultValue={systemConfig?.adminEmail || "simputeam@gmail.com"} placeholder="Contoh: simputeam@gmail.com" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="adminWhatsapp">WhatsApp Kontak Admin</Label>
+                    <Input id="adminWhatsapp" name="adminWhatsapp" defaultValue={systemConfig?.adminWhatsapp || "wa.me/62817319885"} placeholder="Contoh: wa.me/62817319885" />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="copyright">Teks Hak Cipta</Label>
                     <Input id="copyright" name="copyright" defaultValue={systemConfig?.copyright || "© 2024 Dinas Koperasi & UKM"} placeholder="Contoh: © 2024 Nama Dinas" />
                   </div>

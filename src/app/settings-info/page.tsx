@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useDatabase, useUser, useObject, useMemoFirebase } from "@/firebase"
-import { ref, get, set } from "firebase/database"
+import { ref, get, set, update } from "firebase/database"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,7 +22,10 @@ export default function SettingsInfoPage() {
   const [isSaving, setIsSaving] = useState(false)
   
   // Form State
-  const [version, setVersion] = useState("")
+  const [appName, setAppName] = useState("SIMPU")
+  const [version, setVersion] = useState("8.2.5 PRO")
+  const [adminEmail, setAdminEmail] = useState("simputeam@gmail.com")
+  const [adminWhatsapp, setAdminWhatsapp] = useState("wa.me/62817319885")
   const [copyright, setCopyright] = useState("")
   const [welcomeText, setWelcomeText] = useState("")
   const [subText, setSubText] = useState("")
@@ -46,7 +49,10 @@ export default function SettingsInfoPage() {
       get(configRef).then(snap => {
         if (snap.exists()) {
           const data = snap.val()
-          setVersion(data.version || "")
+          setAppName(data.appName || "SIMPU")
+          setVersion(data.version || "8.2.5 PRO")
+          setAdminEmail(data.adminEmail || "simputeam@gmail.com")
+          setAdminWhatsapp(data.adminWhatsapp || "wa.me/62817319885")
           setCopyright(data.copyright || "")
           setWelcomeText(data.welcomeText || "")
           setSubText(data.subText || "")
@@ -71,8 +77,11 @@ export default function SettingsInfoPage() {
     if (!database) return
     setIsSaving(true)
     try {
-      await set(ref(database, 'settings/system_config'), {
+      await update(ref(database, 'settings/system_config'), {
+        appName,
         version,
+        adminEmail,
+        adminWhatsapp,
         copyright,
         welcomeText,
         subText,
@@ -102,7 +111,7 @@ export default function SettingsInfoPage() {
           <h1 className="text-3xl font-black text-primary font-headline uppercase">Pengaturan Informasi</h1>
         </div>
         <p className="text-muted-foreground text-sm font-bold uppercase tracking-widest">
-          Kelola Konten Dialog Informasi Aplikasi
+          Kelola Konten Dialog Informasi Aplikasi & Widget Kontak Admin
         </p>
       </div>
 
@@ -110,19 +119,46 @@ export default function SettingsInfoPage() {
         {/* Basic Info Section */}
         <div className="space-y-4">
           <h2 className="text-lg font-black uppercase text-slate-800 flex items-center gap-2 border-b pb-2">
-            <Info className="w-5 h-5 text-primary" /> Identitas Aplikasi
+            <Info className="w-5 h-5 text-primary" /> Identitas Aplikasi & Kontak Admin
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-widest text-slate-500">Nama Aplikasi</Label>
+              <Input 
+                value={appName} 
+                onChange={(e) => setAppName(e.target.value)}
+                placeholder="Contoh: SIMPU"
+                className="font-bold focus-visible:ring-primary/30"
+              />
+            </div>
             <div className="space-y-2">
               <Label className="text-xs font-bold uppercase tracking-widest text-slate-500">Versi Aplikasi</Label>
               <Input 
                 value={version} 
                 onChange={(e) => setVersion(e.target.value)}
-                placeholder="Contoh: v8.1 Stable"
+                placeholder="Contoh: 8.2.5 PRO"
                 className="font-bold focus-visible:ring-primary/30"
               />
             </div>
             <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-widest text-slate-500">Email Kontak Admin</Label>
+              <Input 
+                value={adminEmail} 
+                onChange={(e) => setAdminEmail(e.target.value)}
+                placeholder="Contoh: simputeam@gmail.com"
+                className="font-bold focus-visible:ring-primary/30"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-widest text-slate-500">WhatsApp Kontak Admin</Label>
+              <Input 
+                value={adminWhatsapp} 
+                onChange={(e) => setAdminWhatsapp(e.target.value)}
+                placeholder="Contoh: wa.me/62817319885"
+                className="font-bold focus-visible:ring-primary/30"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
               <Label className="text-xs font-bold uppercase tracking-widest text-slate-500">Copyright</Label>
               <Input 
                 value={copyright} 

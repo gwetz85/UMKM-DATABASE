@@ -56,6 +56,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [database]);
   const { data: maintenanceData } = useObject(maintenanceRef);
 
+  const systemConfigRef = useMemoFirebase(() => {
+    if (!database) return null;
+    return ref(database, 'settings/system_config');
+  }, [database]);
+  const { data: systemConfig } = useObject(systemConfigRef);
+
   const isAdmin = profile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
 
   React.useEffect(() => {
@@ -291,11 +297,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                         <div className="flex flex-col gap-3">
                           <div className="flex items-center justify-between w-full">
                             <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Aplikasi</span>
-                            <span className="text-xs font-black text-blue-700 uppercase drop-shadow-sm">SIMPU</span>
+                            <span className="text-xs font-black text-blue-700 uppercase drop-shadow-sm">{systemConfig?.appName || 'SIMPU'}</span>
                           </div>
                           <div className="flex items-center justify-between w-full">
                             <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Versi</span>
-                            <span className="text-xs font-black text-slate-800 bg-slate-200/80 border border-slate-300 px-2 py-1 rounded-md uppercase tracking-wider shadow-sm">8.2.5 PRO</span>
+                            <span className="text-xs font-black text-slate-800 bg-slate-200/80 border border-slate-300 px-2 py-1 rounded-md uppercase tracking-wider shadow-sm">{systemConfig?.version || '8.2.5 PRO'}</span>
                           </div>
                           <div className="flex items-center justify-between w-full">
                             <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Pengguna</span>
@@ -310,13 +316,18 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                           <div className="w-2 h-2 bg-blue-600 rounded-full shadow-sm"></div>
                           Kontak Admin
                         </span>
-                        <a href="mailto:simputeam@gmail.com" className="flex items-center justify-between w-full group">
+                        <a href={`mailto:${systemConfig?.adminEmail || 'simputeam@gmail.com'}`} className="flex items-center justify-between w-full group">
                           <span className="text-xs font-bold text-slate-600 uppercase tracking-wider group-hover:text-blue-700 transition-colors">Email</span>
-                          <span className="text-xs font-bold text-slate-800 group-hover:text-blue-700 transition-colors">simputeam@gmail.com</span>
+                          <span className="text-xs font-bold text-slate-800 group-hover:text-blue-700 transition-colors">{systemConfig?.adminEmail || 'simputeam@gmail.com'}</span>
                         </a>
-                        <a href="https://wa.me/62817319885" target="_blank" rel="noopener noreferrer" className="flex items-center justify-between w-full group">
+                        <a 
+                          href={systemConfig?.adminWhatsapp ? (systemConfig.adminWhatsapp.startsWith('http') ? systemConfig.adminWhatsapp : `https://${systemConfig.adminWhatsapp}`) : 'https://wa.me/62817319885'} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="flex items-center justify-between w-full group"
+                        >
                           <span className="text-xs font-bold text-slate-600 uppercase tracking-wider group-hover:text-emerald-700 transition-colors">WhatsApp</span>
-                          <span className="text-xs font-black text-emerald-700 group-hover:text-emerald-800 transition-colors">wa.me/62817319885</span>
+                          <span className="text-xs font-black text-emerald-700 group-hover:text-emerald-800 transition-colors">{systemConfig?.adminWhatsapp || 'wa.me/62817319885'}</span>
                         </a>
                       </div>
                     </div>
