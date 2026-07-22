@@ -668,58 +668,58 @@ function RekapanDataContent() {
             <p className="text-xs text-slate-400">Coba ubah atau reset filter wilayah</p>
           </div>
         ) : (
-          <div className="overflow-x-auto w-full pb-2">
-            <Table className="w-full min-w-[1050px]">
+          <div className="overflow-x-auto w-full">
+            <Table className="w-full text-left border-collapse">
               <TableHeader className="bg-slate-50/80 border-b">
                 <TableRow>
-                  <TableHead className="font-black text-primary py-3.5 pl-6 w-12 text-center whitespace-nowrap">NO</TableHead>
-                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">NAMA LENGKAP</TableHead>
-                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">NIK</TableHead>
-                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">USAHA</TableHead>
-                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">KECAMATAN</TableHead>
-                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">KELURAHAN</TableHead>
-                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">RT / RW</TableHead>
-                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">USULAN</TableHead>
-                  <TableHead className="font-black text-primary py-3.5 pr-6 text-right whitespace-nowrap">SUMBER DATA</TableHead>
+                  <TableHead className="font-black text-primary py-3 pl-4 w-10 text-center text-[11px]">NO</TableHead>
+                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">NAMA LENGKAP</TableHead>
+                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">NIK</TableHead>
+                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">USAHA</TableHead>
+                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">KECAMATAN</TableHead>
+                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">KELURAHAN</TableHead>
+                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">RT / RW</TableHead>
+                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">USULAN</TableHead>
+                  <TableHead className="font-black text-primary py-3 pr-4 text-right text-[11px]">SUMBER DATA</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((actor, index) => {
                   const { rt, rw } = parseRtRw(actor.rtRw)
                   return (
-                    <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors">
-                      <TableCell className="py-3 pl-6 text-center font-bold text-slate-500 text-sm whitespace-nowrap">{index + 1}</TableCell>
-                      <TableCell className="py-3 whitespace-nowrap">
+                    <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors border-b border-slate-100">
+                      <TableCell className="py-2.5 pl-4 text-center font-bold text-slate-500 text-xs">{index + 1}</TableCell>
+                      <TableCell className="py-2.5 px-2">
                         <div className="flex flex-col">
-                          <span className="font-bold text-slate-800 uppercase text-[13px]">{actor.fullName}</span>
-                          <span className="text-[10px] text-slate-400 font-bold">{actor.gender}</span>
+                          <span className="font-bold text-slate-800 uppercase text-xs leading-tight">{actor.fullName}</span>
+                          <span className="text-[9px] text-slate-400 font-bold">{actor.gender}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-3 font-mono text-[11px] text-slate-600 whitespace-nowrap">{actor.nik || "-"}</TableCell>
-                      <TableCell className="py-3 whitespace-nowrap">
-                        <div className="flex flex-col">
-                          <span className="font-black text-primary text-[12px] uppercase">{actor.businessName}</span>
-                          <span className="text-[10px] text-slate-400 font-bold">{actor.businessCategory}</span>
+                      <TableCell className="py-2.5 px-2 font-mono text-[11px] text-slate-600 tracking-tighter">{actor.nik || "-"}</TableCell>
+                      <TableCell className="py-2.5 px-2 max-w-[170px]">
+                        <div className="flex flex-col overflow-hidden">
+                          <span className="font-black text-primary text-[11px] uppercase truncate" title={actor.businessName}>{actor.businessName}</span>
+                          <span className="text-[9px] text-slate-400 font-bold truncate">{actor.businessCategory}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-3 whitespace-nowrap">
+                      <TableCell className="py-2.5 px-2">
                         <span className="text-[11px] font-bold uppercase text-slate-700">{actor.kecamatan || "-"}</span>
                       </TableCell>
-                      <TableCell className="py-3 whitespace-nowrap">
+                      <TableCell className="py-2.5 px-2">
                         <span className="text-[11px] font-bold uppercase text-slate-700">{actor.kelurahan || "-"}</span>
                       </TableCell>
-                      <TableCell className="py-3 whitespace-nowrap">
-                        <div className="flex gap-1">
-                          <span className="text-[10px] font-black bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">RT {rt}</span>
-                          <span className="text-[10px] font-black bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">RW {rw}</span>
+                      <TableCell className="py-2.5 px-2">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] font-black bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded">RT {rt}</span>
+                          <span className="text-[9px] font-black bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded">RW {rw}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-3 whitespace-nowrap">
-                        <span className="text-[11px] font-bold uppercase text-slate-700">{actor.coordinator || "-"}</span>
+                      <TableCell className="py-2.5 px-2 max-w-[110px]">
+                        <span className="text-[11px] font-bold uppercase text-slate-700 truncate block" title={actor.coordinator || "-"}>{actor.coordinator || "-"}</span>
                       </TableCell>
-                      <TableCell className="py-3 pr-6 text-right whitespace-nowrap">
+                      <TableCell className="py-2.5 pr-4 text-right">
                         <Badge variant="outline" className={cn(
-                          "text-[9px] font-black uppercase px-2.5 py-0.5 border-none shadow-sm inline-block",
+                          "text-[9px] font-black uppercase px-2 py-0.5 border-none shadow-xs shrink-0",
                           actor.source?.includes("Pengajuan") ? "bg-emerald-100 text-emerald-800" :
                           actor.source?.includes("Sheet 1") ? "bg-blue-100 text-blue-800" :
                           actor.source?.includes("Sheet 2") ? "bg-indigo-100 text-indigo-800" :
