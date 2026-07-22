@@ -20,28 +20,106 @@ import { useToast } from "@/hooks/use-toast"
 
 const KELURAHAN_TO_KECAMATAN: Record<string, string> = {
   "SEIJANG": "BUKIT BESTARI",
+  "SEI JANG": "BUKIT BESTARI",
   "DOMPAK": "BUKIT BESTARI",
+  "TANJUNG UNGGAT": "BUKIT BESTARI",
   "TANJUNGPINANG TIMUR": "TANJUNGPINANG TIMUR",
+  "TANJUNJGPINANG TIMUR": "TANJUNGPINANG TIMUR",
   "TANJUNGPINNAG TIMUR": "TANJUNGPINANG TIMUR",
+  "TANJUNG PINANG TIMUR": "TANJUNGPINANG TIMUR",
   "AIR RAJA": "TANJUNGPINANG TIMUR",
+  "AIRRAJA": "TANJUNGPINANG TIMUR",
   "PINANG KENCANA": "TANJUNGPINANG TIMUR",
+  "PINANGKENCANA": "TANJUNGPINANG TIMUR",
   "BATU IX": "TANJUNGPINANG TIMUR",
+  "BATUIX": "TANJUNGPINANG TIMUR",
   "BATU 9": "TANJUNGPINANG TIMUR",
+  "BATU9": "TANJUNGPINANG TIMUR",
   "KAMPUNG BULANG": "TANJUNGPINANG TIMUR",
+  "KP BULANG": "TANJUNGPINANG TIMUR",
+  "BULANG": "TANJUNGPINANG TIMUR",
   "KAMPUNG BUGIS": "TANJUNGPINANG KOTA",
+  "KP BUGIS": "TANJUNGPINANG KOTA",
   "SENGGARANG": "TANJUNGPINANG KOTA",
   "TANJUNGPINANG KOTA": "TANJUNGPINANG KOTA",
+  "TANJUNG PINANG KOTA": "TANJUNGPINANG KOTA",
   "PENYENGAT": "TANJUNGPINANG KOTA",
   "TANJUNGPINANG BARAT": "TANJUNGPINANG BARAT",
+  "TANJUNG PINANG BARAT": "TANJUNGPINANG BARAT",
   "KEMBOJA": "TANJUNGPINANG BARAT",
+  "KAMBOJA": "TANJUNGPINANG BARAT",
   "KAMPUNG BARU": "TANJUNGPINANG BARAT",
+  "KP BARU": "TANJUNGPINANG BARAT",
   "BUKIT CERMIN": "TANJUNGPINANG BARAT",
+  "BKT CERMIN": "TANJUNGPINANG BARAT",
 }
 
 function isValidKecamatan(kec: string): boolean {
   if (!kec) return false
   const clean = kec.trim().toUpperCase()
   return clean !== "" && clean !== "#N/A" && clean !== "N/A" && clean !== "NA" && clean !== "NULL" && clean !== "-" && clean !== "TIDAK DIKETAHUI"
+}
+
+function inferKecamatanFromText(text: string): string {
+  if (!text) return ""
+  const clean = text.toUpperCase().replace(/[^A-Z0-9]/g, "")
+
+  if (
+    clean.includes("BARAT") ||
+    clean.includes("KEMBOJA") ||
+    clean.includes("KAMBOJA") ||
+    clean.includes("BUKITCERMIN") ||
+    clean.includes("BKTCERMIN") ||
+    clean.includes("KAMPUNGBARU") ||
+    clean.includes("KPBARU")
+  ) {
+    return "TANJUNGPINANG BARAT"
+  }
+
+  if (
+    clean.includes("BESTARI") ||
+    clean.includes("SEIJANG") ||
+    clean.includes("DOMPAK") ||
+    clean.includes("TANJUNGUNGGAT") ||
+    clean.includes("TUNGGAT")
+  ) {
+    return "BUKIT BESTARI"
+  }
+
+  if (
+    clean.includes("KOTA") ||
+    clean.includes("BUGIS") ||
+    clean.includes("KPBUGIS") ||
+    clean.includes("SENGGARANG") ||
+    clean.includes("PENYENGAT")
+  ) {
+    return "TANJUNGPINANG KOTA"
+  }
+
+  if (
+    clean.includes("TIMUR") ||
+    clean.includes("BATUIX") ||
+    clean.includes("BATU9") ||
+    clean.includes("PINANGKENCANA") ||
+    clean.includes("AIRRAJA") ||
+    clean.includes("BULANG") ||
+    clean.includes("TANJUNJGPINANG") ||
+    clean.includes("TANJUNGPINNAG")
+  ) {
+    return "TANJUNGPINANG TIMUR"
+  }
+
+  return ""
+}
+
+function formatKelurahan(rawKel: string): string {
+  if (!rawKel || rawKel === "-") return "-"
+  const clean = rawKel.trim().toUpperCase()
+  if (clean === "BATUIX" || clean === "BATU9") return "BATU IX"
+  if (clean === "TANJUNJGPINANG TIMUR" || clean === "TANJUNGPINNAG TIMUR" || clean === "TANJUNG PINANG TIMUR") return "TANJUNGPINANG TIMUR"
+  if (clean === "TANJUNG PINANG BARAT") return "TANJUNGPINANG BARAT"
+  if (clean === "TANJUNG PINANG KOTA") return "TANJUNGPINANG KOTA"
+  return clean
 }
 
 function parseRtRw(raw: string): { rt: string; rw: string } {
@@ -118,7 +196,8 @@ function RekapanDataContent() {
         const kel = normalizeStr(item.kelurahan || item.kel)
         const kec = normalizeStr(item.kecamatan || item.kec)
         if (kel && isValidKecamatan(kec)) {
-          kelurahanMap.set(kel, kec)
+          const inferred = inferKecamatanFromText(kec) || kec
+          kelurahanMap.set(kel, inferred)
         }
       })
     }
@@ -128,15 +207,26 @@ function RekapanDataContent() {
     learnMap(data2023 || [])
     learnMap(data2025 || [])
 
-    const resolveKecamatan = (rawKec: string, rawKel: string): string => {
+    const resolveKecamatan = (rawKec: string, rawKel: string, rawAddress: string = "", rawLocation: string = ""): string => {
       const cleanKec = normalizeStr(rawKec)
       if (isValidKecamatan(cleanKec)) {
-        return cleanKec
+        const inferredFromKec = inferKecamatanFromText(cleanKec)
+        return inferredFromKec || cleanKec
       }
+
+      // Fuzzy/keyword match on combined location text
+      const combinedText = `${rawKel} ${rawAddress} ${rawLocation}`
+      const inferred = inferKecamatanFromText(combinedText)
+      if (inferred) {
+        return inferred
+      }
+
+      // Direct lookup from dynamic dataset map
       const cleanKel = normalizeStr(rawKel)
       if (cleanKel && kelurahanMap.has(cleanKel)) {
         return kelurahanMap.get(cleanKel)!
       }
+
       return "-"
     }
 
@@ -158,7 +248,10 @@ function RekapanDataContent() {
 
       const rawKel = rawItem.kelurahan || rawItem.kel || ""
       const rawKec = rawItem.kecamatan || rawItem.kec || ""
-      const resolvedKec = resolveKecamatan(rawKec, rawKel)
+      const rawAddress = rawItem.address || rawItem.alamat || ""
+      const rawLocation = rawItem.businessLocation || rawItem.lokasi || ""
+
+      const resolvedKec = resolveKecamatan(rawKec, rawKel, rawAddress, rawLocation)
 
       // Ignore duplicate (count only 1 business actor)
       if (dedupeMap.has(dedupeKey)) {
@@ -181,13 +274,13 @@ function RekapanDataContent() {
         pob: rawItem.pob || parsedPobDob.pob || "-",
         dob: rawItem.dob || parsedPobDob.dob || "-",
         phone: rawItem.phone || rawItem.hp || "-",
-        address: rawItem.address || rawItem.alamat || "-",
+        address: rawAddress || "-",
         rtRw: rawItem.rtRw || rawItem.rt_rw || (rawItem.rt ? `RT ${rawItem.rt} RW ${rawItem.rw || '-'}` : "-"),
-        kelurahan: rawKel ? normalizeStr(rawKel) : "-",
+        kelurahan: rawKel ? formatKelurahan(rawKel) : "-",
         kecamatan: resolvedKec,
         businessName: rawItem.businessName || rawItem.usaha || "-",
         businessCategory: rawItem.businessCategory || rawItem.kategori || rawItem.status || "-",
-        businessLocation: rawItem.businessLocation || rawItem.lokasi || rawItem.address || rawItem.alamat || "-",
+        businessLocation: rawLocation || rawAddress || "-",
         coordinator: rawItem.coordinator || rawItem.koor || "-",
         source: sourceLabel
       }
@@ -261,7 +354,9 @@ function RekapanDataContent() {
     const map: Record<string, number> = {}
     actors.forEach(a => {
       const k = normalizeStr(a.kecamatan) || "TIDAK DIKETAHUI"
-      map[k] = (map[k] || 0) + 1
+      if (k !== "-") {
+        map[k] = (map[k] || 0) + 1
+      }
     })
     return Object.entries(map).sort((a, b) => b[1] - a[1])
   }, [actors])
