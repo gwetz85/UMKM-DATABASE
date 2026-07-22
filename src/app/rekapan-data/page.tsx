@@ -4,7 +4,7 @@ import { useState, useMemo, Suspense } from "react"
 import { useMemoFirebase, useList, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
 import { BusinessActor } from "../lib/types"
-import { parsePobDob } from "@/lib/utils"
+import { parsePobDob, cn } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-import { MapPin, Users, Building2, RotateCcw, FileSpreadsheet, Search, Map, Home, Hash } from "lucide-react"
+import { MapPin, Users, Building2, RotateCcw, FileSpreadsheet, Search, Map as MapIcon, Home, Hash, Layers } from "lucide-react"
 import * as XLSX from "xlsx"
 import { useToast } from "@/hooks/use-toast"
 
@@ -43,17 +43,98 @@ function RekapanDataContent() {
   const database = useDatabase()
   const { toast } = useToast()
 
+  // 1. Data Pengajuan Terbaru (businessActors)
   const actorsRef = useMemoFirebase(
     () => (database ? ref(database, "businessActors") : null),
     [database]
   )
-  const { data: allActorsRaw, isLoading } = useList<BusinessActor>(actorsRef)
+  const { data: allActorsRaw, isLoading: isActorsLoading } = useList<BusinessActor>(actorsRef)
 
-  // Only verified actors
-  const actors = useMemo(
-    () => (allActorsRaw || []).filter(a => a && a.status === "verified_actor"),
-    [allActorsRaw]
+  // 2. Sheet 1: Data Pembanding 2024
+  const master2024Ref = useMemoFirebase(
+    () => (database ? ref(database, "master_data_2024") : null),
+    [database]
   )
+  const { data: data2024, isLoading: is2024Loading } = useList<any>(master2024Ref)
+
+  // 3. Sheet 2: Data Pembanding 2023
+  const master2023Ref = useMemoFirebase(
+    () => (database ? ref(database, "master_data_2023") : null),
+    [database]
+  )
+  const { data: data2023, isLoading: is2023Loading } = useList<any>(master2023Ref)
+
+  // 4. Sheet 3: Data Pembanding 2025
+  const master2025Ref = useMemoFirebase(
+    () => (database ? ref(database, "master_data_2025") : null),
+    [database]
+  )
+  const { data: data2025, isLoading: is2025Loading } = useList<any>(master2025Ref)
+
+  const isLoading = isActorsLoading || is2024Loading || is2023Loading || is2025Loading
+
+  // ── Combine & Deduplicate Data across Sheet 1, Sheet 2, Sheet 3 & Pengajuan Terbaru ──
+  const actors: any[] = useMemo(() => {
+    if (isLoading) return []
+
+    const map = new Map<string, any>()
+
+    const processItem = (rawItem: any, sourceLabel: string) => {
+      if (!rawItem) return
+
+      const fullName = (rawItem.fullName || rawItem.nama || "").trim()
+      const nik = (rawItem.nik ? String(rawItem.nik).trim() : "")
+
+      // Skip if completely empty name AND empty NIK
+      if (!fullName && !nik) return
+
+      // Deduplication Key: Prefer NIK if valid (not empty / not "-"), fallback to uppercase Name
+      const dedupeKey = (nik && nik !== "-")
+        ? `NIK:${nik}`
+        : `NAME:${fullName.toUpperCase()}`
+
+      // Ignore duplicate (count only 1 business actor)
+      if (map.has(dedupeKey)) return
+
+      const parsedPobDob = parsePobDob(rawItem.pobDob || "")
+
+      const normalizedItem = {
+        id: rawItem.id || `rec_${dedupeKey}_${Math.random().toString(36).substr(2, 5)}`,
+        fullName: fullName || "TANPA NAMA",
+        nik: nik || "-",
+        noKK: rawItem.noKK || rawItem.kk || "-",
+        gender: rawItem.gender || "-",
+        pob: rawItem.pob || parsedPobDob.pob || "-",
+        dob: rawItem.dob || parsedPobDob.dob || "-",
+        phone: rawItem.phone || rawItem.hp || "-",
+        address: rawItem.address || rawItem.alamat || "-",
+        rtRw: rawItem.rtRw || rawItem.rt_rw || (rawItem.rt ? `RT ${rawItem.rt} RW ${rawItem.rw || '-'}` : "-"),
+        kelurahan: rawItem.kelurahan || rawItem.kel || "-",
+        kecamatan: rawItem.kecamatan || rawItem.kec || "-",
+        businessName: rawItem.businessName || rawItem.usaha || "-",
+        businessCategory: rawItem.businessCategory || rawItem.kategori || rawItem.status || "-",
+        businessLocation: rawItem.businessLocation || rawItem.lokasi || rawItem.address || rawItem.alamat || "-",
+        coordinator: rawItem.coordinator || rawItem.koor || "-",
+        source: sourceLabel
+      }
+
+      map.set(dedupeKey, normalizedItem)
+    }
+
+    // 1. Pengajuan Terbaru (Highest Priority)
+    (allActorsRaw || []).forEach(item => processItem(item, "Pengajuan Terbaru"));
+
+    // 2. Sheet 1: 2024
+    (data2024 || []).forEach(item => processItem(item, "Sheet 1 (2024)"));
+
+    // 3. Sheet 2: 2023
+    (data2023 || []).forEach(item => processItem(item, "Sheet 2 (2023)"));
+
+    // 4. Sheet 3: 2025
+    (data2025 || []).forEach(item => processItem(item, "Sheet 3 (2025)"));
+
+    return Array.from(map.values())
+  }, [allActorsRaw, data2024, data2023, data2025, isLoading])
 
   // ── filter state ──────────────────────────────────────────────────────────
   const [filterKecamatan, setFilterKecamatan] = useState("ALL")
@@ -162,19 +243,20 @@ function RekapanDataContent() {
         "JENIS USAHA": (a.businessCategory || "").toUpperCase(),
         "LOKASI USAHA": (a.businessLocation || "").toUpperCase(),
         "KOORDINATOR": (a.coordinator || "").toUpperCase(),
+        "SUMBER DATA": (a.source || "").toUpperCase(),
       }
     })
     const ws = XLSX.utils.json_to_sheet(rows)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "Rekapan Data")
+    XLSX.utils.book_append_sheet(wb, ws, "Rekapan Data Gabungan")
     const cols = Object.keys(rows[0]).map(k => {
       let max = k.length
       rows.forEach(r => { const v = String((r as any)[k] || ""); if (v.length > max) max = v.length })
       return { wch: max + 2 }
     })
     ws["!cols"] = cols
-    XLSX.writeFile(wb, `Rekapan_Data_${new Date().toISOString().split("T")[0]}.xlsx`)
-    toast({ title: "Berhasil", description: "Data berhasil diekspor ke Excel." })
+    XLSX.writeFile(wb, `Rekapan_Data_Gabungan_${new Date().toISOString().split("T")[0]}.xlsx`)
+    toast({ title: "Berhasil", description: "Data gabungan berhasil diekspor ke Excel." })
   }
 
   const activeFilters = [filterKecamatan, filterKelurahan, filterRw, filterRt].filter(f => f !== "ALL").length
@@ -187,10 +269,10 @@ function RekapanDataContent() {
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
-            <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Rekapan Data</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Rekapan Data Gabungan</h1>
           </div>
           <p className="text-xs md:text-sm text-muted-foreground">
-            Rekap data pelaku usaha berdasarkan wilayah kecamatan, kelurahan, RW, dan RT.
+            Rekap gabungan data pelaku usaha unik dari Sheet 1 (2024), Sheet 2 (2023), Sheet 3 (2025), dan Pengajuan Terbaru (Deduplikasi NIK & Nama).
           </p>
         </div>
         <Button
@@ -212,13 +294,13 @@ function RekapanDataContent() {
           <Card className="border-none shadow-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white overflow-hidden relative">
             <div className="absolute -right-4 -top-4 opacity-10"><Users className="w-24 h-24" /></div>
             <CardContent className="p-5 relative z-10">
-              <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Total Data</p>
-              <p className="text-4xl font-black mt-1">{actors.length}</p>
-              <p className="text-[10px] font-bold opacity-70 mt-1">Pelaku Usaha Terverifikasi</p>
+              <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Total Pelaku Usaha</p>
+              <p className="text-4xl font-black mt-1">{actors.length.toLocaleString('id-ID')}</p>
+              <p className="text-[10px] font-bold opacity-70 mt-1">Gabungan Unik (Tanpa Duplikat)</p>
             </CardContent>
           </Card>
           <Card className="border-none shadow-xl bg-gradient-to-br from-violet-600 to-violet-700 text-white overflow-hidden relative">
-            <div className="absolute -right-4 -top-4 opacity-10"><Map className="w-24 h-24" /></div>
+            <div className="absolute -right-4 -top-4 opacity-10"><MapIcon className="w-24 h-24" /></div>
             <CardContent className="p-5 relative z-10">
               <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Kecamatan</p>
               <p className="text-4xl font-black mt-1">{kecamatanList.length}</p>
@@ -229,7 +311,7 @@ function RekapanDataContent() {
             <div className="absolute -right-4 -top-4 opacity-10"><MapPin className="w-24 h-24" /></div>
             <CardContent className="p-5 relative z-10">
               <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Hasil Filter</p>
-              <p className="text-4xl font-black mt-1">{filtered.length}</p>
+              <p className="text-4xl font-black mt-1">{filtered.length.toLocaleString('id-ID')}</p>
               <p className="text-[10px] font-bold opacity-70 mt-1">Data Sesuai Filter</p>
             </CardContent>
           </Card>
@@ -248,11 +330,11 @@ function RekapanDataContent() {
       {!isLoading && kecamatanStats.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-            <Map className="w-4 h-4" /> Distribusi Per Kecamatan
+            <MapIcon className="w-4 h-4" /> Distribusi Per Kecamatan
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {kecamatanStats.map(([name, count]) => {
-              const pct = Math.round((count / actors.length) * 100)
+              const pct = actors.length > 0 ? Math.round((count / actors.length) * 100) : 0
               return (
                 <button
                   key={name}
@@ -261,7 +343,7 @@ function RekapanDataContent() {
                 >
                   <div className="flex items-start justify-between mb-2">
                     <span className="text-[11px] font-black uppercase leading-tight text-slate-700 group-hover:text-primary transition-colors line-clamp-2">{name}</span>
-                    <Badge className="bg-primary/10 text-primary text-[10px] font-black ml-1 shrink-0">{count}</Badge>
+                    <Badge className="bg-primary/10 text-primary text-[10px] font-black ml-1 shrink-0">{count.toLocaleString('id-ID')}</Badge>
                   </div>
                   <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
@@ -294,7 +376,7 @@ function RekapanDataContent() {
           {/* Kecamatan */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-              <Map className="w-3 h-3" /> Kecamatan
+              <MapIcon className="w-3 h-3" /> Kecamatan
             </label>
             <Select value={filterKecamatan} onValueChange={handleKecamatanChange}>
               <SelectTrigger className="h-10 border-primary/20 font-bold text-xs rounded-xl">
@@ -369,7 +451,7 @@ function RekapanDataContent() {
           <div className="flex flex-wrap gap-2 pt-1">
             {filterKecamatan !== "ALL" && (
               <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-black uppercase px-3 py-1 rounded-full">
-                <Map className="w-3 h-3" /> {filterKecamatan}
+                <MapIcon className="w-3 h-3" /> {filterKecamatan}
               </span>
             )}
             {filterKelurahan !== "ALL" && (
@@ -388,7 +470,7 @@ function RekapanDataContent() {
               </span>
             )}
             <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 text-[10px] font-black uppercase px-3 py-1 rounded-full">
-              <Users className="w-3 h-3" /> {filtered.length} DATA
+              <Users className="w-3 h-3" /> {filtered.length.toLocaleString('id-ID')} DATA
             </span>
           </div>
         )}
@@ -399,8 +481,8 @@ function RekapanDataContent() {
         <div className="flex items-center justify-between px-6 py-4 border-b bg-muted/30">
           <h2 className="text-sm font-black uppercase tracking-widest text-slate-700 flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" />
-            Data Pelaku Usaha
-            <Badge className="bg-primary text-white font-black">{filtered.length}</Badge>
+            Data Pelaku Usaha Gabungan
+            <Badge className="bg-primary text-white font-black">{filtered.length.toLocaleString('id-ID')}</Badge>
           </h2>
         </div>
 
@@ -428,7 +510,8 @@ function RekapanDataContent() {
                   <TableHead className="font-black text-primary py-3">KECAMATAN</TableHead>
                   <TableHead className="font-black text-primary py-3">KELURAHAN</TableHead>
                   <TableHead className="font-black text-primary py-3">RT / RW</TableHead>
-                  <TableHead className="font-black text-primary py-3">KOORDINATOR</TableHead>
+                  <TableHead className="font-black text-primary py-3">USULAN</TableHead>
+                  <TableHead className="font-black text-primary py-3">SUMBER DATA</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -464,6 +547,17 @@ function RekapanDataContent() {
                       </TableCell>
                       <TableCell className="py-3">
                         <span className="text-[11px] font-bold uppercase text-slate-700">{actor.coordinator || "-"}</span>
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <Badge variant="outline" className={cn(
+                          "text-[9px] font-black uppercase px-2 py-0.5 border-none",
+                          actor.source?.includes("Pengajuan") ? "bg-emerald-100 text-emerald-800" :
+                          actor.source?.includes("Sheet 1") ? "bg-blue-100 text-blue-800" :
+                          actor.source?.includes("Sheet 2") ? "bg-indigo-100 text-indigo-800" :
+                          "bg-amber-100 text-amber-800"
+                        )}>
+                          {actor.source}
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   )
