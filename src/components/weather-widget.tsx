@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { cn } from "@/lib/utils"
 
-// Tanjungpinang, Kepulauan Riau coordinates
+// Tanjungpinang, Kepulauan Riau coordinates (Pusat Kota Tanjungpinang)
 const LATITUDE = 0.9186
-const LONGITUDE = 104.4469
+const LONGITUDE = 104.4586
 const CITY_NAME = "Tanjungpinang"
 const PROVINCE = "Kepulauan Riau"
 
@@ -318,7 +318,7 @@ export function WeatherWidget({ className }: { className?: string }) {
 
   const fetchWeather = useCallback(async () => {
     try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${LATITUDE}&longitude=${LONGITUDE}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m&timezone=Asia%2FSingapore`
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${LATITUDE}&longitude=${LONGITUDE}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m&timezone=Asia%2FJakarta`
       
       const res = await fetch(url)
       if (!res.ok) throw new Error('Gagal mengambil data cuaca')
@@ -480,14 +480,19 @@ export function WeatherWidget({ className }: { className?: string }) {
       </div>
 
       {/* Footer */}
-      <div className="weather-footer">
-        <span>Terakhir diperbarui: {weather.lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':')}</span>
-        <button onClick={fetchWeather} className="weather-refresh-btn" title="Perbarui Sekarang">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M1 4v6h6M23 20v-6h-6" />
-            <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
-          </svg>
-        </button>
+      <div className="weather-footer flex-col items-start gap-1">
+        <div className="flex items-center justify-between w-full">
+          <span>Diperbarui: {weather.lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':')} WIB</span>
+          <button onClick={fetchWeather} className="weather-refresh-btn" title="Perbarui Sekarang">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M1 4v6h6M23 20v-6h-6" />
+              <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
+            </svg>
+          </button>
+        </div>
+        <div className="text-[7.5px] font-medium text-slate-400/90 tracking-tight">
+          Sumber Data: <span className="font-bold text-slate-500">Open-Meteo API</span> (Model BMKG & High-Res Global Data)
+        </div>
       </div>
     </div>
   )
