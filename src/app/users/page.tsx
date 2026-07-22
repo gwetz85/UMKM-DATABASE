@@ -413,7 +413,7 @@ export default function UserManagementPage() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="petugas">Petugas</SelectItem>
-                      <SelectItem value="koordinator">KORLAP / DEWAN AKTIF</SelectItem>
+                      <SelectItem value="koordinator">USULAN</SelectItem>
                       <SelectItem value="admin">Administrator</SelectItem>
                       <SelectItem value="monitoring">Monitoring</SelectItem>
                       <SelectItem value="dinas">Dinas</SelectItem>
@@ -472,7 +472,7 @@ export default function UserManagementPage() {
                         </Badge>
                       ) : u.role === 'koordinator' ? (
                         <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 font-black uppercase text-[9px] gap-1">
-                          <UserCheck className="w-3 h-3" /> KORLAP / DEWAN AKTIF
+                          <UserCheck className="w-3 h-3" /> USULAN
                         </Badge>
                       ) : u.role === 'petugas' ? (
                         <Badge variant="secondary" className="text-slate-600 bg-slate-100 font-black uppercase text-[9px] gap-1">
@@ -563,7 +563,7 @@ export default function UserManagementPage() {
                                       <SelectTrigger><SelectValue /></SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="petugas">Petugas</SelectItem>
-                                        <SelectItem value="koordinator">KORLAP / DEWAN AKTIF</SelectItem>
+                                        <SelectItem value="koordinator">USULAN</SelectItem>
                                         <SelectItem value="admin">Administrator</SelectItem>
                                         <SelectItem value="monitoring">Monitoring</SelectItem>
                                         <SelectItem value="dinas">Dinas</SelectItem>

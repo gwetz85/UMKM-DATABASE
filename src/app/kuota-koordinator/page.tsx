@@ -292,7 +292,7 @@ export default function KuotaKorlapDewanAktifPage() {
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(10)
         doc.setTextColor(0)
-        doc.text('DATA KUOTA KORLAP / DEWAN AKTIF', pageWidth - 14, 17, { align: 'right' })
+        doc.text('DATA KUOTA USULAN', pageWidth - 14, 17, { align: 'right' })
         doc.setFontSize(7)
         doc.setTextColor(150)
         doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth - 14, 21, { align: 'right' })
@@ -400,9 +400,9 @@ export default function KuotaKorlapDewanAktifPage() {
           <div>
             <h1 className="text-3xl font-bold text-primary font-headline flex items-center gap-3">
               <BarChart3 className="w-8 h-8" />
-              Kuota KORLAP / DEWAN AKTIF
+              Kuota USULAN
             </h1>
-            <p className="text-muted-foreground font-medium">Pengelolaan target data pencapaian masing-masing korlap / dewan aktif.</p>
+            <p className="text-muted-foreground font-medium">Pengelolaan target data pencapaian masing-masing usulan.</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -453,8 +453,8 @@ export default function KuotaKorlapDewanAktifPage() {
               <TableHeader className="bg-muted/30">
                 <TableRow>
                   <TableHead className="font-bold uppercase text-[10px] w-[50px] text-center">No</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px]">KORLAP / DEWAN AKTIF</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] text-center">Kuota KORLAP / DEWAN AKTIF</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px]">USULAN</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px] text-center">Kuota USULAN</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] text-center">Tercapai</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] text-center">Sisa</TableHead>
                   <TableHead className="text-right font-bold uppercase text-[10px]">Aksi</TableHead>

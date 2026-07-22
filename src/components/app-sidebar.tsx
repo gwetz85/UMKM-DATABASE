@@ -265,7 +265,7 @@ export function AppSidebar() {
                       {userProfile?.fullName?.toUpperCase() || user.email?.split('@')[0].toUpperCase()}
                     </span>
                     <span className="text-[8px] text-white/60 font-black uppercase tracking-tighter">
-                      {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 KORLAP / DEWAN AKTIF" : isPetugas ? "📝 Petugas" : isDinas ? "🏢 Dinas" : "👤 User"}
+                      {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 USULAN" : isPetugas ? "📝 Petugas" : isDinas ? "🏢 Dinas" : "👤 User"}
                     </span>
                   </div>
                 </Link>

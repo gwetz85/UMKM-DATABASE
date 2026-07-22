@@ -514,10 +514,10 @@ export default function InputDataPage() {
               <Input id="businessLocation" name="businessLocation" required />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="coordinator">KORLAP / DEWAN AKTIF</Label>
+              <Label htmlFor="coordinator">USULAN</Label>
               <Select value={selectedCoordinator} onValueChange={setSelectedCoordinator} required>
                 <SelectTrigger>
-                  <SelectValue placeholder="Pilih Korlap/Dewan Aktif..." />
+                  <SelectValue placeholder="Pilih Usulan..." />
                 </SelectTrigger>
                 <SelectContent>
                   {availableCoordinators.filter(c => c.remaining > 0).map((c) => (

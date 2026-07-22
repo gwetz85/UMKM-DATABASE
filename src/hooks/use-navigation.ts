@@ -240,7 +240,7 @@ export function useNavigation() {
       description: "Manajemen Slideshow Login"
     },
     {
-      name: "Kuota KORLAP / DEWAN",
+      name: "Kuota USULAN",
       href: "/kuota-koordinator",
       icon: BarChart3,
       show: isAdmin,

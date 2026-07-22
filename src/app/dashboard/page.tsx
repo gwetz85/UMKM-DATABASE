@@ -457,7 +457,7 @@ export default function DashboardStatsPage() {
                   <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="w-[40px] text-center font-black text-slate-800 text-[10px] md:text-xs">No</TableHead>
-                      <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">Nama Korlap / Dewan Aktif</TableHead>
+                      <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">Nama Usulan</TableHead>
                       <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Jumlah Kuota</TableHead>
                       <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Tercapai</TableHead>
                       <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Sisa Kuota</TableHead>

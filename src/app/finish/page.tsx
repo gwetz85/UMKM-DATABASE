@@ -478,7 +478,7 @@ function FinishContent() {
                         { label: "Usaha", value: viewingActor.businessName },
                         { label: "Kategori Usaha", value: viewingActor.businessCategory },
                         { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                        { label: "KORLAP / DEWAN AKTIF", value: viewingActor.coordinator }
+                        { label: "USULAN", value: viewingActor.coordinator }
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
