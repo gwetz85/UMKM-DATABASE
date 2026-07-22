@@ -12,11 +12,37 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Skeleton } from "@/components/ui/skeleton"
-import { MapPin, Users, Building2, RotateCcw, FileSpreadsheet, Search, Map as MapIcon, Home, Hash, Layers } from "lucide-react"
+import { MapPin, Users, Building2, RotateCcw, FileSpreadsheet, Search, Map as MapIcon, Home, Hash } from "lucide-react"
 import * as XLSX from "xlsx"
 import { useToast } from "@/hooks/use-toast"
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+// ── helpers & mappings ────────────────────────────────────────────────────────
+
+const KELURAHAN_TO_KECAMATAN: Record<string, string> = {
+  "SEIJANG": "BUKIT BESTARI",
+  "DOMPAK": "BUKIT BESTARI",
+  "TANJUNGPINANG TIMUR": "TANJUNGPINANG TIMUR",
+  "TANJUNGPINNAG TIMUR": "TANJUNGPINANG TIMUR",
+  "AIR RAJA": "TANJUNGPINANG TIMUR",
+  "PINANG KENCANA": "TANJUNGPINANG TIMUR",
+  "BATU IX": "TANJUNGPINANG TIMUR",
+  "BATU 9": "TANJUNGPINANG TIMUR",
+  "KAMPUNG BULANG": "TANJUNGPINANG TIMUR",
+  "KAMPUNG BUGIS": "TANJUNGPINANG KOTA",
+  "SENGGARANG": "TANJUNGPINANG KOTA",
+  "TANJUNGPINANG KOTA": "TANJUNGPINANG KOTA",
+  "PENYENGAT": "TANJUNGPINANG KOTA",
+  "TANJUNGPINANG BARAT": "TANJUNGPINANG BARAT",
+  "KEMBOJA": "TANJUNGPINANG BARAT",
+  "KAMPUNG BARU": "TANJUNGPINANG BARAT",
+  "BUKIT CERMIN": "TANJUNGPINANG BARAT",
+}
+
+function isValidKecamatan(kec: string): boolean {
+  if (!kec) return false
+  const clean = kec.trim().toUpperCase()
+  return clean !== "" && clean !== "#N/A" && clean !== "N/A" && clean !== "NA" && clean !== "NULL" && clean !== "-" && clean !== "TIDAK DIKETAHUI"
+}
 
 function parseRtRw(raw: string): { rt: string; rw: string } {
   if (!raw) return { rt: "-", rw: "-" }
@@ -77,7 +103,44 @@ function RekapanDataContent() {
   const actors: any[] = useMemo(() => {
     if (isLoading) return []
 
-    const map = new Map<string, any>()
+    // Build dynamic kelurahan -> kecamatan map from all available datasets
+    const kelurahanMap = new Map<string, string>()
+
+    // Seed static map
+    Object.entries(KELURAHAN_TO_KECAMATAN).forEach(([kel, kec]) => {
+      kelurahanMap.set(normalizeStr(kel), normalizeStr(kec))
+    })
+
+    const learnMap = (list: any[]) => {
+      if (!list) return
+      list.forEach(item => {
+        if (!item) return
+        const kel = normalizeStr(item.kelurahan || item.kel)
+        const kec = normalizeStr(item.kecamatan || item.kec)
+        if (kel && isValidKecamatan(kec)) {
+          kelurahanMap.set(kel, kec)
+        }
+      })
+    }
+
+    learnMap(allActorsRaw || [])
+    learnMap(data2024 || [])
+    learnMap(data2023 || [])
+    learnMap(data2025 || [])
+
+    const resolveKecamatan = (rawKec: string, rawKel: string): string => {
+      const cleanKec = normalizeStr(rawKec)
+      if (isValidKecamatan(cleanKec)) {
+        return cleanKec
+      }
+      const cleanKel = normalizeStr(rawKel)
+      if (cleanKel && kelurahanMap.has(cleanKel)) {
+        return kelurahanMap.get(cleanKel)!
+      }
+      return "-"
+    }
+
+    const dedupeMap = new Map<string, any>()
 
     const processItem = (rawItem: any, sourceLabel: string) => {
       if (!rawItem) return
@@ -93,8 +156,19 @@ function RekapanDataContent() {
         ? `NIK:${nik}`
         : `NAME:${fullName.toUpperCase()}`
 
+      const rawKel = rawItem.kelurahan || rawItem.kel || ""
+      const rawKec = rawItem.kecamatan || rawItem.kec || ""
+      const resolvedKec = resolveKecamatan(rawKec, rawKel)
+
       // Ignore duplicate (count only 1 business actor)
-      if (map.has(dedupeKey)) return
+      if (dedupeMap.has(dedupeKey)) {
+        const existing = dedupeMap.get(dedupeKey)!
+        // Enrich kecamatan if existing is invalid but current has valid kecamatan
+        if (!isValidKecamatan(existing.kecamatan) && isValidKecamatan(resolvedKec)) {
+          existing.kecamatan = resolvedKec
+        }
+        return
+      }
 
       const parsedPobDob = parsePobDob(rawItem.pobDob || "")
 
@@ -109,8 +183,8 @@ function RekapanDataContent() {
         phone: rawItem.phone || rawItem.hp || "-",
         address: rawItem.address || rawItem.alamat || "-",
         rtRw: rawItem.rtRw || rawItem.rt_rw || (rawItem.rt ? `RT ${rawItem.rt} RW ${rawItem.rw || '-'}` : "-"),
-        kelurahan: rawItem.kelurahan || rawItem.kel || "-",
-        kecamatan: rawItem.kecamatan || rawItem.kec || "-",
+        kelurahan: rawKel ? normalizeStr(rawKel) : "-",
+        kecamatan: resolvedKec,
         businessName: rawItem.businessName || rawItem.usaha || "-",
         businessCategory: rawItem.businessCategory || rawItem.kategori || rawItem.status || "-",
         businessLocation: rawItem.businessLocation || rawItem.lokasi || rawItem.address || rawItem.alamat || "-",
@@ -118,7 +192,7 @@ function RekapanDataContent() {
         source: sourceLabel
       }
 
-      map.set(dedupeKey, normalizedItem)
+      dedupeMap.set(dedupeKey, normalizedItem)
     }
 
     // 1. Pengajuan Terbaru (Highest Priority)
@@ -133,7 +207,7 @@ function RekapanDataContent() {
     // 4. Sheet 3: 2025
     (data2025 || []).forEach(item => processItem(item, "Sheet 3 (2025)"));
 
-    return Array.from(map.values())
+    return Array.from(dedupeMap.values())
   }, [allActorsRaw, data2024, data2023, data2025, isLoading])
 
   // ── filter state ──────────────────────────────────────────────────────────
@@ -145,7 +219,7 @@ function RekapanDataContent() {
   // ── unique values ─────────────────────────────────────────────────────────
   const kecamatanList = useMemo(
     () =>
-      Array.from(new Set(actors.map(a => normalizeStr(a.kecamatan)).filter(Boolean))).sort(),
+      Array.from(new Set(actors.map(a => normalizeStr(a.kecamatan)).filter(k => k && k !== "-"))).sort(),
     [actors]
   )
 
@@ -154,7 +228,7 @@ function RekapanDataContent() {
       filterKecamatan === "ALL"
         ? actors
         : actors.filter(a => normalizeStr(a.kecamatan) === filterKecamatan)
-    return Array.from(new Set(src.map(a => normalizeStr(a.kelurahan)).filter(Boolean))).sort()
+    return Array.from(new Set(src.map(a => normalizeStr(a.kelurahan)).filter(k => k && k !== "-"))).sort()
   }, [actors, filterKecamatan])
 
   const rwList = useMemo(() => {
@@ -263,7 +337,7 @@ function RekapanDataContent() {
 
   // ── render ────────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 md:p-8 space-y-8">
+    <div className="p-4 md:p-8 space-y-8 max-w-[100vw] overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="space-y-1">
@@ -272,7 +346,7 @@ function RekapanDataContent() {
             <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Rekapan Data Gabungan</h1>
           </div>
           <p className="text-xs md:text-sm text-muted-foreground">
-            Rekap gabungan data pelaku usaha unik dari Sheet 1 (2024), Sheet 2 (2023), Sheet 3 (2025), dan Pengajuan Terbaru (Deduplikasi NIK & Nama).
+            Rekap gabungan data pelaku usaha unik dari Sheet 1 (2024), Sheet 2 (2023), Sheet 3 (2025), dan Pengajuan Terbaru.
           </p>
         </div>
         <Button
@@ -477,7 +551,7 @@ function RekapanDataContent() {
       </div>
 
       {/* Data Table */}
-      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden">
+      <div className="rounded-2xl border bg-white shadow-sm overflow-hidden w-full">
         <div className="flex items-center justify-between px-6 py-4 border-b bg-muted/30">
           <h2 className="text-sm font-black uppercase tracking-widest text-slate-700 flex items-center gap-2">
             <Users className="w-4 h-4 text-primary" />
@@ -499,19 +573,19 @@ function RekapanDataContent() {
             <p className="text-xs text-slate-400">Coba ubah atau reset filter wilayah</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-muted/40">
+          <div className="overflow-x-auto w-full pb-2">
+            <Table className="w-full min-w-[1050px]">
+              <TableHeader className="bg-slate-50/80 border-b">
                 <TableRow>
-                  <TableHead className="font-black text-primary py-3 pl-6 w-12 text-center">NO</TableHead>
-                  <TableHead className="font-black text-primary py-3">NAMA LENGKAP</TableHead>
-                  <TableHead className="font-black text-primary py-3">NIK</TableHead>
-                  <TableHead className="font-black text-primary py-3">USAHA</TableHead>
-                  <TableHead className="font-black text-primary py-3">KECAMATAN</TableHead>
-                  <TableHead className="font-black text-primary py-3">KELURAHAN</TableHead>
-                  <TableHead className="font-black text-primary py-3">RT / RW</TableHead>
-                  <TableHead className="font-black text-primary py-3">USULAN</TableHead>
-                  <TableHead className="font-black text-primary py-3">SUMBER DATA</TableHead>
+                  <TableHead className="font-black text-primary py-3.5 pl-6 w-12 text-center whitespace-nowrap">NO</TableHead>
+                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">NAMA LENGKAP</TableHead>
+                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">NIK</TableHead>
+                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">USAHA</TableHead>
+                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">KECAMATAN</TableHead>
+                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">KELURAHAN</TableHead>
+                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">RT / RW</TableHead>
+                  <TableHead className="font-black text-primary py-3.5 whitespace-nowrap">USULAN</TableHead>
+                  <TableHead className="font-black text-primary py-3.5 pr-6 text-right whitespace-nowrap">SUMBER DATA</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -519,38 +593,38 @@ function RekapanDataContent() {
                   const { rt, rw } = parseRtRw(actor.rtRw)
                   return (
                     <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors">
-                      <TableCell className="py-3 pl-6 text-center font-bold text-slate-500 text-sm">{index + 1}</TableCell>
-                      <TableCell className="py-3">
+                      <TableCell className="py-3 pl-6 text-center font-bold text-slate-500 text-sm whitespace-nowrap">{index + 1}</TableCell>
+                      <TableCell className="py-3 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="font-bold text-slate-800 uppercase text-[13px]">{actor.fullName}</span>
                           <span className="text-[10px] text-slate-400 font-bold">{actor.gender}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-3 font-mono text-[11px] text-slate-600">{actor.nik || "-"}</TableCell>
-                      <TableCell className="py-3">
+                      <TableCell className="py-3 font-mono text-[11px] text-slate-600 whitespace-nowrap">{actor.nik || "-"}</TableCell>
+                      <TableCell className="py-3 whitespace-nowrap">
                         <div className="flex flex-col">
                           <span className="font-black text-primary text-[12px] uppercase">{actor.businessName}</span>
                           <span className="text-[10px] text-slate-400 font-bold">{actor.businessCategory}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-3">
+                      <TableCell className="py-3 whitespace-nowrap">
                         <span className="text-[11px] font-bold uppercase text-slate-700">{actor.kecamatan || "-"}</span>
                       </TableCell>
-                      <TableCell className="py-3">
+                      <TableCell className="py-3 whitespace-nowrap">
                         <span className="text-[11px] font-bold uppercase text-slate-700">{actor.kelurahan || "-"}</span>
                       </TableCell>
-                      <TableCell className="py-3">
+                      <TableCell className="py-3 whitespace-nowrap">
                         <div className="flex gap-1">
                           <span className="text-[10px] font-black bg-teal-100 text-teal-700 px-2 py-0.5 rounded-full">RT {rt}</span>
                           <span className="text-[10px] font-black bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">RW {rw}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="py-3">
+                      <TableCell className="py-3 whitespace-nowrap">
                         <span className="text-[11px] font-bold uppercase text-slate-700">{actor.coordinator || "-"}</span>
                       </TableCell>
-                      <TableCell className="py-3">
+                      <TableCell className="py-3 pr-6 text-right whitespace-nowrap">
                         <Badge variant="outline" className={cn(
-                          "text-[9px] font-black uppercase px-2 py-0.5 border-none",
+                          "text-[9px] font-black uppercase px-2.5 py-0.5 border-none shadow-sm inline-block",
                           actor.source?.includes("Pengajuan") ? "bg-emerald-100 text-emerald-800" :
                           actor.source?.includes("Sheet 1") ? "bg-blue-100 text-blue-800" :
                           actor.source?.includes("Sheet 2") ? "bg-indigo-100 text-indigo-800" :
