@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useMemo } from "react"
 import { useDatabase, useList, useMemoFirebase } from "@/firebase"
 import { ref } from "firebase/database"
@@ -10,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Search, User, MapPin, Building2, CreditCard, History, AlertCircle, CheckCircle2, XCircle } from "lucide-react"
+import { Loader2, Search, User, MapPin, Building2, CreditCard, XCircle } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
 
 interface LogDataDialogProps {
@@ -27,11 +29,23 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
   }, [database])
   const { data: allActors, isLoading: isActorsLoading } = useList(actorsRef)
 
-  const masterRef = useMemoFirebase(() => {
+  const master2024Ref = useMemoFirebase(() => {
     if (!database) return null
-    return ref(database, "master_data")
+    return ref(database, "master_data_2024")
   }, [database])
-  const { data: allMaster, isLoading: isMasterLoading } = useList(masterRef)
+  const { data: data2024, isLoading: is2024Loading } = useList(master2024Ref)
+
+  const master2023Ref = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, "master_data_2023")
+  }, [database])
+  const { data: data2023, isLoading: is2023Loading } = useList(master2023Ref)
+
+  const master2025Ref = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, "master_data_2025")
+  }, [database])
+  const { data: data2025, isLoading: is2025Loading } = useList(master2025Ref)
 
   const blacklistRef = useMemoFirebase(() => {
     if (!database) return null
@@ -39,45 +53,90 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
   }, [database])
   const { data: allBlacklist, isLoading: isBlacklistLoading } = useList(blacklistRef)
 
-  const isLoading = isActorsLoading || isMasterLoading || isBlacklistLoading
+  const isLoading = isActorsLoading || is2024Loading || is2023Loading || is2025Loading || isBlacklistLoading
 
   const results = useMemo(() => {
     if (!searchTerm || isLoading) return []
 
-    const q = searchTerm.trim()
-    const qLower = q.toLowerCase()
+    const originalSearch = searchTerm.trim()
+
+    // 1. Clean query from prefix tags like "CEK NIK:", "CEK KK:", "CEK NAMA:", etc.
+    let cleanQuery = originalSearch
+      .replace(/^(CEK NIK|CEK KK|CEK NAMA|CEK|PENCARIAN DATA|PENCARIAN|TAMBAH DATA|UBAH DATA|HAPUS DATA|TAMBAH KUOTA KORLAP|UBAH KUOTA KORLAP|HAPUS KUOTA KORLAP|UBAH NAMA KORLAP|CETAK PDF)\s*:\s*/i, '')
+      .replace(/\s*\(\d+\)$/, '')
+      .trim()
+
+    // 2. Extract 16-digit numbers (NIK / KK) if present anywhere in the string
+    const extractedDigits = originalSearch.match(/\d{16}/g) || cleanQuery.match(/\d{16}/g) || []
+
+    const qLower = cleanQuery.toLowerCase()
     const matches: any[] = []
 
     const matchesQuery = (item: any) => {
-      // Check NIK with exact match (String conversion for numeric NIK values)
-      if (item.nik && String(item.nik).trim() === q) return true
-      // Check NoKK with exact match
-      if (item.noKK && String(item.noKK).trim() === q) return true
-      // Check name fields with partial match (case-insensitive)
-      if (item.fullName && String(item.fullName).toLowerCase().includes(qLower)) return true
-      if (item.nama && String(item.nama).toLowerCase().includes(qLower)) return true
-      if (item.businessName && String(item.businessName).toLowerCase().includes(qLower)) return true
-      if (item.usaha && String(item.usaha).toLowerCase().includes(qLower)) return true
+      if (!item) return false
+
+      const nikStr = item.nik ? String(item.nik).trim() : ""
+      const kkStr = item.noKK || item.kk ? String(item.noKK || item.kk).trim() : ""
+      const fullNameStr = (item.fullName || item.nama || "").toLowerCase()
+      const businessStr = (item.businessName || item.usaha || "").toLowerCase()
+      const coordStr = (item.coordinator || item.koor || "").toLowerCase()
+
+      // Match 1: Extracted 16-digit NIK or KK number
+      if (extractedDigits.length > 0) {
+        if (extractedDigits.some(d => (nikStr && nikStr === d) || (kkStr && kkStr === d))) {
+          return true
+        }
+      }
+
+      // Match 2: Exact NIK or KK match with cleanQuery
+      if (cleanQuery && (nikStr === cleanQuery || kkStr === cleanQuery)) {
+        return true
+      }
+
+      // Match 3: Numeric partial match for NIK or KK
+      if (cleanQuery && /^\d+$/.test(cleanQuery)) {
+        if (nikStr.includes(cleanQuery) || kkStr.includes(cleanQuery)) {
+          return true
+        }
+      }
+
+      // Match 4: Name, Business Name, or Coordinator match
+      if (qLower.length >= 2) {
+        if (fullNameStr && fullNameStr.includes(qLower)) return true
+        if (businessStr && businessStr.includes(qLower)) return true
+        if (coordStr && coordStr.includes(qLower)) return true
+      }
+
       return false
     }
 
     // Search in Business Actors
     if (allActors) {
-      allActors.filter(matchesQuery).forEach(a => matches.push({ ...a, _sourceType: 'Registration' }))
+      allActors.filter(matchesQuery).forEach(a => matches.push({ ...a, _sourceType: 'Pendaftaran (Aplikasi)' }))
     }
 
-    // Search in Master Data
-    if (allMaster) {
-      allMaster.filter(matchesQuery).forEach(m => matches.push({ ...m, _sourceType: 'Master (Accepted)' }))
+    // Search in Master 2024
+    if (data2024) {
+      data2024.filter(matchesQuery).forEach(m => matches.push({ ...m, _sourceType: 'Pembanding 2024 (Sheet 1)' }))
     }
 
-    // Search in Blacklist Data
+    // Search in Master 2023
+    if (data2023) {
+      data2023.filter(matchesQuery).forEach(m => matches.push({ ...m, _sourceType: 'Pembanding 2023 (Sheet 2)' }))
+    }
+
+    // Search in Master 2025
+    if (data2025) {
+      data2025.filter(matchesQuery).forEach(m => matches.push({ ...m, _sourceType: 'Pembanding 2025 (Sheet 3)' }))
+    }
+
+    // Search in Blacklist
     if (allBlacklist) {
-      allBlacklist.filter(matchesQuery).forEach(b => matches.push({ ...b, _sourceType: 'Blacklist (Rejected)' }))
+      allBlacklist.filter(matchesQuery).forEach(b => matches.push({ ...b, _sourceType: 'Blacklist (Sheet 4)' }))
     }
 
     return matches
-  }, [searchTerm, allActors, allMaster, allBlacklist, isLoading])
+  }, [searchTerm, allActors, data2024, data2023, data2025, allBlacklist, isLoading])
 
   return (
     <Dialog open={!!searchTerm} onOpenChange={(open) => !open && onClose()}>
@@ -120,22 +179,26 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
                   <Card key={idx} className="overflow-hidden border-none bg-slate-50/50 hover:bg-slate-100 transition-colors shadow-sm relative group">
                     <div className={cn(
                       "absolute top-0 left-0 w-1.5 h-full",
-                      res._sourceType?.includes('Registration') ? "bg-emerald-500" :
-                      res._sourceType?.includes('Master') ? "bg-blue-500" : "bg-red-500"
+                      res._sourceType?.includes('Pendaftaran') ? "bg-emerald-500" :
+                      res._sourceType?.includes('2024') ? "bg-blue-600" :
+                      res._sourceType?.includes('2023') ? "bg-indigo-600" :
+                      res._sourceType?.includes('2025') ? "bg-amber-600" : "bg-red-600"
                     )} />
                     <CardContent className="p-4 sm:p-5">
                       <div className="flex flex-col md:flex-row justify-between gap-4">
                         <div className="space-y-3 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                              <Badge className={cn(
-                               "text-[9px] font-black uppercase px-2 py-0",
-                               res._sourceType?.includes('Registration') ? "bg-emerald-500 text-white" :
-                               res._sourceType?.includes('Master') ? "bg-blue-500 text-white" : "bg-red-500 text-white"
+                               "text-[9px] font-black uppercase px-2 py-0.5",
+                               res._sourceType?.includes('Pendaftaran') ? "bg-emerald-500 text-white" :
+                               res._sourceType?.includes('2024') ? "bg-blue-600 text-white" :
+                               res._sourceType?.includes('2023') ? "bg-indigo-600 text-white" :
+                               res._sourceType?.includes('2025') ? "bg-amber-600 text-white" : "bg-red-600 text-white"
                              )}>
                                {res._sourceType}
                              </Badge>
                              {res.status && (
-                               <Badge variant="outline" className="text-[9px] font-black uppercase px-2 py-0 border-primary/20 text-primary">
+                               <Badge variant="outline" className="text-[9px] font-black uppercase px-2 py-0.5 border-primary/20 text-primary">
                                  Status: {(res.status || "UNKNOWN").replace('_', ' ')}
                                </Badge>
                              )}
@@ -147,12 +210,12 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
                             </h4>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-bold text-slate-500">
                               <span className="flex items-center gap-1.5">
-                                <CreditCard className="w-3.5 h-3.5" />
+                                <CreditCard className="w-3.5 h-3.5 text-primary" />
                                 NIK: <span className="text-slate-700 font-mono tracking-wider">{res.nik || "-"}</span>
                               </span>
                               <span className="flex items-center gap-1.5">
-                                <User className="w-3.5 h-3.5" />
-                                KK: <span className="text-slate-700 font-mono tracking-wider">{res.noKK || "-"}</span>
+                                <User className="w-3.5 h-3.5 text-primary" />
+                                KK: <span className="text-slate-700 font-mono tracking-wider">{res.noKK || res.kk || "-"}</span>
                               </span>
                             </div>
                           </div>
@@ -173,7 +236,7 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
                                 <div className="space-y-0.5">
                                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Wilayah / Alamat</p>
                                   <p className="text-xs font-bold text-slate-700 uppercase truncate">
-                                    {res.kelurahan || "-"}, {res.kecamatan || "-"}
+                                    {[res.alamat, res.kelurahan || res.kel, res.kecamatan || res.kec].filter(Boolean).join(', ') || "-"}
                                   </p>
                                 </div>
                               </div>
@@ -188,9 +251,9 @@ export function LogDataDialog({ query: searchTerm, onClose }: LogDataDialogProps
                             <p className="text-[10px] font-bold text-slate-500">{res.tahunPengajuan || res.tahun || "-"}</p>
                           </div>
                           
-                          {res.statusLpj && (
-                            <Badge variant="secondary" className="text-[9px] font-black uppercase">
-                              LPJ: {res.statusLpj}
+                          {(res.coordinator || res.koor) && (
+                            <Badge variant="secondary" className="text-[9px] font-black uppercase bg-slate-100 text-slate-700">
+                              Usulan: {res.coordinator || res.koor}
                             </Badge>
                           )}
                         </div>
