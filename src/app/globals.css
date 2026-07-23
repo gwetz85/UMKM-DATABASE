@@ -66,9 +66,9 @@
     min-height: 100vh;
   }
   body.app-bg {
-    background-image: url('/bg-baru.jpg');
+    background-image: url('/bg-dkukm-bpjs.jpg?v=20260723');
     background-size: cover;
-    background-position: center;
+    background-position: center top;
     background-attachment: fixed;
     background-repeat: no-repeat;
   }
