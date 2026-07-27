@@ -1,6 +1,35 @@
 
 export type BusinessActorStatus = 'pending' | 'hold' | 'lengkapi_data' | 'verified_actor' | 'verified_dinas' | 'bank_pending' | 'lpj_pending' | 'finish' | 'rejected' | 'blacklist' | 'verifikasi_manual';
 
+export interface SurveyDinasData {
+  namaUsaha: string;
+  namaPemilik: string;
+  jenisKelamin: 'Laki-Laki' | 'Perempuan' | string;
+  status: 'Janda' | 'Duda' | 'Lajang' | 'Kepala Keluarga' | string;
+  alamatRumah: string;
+  noHp: string;
+  email: string;
+  sosmed: string;
+  dtks: {
+    masuk: boolean;
+    jenis?: 'PKH' | 'BPNT' | 'KIP' | 'LANSIA' | string;
+  };
+  bidangUsaha: string;
+  peralatan: string;
+  tahunBerdiri: string;
+  izin: string[];
+  modalUsaha: string;
+  omset: string;
+  hibah: {
+    pernah: boolean;
+    dariMana?: string;
+    tahun?: string;
+  };
+  rencanaPenggunaan: string;
+  hasilSurvey: string;
+  fotoSurveyUrl?: string;
+}
+
 export interface BusinessActor {
   id: string;
   fullName: string;
@@ -39,4 +68,6 @@ export interface BusinessActor {
   readyForLPJ?: boolean;
   registrationCode?: string;
   filingNote?: string;
+  surveyData?: SurveyDinasData;
+  surveyProgress?: number;
 }
