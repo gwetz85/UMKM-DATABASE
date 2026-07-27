@@ -37,6 +37,147 @@ function FinishContent() {
     setPrintDate(new Date().toLocaleString('id-ID'))
   }, [])
 
+  const handlePrintActor = (actor: BusinessActor) => {
+    const a = actor as any
+    const sd = a.surveyData || {}
+    const parsed = parsePobDob(actor.pobDob || "")
+    const dob = actor.dob || parsed.dob || "-"
+    const pob = actor.pob || parsed.pob || "-"
+    const age = calculateAge(dob)
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+    printWindow.document.write(`<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Data Pengajuan - ${actor.fullName}</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 11px; margin: 20px; color: #111; }
+  h1 { text-align: center; font-size: 16px; margin-bottom: 2px; }
+  .sub { text-align: center; font-size: 10px; color: #555; margin-bottom: 16px; }
+  .section { margin-bottom: 14px; }
+  .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #166534; color: #166534; padding-bottom: 3px; margin-bottom: 8px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .field label { font-size: 8px; font-weight: bold; text-transform: uppercase; color: #6b7280; display: block; }
+  .field p { font-weight: bold; font-size: 11px; margin: 0; }
+  .lpj-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .lpj-amount { font-size: 24px; font-weight: 900; color: #16a34a; }
+  .foto-box { text-align: center; margin-top: 8px; }
+  .foto-box img { max-height: 200px; border: 1px solid #ddd; border-radius: 6px; }
+  .badge { display: inline-block; background: #16a34a; color: white; font-size: 8px; font-weight: bold; padding: 2px 10px; border-radius: 99px; text-transform: uppercase; }
+  .loc-box { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 6px; padding: 10px; }
+  .loc-box p { margin: 0; font-size: 10px; }
+  hr { border: none; border-top: 1px solid #e5e7eb; margin: 12px 0; }
+  @media print { body { margin: 10px; } }
+</style>
+</head>
+<body>
+<h1>DOKUMEN DATA PENGAJUAN PELAKU USAHA</h1>
+<p class="sub">Dinas Koperasi UMKM &bull; Dicetak: ${new Date().toLocaleString('id-ID')}</p>
+
+<div class="section">
+  <div class="section-title">Informasi Pribadi</div>
+  <div class="grid">
+    <div class="field"><label>Nama Lengkap</label><p>${actor.fullName || '-'}</p></div>
+    <div class="field"><label>NIK</label><p>${actor.nik || '-'}</p></div>
+    <div class="field"><label>Nomor KK</label><p>${actor.noKK || '-'}</p></div>
+    <div class="field"><label>Jenis Kelamin</label><p>${actor.gender || '-'}</p></div>
+    <div class="field"><label>Tempat Lahir</label><p>${pob}</p></div>
+    <div class="field"><label>Tanggal Lahir</label><p>${dob}</p></div>
+    <div class="field"><label>Usia</label><p>${age}</p></div>
+    <div class="field"><label>Nomor HP</label><p>${actor.phone || '-'}</p></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Alamat &amp; Domisili</div>
+  <div class="grid">
+    <div class="field"><label>Kecamatan</label><p>${actor.kecamatan || '-'}</p></div>
+    <div class="field"><label>Kelurahan</label><p>${actor.kelurahan || '-'}</p></div>
+    <div class="field"><label>RT/RW</label><p>${actor.rtRw || '-'}</p></div>
+    <div class="field" style="grid-column:span 3"><label>Alamat Lengkap</label><p>${actor.address || '-'}</p></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Informasi Usaha</div>
+  <div class="grid grid-2">
+    <div class="field"><label>Nama Usaha</label><p>${actor.businessName || '-'}</p></div>
+    <div class="field"><label>Kategori</label><p>${actor.businessCategory || '-'}</p></div>
+    <div class="field"><label>Lokasi Usaha</label><p>${actor.businessLocation || '-'}</p></div>
+    <div class="field"><label>Koordinator/Usulan</label><p>${actor.coordinator || '-'}</p></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Data Hasil Survey Dinas</div>
+  <div class="grid">
+    <div class="field"><label>Nama Usaha</label><p>${sd.namaUsaha || '-'}</p></div>
+    <div class="field"><label>Nama Pemilik</label><p>${sd.namaPemilik || '-'}</p></div>
+    <div class="field"><label>Jenis Kelamin</label><p>${sd.jenisKelamin || '-'}</p></div>
+    <div class="field"><label>Status</label><p>${sd.status || '-'}</p></div>
+    <div class="field"><label>Alamat Rumah</label><p>${sd.alamatRumah || '-'}</p></div>
+    <div class="field"><label>No HP</label><p>${sd.noHp || '-'}</p></div>
+    <div class="field"><label>Email</label><p>${sd.email || '-'}</p></div>
+    <div class="field"><label>Sosial Media</label><p>${sd.sosmed || '-'}</p></div>
+    <div class="field"><label>DTKS</label><p>${sd.dtks?.masuk ? 'Ya (' + sd.dtks.jenis + ')' : 'Tidak'}</p></div>
+    <div class="field"><label>Bidang Usaha</label><p>${sd.bidangUsaha || '-'}</p></div>
+    <div class="field"><label>Peralatan</label><p>${sd.peralatan || '-'}</p></div>
+    <div class="field"><label>Tahun Berdiri</label><p>${sd.tahunBerdiri || '-'}</p></div>
+    <div class="field"><label>Izin</label><p>${(sd.izin || []).join(', ') || '-'}</p></div>
+    <div class="field"><label>Modal Usaha</label><p>${sd.modalUsaha || '-'}</p></div>
+    <div class="field"><label>Omset</label><p>${sd.omset || '-'}</p></div>
+    <div class="field"><label>Pernah Terima Hibah?</label><p>${sd.hibah?.pernah ? 'Ya (Dari: ' + sd.hibah.dariMana + ', Tahun: ' + sd.hibah.tahun + ')' : 'Tidak'}</p></div>
+    <div class="field"><label>Rencana Penggunaan</label><p>${sd.rencanaPenggunaan || '-'}</p></div>
+    <div class="field" style="grid-column:span 3"><label>Hasil Survey</label><p>${sd.hasilSurvey || '-'}</p></div>
+  </div>
+</div>
+
+${sd.fotoSurveyUrl ? `
+<div class="section">
+  <div class="section-title">Foto Survey</div>
+  <div class="foto-box"><img src="${sd.fotoSurveyUrl}" alt="Foto Survey" /></div>
+</div>` : ''}
+
+${a.verificationLocationDinas ? `
+<div class="section">
+  <div class="section-title">Titik Lokasi Survey Dinas</div>
+  <div class="loc-box">
+    <p><strong>Koordinat:</strong> ${a.verificationLocationDinas.lat}, ${a.verificationLocationDinas.lon}</p>
+    <p><a href="https://www.google.com/maps?q=${a.verificationLocationDinas.lat},${a.verificationLocationDinas.lon}" target="_blank">Buka di Google Maps</a></p>
+  </div>
+</div>` : ''}
+
+<div class="section">
+  <div class="section-title">Data Perbankan</div>
+  <div class="grid">
+    <div class="field"><label>Nama Bank</label><p>${actor.bankName || '-'}</p></div>
+    <div class="field"><label>Nomor Rekening</label><p>${actor.bankNumber || '-'}</p></div>
+    <div class="field"><label>Nama Pemilik Rekening</label><p>${actor.bankOwner || '-'}</p></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Laporan Pertanggung Jawaban (LPJ)</div>
+  <div class="lpj-box">
+    <div>
+      <label style="font-size:9px;text-transform:uppercase;color:#166534;font-weight:bold">Nominal Terlaporkan</label>
+      <div class="lpj-amount">RP ${(actor.lpjNominal || 0).toLocaleString('id-ID')}</div>
+    </div>
+    <div><span class="badge">Telah Terverifikasi</span></div>
+  </div>
+</div>
+
+<hr/>
+<p style="font-size:9px;color:#9ca3af;text-align:center">Dokumen ini dicetak dari Sistem Informasi DKUKM &bull; ${new Date().toLocaleString('id-ID')}</p>
+</body>
+</html>`)
+    printWindow.document.close()
+    printWindow.focus()
+    setTimeout(() => { printWindow.print() }, 500)
+  }
+
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
     return ref(database, `roles_admin/${user.uid}`)
@@ -316,6 +457,16 @@ function FinishContent() {
                   {isEditMode ? "Edit Data Selesai" : "Detail Lengkap Data Final"}
                 </DialogTitle>
                 <div className="flex flex-wrap gap-2">
+                  {!isEditMode && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handlePrintActor(viewingActor)}
+                      className="border-green-600 text-green-700 font-bold hover:bg-green-50"
+                    >
+                      <Printer className="w-4 h-4 mr-2" /> Cetak Data Pengajuan
+                    </Button>
+                  )}
                   {isAdmin && (
                     <Button 
                       variant={isEditMode ? "outline" : "default"} 
