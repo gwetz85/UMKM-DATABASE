@@ -70,4 +70,5 @@ export interface BusinessActor {
   filingNote?: string;
   surveyData?: SurveyDinasData;
   surveyProgress?: number;
+  verificationLocationDinas?: { lat: number; lon: number };
 }
