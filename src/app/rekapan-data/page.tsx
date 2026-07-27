@@ -288,8 +288,11 @@ function RekapanDataContent() {
       dedupeMap.set(dedupeKey, normalizedItem)
     }
 
-    // 1. Pengajuan Terbaru (Highest Priority)
-    (allActorsRaw || []).forEach(item => processItem(item, "Pengajuan Terbaru"));
+    // 1. Pengajuan Terbaru (Highest Priority - Hanya data terverifikasi)
+    const VERIFIED_STATUSES = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish']
+    ;(allActorsRaw || [])
+      .filter(item => VERIFIED_STATUSES.includes(item.status || ''))
+      .forEach(item => processItem(item, "Pengajuan Terbaru"));
 
     // 2. Sheet 1: 2024
     (data2024 || []).forEach(item => processItem(item, "Sheet 1 (2024)"));
