@@ -456,6 +456,16 @@ export default function VerifikasiDinasPage() {
                           </div>
                         </div>
 
+                        {actor.surveyProgress !== undefined && (
+                          <div className="pb-3">
+                            <div className="flex justify-between text-[10px] font-bold mb-1.5">
+                              <span className="text-slate-600 uppercase tracking-wider">Progress Survey</span>
+                              <span className={actor.surveyProgress === 100 ? 'text-emerald-600' : 'text-amber-600'}>{actor.surveyProgress}%</span>
+                            </div>
+                            <Progress value={actor.surveyProgress} className="h-2" />
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-2 gap-3 py-4 border-y border-slate-100">
                           <div className="space-y-1">
                             <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Usaha</span>
@@ -478,16 +488,6 @@ export default function VerifikasiDinasPage() {
                               {actor.coordinator || "Tanpa Korlap"}
                             </span>
                           </div>
-
-                          {actor.surveyProgress !== undefined && (
-                            <div className="flex-1 px-3 space-y-1 max-w-[100px]">
-                               <div className="flex justify-between text-[9px] font-bold">
-                                 <span className="text-slate-500">Progress</span>
-                                 <span className={actor.surveyProgress === 100 ? 'text-emerald-600' : 'text-amber-600'}>{actor.surveyProgress}%</span>
-                               </div>
-                               <Progress value={actor.surveyProgress} className="h-1.5" />
-                            </div>
-                          )}
 
                           <div className="flex gap-2">
                             {/* Viewer Dialog */}
