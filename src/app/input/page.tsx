@@ -27,7 +27,7 @@ import { logActivity, getDeviceType } from "@/lib/logger"
 
 export default function InputDataPage() {
   const { toast } = useToast()
-  const { user } = useUser()
+  const { user, userProfile: currentUserProfile } = useUser()
   const database = useDatabase()
   const [loading, setLoading] = useState(false)
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
@@ -87,14 +87,6 @@ export default function InputDataPage() {
       .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))
   }, [rawQuotaData, allActorsData])
 
-  // Get current user profile to record who created the entry
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-
-  const { data: allUsersForProfile } = useList(userProfileRef)
-  const currentUserProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
   const isMonitoring = currentUserProfile?.role === 'monitoring'
 
   useEffect(() => {

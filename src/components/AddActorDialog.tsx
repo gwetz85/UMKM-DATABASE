@@ -32,7 +32,7 @@ import { logActivity, getDeviceType } from "@/lib/logger"
 
 export function AddActorDialog() {
   const { toast } = useToast()
-  const { user } = useUser()
+  const { user, userProfile: currentUserProfile } = useUser()
   const database = useDatabase()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -63,28 +63,13 @@ export function AddActorDialog() {
       .map((q: any) => {
         const nameUpper = (q.name || "").toUpperCase().trim()
         const used = usageStats[nameUpper] || 0
-        const rawQuota = parseInt(String(q.quota)) || 0
-        const remaining = rawQuota - used
-        return { ...q, remaining: Math.max(0, remaining) }
-      })
-      .filter((q: any) => {
-        const nameUpper = (q.name || "").toUpperCase()
-        const isDeleted = nameUpper.includes('( PERBAIKKAN )') || 
-                          nameUpper.includes('( PERBAIKAN )') || 
-                          nameUpper.includes('( DIHAPUS )')
-        return q.remaining > 0 && !isDeleted
+        const quota = q.quota || 0
+        const isFull = quota > 0 && (quota - used) <= 0
+        return { ...q, isFull, remaining: quota - used }
       })
       .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))
   }, [rawQuotaData, systemStats])
 
-  // Get current user profile to record who created the entry
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-
-  const { data: allUsersForProfile } = useList(userProfileRef)
-  const currentUserProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
   const isMonitoring = currentUserProfile?.role === 'monitoring'
 
   useEffect(() => {

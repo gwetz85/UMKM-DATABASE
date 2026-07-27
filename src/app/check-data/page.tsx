@@ -17,7 +17,7 @@ import { logActivity, getDeviceType } from "@/lib/logger"
 
 
 export default function CheckDataPage() {
-  const { user } = useUser()
+  const { user, userProfile } = useUser()
   const database = useDatabase()
   const [loading, setLoading] = useState(false)
   const [searchDone, setSearchDone] = useState(false)
@@ -34,13 +34,6 @@ export default function CheckDataPage() {
 
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
   
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-  const { data: allUsersForProfile } = useList(userProfileRef)
-  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
-
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isPetugas = userProfile?.role === 'petugas'
   const hasAccess = isAdmin || isPetugas

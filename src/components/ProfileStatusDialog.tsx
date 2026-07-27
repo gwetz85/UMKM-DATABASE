@@ -32,18 +32,10 @@ import {
 
 
 export function ProfileStatusDialog() {
-  const { user, isUserLoading } = useUser()
+  const { user, isUserLoading, userProfile: profile, isProfileLoading } = useUser()
   const database = useDatabase()
   const [isOpen, setIsOpen] = useState(false)
   const [step, setStep] = useState<'profile' | 'info'>('profile')
-
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-
-  const { data: allUsersForProfile, isLoading: isProfileLoading } = useList(userProfileRef)
-  const profile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   useEffect(() => {
     // Show dialog once per session after login and profile is loaded

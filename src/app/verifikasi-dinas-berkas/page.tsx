@@ -33,7 +33,7 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function VerifikasiDinasBerkasPage() {
-  const { user } = useUser()
+  const { user, userProfile } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
@@ -81,13 +81,6 @@ export default function VerifikasiDinasBerkasPage() {
     return ref(database, `roles_admin/${user.uid}`)
   }, [user, database])
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
-
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-  const { data: allUsersForProfile } = useList(userProfileRef)
-  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isDinas = userProfile?.role === 'dinas'

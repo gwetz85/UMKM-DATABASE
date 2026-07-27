@@ -2,7 +2,7 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Database } from 'firebase/database';
+import { Database, ref, query, orderByChild, equalTo, onValue, get } from 'firebase/database';
 import { Auth, User, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseStorage } from 'firebase/storage';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
@@ -33,6 +33,8 @@ export interface FirebaseContextState {
   user: User | null;
   isUserLoading: boolean; // True during initial auth check
   userError: Error | null; // Error from auth listener
+  userProfile: any | null;
+  isProfileLoading: boolean;
 }
 
 // Return type for useFirebase()
@@ -44,13 +46,17 @@ export interface FirebaseServicesAndUser {
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
+  userProfile: any | null;
+  isProfileLoading: boolean;
 }
 
 // Return type for useUser() - specific to user auth state
-export interface UserHookResult { // Renamed from UserAuthHookResult for consistency if desired, or keep as UserAuthHookResult
+export interface UserHookResult {
   user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
+  userProfile: any | null;
+  isProfileLoading: boolean;
 }
 
 // React Context
@@ -70,6 +76,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     user: null,
     isUserLoading: true, // Start loading until first auth event
     userError: null,
+  });
+
+  const [userProfileState, setUserProfileState] = useState<{ profile: any; isProfileLoading: boolean }>({
+    profile: null,
+    isProfileLoading: false,
   });
 
   // Effect to subscribe to Firebase auth state changes
@@ -94,12 +105,54 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe(); // Cleanup
   }, [auth]); // Depends on the auth instance
 
+  // Effect to fetch user profile efficiently using indexed query
+  useEffect(() => {
+    if (!userAuthState.user || !database) {
+      setUserProfileState({ profile: null, isProfileLoading: false });
+      return;
+    }
+
+    setUserProfileState(prev => ({ ...prev, isProfileLoading: true }));
+
+    // Primary: Query system_users by uid index
+    const q = query(ref(database, 'system_users'), orderByChild('uid'), equalTo(userAuthState.user.uid));
+
+    const unsubscribe = onValue(q, (snapshot) => {
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        const keys = Object.keys(val);
+        const first = { ...val[keys[0]], id: keys[0] };
+        setUserProfileState({ profile: first, isProfileLoading: false });
+      } else {
+        // Fallback: Check if username matches email username (e.g. agus@umkm.id -> system_users/agus)
+        const emailUsername = userAuthState.user?.email?.split('@')[0]?.toLowerCase();
+        if (emailUsername) {
+          const directRef = ref(database, `system_users/${emailUsername}`);
+          get(directRef).then((dirSnap) => {
+            if (dirSnap.exists()) {
+              setUserProfileState({ profile: { ...dirSnap.val(), id: emailUsername }, isProfileLoading: false });
+            } else {
+              setUserProfileState({ profile: null, isProfileLoading: false });
+            }
+          }).catch(() => {
+            setUserProfileState({ profile: null, isProfileLoading: false });
+          });
+        } else {
+          setUserProfileState({ profile: null, isProfileLoading: false });
+        }
+      }
+    }, (err) => {
+      console.error("Error fetching user profile:", err);
+      setUserProfileState({ profile: null, isProfileLoading: false });
+    });
+
+    return () => unsubscribe();
+  }, [userAuthState.user, database]);
+
   // Memoize the context value
   const contextValue = useMemo((): FirebaseContextState => {
     const servicesAvailable = !!(firebaseApp && database && auth && storage);
     
-    // During build time (SSR/Prerendering), we provide "stubs" to prevent Firebase SDK from crashing.
-    // This is safer than returning null because many components pass these services to ref(), etc.
     const createStub = (name: string) => ({
       _checkNotDeleted: () => {},
       _getActualRepo: () => ({ repoInfo_: { host: 'localhost' } }),
@@ -118,8 +171,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       user: userAuthState.user,
       isUserLoading: userAuthState.isUserLoading,
       userError: userAuthState.userError,
+      userProfile: userProfileState.profile,
+      isProfileLoading: userProfileState.isProfileLoading,
     };
-  }, [firebaseApp, database, auth, storage, userAuthState.user, userAuthState.isUserLoading, userAuthState.userError]);
+  }, [firebaseApp, database, auth, storage, userAuthState.user, userAuthState.isUserLoading, userAuthState.userError, userProfileState.profile, userProfileState.isProfileLoading]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>

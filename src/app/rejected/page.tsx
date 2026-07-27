@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, Suspense } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, deleteDocumentNonBlocking, useObject } from "@/firebase"
-import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import { ref, query, equalTo, limitToFirst, orderByChild } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,20 +11,33 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Printer, Edit3, Loader2, Save, RotateCcw, Trash2, Eye, User, CreditCard, History, X, Building2, MapPin, Ban, AlertCircle, Search, Info } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, RotateCcw, Trash2, Eye, User, CreditCard, History, X, Building2, MapPin, Ban, AlertCircle, Search, Info, FileSpreadsheet, CheckCircle2, AlertTriangle, ChevronRight, Folder } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
+import { VerificationBadge } from "@/components/verification-badge"
 
-import { cn, extractDobFromNik, parsePobDob } from "@/lib/utils"
+import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 
+export default function RejectedPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    }>
+      <RejectedContent />
+    </Suspense>
+  )
+}
+
 function RejectedContent() {
-  const { user } = useUser()
+  const { user, userProfile } = useUser()
   const database = useDatabase()
   const { toast } = useToast()
   const router = useRouter()
@@ -56,19 +69,12 @@ function RejectedContent() {
   }, [user, database])
   const { data: adminRole } = useObject(adminRef)
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-  const { data: allUsersForProfile } = useList(userProfileRef)
-  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
-
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isKoordinator = userProfile?.role === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    return ref(database, 'businessActors')
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('rejected'))
   }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
@@ -855,8 +861,4 @@ function RejectedContent() {
       )}
     </div>
   )
-}
-
-export default function RejectedPage() {
-  return (<Suspense fallback={<div className="p-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>}><RejectedContent /></Suspense>)
 }

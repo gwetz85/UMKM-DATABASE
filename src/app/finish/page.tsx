@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
-import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import { ref, query, equalTo, limitToFirst, orderByChild } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,8 +19,20 @@ import Link from "next/link"
 import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
+export default function FinishPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    }>
+      <FinishContent />
+    </Suspense>
+  )
+}
+
 function FinishContent() {
-  const { user } = useUser()
+  const { user, userProfile } = useUser()
   const database = useDatabase()
   const { toast } = useToast()
   const router = useRouter()
@@ -233,26 +245,18 @@ ${a.verificationLocationDinas ? `
   }, [user, database])
   const { data: adminRole } = useObject(adminRef)
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-  const { data: allUsersForProfile } = useList(userProfileRef)
-  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
-
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isKoordinator = userProfile?.role === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    return ref(database, 'businessActors')
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('finish'))
   }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
-    // Status filter - equivalent to previous orderByChild('status').equalTo('finish')
-    if (a.status !== 'finish' || !a.lpjNominal) return false;
+    if (!a.lpjNominal) return false;
 
     const matchesSearch = 
       a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -273,8 +277,6 @@ ${a.verificationLocationDinas ? `
   }).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || "")) : undefined
 
   const [isEditMode, setIsEditMode] = useState(false)
-
-  // ConfirmDialog states
   const [showRevertDialog, setShowRevertDialog] = useState(false)
   const [revertPending, setRevertPending] = useState<{actorId: string, fullName: string} | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -838,8 +840,4 @@ ${a.verificationLocationDinas ? `
       />
     </div>
   )
-}
-
-export default function FinishPage() {
-  return (<Suspense fallback={<div className="p-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>}><FinishContent /></Suspense>)
 }

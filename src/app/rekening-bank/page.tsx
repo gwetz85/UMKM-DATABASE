@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking } from "@/firebase"
-import { ref } from "firebase/database"
+import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -35,7 +35,7 @@ export default function RekeningBankPage() {
 }
 
 function RekeningBankContent() {
-  const { user, isUserLoading } = useUser()
+  const { user, isUserLoading, userProfile } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
@@ -45,17 +45,11 @@ function RekeningBankContent() {
   const searchParams = useSearchParams()
   const selectedBank = searchParams.get('bank')
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-  const { data: allUsersForProfile } = useList(userProfileRef)
-  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
   const isKoordinator = userProfile?.role === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database || !user) return null
-    return ref(database, 'businessActors')
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('finish'))
   }, [database, user])
 
   const { data: allData, isLoading } = useList<BusinessActor>(memoQuery)

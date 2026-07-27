@@ -28,18 +28,11 @@ import { WeatherWidget } from './weather-widget';
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isUserLoading } = useUser();
+  const { user, isUserLoading, userProfile: profile, isProfileLoading } = useUser();
   const auth = useAuth()
   const database = useDatabase();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = React.useState(false);
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-  
-  const { data: allUsers, isLoading: isUsersLoading } = useList(userProfileRef)
-  const profile = allUsers?.find((u: any) => u.uid === user?.uid)
   const isKoordinator = profile?.role === 'koordinator'
   const { playSound } = useSoundEffect();
 
@@ -93,21 +86,18 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
     return () => {
       unsubscribe();
-      // NOTE: Do NOT manually set userStatusRef/lastSeenRef here.
-      // onDisconnect() already handles offline status server-side.
-      // Manually setting here causes false-offline glitches during HMR and re-renders.
     };
   }, [database, user, profile?.id]);
 
   React.useEffect(() => {
-    if (!isUserLoading && user && !isUsersLoading && allUsers && pathname !== '/login') {
+    if (!isUserLoading && user && !isProfileLoading && pathname !== '/login') {
        if (!profile) {
           signOut(auth).then(() => {
              router.push('/login');
           });
        }
     }
-  }, [user, allUsers, isUserLoading, isUsersLoading, profile, auth, router, pathname])
+  }, [user, isUserLoading, isProfileLoading, profile, auth, router, pathname])
 
   React.useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {

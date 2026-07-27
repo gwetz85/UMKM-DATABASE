@@ -24,7 +24,7 @@ import { useUser, useObject, useMemoFirebase, useList, useDatabase } from "@/fir
 import { ref } from "firebase/database"
 
 export function useNavigation() {
-  const { user } = useUser()
+  const { user, userProfile } = useUser()
   const database = useDatabase()
 
   // Admin Check
@@ -33,14 +33,6 @@ export function useNavigation() {
     return ref(database, `roles_admin/${user.uid}`)
   }, [user, database])
   const { data: adminRole } = useObject(adminRef)
-
-  // System User / Role Check
-  const usersRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-  const { data: allUsersForProfile } = useList(usersRef)
-  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isMonitoring = userProfile?.role === 'monitoring'
