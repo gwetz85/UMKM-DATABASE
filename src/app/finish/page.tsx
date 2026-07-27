@@ -46,9 +46,9 @@ function FinishContent() {
     const age = calculateAge(dob)
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
-    const row = (label: string, value: string, span = false) =>
+    const row = (label: string, value: string | undefined, span = false) =>
       `<tr><td class="lbl">${label}</td><td class="sep">:</td><td class="val${span ? ' full' : ''}">${value || '-'}</td></tr>`
-    const rowFull = (label: string, value: string) =>
+    const rowFull = (label: string, value: string | undefined) =>
       `<tr><td class="lbl" colspan="3" style="padding-bottom:2px;font-weight:bold;font-size:9px;color:#555;text-transform:uppercase;">${label}</td></tr><tr><td colspan="3" class="val" style="border:1px solid #333;padding:5px 8px;background:#fafafa;">${value || '-'}</td></tr>`
     printWindow.document.write(`<!DOCTYPE html>
 <html lang="id">
