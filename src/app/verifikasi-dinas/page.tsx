@@ -456,15 +456,13 @@ export default function VerifikasiDinasPage() {
                           </div>
                         </div>
 
-                        {actor.surveyProgress !== undefined && (
-                          <div className="pb-3">
-                            <div className="flex justify-between text-[10px] font-bold mb-1.5">
-                              <span className="text-slate-600 uppercase tracking-wider">Progress Survey</span>
-                              <span className={actor.surveyProgress === 100 ? 'text-emerald-600' : 'text-amber-600'}>{actor.surveyProgress}%</span>
-                            </div>
-                            <Progress value={actor.surveyProgress} className="h-2" />
+                        <div className="pb-3">
+                          <div className="flex justify-between text-[10px] font-bold mb-1.5">
+                            <span className="text-slate-600 uppercase tracking-wider">Progress Survey</span>
+                            <span className={(actor.surveyProgress || 0) === 100 ? 'text-emerald-600' : 'text-amber-600'}>{actor.surveyProgress || 0}%</span>
                           </div>
-                        )}
+                          <Progress value={actor.surveyProgress || 0} className="h-2" />
+                        </div>
 
                         <div className="grid grid-cols-2 gap-3 py-4 border-y border-slate-100">
                           <div className="space-y-1">
