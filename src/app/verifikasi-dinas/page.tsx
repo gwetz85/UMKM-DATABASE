@@ -133,7 +133,7 @@ export default function VerifikasiDinasPage() {
 
   const openSurveyDialog = (actor: BusinessActor) => {
     setVerifyingActor(actor);
-    setLocation(null);
+    setLocation(actor.verificationLocationDinas || null);
     setPhotoPreview(actor.surveyData?.fotoSurveyUrl || null);
     
     // Auto fill data
@@ -272,6 +272,25 @@ export default function VerifikasiDinasPage() {
     setVerifyingActor(null)
     setIsSubmitting(false)
   }
+
+  const handleSimpanDraft = () => {
+    if (!verifyingActor || !database || (!isAdmin && !isDinas && !isPetugas)) return;
+    setIsSubmitting(true);
+
+    const actorRef = ref(database, `businessActors/${verifyingActor.id}`);
+    const updateData: any = {
+      surveyData: surveyData,
+      surveyProgress: surveyProgress
+    };
+    if (location) {
+      updateData.verificationLocationDinas = { lat: location.lat, lon: location.lon };
+    }
+    updateDocumentNonBlocking(actorRef, updateData);
+
+    toast({ title: "Draft Tersimpan", description: `Draft progress survey (${surveyProgress}%) telah disimpan.` });
+    setVerifyingActor(null);
+    setIsSubmitting(false);
+  };
 
   const handleDeleteAll = () => {
     if (!database || !isAdmin || deleteConfirmText !== 'HAPUS SEMUA') return
@@ -898,8 +917,14 @@ export default function VerifikasiDinasPage() {
                                         )}
                                       </div>
                                     </div>
-                                    <DialogFooter className="pt-4 border-t mt-2">
-                                      <Button type="button" variant="ghost" onClick={() => setVerifyingActor(null)}>Batal</Button>
+                                    <DialogFooter className="pt-4 border-t mt-2 flex flex-row justify-between items-center w-full">
+                                      <div className="flex-1">
+                                        <Button type="button" variant="outline" onClick={handleSimpanDraft} disabled={isSubmitting} className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold shadow-sm">
+                                          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null} Simpan Draft
+                                        </Button>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <Button type="button" variant="ghost" onClick={() => setVerifyingActor(null)}>Batal</Button>
                                       {surveyProgress === 100 && location ? (
                                         <Button type="submit" disabled={isSubmitting} className="min-w-[150px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
                                           {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ClipboardCheck className="w-4 h-4 mr-2" />} Simpan Verifikasi
@@ -909,6 +934,7 @@ export default function VerifikasiDinasPage() {
                                           Isi Form 100%
                                         </Button>
                                       )}
+                                      </div>
                                     </DialogFooter>
                                   </form>
                                 </DialogContent>
