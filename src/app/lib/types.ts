@@ -71,4 +71,5 @@ export interface BusinessActor {
   surveyData?: SurveyDinasData;
   surveyProgress?: number;
   verificationLocationDinas?: { lat: number; lon: number };
+  googleDriveLink?: string;
 }

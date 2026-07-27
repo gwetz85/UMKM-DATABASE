@@ -27,7 +27,8 @@ import {
   ClipboardCheck,
   Check,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Folder
 } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
@@ -466,6 +467,21 @@ export default function VerifikasiDinasBerkasPage() {
                                               </div>
                                             </div>
                                           </section>
+
+                                          {verifyingActor.googleDriveLink && (
+                                            <section className="space-y-4">
+                                              <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Folder className="w-4 h-4" /> Berkas Tambahan (Google Drive)</div>
+                                              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                                <div>
+                                                  <p className="text-xs font-bold text-blue-800 uppercase">Folder Google Drive Pelaku Usaha</p>
+                                                  <p className="text-[10px] font-medium text-blue-600 mt-1">Berisi foto, video, dokumen usulan, atau file lainnya</p>
+                                                </div>
+                                                <a href={verifyingActor.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold px-4 py-2.5 rounded-lg text-xs shadow flex items-center justify-center min-w-[140px]">
+                                                  Buka Folder Drive
+                                                </a>
+                                              </div>
+                                            </section>
+                                          )}
                                         </div>
                                         
                                         {!showChecklist && (
