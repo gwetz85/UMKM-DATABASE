@@ -44,12 +44,6 @@ function FinishContent() {
     const dob = actor.dob || parsed.dob || "-"
     const pob = actor.pob || parsed.pob || "-"
     const regCode = actor.registrationCode || '-'
-    
-    // Generate simple barcode SVG from regCode
-    const barcodeStr = regCode.split('').map((c: string) => c.charCodeAt(0).toString(2).padStart(7,'0')).join('')
-    const barcodeSvg = `<svg width="140" height="40" xmlns="http://www.w3.org/2000/svg">${barcodeStr.split('').map((bit: string, i: number) =>
-      bit === '1' ? `<rect x="${i*1.3}" y="0" width="1.3" height="40" fill="black"/>` : ''
-    ).join('')}</svg>`
 
     const row = (label: string, value: string | undefined) =>
       `<tr><td class="lbl">${label}</td><td class="sep">:</td><td class="val">${value || '-'}</td></tr>`
@@ -64,67 +58,62 @@ function FinishContent() {
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Arial',sans-serif;font-size:11px;color:#222;background:white;}
-  .page{width:210mm;min-height:297mm;margin:0 auto;padding:15mm 15mm 10mm 15mm;}
+  .page{width:210mm;min-height:297mm;margin:0 auto;padding:15mm;}
 
   /* === KOP === */
   .kop{display:flex;align-items:center;gap:15px;padding-bottom:10px;}
   .kop-logo{width:80px;flex-shrink:0;text-align:center;}
   .kop-logo img{width:80px;height:auto;object-fit:contain;}
-  .kop-center{flex:1;padding-top:4px;}
+  .kop-center{flex:1;padding-top:4px;text-align:center;}
   .kop-center .org{font-size:16px;font-weight:bold;color:#1565C0;text-transform:uppercase;letter-spacing:0.5px;}
   .kop-center .sub{font-size:10px;font-weight:bold;color:#555;text-transform:uppercase;margin-top:4px;}
-  .kop-right{text-align:center;min-width:120px;padding-top:6px;}
-  .kop-right .barcode{display:block;}
-  .kop-right .reg-code{font-size:11px;font-weight:bold;letter-spacing:1px;margin-top:2px;color:#000;}
-  .kop-right .reg-label{font-size:8px;color:#666;text-transform:uppercase;margin-top:1px;}
+  .kop-right{width:80px;flex-shrink:0;} /* Spacer untuk menyeimbangkan logo di kiri */
   .kop-line{height:2px;background:#1565C0;margin-top:2px;margin-bottom:20px;}
 
   /* === JUDUL === */
-  .judul-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding:0 30px;}
-  .judul-center{flex:1;text-align:center;}
+  .judul-row{text-align:center;margin-bottom:20px;}
   .judul-text{font-size:16px;font-weight:bold;text-transform:uppercase;color:#1565C0;letter-spacing:0.5px;}
   .judul-underline{width:90px;height:4px;background:#4285F4;margin:6px auto 0 auto;}
-  .no-badge{background:#1565C0;color:white;font-weight:bold;font-size:11px;padding:5px 20px;border-radius:20px;white-space:nowrap;}
 
   /* === SECTION === */
-  .section{margin-bottom:12px;}
-  .sec-hdr{background:#EEF5FF;color:#1565C0;font-weight:bold;font-size:11px;padding:8px 12px;text-transform:uppercase;}
+  .section{margin-bottom:10px; page-break-inside:avoid;}
+  .sec-hdr{background:#EEF5FF;color:#1565C0;font-weight:bold;font-size:11px;padding:6px 12px;text-transform:uppercase;}
   .sec-body{padding:0;}
 
   /* === TABLE === */
   table{width:100%;border-collapse:collapse;}
-  td.lbl{width:30%;font-weight:bold;font-size:11px;padding:10px 12px;color:#222;}
-  td.sep{width:10px;padding:10px 2px;color:#555;}
-  td.val{font-size:11px;padding:10px 12px;color:#555;text-transform:uppercase;}
-  tr{border-bottom:1px solid #F0F0F0;}
+  td.lbl{width:30%;font-weight:bold;font-size:11px;padding:7px 12px;color:#222;}
+  td.sep{width:10px;padding:7px 2px;color:#555;}
+  td.val{font-size:11px;padding:7px 12px;color:#555;text-transform:uppercase;}
+  tr{border-bottom:1px solid #F0F0F0; page-break-inside:avoid;}
   tr:last-child{border-bottom:none;}
 
   /* === SURVEY TABLE === */
   .stbl{width:100%;border-collapse:collapse;font-size:11px;}
-  .stbl th, .stbl td{padding:10px 12px;border-bottom:1px solid #F0F0F0;}
+  .stbl th, .stbl td{padding:7px 12px;border-bottom:1px solid #F0F0F0;}
   .stbl th{font-weight:bold;color:#222;text-align:left;width:25%;}
   .stbl td{color:#555;text-transform:uppercase;}
 
   /* === LPJ === */
-  .lpj-box{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;}
+  .lpj-box{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;}
   .lpj-nom{font-size:16px;font-weight:bold;color:#555;}
   .lpj-badge{background:#E8F5E9;color:#2E7D32;font-weight:bold;font-size:10px;padding:6px 14px;border:1px solid #81C784;border-radius:4px;}
 
   /* === TTD === */
-  .ttd-row{display:flex;justify-content:space-between;margin-top:40px;padding:0 20px;}
+  .ttd-row{display:flex;justify-content:space-between;margin-top:30px;padding:0 20px; page-break-inside:avoid;}
   .ttd-col{flex:1;text-align:center;}
   .ttd-title{font-size:11px;font-weight:bold;text-transform:uppercase;margin-bottom:4px;}
-  .ttd-sub{font-size:9px;color:#777;margin-bottom:70px;}
+  .ttd-sub{font-size:9px;color:#777;margin-bottom:60px;}
   .ttd-name{font-size:11px;font-weight:bold;text-decoration:underline;}
 
   /* === FOOTER === */
-  .footer{margin-top:20px;border-top:1px solid #F0F0F0;padding-top:10px;text-align:center;font-size:9px;color:#888;}
+  .footer{margin-top:15px;border-top:1px solid #F0F0F0;padding-top:10px;text-align:center;font-size:9px;color:#888;}
 
   @media print{
-    .page{margin:0;padding:10mm 15mm;}
+    @page { size: A4; margin: 15mm; }
+    .page{width:100%;min-height:auto;margin:0;padding:0;}
     body{background:white;}
     .sec-hdr{background:#EEF5FF !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    .no-badge{background:#1565C0 !important;color:white !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   }
 </style>
 </head>
@@ -140,24 +129,14 @@ function FinishContent() {
     <div class="org">Tunas Bangsa Kepulauan Riau</div>
     <div class="sub">Pengajuan Bantuan UMKM Tahun 2026</div>
   </div>
-  <div class="kop-right">
-    <span class="barcode">${barcodeSvg}</span>
-    <div class="reg-code">${regCode}</div>
-    <div class="reg-label">Registration Code</div>
-  </div>
+  <div class="kop-right"></div>
 </div>
 <div class="kop-line"></div>
 
 <!-- JUDUL -->
 <div class="judul-row">
-  <div style="width:70px;"></div> <!-- spacer -->
-  <div class="judul-center">
-    <div class="judul-text">Formulir Biodata Pelaku Usaha</div>
-    <div class="judul-underline"></div>
-  </div>
-  <div>
-    <div class="no-badge">NO: ${actor.registrationCode || '-'}</div>
-  </div>
+  <div class="judul-text">Formulir Biodata Pelaku Usaha</div>
+  <div class="judul-underline"></div>
 </div>
 
 <!-- I. DATA PRIBADI -->
