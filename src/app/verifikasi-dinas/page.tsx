@@ -210,7 +210,7 @@ export default function VerifikasiDinasPage() {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-3">
             <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
-            <h1 className="text-3xl font-bold text-primary font-headline">Verifikasi & Validasi Dinas</h1>
+            <h1 className="text-3xl font-bold text-primary font-headline">Survey Dinas</h1>
             {filteredActors && (
               <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/20 shadow-sm flex items-center gap-2">
                 <span>Total Data:</span>
@@ -541,7 +541,7 @@ export default function VerifikasiDinasPage() {
                                 <DialogContent>
                                   <form onSubmit={handleVerifyDinas}>
                                     <DialogHeader>
-                                      <DialogTitle className="text-xl font-black text-emerald-600 uppercase">Verifikasi & Validasi Dinas</DialogTitle>
+                                      <DialogTitle className="text-xl font-black text-emerald-600 uppercase">Survey Dinas</DialogTitle>
                                       <DialogDescription>Lakukan verifikasi tingkat dinas untuk data pelaku usaha yang telah diloloskan Admin.</DialogDescription>
                                     </DialogHeader>
                                     <div className="py-6 space-y-4">

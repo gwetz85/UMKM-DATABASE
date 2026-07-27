@@ -128,7 +128,7 @@ export function useNavigation() {
       description: "Arsip Data yang Tidak Disetujui"
     },
     {
-      name: "Verifikasi & Validasi Dinas",
+      name: "Survey Dinas",
       href: "/verifikasi-dinas",
       icon: ClipboardCheck,
       show: isAdmin || isDinas || isPetugas,
