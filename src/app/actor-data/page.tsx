@@ -145,7 +145,7 @@ function ActorDataContent() {
     // Status filter - must match the statuses counted in handleSyncStats for coordinator
     // Status filter - EXCLUDE rejected for the active processing list (as requested)
     const s = a.status || ""
-    if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)) return false;
+    if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s)) return false;
 
     if (isKoordinator) {
       if (!a.coordinator || !userProfile?.fullName) return false;
@@ -307,7 +307,7 @@ function ActorDataContent() {
           stats.totalActors++
           
           const s = actor.status || 'pending'
-          const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)
+          const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s)
           const isRejected = s === 'rejected'
           
           if (isVerified || isRejected) {
@@ -585,7 +585,7 @@ function ActorDataContent() {
         const snap = await get(ref(database, 'businessActors'))
         if (snap.exists()) {
           const allActors = Object.values(snap.val()) as BusinessActor[]
-          dataToExport = allActors.filter(a => ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(a.status || ""))
+          dataToExport = allActors.filter(a => ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(a.status || ""))
         }
       }
 
