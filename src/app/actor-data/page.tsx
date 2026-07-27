@@ -159,29 +159,16 @@ function ActorDataContent() {
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingBankMode, setEditingBankMode] = useState(false)
   const [editingDriveMode, setEditingDriveMode] = useState(false)
-  const [filterKecamatan, setFilterKecamatan] = useState<string>("")
-  const [filterKelurahan, setFilterKelurahan] = useState<string>("")
-  const [filterRW, setFilterRW] = useState<string>("")
-  const [filterRT, setFilterRT] = useState<string>("")
   const [isSyncing, setIsSyncing] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [selectedExportSheets, setSelectedExportSheets] = useState<string[]>([])
 
-  const filteredActors = actors ? actors.filter(a => {
-    const matchesSearch =
-      (a.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (a.nik || "").includes(searchQuery) ||
-      (a.businessName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (a.address || "").toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesKecamatan = !filterKecamatan || (a.kecamatan || "").toLowerCase() === filterKecamatan.toLowerCase()
-    const matchesKelurahan = !filterKelurahan || (a.kelurahan || "").toLowerCase() === filterKelurahan.toLowerCase()
-    const rtRwParts = (a.rtRw || "").split('/')
-    const rtVal = (rtRwParts[0] || "").trim()
-    const rwVal = (rtRwParts[1] || "").trim()
-    const matchesRW = !filterRW || rwVal === filterRW
-    const matchesRT = !filterRT || rtVal === filterRT
-    return matchesSearch && matchesKecamatan && matchesKelurahan && matchesRW && matchesRT
-  }).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || "")) : undefined
+  const filteredActors = actors ? actors.filter(a => 
+    (a.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (a.nik || "").includes(searchQuery) ||
+    (a.businessName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (a.address || "").toLowerCase().includes(searchQuery.toLowerCase())
+  ).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || "")) : undefined
 
   const hasAutoOpened = useRef(false)
 
@@ -847,94 +834,7 @@ function ActorDataContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Filter Wilayah */}
-      {(() => {
-        const allActorsForFilter = actors || []
-        const kecamatanList = [...new Set(allActorsForFilter.map(a => (a.kecamatan || "").trim()).filter(Boolean))].sort()
-        const kelurahanList = [...new Set(
-          allActorsForFilter
-            .filter(a => !filterKecamatan || (a.kecamatan || "").toLowerCase() === filterKecamatan.toLowerCase())
-            .map(a => (a.kelurahan || "").trim())
-            .filter(Boolean)
-        )].sort()
-        const rwSet = new Set<string>()
-        const rtSet = new Set<string>()
-        allActorsForFilter.forEach(a => {
-          if (filterKecamatan && (a.kecamatan || "").toLowerCase() !== filterKecamatan.toLowerCase()) return
-          if (filterKelurahan && (a.kelurahan || "").toLowerCase() !== filterKelurahan.toLowerCase()) return
-          const parts = (a.rtRw || "").split('/')
-          const rt = (parts[0] || "").trim()
-          const rw = (parts[1] || "").trim()
-          if (rw) rwSet.add(rw)
-          if (rt) rtSet.add(rt)
-        })
-        const rwList = [...rwSet].sort((a,b) => a.localeCompare(b, undefined, { numeric: true }))
-        const rtList = [...rtSet].sort((a,b) => a.localeCompare(b, undefined, { numeric: true }))
-        return (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 print:hidden">
-            <div className="flex items-center gap-2 mb-3">
-              <Search className="w-4 h-4 text-primary" />
-              <span className="text-xs font-black uppercase text-primary tracking-widest">Filter Wilayah</span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="space-y-1">
-                <p className="text-[9px] font-bold uppercase text-slate-500 flex items-center gap-1"><MapPin className="w-3 h-3" /> Kecamatan</p>
-                <Select value={filterKecamatan} onValueChange={(v) => { setFilterKecamatan(v === "__all__" ? "" : v); setFilterKelurahan(""); setFilterRW(""); setFilterRT("") }}>
-                  <SelectTrigger className="h-9 text-xs font-semibold">
-                    <SelectValue placeholder="Semua Kecamatan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Semua Kecamatan</SelectItem>
-                    {kecamatanList.map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[9px] font-bold uppercase text-slate-500 flex items-center gap-1"><MapPin className="w-3 h-3" /> Kelurahan</p>
-                <Select value={filterKelurahan} onValueChange={(v) => { setFilterKelurahan(v === "__all__" ? "" : v); setFilterRW(""); setFilterRT("") }}>
-                  <SelectTrigger className="h-9 text-xs font-semibold">
-                    <SelectValue placeholder="Semua Kelurahan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Semua Kelurahan</SelectItem>
-                    {kelurahanList.map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[9px] font-bold uppercase text-slate-500"># RW</p>
-                <Select value={filterRW} onValueChange={(v) => { setFilterRW(v === "__all__" ? "" : v); setFilterRT("") }}>
-                  <SelectTrigger className="h-9 text-xs font-semibold">
-                    <SelectValue placeholder="Semua RW" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Semua RW</SelectItem>
-                    {rwList.map(r => <SelectItem key={r} value={r}>RW {r}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[9px] font-bold uppercase text-slate-500"># RT</p>
-                <Select value={filterRT} onValueChange={(v) => setFilterRT(v === "__all__" ? "" : v)}>
-                  <SelectTrigger className="h-9 text-xs font-semibold">
-                    <SelectValue placeholder="Semua RT" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Semua RT</SelectItem>
-                    {rtList.map(r => <SelectItem key={r} value={r}>RT {r}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            {(filterKecamatan || filterKelurahan || filterRW || filterRT) && (
-              <div className="mt-3 flex items-center justify-between">
-                <p className="text-[10px] text-slate-500 font-medium">Menampilkan {filteredActors?.length ?? 0} data dari filter aktif</p>
-                <button onClick={() => { setFilterKecamatan(""); setFilterKelurahan(""); setFilterRW(""); setFilterRT("") }} className="text-[10px] font-bold text-red-500 hover:underline">Reset Filter</button>
-              </div>
-            )}
-          </div>
-        )
-      })()}
+
 
       <div className="bg-transparent print:bg-transparent">
         {isLoading ? (
