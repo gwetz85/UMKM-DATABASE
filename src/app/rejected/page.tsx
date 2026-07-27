@@ -544,12 +544,23 @@ function RejectedContent() {
                           { label: "Jenis Kelamin", value: viewingActor.gender },
                           { label: "Tempat Lahir", value: viewingActor.pob || parsed.pob || "-" },
                           { label: "Tanggal Lahir", value: viewingActor.dob || parsed.dob || "-" },
-                          { label: "Nomor HP", value: viewingActor.phone }
+                          { label: "Nomor HP", value: viewingActor.phone, isPhone: true }
                         ]
                       })().map((item, i) => (
                          <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                          <p className="text-sm font-bold">{item.value || "-"}</p>
+                          {(item as any).isPhone && item.value ? (
+                            <a
+                              href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-sm font-bold text-green-600 hover:text-green-700 hover:underline flex items-center gap-1"
+                            >
+                              {item.value}
+                            </a>
+                          ) : (
+                            <p className="text-sm font-bold">{item.value || "-"}</p>
+                          )}
                         </div>
                       ))}
                       <div className="md:col-span-3 pt-2 border-t">

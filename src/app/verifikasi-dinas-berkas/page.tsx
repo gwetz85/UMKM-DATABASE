@@ -401,12 +401,23 @@ export default function VerifikasiDinasBerkasPage() {
                                                   { label: "Jenis Kelamin", value: verifyingActor.gender },
                                                   { label: "Tempat Lahir", value: verifyingActor.pob || parsed.pob || "-" },
                                                   { label: "Tanggal Lahir", value: verifyingActor.dob || parsed.dob || "-" },
-                                                  { label: "Nomor HP", value: verifyingActor.phone }
+                                                  { label: "Nomor HP", value: verifyingActor.phone, isPhone: true }
                                                 ]
                                               })().map((item, i) => (
                                                 <div key={i} className="space-y-1">
                                                   <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                                  <p className="text-xs font-bold">{item.value || "-"}</p>
+                                                  {(item as any).isPhone && item.value ? (
+                                                     <a
+                                                       href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
+                                                       target="_blank"
+                                                       rel="noreferrer"
+                                                       className="text-xs font-bold text-green-600 hover:text-green-700 hover:underline flex items-center gap-1"
+                                                     >
+                                                       {item.value}
+                                                     </a>
+                                                   ) : (
+                                                     <p className="text-xs font-bold">{item.value || "-"}</p>
+                                                   )}
                                                 </div>
                                               ))}
                                             </div>
