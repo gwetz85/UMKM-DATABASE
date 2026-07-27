@@ -138,12 +138,12 @@ export default function VerifikasiDinasPage() {
     
     // Auto fill data
     setSurveyData(actor.surveyData || {
-      namaUsaha: actor.businessName || '',
+      namaUsaha: '',
       namaPemilik: actor.fullName || '',
-      jenisKelamin: actor.gender || '',
-      alamatRumah: actor.address || '',
-      noHp: actor.phone || '',
-      bidangUsaha: actor.businessCategory || '',
+      jenisKelamin: '',
+      alamatRumah: '',
+      noHp: '',
+      bidangUsaha: '',
       dtks: { masuk: false },
       hibah: { pernah: false },
       izin: []
