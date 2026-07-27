@@ -43,7 +43,7 @@ function FinishContent() {
     const parsed = parsePobDob(actor.pobDob || "")
     const dob = actor.dob || parsed.dob || "-"
     const pob = actor.pob || parsed.pob || "-"
-    const regCode = (actor.id || '00000000').slice(-8).toUpperCase()
+    const regCode = actor.registrationCode || '-'
     
     // Generate simple barcode SVG from regCode
     const barcodeStr = regCode.split('').map((c: string) => c.charCodeAt(0).toString(2).padStart(7,'0')).join('')
@@ -156,7 +156,7 @@ function FinishContent() {
     <div class="judul-underline"></div>
   </div>
   <div>
-    <div class="no-badge">NO: ${actor.id?.slice(-4) || '1'}</div>
+    <div class="no-badge">NO: ${actor.registrationCode || '-'}</div>
   </div>
 </div>
 
