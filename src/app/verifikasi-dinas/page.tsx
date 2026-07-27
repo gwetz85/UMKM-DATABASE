@@ -453,15 +453,6 @@ export default function VerifikasiDinasPage() {
                               <p className="text-[10px] font-mono text-slate-500 mt-0.5 tracking-tighter">
                                 NIK: {actor.nik}
                               </p>
-                              {actor.surveyProgress !== undefined && (
-                                <div className="mt-2 space-y-1 pr-4">
-                                  <div className="flex justify-between text-[9px] font-bold">
-                                    <span className="text-slate-500">Progress Survey</span>
-                                    <span className={actor.surveyProgress === 100 ? 'text-emerald-600' : 'text-amber-600'}>{actor.surveyProgress}%</span>
-                                  </div>
-                                  <Progress value={actor.surveyProgress} className="h-1.5" />
-                                </div>
-                              )}
                           </div>
                         </div>
 
@@ -483,10 +474,20 @@ export default function VerifikasiDinasPage() {
                         <div className="flex items-center justify-between mt-2 pt-2">
                           <div className="flex flex-col">
                             <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">Koordinator</span>
-                            <span className="text-[10px] font-black text-primary truncate max-w-[120px] uppercase">
+                            <span className="text-[10px] font-black text-primary truncate max-w-[90px] uppercase">
                               {actor.coordinator || "Tanpa Korlap"}
                             </span>
                           </div>
+
+                          {actor.surveyProgress !== undefined && (
+                            <div className="flex-1 px-3 space-y-1 max-w-[100px]">
+                               <div className="flex justify-between text-[9px] font-bold">
+                                 <span className="text-slate-500">Progress</span>
+                                 <span className={actor.surveyProgress === 100 ? 'text-emerald-600' : 'text-amber-600'}>{actor.surveyProgress}%</span>
+                               </div>
+                               <Progress value={actor.surveyProgress} className="h-1.5" />
+                            </div>
+                          )}
 
                           <div className="flex gap-2">
                             {/* Viewer Dialog */}
