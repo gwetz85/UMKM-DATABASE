@@ -41,9 +41,9 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   const volumeRef = useRef(50);
   const currentTitleRef = useRef("");
 
-  // Role check: Only admin and petugas can access
+  // Role check: Only Administrator can access
   const normalizedRole = role?.toLowerCase();
-  const isAllowedRole = normalizedRole === 'admin' || normalizedRole === 'petugas';
+  const isAllowedRole = normalizedRole === 'admin';
 
 
   // Configuration: YouTube Playlist
