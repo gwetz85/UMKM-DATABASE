@@ -247,7 +247,7 @@ export default function HasilVerifikasiPage() {
                                         </h3>
                                         <div className="space-y-1 mt-3">
                                           <p className="text-[10px] font-bold text-muted-foreground uppercase">Keterangan / Alasan</p>
-                                          <p className="text-sm font-medium">{viewingActor.keteranganDinas || "Tidak ada keterangan."}</p>
+                                          <p className="text-sm font-medium">{viewingActor.keteranganDinas || (viewingActor as any).surveyData?.hasilSurvey || "Tidak ada keterangan."}</p>
                                         </div>
                                       </CardContent>
                                     </Card>
