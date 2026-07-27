@@ -46,136 +46,244 @@ function FinishContent() {
     const age = calculateAge(dob)
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
+    const row = (label: string, value: string, span = false) =>
+      `<tr><td class="lbl">${label}</td><td class="sep">:</td><td class="val${span ? ' full' : ''}">${value || '-'}</td></tr>`
+    const rowFull = (label: string, value: string) =>
+      `<tr><td class="lbl" colspan="3" style="padding-bottom:2px;font-weight:bold;font-size:9px;color:#555;text-transform:uppercase;">${label}</td></tr><tr><td colspan="3" class="val" style="border:1px solid #333;padding:5px 8px;background:#fafafa;">${value || '-'}</td></tr>`
     printWindow.document.write(`<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8" />
-<title>Data Pengajuan - ${actor.fullName}</title>
+<title>Formulir Pendaftaran - ${actor.fullName}</title>
 <style>
-  body { font-family: Arial, sans-serif; font-size: 11px; margin: 20px; color: #111; }
-  h1 { text-align: center; font-size: 16px; margin-bottom: 2px; }
-  .sub { text-align: center; font-size: 10px; color: #555; margin-bottom: 16px; }
-  .section { margin-bottom: 14px; }
-  .section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 2px solid #166534; color: #166534; padding-bottom: 3px; margin-bottom: 8px; }
-  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px; }
-  .grid-2 { grid-template-columns: repeat(2, 1fr); }
-  .field label { font-size: 8px; font-weight: bold; text-transform: uppercase; color: #6b7280; display: block; }
-  .field p { font-weight: bold; font-size: 11px; margin: 0; }
-  .lpj-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px; display: flex; justify-content: space-between; align-items: center; }
-  .lpj-amount { font-size: 24px; font-weight: 900; color: #16a34a; }
-  .foto-box { text-align: center; margin-top: 8px; }
-  .foto-box img { max-height: 200px; border: 1px solid #ddd; border-radius: 6px; }
-  .badge { display: inline-block; background: #16a34a; color: white; font-size: 8px; font-weight: bold; padding: 2px 10px; border-radius: 99px; text-transform: uppercase; }
-  .loc-box { background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 6px; padding: 10px; }
-  .loc-box p { margin: 0; font-size: 10px; }
-  hr { border: none; border-top: 1px solid #e5e7eb; margin: 12px 0; }
-  @media print { body { margin: 10px; } }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Arial', sans-serif; font-size: 11px; color: #000; background: white; }
+  .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 15mm 15mm 10mm 15mm; }
+  
+  /* KOP SURAT */
+  .kop { display: flex; align-items: center; gap: 12px; border-bottom: 3px solid #166534; padding-bottom: 10px; margin-bottom: 4px; }
+  .kop-logo { width: 60px; height: 60px; border: 2px solid #166534; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: bold; color: #166534; text-align: center; flex-shrink: 0; padding: 4px; }
+  .kop-text { flex: 1; text-align: center; }
+  .kop-text .instansi { font-size: 10px; font-weight: bold; text-transform: uppercase; color: #333; }
+  .kop-text .judul { font-size: 16px; font-weight: 900; text-transform: uppercase; color: #166534; letter-spacing: 1px; margin: 2px 0; }
+  .kop-text .sub { font-size: 9px; color: #555; }
+  .kop-right { width: 60px; text-align: right; font-size: 8px; color: #666; }
+
+  /* JUDUL FORMULIR */
+  .form-title { text-align: center; margin: 10px 0 8px 0; }
+  .form-title h2 { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; border: 2px solid #000; padding: 5px 20px; display: inline-block; }
+  .form-title .nomor { font-size: 9px; color: #555; margin-top: 3px; }
+
+  /* FOTO & DATA UTAMA */
+  .header-row { display: flex; gap: 12px; margin-bottom: 10px; }
+  .foto-col { width: 90px; flex-shrink: 0; }
+  .foto-box { width: 90px; height: 115px; border: 1.5px solid #333; display: flex; align-items: center; justify-content: center; background: #f5f5f5; overflow: hidden; }
+  .foto-box img { width: 100%; height: 100%; object-fit: cover; }
+  .foto-label { text-align: center; font-size: 8px; margin-top: 3px; color: #555; }
+  .data-col { flex: 1; }
+
+  /* SECTION */
+  .section { margin-bottom: 10px; }
+  .section-hdr { background: #166534; color: white; font-weight: bold; font-size: 10px; text-transform: uppercase; padding: 4px 8px; letter-spacing: 0.5px; margin-bottom: 0; }
+  .section-body { border: 1px solid #333; border-top: none; padding: 6px 8px; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  td.lbl { width: 38%; font-weight: bold; font-size: 10px; padding: 3px 4px; vertical-align: top; white-space: nowrap; }
+  td.sep { width: 3%; text-align: center; padding: 3px 2px; }
+  td.val { font-size: 10px; padding: 3px 4px; border-bottom: 1px dotted #ccc; text-transform: uppercase; font-weight: 600; }
+  td.full { text-transform: none; }
+  tr:last-child td.val { border-bottom: none; }
+
+  /* SURVEY TABLE */
+  .survey-table { width: 100%; border-collapse: collapse; }
+  .survey-table td, .survey-table th { border: 1px solid #aaa; padding: 4px 6px; font-size: 10px; }
+  .survey-table th { background: #e8f5e9; font-weight: bold; text-transform: uppercase; font-size: 9px; width: 40%; }
+  .survey-table tr:nth-child(even) td:last-child { background: #fafafa; }
+
+  /* LPJ */
+  .lpj-box { border: 2px solid #166534; border-radius: 4px; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; background: #f0fdf4; }
+  .lpj-nom { font-size: 20px; font-weight: 900; color: #166534; }
+  .lpj-status { border: 2px solid #166534; padding: 4px 14px; font-weight: 900; font-size: 9px; color: #166534; text-transform: uppercase; border-radius: 4px; }
+
+  /* TTD */
+  .ttd-row { display: flex; justify-content: space-between; margin-top: 14px; gap: 10px; }
+  .ttd-col { flex: 1; text-align: center; }
+  .ttd-title { font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+  .ttd-sub { font-size: 9px; color: #555; margin-bottom: 60px; }
+  .ttd-line { border-top: 1px solid #333; margin-top: 5px; padding-top: 3px; font-size: 9px; }
+
+  /* FOTO SURVEY */
+  .foto-survey-box { display: flex; gap: 12px; align-items: flex-start; }
+  .foto-survey-img { max-width: 160px; max-height: 160px; border: 1.5px solid #aaa; border-radius: 4px; object-fit: contain; }
+  .foto-survey-info { flex: 1; font-size: 10px; }
+
+  /* FOOTER */
+  .footer { margin-top: 10px; border-top: 1px solid #ccc; padding-top: 4px; text-align: center; font-size: 8px; color: #888; }
+
+  @media print {
+    .page { margin: 0; padding: 10mm 12mm; }
+    body { background: white; }
+  }
 </style>
 </head>
 <body>
-<h1>DOKUMEN DATA PENGAJUAN PELAKU USAHA</h1>
-<p class="sub">Dinas Koperasi UMKM &bull; Dicetak: ${new Date().toLocaleString('id-ID')}</p>
+<div class="page">
 
-<div class="section">
-  <div class="section-title">Informasi Pribadi</div>
-  <div class="grid">
-    <div class="field"><label>Nama Lengkap</label><p>${actor.fullName || '-'}</p></div>
-    <div class="field"><label>NIK</label><p>${actor.nik || '-'}</p></div>
-    <div class="field"><label>Nomor KK</label><p>${actor.noKK || '-'}</p></div>
-    <div class="field"><label>Jenis Kelamin</label><p>${actor.gender || '-'}</p></div>
-    <div class="field"><label>Tempat Lahir</label><p>${pob}</p></div>
-    <div class="field"><label>Tanggal Lahir</label><p>${dob}</p></div>
-    <div class="field"><label>Usia</label><p>${age}</p></div>
-    <div class="field"><label>Nomor HP</label><p>${actor.phone || '-'}</p></div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title">Alamat &amp; Domisili</div>
-  <div class="grid">
-    <div class="field"><label>Kecamatan</label><p>${actor.kecamatan || '-'}</p></div>
-    <div class="field"><label>Kelurahan</label><p>${actor.kelurahan || '-'}</p></div>
-    <div class="field"><label>RT/RW</label><p>${actor.rtRw || '-'}</p></div>
-    <div class="field" style="grid-column:span 3"><label>Alamat Lengkap</label><p>${actor.address || '-'}</p></div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title">Informasi Usaha</div>
-  <div class="grid grid-2">
-    <div class="field"><label>Nama Usaha</label><p>${actor.businessName || '-'}</p></div>
-    <div class="field"><label>Kategori</label><p>${actor.businessCategory || '-'}</p></div>
-    <div class="field"><label>Lokasi Usaha</label><p>${actor.businessLocation || '-'}</p></div>
-    <div class="field"><label>Koordinator/Usulan</label><p>${actor.coordinator || '-'}</p></div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title">Data Hasil Survey Dinas</div>
-  <div class="grid">
-    <div class="field"><label>Nama Usaha</label><p>${sd.namaUsaha || '-'}</p></div>
-    <div class="field"><label>Nama Pemilik</label><p>${sd.namaPemilik || '-'}</p></div>
-    <div class="field"><label>Jenis Kelamin</label><p>${sd.jenisKelamin || '-'}</p></div>
-    <div class="field"><label>Status</label><p>${sd.status || '-'}</p></div>
-    <div class="field"><label>Alamat Rumah</label><p>${sd.alamatRumah || '-'}</p></div>
-    <div class="field"><label>No HP</label><p>${sd.noHp || '-'}</p></div>
-    <div class="field"><label>Email</label><p>${sd.email || '-'}</p></div>
-    <div class="field"><label>Sosial Media</label><p>${sd.sosmed || '-'}</p></div>
-    <div class="field"><label>DTKS</label><p>${sd.dtks?.masuk ? 'Ya (' + sd.dtks.jenis + ')' : 'Tidak'}</p></div>
-    <div class="field"><label>Bidang Usaha</label><p>${sd.bidangUsaha || '-'}</p></div>
-    <div class="field"><label>Peralatan</label><p>${sd.peralatan || '-'}</p></div>
-    <div class="field"><label>Tahun Berdiri</label><p>${sd.tahunBerdiri || '-'}</p></div>
-    <div class="field"><label>Izin</label><p>${(sd.izin || []).join(', ') || '-'}</p></div>
-    <div class="field"><label>Modal Usaha</label><p>${sd.modalUsaha || '-'}</p></div>
-    <div class="field"><label>Omset</label><p>${sd.omset || '-'}</p></div>
-    <div class="field"><label>Pernah Terima Hibah?</label><p>${sd.hibah?.pernah ? 'Ya (Dari: ' + sd.hibah.dariMana + ', Tahun: ' + sd.hibah.tahun + ')' : 'Tidak'}</p></div>
-    <div class="field"><label>Rencana Penggunaan</label><p>${sd.rencanaPenggunaan || '-'}</p></div>
-    <div class="field" style="grid-column:span 3"><label>Hasil Survey</label><p>${sd.hasilSurvey || '-'}</p></div>
-  </div>
-</div>
-
-${sd.fotoSurveyUrl ? `
-<div class="section">
-  <div class="section-title">Foto Survey</div>
-  <div class="foto-box"><img src="${sd.fotoSurveyUrl}" alt="Foto Survey" /></div>
-</div>` : ''}
-
-${a.verificationLocationDinas ? `
-<div class="section">
-  <div class="section-title">Titik Lokasi Survey Dinas</div>
-  <div class="loc-box">
-    <p><strong>Koordinat:</strong> ${a.verificationLocationDinas.lat}, ${a.verificationLocationDinas.lon}</p>
-    <p><a href="https://www.google.com/maps?q=${a.verificationLocationDinas.lat},${a.verificationLocationDinas.lon}" target="_blank">Buka di Google Maps</a></p>
-  </div>
-</div>` : ''}
-
-<div class="section">
-  <div class="section-title">Data Perbankan</div>
-  <div class="grid">
-    <div class="field"><label>Nama Bank</label><p>${actor.bankName || '-'}</p></div>
-    <div class="field"><label>Nomor Rekening</label><p>${actor.bankNumber || '-'}</p></div>
-    <div class="field"><label>Nama Pemilik Rekening</label><p>${actor.bankOwner || '-'}</p></div>
-  </div>
-</div>
-
-<div class="section">
-  <div class="section-title">Laporan Pertanggung Jawaban (LPJ)</div>
-  <div class="lpj-box">
-    <div>
-      <label style="font-size:9px;text-transform:uppercase;color:#166534;font-weight:bold">Nominal Terlaporkan</label>
-      <div class="lpj-amount">RP ${(actor.lpjNominal || 0).toLocaleString('id-ID')}</div>
+  <!-- KOP SURAT -->
+  <div class="kop">
+    <div class="kop-logo">DKUKM<br/>KEPRI</div>
+    <div class="kop-text">
+      <div class="instansi">Pemerintah Provinsi Kepulauan Riau</div>
+      <div class="judul">Dinas Koperasi &amp; UMKM</div>
+      <div class="sub">Jl. D.I. Panjaitan, Kota Tanjungpinang, Kepulauan Riau &nbsp;|&nbsp; Telp. (0771) 21000</div>
     </div>
-    <div><span class="badge">Telah Terverifikasi</span></div>
+    <div class="kop-right">No. Dok:<br/><strong>${actor.id?.slice(-6)?.toUpperCase() || 'XXXXXX'}</strong></div>
   </div>
-</div>
 
-<hr/>
-<p style="font-size:9px;color:#9ca3af;text-align:center">Dokumen ini dicetak dari Sistem Informasi DKUKM &bull; ${new Date().toLocaleString('id-ID')}</p>
+  <!-- JUDUL -->
+  <div class="form-title">
+    <h2>Formulir Data Pelaku Usaha UMKM</h2>
+    <div class="nomor">Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', {day:'2-digit',month:'long',year:'numeric'})}</div>
+  </div>
+
+  <!-- DATA PRIBADI + FOTO -->
+  <div class="header-row">
+    <div class="data-col">
+      <div class="section">
+        <div class="section-hdr">A. Identitas Pelaku Usaha</div>
+        <div class="section-body">
+          <table>
+            ${row('Nama Lengkap', actor.fullName)}
+            ${row('NIK', actor.nik)}
+            ${row('Nomor KK', actor.noKK)}
+            ${row('Jenis Kelamin', actor.gender)}
+            ${row('Tempat Lahir', pob)}
+            ${row('Tanggal Lahir', dob)}
+            ${row('Usia', age)}
+            ${row('Nomor HP', actor.phone)}
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="foto-col">
+      <div class="foto-box">
+        ${sd.fotoSurveyUrl ? `<img src="${sd.fotoSurveyUrl}" alt="Foto" />` : '<span style="font-size:8px;color:#999;text-align:center;padding:4px;">Foto<br/>Pelaku Usaha</span>'}
+      </div>
+      <div class="foto-label">Foto Survey</div>
+    </div>
+  </div>
+
+  <!-- ALAMAT -->
+  <div class="section">
+    <div class="section-hdr">B. Alamat &amp; Domisili</div>
+    <div class="section-body">
+      <table>
+        ${row('Kecamatan', actor.kecamatan)}
+        ${row('Kelurahan', actor.kelurahan)}
+        ${row('RT / RW', actor.rtRw)}
+        ${row('Alamat Lengkap', actor.address, true)}
+      </table>
+    </div>
+  </div>
+
+  <!-- USAHA -->
+  <div class="section">
+    <div class="section-hdr">C. Informasi Usaha</div>
+    <div class="section-body">
+      <table>
+        ${row('Nama Usaha', actor.businessName)}
+        ${row('Kategori Usaha', actor.businessCategory)}
+        ${row('Lokasi Usaha', actor.businessLocation)}
+        ${row('Koordinator / Usulan', actor.coordinator)}
+      </table>
+    </div>
+  </div>
+
+  <!-- DATA SURVEY DINAS -->
+  <div class="section">
+    <div class="section-hdr">D. Hasil Survey Dinas</div>
+    <div class="section-body" style="padding:0;">
+      <table class="survey-table">
+        <tr><th>Bidang Usaha</th><td>${sd.bidangUsaha || '-'}</td><th>Tahun Berdiri</th><td>${sd.tahunBerdiri || '-'}</td></tr>
+        <tr><th>Peralatan Usaha</th><td>${sd.peralatan || '-'}</td><th>Email</th><td>${sd.email || '-'}</td></tr>
+        <tr><th>Sosial Media</th><td>${sd.sosmed || '-'}</td><th>DTKS</th><td>${sd.dtks?.masuk ? 'Ya (' + sd.dtks.jenis + ')' : 'Tidak'}</td></tr>
+        <tr><th>Modal Usaha</th><td>${sd.modalUsaha || '-'}</td><th>Omset / Bulan</th><td>${sd.omset || '-'}</td></tr>
+        <tr><th>Izin yang Dimiliki</th><td colspan="3">${(sd.izin || []).join(', ') || '-'}</td></tr>
+        <tr><th>Pernah Terima Hibah?</th><td colspan="3">${sd.hibah?.pernah ? 'Ya (Dari: ' + sd.hibah.dariMana + ', Tahun: ' + sd.hibah.tahun + ')' : 'Tidak'}</td></tr>
+        <tr><th>Rencana Penggunaan Dana</th><td colspan="3">${sd.rencanaPenggunaan || '-'}</td></tr>
+        <tr><th style="background:#dcfce7;">Hasil Survey</th><td colspan="3" style="font-weight:bold;background:#f0fdf4;">${sd.hasilSurvey || '-'}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- TITIK LOKASI -->
+  ${a.verificationLocationDinas ? `
+  <div class="section">
+    <div class="section-hdr">E. Titik Lokasi GPS Survey</div>
+    <div class="section-body">
+      <table>
+        ${row('Koordinat GPS', a.verificationLocationDinas.lat + ', ' + a.verificationLocationDinas.lon)}
+        ${row('Link Maps', 'maps.google.com/?q=' + a.verificationLocationDinas.lat + ',' + a.verificationLocationDinas.lon, true)}
+      </table>
+    </div>
+  </div>` : ''}
+
+  <!-- PERBANKAN -->
+  <div class="section">
+    <div class="section-hdr">F. Data Rekening Bank</div>
+    <div class="section-body">
+      <table>
+        ${row('Nama Bank', actor.bankName)}
+        ${row('Nomor Rekening', actor.bankNumber)}
+        ${row('Nama Pemilik Rekening', actor.bankOwner)}
+      </table>
+    </div>
+  </div>
+
+  <!-- LPJ -->
+  <div class="section">
+    <div class="section-hdr">G. Laporan Pertanggung Jawaban (LPJ)</div>
+    <div class="section-body">
+      <div class="lpj-box">
+        <div>
+          <div style="font-size:9px;font-weight:bold;text-transform:uppercase;color:#166534;margin-bottom:4px;">Nominal Dana Terlaporkan</div>
+          <div class="lpj-nom">Rp ${(actor.lpjNominal || 0).toLocaleString('id-ID')}</div>
+        </div>
+        <div class="lpj-status">&#10003; Telah Terverifikasi</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TANDA TANGAN -->
+  <div class="ttd-row">
+    <div class="ttd-col">
+      <div class="ttd-title">Pelaku Usaha</div>
+      <div class="ttd-sub">Yang bertanda tangan di bawah ini</div>
+      <div class="ttd-line">( ${actor.fullName?.toUpperCase() || '.................................'} )</div>
+    </div>
+    <div class="ttd-col">
+      <div class="ttd-title">Koordinator Lapangan</div>
+      <div class="ttd-sub">Menyatakan data telah diperiksa</div>
+      <div class="ttd-line">( ${actor.coordinator?.toUpperCase() || '.................................'} )</div>
+    </div>
+    <div class="ttd-col">
+      <div class="ttd-title">Pejabat Verifikasi Dinas</div>
+      <div class="ttd-sub">Menyatakan data telah diverifikasi</div>
+      <div class="ttd-line">( ................................. )</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Dokumen ini dicetak dari Sistem Informasi DKUKM &bull; ${new Date().toLocaleString('id-ID')} &bull; ID: ${actor.id || '-'}
+  </div>
+
+</div>
 </body>
 </html>`)
     printWindow.document.close()
     printWindow.focus()
-    setTimeout(() => { printWindow.print() }, 500)
+    setTimeout(() => { printWindow.print() }, 600)
   }
 
   const adminRef = useMemoFirebase(() => {
