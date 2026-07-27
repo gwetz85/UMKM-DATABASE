@@ -308,6 +308,15 @@ function RekapanDataContent() {
   const [filterKelurahan, setFilterKelurahan] = useState("ALL")
   const [filterRw, setFilterRw] = useState("ALL")
   const [filterRt, setFilterRt] = useState("ALL")
+  const [filterSource, setFilterSource] = useState("ALL")
+
+  const SOURCE_OPTIONS = [
+    { value: "ALL", label: "Semua Sumber" },
+    { value: "Pengajuan Terbaru", label: "Pengajuan Terbaru" },
+    { value: "Sheet 1 (2024)", label: "Sheet 1 (2024)" },
+    { value: "Sheet 2 (2023)", label: "Sheet 2 (2023)" },
+    { value: "Sheet 3 (2025)", label: "Sheet 3 (2025)" },
+  ]
 
   // ── unique values ─────────────────────────────────────────────────────────
   const kecamatanList = useMemo(
@@ -342,12 +351,13 @@ function RekapanDataContent() {
   // ── filtered result ───────────────────────────────────────────────────────
   const filtered = useMemo(() => {
     let src = actors
+    if (filterSource !== "ALL") src = src.filter(a => a.source === filterSource)
     if (filterKecamatan !== "ALL") src = src.filter(a => normalizeStr(a.kecamatan) === filterKecamatan)
     if (filterKelurahan !== "ALL") src = src.filter(a => normalizeStr(a.kelurahan) === filterKelurahan)
     if (filterRw !== "ALL") src = src.filter(a => parseRtRw(a.rtRw).rw === filterRw)
     if (filterRt !== "ALL") src = src.filter(a => parseRtRw(a.rtRw).rt === filterRt)
     return src
-  }, [actors, filterKecamatan, filterKelurahan, filterRw, filterRt])
+  }, [actors, filterSource, filterKecamatan, filterKelurahan, filterRw, filterRt])
 
   // ── stats per kecamatan (summary cards) ───────────────────────────────────
   const kecamatanStats = useMemo(() => {
@@ -367,6 +377,7 @@ function RekapanDataContent() {
     setFilterKelurahan("ALL")
     setFilterRw("ALL")
     setFilterRt("ALL")
+    setFilterSource("ALL")
   }
 
   const handleKecamatanChange = (val: string) => {
@@ -428,7 +439,7 @@ function RekapanDataContent() {
     toast({ title: "Berhasil", description: "Data gabungan berhasil diekspor ke Excel." })
   }
 
-  const activeFilters = [filterKecamatan, filterKelurahan, filterRw, filterRt].filter(f => f !== "ALL").length
+  const activeFilters = [filterKecamatan, filterKelurahan, filterRw, filterRt, filterSource].filter(f => f !== "ALL").length
 
   // ── render ────────────────────────────────────────────────────────────────
   return (
@@ -489,7 +500,7 @@ function RekapanDataContent() {
             <CardContent className="p-5 relative z-10">
               <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Filter Aktif</p>
               <p className="text-4xl font-black mt-1">{activeFilters}</p>
-              <p className="text-[10px] font-bold opacity-70 mt-1">dari 4 Tingkat Wilayah</p>
+              <p className="text-[10px] font-bold opacity-70 mt-1">dari 5 Tingkat Filter</p>
             </CardContent>
           </Card>
         </div>
@@ -612,6 +623,29 @@ function RekapanDataContent() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        </div>
+
+        {/* Sumber Data */}
+        <div className="pt-2 border-t">
+          <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1 mb-1.5">
+            <FileSpreadsheet className="w-3 h-3" /> Sumber Data
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {SOURCE_OPTIONS.map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setFilterSource(opt.value)}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs font-black border transition-all",
+                  filterSource === opt.value
+                    ? "bg-primary text-white border-primary shadow-sm"
+                    : "bg-white text-slate-600 border-slate-200 hover:border-primary/50 hover:text-primary"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
           </div>
         </div>
 
