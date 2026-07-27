@@ -133,7 +133,15 @@ export function useNavigation() {
       icon: ClipboardCheck,
       show: isAdmin || isDinas || isPetugas,
       color: "#c026d3", // fuchsia-600
-      description: "Tahap Akhir Verifikasi Dinas"
+      description: "Tahap Awal Verifikasi Dinas"
+    },
+    {
+      name: "Verifikasi Dinas",
+      href: "/verifikasi-dinas-berkas",
+      icon: ClipboardCheck,
+      show: isAdmin || isDinas || isPetugas,
+      color: "#9333ea", // purple-600
+      description: "Cek Kelengkapan Berkas"
     },
     {
       name: "Hasil Verifikasi",
