@@ -207,7 +207,6 @@ export function AddActorDialog() {
         businessName: formData.get("businessName"),
         businessLocation: formData.get("businessLocation"),
         coordinator: selectedCoordinator,
-        googleDriveLink: formData.get("googleDriveLink") || "",
         status: "pending",
         createdAt: new Date().toISOString(),
       }
@@ -438,11 +437,6 @@ export function AddActorDialog() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="googleDriveLink">Link Google Drive (Opsional)</Label>
-                    <Input id="googleDriveLink" name="googleDriveLink" placeholder="Masukkan link folder Google Drive jika ada" className="rounded-xl" />
-                    <p className="text-[10px] text-slate-500">Gunakan untuk menautkan folder dokumen atau foto tambahan</p>
                   </div>
                 </div>
               </section>
