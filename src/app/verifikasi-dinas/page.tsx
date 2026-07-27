@@ -74,7 +74,7 @@ export default function VerifikasiDinasPage() {
 
   // Calculate progress
   const calculateProgress = () => {
-    let requiredFields = 16;
+    let requiredFields = 18;
     let filled = 0;
     if (surveyData.namaUsaha) filled++;
     if (surveyData.namaPemilik) filled++;
@@ -113,7 +113,7 @@ export default function VerifikasiDinasPage() {
     if (surveyData.fotoSurveyUrl) filled++;
     if (location) filled++;
     
-    return Math.round((filled / requiredFields) * 100);
+    return Math.min(100, Math.round((filled / requiredFields) * 100));
   };
 
   const surveyProgress = calculateProgress();
@@ -478,7 +478,7 @@ export default function VerifikasiDinasPage() {
                         <div className="pb-3">
                           <div className="flex justify-between text-[10px] font-bold mb-1.5">
                             <span className="text-slate-600 uppercase tracking-wider">Progress Pengisian</span>
-                            <span className={(verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)) === 100 ? 'text-emerald-600' : 'text-amber-600'}>
+                            <span className={(verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)) >= 100 ? 'text-emerald-600' : 'text-amber-600'}>
                               {verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)}%
                             </span>
                           </div>
@@ -683,7 +683,7 @@ export default function VerifikasiDinasPage() {
                                     <div className="sticky top-0 bg-white z-10 py-4 border-b border-slate-100 shadow-sm px-1 mb-4">
                                       <div className="flex justify-between text-sm font-bold mb-2">
                                         <span className="text-slate-600 uppercase">Progress Pengisian</span>
-                                        <span className={surveyProgress === 100 ? 'text-emerald-600' : 'text-amber-600'}>{surveyProgress}%</span>
+                                        <span className={surveyProgress >= 100 ? 'text-emerald-600' : 'text-amber-600'}>{surveyProgress}%</span>
                                       </div>
                                       <Progress value={surveyProgress} className="h-2" />
                                     </div>
@@ -927,7 +927,7 @@ export default function VerifikasiDinasPage() {
                                       </div>
                                       <div className="flex gap-2">
                                         <Button type="button" variant="ghost" onClick={() => setVerifyingActor(null)}>Batal</Button>
-                                      {surveyProgress === 100 && location ? (
+                                      {surveyProgress >= 100 && location ? (
                                         <Button type="submit" disabled={isSubmitting} className="min-w-[150px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
                                           {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ClipboardCheck className="w-4 h-4 mr-2" />} Simpan Verifikasi
                                         </Button>
