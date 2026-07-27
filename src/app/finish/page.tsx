@@ -61,13 +61,12 @@ function FinishContent() {
   .page{width:210mm;min-height:297mm;margin:0 auto;padding:15mm;}
 
   /* === KOP === */
-  .kop{display:flex;align-items:center;gap:15px;padding-bottom:10px;}
-  .kop-logo{width:80px;flex-shrink:0;text-align:center;}
+  .kop{display:flex;align-items:center;justify-content:center;gap:20px;padding-bottom:10px;}
+  .kop-logo{text-align:center;}
   .kop-logo img{width:80px;height:auto;object-fit:contain;}
-  .kop-center{flex:1;padding-top:4px;text-align:center;}
+  .kop-center{text-align:center;padding-top:4px;}
   .kop-center .org{font-size:16px;font-weight:bold;color:#1565C0;text-transform:uppercase;letter-spacing:0.5px;}
   .kop-center .sub{font-size:10px;font-weight:bold;color:#555;text-transform:uppercase;margin-top:4px;}
-  .kop-right{width:80px;flex-shrink:0;} /* Spacer untuk menyeimbangkan logo di kiri */
   .kop-line{height:2px;background:#1565C0;margin-top:2px;margin-bottom:20px;}
 
   /* === JUDUL === */
@@ -99,13 +98,6 @@ function FinishContent() {
   .lpj-nom{font-size:16px;font-weight:bold;color:#555;}
   .lpj-badge{background:#E8F5E9;color:#2E7D32;font-weight:bold;font-size:10px;padding:6px 14px;border:1px solid #81C784;border-radius:4px;}
 
-  /* === TTD === */
-  .ttd-row{display:flex;justify-content:space-between;margin-top:30px;padding:0 20px; page-break-inside:avoid;}
-  .ttd-col{flex:1;text-align:center;}
-  .ttd-title{font-size:11px;font-weight:bold;text-transform:uppercase;margin-bottom:4px;}
-  .ttd-sub{font-size:9px;color:#777;margin-bottom:60px;}
-  .ttd-name{font-size:11px;font-weight:bold;text-decoration:underline;}
-
   /* === FOOTER === */
   .footer{margin-top:15px;border-top:1px solid #F0F0F0;padding-top:10px;text-align:center;font-size:9px;color:#888;}
 
@@ -129,7 +121,6 @@ function FinishContent() {
     <div class="org">Tunas Bangsa Kepulauan Riau</div>
     <div class="sub">Pengajuan Bantuan UMKM Tahun 2026</div>
   </div>
-  <div class="kop-right"></div>
 </div>
 <div class="kop-line"></div>
 
@@ -222,25 +213,6 @@ ${a.verificationLocationDinas ? `
       </div>
       <div class="lpj-badge">&#10003; Telah Terverifikasi</div>
     </div>
-  </div>
-</div>
-
-<!-- TANDA TANGAN -->
-<div class="ttd-row">
-  <div class="ttd-col">
-    <div class="ttd-title">Pelaku Usaha</div>
-    <div class="ttd-sub">Yang bertanda tangan di bawah ini</div>
-    <div class="ttd-name">(${actor.fullName?.toUpperCase()||'..............................'})</div>
-  </div>
-  <div class="ttd-col">
-    <div class="ttd-title">Koordinator Lapangan</div>
-    <div class="ttd-sub">Menyatakan data telah diperiksa</div>
-    <div class="ttd-name">(${actor.coordinator?.toUpperCase()||'..............................'})</div>
-  </div>
-  <div class="ttd-col">
-    <div class="ttd-title">Pejabat Verifikasi Dinas</div>
-    <div class="ttd-sub">Menyatakan data telah diverifikasi</div>
-    <div class="ttd-name">(..............................)</div>
   </div>
 </div>
 
