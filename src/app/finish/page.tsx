@@ -44,12 +44,16 @@ function FinishContent() {
     const dob = actor.dob || parsed.dob || "-"
     const pob = actor.pob || parsed.pob || "-"
     const regCode = (actor.id || '00000000').slice(-8).toUpperCase()
+    
+    // Generate simple barcode SVG from regCode
     const barcodeStr = regCode.split('').map((c: string) => c.charCodeAt(0).toString(2).padStart(7,'0')).join('')
-    const barcodeSvg = `<svg width="120" height="40" xmlns="http://www.w3.org/2000/svg">${barcodeStr.split('').map((bit: string, i: number) =>
-      bit === '1' ? `<rect x="${i*1.1}" y="0" width="1" height="40" fill="black"/>` : ''
+    const barcodeSvg = `<svg width="140" height="40" xmlns="http://www.w3.org/2000/svg">${barcodeStr.split('').map((bit: string, i: number) =>
+      bit === '1' ? `<rect x="${i*1.3}" y="0" width="1.3" height="40" fill="black"/>` : ''
     ).join('')}</svg>`
+
     const row = (label: string, value: string | undefined) =>
       `<tr><td class="lbl">${label}</td><td class="sep">:</td><td class="val">${value || '-'}</td></tr>`
+
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
     printWindow.document.write(`<!DOCTYPE html>
@@ -59,134 +63,190 @@ function FinishContent() {
 <title>Formulir Biodata - ${actor.fullName}</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:Arial,sans-serif;font-size:11px;color:#222;background:white;}
-  .page{width:210mm;min-height:297mm;margin:0 auto;padding:12mm 14mm 10mm 14mm;}
-  .kop{display:flex;align-items:center;gap:10px;padding-bottom:8px;}
-  .kop-logo-placeholder{width:68px;height:68px;border:2px solid #1565C0;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#1565C0;text-align:center;line-height:1.2;background:#EBF5FB;flex-shrink:0;}
-  .kop-center{flex:1;padding-left:4px;}
-  .kop-center .org{font-size:15px;font-weight:900;color:#1565C0;text-transform:uppercase;letter-spacing:0.5px;}
-  .kop-center .sub{font-size:10px;font-weight:700;color:#1565C0;text-transform:uppercase;margin-top:1px;}
-  .kop-right{text-align:center;min-width:110px;}
-  .kop-right .reg-code{font-size:12px;font-weight:900;font-family:monospace;letter-spacing:2px;margin-top:2px;}
-  .kop-right .reg-label{font-size:8px;color:#555;letter-spacing:1px;text-transform:uppercase;}
-  .kop-line{height:3px;background:linear-gradient(to right,#1565C0 70%,#4CAF50 100%);margin-top:6px;margin-bottom:14px;}
-  .judul-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:16px;}
-  .judul-text{font-size:17px;font-weight:900;text-transform:uppercase;letter-spacing:1px;text-align:center;}
-  .judul-underline{width:60px;height:3px;background:#1565C0;margin:4px auto 0 auto;}
-  .no-badge{background:#1565C0;color:white;font-weight:900;font-size:11px;padding:5px 16px;border-radius:20px;white-space:nowrap;}
-  .section{margin-bottom:0;}
-  .sec-hdr{background:#BBDEFB;color:#0D47A1;font-weight:900;font-size:11px;padding:6px 10px;border:1px solid #90CAF9;letter-spacing:0.3px;}
-  .sec-body{border:1px solid #90CAF9;border-top:none;}
+  body{font-family:'Arial',sans-serif;font-size:11px;color:#222;background:white;}
+  .page{width:210mm;min-height:297mm;margin:0 auto;padding:15mm 15mm 10mm 15mm;}
+
+  /* === KOP === */
+  .kop{display:flex;align-items:center;gap:15px;padding-bottom:10px;}
+  .kop-logo{width:80px;flex-shrink:0;text-align:center;}
+  .kop-logo img{width:80px;height:auto;object-fit:contain;}
+  .kop-center{flex:1;padding-top:4px;}
+  .kop-center .org{font-size:16px;font-weight:bold;color:#1565C0;text-transform:uppercase;letter-spacing:0.5px;}
+  .kop-center .sub{font-size:10px;font-weight:bold;color:#555;text-transform:uppercase;margin-top:4px;}
+  .kop-right{text-align:center;min-width:120px;padding-top:6px;}
+  .kop-right .barcode{display:block;}
+  .kop-right .reg-code{font-size:11px;font-weight:bold;letter-spacing:1px;margin-top:2px;color:#000;}
+  .kop-right .reg-label{font-size:8px;color:#666;text-transform:uppercase;margin-top:1px;}
+  .kop-line{height:2px;background:#1565C0;margin-top:2px;margin-bottom:20px;}
+
+  /* === JUDUL === */
+  .judul-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding:0 30px;}
+  .judul-center{flex:1;text-align:center;}
+  .judul-text{font-size:16px;font-weight:bold;text-transform:uppercase;color:#1565C0;letter-spacing:0.5px;}
+  .judul-underline{width:90px;height:4px;background:#4285F4;margin:6px auto 0 auto;}
+  .no-badge{background:#1565C0;color:white;font-weight:bold;font-size:11px;padding:5px 20px;border-radius:20px;white-space:nowrap;}
+
+  /* === SECTION === */
+  .section{margin-bottom:12px;}
+  .sec-hdr{background:#EEF5FF;color:#1565C0;font-weight:bold;font-size:11px;padding:8px 12px;text-transform:uppercase;}
+  .sec-body{padding:0;}
+
+  /* === TABLE === */
   table{width:100%;border-collapse:collapse;}
-  td.lbl{width:200px;font-weight:700;font-size:11px;padding:6px 10px;vertical-align:top;color:#222;}
-  td.sep{width:16px;padding:6px 2px;color:#222;font-weight:700;}
-  td.val{font-size:11px;padding:6px 8px;color:#222;border-bottom:1px solid #E3F2FD;}
-  tr:last-child td{border-bottom:none;}
-  tr:nth-child(even) td{background:#F8FCFF;}
-  .stbl{width:100%;border-collapse:collapse;font-size:10.5px;}
-  .stbl th,.stbl td{border:1px solid #90CAF9;padding:5px 8px;}
-  .stbl th{background:#BBDEFB;color:#0D47A1;font-weight:700;text-transform:uppercase;font-size:9.5px;width:35%;}
-  .stbl tr:nth-child(even) td{background:#F8FCFF;}
-  .stbl .highlight-th{background:#C8E6C9;color:#1B5E20;}
-  .stbl .highlight-td{background:#F1F8E9;font-weight:700;color:#1B5E20;}
-  .lpj-box{display:flex;justify-content:space-between;align-items:center;background:#E8F5E9;border:2px solid #66BB6A;border-radius:4px;padding:10px 16px;}
-  .lpj-nom{font-size:22px;font-weight:900;color:#2E7D32;}
-  .lpj-badge{background:#2E7D32;color:white;font-weight:900;font-size:10px;padding:5px 14px;border-radius:4px;}
-  .ttd-row{display:flex;justify-content:space-between;gap:10px;margin-top:20px;}
-  .ttd-col{flex:1;text-align:center;border:1px solid #ccc;padding:10px 6px 6px 6px;border-radius:4px;}
-  .ttd-title{font-size:10px;font-weight:900;text-transform:uppercase;margin-bottom:2px;}
-  .ttd-sub{font-size:8.5px;color:#666;margin-bottom:55px;}
-  .ttd-name{border-top:1px solid #333;padding-top:3px;font-size:9px;font-weight:700;}
-  .footer{margin-top:12px;border-top:1px solid #ddd;padding-top:5px;text-align:center;font-size:8px;color:#aaa;}
-  @media print{.page{margin:0;padding:8mm 10mm;}body{background:white;}}
+  td.lbl{width:30%;font-weight:bold;font-size:11px;padding:10px 12px;color:#222;}
+  td.sep{width:10px;padding:10px 2px;color:#555;}
+  td.val{font-size:11px;padding:10px 12px;color:#555;text-transform:uppercase;}
+  tr{border-bottom:1px solid #F0F0F0;}
+  tr:last-child{border-bottom:none;}
+
+  /* === SURVEY TABLE === */
+  .stbl{width:100%;border-collapse:collapse;font-size:11px;}
+  .stbl th, .stbl td{padding:10px 12px;border-bottom:1px solid #F0F0F0;}
+  .stbl th{font-weight:bold;color:#222;text-align:left;width:25%;}
+  .stbl td{color:#555;text-transform:uppercase;}
+
+  /* === LPJ === */
+  .lpj-box{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;}
+  .lpj-nom{font-size:16px;font-weight:bold;color:#555;}
+  .lpj-badge{background:#E8F5E9;color:#2E7D32;font-weight:bold;font-size:10px;padding:6px 14px;border:1px solid #81C784;border-radius:4px;}
+
+  /* === TTD === */
+  .ttd-row{display:flex;justify-content:space-between;margin-top:40px;padding:0 20px;}
+  .ttd-col{flex:1;text-align:center;}
+  .ttd-title{font-size:11px;font-weight:bold;text-transform:uppercase;margin-bottom:4px;}
+  .ttd-sub{font-size:9px;color:#777;margin-bottom:70px;}
+  .ttd-name{font-size:11px;font-weight:bold;text-decoration:underline;}
+
+  /* === FOOTER === */
+  .footer{margin-top:20px;border-top:1px solid #F0F0F0;padding-top:10px;text-align:center;font-size:9px;color:#888;}
+
+  @media print{
+    .page{margin:0;padding:10mm 15mm;}
+    body{background:white;}
+    .sec-hdr{background:#EEF5FF !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .no-badge{background:#1565C0 !important;color:white !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
 </style>
 </head>
 <body>
 <div class="page">
+
+<!-- KOP -->
 <div class="kop">
-  <div class="kop-logo-placeholder">TUNAS<br/>BANGSA<br/>KEPRI</div>
+  <div class="kop-logo">
+    <img src="/logo-tunas-bangsa.png" alt="Logo Tunas Bangsa"/>
+  </div>
   <div class="kop-center">
     <div class="org">Tunas Bangsa Kepulauan Riau</div>
     <div class="sub">Pengajuan Bantuan UMKM Tahun 2026</div>
   </div>
   <div class="kop-right">
-    ${barcodeSvg}
+    <span class="barcode">${barcodeSvg}</span>
     <div class="reg-code">${regCode}</div>
     <div class="reg-label">Registration Code</div>
   </div>
 </div>
 <div class="kop-line"></div>
+
+<!-- JUDUL -->
 <div class="judul-row">
-  <div>
+  <div style="width:70px;"></div> <!-- spacer -->
+  <div class="judul-center">
     <div class="judul-text">Formulir Biodata Pelaku Usaha</div>
     <div class="judul-underline"></div>
   </div>
-  <div class="no-badge">NO: ${actor.id?.slice(-4) || '1'}</div>
+  <div>
+    <div class="no-badge">NO: ${actor.id?.slice(-4) || '1'}</div>
+  </div>
 </div>
+
+<!-- I. DATA PRIBADI -->
 <div class="section">
   <div class="sec-hdr">I. DATA PRIBADI</div>
-  <div class="sec-body"><table>
-    ${row('Nama Lengkap', actor.fullName)}
-    ${row('NIK', actor.nik)}
-    ${row('Nomor Kartu Keluarga', actor.noKK)}
-    ${row('Jenis Kelamin', actor.gender)}
-    ${row('Tempat Lahir', pob)}
-    ${row('Tanggal Lahir', dob)}
-    ${row('Nomor HP / WhatsApp', actor.phone)}
-    ${row('Kecamatan / Kelurahan', (actor.kecamatan && actor.kelurahan) ? actor.kecamatan + ' / ' + actor.kelurahan : (actor.kecamatan || actor.kelurahan || '-'))}
-    ${row('Alamat Domisili', actor.address)}
-  </table></div>
+  <div class="sec-body">
+    <table>
+      ${row('Nama Lengkap', actor.fullName)}
+      ${row('NIK', actor.nik)}
+      ${row('Nomor Kartu Keluarga', actor.noKK)}
+      ${row('Jenis Kelamin', actor.gender)}
+      ${row('Tempat Lahir', pob)}
+      ${row('Tanggal Lahir', dob)}
+      ${row('Nomor HP / WhatsApp', actor.phone)}
+      ${row('Kecamatan / Kelurahan', (actor.kecamatan && actor.kelurahan) ? actor.kecamatan + ' / ' + actor.kelurahan : (actor.kecamatan || actor.kelurahan || '-'))}
+      ${row('Alamat Domisili', actor.address)}
+    </table>
+  </div>
 </div>
-<div class="section" style="margin-top:8px;">
+
+<!-- II. INFORMASI USAHA -->
+<div class="section">
   <div class="sec-hdr">II. INFORMASI USAHA</div>
-  <div class="sec-body"><table>
-    ${row('Nama Usaha', actor.businessName)}
-    ${row('Kategori Usaha', actor.businessCategory)}
-    ${row('Lokasi Usaha', actor.businessLocation)}
-    ${row('Korlap / Koordinator', actor.coordinator)}
-  </table></div>
+  <div class="sec-body">
+    <table>
+      ${row('Nama Usaha', actor.businessName)}
+      ${row('Kategori Usaha', actor.businessCategory)}
+      ${row('Lokasi Usaha', actor.businessLocation)}
+      ${row('Korlap / Koordinator', actor.coordinator)}
+    </table>
+  </div>
 </div>
-<div class="section" style="margin-top:8px;">
+
+<!-- III. DATA PERBANKAN -->
+<div class="section">
   <div class="sec-hdr">III. DATA PERBANKAN</div>
-  <div class="sec-body"><table>
-    ${row('Nama Bank', actor.bankName)}
-    ${row('Nomor Rekening', actor.bankNumber)}
-    ${row('Nama Pemilik Rekening', actor.bankOwner)}
-  </table></div>
+  <div class="sec-body">
+    <table>
+      ${row('Nama Bank', actor.bankName)}
+      ${row('Nomor Rekening', actor.bankNumber)}
+      ${row('Nama Pemilik Rekening', actor.bankOwner)}
+    </table>
+  </div>
 </div>
-<div class="section" style="margin-top:8px;">
+
+<!-- IV. HASIL SURVEY DINAS -->
+<div class="section">
   <div class="sec-hdr">IV. HASIL SURVEY DINAS</div>
-  <div class="sec-body" style="padding:0;"><table class="stbl">
-    <tr><th>Bidang Usaha</th><td>${sd.bidangUsaha||'-'}</td><th>Tahun Berdiri</th><td>${sd.tahunBerdiri||'-'}</td></tr>
-    <tr><th>Peralatan Usaha</th><td>${sd.peralatan||'-'}</td><th>Email</th><td>${sd.email||'-'}</td></tr>
-    <tr><th>Sosial Media</th><td>${sd.sosmed||'-'}</td><th>DTKS</th><td>${sd.dtks?.masuk?'Ya ('+sd.dtks.jenis+')':'Tidak'}</td></tr>
-    <tr><th>Modal Usaha</th><td>${sd.modalUsaha||'-'}</td><th>Omset / Bulan</th><td>${sd.omset||'-'}</td></tr>
-    <tr><th>Izin yang Dimiliki</th><td colspan="3">${(sd.izin||[]).join(', ')||'-'}</td></tr>
-    <tr><th>Pernah Terima Hibah?</th><td colspan="3">${sd.hibah?.pernah?'Ya (Dari: '+sd.hibah.dariMana+', Tahun: '+sd.hibah.tahun+')':'Tidak'}</td></tr>
-    <tr><th>Rencana Penggunaan Dana</th><td colspan="3">${sd.rencanaPenggunaan||'-'}</td></tr>
-    <tr><th class="highlight-th">Hasil Survey</th><td colspan="3" class="highlight-td">${sd.hasilSurvey||'-'}</td></tr>
-  </table></div>
+  <div class="sec-body">
+    <table class="stbl">
+      <tr><th>Bidang Usaha</th><td>${sd.bidangUsaha||'-'}</td><th>Tahun Berdiri</th><td>${sd.tahunBerdiri||'-'}</td></tr>
+      <tr><th>Peralatan Usaha</th><td>${sd.peralatan||'-'}</td><th>Email</th><td>${sd.email||'-'}</td></tr>
+      <tr><th>Sosial Media</th><td>${sd.sosmed||'-'}</td><th>DTKS</th><td>${sd.dtks?.masuk?'Ya ('+sd.dtks.jenis+')':'Tidak'}</td></tr>
+      <tr><th>Modal Usaha</th><td>${sd.modalUsaha||'-'}</td><th>Omset / Bulan</th><td>${sd.omset||'-'}</td></tr>
+      <tr><th>Izin yang Dimiliki</th><td colspan="3">${(sd.izin||[]).join(', ')||'-'}</td></tr>
+      <tr><th>Pernah Terima Hibah?</th><td colspan="3">${sd.hibah?.pernah?'Ya (Dari: '+sd.hibah.dariMana+', Tahun: '+sd.hibah.tahun+')':'Tidak'}</td></tr>
+      <tr><th>Rencana Penggunaan Dana</th><td colspan="3">${sd.rencanaPenggunaan||'-'}</td></tr>
+      <tr><th>Hasil Survey</th><td colspan="3" style="font-weight:bold;color:#1565C0;">${sd.hasilSurvey||'-'}</td></tr>
+    </table>
+  </div>
 </div>
+
 ${a.verificationLocationDinas ? `
-<div class="section" style="margin-top:8px;">
+<!-- V. TITIK LOKASI -->
+<div class="section">
   <div class="sec-hdr">V. TITIK LOKASI GPS SURVEY</div>
-  <div class="sec-body"><table>
-    ${row('Koordinat GPS', a.verificationLocationDinas.lat + ', ' + a.verificationLocationDinas.lon)}
-    ${row('Link Google Maps', 'maps.google.com/?q=' + a.verificationLocationDinas.lat + ',' + a.verificationLocationDinas.lon)}
-  </table></div>
+  <div class="sec-body">
+    <table>
+      ${row('Koordinat GPS', a.verificationLocationDinas.lat + ', ' + a.verificationLocationDinas.lon)}
+      ${row('Link Google Maps', 'maps.google.com/?q=' + a.verificationLocationDinas.lat + ',' + a.verificationLocationDinas.lon)}
+    </table>
+  </div>
 </div>` : ''}
-<div class="section" style="margin-top:8px;">
+
+<!-- VI. LPJ -->
+<div class="section">
   <div class="sec-hdr">VI. LAPORAN PERTANGGUNG JAWABAN (LPJ)</div>
-  <div class="sec-body" style="padding:8px;">
+  <div class="sec-body">
     <div class="lpj-box">
       <div>
-        <div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#2E7D32;margin-bottom:3px;">Nominal Dana Terlaporkan</div>
+        <div style="font-size:10px;font-weight:bold;text-transform:uppercase;color:#555;margin-bottom:3px;">Nominal Dana Terlaporkan</div>
         <div class="lpj-nom">Rp ${(actor.lpjNominal||0).toLocaleString('id-ID')}</div>
       </div>
       <div class="lpj-badge">&#10003; Telah Terverifikasi</div>
     </div>
   </div>
 </div>
+
+<!-- TANDA TANGAN -->
 <div class="ttd-row">
   <div class="ttd-col">
     <div class="ttd-title">Pelaku Usaha</div>
@@ -204,8 +264,14 @@ ${a.verificationLocationDinas ? `
     <div class="ttd-name">(..............................)</div>
   </div>
 </div>
-<div class="footer">Sistem Informasi DKUKM &bull; Dicetak: ${new Date().toLocaleString('id-ID')} &bull; Kode: ${regCode}</div>
-</div></body></html>`)
+
+<div class="footer">
+  Sistem Informasi DKUKM &bull; Dicetak: ${new Date().toLocaleString('id-ID')} &bull; Kode: ${regCode}
+</div>
+
+</div>
+</body>
+</html>`)
     printWindow.document.close()
     printWindow.focus()
     setTimeout(() => { printWindow.print() }, 600)
