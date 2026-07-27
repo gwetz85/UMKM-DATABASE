@@ -652,7 +652,7 @@ export default function VerifikasiDinasPage() {
                                     <ClipboardCheck className="w-4 h-4" />
                                   </Button>
                                 </DialogTrigger>
-                                <DialogContent>
+                                <DialogContent className="max-w-4xl max-h-[95vh]">
                                   <form onSubmit={handleVerifyDinas}>
                                     <DialogHeader>
                                       <DialogTitle className="text-xl font-black text-emerald-600 uppercase">Survey Dinas</DialogTitle>
@@ -667,7 +667,7 @@ export default function VerifikasiDinasPage() {
                                       <Progress value={surveyProgress} className="h-2" />
                                     </div>
 
-                                    <div className="py-2 space-y-6 max-h-[60vh] overflow-y-auto px-1">
+                                    <div className="py-2 space-y-6 max-h-[75vh] overflow-y-auto px-1">
                                       
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
