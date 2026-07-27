@@ -26,7 +26,9 @@ import {
   CreditCard, 
   History, 
   ClipboardCheck,
-  Check
+  Check,
+  Trash2,
+  AlertTriangle
 } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
@@ -40,6 +42,9 @@ export default function VerifikasiDinasPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
   const [isFetchingLocation, setIsFetchingLocation] = useState(false)
+  const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState("")
+  const [isDeletingAll, setIsDeletingAll] = useState(false)
 
   const fetchLocation = () => {
     setIsFetchingLocation(true);
@@ -162,6 +167,41 @@ export default function VerifikasiDinasPage() {
     setIsSubmitting(false)
   }
 
+  const handleDeleteAll = () => {
+    if (!database || !isAdmin || deleteConfirmText !== 'HAPUS SEMUA') return
+    
+    setIsDeletingAll(true)
+    const pendingActors = actors || []
+    let deletedCount = 0
+    
+    pendingActors.forEach((actor) => {
+      const actorRef = ref(database, `businessActors/${actor.id}`)
+      updateDocumentNonBlocking(actorRef, {
+        status: 'dihapus_dinas',
+        dihapusDinasAt: new Date().toISOString(),
+        dihapusDinasBy: user?.email || user?.uid || 'Admin'
+      })
+      deletedCount++
+    })
+
+    logActivity({
+      query: `HAPUS SEMUA DATA DARI MENU VERIFIKASI DINAS: ${deletedCount} data dihapus dari daftar`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'HAPUS DARI VERIFIKASI DINAS',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+
+    toast({ 
+      title: "Data Berhasil Dihapus dari Daftar", 
+      description: `${deletedCount} data pelaku usaha telah dihapus dari menu Verifikasi Dinas. Data tetap tersimpan di database.` 
+    })
+    setShowDeleteAllDialog(false)
+    setDeleteConfirmText("")
+    setIsDeletingAll(false)
+  }
+
   if (!isAdmin && !isDinas && !isPetugas && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
 
   return (
@@ -180,14 +220,80 @@ export default function VerifikasiDinasPage() {
           </div>
           <p className="text-muted-foreground mt-1">Lakukan verifikasi tingkat dinas untuk data pelaku usaha yang telah diloloskan Admin.</p>
         </div>
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            placeholder="Cari Nama, NIK, atau Usaha..."
-            className="flex h-11 w-full rounded-md border border-primary/20 bg-card px-3 py-2 pl-9 text-sm text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              placeholder="Cari Nama, NIK, atau Usaha..."
+              className="flex h-11 w-full rounded-md border border-primary/20 bg-card px-3 py-2 pl-9 text-sm text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* Tombol Hapus Semua - Hanya Admin */}
+          {isAdmin && filteredActors && filteredActors.length > 0 && (
+            <Dialog open={showDeleteAllDialog} onOpenChange={(open) => { setShowDeleteAllDialog(open); if (!open) setDeleteConfirmText(""); }}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  className="h-11 gap-2 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 bg-red-600 hover:bg-red-700 font-bold shrink-0"
+                  onClick={() => setShowDeleteAllDialog(true)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Hapus Semua Data</span>
+                  <span className="sm:hidden">Hapus</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-black text-red-600 uppercase flex items-center gap-2">
+                    <AlertTriangle className="w-6 h-6" /> Hapus Semua Data
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground">
+                    Tindakan ini akan menghapus semua data pelaku usaha yang berstatus <strong>lpj_pending</strong> secara permanen dan tidak dapat dibatalkan.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-2">
+                    <div className="flex items-center gap-2 text-red-700">
+                      <AlertTriangle className="w-5 h-5" />
+                      <span className="text-sm font-bold uppercase">Peringatan!</span>
+                    </div>
+                    <p className="text-xs text-red-600">
+                      Anda akan menghapus <strong className="text-red-800">{filteredActors?.length || 0} data</strong> pelaku usaha. Data yang sudah dihapus tidak dapat dikembalikan.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-slate-700">
+                      Ketik <span className="font-mono bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs">HAPUS SEMUA</span> untuk konfirmasi:
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="Ketik HAPUS SEMUA"
+                      className="flex h-11 w-full rounded-md border border-red-200 bg-white px-3 py-2 text-sm font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                    />
+                  </div>
+                </div>
+                <DialogFooter className="gap-2">
+                  <Button type="button" variant="ghost" onClick={() => { setShowDeleteAllDialog(false); setDeleteConfirmText(""); }}>
+                    Batal
+                  </Button>
+                  <Button 
+                    type="button"
+                    disabled={deleteConfirmText !== 'HAPUS SEMUA' || isDeletingAll}
+                    onClick={handleDeleteAll}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold min-w-[180px] gap-2"
+                  >
+                    {isDeletingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    Hapus {filteredActors?.length || 0} Data
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
 
