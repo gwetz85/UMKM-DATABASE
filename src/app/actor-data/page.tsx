@@ -253,6 +253,7 @@ function ActorDataContent() {
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingBankMode, setEditingBankMode] = useState(false)
+  const [editingDriveMode, setEditingDriveMode] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
   const [isLanjutDinasBatching, setIsLanjutDinasBatching] = useState(false)
 
@@ -432,6 +433,30 @@ function ActorDataContent() {
     setEditingBankMode(false)
     setViewingActor(null)
   }
+
+  const handleSaveDrive = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!database || !viewingActor) return
+    const formData = new FormData(e.currentTarget)
+    const updates = {
+      googleDriveLink: formData.get('googleDriveLink') as string
+    }
+    updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
+    
+    logActivity({
+      query: `UPDATE GOOGLE DRIVE: ${viewingActor.fullName}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'DATA PELAKU USAHA',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+    
+    toast({ title: "Tersimpan", description: "Link Google Drive berhasil ditambahkan." })
+    setEditingDriveMode(false)
+    setViewingActor({ ...viewingActor, ...updates } as BusinessActor)
+  }
+
 
   const handleRevert = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
@@ -999,10 +1024,11 @@ function ActorDataContent() {
           setViewingActor(null)
           setIsEditMode(false)
           setEditingBankMode(false)
+          setEditingDriveMode(false)
         }
       }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {viewingActor && !editingBankMode && (
+          {viewingActor && !editingBankMode && !editingDriveMode && (
             <div className="flex flex-col gap-2 relative">
               <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b gap-4">
                 <DialogTitle className="text-xl md:text-2xl font-black text-primary uppercase">
@@ -1026,6 +1052,15 @@ function ActorDataContent() {
                       className="font-bold bg-amber-500 hover:bg-amber-600 text-white"
                     >
                       <CreditCard className="w-4 h-4 mr-2" /> Input Rekening
+                    </Button>
+                  )}
+                  {isAdmin && !isEditMode && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => setEditingDriveMode(true)}
+                      className="font-bold bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      <Folder className="w-4 h-4 mr-2" /> Link Drive
                     </Button>
                   )}
                   {isAdmin && (
@@ -1328,6 +1363,29 @@ function ActorDataContent() {
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="submit" className="w-full bg-primary font-bold"><Save className="w-4 h-4 mr-2" /> Simpan & Proses LPJ</Button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {viewingActor && editingDriveMode && (
+            <div className="flex flex-col gap-4">
+              <div className="border-b pb-2 flex justify-between items-center">
+                <DialogTitle className="text-xl font-black text-blue-600 flex items-center gap-2">
+                  <Folder className="w-5 h-5"/> INPUT LINK GOOGLE DRIVE
+                </DialogTitle>
+                <Button variant="ghost" size="sm" onClick={() => setEditingDriveMode(false)}>Batal</Button>
+              </div>
+              <form onSubmit={handleSaveDrive}>
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label className="font-bold">Link Folder Google Drive</Label>
+                    <Input name="googleDriveLink" defaultValue={viewingActor.googleDriveLink || ""} placeholder="Contoh: https://drive.google.com/drive/folders/..." required />
+                    <p className="text-[10px] text-slate-500 font-medium">Link folder ini akan digunakan untuk lampiran foto/video/dokumen tambahan (opsional).</p>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"><Save className="w-4 h-4 mr-2" /> Simpan Link Drive</Button>
                 </div>
               </form>
             </div>
