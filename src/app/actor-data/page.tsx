@@ -1024,16 +1024,37 @@ function ActorDataContent() {
                       setViewingActor(actor);
                       setIsEditMode(false);
                       setEditingBankMode(false);
+                      setEditingDriveMode(false);
                       fetchAuxData(actor);
                     }}
+                    title="Lihat Detail"
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
                   <Button
                     size="sm"
                     variant="ghost"
+                    className={cn(
+                      "h-8 w-8 p-0 hover:bg-blue-50 transition-colors",
+                      actor.googleDriveLink ? "text-blue-600 bg-blue-50 hover:bg-blue-100" : "text-slate-400 hover:text-blue-600"
+                    )}
+                    onClick={() => {
+                      setViewingActor(actor);
+                      setIsEditMode(false);
+                      setEditingBankMode(false);
+                      setEditingDriveMode(true);
+                      fetchAuxData(actor);
+                    }}
+                    title={actor.googleDriveLink ? "Edit/Buka Link Google Drive" : "Input Link Google Drive"}
+                  >
+                    <Folder className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50"
                     onClick={() => handlePrintForm(actor)}
+                    title="Cetak Formulir"
                   >
                     <Printer className="w-4 h-4" />
                   </Button>
@@ -1478,6 +1499,14 @@ function ActorDataContent() {
                     <Input name="googleDriveLink" defaultValue={viewingActor.googleDriveLink || ""} placeholder="Contoh: https://drive.google.com/drive/folders/..." required />
                     <p className="text-[10px] text-slate-500 font-medium">Link folder ini akan digunakan untuk lampiran foto/video/dokumen tambahan (opsional).</p>
                   </div>
+                  {viewingActor.googleDriveLink && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
+                      <span className="text-xs font-bold text-blue-800">Link saat ini sudah tersimpan</span>
+                      <a href={viewingActor.googleDriveLink} target="_blank" rel="noreferrer" className="text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg flex items-center gap-1">
+                        <Folder className="w-3.5 h-3.5" /> Buka Folder
+                      </a>
+                    </div>
+                  )}
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"><Save className="w-4 h-4 mr-2" /> Simpan Link Drive</Button>
