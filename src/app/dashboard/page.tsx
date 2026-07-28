@@ -10,6 +10,7 @@ import React, { useEffect, useMemo, useState } from "react"
 import { BusinessActor } from "../lib/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { MusicDashboardCard } from "@/components/MusicDashboardCard"
+import { MonitoringDialog } from "@/components/monitoring-dialog"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -146,6 +147,8 @@ export default function DashboardStatsPage() {
   }, [systemStats])
 
   const [isSyncing, setIsSyncing] = useState(false)
+  const [isMonitoringOpen, setIsMonitoringOpen] = useState(false)
+
   const handleSyncStats = async () => {
     if (!database || isSyncing) return
     setIsSyncing(true)
@@ -177,6 +180,9 @@ export default function DashboardStatsPage() {
             const g = (actor.gender || "").toLowerCase().trim()
             const gender = (g === 'perempuan' || g === 'p') ? 'perempuan' : 'laki'
             stats.gender[gender]++
+            if (actor.googleDriveLink) {
+              stats.googleDrive = (stats.googleDrive || 0) + 1
+            }
           }
           
           if (isVerified || isRejected) {
@@ -384,7 +390,16 @@ export default function DashboardStatsPage() {
             Monitor dan kelola pendaftaran pelaku usaha secara real-time.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 lg:gap-3">
+          <Button 
+            onClick={() => setIsMonitoringOpen(true)} 
+            variant="outline" 
+            size="sm"
+            className="glass-panel border-indigo-300 text-indigo-700 hover:bg-indigo-50 font-bold text-[10px] md:text-xs h-8 md:h-10"
+          >
+            <MapPin className="w-3 h-3 md:w-4 md:h-4 mr-1.5" />
+            MONITORING
+          </Button>
           {userProfile?.role === 'admin' && (
             <Button 
               variant="outline" 
@@ -647,6 +662,13 @@ export default function DashboardStatsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <MonitoringDialog 
+        open={isMonitoringOpen} 
+        onOpenChange={setIsMonitoringOpen} 
+        systemStats={systemStats}
+        isLoading={isStatsLoading}
+      />
     </div>
   )
 }
