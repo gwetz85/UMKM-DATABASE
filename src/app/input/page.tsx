@@ -60,7 +60,7 @@ export default function InputDataPage() {
     
     const counts: Record<string, number> = {}
     if (allActorsData) {
-      const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish']
+      const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas']
       allActorsData.forEach((d: any) => {
         if (!activeStatuses.includes((d.status || 'pending').toLowerCase())) return
         if (d.coordinator) {
@@ -177,7 +177,7 @@ export default function InputDataPage() {
         const allActors = Object.values(snap.val()) as any[]
         duplicateInActors = allActors.find(a => a.nik === nik || a.noKK === noKK)
         if (selectedCoordinator) {
-          const verifiedStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'];
+          const verifiedStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'];
           currentCoordCount = allActors.filter(a => 
             a.coordinator === selectedCoordinator && 
             verifiedStatuses.includes((a.status || "pending").toLowerCase())

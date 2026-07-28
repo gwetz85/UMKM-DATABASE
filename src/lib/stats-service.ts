@@ -21,7 +21,7 @@ export interface SystemStats {
 // Helper to determine if a status is considered "Verified" for stats purposes
 const isVerifiedStatus = (s: string) => {
   const status = (s || "").toLowerCase();
-  return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(status);
+  return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(status);
 };
 
 // Helper to get general category
