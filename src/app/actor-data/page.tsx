@@ -176,6 +176,15 @@ function ActorDataContent() {
     }
   }, [viewId, actors, viewingActor])
 
+  // Auto-sync stats on load
+  const hasAutoSynced = useRef(false)
+  useEffect(() => {
+    if (isAdmin && database && !hasAutoSynced.current && !isSyncing) {
+      hasAutoSynced.current = true;
+      handleSyncStats(true);
+    }
+  }, [isAdmin, database])
+
 
   const { groupedActors, globalIndexMap } = useMemo(() => {
     if (!filteredActors) return { groupedActors: {}, globalIndexMap: new Map<string, number>() }
@@ -277,7 +286,7 @@ function ActorDataContent() {
     }
   }, [viewingActor, isEditMode])
 
-  const handleSyncStats = async () => {
+  const handleSyncStats = async (silent = false) => {
     if (!database || isSyncing || !isAdmin) return
     setIsSyncing(true)
     try {
@@ -335,15 +344,15 @@ function ActorDataContent() {
 
         if (fixCount > 0) {
           await update(actorsRef, updates)
-          toast({ title: "Auto-Fix Berhasil", description: `${fixCount} data koordinator berhasil diseragamkan.` })
+          if (!silent) toast({ title: "Auto-Fix Berhasil", description: `${fixCount} data koordinator berhasil diseragamkan.` })
         }
 
         await set(ref(database, 'system_stats'), stats)
-        toast({ title: "Sinkronisasi Selesai", description: "Statistik sistem telah berhasil diperbarui." })
+        if (!silent) toast({ title: "Sinkronisasi Selesai", description: "Statistik sistem telah berhasil diperbarui." })
       }
     } catch (err) {
       console.error(err)
-      toast({ variant: "destructive", title: "Gagal Sinkronisasi", description: "Terjadi kesalahan saat menghitung ulang statistik." })
+      if (!silent) toast({ variant: "destructive", title: "Gagal Sinkronisasi", description: "Terjadi kesalahan saat menghitung ulang statistik." })
     } finally {
       setIsSyncing(false)
     }
@@ -737,17 +746,6 @@ function ActorDataContent() {
               className="pl-9 h-10 border-primary/20 bg-white"
             />
           </div>
-
-          {isAdmin && (
-            <Button 
-              onClick={handleSyncStats} 
-              disabled={isSyncing}
-              className="bg-primary hover:bg-primary/90 font-bold shadow-md w-full md:w-auto h-10 rounded-xl"
-            >
-              {isSyncing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-              SYNC DATA
-            </Button>
-          )}
 
           {!isMonitoring && (
           <Button onClick={() => {
