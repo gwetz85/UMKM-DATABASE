@@ -61,6 +61,10 @@ function ActorDataContent() {
     setPrintDate(new Date().toLocaleString('id-ID'))
   }, [])
 
+  useEffect(() => {
+    setPageLimit(50)
+  }, [searchQuery, filterCoordinator])
+
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
     return ref(database, `roles_admin/${user.uid}`)
@@ -721,6 +725,8 @@ function ActorDataContent() {
     });
   }, [filteredActors, database]);
 
+  const currentDataToDisplay = isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []);
+
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
@@ -928,7 +934,7 @@ function ActorDataContent() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
+        {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
           <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
             <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{globalIndexMap.get(actor.id) || index + 1}</TableCell>
             <TableCell className={cn("py-4 font-bold", normalizeGender(actor.gender) === 'Perempuan' ? "text-red-600" : "text-blue-600")}>{actor.fullName}</TableCell>
@@ -941,6 +947,13 @@ function ActorDataContent() {
         ))}
       </TableBody>
     </Table>
+    {currentDataToDisplay.length > pageLimit && (
+      <div className="p-4 flex justify-center border-t bg-slate-50 print:hidden">
+        <Button variant="outline" onClick={() => setPageLimit(prev => prev + 50)} className="font-bold border-primary text-primary hover:bg-primary/10">
+          <RefreshCw className="w-4 h-4 mr-2" /> Tampilkan Lebih Banyak Data
+        </Button>
+      </div>
+    )}
     </div>
   </div>
 ) : (
@@ -961,7 +974,7 @@ function ActorDataContent() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {((isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []))).map((actor, index) => (
+        {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
           <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
             <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{globalIndexMap.get(actor.id) || index + 1}</TableCell>
             <TableCell className="py-4">
@@ -1056,6 +1069,13 @@ function ActorDataContent() {
         ))}
       </TableBody>
     </Table>
+    {currentDataToDisplay.length > pageLimit && (
+      <div className="p-4 flex justify-center border-t bg-slate-50 print:hidden">
+        <Button variant="outline" onClick={() => setPageLimit(prev => prev + 50)} className="font-bold border-primary text-primary hover:bg-primary/10">
+          <RefreshCw className="w-4 h-4 mr-2" /> Tampilkan Lebih Banyak Data
+        </Button>
+      </div>
+    )}
     </div>
   </div>
 )}
