@@ -30,9 +30,6 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   const [duration, setDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const showControls = isHovered || isExpanded;
 
   const formatTime = (timeInSeconds: number) => {
     if (!timeInSeconds || isNaN(timeInSeconds)) return "0:00";
@@ -455,15 +452,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   if (!isAllowedRole) return null;
 
   return (
-    <div 
-      className={cn("fixed bottom-24 right-6 z-[1000] print:hidden grid justify-items-end gap-2 transition-all duration-500", className)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        setIsExpanded(false);
-        setShowVolumeSlider(false);
-      }}
-    >
+    <div className={cn("fixed bottom-24 right-6 z-[1000] print:hidden grid justify-items-end gap-2", className)}>
 
       {/* Invisible YouTube Player Container */}
       <div 
@@ -479,55 +468,11 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
           isPlayerReady 
             ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-2xl' 
             : 'bg-slate-100/50 dark:bg-slate-800/20 backdrop-blur-sm opacity-50',
-          showControls 
-            ? 'w-[280px] h-[116px] rounded-2xl border border-white/20 dark:border-slate-800/50 p-4' 
-            : 'w-10 h-10 md:w-11 md:h-11 rounded-full border-none p-0'
+          'w-[280px] h-[116px] rounded-2xl border border-white/20 dark:border-slate-800/50 p-4'
         )}
-        onClick={(e) => {
-          if (e.target === e.currentTarget && showControls) {
-             setIsExpanded(false);
-          }
-        }}
       >
-        {/* Collapsed View (Main Anchor) */}
-        <div className={cn(
-          "absolute inset-0 flex items-center justify-center transition-all duration-500",
-          showControls ? "opacity-0 pointer-events-none scale-50" : "opacity-100 scale-100"
-        )}>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              togglePlayPause();
-              if (!showControls) {
-                setIsExpanded(true);
-              }
-            }}
-            disabled={!isPlayerReady}
-            className={`
-              relative flex items-center justify-center
-              w-full h-full rounded-full 
-              transition-all duration-500 ease-out shrink-0
-              ${!isPlayerReady 
-                ? 'text-slate-200 cursor-not-allowed' 
-                : isPlaying 
-                  ? 'bg-primary text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-110 active:scale-95' 
-                  : 'bg-primary/90 text-white shadow-lg hover:scale-110 active:scale-95'
-              }
-            `}
-            title={isPlaying ? "Jeda & Buka Player" : "Putar & Buka Player"}
-          >
-            {isPlaying && (
-              <span className="absolute inset-0 rounded-full animate-ping bg-primary opacity-20" />
-            )}
-            {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
-          </button>
-        </div>
-
-        {/* Expanded View */}
-        <div className={cn(
-          "flex flex-col w-full h-full transition-all duration-500 justify-between",
-          showControls ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none absolute"
-        )}>
+        {/* Expanded View (Always Visible) */}
+        <div className="flex flex-col w-full h-full justify-between">
           {/* Top: Controls */}
           <div className="flex items-center justify-between w-full mb-1">
              <div className="flex items-center gap-1">
