@@ -28,6 +28,8 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   const [volume, setVolume] = useState(50);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const showControls = isHovered || isExpanded;
 
   const [playerWidth, setPlayerWidth] = useState<number>(0);
   const playerRef = useRef<any>(null);
@@ -421,8 +423,10 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => {
         setIsHovered(false);
+        setIsExpanded(false);
         setShowVolumeSlider(false);
       }}
+      onClick={() => setIsExpanded(!isExpanded)}
     >
 
       {/* Invisible YouTube Player Container */}
@@ -441,17 +445,23 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
             ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-800/50 shadow-2xl' 
             : 'bg-slate-100/50 dark:bg-slate-800/20 backdrop-blur-sm opacity-50'
           }
-          ${isHovered ? 'px-3 gap-2' : 'px-1 gap-0'}
+          ${showControls ? 'px-3 gap-2' : 'px-1 gap-0'}
         `}
+        onClick={(e) => {
+          // If they click the container (not the buttons directly), toggle expansion
+          if (e.target === e.currentTarget) {
+             setIsExpanded(!isExpanded);
+          }
+        }}
       >
         {/* Hidden Controls Area */}
         <div className={cn(
           "flex items-center gap-1 transition-all duration-500 overflow-hidden",
-          isHovered ? "max-w-md opacity-100 mr-2" : "max-w-0 opacity-0 mr-0"
+          showControls ? "max-w-md opacity-100 mr-2" : "max-w-0 opacity-0 mr-0"
         )}>
           {/* Previous Button */}
           <button
-            onClick={handlePrevious}
+            onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
             disabled={!isPlayerReady}
             className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
             title="Sebelumnya"
@@ -461,7 +471,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
 
           {/* Stop Button */}
           <button
-            onClick={handleStop}
+            onClick={(e) => { e.stopPropagation(); handleStop(); }}
             disabled={!isPlayerReady}
             className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500 disabled:opacity-30 disabled:cursor-not-allowed"
             title="Berhenti"
@@ -471,7 +481,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
 
           {/* Next Button */}
           <button
-            onClick={handleNext}
+            onClick={(e) => { e.stopPropagation(); handleNext(); }}
             disabled={!isPlayerReady}
             className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
             title="Selanjutnya"
@@ -502,7 +512,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
             </div>
 
             <button
-              onClick={toggleMute}
+              onClick={(e) => { e.stopPropagation(); toggleMute(); }}
               disabled={!isPlayerReady}
               className={`
                 p-2 rounded-full transition-all duration-300
@@ -521,7 +531,13 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
 
         {/* Play/Pause Button (Main Anchor) */}
         <button
-          onClick={togglePlayPause}
+          onClick={(e) => {
+            e.stopPropagation();
+            togglePlayPause();
+            if (!showControls) {
+              setIsExpanded(true);
+            }
+          }}
           disabled={!isPlayerReady}
           className={`
             relative flex items-center justify-center
