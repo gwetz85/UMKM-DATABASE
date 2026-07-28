@@ -22,7 +22,8 @@ export function initializeFirebase() {
 
 export function getSdks(firebaseApp: FirebaseApp) {
   const auth = getAuth(firebaseApp);
-  // Persist login session in localStorage so users stay logged in after refresh
+  // Persist login session in localStorage so users stay logged in after refresh.
+  // Logout only happens when user manually clicks the Logout button.
   setPersistence(auth, browserLocalPersistence).catch(console.error);
   return {
     firebaseApp,
