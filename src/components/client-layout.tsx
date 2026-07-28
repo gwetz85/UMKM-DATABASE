@@ -118,13 +118,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     const sessionRef = ref(database, `system_users/${profile.id}/activeSessionId`);
     const unsubscribe = onValue(sessionRef, (snap) => {
       const remoteSessionId = snap.val();
-      // If a new sessionId was written by another device, force this session out
+      // If a new sessionId was written by another device, show the displaced overlay
       if (remoteSessionId && remoteSessionId !== mySessionId) {
         setIsDisplaced(true);
-        setTimeout(() => {
-          localStorage.removeItem('simpu_session_id');
-          signOut(auth).then(() => router.push('/login'));
-        }, 3500);
+        // Clean up localStorage only — no automatic sign-out or redirect
+        localStorage.removeItem('simpu_session_id');
       }
     });
 
@@ -405,13 +403,16 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 User Sudah Digunakan<br />di Perangkat Lain
               </h2>
               <p className="text-sm text-slate-500 leading-relaxed">
-                Sesi Anda telah diambil alih oleh perangkat lain. Anda akan diarahkan ke halaman login secara otomatis.
+                Akun ini sedang digunakan di perangkat lain. Silakan klik tombol di bawah untuk kembali ke halaman login.
               </p>
             </div>
-            <div className="flex items-center justify-center gap-2 text-rose-500">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-sm font-bold uppercase tracking-widest">Mengalihkan...</span>
-            </div>
+            <button
+              onClick={() => signOut(auth).then(() => router.push('/login'))}
+              className="w-full h-12 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Kembali ke Login
+            </button>
           </div>
         </div>
       )}
