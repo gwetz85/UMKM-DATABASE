@@ -92,9 +92,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!isUserLoading && user && !isProfileLoading && pathname !== '/login') {
        if (!profile) {
-          signOut(auth).then(() => {
-             router.push('/login');
-          });
+          // Add a grace period before signing out to prevent race condition on refresh
+          // where Firebase Auth restores the user but profile data hasn't loaded yet
+          const timer = setTimeout(() => {
+            signOut(auth).then(() => {
+              router.push('/login');
+            });
+          }, 3000);
+          return () => clearTimeout(timer);
        }
     }
   }, [user, isUserLoading, isProfileLoading, profile, auth, router, pathname])
