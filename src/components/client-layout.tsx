@@ -367,8 +367,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               "flex-1 bg-transparent print:bg-white relative z-0 isolate flex flex-col",
               (isRootPage || isLoginPage) ? "overflow-hidden" : "overflow-auto"
             )}>
-              {!isLoginPage && <RunningText />}
-              
               <div key={pathname} className={cn(
                 "w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out",
                 isLoginPage ? "flex-1 flex flex-col min-h-0 p-0 overflow-hidden" : 
@@ -379,6 +377,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               </div>
             </main>
           </div>
+
+          {!isLoginPage && <RunningText />}
 
           {!isLoginPage && !isRootPage && !isKoordinator && (
             <button 

@@ -17,7 +17,7 @@ export function RunningText() {
   const text = (typeof config === 'string' ? config : config?.text) || defaultText;
 
   return (
-    <div className="w-full fixed bottom-0 left-0 bg-[#005e61] border-t border-white/10 overflow-hidden py-2.5 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-[100] print:hidden">
+    <div className="w-full shrink-0 relative bg-[#005e61] border-t border-white/10 overflow-hidden py-2.5 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-[100] print:hidden">
       <div className="relative flex overflow-x-hidden whitespace-nowrap">
         <div className="animate-marquee inline-block whitespace-nowrap">
           <span className="text-[11px] font-bold text-white uppercase tracking-widest px-8">
