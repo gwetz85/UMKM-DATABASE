@@ -54,8 +54,14 @@ function ActorDataContent() {
   const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [printDate, setPrintDate] = useState<string>("")
+  const [searchInput, setSearchInput] = useState(searchParams.get('search') || "")
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || "")
   const viewId = searchParams.get('viewId')
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearchQuery(searchInput), 300)
+    return () => clearTimeout(t)
+  }, [searchInput])
 
   useEffect(() => {
     setPrintDate(new Date().toLocaleString('id-ID'))
@@ -137,21 +143,19 @@ function ActorDataContent() {
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
   const { data: kuotaData } = useList<any>(kuotaRef)
 
-  const actors = allActorsRaw ? allActorsRaw.filter(a => {
-    if (!a) return false;
-    // Status filter - must match the statuses counted in handleSyncStats for coordinator
-    // Status filter - EXCLUDE rejected for the active processing list (as requested)
-    const s = a.status || ""
-    if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s)) return false;
-
-    if (isKoordinator) {
-      if (!a.coordinator || !userProfile?.fullName) return false;
-      return String(a.coordinator).toLowerCase() === String(userProfile.fullName).toLowerCase();
-    }
-    // Note: We remove the filterCoordinator from this main filter 
-    // to allow calculating stats for all coordinators while viewing one.
-    return true;
-  }) : undefined
+  const actors = useMemo(() => {
+    if (!allActorsRaw) return undefined;
+    return allActorsRaw.filter(a => {
+      if (!a) return false;
+      const s = a.status || "";
+      if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s)) return false;
+      if (isKoordinator) {
+        if (!a.coordinator || !userProfile?.fullName) return false;
+        return String(a.coordinator).toLowerCase() === String(userProfile.fullName).toLowerCase();
+      }
+      return true;
+    });
+  }, [allActorsRaw, isKoordinator, userProfile?.fullName]);
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingBankMode, setEditingBankMode] = useState(false)
@@ -160,12 +164,16 @@ function ActorDataContent() {
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [selectedExportSheets, setSelectedExportSheets] = useState<string[]>([])
 
-  const filteredActors = actors ? actors.filter(a => 
-    (a.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (a.nik || "").includes(searchQuery) ||
-    (a.businessName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (a.address || "").toLowerCase().includes(searchQuery.toLowerCase())
-  ).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || "")) : undefined
+  const filteredActors = useMemo(() => {
+    if (!actors) return undefined;
+    const lowerQuery = searchQuery.toLowerCase();
+    return actors.filter(a => 
+      (a.fullName || "").toLowerCase().includes(lowerQuery) ||
+      (a.nik || "").includes(searchQuery) ||
+      (a.businessName || "").toLowerCase().includes(lowerQuery) ||
+      (a.address || "").toLowerCase().includes(lowerQuery)
+    ).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
+  }, [actors, searchQuery]);
 
   const hasAutoOpened = useRef(false)
 
@@ -747,8 +755,8 @@ function ActorDataContent() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Cari Nama, NIK, Usaha..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-9 h-10 border-primary/20 bg-white"
             />
           </div>
