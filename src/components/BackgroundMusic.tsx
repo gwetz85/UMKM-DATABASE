@@ -26,10 +26,33 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTitle, setCurrentTitle] = useState("");
   const [volume, setVolume] = useState(50);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isSeeking, setIsSeeking] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const showControls = isHovered || isExpanded;
+
+  const formatTime = (timeInSeconds: number) => {
+    if (!timeInSeconds || isNaN(timeInSeconds)) return "0:00";
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying && isPlayerReady && !isSeeking) {
+      interval = setInterval(() => {
+        if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+          setCurrentTime(playerRef.current.getCurrentTime());
+          setDuration(playerRef.current.getDuration() || 0);
+        }
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, isPlayerReady, isSeeking]);
 
   const [playerWidth, setPlayerWidth] = useState<number>(0);
   const playerRef = useRef<any>(null);
@@ -355,6 +378,20 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
     }));
   }, [isPlaying, currentTitle, isPlayerReady, volume, isMuted]);
 
+  const handleSeekChange = (value: number[]) => {
+    setIsSeeking(true);
+    setCurrentTime(value[0]);
+  };
+
+  const handleSeekCommit = (value: number[]) => {
+    const newTime = value[0];
+    setCurrentTime(newTime);
+    if (playerRef.current && isPlayerReadyRef.current) {
+      playerRef.current.seekTo(newTime, true);
+    }
+    setIsSeeking(false);
+  };
+
   const handleVolumeChange = (value: number[]) => {
     const newVolume = value[0];
     volumeRef.current = newVolume;
@@ -456,10 +493,35 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
       >
         {/* Hidden Controls Area */}
         <div className={cn(
-          "flex items-center gap-1 transition-all duration-500 overflow-hidden",
-          showControls ? "max-w-md opacity-100 mr-2" : "max-w-0 opacity-0 mr-0"
+          "flex items-center transition-all duration-500 overflow-hidden gap-1 md:gap-2",
+          showControls ? "max-w-[80vw] sm:max-w-xl opacity-100 mr-2 pl-1 sm:pl-2" : "max-w-0 opacity-0 mr-0 pl-0"
         )}>
-          {/* Previous Button */}
+          {/* Info & Progress */}
+          <div className="flex flex-col w-32 sm:w-48 gap-1.5 shrink-0 justify-center">
+            <div className="text-[11px] sm:text-xs font-medium truncate text-slate-700 dark:text-slate-200 leading-none" title={currentTitle}>
+              {currentTitle || "Memuat musik..."}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[9px] sm:text-[10px] text-slate-500 tabular-nums leading-none">{formatTime(currentTime)}</span>
+              <div className="flex-1 flex items-center">
+                <Slider
+                  value={[currentTime]}
+                  max={duration || 100}
+                  step={1}
+                  onValueChange={handleSeekChange}
+                  onValueCommit={handleSeekCommit}
+                  className="w-full"
+                />
+              </div>
+              <span className="text-[9px] sm:text-[10px] text-slate-500 tabular-nums leading-none">{formatTime(duration)}</span>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-1 shrink-0" />
+
+          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+            {/* Previous Button */}
           <button
             onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
             disabled={!isPlayerReady}
@@ -526,6 +588,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
             >
               {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </button>
+          </div>
           </div>
         </div>
 
