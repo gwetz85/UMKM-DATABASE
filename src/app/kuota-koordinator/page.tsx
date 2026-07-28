@@ -77,7 +77,7 @@ export default function KuotaKorlapDewanAktifPage() {
     if (allData) {
       allData.forEach((d: any) => {
         // Only count Verified data (Cancell does not reduce quota)
-        const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'];
+        const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'];
         if (!activeStatuses.includes(d.status)) return;
         if (d.coordinator) {
           const name = d.coordinator.toUpperCase().trim()
