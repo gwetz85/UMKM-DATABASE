@@ -411,10 +411,10 @@ export function AddActorDialog() {
                       </SelectTrigger>
                       <SelectContent>
                         {availableCoordinators.filter(c => c.remaining > 0).map((c) => (
-                          <SelectItem key={c.id} value={c.name}>
+                          <SelectItem key={c.id} value={c.name} className="group focus:bg-primary focus:text-white">
                             <div className="flex justify-between items-center w-full min-w-[300px]">
-                              <span className="font-bold">{c.name}</span>
-                              <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                              <span className="font-bold group-focus:text-white">{c.name}</span>
+                              <span className="text-[10px] bg-primary/10 text-primary group-focus:bg-white/20 group-focus:text-white px-2 py-0.5 rounded-full">
                                 Sisa Kuota: {c.remaining}
                               </span>
                             </div>
