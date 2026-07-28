@@ -1,8 +1,8 @@
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getDatabase } from 'firebase/database'
 import { getStorage } from 'firebase/storage'
 
@@ -21,9 +21,12 @@ export function initializeFirebase() {
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
+  const auth = getAuth(firebaseApp);
+  // Persist login session in localStorage so users stay logged in after refresh
+  setPersistence(auth, browserLocalPersistence).catch(console.error);
   return {
     firebaseApp,
-    auth: getAuth(firebaseApp),
+    auth,
     database: getDatabase(firebaseApp),
     storage: getStorage(firebaseApp)
   };
