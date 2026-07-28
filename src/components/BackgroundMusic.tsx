@@ -463,7 +463,6 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
         setIsExpanded(false);
         setShowVolumeSlider(false);
       }}
-      onClick={() => setIsExpanded(!isExpanded)}
     >
 
       {/* Invisible YouTube Player Container */}
@@ -475,35 +474,109 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
       {/* Music Control Panel */}
       <div 
         ref={playerContainerRef}
-        className={`
-          flex items-center p-1 rounded-full 
-          transition-all duration-500 ease-in-out
-          ${isPlayerReady 
-            ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white/20 dark:border-slate-800/50 shadow-2xl' 
-            : 'bg-slate-100/50 dark:bg-slate-800/20 backdrop-blur-sm opacity-50'
-          }
-          ${showControls ? 'px-3 gap-2' : 'px-1 gap-0'}
-        `}
+        className={cn(
+          "relative flex items-center justify-center overflow-hidden transition-all duration-500 ease-out",
+          isPlayerReady 
+            ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-2xl' 
+            : 'bg-slate-100/50 dark:bg-slate-800/20 backdrop-blur-sm opacity-50',
+          showControls 
+            ? 'w-[280px] h-[116px] rounded-2xl border border-white/20 dark:border-slate-800/50 p-4' 
+            : 'w-10 h-10 md:w-11 md:h-11 rounded-full border-none p-0'
+        )}
         onClick={(e) => {
-          // If they click the container (not the buttons directly), toggle expansion
-          if (e.target === e.currentTarget) {
-             setIsExpanded(!isExpanded);
+          if (e.target === e.currentTarget && showControls) {
+             setIsExpanded(false);
           }
         }}
       >
-        {/* Hidden Controls Area */}
+        {/* Collapsed View (Main Anchor) */}
         <div className={cn(
-          "flex items-center transition-all duration-500 overflow-hidden gap-1 md:gap-2",
-          showControls ? "max-w-[80vw] sm:max-w-xl opacity-100 mr-2 pl-1 sm:pl-2" : "max-w-0 opacity-0 mr-0 pl-0"
+          "absolute inset-0 flex items-center justify-center transition-all duration-500",
+          showControls ? "opacity-0 pointer-events-none scale-50" : "opacity-100 scale-100"
         )}>
-          {/* Info & Progress */}
-          <div className="flex flex-col w-32 sm:w-48 gap-1.5 shrink-0 justify-center">
-            <div className="text-[11px] sm:text-xs font-medium truncate text-slate-700 dark:text-slate-200 leading-none" title={currentTitle}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              togglePlayPause();
+              if (!showControls) {
+                setIsExpanded(true);
+              }
+            }}
+            disabled={!isPlayerReady}
+            className={`
+              relative flex items-center justify-center
+              w-full h-full rounded-full 
+              transition-all duration-500 ease-out shrink-0
+              ${!isPlayerReady 
+                ? 'text-slate-200 cursor-not-allowed' 
+                : isPlaying 
+                  ? 'bg-primary text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-110 active:scale-95' 
+                  : 'bg-primary/90 text-white shadow-lg hover:scale-110 active:scale-95'
+              }
+            `}
+            title={isPlaying ? "Jeda & Buka Player" : "Putar & Buka Player"}
+          >
+            {isPlaying && (
+              <span className="absolute inset-0 rounded-full animate-ping bg-primary opacity-20" />
+            )}
+            {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
+          </button>
+        </div>
+
+        {/* Expanded View */}
+        <div className={cn(
+          "flex flex-col w-full h-full transition-all duration-500 justify-between",
+          showControls ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none absolute"
+        )}>
+          {/* Top: Controls */}
+          <div className="flex items-center justify-between w-full mb-1">
+             <div className="flex items-center gap-1">
+               <button onClick={handlePrevious} disabled={!isPlayerReady} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+                 <SkipBack size={16} fill="currentColor" />
+               </button>
+               
+               <button onClick={togglePlayPause} disabled={!isPlayerReady} className="p-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors mx-0.5">
+                  {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
+               </button>
+               
+               <button onClick={handleNext} disabled={!isPlayerReady} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors">
+                 <SkipForward size={16} fill="currentColor" />
+               </button>
+
+               <button onClick={handleStop} disabled={!isPlayerReady} className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 transition-colors">
+                 <Square size={14} fill="currentColor" />
+               </button>
+             </div>
+
+             {/* Volume */}
+             <div 
+               className="relative flex items-center group/vol"
+               onMouseEnter={() => setShowVolumeSlider(true)}
+               onMouseLeave={() => setShowVolumeSlider(false)}
+             >
+               <div className={cn(
+                 "absolute right-full mr-2 overflow-hidden transition-all duration-300 ease-in-out flex items-center bg-white dark:bg-slate-800 p-1.5 rounded-full shadow-lg border border-slate-100 dark:border-slate-700",
+                 showVolumeSlider ? "w-24 opacity-100" : "w-0 opacity-0 pointer-events-none border-transparent shadow-none px-0"
+               )}>
+                 <Slider value={[volume]} max={100} step={1} onValueChange={handleVolumeChange} className="w-20" />
+               </div>
+               <button onClick={toggleMute} disabled={!isPlayerReady} className={cn(
+                 "p-2 rounded-full transition-colors",
+                 isMuted ? "text-red-500 bg-red-50 dark:bg-red-900/20" : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+               )}>
+                 {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+               </button>
+             </div>
+          </div>
+
+          {/* Bottom: Info & Progress */}
+          <div className="flex flex-col w-full gap-2">
+            <div className="text-xs font-semibold truncate text-slate-800 dark:text-slate-100 px-1">
               {currentTitle || "Memuat musik..."}
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[9px] sm:text-[10px] text-slate-500 tabular-nums leading-none">{formatTime(currentTime)}</span>
-              <div className="flex-1 flex items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-slate-500 tabular-nums w-8 text-right shrink-0">{formatTime(currentTime)}</span>
+              <div className="flex-1 flex items-center cursor-pointer">
                 <Slider
                   value={[currentTime]}
                   max={duration || 100}
@@ -513,118 +586,11 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
                   className="w-full"
                 />
               </div>
-              <span className="text-[9px] sm:text-[10px] text-slate-500 tabular-nums leading-none">{formatTime(duration)}</span>
+              <span className="text-[10px] text-slate-500 tabular-nums w-8 shrink-0">{formatTime(duration)}</span>
             </div>
-          </div>
-
-          {/* Divider */}
-          <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-1 shrink-0" />
-
-          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
-            {/* Previous Button */}
-          <button
-            onClick={(e) => { e.stopPropagation(); handlePrevious(); }}
-            disabled={!isPlayerReady}
-            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Sebelumnya"
-          >
-            <SkipBack size={14} fill="currentColor" />
-          </button>
-
-          {/* Stop Button */}
-          <button
-            onClick={(e) => { e.stopPropagation(); handleStop(); }}
-            disabled={!isPlayerReady}
-            className="p-2 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-red-500 disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Berhenti"
-          >
-            <Square size={14} fill="currentColor" />
-          </button>
-
-          {/* Next Button */}
-          <button
-            onClick={(e) => { e.stopPropagation(); handleNext(); }}
-            disabled={!isPlayerReady}
-            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Selanjutnya"
-          >
-            <SkipForward size={14} fill="currentColor" />
-          </button>
-
-          {/* Divider */}
-          <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-1" />
-
-          {/* Mute Toggle & Volume Slider */}
-          <div 
-            className="relative flex items-center group/vol"
-            onMouseEnter={() => setShowVolumeSlider(true)}
-            onMouseLeave={() => setShowVolumeSlider(false)}
-          >
-            <div className={`
-              overflow-hidden transition-all duration-300 ease-in-out flex items-center
-              ${showVolumeSlider ? 'w-24 px-2 opacity-100' : 'w-0 opacity-0'}
-            `}>
-              <Slider
-                value={[volume]}
-                max={100}
-                step={1}
-                onValueChange={handleVolumeChange}
-                className="w-20"
-              />
-            </div>
-
-            <button
-              onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-              disabled={!isPlayerReady}
-              className={`
-                p-2 rounded-full transition-all duration-300
-                ${isMuted 
-                  ? 'text-red-500 bg-red-50 dark:bg-red-900/20' 
-                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
-                }
-                disabled:opacity-30 disabled:cursor-not-allowed
-              `}
-              title={isMuted ? "Aktifkan Musik" : "Senyap"}
-            >
-              {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-            </button>
-          </div>
           </div>
         </div>
-
-        {/* Play/Pause Button (Main Anchor) */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            togglePlayPause();
-            if (!showControls) {
-              setIsExpanded(true);
-            }
-          }}
-          disabled={!isPlayerReady}
-          className={`
-            relative flex items-center justify-center
-            w-10 h-10 md:w-11 md:h-11 rounded-full 
-            transition-all duration-500 ease-out shrink-0
-            ${!isPlayerReady 
-              ? 'bg-slate-50 text-slate-200 cursor-not-allowed' 
-              : isPlaying 
-                ? 'bg-primary text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-110 active:scale-95' 
-                : 'bg-primary/90 text-white shadow-lg hover:scale-110 active:scale-95'
-            }
-          `}
-          title={isPlaying ? "Jeda" : "Putar"}
-        >
-          {isPlaying && (
-            <span className="absolute inset-0 rounded-full animate-ping bg-primary opacity-20" />
-          )}
-          {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
-        </button>
       </div>
-
-
-
-
 
       {/* Status Tooltip (Optional, floating above) */}
       {!hasInteracted && isPlayerReady && (
