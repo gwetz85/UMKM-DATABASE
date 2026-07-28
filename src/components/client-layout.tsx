@@ -357,8 +357,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                         </a>
                       </div>
                     </div>
+                    <BackgroundMusic role={profile?.role} className="lg:static" />
                   </div>
-                  <BackgroundMusic role={profile?.role} className="lg:static" />
                 </div>
               </div>
             )}
