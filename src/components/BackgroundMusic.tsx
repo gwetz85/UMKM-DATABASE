@@ -29,7 +29,6 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isSeeking, setIsSeeking] = useState(false);
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   const formatTime = (timeInSeconds: number) => {
     if (!timeInSeconds || isNaN(timeInSeconds)) return "0:00";
@@ -494,23 +493,16 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
              </div>
 
              {/* Volume */}
-             <div 
-               className="relative flex items-center group/vol"
-               onMouseEnter={() => setShowVolumeSlider(true)}
-               onMouseLeave={() => setShowVolumeSlider(false)}
-             >
-               <div className={cn(
-                 "absolute right-full mr-2 overflow-hidden transition-all duration-300 ease-in-out flex items-center bg-white dark:bg-slate-800 p-1.5 rounded-full shadow-lg border border-slate-100 dark:border-slate-700",
-                 showVolumeSlider ? "w-24 opacity-100" : "w-0 opacity-0 pointer-events-none border-transparent shadow-none px-0"
-               )}>
-                 <Slider value={[volume]} max={100} step={1} onValueChange={handleVolumeChange} className="w-20" />
-               </div>
+             <div className="flex items-center gap-1.5 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-full border border-slate-200/50 dark:border-slate-700/50">
                <button onClick={toggleMute} disabled={!isPlayerReady} className={cn(
-                 "p-2 rounded-full transition-colors",
-                 isMuted ? "text-red-500 bg-red-50 dark:bg-red-900/20" : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                 "p-1.5 rounded-full transition-colors shrink-0",
+                 isMuted ? "text-red-500 bg-red-100 dark:bg-red-900/40" : "text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700"
                )}>
-                 {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                 {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
                </button>
+               <div className="w-16 sm:w-20 mr-2 flex items-center cursor-pointer">
+                 <Slider value={[volume]} max={100} step={1} onValueChange={handleVolumeChange} className="w-full" />
+               </div>
              </div>
           </div>
 
