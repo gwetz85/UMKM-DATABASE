@@ -135,6 +135,7 @@ export default function LoginPage() {
 
     try {
       let user;
+      let finalUserRole = ''; // Track role for single-device enforcement
 
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password)
@@ -145,6 +146,7 @@ export default function LoginPage() {
 
         if (userSnap.exists()) {
           const userData = userSnap.val()
+          finalUserRole = userData.role || ''
           
           if (userData.password && userData.password !== password) {
              throw new Error("auth/password-changed-by-admin")
@@ -245,6 +247,7 @@ export default function LoginPage() {
                 }
               }
               user = newUserCred.user
+              finalUserRole = preRegisteredData.role || ''
 
               await update(tempUserRef, {
                 uid: user.uid,
@@ -280,6 +283,17 @@ export default function LoginPage() {
         method: 'LOGIN',
         userId: username.toUpperCase()
       }, database || undefined)
+
+      // Single-device login enforcement:
+      // Generate a unique session ID and store in localStorage + Firebase
+      // Admin users are exempt from single-device restriction
+      const sessionId = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : Math.random().toString(36).substring(2) + Date.now().toString(36)
+      localStorage.setItem('simpu_session_id', sessionId)
+      if (finalUserRole !== 'admin' && email !== 'agus@umkm.id') {
+        update(ref(database, `system_users/${username}`), { activeSessionId: sessionId }).catch(console.error)
+      }
 
       router.push("/")
     } catch (error: any) {

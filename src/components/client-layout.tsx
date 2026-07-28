@@ -12,7 +12,7 @@ import { BackgroundMusic } from '@/components/BackgroundMusic';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
-import { User as UserIcon, LayoutGrid, Home, LogOut, Check, X as XIcon, AlertCircle } from 'lucide-react'
+import { User as UserIcon, LayoutGrid, Home, LogOut, Check, X as XIcon, AlertCircle, MonitorOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
 import { useActiveEvent } from '@/hooks/use-active-event';
@@ -32,6 +32,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const auth = useAuth()
   const database = useDatabase();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = React.useState(false);
+  const [isDisplaced, setIsDisplaced] = React.useState(false); // True when another device took over the session
 
   const isKoordinator = profile?.role === 'koordinator'
   const { playSound } = useSoundEffect();
@@ -103,6 +104,32 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
        }
     }
   }, [user, isUserLoading, isProfileLoading, profile, auth, router, pathname])
+
+  // Single-device login enforcement: listen to activeSessionId in realtime.
+  // If another device logs in and changes the sessionId, force this session out.
+  React.useEffect(() => {
+    if (!database || !profile?.id || isLoginPage || isDisplaced) return;
+    // Admin users are exempt from single-device restriction
+    if (profile?.role === 'admin' || user?.email?.toLowerCase() === 'agus@umkm.id') return;
+
+    const mySessionId = localStorage.getItem('simpu_session_id');
+    if (!mySessionId) return;
+
+    const sessionRef = ref(database, `system_users/${profile.id}/activeSessionId`);
+    const unsubscribe = onValue(sessionRef, (snap) => {
+      const remoteSessionId = snap.val();
+      // If a new sessionId was written by another device, force this session out
+      if (remoteSessionId && remoteSessionId !== mySessionId) {
+        setIsDisplaced(true);
+        setTimeout(() => {
+          localStorage.removeItem('simpu_session_id');
+          signOut(auth).then(() => router.push('/login'));
+        }, 3500);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [database, profile?.id, profile?.role, isLoginPage, isDisplaced, user?.email, auth, router])
 
   React.useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
@@ -365,6 +392,29 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </SidebarProvider>
+
+      {/* Single-device displaced overlay — shown when another device took over this session */}
+      {isDisplaced && (
+        <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-2xl flex items-center justify-center animate-in fade-in duration-500">
+          <div className="bg-white rounded-3xl p-10 max-w-sm w-full mx-4 text-center space-y-6 shadow-2xl animate-in zoom-in-95 duration-500">
+            <div className="w-20 h-20 rounded-full bg-rose-100 flex items-center justify-center mx-auto border-2 border-rose-200">
+              <MonitorOff className="w-10 h-10 text-rose-500" />
+            </div>
+            <div className="space-y-3">
+              <h2 className="text-base font-black text-slate-900 uppercase tracking-tight leading-tight">
+                User Sudah Digunakan<br />di Perangkat Lain
+              </h2>
+              <p className="text-sm text-slate-500 leading-relaxed">
+                Sesi Anda telah diambil alih oleh perangkat lain. Anda akan diarahkan ke halaman login secara otomatis.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-2 text-rose-500">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm font-bold uppercase tracking-widest">Mengalihkan...</span>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
-}
+}

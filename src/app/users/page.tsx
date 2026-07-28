@@ -313,6 +313,7 @@ export default function UserManagementPage() {
     const userRef = ref(database, `system_users/${id}`)
     updateDocumentNonBlocking(userRef, { 
       uid: null,
+      activeSessionId: null, // Also clear session so user is logged out on other device
       addedAt: new Date().toISOString() 
     })
     
@@ -498,8 +499,14 @@ export default function UserManagementPage() {
                     </TableCell>
                     <TableCell>
                       {u.uid ? (
-                        <div className="flex flex-col gap-1">
+                        <div className="flex flex-col gap-1.5">
                           <span className="text-[9px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-black uppercase w-fit">Terkunci di Perangkat</span>
+                          {u.activeSessionId && (
+                            <span className="text-[9px] px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full font-black uppercase border border-orange-200 w-fit flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse inline-block" />
+                              AKTIF DI PERANGKAT LAIN
+                            </span>
+                          )}
                           <span className="text-[8px] font-mono text-muted-foreground truncate max-w-[100px]">{u.uid}</span>
                         </div>
                       ) : (
