@@ -57,6 +57,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const { data: systemConfig } = useObject(systemConfigRef);
 
   const isAdmin = profile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
+  const isLoginPage = pathname === '/login'
+  const isRootPage = pathname === '/'
 
   React.useEffect(() => {
     if (maintenanceData && typeof maintenanceData === 'object' && user && profile) {
@@ -158,8 +160,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('click', handleGlobalClick);
   }, [playSound]);
 
-  const isLoginPage = pathname === '/login'
-  const isRootPage = pathname === '/'
 
   // Toggle body background class — login page has its own background
   useEffect(() => {
