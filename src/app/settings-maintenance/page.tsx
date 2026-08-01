@@ -41,30 +41,49 @@ export default function SettingsMaintenance() {
 
   const { data: currentData, isLoading: dataLoading } = useObject(maintenanceRef);
 
+  const defaultMsg = 'Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.';
+
   // Load data from Firebase whenever it arrives/changes
   useEffect(() => {
     if (dataLoading) return;
     if (initDoneRef.current) return; // Only auto-populate on first load
 
-    const defaultMsg = 'Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.';
-
     if (currentData) {
       setEnabled(currentData.enabled ?? false);
       setLastSaved({ enabled: currentData.enabled ?? false, updatedAt: currentData.updatedAt });
-      const msg = currentData.message || defaultMsg;
+      const msg = currentData.enabled ? (currentData.message || defaultMsg) : '';
       setMessage(msg);
       if (editorRef.current) {
         editorRef.current.innerHTML = msg;
       }
     } else {
       setEnabled(false);
-      setMessage(defaultMsg);
+      setMessage('');
       if (editorRef.current) {
-        editorRef.current.innerHTML = defaultMsg;
+        editorRef.current.innerHTML = '';
       }
     }
     initDoneRef.current = true;
   }, [currentData, dataLoading]);
+
+  // Handle toggling "enabled" to clear or show default message
+  useEffect(() => {
+    if (!initDoneRef.current) return;
+    if (!enabled) {
+      setMessage('');
+      if (editorRef.current) editorRef.current.innerHTML = '';
+    } else if (enabled && (!message || message.trim() === '')) {
+      setMessage(defaultMsg);
+      if (editorRef.current) editorRef.current.innerHTML = defaultMsg;
+    }
+  }, [enabled]);
+
+  // Ensure editor retains HTML when toggling preview mode
+  useEffect(() => {
+    if (!showPreview && editorRef.current && editorRef.current.innerHTML !== message) {
+      editorRef.current.innerHTML = message;
+    }
+  }, [showPreview, message]);
 
   const handleEditorInput = useCallback(() => {
     if (editorRef.current) {
