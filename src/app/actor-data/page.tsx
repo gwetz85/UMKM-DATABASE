@@ -337,11 +337,18 @@ function ActorDataContent() {
               const genderKey = (g === 'perempuan' || g === 'p') ? 'Perempuan' : 'Laki-laki'
               stats.verifiedGender[genderKey] = (stats.verifiedGender[genderKey] || 0) + 1
 
-              // Populate detailedStatus based on exact value
-              if (s === 'verified_actor') stats.detailedStatus.survey++
+              // Populate detailedStatus based on exact value matching the menus
+              // "Survey Dinas" menu queries lpj_pending
+              if (s === 'lpj_pending') stats.detailedStatus.survey++
+              
+              // "Verifikasi Dinas" menu queries verified_dinas
               if (s === 'verified_dinas' || s === 'bank_pending') stats.detailedStatus.verifikasi++
-              if (s === 'lpj_pending') stats.detailedStatus.lpj++
-              if (s === 'finish') stats.detailedStatus.selesai++
+              
+              // "LPJ" menu queries finish + readyForLPJ + !lpjNominal
+              if (s === 'finish' && actor.readyForLPJ && !actor.lpjNominal) stats.detailedStatus.lpj++
+              
+              // "Selesai" menu queries finish (that are not pending LPJ)
+              if (s === 'finish' && (!actor.readyForLPJ || actor.lpjNominal)) stats.detailedStatus.selesai++
 
               if (actor.coordinator) {
                 const coord = actor.coordinator.toUpperCase().trim()

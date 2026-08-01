@@ -195,10 +195,11 @@ export default function DashboardStatsPage() {
               const genderKey = (g === 'perempuan' || g === 'p') ? 'Perempuan' : 'Laki-laki'
               stats.verifiedGender[genderKey] = (stats.verifiedGender[genderKey] || 0) + 1
 
-              if (s === 'verified_actor') stats.detailedStatus.survey++
+              // Populate detailedStatus based on exact value matching the menus
+              if (s === 'lpj_pending') stats.detailedStatus.survey++
               if (s === 'verified_dinas' || s === 'bank_pending') stats.detailedStatus.verifikasi++
-              if (s === 'lpj_pending') stats.detailedStatus.lpj++
-              if (s === 'finish') stats.detailedStatus.selesai++
+              if (s === 'finish' && actor.readyForLPJ && !actor.lpjNominal) stats.detailedStatus.lpj++
+              if (s === 'finish' && (!actor.readyForLPJ || actor.lpjNominal)) stats.detailedStatus.selesai++
               if (actor.coordinator) {
                 const coord = actor.coordinator.toUpperCase().trim()
                 stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
