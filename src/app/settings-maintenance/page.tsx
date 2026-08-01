@@ -21,8 +21,9 @@ export default function SettingsMaintenance() {
   const [message, setMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [lastSaved, setLastSaved] = useState<{enabled: boolean, updatedAt?: number} | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
-  const isLoadedRef = useRef(false);
+  const initDoneRef = useRef(false);
 
   // Cek Role Admin
   const usersRef = useMemoFirebase(() => {
@@ -40,25 +41,29 @@ export default function SettingsMaintenance() {
 
   const { data: currentData, isLoading: dataLoading } = useObject(maintenanceRef);
 
+  // Load data from Firebase whenever it arrives/changes
   useEffect(() => {
-    if (dataLoading) return; // Tunggu sampai data selesai di-load dari Firebase
+    if (dataLoading) return;
+    if (initDoneRef.current) return; // Only auto-populate on first load
 
-    if (currentData && !isLoadedRef.current) {
-      setEnabled(currentData.enabled || false);
-      const msg = currentData.message || 'Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.';
+    const defaultMsg = 'Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.';
+
+    if (currentData) {
+      setEnabled(currentData.enabled ?? false);
+      setLastSaved({ enabled: currentData.enabled ?? false, updatedAt: currentData.updatedAt });
+      const msg = currentData.message || defaultMsg;
       setMessage(msg);
       if (editorRef.current) {
         editorRef.current.innerHTML = msg;
       }
-      isLoadedRef.current = true;
-    } else if (currentData === null && !isLoadedRef.current) {
-      const defaultMsg = 'Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.';
+    } else {
+      setEnabled(false);
       setMessage(defaultMsg);
       if (editorRef.current) {
         editorRef.current.innerHTML = defaultMsg;
       }
-      isLoadedRef.current = true;
     }
+    initDoneRef.current = true;
   }, [currentData, dataLoading]);
 
   const handleEditorInput = useCallback(() => {
@@ -102,12 +107,14 @@ export default function SettingsMaintenance() {
 
     setIsSaving(true);
     try {
+      const updatedAt = Date.now();
       await set(ref(database!, 'settings/maintenance'), {
         enabled,
         message: currentMessage,
-        updatedAt: Date.now(),
+        updatedAt,
         updatedBy: user?.uid
       });
+      setLastSaved({ enabled, updatedAt });
       toast({ title: 'Berhasil', description: 'Pengaturan Maintenance telah diperbarui.' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Gagal', description: error.message });
@@ -136,6 +143,26 @@ export default function SettingsMaintenance() {
             <div>
               <h3 className="text-lg font-bold">Status Maintenance</h3>
               <p className="text-sm text-muted-foreground">Jika diaktifkan, semua pengguna kecuali Admin akan dialihkan ke halaman peringatan.</p>
+              {/* Status tersimpan terakhir */}
+              {lastSaved !== null && (
+                <div className={cn(
+                  "mt-2 inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full",
+                  lastSaved.enabled
+                    ? "bg-red-100 text-red-700 border border-red-200"
+                    : "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                )}>
+                  <span className={cn(
+                    "w-2 h-2 rounded-full animate-pulse",
+                    lastSaved.enabled ? "bg-red-500" : "bg-emerald-500"
+                  )} />
+                  {lastSaved.enabled ? "Maintenance AKTIF" : "Layanan AKTIF (Normal)"}
+                  {lastSaved.updatedAt && (
+                    <span className="opacity-60 font-normal ml-1">
+                      · Disimpan {new Date(lastSaved.updatedAt).toLocaleString('id-ID')}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <Switch 
               checked={enabled} 
