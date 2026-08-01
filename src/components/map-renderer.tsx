@@ -1,11 +1,12 @@
 "use client"
 import 'leaflet/dist/leaflet.css'
-import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, GeoJSON, useMap, Marker } from 'react-leaflet'
 import { KelurahanStat } from './monitoring-dialog'
 import { useEffect, useMemo, useCallback, useRef, useState } from 'react'
 import L from 'leaflet'
 import { KELURAHAN_GEOJSON } from '@/data/kelurahan-geo'
 import { KECAMATAN_KELURAHAN } from '@/data/kecamatan-geo'
+import { ChevronLeft } from 'lucide-react'
 
 // ── Color scale (light → dark blue) based on count intensity ──────────────────
 function getChoroColor(count: number, maxCount: number): string {
@@ -27,104 +28,131 @@ function injectMapStyles() {
   const style = document.createElement('style')
   style.id = 'choropleth-map-styles'
   style.textContent = `
-    .kecamatan-tooltip {
-      background: rgba(255, 255, 255, 0.95) !important;
-      border: 1px solid rgba(0,0,0,0.1) !important;
-      border-radius: 8px !important;
-      color: #0f172a !important;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
-      padding: 6px 12px !important;
-      font-weight: 700;
+    .kecamatan-marker-icon {
+      background: transparent !important;
+      border: none !important;
+    }
+    .kec-label-box {
+      background: white;
+      border: 2px solid #3b82f6;
+      color: #1e3a8a;
+      font-weight: 900;
       font-size: 11px;
+      padding: 8px 14px;
+      border-radius: 20px;
+      box-shadow: 0 4px 15px rgba(59,130,246,0.3);
+      white-space: nowrap;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .kec-label-box:hover {
+      background: #3b82f6;
+      color: white;
+      transform: scale(1.05) translateY(-2px);
+      box-shadow: 0 6px 20px rgba(59,130,246,0.5);
+    }
+    .kec-label-box .kec-total {
+      font-size: 14px;
+      background: #eff6ff;
+      color: #2563eb;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+    .kec-label-box:hover .kec-total {
+      background: white;
+    }
+
+    .kelurahan-tooltip {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
       pointer-events: none;
     }
-    .kecamatan-tooltip::before { display: none !important; }
+    .kelurahan-tooltip::before { display: none !important; }
+    .kel-label-inner {
+      background: rgba(255,255,255,0.9);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #0f172a;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      border: 1px solid rgba(0,0,0,0.05);
+      backdrop-filter: blur(4px);
+      text-transform: uppercase;
+    }
+    .kel-label-inner span {
+      display: block;
+      color: #3b82f6;
+      font-size: 12px;
+      margin-top: 1px;
+    }
 
     .leaflet-interactive {
       transition: filter 0.22s ease, stroke-width 0.22s ease;
-      cursor: pointer;
     }
     .leaflet-interactive.hovered {
-      filter: brightness(1.20) drop-shadow(0 0 10px rgba(59,130,246,0.5));
-    }
-    
-    .custom-popup .leaflet-popup-content-wrapper {
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      padding: 0;
-      overflow: hidden;
-    }
-    .custom-popup .leaflet-popup-content {
-      margin: 0;
-      width: 280px !important;
-    }
-    .custom-popup .leaflet-popup-tip-container {
-      margin-top: -1px;
+      filter: brightness(1.15) drop-shadow(0 0 10px rgba(255,255,255,0.5));
     }
   `
   document.head.appendChild(style)
 }
 
-// ── Legend component ──────────────────────────────────────────────────────────
-function MapLegend({ maxCount }: { maxCount: number }) {
+// ── Map Bounds Controller ─────────────────────────────────────────────────────
+function MapBoundsController({ selectedKec, geoData }: { selectedKec: string | null, geoData: any }) {
   const map = useMap()
-
+  
   useEffect(() => {
-    const legend = new (L.Control.extend({
-      onAdd() {
-        const div = L.DomUtil.create('div', '')
-        div.innerHTML = `
-          <div style="
-            background: rgba(255,255,255,0.95);
-            color:#0f172a;
-            border-radius:10px;
-            padding:10px 14px;
-            font-family:system-ui,sans-serif;
-            font-size:11px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-            border: 1px solid rgba(0,0,0,0.05);
-            backdrop-filter:blur(8px);
-            min-width:130px;
-          ">
-            <p style="font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin:0 0 8px">Jumlah Pelaku</p>
-            ${[
-              ['#1e3a8a', 'Sangat Padat'],
-              ['#3b82f6', 'Padat'],
-              ['#93c5fd', 'Sedang'],
-              ['#dbeafe', 'Rendah / Kosong'],
-            ].map(([color, label]) => `
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-                <div style="width:16px;height:16px;border-radius:4px;background:${color};border:1px solid rgba(0,0,0,0.1);flex-shrink:0"></div>
-                <span style="color:#334155;font-weight:600">${label}</span>
-              </div>
-            `).join('')}
-          </div>
-        `
-        return div
+    if (selectedKec && geoData.features.length > 0) {
+      const layer = L.geoJSON(geoData)
+      const bounds = layer.getBounds()
+      if (bounds.isValid()) {
+        map.flyToBounds(bounds, { padding: [40, 40], duration: 1 })
       }
-    }))({ position: 'bottomleft' })
-    legend.addTo(map)
-    return () => { legend.remove() }
-  }, [map])
+    } else if (!selectedKec) {
+      map.flyTo([0.9100, 104.4700], 12, { duration: 1 })
+    }
+  }, [selectedKec, geoData, map])
 
+  return null
+}
+
+const KEC_CENTERS = [
+  { name: 'Tanjungpinang Barat', pos: [0.915, 104.435] },
+  { name: 'Tanjungpinang Kota', pos: [0.940, 104.425] },
+  { name: 'Bukit Bestari', pos: [0.895, 104.460] },
+  { name: 'Tanjungpinang Timur', pos: [0.925, 104.495] }
+]
+
+// Helper to find which Kecamatan a Kelurahan belongs to
+const getKecamatanForKelurahan = (kelName: string) => {
+  const kelLower = kelName.toLowerCase()
+  for (const [kec, kelList] of Object.entries(KECAMATAN_KELURAHAN)) {
+    if (kelList.some(k => k.toLowerCase() === kelLower)) {
+      return kec
+    }
+  }
   return null
 }
 
 // ── Main renderer ─────────────────────────────────────────────────────────────
 export default function MapRenderer({ data }: { data: KelurahanStat[] }) {
-  const center: [number, number] = [0.9100, 104.4700]
-
-  // data = kelurahan stats.
-  // We need to aggregate them by Kecamatan
+  const [selectedKec, setSelectedKec] = useState<string | null>(null)
+  
+  // Aggregate data by Kecamatan
   const kecamatanStats = useMemo(() => {
     const stats: Record<string, { total: number, kelurahan: { name: string, count: number }[] }> = {}
     
-    // Initialize
     Object.keys(KECAMATAN_KELURAHAN).forEach(kec => {
       stats[kec] = { total: 0, kelurahan: [] }
     })
 
-    // Map kelurahan to kecamatan mapping safely
     const dataMap: Record<string, number> = {}
     data.forEach(d => { dataMap[d.name.toLowerCase()] = d.count })
 
@@ -135,156 +163,155 @@ export default function MapRenderer({ data }: { data: KelurahanStat[] }) {
         total += count
         return { name: kelName, count }
       })
-      
-      // sort kelurahan by count desc
       kelData.sort((a, b) => b.count - a.count)
-      
       stats[kecName] = { total, kelurahan: kelData }
     })
 
     return stats
   }, [data])
 
-  const maxCount = useMemo(() => {
-    const totals = Object.values(kecamatanStats).map(s => s.total)
-    return Math.max(...totals, 1)
-  }, [kecamatanStats])
-
-  // Helper to find which Kecamatan a Kelurahan belongs to
-  const getKecamatanForKelurahan = (kelName: string) => {
-    const kelLower = kelName.toLowerCase()
-    for (const [kec, kelList] of Object.entries(KECAMATAN_KELURAHAN)) {
-      if (kelList.some(k => k.toLowerCase() === kelLower)) {
-        return kec
-      }
+  // Filter geojson for selected kecamatan only
+  const filteredGeojson = useMemo(() => {
+    if (!selectedKec) return { type: "FeatureCollection", features: [] }
+    return {
+      type: "FeatureCollection",
+      features: (KELURAHAN_GEOJSON as any).features.filter((f: any) => {
+        const kelName = f.properties.name
+        return getKecamatanForKelurahan(kelName) === selectedKec
+      })
     }
-    return null
-  }
+  }, [selectedKec])
+
+  const maxKelCount = useMemo(() => {
+    if (!selectedKec) return 1
+    const kelData = kecamatanStats[selectedKec]?.kelurahan || []
+    const counts = kelData.map(k => k.count)
+    return Math.max(...counts, 1)
+  }, [selectedKec, kecamatanStats])
 
   const geoRef = useRef<L.GeoJSON | null>(null)
 
   const styleFeature = useCallback((feature: any): L.PathOptions => {
     const kelName = feature?.properties?.name as string
-    const kecName = getKecamatanForKelurahan(kelName)
-    const stat = kecName ? kecamatanStats[kecName] : null
-    const count = stat ? stat.total : 0
+    const statList = selectedKec ? kecamatanStats[selectedKec]?.kelurahan : []
+    const count = statList?.find(k => k.name.toLowerCase() === kelName.toLowerCase())?.count || 0
     return {
-      fillColor: getChoroColor(count, maxCount),
-      fillOpacity: 0.75,
+      fillColor: getChoroColor(count, maxKelCount),
+      fillOpacity: 0.85,
       color: '#ffffff',
-      weight: 1.5,
-      opacity: 0.9,
+      weight: 2,
+      opacity: 1,
     }
-  }, [kecamatanStats, maxCount])
+  }, [selectedKec, kecamatanStats, maxKelCount])
 
   const onEachFeature = useCallback((feature: any, layer: L.Layer) => {
     const kelName = feature.properties?.name as string
-    const kecName = getKecamatanForKelurahan(kelName) || kelName
-    const stat = kecamatanStats[kecName]
-    const count = stat ? stat.total : 0
+    const statList = selectedKec ? kecamatanStats[selectedKec]?.kelurahan : []
+    const count = statList?.find(k => k.name.toLowerCase() === kelName.toLowerCase())?.count || 0
 
-    // Tooltip for quick hover info (Shows Kecamatan name)
+    // Permanent label directly on the polygon
     layer.bindTooltip(`
-      <div style="text-align:center;">
-        <span style="text-transform:uppercase; font-weight: 800; color: #0f172a;">${kecName}</span>
-        <div style="font-size: 9px; color: #64748b; margin-top: 2px;">(Kel. ${kelName})</div>
+      <div class="kel-label-inner">
+        ${kelName}
+        <span>${count}</span>
       </div>
     `, {
-      sticky: true,
-      className: 'kecamatan-tooltip',
-      direction: 'top',
-      offset: [0, -10]
-    })
-
-    // Popup for detailed click info (Mimicking the requested UI)
-    const popupContent = `
-      <div style="font-family: system-ui, sans-serif; color: #1e293b;">
-        <div style="padding: 16px; border-bottom: 1px solid #e2e8f0;">
-          <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">${kecName.toUpperCase()}</h3>
-        </div>
-        <div style="padding: 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
-            <span style="color: #64748b; font-size: 13px; font-weight: 600;">Total Pelaku Usaha</span>
-            <span style="background: #3b82f6; color: white; padding: 2px 10px; border-radius: 12px; font-weight: 700; font-size: 13px;">${count}</span>
-          </div>
-          <div style="max-height: 200px; overflow-y: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-              <tbody>
-                ${stat?.kelurahan.map((kel, i) => `
-                  <tr>
-                    <td style="padding: 6px 0; color: #475569; ${i !== stat.kelurahan.length - 1 ? 'border-bottom: 1px dashed #e2e8f0;' : ''}">${kel.name}</td>
-                    <td style="padding: 6px 0; text-align: right; font-weight: 600; color: #0f172a; ${i !== stat.kelurahan.length - 1 ? 'border-bottom: 1px dashed #e2e8f0;' : ''}">${kel.count}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    `
-
-    layer.bindPopup(popupContent, {
-      className: 'custom-popup'
+      permanent: true,
+      direction: 'center',
+      className: 'kelurahan-tooltip'
     })
 
     const pathLayer = layer as L.Path
 
     layer.on('mouseover', (e: L.LeafletMouseEvent) => {
       pathLayer.setStyle({
-        fillOpacity: 0.95,
-        weight: 2.5,
-        color: '#ffffff',
+        fillOpacity: 1,
+        weight: 3,
       })
       const el = (e.target as any).getElement?.() as SVGPathElement | null
       el?.classList.add('hovered')
+      pathLayer.bringToFront()
     })
 
     layer.on('mouseout', (e: L.LeafletMouseEvent) => {
       pathLayer.setStyle({
-        fillColor: getChoroColor(count, maxCount),
-        fillOpacity: 0.75,
-        weight: 1.5,
-        color: '#ffffff',
-        opacity: 0.9,
+        fillOpacity: 0.85,
+        weight: 2,
       })
       const el = (e.target as any).getElement?.() as SVGPathElement | null
       el?.classList.remove('hovered')
     })
-  }, [kecamatanStats, maxCount])
-
-  useEffect(() => {
-    if (geoRef.current) {
-      geoRef.current.setStyle(styleFeature)
-    }
-  }, [styleFeature])
+  }, [selectedKec, kecamatanStats])
 
   useEffect(() => {
     injectMapStyles()
   }, [])
 
+  // Create custom marker icons
+  const createKecIcon = useCallback((name: string, count: number) => {
+    return L.divIcon({
+      html: `<div class="kec-label-box">${name} <div class="kec-total">${count}</div></div>`,
+      className: 'kecamatan-marker-icon',
+      iconSize: [160, 60],
+      iconAnchor: [80, 30]
+    })
+  }, [])
+
   return (
-    <MapContainer
-      center={center}
-      zoom={12}
-      scrollWheelZoom={true}
-      className="w-full h-full min-h-[400px] rounded-xl"
-      style={{ zIndex: 0, background: '#e0e7ff' }} // light indigo background for sea
-      zoomControl={true}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        maxZoom={19}
-      />
+    <div className="w-full h-full relative">
+      {selectedKec && (
+        <div className="absolute top-4 left-4 z-[400]">
+          <button 
+            onClick={() => setSelectedKec(null)}
+            className="flex items-center gap-2 bg-white/95 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-primary transition-all"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            KEMBALI KE SEMUA KECAMATAN
+          </button>
+        </div>
+      )}
 
-      <GeoJSON
-        ref={geoRef as any}
-        data={KELURAHAN_GEOJSON as any}
-        style={styleFeature}
-        onEachFeature={onEachFeature}
-      />
+      <MapContainer
+        center={[0.9100, 104.4700]}
+        zoom={12}
+        scrollWheelZoom={true}
+        className="w-full h-full min-h-[400px] rounded-xl"
+        style={{ zIndex: 0, background: '#e0e7ff' }} 
+        zoomControl={true}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://carto.com/">CartoDB</a>'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          maxZoom={19}
+        />
 
-      <MapLegend maxCount={maxCount} />
-    </MapContainer>
+        <MapBoundsController selectedKec={selectedKec} geoData={filteredGeojson} />
+
+        {/* DEFAULT VIEW: MARKERS ONLY */}
+        {!selectedKec && KEC_CENTERS.map((kec, i) => {
+          const total = kecamatanStats[kec.name]?.total || 0
+          return (
+            <Marker 
+              key={i} 
+              position={kec.pos as [number, number]} 
+              icon={createKecIcon(kec.name, total)}
+              eventHandlers={{
+                click: () => setSelectedKec(kec.name)
+              }}
+            />
+          )
+        })}
+
+        {/* DRILL DOWN VIEW: KELURAHAN POLYGONS */}
+        {selectedKec && (
+          <GeoJSON
+            key={selectedKec} // force remount when selectedKec changes
+            data={filteredGeojson as any}
+            style={styleFeature}
+            onEachFeature={onEachFeature}
+          />
+        )}
+      </MapContainer>
+    </div>
   )
 }
