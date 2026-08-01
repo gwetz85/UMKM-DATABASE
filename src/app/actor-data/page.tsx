@@ -310,7 +310,9 @@ function ActorDataContent() {
         const stats = {
           totalActors: 0,
           gender: { 'Laki-laki': 0, 'Perempuan': 0, unknown: 0 },
+          verifiedGender: { 'Laki-laki': 0, 'Perempuan': 0 },
           status: { pending: 0, verified: 0, rejected: 0, finish: 0 },
+          detailedStatus: { survey: 0, verifikasi: 0, lpj: 0, selesai: 0 },
           kelurahan: {},
           coordinator: {},
           lastUpdated: new Date().toISOString()
@@ -331,6 +333,16 @@ function ActorDataContent() {
             stats.status[isVerified ? 'verified' : 'rejected']++
             
             if (isVerified) {
+              const g = (actor.gender || "").toLowerCase().trim()
+              const genderKey = (g === 'perempuan' || g === 'p') ? 'Perempuan' : 'Laki-laki'
+              stats.verifiedGender[genderKey] = (stats.verifiedGender[genderKey] || 0) + 1
+
+              // Populate detailedStatus based on exact value
+              if (s === 'verified_actor') stats.detailedStatus.survey++
+              if (s === 'verified_dinas' || s === 'bank_pending') stats.detailedStatus.verifikasi++
+              if (s === 'lpj_pending') stats.detailedStatus.lpj++
+              if (s === 'finish') stats.detailedStatus.selesai++
+
               if (actor.coordinator) {
                 const coord = actor.coordinator.toUpperCase().trim()
                 stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1

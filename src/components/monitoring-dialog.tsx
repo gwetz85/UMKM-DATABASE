@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Users, Building2, Link2, MapPin, TrendingUp, TrendingDown, RefreshCw } from "lucide-react"
+import { Users, Building2, MapPin, TrendingUp, TrendingDown, RefreshCw } from "lucide-react"
 import MonitoringMap from "./monitoring-map"
 import { useMemo } from "react"
 
@@ -27,18 +27,20 @@ export function MonitoringDialog({
   isLoading?: boolean
 }) {
   
-  const { totalData, totalLaki, totalPerempuan, totalDrive, top5, bottom5, kelurahanStats } = useMemo(() => {
+  const { totalData, totalLaki, totalPerempuan, detailedStatus, top5, bottom5, kelurahanStats } = useMemo(() => {
     let td = 0
     let tl = 0
     let tp = 0
-    let tDrive = 0
+    let ds = { survey: 0, verifikasi: 0, lpj: 0, selesai: 0 }
     let kStats: KelurahanStat[] = []
     
     if (systemStats) {
-      td = (systemStats.status?.verified || 0) + (systemStats.status?.rejected || 0)
-      tl = systemStats.gender?.laki || systemStats.gender?.['Laki-laki'] || 0
-      tp = systemStats.gender?.perempuan || systemStats.gender?.['Perempuan'] || 0
-      tDrive = systemStats.googleDrive || 0
+      td = systemStats.status?.verified || 0
+      tl = systemStats.verifiedGender?.['Laki-laki'] || systemStats.verifiedGender?.laki || 0
+      tp = systemStats.verifiedGender?.['Perempuan'] || systemStats.verifiedGender?.perempuan || 0
+      if (systemStats.detailedStatus) {
+        ds = systemStats.detailedStatus
+      }
       
       const kelMap = systemStats.kelurahan || {}
       kStats = KELURAHAN_LIST.map(k => {
@@ -62,7 +64,7 @@ export function MonitoringDialog({
       totalData: td,
       totalLaki: tl,
       totalPerempuan: tp,
-      totalDrive: tDrive,
+      detailedStatus: ds,
       kelurahanStats: kStats,
       top5: t5,
       bottom5: b5
@@ -88,7 +90,7 @@ export function MonitoringDialog({
             {/* KIRI - PETA & KPI */}
             <div className="flex-1 flex flex-col gap-4 min-h-0">
               {/* KPI ROW */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 shrink-0">
+              <div className="grid grid-cols-3 gap-3 md:gap-4 shrink-0">
                 <div className="bg-white p-4 rounded-xl border shadow-sm border-l-4 border-l-primary relative overflow-hidden group">
                   <p className="text-[10px] md:text-xs font-bold text-slate-500 uppercase">Total Data</p>
                   <p className="text-xl md:text-3xl font-black text-primary mt-1">{totalData}</p>
@@ -104,11 +106,6 @@ export function MonitoringDialog({
                   <p className="text-xl md:text-3xl font-black text-blue-600 mt-1">{totalLaki}</p>
                   <Users className="absolute -right-2 -bottom-2 w-12 h-12 text-blue-500/10 group-hover:scale-110 transition-transform" />
                 </div>
-                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-4 rounded-xl border shadow-sm border-indigo-700 relative overflow-hidden group text-white">
-                  <p className="text-[10px] md:text-xs font-bold text-indigo-100 uppercase">Google Drive Terisi</p>
-                  <p className="text-xl md:text-3xl font-black mt-1">{totalDrive}</p>
-                  <Link2 className="absolute -right-2 -bottom-2 w-12 h-12 text-white/20 group-hover:scale-110 transition-transform" />
-                </div>
               </div>
 
               {/* MAP */}
@@ -117,9 +114,40 @@ export function MonitoringDialog({
               </div>
             </div>
 
-            {/* KANAN - LEADERBOARD */}
-            <div className="w-full lg:w-80 flex flex-col gap-4 shrink-0 overflow-y-auto pr-2">
-              <div className="bg-white rounded-xl border shadow-sm overflow-hidden flex-1 flex flex-col">
+            {/* KANAN - STATUS TABLE & LEADERBOARD */}
+            <div className="w-full lg:w-[360px] flex flex-col gap-4 shrink-0 overflow-y-auto pr-2">
+              
+              {/* TABLE STATUS DETAIL */}
+              <div className="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col shrink-0">
+                <div className="bg-indigo-50 border-b border-indigo-100 p-3 flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-indigo-600" />
+                  <h3 className="text-xs font-black text-indigo-800 uppercase">Status Data (Terverifikasi)</h3>
+                </div>
+                <div className="p-0">
+                  <table className="w-full text-left border-collapse text-sm">
+                    <tbody>
+                      <tr className="border-b last:border-0 hover:bg-slate-50 transition-colors">
+                        <td className="p-3 font-semibold text-slate-600 text-xs">Survey Dinas</td>
+                        <td className="p-3 text-right font-black text-slate-800">{detailedStatus.survey}</td>
+                      </tr>
+                      <tr className="border-b last:border-0 hover:bg-slate-50 transition-colors">
+                        <td className="p-3 font-semibold text-slate-600 text-xs">Verifikasi Dinas</td>
+                        <td className="p-3 text-right font-black text-slate-800">{detailedStatus.verifikasi}</td>
+                      </tr>
+                      <tr className="border-b last:border-0 hover:bg-slate-50 transition-colors">
+                        <td className="p-3 font-semibold text-slate-600 text-xs">LPJ</td>
+                        <td className="p-3 text-right font-black text-slate-800">{detailedStatus.lpj}</td>
+                      </tr>
+                      <tr className="border-b last:border-0 hover:bg-slate-50 transition-colors">
+                        <td className="p-3 font-semibold text-slate-600 text-xs">Selesai</td>
+                        <td className="p-3 text-right font-black text-emerald-600">{detailedStatus.selesai}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl border shadow-sm overflow-hidden flex-1 flex flex-col min-h-[200px]">
                 <div className="bg-emerald-50 border-b border-emerald-100 p-3 flex items-center gap-2 shrink-0">
                   <TrendingUp className="w-4 h-4 text-emerald-600" />
                   <h3 className="text-xs font-black text-emerald-800 uppercase">Top 5 Kelurahan Terbanyak</h3>
