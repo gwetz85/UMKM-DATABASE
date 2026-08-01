@@ -4,7 +4,8 @@ import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet'
 import { KelurahanStat } from './monitoring-dialog'
 import { useEffect, useMemo, useCallback, useRef, useState } from 'react'
 import L from 'leaflet'
-import { KECAMATAN_GEOJSON, KECAMATAN_KELURAHAN } from '@/data/kecamatan-geo'
+import { KELURAHAN_GEOJSON } from '@/data/kelurahan-geo'
+import { KECAMATAN_KELURAHAN } from '@/data/kecamatan-geo'
 
 // ── Color scale (light → dark blue) based on count intensity ──────────────────
 function getChoroColor(count: number, maxCount: number): string {
@@ -149,30 +150,44 @@ export default function MapRenderer({ data }: { data: KelurahanStat[] }) {
     return Math.max(...totals, 1)
   }, [kecamatanStats])
 
+  // Helper to find which Kecamatan a Kelurahan belongs to
+  const getKecamatanForKelurahan = (kelName: string) => {
+    const kelLower = kelName.toLowerCase()
+    for (const [kec, kelList] of Object.entries(KECAMATAN_KELURAHAN)) {
+      if (kelList.some(k => k.toLowerCase() === kelLower)) {
+        return kec
+      }
+    }
+    return null
+  }
+
   const geoRef = useRef<L.GeoJSON | null>(null)
 
   const styleFeature = useCallback((feature: any): L.PathOptions => {
-    const name = feature?.properties?.name as string
-    const stat = kecamatanStats[name]
+    const kelName = feature?.properties?.name as string
+    const kecName = getKecamatanForKelurahan(kelName)
+    const stat = kecName ? kecamatanStats[kecName] : null
     const count = stat ? stat.total : 0
     return {
       fillColor: getChoroColor(count, maxCount),
       fillOpacity: 0.75,
       color: '#ffffff',
-      weight: 2,
-      opacity: 1,
+      weight: 1.5,
+      opacity: 0.9,
     }
   }, [kecamatanStats, maxCount])
 
   const onEachFeature = useCallback((feature: any, layer: L.Layer) => {
-    const name = feature.properties?.name as string
-    const stat = kecamatanStats[name]
+    const kelName = feature.properties?.name as string
+    const kecName = getKecamatanForKelurahan(kelName) || kelName
+    const stat = kecamatanStats[kecName]
     const count = stat ? stat.total : 0
 
-    // Tooltip for quick hover info
+    // Tooltip for quick hover info (Shows Kecamatan name)
     layer.bindTooltip(`
       <div style="text-align:center;">
-        <span style="text-transform:uppercase">${name}</span>
+        <span style="text-transform:uppercase; font-weight: 800; color: #0f172a;">${kecName}</span>
+        <div style="font-size: 9px; color: #64748b; margin-top: 2px;">(Kel. ${kelName})</div>
       </div>
     `, {
       sticky: true,
@@ -185,7 +200,7 @@ export default function MapRenderer({ data }: { data: KelurahanStat[] }) {
     const popupContent = `
       <div style="font-family: system-ui, sans-serif; color: #1e293b;">
         <div style="padding: 16px; border-bottom: 1px solid #e2e8f0;">
-          <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">${name.toUpperCase()}</h3>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #0f172a;">${kecName.toUpperCase()}</h3>
         </div>
         <div style="padding: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;">
@@ -217,7 +232,7 @@ export default function MapRenderer({ data }: { data: KelurahanStat[] }) {
     layer.on('mouseover', (e: L.LeafletMouseEvent) => {
       pathLayer.setStyle({
         fillOpacity: 0.95,
-        weight: 3,
+        weight: 2.5,
         color: '#ffffff',
       })
       const el = (e.target as any).getElement?.() as SVGPathElement | null
@@ -228,9 +243,9 @@ export default function MapRenderer({ data }: { data: KelurahanStat[] }) {
       pathLayer.setStyle({
         fillColor: getChoroColor(count, maxCount),
         fillOpacity: 0.75,
-        weight: 2,
+        weight: 1.5,
         color: '#ffffff',
-        opacity: 1,
+        opacity: 0.9,
       })
       const el = (e.target as any).getElement?.() as SVGPathElement | null
       el?.classList.remove('hovered')
@@ -264,7 +279,7 @@ export default function MapRenderer({ data }: { data: KelurahanStat[] }) {
 
       <GeoJSON
         ref={geoRef as any}
-        data={KECAMATAN_GEOJSON as any}
+        data={KELURAHAN_GEOJSON as any}
         style={styleFeature}
         onEachFeature={onEachFeature}
       />
