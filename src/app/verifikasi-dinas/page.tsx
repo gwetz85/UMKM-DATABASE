@@ -543,7 +543,7 @@ export default function VerifikasiDinasPage() {
 
                         <div className="flex items-center justify-between mt-2 pt-2">
                           <div className="flex flex-col">
-                            <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">Koordinator</span>
+                            <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">USULAN</span>
                             <span className="text-[10px] font-black text-primary truncate max-w-[90px] uppercase">
                               {actor.coordinator || "Tanpa Korlap"}
                             </span>
