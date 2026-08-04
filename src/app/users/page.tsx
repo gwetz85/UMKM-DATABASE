@@ -33,7 +33,8 @@ import {
   Building2,
   ShieldCheck,
   AlertCircle,
-  RotateCcw
+  RotateCcw,
+  ClipboardCheck
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { SidebarTrigger } from "@/components/ui/sidebar"
