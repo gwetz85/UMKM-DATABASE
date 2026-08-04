@@ -732,105 +732,128 @@ export default function VerifikasiDinasPage() {
                               </DialogContent>
                             </Dialog>
                             
-                            {/* Verifikasi Dinas Dialog */}
-                             {(isAdmin || isDinas || isPetugas) && (
+                             {/* Verifikasi Dinas Dialog */}
+                              {(isAdmin || isDinas || isPetugas) && (
                                <>
-                                 {/* Choice Dialog */}
+                                 {/* Trigger Button - outside Dialog to avoid controlled/uncontrolled conflict */}
+                                 <Button
+                                   size="icon"
+                                   variant="outline"
+                                   onClick={() => openChoiceDialog(actor)}
+                                   className="h-9 w-9 border-emerald-100 text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl shadow-sm transition-all duration-300"
+                                   title="Verifikasi Dinas"
+                                 >
+                                   <ClipboardCheck className="w-4 h-4" />
+                                 </Button>
+
+                                 {/* Choice Dialog - purely controlled */}
                                  <Dialog open={!!choiceActor && choiceActor.id === actor.id} onOpenChange={(open) => { if (!open) { setChoiceActor(null); setSelectedChoice(null); setCancelReason(""); } }}>
-                                   <DialogTrigger asChild>
-                                     <Button size="icon" variant="outline" onClick={() => openChoiceDialog(actor)} className="h-9 w-9 border-emerald-100 text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl shadow-sm transition-all duration-300" title="Verifikasi Dinas">
-                                       <ClipboardCheck className="w-4 h-4" />
-                                     </Button>
-                                   </DialogTrigger>
-                                   <DialogContent className="max-w-md">
-                                     <DialogHeader>
-                                       <DialogTitle className="text-xl font-black text-primary uppercase flex items-center gap-2">
-                                         <ClipboardCheck className="w-5 h-5" /> Tindakan Survey Dinas
-                                       </DialogTitle>
-                                       <DialogDescription>
-                                         Pilih tindakan untuk <span className="font-bold text-slate-800">{choiceActor?.fullName}</span>
-                                       </DialogDescription>
-                                     </DialogHeader>
+                                    <DialogContent className="max-w-md">
+                                      <DialogHeader>
+                                        <DialogTitle className="text-xl font-black text-primary uppercase flex items-center gap-2">
+                                          <ClipboardCheck className="w-5 h-5" /> Tindakan Survey Dinas
+                                        </DialogTitle>
+                                        <DialogDescription>
+                                          Pilih tindakan untuk <span className="font-bold text-slate-800">{choiceActor?.fullName}</span>
+                                        </DialogDescription>
+                                      </DialogHeader>
 
-                                     <div className="py-4 space-y-4">
-                                       {/* Choice Buttons */}
-                                       {!selectedChoice && (
-                                         <div className="grid grid-cols-2 gap-4">
-                                           <button
-                                             onClick={() => setSelectedChoice('survey')}
-                                             className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-emerald-200 bg-emerald-50 hover:border-emerald-500 hover:bg-emerald-100 transition-all duration-200 cursor-pointer group"
-                                           >
-                                             <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                               <ClipboardCheck className="w-7 h-7 text-white" />
-                                             </div>
-                                             <div className="text-center">
-                                               <p className="font-black text-emerald-700 text-sm uppercase tracking-wide">Di Survey</p>
-                                               <p className="text-[10px] text-emerald-600 mt-0.5">Lanjut isi form survey</p>
-                                             </div>
-                                           </button>
+                                      <div className="py-4 space-y-4">
+                                        {/* Choice Buttons */}
+                                        {!selectedChoice && (
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <button
+                                              type="button"
+                                              onClick={() => setSelectedChoice('survey')}
+                                              className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-emerald-200 bg-emerald-50 hover:border-emerald-500 hover:bg-emerald-100 transition-all duration-200 cursor-pointer group"
+                                            >
+                                              <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                                <ClipboardCheck className="w-7 h-7 text-white" />
+                                              </div>
+                                              <div className="text-center">
+                                                <p className="font-black text-emerald-700 text-sm uppercase tracking-wide">Di Survey</p>
+                                                <p className="text-[10px] text-emerald-600 mt-0.5">Lanjut isi form survey</p>
+                                              </div>
+                                            </button>
 
-                                           <button
-                                             onClick={() => setSelectedChoice('cancel')}
-                                             className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 transition-all duration-200 cursor-pointer group"
-                                           >
-                                             <div className="w-14 h-14 rounded-2xl bg-red-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                               <AlertTriangle className="w-7 h-7 text-white" />
-                                             </div>
-                                             <div className="text-center">
-                                               <p className="font-black text-red-700 text-sm uppercase tracking-wide">Cancel</p>
-                                               <p className="text-[10px] text-red-600 mt-0.5">Tolak & isi alasan</p>
-                                             </div>
-                                           </button>
-                                         </div>
-                                       )}
+                                            <button
+                                              type="button"
+                                              onClick={() => setSelectedChoice('cancel')}
+                                              className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 transition-all duration-200 cursor-pointer group"
+                                            >
+                                              <div className="w-14 h-14 rounded-2xl bg-red-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                                <AlertTriangle className="w-7 h-7 text-white" />
+                                              </div>
+                                              <div className="text-center">
+                                                <p className="font-black text-red-700 text-sm uppercase tracking-wide">Cancel</p>
+                                                <p className="text-[10px] text-red-600 mt-0.5">Tolak &amp; isi alasan</p>
+                                              </div>
+                                            </button>
+                                          </div>
+                                        )}
 
-                                       {/* Cancel reason form */}
-                                       {selectedChoice === 'cancel' && (
-                                         <div className="space-y-4">
-                                           <div className="flex items-center gap-2 p-3 bg-red-50 rounded-xl border border-red-200">
-                                             <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-                                             <p className="text-xs font-semibold text-red-700">Data akan dipindahkan ke menu Ditolak beserta alasan cancel.</p>
-                                           </div>
-                                           <div className="space-y-2">
-                                             <Label className="font-bold text-slate-700">Alasan Cancel Survey</Label>
-                                             <Textarea
-                                               placeholder="Tulis alasan cancel di sini..."
-                                               value={cancelReason}
-                                               onChange={(e) => setCancelReason(e.target.value)}
-                                               rows={4}
-                                               className="resize-none border-red-200 focus-visible:ring-red-400"
-                                             />
-                                           </div>
-                                           <div className="flex gap-2">
-                                             <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedChoice(null)} className="flex-1">
-                                               Kembali
-                                             </Button>
-                                             <Button
-                                               type="button"
-                                               onClick={handleSubmitCancel}
-                                               disabled={!cancelReason.trim() || isSubmittingCancel}
-                                               className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold"
-                                             >
-                                               {isSubmittingCancel ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                                               Submit Cancel
-                                             </Button>
-                                           </div>
-                                         </div>
-                                       )}
-                                     </div>
+                                        {/* Cancel reason form */}
+                                        {selectedChoice === 'cancel' && (
+                                          <div className="space-y-4">
+                                            <div className="flex items-center gap-2 p-3 bg-red-50 rounded-xl border border-red-200">
+                                              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                                              <p className="text-xs font-semibold text-red-700">Data akan dipindahkan ke menu Ditolak beserta alasan cancel.</p>
+                                            </div>
+                                            <div className="space-y-2">
+                                              <Label className="font-bold text-slate-700">Alasan Cancel Survey</Label>
+                                              <Textarea
+                                                placeholder="Tulis alasan cancel di sini..."
+                                                value={cancelReason}
+                                                onChange={(e) => setCancelReason(e.target.value)}
+                                                rows={4}
+                                                className="resize-none border-red-200 focus-visible:ring-red-400"
+                                              />
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedChoice(null)} className="flex-1">
+                                                Kembali
+                                              </Button>
+                                              <Button
+                                                type="button"
+                                                onClick={handleSubmitCancel}
+                                                disabled={!cancelReason.trim() || isSubmittingCancel}
+                                                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold"
+                                              >
+                                                {isSubmittingCancel ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                                                Submit Cancel
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        )}
 
-                                     {/* Footer only shown on initial choice */}
-                                     {!selectedChoice && (
-                                       <DialogFooter>
-                                         <Button type="button" variant="ghost" onClick={() => { setChoiceActor(null); setSelectedChoice(null); }} className="w-full">
-                                           Tutup
-                                         </Button>
-                                         <Button type="button" onClick={handleProceedToSurvey} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-                                           <ClipboardCheck className="w-4 h-4 mr-2" /> Lanjut Survey
-                                         </Button>
-                                       </DialogFooter>
-                                     )}
-                                   </DialogContent>
+                                        {/* Di Survey confirm */}
+                                        {selectedChoice === 'survey' && (
+                                          <div className="space-y-4">
+                                            <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                                              <ClipboardCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                                              <p className="text-xs font-semibold text-emerald-700">Anda akan membuka form survey untuk <strong>{choiceActor?.fullName}</strong></p>
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedChoice(null)} className="flex-1">
+                                                Kembali
+                                              </Button>
+                                              <Button type="button" onClick={handleProceedToSurvey} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                                                <ClipboardCheck className="w-4 h-4 mr-2" /> Buka Form Survey
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Footer only shown on initial choice */}
+                                      {!selectedChoice && (
+                                        <DialogFooter>
+                                          <Button type="button" variant="ghost" onClick={() => { setChoiceActor(null); setSelectedChoice(null); }} className="w-full">
+                                            Tutup
+                                          </Button>
+                                        </DialogFooter>
+                                      )}
+                                    </DialogContent>
                                  </Dialog>
 
                                  {/* Survey Form Dialog */}
