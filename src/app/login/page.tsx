@@ -174,7 +174,7 @@ export default function LoginPage() {
             return
           }
 
-          if (userData.role !== 'dinas') {
+          if (userData.role !== 'dinas' && userData.role !== 'verifikator_dinas') {
             if (!userData.uid) {
               await update(userRef, { uid: user.uid })
               toast({ title: "Perangkat Terkunci", description: "Akun Anda sekarang terikat pada perangkat ini." })

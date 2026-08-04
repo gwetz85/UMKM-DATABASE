@@ -83,7 +83,7 @@ export default function VerifikasiDinasBerkasPage() {
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
-  const isDinas = userProfile?.role === 'dinas'
+  const isVerifikatorDinas = userProfile?.role === 'verifikator_dinas'
   const isPetugas = userProfile?.role === 'petugas'
 
   const memoQuery = useMemoFirebase(() => {
@@ -122,7 +122,7 @@ export default function VerifikasiDinasBerkasPage() {
   }, [filteredActors])
 
   const handleVerifyBerkas = () => {
-    if (!verifyingActor || !database || (!isAdmin && !isDinas && !isPetugas)) return
+    if (!verifyingActor || !database || (!isAdmin && !isVerifikatorDinas && !isPetugas)) return
     if (!checks.ktp || !checks.kk || !checks.nib || !checks.foto) return
 
     setIsSubmitting(true)
@@ -184,7 +184,7 @@ export default function VerifikasiDinasBerkasPage() {
     setIsDeletingAll(false)
   }
 
-  if (!isAdmin && !isDinas && !isPetugas && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
+  if (!isAdmin && !isVerifikatorDinas && !isPetugas && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
 
   return (
     <div className="p-4 md:p-8 space-y-6 animate-in fade-in-up duration-700">
@@ -356,7 +356,7 @@ export default function VerifikasiDinasBerkasPage() {
                           </div>
 
                           <div className="flex gap-2 w-full">
-                            {(isAdmin || isDinas || isPetugas) && (
+                            {(isAdmin || isVerifikatorDinas || isPetugas) && (
                               <Dialog open={!!verifyingActor && verifyingActor.id === actor.id} onOpenChange={(open) => {
                                 if (!open) {
                                   setVerifyingActor(null);

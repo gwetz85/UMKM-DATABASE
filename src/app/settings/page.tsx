@@ -79,6 +79,7 @@ export default function SettingsPage() {
   const isPetugas = userProfile?.role === 'petugas'
   const isMonitoring = userProfile?.role === 'monitoring'
   const isDinas = userProfile?.role === 'dinas'
+  const isVerifikatorDinas = userProfile?.role === 'verifikator_dinas'
 
   const themeSettingsRef = database ? ref(database, 'chats/__system_settings/theme') : null
   const { data: themeSettings, error: themeError } = useObject(themeSettingsRef)
@@ -434,7 +435,7 @@ export default function SettingsPage() {
           <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           <AlertTitle className="text-blue-800 dark:text-blue-300 font-bold">Akses Pengaturan</AlertTitle>
           <AlertDescription className="text-blue-700 dark:text-blue-400">
-            Halo {userProfile?.fullName || 'User'}, sebagai {isKoordinator ? "USULAN" : isPetugas ? "Petugas Input" : isDinas ? "Dinas" : isMonitoring ? "Monitoring" : "User"}, 
+            Halo {userProfile?.fullName || 'User'}, sebagai {isKoordinator ? "USULAN" : isPetugas ? "Petugas Input" : isDinas ? "Dinas" : isVerifikatorDinas ? "Verifikator Dinas" : isMonitoring ? "Monitoring" : "User"}, 
             Anda hanya dapat merubah tema aplikasi dan mengganti kata sandi. Fitur manajemen data hanya tersedia untuk Administrator.
           </AlertDescription>
         </Alert>

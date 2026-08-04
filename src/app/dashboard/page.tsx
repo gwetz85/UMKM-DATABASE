@@ -87,6 +87,10 @@ export default function DashboardStatsPage() {
       router.push("/verifikasi-dinas")
     }
 
+    if (userProfile?.role === 'verifikator_dinas') {
+      router.push("/verifikasi-dinas-berkas")
+    }
+
     if (userProfile?.role === 'koordinator') {
       router.push("/actor-data")
     }
