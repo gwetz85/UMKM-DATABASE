@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Printer, Edit3, Loader2, Save, RotateCcw, Trash2, Eye, User, CreditCard, History, X, Building2, MapPin, Ban, AlertCircle, Search, Info, FileSpreadsheet, CheckCircle2, AlertTriangle, ChevronRight, Folder } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, RotateCcw, Trash2, Eye, User, CreditCard, History, X, Building2, MapPin, Ban, AlertCircle, Search, Info, FileSpreadsheet, CheckCircle2, AlertTriangle, ChevronRight, Folder, ClipboardCheck, ShieldAlert } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
@@ -50,6 +50,7 @@ function RejectedContent() {
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [printDate, setPrintDate] = useState<string>("")
   const [actorToPrint, setActorToPrint] = useState<BusinessActor | null>(null)
+  const [activeTab, setActiveTab] = useState<'pendataan' | 'dinas'>('pendataan')
 
   useEffect(() => {
     setPrintDate(new Date().toLocaleString('id-ID'))
@@ -78,6 +79,13 @@ function RejectedContent() {
   }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
+
+  // Query for Dinas-cancelled data (verified_dinas + Tidak Lolos)
+  const dinasQuery = useMemoFirebase(() => {
+    if (!database) return null
+    return ref(database, 'businessActors')
+  }, [database])
+  const { data: allActorsDinasRaw, isLoading: isLoadingDinas } = useList<BusinessActor>(dinasQuery)
   
   const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
   const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
@@ -98,8 +106,7 @@ function RejectedContent() {
   
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     const isRejected = a.status === 'rejected';
-    const isDinasFailed = a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos';
-    if (!isRejected && !isDinasFailed) return false;
+    if (!isRejected) return false;
 
     const matchesSearch = 
       a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -116,6 +123,21 @@ function RejectedContent() {
       const matchesKoor = a.coordinator === filterCoordinator;
       return matchesSearch && matchesCategory && matchesKoor;
     }
+    return matchesSearch && matchesCategory;
+  }) : undefined
+
+  // Dinas-cancelled actors
+  const actorsDinas = allActorsDinasRaw ? allActorsDinasRaw.filter(a => {
+    const isDinasCancelled = 
+      (a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') ||
+      (a as any).alasanCancelDinas;
+    if (!isDinasCancelled) return false;
+
+    const matchesSearch = 
+      a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      a.nik?.includes(searchQuery)
+    const matchesCategory = !category || a.businessCategory === category
     return matchesSearch && matchesCategory;
   }) : undefined
 
@@ -280,6 +302,34 @@ function RejectedContent() {
         </Button>
       </div>
 
+      {/* TABS */}
+      <div className="flex gap-2 print:hidden">
+        <button
+          onClick={() => { setActiveTab('pendataan'); setSearchQuery(''); setCategory(''); }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 ${
+            activeTab === 'pendataan'
+              ? 'bg-red-600 text-white shadow-md'
+              : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
+          }`}
+        >
+          <Ban className="w-4 h-4" />
+          Pendataan
+          {actors && <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'pendataan' ? 'bg-white/30' : 'bg-red-100'}`}>{actors.length}</span>}
+        </button>
+        <button
+          onClick={() => { setActiveTab('dinas'); setSearchQuery(''); setCategory(''); }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider transition-all duration-200 ${
+            activeTab === 'dinas'
+              ? 'bg-orange-600 text-white shadow-md'
+              : 'bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100'
+          }`}
+        >
+          <ShieldAlert className="w-4 h-4" />
+          Dinas
+          {actorsDinas && <span className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-black ${activeTab === 'dinas' ? 'bg-white/30' : 'bg-orange-100'}`}>{actorsDinas.length}</span>}
+        </button>
+      </div>
+
       <div className="flex flex-col md:flex-row gap-4 mb-4 print:hidden">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -303,8 +353,8 @@ function RejectedContent() {
         </div>
       </div>
 
-      <div className="bg-card print:bg-transparent border border-red-100 rounded-2xl overflow-hidden shadow-sm">
-        {isLoading ? (
+      <div className={`bg-card print:bg-transparent border rounded-2xl overflow-hidden shadow-sm ${activeTab === 'dinas' ? 'border-orange-100' : 'border-red-100'}`}>
+        {(activeTab === 'pendataan' ? isLoading : isLoadingDinas) ? (
           <div className="p-4 space-y-4">
             <div className="flex gap-4 border-b pb-4">
               {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-4 flex-1" />)}
@@ -315,7 +365,8 @@ function RejectedContent() {
               </div>
             ))}
           </div>
-        ) : (
+        ) : activeTab === 'pendataan' ? (
+          /* ===== TAB PENDATAAN ===== */
           <div className="overflow-x-auto">
             <Table>
               <TableHeader className="bg-red-50/50">
@@ -324,7 +375,7 @@ function RejectedContent() {
                   <TableHead className="font-black text-red-700 uppercase text-[10px]">Nama Usaha</TableHead>
                   <TableHead className="font-black text-red-700 uppercase text-[10px]">Pelaku Usaha</TableHead>
                   <TableHead className="font-black text-red-700 uppercase text-[10px] text-center">Kategori</TableHead>
-                  <TableHead className="font-black text-red-700 uppercase text-[10px]">Koordinator</TableHead>
+                  <TableHead className="font-black text-red-700 uppercase text-[10px]">USULAN</TableHead>
                   <TableHead className="font-black text-red-700 uppercase text-[10px]">Alasan Penolakan</TableHead>
                   <TableHead className="font-black text-red-700 uppercase text-[10px] text-right">Detail</TableHead>
                 </TableRow>
@@ -332,13 +383,10 @@ function RejectedContent() {
               <TableBody>
                 {actors && actors.length > 0 ? (
                   actors.map((actor, index) => (
-                    <TableRow 
-                      key={actor.id} 
+                    <TableRow
+                      key={actor.id}
                       className="cursor-pointer hover:bg-red-50/30 border-red-50 transition-colors group print:border-b print:rounded-none"
-                      onClick={() => {
-                        setViewingActor(actor)
-                        setIsEditMode(false)
-                      }}
+                      onClick={() => { setViewingActor(actor); setIsEditMode(false); }}
                     >
                       <TableCell className="text-center font-bold text-slate-400 text-xs">{index + 1}</TableCell>
                       <TableCell>
@@ -347,14 +395,7 @@ function RejectedContent() {
                             {actor.businessName || "NAMA USAHA KOSONG"}
                           </span>
                           <div className="flex items-center gap-1 mt-1 print:hidden">
-                             <CheckDataIndicator 
-                                actor={actor} 
-                                data2023={data2023}
-                                data2024={data2024}
-                                data2025={data2025}
-                                dataBlacklist={dataBlacklist}
-                                showText={false} 
-                              />
+                             <CheckDataIndicator actor={actor} data2023={data2023} data2024={data2024} data2025={data2025} dataBlacklist={dataBlacklist} showText={false} />
                           </div>
                         </div>
                       </TableCell>
@@ -365,10 +406,7 @@ function RejectedContent() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant="outline" className={cn(
-                          "text-[9px] font-black uppercase px-2 py-0 border-2",
-                          actor.businessCategory === 'Kuliner' ? "border-amber-200 text-amber-600 bg-amber-50" : "border-blue-200 text-blue-600 bg-blue-50"
-                        )}>
+                        <Badge variant="outline" className={cn("text-[9px] font-black uppercase px-2 py-0 border-2", actor.businessCategory === 'Kuliner' ? "border-amber-200 text-amber-600 bg-amber-50" : "border-blue-200 text-blue-600 bg-blue-50")}>
                           {actor.businessCategory || "-"}
                         </Badge>
                       </TableCell>
@@ -382,24 +420,10 @@ function RejectedContent() {
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end items-center gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
-                            onClick={() => handlePrintActorForm(actor)}
-                            title="Cetak Form"
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all" onClick={() => handlePrintActorForm(actor)} title="Cetak Form">
                             <Printer className="w-4 h-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-100 rounded-full transition-all"
-                            onClick={() => {
-                              setViewingActor(actor)
-                              setIsEditMode(false)
-                            }}
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-100 rounded-full transition-all" onClick={() => { setViewingActor(actor); setIsEditMode(false); }}>
                             <Eye className="w-4 h-4" />
                           </Button>
                         </div>
@@ -411,7 +435,84 @@ function RejectedContent() {
                     <TableCell colSpan={7} className="h-48 text-center">
                       <div className="flex flex-col items-center justify-center text-muted-foreground gap-3">
                         <Ban className="w-12 h-12 opacity-10" />
-                        <p className="font-black text-[10px] uppercase tracking-[0.2em]">Tidak Ada Data Ditolak</p>
+                        <p className="font-black text-[10px] uppercase tracking-[0.2em]">Tidak Ada Data Ditolak (Pendataan)</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          /* ===== TAB DINAS ===== */
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-orange-50/50">
+                <TableRow className="border-orange-100 hover:bg-transparent">
+                  <TableHead className="w-[50px] font-black text-orange-700 text-center uppercase text-[10px]">No</TableHead>
+                  <TableHead className="font-black text-orange-700 uppercase text-[10px]">Nama Usaha</TableHead>
+                  <TableHead className="font-black text-orange-700 uppercase text-[10px]">Pelaku Usaha</TableHead>
+                  <TableHead className="font-black text-orange-700 uppercase text-[10px] text-center">Kategori</TableHead>
+                  <TableHead className="font-black text-orange-700 uppercase text-[10px]">USULAN</TableHead>
+                  <TableHead className="font-black text-orange-700 uppercase text-[10px]">Alasan Cancel Dinas</TableHead>
+                  <TableHead className="font-black text-orange-700 uppercase text-[10px]">Dibatalkan Oleh</TableHead>
+                  <TableHead className="font-black text-orange-700 uppercase text-[10px] text-right">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {actorsDinas && actorsDinas.length > 0 ? (
+                  actorsDinas.map((actor, index) => (
+                    <TableRow
+                      key={actor.id}
+                      className="cursor-pointer hover:bg-orange-50/30 border-orange-50 transition-colors"
+                      onClick={() => { setViewingActor(actor); setIsEditMode(false); }}
+                    >
+                      <TableCell className="text-center font-bold text-slate-400 text-xs">{index + 1}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-black text-orange-700 uppercase text-[12px] leading-tight">
+                            {actor.businessName || "NAMA USAHA KOSONG"}
+                          </span>
+                          <div className="flex items-center gap-1 mt-1">
+                            <CheckDataIndicator actor={actor} data2023={data2023} data2024={data2024} data2025={data2025} dataBlacklist={dataBlacklist} showText={false} />
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-700 text-[11px] uppercase">{actor.fullName}</span>
+                          <span className="text-[9px] text-slate-400 font-mono tracking-tighter uppercase">{actor.nik}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className={cn("text-[9px] font-black uppercase px-2 py-0 border-2", actor.businessCategory === 'Kuliner' ? "border-amber-200 text-amber-600 bg-amber-50" : "border-blue-200 text-blue-600 bg-blue-50")}>
+                          {actor.businessCategory || "-"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-[10px] font-bold text-slate-600 uppercase">{actor.coordinator || "-"}</span>
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-[10px] italic text-orange-600 line-clamp-2 max-w-[200px] leading-relaxed" title={(actor as any).alasanCancelDinas || actor.keteranganDinas}>
+                          {(actor as any).alasanCancelDinas || actor.keteranganDinas || "Tidak ada alasan."}
+                        </p>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase">{(actor as any).cancelDinasBy || "-"}</span>
+                      </TableCell>
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-orange-400 hover:text-orange-600 hover:bg-orange-100 rounded-full transition-all" onClick={() => { setViewingActor(actor); setIsEditMode(false); }}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="h-48 text-center">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground gap-3">
+                        <ShieldAlert className="w-12 h-12 opacity-10" />
+                        <p className="font-black text-[10px] uppercase tracking-[0.2em]">Tidak Ada Data Cancel dari Dinas</p>
                       </div>
                     </TableCell>
                   </TableRow>
