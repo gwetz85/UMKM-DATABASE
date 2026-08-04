@@ -34,7 +34,8 @@ import {
   ShieldCheck,
   AlertCircle,
   RotateCcw,
-  ClipboardCheck
+  ClipboardCheck,
+  Power
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -529,26 +530,28 @@ export default function UserManagementPage() {
                       <div className="flex justify-end gap-2">
                         <Button 
                           variant="outline" 
-                          size="sm" 
+                          size="icon" 
                           onClick={() => { setDetailUser(u); setShowPassword(false); }} 
-                          className="h-8 text-[10px] font-bold border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+                          className="h-8 w-8 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+                          title="Lihat Data"
                         >
-                          <Eye className="w-3 h-3 mr-1" /> Lihat Data
+                          <Eye className="w-4 h-4" />
                         </Button>
                         {isAdmin && (
                           <Button 
                             variant={u.status === 'inactive' ? "secondary" : "destructive"} 
-                            size="sm" 
+                            size="icon" 
                             onClick={() => handleToggleStatus(u.id, u.status)} 
-                            className={`h-8 text-[10px] font-bold ${u.status === 'inactive' ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200' : ''}`}
+                            className={`h-8 w-8 ${u.status === 'inactive' ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200' : ''}`}
+                            title={u.status === 'inactive' ? 'Aktifkan' : 'Nonaktifkan'}
                           >
-                            {u.status === 'inactive' ? 'Aktifkan' : 'Nonaktifkan'}
+                            <Power className="w-4 h-4" />
                           </Button>
                         )}
                         <Dialog>
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setEditingUser(u)} className="h-8 text-[10px] font-bold border-primary/20 hover:bg-primary/5 text-primary">
-                              <UserCog className="w-3 h-3 mr-1" /> Ganti Role
+                            <Button variant="outline" size="icon" onClick={() => setEditingUser(u)} className="h-8 w-8 border-primary/20 hover:bg-primary/5 text-primary" title="Ganti Role">
+                              <UserCog className="w-4 h-4" />
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
@@ -609,11 +612,12 @@ export default function UserManagementPage() {
                         {u.uid && (
                           <Button 
                             variant="outline" 
-                            size="sm" 
-                            className="h-8 text-amber-600 hover:bg-amber-50 border-amber-200 text-[10px] font-bold"
+                            size="icon" 
+                            className="h-8 w-8 text-amber-600 hover:bg-amber-50 border-amber-200"
                             onClick={() => handleResetUID(u.id, u.fullName)}
+                            title="Reset Perangkat"
                           >
-                            <RefreshCcw className="w-3 h-3 mr-1" /> Reset Perangkat
+                            <RefreshCcw className="w-4 h-4" />
                           </Button>
                         )}
                         <Button 
