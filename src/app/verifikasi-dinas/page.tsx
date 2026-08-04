@@ -1108,10 +1108,12 @@ export default function VerifikasiDinasPage() {
                           </div>
                         </div>
                       </div>
-                    </CardContent>
-              </div>
-            </div>
-          ))}
+                     </CardContent>
+                   </Card>
+                 ))}
+               </div>
+             </div>
+           ))}
         </div>
       )}
     </div>
