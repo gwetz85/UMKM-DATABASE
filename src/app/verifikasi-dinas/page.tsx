@@ -38,8 +38,10 @@ import {
   AlertTriangle,
   Camera,
   Upload,
-  Folder
+  Folder,
+  FileDown
 } from "lucide-react"
+import { generateBeritaAcaraPDF } from "@/lib/generate-berita-acara-pdf"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function VerifikasiDinasPage() {
@@ -55,6 +57,7 @@ export default function VerifikasiDinasPage() {
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
   const [isDeletingAll, setIsDeletingAll] = useState(false)
+  const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null)
 
   // Choice dialog states
   const [choiceActor, setChoiceActor] = useState<BusinessActor | null>(null)
@@ -333,6 +336,23 @@ export default function VerifikasiDinasPage() {
     setIsSubmitting(false);
   };
 
+  const handleGeneratePDF = async (actor: BusinessActor) => {
+    if (!actor.surveyData) {
+      toast({ variant: "destructive", title: "Data Survey Belum Ada", description: "Lakukan survey terlebih dahulu sebelum mencetak Berita Acara." })
+      return
+    }
+    setGeneratingPdfId(actor.id)
+    try {
+      await generateBeritaAcaraPDF(actor, actor.surveyData)
+      toast({ title: "PDF Berhasil Dibuat", description: `Berita Acara Survey untuk ${actor.fullName} telah diunduh.` })
+    } catch (err) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal Membuat PDF", description: "Terjadi kesalahan saat membuat dokumen PDF." })
+    } finally {
+      setGeneratingPdfId(null)
+    }
+  }
+
   const handleDeleteAll = () => {
     if (!database || !isAdmin || deleteConfirmText !== 'HAPUS SEMUA') return
     
@@ -550,6 +570,22 @@ export default function VerifikasiDinasPage() {
                           </div>
 
                           <div className="flex gap-2">
+                            {/* Tombol Generate PDF Berita Acara */}
+                            {(isAdmin || isDinas || isPetugas) && (
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                onClick={() => handleGeneratePDF(actor)}
+                                disabled={generatingPdfId === actor.id || !actor.surveyData}
+                                className="h-9 w-9 border-purple-100 text-purple-600 bg-purple-50 hover:bg-purple-600 hover:text-white rounded-xl shadow-sm transition-all duration-300 disabled:opacity-40"
+                                title={actor.surveyData ? "Cetak Berita Acara Survey (PDF)" : "Survey belum diisi"}
+                              >
+                                {generatingPdfId === actor.id
+                                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                                  : <FileDown className="w-4 h-4" />}
+                              </Button>
+                            )}
+
                             {/* Viewer Dialog */}
                             <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
                               <DialogTrigger asChild>
