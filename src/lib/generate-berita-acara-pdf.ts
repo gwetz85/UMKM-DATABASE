@@ -319,6 +319,8 @@ export async function generateBeritaAcaraPDF(
   // --- HEADER 1: TIM SURVEY (3 Kolom) & CALON PENERIMA DANA HIBAH (1 Kolom) ---
   const header1H = 6;
   doc.setFillColor(226, 239, 218); // Hijau muda #E2EFDA
+  doc.setDrawColor(0, 0, 0);
+  doc.setTextColor(0, 0, 0);
 
   // Rect Header Tim Survey
   doc.rect(marginL, ttStartY, col1W + col2W + col3W, header1H, "FD");
@@ -327,6 +329,7 @@ export async function generateBeritaAcaraPDF(
   doc.text("TIM SURVEY", marginL + (col1W + col2W + col3W) / 2, ttStartY + 4.2, { align: "center" });
 
   // Rect Header Calon Penerima Dana Hibah (juga hijau muda)
+  doc.setFillColor(226, 239, 218);
   doc.rect(marginL + col1W + col2W + col3W, ttStartY, col4W, header1H, "FD");
   doc.setFontSize(7.5);
   doc.text("CALON PENERIMA DANA HIBAH", marginL + col1W + col2W + col3W + col4W / 2, ttStartY + 4.2, { align: "center" });
@@ -340,13 +343,11 @@ export async function generateBeritaAcaraPDF(
   doc.rect(marginL + col1W + col2W, signY, col3W, signBoxH);
   doc.rect(marginL + col1W + col2W + col3W, signY, col4W, signBoxH);
 
-  // Label nama di bagian bawah kotak tanda tangan (Sama persis Gambar 2)
+  // Nama Tim Survey 1, 2, 3 DIKOSONGKAN (siap diisi nanti).
+  // Hanya nama Calon Penerima Dana Hibah yang dicetak di kolom 4.
   const nameLabelY = signY + signBoxH - 2.5;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
-  doc.text("DEVI KUSMIATI, S.E.", marginL + col1W / 2, nameLabelY, { align: "center" });
-  doc.text("OKTAVIA DWI INDARTI, S.E.", marginL + col1W + col2W / 2, nameLabelY, { align: "center" });
-  doc.text("SITTI KHATIJAH, S.Ak.", marginL + col1W + col2W + col3W / 2, nameLabelY, { align: "center" });
   doc.text((actor.fullName || "").toUpperCase(), marginL + col1W + col2W + col3W + col4W / 2, nameLabelY, { align: "center" });
 
   // --- HEADER 2: MENGETAHUI/VERIFIKATOR ---
