@@ -202,23 +202,14 @@ export async function generateBeritaAcaraPDF(
     doc.text(":", dataColonX, y);
 
     if (row.special === "jenis_kelamin_status") {
-      // Tampilan: P  L  Janda  Duda  Lajang  Kepala Keluarga  (cetak tebal/kotak cek)
-      const jk = surveyData.jenisKelamin || "";
-      const st = surveyData.status || "";
+      // Formulir kosong static — semua opsi dicetak datar, diisi manual petugas
       const options = ["P", "L", "Janda", "Duda", "Lajang", "Kepala Keluarga"];
       let ox = dataValueX;
+      doc.setFont("helvetica", "normal");
       options.forEach((opt) => {
-        const isSel =
-          (opt === "P" && jk === "Perempuan") ||
-          (opt === "L" && (jk === "Laki-Laki" || jk === "Laki-laki")) ||
-          opt === st;
-        doc.setFont("helvetica", isSel ? "bold" : "normal");
         doc.text(opt, ox, y);
         ox += doc.getTextWidth(opt) + 6;
       });
-      // Garis bawah
-      doc.setLineWidth(0.2);
-      doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
       y += 6;
     } else {
       const lines = splitLines(doc, row.value, dataValueW);
@@ -244,29 +235,26 @@ export async function generateBeritaAcaraPDF(
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
   y += 6;
 
-  // No 6: DTKS
+  // No 6: DTKS — formulir kosong static, diisi manual petugas
+  doc.setFont("helvetica", "normal");
   doc.text("6.", marginL, y);
   doc.text("Apakah Saudara Masuk dalam DTKS ?", marginL + noW, y);
   doc.text(":", dataColonX, y);
-  const dtksVal = surveyData.dtks?.masuk ? "YA" : "TIDAK";
-  doc.text(dtksVal, dataValueX, y);
-  y += 5;
+  // Garis kosong untuk jawaban
+  doc.setLineWidth(0.2);
+  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
+  y += 6;
 
-  if (surveyData.dtks?.masuk) {
-    const dtksOptions = ["PKH", "BPNT", "KIP", "LANSIA"];
-    doc.text("Jika YA, DTKS Kategori *:", marginL + noW, y);
-    let ox = marginL + noW + doc.getTextWidth("Jika YA, DTKS Kategori *: ") + 2;
-    dtksOptions.forEach((opt) => {
-      const isSel = surveyData.dtks?.jenis === opt;
-      doc.setFont("helvetica", isSel ? "bold" : "normal");
-      doc.text(opt, ox, y);
-      ox += doc.getTextWidth(opt) + 5;
-    });
+  // Baris DTKS Kategori static
+  const dtksOptions = ["PKH", "BPNT", "KIP", "LANSIA"];
+  doc.text("Jika YA, DTKS Kategori *:", marginL + noW + 4, y);
+  let dtksOx = marginL + noW + 4 + doc.getTextWidth("Jika YA, DTKS Kategori *:  ");
+  dtksOptions.forEach((opt) => {
     doc.setFont("helvetica", "normal");
-    y += 6;
-  } else {
-    y += 2;
-  }
+    doc.text(opt, dtksOx, y);
+    dtksOx += doc.getTextWidth(opt) + 6;
+  });
+  y += 7;
 
   // Baris 7–14
   const moreRows = [
@@ -311,26 +299,23 @@ export async function generateBeritaAcaraPDF(
       doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
       y += 6;
     } else if (row.special === "hibah") {
+      // Formulir kosong static — diisi manual petugas
       doc.text(row.label, marginL + noW, y);
       doc.text(":", dataColonX, y);
-      if (surveyData.hibah?.pernah) {
-        doc.text(`YA  dari mana :`, dataValueX, y);
-        const ymW = doc.getTextWidth(`YA  dari mana : `);
-        doc.text(surveyData.hibah.dariMana || "", dataValueX + ymW, y);
-        doc.setLineWidth(0.2);
-        doc.line(dataValueX + ymW, y + lineY_offset, dataValueX + ymW + 50, y + lineY_offset);
-        const thnLabel = `   Tahun berapa : `;
-        const thnLabelW = doc.getTextWidth(thnLabel);
-        doc.text(thnLabel, dataValueX + ymW + 50, y);
-        doc.text(surveyData.hibah.tahun || "", dataValueX + ymW + 50 + thnLabelW, y);
-        doc.line(dataValueX + ymW + 50 + thnLabelW, y + lineY_offset, pageW - marginR, y + lineY_offset);
-        y += 6;
-        doc.text("TIDAK", dataValueX, y);
-        y += 6;
-      } else {
-        doc.text("TIDAK", dataValueX, y);
-        y += 6;
-      }
+      // Baris: YA dari mana : ______________ Tahun berapa : ______
+      const yaLabel = "YA  dari mana : ";
+      doc.text(yaLabel, dataValueX, y);
+      const yaW = doc.getTextWidth(yaLabel);
+      doc.setLineWidth(0.2);
+      doc.line(dataValueX + yaW, y + lineY_offset, dataValueX + yaW + 52, y + lineY_offset);
+      const thnLabel = "   Tahun berapa : ";
+      const thnLabelW = doc.getTextWidth(thnLabel);
+      doc.text(thnLabel, dataValueX + yaW + 52, y);
+      doc.line(dataValueX + yaW + 52 + thnLabelW, y + lineY_offset, pageW - marginR, y + lineY_offset);
+      y += 6;
+      // Baris kedua: TIDAK
+      doc.text("TIDAK", dataValueX, y);
+      y += 6;
     } else {
       doc.text(row.label, marginL + noW, y);
       doc.text(":", dataColonX, y);
