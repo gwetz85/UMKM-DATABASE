@@ -201,12 +201,26 @@ export async function generateBeritaAcaraPDF(
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
   y += 4.2;
 
-  // No HP
+  // No HP Pemilik Usaha
   doc.text("No HP Pemilik Usaha", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text(surveyData.noHp || actor.phone || "-", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 3.9;
+
+  // Email
+  doc.text("Email", marginL + noW, y);
+  doc.text(":", dataColonX, y);
+  doc.text(surveyData.email || "-", dataValueX, y);
+  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
+  y += 3.9;
+
+  // Account Media Sosial
+  doc.text("Account Media Sosial", marginL + noW, y);
+  doc.text(":", dataColonX, y);
+  doc.text(surveyData.sosmed || "-", dataValueX, y);
+  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
+  y += 3.9;
 
   // Row 6: DTKS
   doc.text("6.", marginL, y);
