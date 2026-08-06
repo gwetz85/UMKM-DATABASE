@@ -60,9 +60,7 @@ function FinishContent() {
     const row = (label: string, value: string | undefined) =>
       `<tr><td class="lbl">${label}</td><td class="sep">:</td><td class="val">${value || '-'}</td></tr>`
 
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) return
-    printWindow.document.write(`<!DOCTYPE html>
+    const htmlContent = `<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8"/>
@@ -127,7 +125,7 @@ function FinishContent() {
 <!-- KOP -->
 <div class="kop">
   <div class="kop-logo">
-    <img src="/logo-tunas-bangsa.png" alt="Logo Tunas Bangsa"/>
+    <img src="${window.location.origin}/logo-tunas-bangsa.png" alt="Logo Tunas Bangsa"/>
   </div>
   <div class="kop-center">
     <div class="org">Tunas Bangsa Kepulauan Riau</div>
@@ -233,11 +231,19 @@ ${a.verificationLocationDinas ? `
 </div>
 
 </div>
+<script>window.onload = function(){ window.print(); }<\/script>
 </body>
-</html>`)
-    printWindow.document.close()
-    printWindow.focus()
-    setTimeout(() => { printWindow.print() }, 600)
+</html>`
+
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
+    const blobUrl = URL.createObjectURL(blob)
+    const printWindow = window.open(blobUrl, '_blank')
+    if (!printWindow) {
+      URL.revokeObjectURL(blobUrl)
+      return
+    }
+    // Revoke the blob URL after the window has had time to load and print
+    setTimeout(() => { URL.revokeObjectURL(blobUrl) }, 10000)
   }
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
