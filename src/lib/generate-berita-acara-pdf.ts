@@ -26,10 +26,13 @@ export async function generateBeritaAcaraPDF(
   // ── FONTS ──────────────────────────────────────────────────────────────────
   doc.setFont("helvetica");
 
-  // ── LOAD LOGO ──────────────────────────────────────────────────────────────
+  // ── LOAD LOGO (Logo Pemprov Kepri) ──────────────────────────────────────────
   let logoBase64: string | null = null;
   try {
-    const res = await fetch("/logo.png");
+    let res = await fetch("/logo-kepri.png");
+    if (!res.ok) {
+      res = await fetch("/logo.png");
+    }
     const blob = await res.blob();
     logoBase64 = await new Promise<string>((resolve) => {
       const reader = new FileReader();
