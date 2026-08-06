@@ -42,40 +42,45 @@ export async function generateBeritaAcaraPDF(
     logoBase64 = null;
   }
 
-  // ── 1. KOP SURAT ───────────────────────────────────────────────────────────
-  let y = 8;
+  // ── 1. KOP SURAT (SAMA PERSIS DENGAN GAMBAR REFERENSI) ─────────────────────
+  let y = 6;
+  const logoH = 23;
+  const logoW = 23;
 
   // Logo Kepri (kiri)
   if (logoBase64) {
-    doc.addImage(logoBase64, "PNG", marginL, y, 18, 18);
+    doc.addImage(logoBase64, "PNG", marginL, y, logoW, logoH);
   }
 
-  // Teks KOP (tengah)
-  const kopX = pageW / 2;
-  doc.setFontSize(8.5);
-  doc.setFont("helvetica", "normal");
-  doc.text("PEMERINTAH PROVINSI KEPULAUAN RIAU", kopX, y + 2, { align: "center" });
+  // Center X untuk teks KOP (berada di tengah area sebelah kanan logo)
+  const kopTextCenterX = marginL + logoW + (contentW - logoW) / 2; // 15 + 23 + (180-23)/2 = 116.5 mm
 
-  doc.setFontSize(11.5);
+  // Baris 1: P E M E R I N T A H   P R O V I N S I   K E P U L A U A N   R I A U
+  doc.setFontSize(9.5);
+  doc.setFont("helvetica", "normal");
+  doc.text("P E M E R I N T A H   P R O V I N S I   K E P U L A U A N   R I A U", kopTextCenterX, y + 3, { align: "center" });
+
+  // Baris 2: DINAS KOPERASI, USAHA KECIL DAN MENENGAH (BOLD, BESAR)
+  doc.setFontSize(13.5);
   doc.setFont("helvetica", "bold");
-  doc.text("DINAS KOPERASI, USAHA KECIL DAN MENENGAH", kopX, y + 6.5, { align: "center" });
+  doc.text("DINAS KOPERASI, USAHA KECIL DAN MENENGAH", kopTextCenterX, y + 8, { align: "center" });
 
-  doc.setFontSize(7);
+  // Baris 3-6: Alamat & Kontak (7.5pt)
+  doc.setFontSize(7.5);
   doc.setFont("helvetica", "normal");
-  doc.text("Pusat Pemerintahan Provinsi Kepulauan Riau Bandar Seri Kota Piring", kopX, y + 10, { align: "center" });
-  doc.text("Kawasan Perkantoran Sultan Mahmud Riayat Syah Gedung Daeng Marewah B1", kopX, y + 13, { align: "center" });
-  doc.text("Lantai 3 Pulau Dompak Seri Darul Makmur \u2013 Tanjungpinang Kode Pos 29124", kopX, y + 16, { align: "center" });
-  doc.text("Pos-el : diskopukmsprovinsikepri@gmail.com    Laman : www.dinaskoperasiukm.kepriprov.go.id", kopX, y + 19, { align: "center" });
+  doc.text("Pusat Pemerintahan Provinsi Kepulauan Riau Bandar Seri Kota Piring", kopTextCenterX, y + 12, { align: "center" });
+  doc.text("Kawasan Perkantoran Sultan Mahmud Riayat Syah Gedung Daeng Marewah B1", kopTextCenterX, y + 15.5, { align: "center" });
+  doc.text("Lantai 3 Pulau Dompak Seri Darul Makmur \u2013 Tanjungpinang Kode Pos 29124", kopTextCenterX, y + 19, { align: "center" });
+  doc.text("Pos-el : diskopukmsprovinsikepri@gmail.com Laman : www.dinaskoperasiukm.kepriprov.go.id", kopTextCenterX, y + 22.5, { align: "center" });
 
-  // Garis tebal & tipis KOP
-  y = 28.5;
-  doc.setLineWidth(0.8);
-  doc.line(marginL, y, pageW - marginR, y);
-  y += 0.8;
-  doc.setLineWidth(0.3);
+  // Garis Bawah KOP (Satu garis tebal hitam presisi)
+  y = 30;
+  doc.setLineWidth(1.0);
+  doc.setDrawColor(0, 0, 0);
   doc.line(marginL, y, pageW - marginR, y);
 
   // ── 2. JUDUL DOKUMEN ───────────────────────────────────────────────────────
+  const kopX = pageW / 2;
   y += 4.5;
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
