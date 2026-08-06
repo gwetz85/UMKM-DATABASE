@@ -383,11 +383,11 @@ export async function generateBeritaAcaraPDF(
   const metaSignY = metaHeaderY + metaHeaderH;
   const metaSignH = 26;
 
-  // Box 1: Kosong + titik-titik di bawah
+  // Box 1: Kosong + titik-titik di bawah (rapi di dalam kotak 45mm)
   doc.rect(marginL, metaSignY, col1W, metaSignH);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.text("....................................................................", marginL + col1W / 2, metaSignY + metaSignH - 3, { align: "center" });
+  doc.text("...................................................", marginL + col1W / 2, metaSignY + metaSignH - 3, { align: "center" });
 
   // Box 2: Header Catatan :
   doc.rect(marginL + col1W, metaSignY, col2W, metaSignH);
@@ -395,17 +395,17 @@ export async function generateBeritaAcaraPDF(
   doc.setFontSize(7.5);
   doc.text("Catatan :", marginL + col1W + 2, metaSignY + 4);
 
-  // Box 3: Header KORLAP/RT/RT/LURAH/CAMAT SETEMPAT (light green fill) + titik-titik di bawah
+  // Box 3: Header KORLAP/RT/RW/LURAH/CAMAT SETEMPAT (light green fill) + titik-titik di bawah
   const subH3 = 5.5;
   doc.setFillColor(226, 239, 218);
   doc.rect(marginL + col1W + col2W, metaSignY, col3W, subH3, "FD");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(6);
-  doc.text("KORLAP/RT/RT/LURAH/CAMAT SETEMPAT", marginL + col1W + col2W + col3W / 2, metaSignY + 3.8, { align: "center" });
+  doc.setFontSize(5.2); // Font disesuaikan agar tidak melanggar garis batas kiri & kanan
+  doc.text("KORLAP/RT/RW/LURAH/CAMAT SETEMPAT", marginL + col1W + col2W + col3W / 2, metaSignY + 3.6, { align: "center" });
   doc.rect(marginL + col1W + col2W, metaSignY + subH3, col3W, metaSignH - subH3);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.text("....................................................................", marginL + col1W + col2W + col3W / 2, metaSignY + metaSignH - 3, { align: "center" });
+  doc.text("...................................................", marginL + col1W + col2W + col3W / 2, metaSignY + metaSignH - 3, { align: "center" });
 
   // Box 4: Header Catatan :
   doc.rect(marginL + col1W + col2W + col3W, metaSignY, col4W, metaSignH);
