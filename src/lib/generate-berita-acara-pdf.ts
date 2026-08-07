@@ -404,7 +404,7 @@ export async function generateBeritaAcaraPDF(
   // Content inside Calon Penerima Dana Hibah Box:
   if (surveyPhotoData) {
     const maxW = 64; // Max 64mm width inside 70mm box
-    const maxH = 14; // Max 14mm height inside 26mm box
+    const maxH = 17; // Max 17mm height inside 26mm box
     let imgW = maxW;
     let imgH = imgW * (surveyPhotoData.h / surveyPhotoData.w);
     if (imgH > maxH) {
@@ -420,65 +420,57 @@ export async function generateBeritaAcaraPDF(
       console.error("Error embedding survey photo:", e);
     }
 
-    // Nama Calon Penerima Dana Hibah di bawah foto
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7);
-    doc.text((actor.fullName || "").toUpperCase(), penerimaX + colPenerimaW / 2, signY + 18, { align: "center" });
-
-    // Badge: Centang Hijau + TERVERIFIKASI
+    // Badge: Centang Hijau + TERVERIFIKASI (di bawah foto)
     const textVerif = "TERVERIFIKASI";
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.5);
+    doc.setFontSize(8);
     const textVerifW = doc.getTextWidth(textVerif);
-    const iconW = 4;
-    const badgeTotalW = iconW + 1 + textVerifW;
+    const iconW = 4.5;
+    const badgeTotalW = iconW + 1.5 + textVerifW;
     const badgeStartX = penerimaX + (colPenerimaW - badgeTotalW) / 2;
-    const badgeY = signY + 22.5;
+    const badgeY = Math.min(signY + imgH + 4.5, signY + 23.5);
 
     // Green Circle
     doc.setFillColor(34, 197, 94);
-    doc.circle(badgeStartX + 1.8, badgeY - 1.0, 2.0, "F");
+    doc.circle(badgeStartX + 2.0, badgeY - 1.2, 2.2, "F");
 
     // White Checkmark
     doc.setDrawColor(255, 255, 255);
-    doc.setLineWidth(0.5);
-    doc.line(badgeStartX + 0.9, badgeY - 1.0, badgeStartX + 1.5, badgeY - 0.4);
-    doc.line(badgeStartX + 1.5, badgeY - 0.4, badgeStartX + 2.8, badgeY - 1.7);
+    doc.setLineWidth(0.6);
+    doc.line(badgeStartX + 1.0, badgeY - 1.2, badgeStartX + 1.7, badgeY - 0.5);
+    doc.line(badgeStartX + 1.7, badgeY - 0.5, badgeStartX + 3.1, badgeY - 1.9);
 
     // Green TERVERIFIKASI Text
     doc.setTextColor(22, 163, 74);
-    doc.text(textVerif, badgeStartX + iconW + 1, badgeY, { align: "left" });
+    doc.text(textVerif, badgeStartX + iconW + 1.5, badgeY, { align: "left" });
 
     // Reset colors
     doc.setTextColor(0, 0, 0);
     doc.setDrawColor(0, 0, 0);
   } else {
-    // Foto tidak tersedia: Tampilkan Nama & TERVERIFIKASI badge saja
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(7.5);
-    doc.text((actor.fullName || "").toUpperCase(), penerimaX + colPenerimaW / 2, signY + 14, { align: "center" });
-
+    // Foto tidak tersedia: Tampilkan TERVERIFIKASI badge di tengah kotak
     const textVerif = "TERVERIFIKASI";
-    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
     const textVerifW = doc.getTextWidth(textVerif);
-    const iconW = 4;
-    const badgeTotalW = iconW + 1 + textVerifW;
+    const iconW = 5;
+    const badgeTotalW = iconW + 1.5 + textVerifW;
     const badgeStartX = penerimaX + (colPenerimaW - badgeTotalW) / 2;
-    const badgeY = signY + 20;
+    const badgeY = signY + 14;
 
     // Green Circle
     doc.setFillColor(34, 197, 94);
-    doc.circle(badgeStartX + 1.8, badgeY - 1.0, 2.0, "F");
+    doc.circle(badgeStartX + 2.2, badgeY - 1.4, 2.5, "F");
 
     // White Checkmark
     doc.setDrawColor(255, 255, 255);
-    doc.setLineWidth(0.5);
-    doc.line(badgeStartX + 0.9, badgeY - 1.0, badgeStartX + 1.5, badgeY - 0.4);
-    doc.line(badgeStartX + 1.5, badgeY - 0.4, badgeStartX + 2.8, badgeY - 1.7);
+    doc.setLineWidth(0.7);
+    doc.line(badgeStartX + 1.1, badgeY - 1.4, badgeStartX + 1.9, badgeY - 0.6);
+    doc.line(badgeStartX + 1.9, badgeY - 0.6, badgeStartX + 3.4, badgeY - 2.1);
 
     // Green TERVERIFIKASI Text
     doc.setTextColor(22, 163, 74);
-    doc.text(textVerif, badgeStartX + iconW + 1, badgeY, { align: "left" });
+    doc.text(textVerif, badgeStartX + iconW + 1.5, badgeY, { align: "left" });
 
     // Reset colors
     doc.setTextColor(0, 0, 0);
