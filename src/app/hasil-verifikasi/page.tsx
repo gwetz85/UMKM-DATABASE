@@ -69,6 +69,12 @@ export default function HasilVerifikasiPage() {
 
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     if (a.status !== 'verified_dinas' || a.hasilVerifikasiDinas !== 'Lolos' || !(a as any).berkasDinasVerified) return false;
+    if (isPetugas) {
+      if (!userProfile?.fullName) return false;
+      const userPetugasUpper = String(userProfile.fullName).toUpperCase().trim();
+      const actorPetugasUpper = String(a.petugasSurvey || a.createdBy || "").toUpperCase().trim();
+      return actorPetugasUpper === userPetugasUpper;
+    }
     if (isKoordinator) {
       if (!a.coordinator || !userProfile?.fullName) return false;
       return a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase();
