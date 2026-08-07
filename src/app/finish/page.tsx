@@ -256,15 +256,29 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
   Sistem Informasi SIMPU &bull; Dicetak: ${new Date().toLocaleString('id-ID')} &bull; Kode Reg: ${regCode}
 </div>
 </div>
-<script>window.onload = function(){ window.print(); }<\/script>
 </body>
 </html>`
 
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
-    const blobUrl = URL.createObjectURL(blob)
-    const printWindow = window.open(blobUrl, '_blank')
-    if (!printWindow) { URL.revokeObjectURL(blobUrl); return }
-    setTimeout(() => { URL.revokeObjectURL(blobUrl) }, 10000)
+    // Gunakan hidden iframe agar tidak terkena popup blocker
+    let iframe = document.getElementById('__print_iframe__') as HTMLIFrameElement | null
+    if (!iframe) {
+      iframe = document.createElement('iframe')
+      iframe.id = '__print_iframe__'
+      iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;'
+      document.body.appendChild(iframe)
+    }
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
+    if (!iframeDoc) return
+
+    iframeDoc.open()
+    iframeDoc.write(htmlContent)
+    iframeDoc.close()
+
+    setTimeout(() => {
+      iframe!.contentWindow?.focus()
+      iframe!.contentWindow?.print()
+    }, 500)
   }
 
   // ── Excel Export ──────────────────────────────────────────────────────────
