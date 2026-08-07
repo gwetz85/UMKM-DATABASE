@@ -74,3 +74,16 @@ export interface BusinessActor {
   verificationLocationDinas?: { lat: number; lon: number };
   googleDriveLink?: string;
 }
+
+export interface PejabatItem {
+  nama: string;
+  nipppk: string;
+  pangkat: string;
+  jabatan: string;
+}
+
+export interface PejabatData {
+  verifikator: PejabatItem;
+  petugas: PejabatItem;
+  updatedAt?: string;
+}

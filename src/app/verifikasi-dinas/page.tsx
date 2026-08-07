@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
 import { ref, query, orderByChild, equalTo } from "firebase/database"
@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Progress } from "@/components/ui/progress"
-import { SurveyDinasData } from "../lib/types"
+import { SurveyDinasData, PejabatData } from "../lib/types"
 
 import { Textarea } from "@/components/ui/textarea"
 import { BusinessActor } from "../lib/types"
@@ -39,7 +39,8 @@ import {
   Camera,
   Upload,
   Folder,
-  FileDown
+  FileDown,
+  Edit
 } from "lucide-react"
 import { generateBeritaAcaraPDF } from "@/lib/generate-berita-acara-pdf"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -64,6 +65,20 @@ export default function VerifikasiDinasPage() {
   const [selectedChoice, setSelectedChoice] = useState<'survey' | 'cancel' | null>(null)
   const [cancelReason, setCancelReason] = useState("")
   const [isSubmittingCancel, setIsSubmittingCancel] = useState(false)
+
+  // Pejabat Modal (First Login for Petugas Survey)
+  const [showPejabatModal, setShowPejabatModal] = useState(false)
+  const [isSavingPejabat, setIsSavingPejabat] = useState(false)
+  const [pejabatForm, setPejabatForm] = useState({
+    verifikatorNama: "",
+    verifikatorNipppk: "",
+    verifikatorPangkat: "",
+    verifikatorJabatan: "",
+    petugasNama: "",
+    petugasNipppk: "",
+    petugasPangkat: "",
+    petugasJabatan: "",
+  })
 
   const [surveyData, setSurveyData] = useState<Partial<SurveyDinasData>>({})
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
@@ -240,6 +255,19 @@ export default function VerifikasiDinasPage() {
   const isDinas = userProfile?.role === 'dinas'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
 
+  // Auto-show pejabat modal on first petugas login if not yet filled
+  useEffect(() => {
+    if (isPetugas && userProfile) {
+      const pd = (userProfile as any).pejabatData as PejabatData | undefined
+      if (!pd?.verifikator?.nama) {
+        // Pre-fill petugas nama from profile
+        setPejabatForm(prev => ({ ...prev, petugasNama: userProfile.fullName || "" }))
+        setShowPejabatModal(true)
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPetugas, userProfile?.id])
+
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
     if (isPetugas && userProfile?.fullName) {
@@ -355,7 +383,8 @@ export default function VerifikasiDinasPage() {
     }
     setGeneratingPdfId(actor.id)
     try {
-      await generateBeritaAcaraPDF(actor, actor.surveyData)
+      const pejabatData = (userProfile as any)?.pejabatData as PejabatData | undefined
+      await generateBeritaAcaraPDF(actor, actor.surveyData, pejabatData)
       toast({ title: "PDF Berhasil Dibuat", description: `Berita Acara Survey untuk ${actor.fullName} telah diunduh.` })
     } catch (err) {
       console.error(err)
@@ -363,6 +392,28 @@ export default function VerifikasiDinasPage() {
     } finally {
       setGeneratingPdfId(null)
     }
+  }
+
+  const handleSavePejabat = async () => {
+    if (!user || !database) return
+    const { verifikatorNama, verifikatorNipppk, verifikatorPangkat, verifikatorJabatan,
+            petugasNama, petugasNipppk, petugasPangkat, petugasJabatan } = pejabatForm
+    if (!verifikatorNama || !verifikatorNipppk || !verifikatorPangkat || !verifikatorJabatan ||
+        !petugasNama || !petugasNipppk || !petugasPangkat || !petugasJabatan) {
+      toast({ variant: "destructive", title: "Lengkapi Data", description: "Semua kolom wajib diisi." })
+      return
+    }
+    setIsSavingPejabat(true)
+    const pejabatData: PejabatData = {
+      verifikator: { nama: verifikatorNama, nipppk: verifikatorNipppk, pangkat: verifikatorPangkat, jabatan: verifikatorJabatan },
+      petugas: { nama: petugasNama, nipppk: petugasNipppk, pangkat: petugasPangkat, jabatan: petugasJabatan },
+      updatedAt: new Date().toISOString()
+    }
+    const { ref: dbRef, update } = await import('firebase/database')
+    await update(dbRef(database, `system_users/${user.uid}`), { pejabatData })
+    toast({ title: "Data Tersimpan", description: "Data pejabat berhasil disimpan dan akan otomatis muncul pada Berita Acara." })
+    setIsSavingPejabat(false)
+    setShowPejabatModal(false)
   }
 
   const handleDeleteAll = () => {
@@ -419,6 +470,34 @@ export default function VerifikasiDinasPage() {
           <p className="text-muted-foreground mt-1">Lakukan verifikasi tingkat dinas untuk data pelaku usaha yang telah diloloskan Admin.</p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* Edit Pejabat Data Button for Petugas Survey */}
+          {isPetugas && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const pd = (userProfile as any)?.pejabatData as PejabatData | undefined
+                if (pd) {
+                  setPejabatForm({
+                    verifikatorNama: pd.verifikator?.nama || "",
+                    verifikatorNipppk: pd.verifikator?.nipppk || "",
+                    verifikatorPangkat: pd.verifikator?.pangkat || "",
+                    verifikatorJabatan: pd.verifikator?.jabatan || "",
+                    petugasNama: pd.petugas?.nama || "",
+                    petugasNipppk: pd.petugas?.nipppk || "",
+                    petugasPangkat: pd.petugas?.pangkat || "",
+                    petugasJabatan: pd.petugas?.jabatan || "",
+                  })
+                }
+                setShowPejabatModal(true)
+              }}
+              className="h-11 gap-2 rounded-xl border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 font-semibold shrink-0"
+            >
+              <Edit className="w-4 h-4" />
+              <span className="hidden sm:inline">Edit Data Pejabat</span>
+              <span className="sm:hidden">Pejabat</span>
+            </Button>
+          )}
           <div className="relative flex-1 md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
@@ -1185,6 +1264,96 @@ export default function VerifikasiDinasPage() {
                </div>
              </div>
            ))}
+        </div>
+      )}
+
+      {/* ─── PEJABAT MODAL (First Login / Edit) ──────────────────────── */}
+      {showPejabatModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-8 py-6">
+              <h2 className="text-white text-xl font-black uppercase tracking-wide">Data Pejabat Berita Acara</h2>
+              <p className="text-indigo-200 text-sm mt-1">Isi data pejabat yang akan ditampilkan pada dokumen Berita Acara Survey. Data hanya diisi sekali dan dapat diedit kapan saja.</p>
+            </div>
+
+            <div className="px-8 py-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              {/* Kolom 1 – Verifikator Dinas */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-black flex items-center justify-center">1</div>
+                  <h3 className="font-black text-sm uppercase tracking-wider text-indigo-800">Data Verifikator Dinas</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
+                  {([
+                    { label: 'Nama', key: 'verifikatorNama', placeholder: 'Nama lengkap verifikator' },
+                    { label: 'NIPPPK', key: 'verifikatorNipppk', placeholder: 'Nomor NIPPPK' },
+                    { label: 'Pangkat / Gol. Ruang', key: 'verifikatorPangkat', placeholder: 'Contoh: Penata, III/c' },
+                    { label: 'Jabatan', key: 'verifikatorJabatan', placeholder: 'Jabatan verifikator' },
+                  ] as {label: string; key: keyof typeof pejabatForm; placeholder: string}[]).map(field => (
+                    <div key={field.key} className="space-y-1">
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">{field.label} <span className="text-red-500">*</span></label>
+                      <input
+                        value={pejabatForm[field.key]}
+                        onChange={e => setPejabatForm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                        placeholder={field.placeholder}
+                        className="flex h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+
+              {/* Kolom 2 – Petugas Survey */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-violet-600 text-white text-xs font-black flex items-center justify-center">2</div>
+                  <h3 className="font-black text-sm uppercase tracking-wider text-violet-800">Data Petugas Survey</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
+                  {([
+                    { label: 'Nama', key: 'petugasNama', placeholder: 'Nama lengkap petugas survey' },
+                    { label: 'NIPPPK', key: 'petugasNipppk', placeholder: 'Nomor NIPPPK' },
+                    { label: 'Pangkat / Gol. Ruang', key: 'petugasPangkat', placeholder: 'Contoh: Pengatur, II/c' },
+                    { label: 'Jabatan', key: 'petugasJabatan', placeholder: 'Jabatan petugas survey' },
+                  ] as {label: string; key: keyof typeof pejabatForm; placeholder: string}[]).map(field => (
+                    <div key={field.key} className="space-y-1">
+                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">{field.label} <span className="text-red-500">*</span></label>
+                      <input
+                        value={pejabatForm[field.key]}
+                        onChange={e => setPejabatForm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                        placeholder={field.placeholder}
+                        className="flex h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-8 py-5 border-t bg-slate-50 flex justify-between items-center">
+              <p className="text-xs text-slate-500">Data ini hanya diisi sekali dan akan otomatis terisi pada setiap Berita Acara Survey Anda.</p>
+              <div className="flex gap-3">
+                {/* Only allow close/skip if data already exists */}
+                {(userProfile as any)?.pejabatData?.verifikator?.nama && (
+                  <Button variant="ghost" onClick={() => setShowPejabatModal(false)} className="text-slate-500">
+                    Batal
+                  </Button>
+                )}
+                <Button
+                  onClick={handleSavePejabat}
+                  disabled={isSavingPejabat}
+                  className="min-w-[140px] bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold rounded-xl shadow-lg"
+                >
+                  {isSavingPejabat ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                  Simpan Data
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

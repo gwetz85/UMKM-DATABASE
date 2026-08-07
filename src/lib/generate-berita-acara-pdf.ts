@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import { BusinessActor, SurveyDinasData } from "@/app/lib/types";
+import { BusinessActor, SurveyDinasData, PejabatData } from "@/app/lib/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: wrap text and return array of lines
@@ -48,7 +48,8 @@ async function loadSurveyPhoto(url: string): Promise<{ base64: string; format: s
 // ─────────────────────────────────────────────────────────────────────────────
 export async function generateBeritaAcaraPDF(
   actor: BusinessActor,
-  surveyData: SurveyDinasData
+  surveyData: SurveyDinasData,
+  pejabatData?: PejabatData
 ): Promise<void> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
@@ -152,10 +153,29 @@ export async function generateBeritaAcaraPDF(
   const afterHari = `   ,  tanggal  ${tgl} ${bln} ${thn}   ,  yang bertandatangan dibawah ini :`;
   doc.text(afterHari, marginL + prefixW + hariW, y);
 
-  // ── 4. PEJABAT 1 & 2 (Dikosongkan) ─────────────────────────────────────────
-  const pejabat = [
-    { no: "1.", fields: ["NAMA", "NIPPPK", "Pangkat/Gol. Ruang", "Jabatan"] },
-    { no: "2.", fields: ["NAMA", "NIPPPK", "Pangkat/Gol. Ruang", "Jabatan"] },
+  // ── 4. PEJABAT 1 & 2 ───────────────────────────────────────────────────────
+  const p1 = pejabatData?.verifikator || { nama: "", nipppk: "", pangkat: "", jabatan: "" };
+  const p2 = pejabatData?.petugas || { nama: "", nipppk: "", pangkat: "", jabatan: "" };
+
+  const pejabatList = [
+    {
+      no: "1.",
+      fields: [
+        { label: "NAMA", val: p1.nama || "" },
+        { label: "NIPPPK", val: p1.nipppk || "" },
+        { label: "Pangkat/Gol. Ruang", val: p1.pangkat || "" },
+        { label: "Jabatan", val: p1.jabatan || "" },
+      ]
+    },
+    {
+      no: "2.",
+      fields: [
+        { label: "NAMA", val: p2.nama || "" },
+        { label: "NIPPPK", val: p2.nipppk || "" },
+        { label: "Pangkat/Gol. Ruang", val: p2.pangkat || "" },
+        { label: "Jabatan", val: p2.jabatan || "" },
+      ]
+    },
   ];
 
   const labelColW = 32;
@@ -165,20 +185,21 @@ export async function generateBeritaAcaraPDF(
   y += 4.5;
   doc.setFontSize(8.5);
 
-  pejabat.forEach((p, idx) => {
+  pejabatList.forEach((p, idx) => {
     doc.setFont("helvetica", "normal");
     doc.text(p.no, marginL, y);
 
-    p.fields.forEach((label, fi) => {
+    p.fields.forEach((item, fi) => {
       doc.setFont("helvetica", "normal");
-      doc.text(label, marginL + 6, y);
+      doc.text(item.label, marginL + 6, y);
       doc.text(":", colonX, y);
-      doc.text("", valueX, y); // dikosongkan
+      doc.setFont("helvetica", "bold");
+      doc.text(item.val, valueX, y);
 
       if (fi < p.fields.length - 1) y += 3.8;
     });
 
-    y += (idx < pejabat.length - 1) ? 5 : 4;
+    y += (idx < pejabatList.length - 1) ? 5 : 4;
   });
 
   // ── 5. KALIMAT PEMBUKA ─────────────────────────────────────────────────────
@@ -404,6 +425,17 @@ export async function generateBeritaAcaraPDF(
   // Box Tim Survey 1 & 2
   doc.rect(marginL, signY, col1W, signBoxH);
   doc.rect(marginL + col1W, signY, col2W, signBoxH);
+
+  if (p1.nama) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.text(p1.nama.toUpperCase(), marginL + col1W / 2, signY + signBoxH - 2.5, { align: "center" });
+  }
+  if (p2.nama) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.text(p2.nama.toUpperCase(), marginL + col1W + col2W / 2, signY + signBoxH - 2.5, { align: "center" });
+  }
 
   // Box Calon Penerima Dana Hibah
   const penerimaX = marginL + colTimSurveyW;
