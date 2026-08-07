@@ -2,22 +2,22 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
-import { ref, query, equalTo, limitToFirst, orderByChild } from "firebase/database"
+import { ref, query, equalTo, orderByChild } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, RotateCcw, Eye, User, CreditCard, History, X, Building2, MapPin, BadgeCheck, FileText, Search, Trash2, Folder } from "lucide-react"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Printer, Edit3, Loader2, Save, RotateCcw, User, CreditCard, History, Building2, MapPin, BadgeCheck, FileText, Search, Trash2, Folder, FileSpreadsheet } from "lucide-react"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
-import { useSearchParams, useRouter } from "next/navigation"
-import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import * as XLSX from 'xlsx'
 
 export default function FinishPage() {
   return (
@@ -35,20 +35,74 @@ function FinishContent() {
   const { user, userProfile } = useUser()
   const database = useDatabase()
   const { toast } = useToast()
-  const router = useRouter()
   const searchParams = useSearchParams()
   const filterCoordinator = searchParams.get('coordinator')
-  
-  const [editingActor, setEditingActor] = useState<BusinessActor | null>(null)
+
   const [searchQuery, setSearchQuery] = useState("")
   const [category, setCategory] = useState<string>("")
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
-  const [printDate, setPrintDate] = useState<string>("")
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [showRevertDialog, setShowRevertDialog] = useState(false)
+  const [revertPending, setRevertPending] = useState<{ actorId: string; fullName: string } | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deletePending, setDeletePending] = useState<{ actorId: string; fullName: string } | null>(null)
+  const [editNik, setEditNik] = useState("")
+  const [editPob, setEditPob] = useState("")
+  const [editDob, setEditDob] = useState("")
 
   useEffect(() => {
-    setPrintDate(new Date().toLocaleString('id-ID'))
-  }, [])
+    if (viewingActor) {
+      const parsed = parsePobDob(viewingActor.pobDob || "")
+      setEditNik(viewingActor.nik || "")
+      setEditPob(parsed.pob || viewingActor.pob || "")
+      setEditDob(parsed.dob || viewingActor.dob || "")
+    } else {
+      setEditNik("")
+      setEditPob("")
+      setEditDob("")
+      setIsEditMode(false)
+    }
+  }, [viewingActor])
 
+  // ── Firebase ──────────────────────────────────────────────────────────────
+  const adminRef = useMemoFirebase(() => {
+    if (!user || !database) return null
+    return ref(database, `roles_admin/${user.uid}`)
+  }, [user, database])
+  const { data: adminRole } = useObject(adminRef)
+
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const isKoordinator = userProfile?.role === 'koordinator'
+
+  const memoQuery = useMemoFirebase(() => {
+    if (!database) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('finish'))
+  }, [database])
+
+  const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
+
+  const actors = allActorsRaw
+    ? allActorsRaw
+        .filter(a => {
+          if (!a.lpjNominal) return false
+          const matchesSearch =
+            a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            a.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            a.nik?.includes(searchQuery)
+          const matchesCategory = !category || a.businessCategory === category
+          if (isKoordinator) {
+            if (!a.coordinator || !userProfile?.fullName) return false
+            return matchesSearch && matchesCategory && a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase()
+          }
+          if (filterCoordinator) {
+            return matchesSearch && matchesCategory && a.coordinator === filterCoordinator
+          }
+          return matchesSearch && matchesCategory
+        })
+        .sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""))
+    : undefined
+
+  // ── Print ─────────────────────────────────────────────────────────────────
   const handlePrintActor = (actor: BusinessActor) => {
     const a = actor as any
     const sd = a.surveyData || {}
@@ -69,167 +123,138 @@ function FinishContent() {
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Arial',sans-serif;font-size:11px;color:#222;background:white;}
   .page{width:210mm;min-height:297mm;margin:0 auto;padding:15mm;}
-
-  /* === KOP === */
   .kop{display:flex;align-items:center;justify-content:center;gap:20px;padding-bottom:10px;}
-  .kop-logo{text-align:center;}
   .kop-logo img{width:80px;height:auto;object-fit:contain;}
   .kop-center{text-align:center;padding-top:4px;}
   .kop-center .org{font-size:16px;font-weight:bold;color:#1565C0;text-transform:uppercase;letter-spacing:0.5px;}
   .kop-center .sub{font-size:10px;font-weight:bold;color:#555;text-transform:uppercase;margin-top:4px;}
   .kop-line{height:2px;background:#1565C0;margin-top:2px;margin-bottom:20px;}
-
-  /* === JUDUL === */
   .judul-row{text-align:center;margin-bottom:20px;}
   .judul-text{font-size:16px;font-weight:bold;text-transform:uppercase;color:#1565C0;letter-spacing:0.5px;}
   .judul-underline{width:90px;height:4px;background:#4285F4;margin:6px auto 0 auto;}
-
-  /* === SECTION === */
-  .section{margin-bottom:10px; page-break-inside:avoid;}
+  .section{margin-bottom:12px;page-break-inside:avoid;}
   .sec-hdr{background:#EEF5FF;color:#1565C0;font-weight:bold;font-size:11px;padding:6px 12px;text-transform:uppercase;}
   .sec-body{padding:0;}
-
-  /* === TABLE === */
   table{width:100%;border-collapse:collapse;}
   td.lbl{width:30%;font-weight:bold;font-size:11px;padding:7px 12px;color:#222;}
   td.sep{width:10px;padding:7px 2px;color:#555;}
   td.val{font-size:11px;padding:7px 12px;color:#555;text-transform:uppercase;}
-  tr{border-bottom:1px solid #F0F0F0; page-break-inside:avoid;}
+  tr{border-bottom:1px solid #F0F0F0;page-break-inside:avoid;}
   tr:last-child{border-bottom:none;}
-
-  /* === SURVEY TABLE === */
   .stbl{width:100%;border-collapse:collapse;font-size:11px;}
-  .stbl th, .stbl td{padding:7px 12px;border-bottom:1px solid #F0F0F0;}
+  .stbl th,.stbl td{padding:7px 12px;border-bottom:1px solid #F0F0F0;}
   .stbl th{font-weight:bold;color:#222;text-align:left;width:25%;}
   .stbl td{color:#555;text-transform:uppercase;}
-
-  /* === LPJ === */
-  .lpj-box{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;}
-  .lpj-nom{font-size:16px;font-weight:bold;color:#555;}
+  .lpj-box{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;}
+  .lpj-nom{font-size:16px;font-weight:bold;color:#1565C0;}
   .lpj-badge{background:#E8F5E9;color:#2E7D32;font-weight:bold;font-size:10px;padding:6px 14px;border:1px solid #81C784;border-radius:4px;}
-
-  /* === FOOTER === */
   .footer{margin-top:15px;border-top:1px solid #F0F0F0;padding-top:10px;text-align:center;font-size:9px;color:#888;}
-
   @media print{
-    @page { size: A4; margin: 15mm; }
+    @page{size:A4;margin:15mm;}
     .page{width:100%;min-height:auto;margin:0;padding:0;}
-    body{background:white;}
     .sec-hdr{background:#EEF5FF !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   }
 </style>
 </head>
 <body>
 <div class="page">
-
-<!-- KOP -->
 <div class="kop">
-  <div class="kop-logo">
-    <img src="${window.location.origin}/logo-tunas-bangsa.png" alt="Logo Tunas Bangsa"/>
-  </div>
+  <div class="kop-logo"><img src="${window.location.origin}/logo-tunas-bangsa.png" alt="Logo"/></div>
   <div class="kop-center">
     <div class="org">Tunas Bangsa Kepulauan Riau</div>
     <div class="sub">Pengajuan Bantuan UMKM Tahun 2026</div>
   </div>
 </div>
 <div class="kop-line"></div>
-
-<!-- JUDUL -->
 <div class="judul-row">
   <div class="judul-text">Formulir Biodata Pelaku Usaha</div>
   <div class="judul-underline"></div>
 </div>
 
-<!-- I. DATA PRIBADI -->
 <div class="section">
-  <div class="sec-hdr">I. DATA PRIBADI</div>
-  <div class="sec-body">
-    <table>
-      ${row('Nama Lengkap', actor.fullName)}
-      ${row('NIK', actor.nik)}
-      ${row('Nomor Kartu Keluarga', actor.noKK)}
-      ${row('Jenis Kelamin', actor.gender)}
-      ${row('Tempat Lahir', pob)}
-      ${row('Tanggal Lahir', dob)}
-      ${row('Nomor HP / WhatsApp', actor.phone)}
-      ${row('Kecamatan / Kelurahan', (actor.kecamatan && actor.kelurahan) ? actor.kecamatan + ' / ' + actor.kelurahan : (actor.kecamatan || actor.kelurahan || '-'))}
-      ${row('Alamat Domisili', actor.address)}
-    </table>
-  </div>
+  <div class="sec-hdr">I. DATA PRIBADI PELAKU USAHA</div>
+  <div class="sec-body"><table>
+    ${row('Nomor Registrasi', regCode)}
+    ${row('Nama Lengkap', actor.fullName)}
+    ${row('NIK', actor.nik)}
+    ${row('Nomor Kartu Keluarga', actor.noKK)}
+    ${row('Jenis Kelamin', actor.gender)}
+    ${row('Tempat Lahir', pob)}
+    ${row('Tanggal Lahir', dob)}
+    ${row('Nomor HP / WhatsApp', actor.phone)}
+    ${row('Kecamatan / Kelurahan', (actor.kecamatan && actor.kelurahan) ? actor.kecamatan + ' / ' + actor.kelurahan : (actor.kecamatan || actor.kelurahan || '-'))}
+    ${row('RT / RW', actor.rtRw)}
+    ${row('Alamat Domisili Lengkap', actor.address)}
+  </table></div>
 </div>
 
-<!-- II. INFORMASI USAHA -->
 <div class="section">
   <div class="sec-hdr">II. INFORMASI USAHA</div>
-  <div class="sec-body">
-    <table>
-      ${row('Nama Usaha', actor.businessName)}
-      ${row('Kategori Usaha', actor.businessCategory)}
-      ${row('Lokasi Usaha', actor.businessLocation)}
-      ${row('Korlap / Koordinator', actor.coordinator)}
-    </table>
-  </div>
+  <div class="sec-body"><table>
+    ${row('Nama Usaha', actor.businessName)}
+    ${row('Kategori Usaha', actor.businessCategory)}
+    ${row('Alamat / Lokasi Usaha', actor.businessLocation)}
+    ${row('Pengusul / Koordinator', actor.coordinator)}
+  </table></div>
 </div>
 
-<!-- III. DATA PERBANKAN -->
 <div class="section">
-  <div class="sec-hdr">III. DATA PERBANKAN</div>
-  <div class="sec-body">
-    <table>
-      ${row('Nama Bank', actor.bankName)}
-      ${row('Nomor Rekening', actor.bankNumber)}
-      ${row('Nama Pemilik Rekening', actor.bankOwner)}
-    </table>
-  </div>
+  <div class="sec-hdr">III. DATA KEUANGAN / PERBANKAN</div>
+  <div class="sec-body"><table>
+    ${row('Nama Bank', actor.bankName)}
+    ${row('Nomor Rekening', actor.bankNumber)}
+    ${row('Nama Pemilik Rekening', actor.bankOwner)}
+  </table></div>
 </div>
 
-<!-- IV. HASIL SURVEY DINAS -->
 <div class="section">
   <div class="sec-hdr">IV. HASIL SURVEY DINAS</div>
-  <div class="sec-body">
-    <table class="stbl">
-      <tr><th>Bidang Usaha</th><td>${sd.bidangUsaha||'-'}</td><th>Tahun Berdiri</th><td>${sd.tahunBerdiri||'-'}</td></tr>
-      <tr><th>Peralatan Usaha</th><td>${sd.peralatan||'-'}</td><th>Email</th><td>${sd.email||'-'}</td></tr>
-      <tr><th>Sosial Media</th><td>${sd.sosmed||'-'}</td><th>DTKS</th><td>${sd.dtks?.masuk?'Ya ('+sd.dtks.jenis+')':'Tidak'}</td></tr>
-      <tr><th>Modal Usaha</th><td>${sd.modalUsaha||'-'}</td><th>Omset / Bulan</th><td>${sd.omset||'-'}</td></tr>
-      <tr><th>Izin yang Dimiliki</th><td colspan="3">${(sd.izin||[]).join(', ')||'-'}</td></tr>
-      <tr><th>Pernah Terima Hibah?</th><td colspan="3">${sd.hibah?.pernah?'Ya (Dari: '+sd.hibah.dariMana+', Tahun: '+sd.hibah.tahun+')':'Tidak'}</td></tr>
-      <tr><th>Rencana Penggunaan Dana</th><td colspan="3">${sd.rencanaPenggunaan||'-'}</td></tr>
-      <tr><th>Hasil Survey</th><td colspan="3" style="font-weight:bold;color:#1565C0;">${sd.hasilSurvey||'-'}</td></tr>
-    </table>
+  <div class="sec-body"><table class="stbl">
+    <tr><th>Petugas Survey</th><td>${actor.petugasSurvey || sd.namaPemilik || '-'}</td><th>Petugas Verifikator</th><td>${actor.createdBy || 'Admin'}</td></tr>
+    <tr><th>Bidang Usaha</th><td>${sd.bidangUsaha || '-'}</td><th>Tahun Berdiri</th><td>${sd.tahunBerdiri || '-'}</td></tr>
+    <tr><th>Peralatan Usaha</th><td>${sd.peralatan || '-'}</td><th>Email</th><td>${sd.email || '-'}</td></tr>
+    <tr><th>Sosial Media</th><td>${sd.sosmed || '-'}</td><th>Status DTKS</th><td>${sd.dtks?.masuk ? 'Ya (' + (sd.dtks.jenis || 'DTKS') + ')' : 'Tidak'}</td></tr>
+    <tr><th>Modal Usaha</th><td>${sd.modalUsaha || '-'}</td><th>Omset / Bulan</th><td>${sd.omset || '-'}</td></tr>
+    <tr><th>Izin Usaha</th><td colspan="3">${Array.isArray(sd.izin) ? sd.izin.join(', ') : (sd.izin || '-')}</td></tr>
+    <tr><th>Riwayat Hibah</th><td colspan="3">${sd.hibah?.pernah ? 'Pernah (Dari: ' + (sd.hibah.dariMana || '-') + ', Tahun: ' + (sd.hibah.tahun || '-') + ')' : 'Belum Pernah'}</td></tr>
+    <tr><th>Rencana Penggunaan</th><td colspan="3">${sd.rencanaPenggunaan || '-'}</td></tr>
+    <tr><th>Hasil Survey</th><td colspan="3" style="font-weight:bold;color:#1565C0;">${sd.hasilSurvey || 'Lolos Verifikasi Dinas'}</td></tr>
+  </table></div>
+</div>
+
+${(a.verificationLocationDinas || a.verificationLocation) ? `
+<div class="section">
+  <div class="sec-hdr">V. TITIK MAP SURVEY &amp; KOORDINAT GPS</div>
+  <div class="sec-body"><table>
+    ${row('Koordinat GPS', (a.verificationLocationDinas || a.verificationLocation).lat + ', ' + (a.verificationLocationDinas || a.verificationLocation).lon)}
+    ${row('Link Google Maps', 'https://maps.google.com/?q=' + (a.verificationLocationDinas || a.verificationLocation).lat + ',' + (a.verificationLocationDinas || a.verificationLocation).lon)}
+  </table></div>
+</div>` : ''}
+
+<div class="section">
+  <div class="sec-hdr">VI. BERKAS TAMBAHAN &amp; FOTO SURVEY</div>
+  <div class="sec-body" style="padding:10px 12px;">
+    ${actor.googleDriveLink ? `<div style="margin-bottom:8px;"><strong>Link Google Drive Berkas:</strong> <a href="${actor.googleDriveLink}" target="_blank" style="color:#1565C0;">${actor.googleDriveLink}</a></div>` : ''}
+    ${sd.fotoSurveyUrl ? `<div style="margin-bottom:4px;"><strong>Foto Survey Lapangan:</strong></div><div><img src="${sd.fotoSurveyUrl}" alt="Foto Survey" style="max-width:100%;max-height:220px;border-radius:6px;border:1px solid #ccc;object-fit:cover;"/></div>` : '<div style="color:#777;">Tidak ada foto survey yang diupload.</div>'}
   </div>
 </div>
 
-${a.verificationLocationDinas ? `
-<!-- V. TITIK LOKASI -->
 <div class="section">
-  <div class="sec-hdr">V. TITIK LOKASI GPS SURVEY</div>
-  <div class="sec-body">
-    <table>
-      ${row('Koordinat GPS', a.verificationLocationDinas.lat + ', ' + a.verificationLocationDinas.lon)}
-      ${row('Link Google Maps', 'maps.google.com/?q=' + a.verificationLocationDinas.lat + ',' + a.verificationLocationDinas.lon)}
-    </table>
-  </div>
-</div>` : ''}
-
-<!-- VI. LPJ -->
-<div class="section">
-  <div class="sec-hdr">VI. LAPORAN PERTANGGUNG JAWABAN (LPJ)</div>
+  <div class="sec-hdr">VII. LAPORAN PERTANGGUNG JAWABAN (LPJ)</div>
   <div class="sec-body">
     <div class="lpj-box">
       <div>
         <div style="font-size:10px;font-weight:bold;text-transform:uppercase;color:#555;margin-bottom:3px;">Nominal Dana Terlaporkan</div>
-        <div class="lpj-nom">Rp ${(actor.lpjNominal||0).toLocaleString('id-ID')}</div>
+        <div class="lpj-nom">Rp ${(actor.lpjNominal || 0).toLocaleString('id-ID')}</div>
       </div>
-      <div class="lpj-badge">&#10003; Telah Terverifikasi</div>
+      <div class="lpj-badge">&#10003; TELAH TERVERIFIKASI</div>
     </div>
   </div>
 </div>
 
 <div class="footer">
-  Sistem Informasi DKUKM &bull; Dicetak: ${new Date().toLocaleString('id-ID')} &bull; Kode: ${regCode}
+  Sistem Informasi SIMPU &bull; Dicetak: ${new Date().toLocaleString('id-ID')} &bull; Kode Reg: ${regCode}
 </div>
-
 </div>
 <script>window.onload = function(){ window.print(); }<\/script>
 </body>
@@ -238,80 +263,89 @@ ${a.verificationLocationDinas ? `
     const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
     const blobUrl = URL.createObjectURL(blob)
     const printWindow = window.open(blobUrl, '_blank')
-    if (!printWindow) {
-      URL.revokeObjectURL(blobUrl)
-      return
-    }
-    // Revoke the blob URL after the window has had time to load and print
+    if (!printWindow) { URL.revokeObjectURL(blobUrl); return }
     setTimeout(() => { URL.revokeObjectURL(blobUrl) }, 10000)
   }
-  const adminRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, `roles_admin/${user.uid}`)
-  }, [user, database])
-  const { data: adminRole } = useObject(adminRef)
 
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
-  const isKoordinator = userProfile?.role === 'koordinator'
-
-  const memoQuery = useMemoFirebase(() => {
-    if (!database) return null
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('finish'))
-  }, [database])
-
-  const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
-  
-  const actors = allActorsRaw ? allActorsRaw.filter(a => {
-    if (!a.lpjNominal) return false;
-
-    const matchesSearch = 
-      a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      a.nik?.includes(searchQuery)
-    const matchesCategory = !category || a.businessCategory === category
-
-    if (isKoordinator) {
-      if (!a.coordinator || !userProfile?.fullName) return false;
-      const matchesKoor = a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase();
-      return matchesSearch && matchesCategory && matchesKoor;
+  // ── Excel Export ──────────────────────────────────────────────────────────
+  const handleExportExcel = () => {
+    if (!actors || actors.length === 0) {
+      toast({ variant: "destructive", title: "Data Kosong", description: "Tidak ada data selesai untuk di-export." })
+      return
     }
-    if (filterCoordinator) {
-      const matchesKoor = a.coordinator === filterCoordinator;
-      return matchesSearch && matchesCategory && matchesKoor;
-    }
-    return matchesSearch && matchesCategory;
-  }).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || "")) : undefined
 
-  const [isEditMode, setIsEditMode] = useState(false)
-  const [showRevertDialog, setShowRevertDialog] = useState(false)
-  const [revertPending, setRevertPending] = useState<{actorId: string, fullName: string} | null>(null)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [deletePending, setDeletePending] = useState<{actorId: string, fullName: string} | null>(null)
-  const [editNik, setEditNik] = useState("")
-  const [editPob, setEditPob] = useState("")
-  const [editDob, setEditDob] = useState("")
+    const exportData = actors.map((actor, index) => {
+      const a = actor as any
+      const sd = a.surveyData || {}
+      const parsed = parsePobDob(actor.pobDob || "")
+      const dob = actor.dob || parsed.dob || "-"
+      const pob = actor.pob || parsed.pob || "-"
+      const locationGps = a.verificationLocationDinas
+        ? `${a.verificationLocationDinas.lat}, ${a.verificationLocationDinas.lon}`
+        : (a.verificationLocation ? `${a.verificationLocation.lat}, ${a.verificationLocation.lon}` : "-")
+      const mapsUrl = a.verificationLocationDinas
+        ? `https://maps.google.com/?q=${a.verificationLocationDinas.lat},${a.verificationLocationDinas.lon}`
+        : (a.verificationLocation ? `https://maps.google.com/?q=${a.verificationLocation.lat},${a.verificationLocation.lon}` : "-")
 
-  useEffect(() => {
-    if (viewingActor) {
-      const parsed = parsePobDob(viewingActor.pobDob || "")
-      setEditNik(viewingActor.nik || "")
-      setEditPob(parsed.pob || viewingActor.pob || "")
-      setEditDob(parsed.dob || viewingActor.dob || "")
-    } else {
-      setEditNik("")
-      setEditPob("")
-      setEditDob("")
-      setIsEditMode(false)
-    }
-  }, [viewingActor, isEditMode])
+      return {
+        "NO": index + 1,
+        "NOMOR REGISTRASI": actor.registrationCode || "-",
+        "NAMA LENGKAP": actor.fullName || "-",
+        "NIK": actor.nik || "-",
+        "NOMOR KK": actor.noKK || "-",
+        "JENIS KELAMIN": actor.gender || "-",
+        "TEMPAT LAHIR": pob,
+        "TANGGAL LAHIR": dob,
+        "NOMOR HP / WA": actor.phone || "-",
+        "ALAMAT LENGKAP": actor.address || "-",
+        "RT / RW": actor.rtRw || "-",
+        "KELURAHAN": actor.kelurahan || "-",
+        "KECAMATAN": actor.kecamatan || "-",
+        "NAMA USAHA": actor.businessName || "-",
+        "KATEGORI USAHA": actor.businessCategory || "-",
+        "LOKASI USAHA": actor.businessLocation || "-",
+        "PENGUSUL / KOORDINATOR": actor.coordinator || "-",
+        "NAMA BANK": actor.bankName || "-",
+        "NOMOR REKENING": actor.bankNumber || "-",
+        "PEMILIK REKENING": actor.bankOwner || "-",
+        "PETUGAS SURVEY": actor.petugasSurvey || sd.namaPemilik || "-",
+        "PETUGAS VERIFIKATOR": actor.createdBy || "Admin",
+        "BIDANG USAHA (SURVEY)": sd.bidangUsaha || "-",
+        "TAHUN BERDIRI": sd.tahunBerdiri || "-",
+        "PERALATAN USAHA": sd.peralatan || "-",
+        "IZIN USAHA": Array.isArray(sd.izin) ? sd.izin.join(", ") : (sd.izin || "-"),
+        "MODAL USAHA": sd.modalUsaha || "-",
+        "OMSET PER BULAN": sd.omset || "-",
+        "STATUS DTKS": sd.dtks?.masuk ? `Ya (${sd.dtks.jenis || 'DTKS'})` : "Tidak",
+        "RIWAYAT HIBAH": sd.hibah?.pernah ? `Pernah (${sd.hibah.dariMana || '-'}, ${sd.hibah.tahun || '-'})` : "Belum Pernah",
+        "RENCANA PENGGUNAAN": sd.rencanaPenggunaan || "-",
+        "HASIL REKOMENDASI SURVEY": sd.hasilSurvey || "-",
+        "LINK GOOGLE DRIVE BERKAS": actor.googleDriveLink || "-",
+        "URL FOTO SURVEY": sd.fotoSurveyUrl || "-",
+        "KOORDINAT MAP GPS": locationGps,
+        "LINK GOOGLE MAPS": mapsUrl,
+        "STATUS LPJ": "TELAH TERVERIFIKASI",
+        "NOMINAL LPJ (RP)": actor.lpjNominal || 0,
+      }
+    })
 
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Selesai UMKM")
+    const colWidths = Object.keys(exportData[0] || {}).map(key => ({ wch: Math.max(key.length + 3, 16) }))
+    worksheet["!cols"] = colWidths
+    const nowStr = new Date().toISOString().split("T")[0]
+    XLSX.writeFile(workbook, `Data_Selesai_UMKM_${nowStr}.xlsx`)
+    toast({ title: "✅ Export Berhasil", description: `${exportData.length} data berhasil di-export ke Excel.` })
+  }
+
+  // ── Edit ──────────────────────────────────────────────────────────────────
   const handleSaveFullEdit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!isAdmin || !database || !viewingActor) return
     const formData = new FormData(e.currentTarget)
-    
-    const lpjVal = formData.get('lpjNominal') as string;
-    const lpjNum = lpjVal ? parseInt(lpjVal) : viewingActor.lpjNominal || 0;
+    const lpjVal = formData.get('lpjNominal') as string
+    const lpjNum = lpjVal ? parseInt(lpjVal) : viewingActor.lpjNominal || 0
 
     const updates: Partial<BusinessActor> = {
       fullName: formData.get('fullName') as string,
@@ -342,6 +376,7 @@ ${a.verificationLocationDinas ? `
     setViewingActor({ ...viewingActor, ...updates } as BusinessActor)
   }
 
+  // ── Revert ────────────────────────────────────────────────────────────────
   const handleRevert = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     setRevertPending({ actorId, fullName })
@@ -351,21 +386,20 @@ ${a.verificationLocationDinas ? `
   const executeRevert = () => {
     if (!revertPending || !database) return
     const { actorId, fullName } = revertPending
-    const actorObj = allActorsRaw?.find(a => a.id === actorId);
+    const actorObj = allActorsRaw?.find(a => a.id === actorId)
     updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
-    
     if (actorObj) {
       import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-        updateStatsOnStatusChange(database, 'finish', 'pending', actorObj).catch(e => console.error(e));
-      });
+        updateStatsOnStatusChange(database, 'finish', 'pending', actorObj).catch(e => console.error(e))
+      })
     }
-
-    toast({ title: "Berhasil", description: "Status dikembalikan ke Pending." })
+    toast({ title: "Berhasil", description: `Data ${fullName} dikembalikan ke Pending.` })
     setViewingActor(null)
     setShowRevertDialog(false)
     setRevertPending(null)
   }
-  
+
+  // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = (actorId: string, fullName: string) => {
     if (!isAdmin || !database) return
     setDeletePending({ actorId, fullName })
@@ -375,116 +409,100 @@ ${a.verificationLocationDinas ? `
   const executeDelete = () => {
     if (!deletePending || !database) return
     const { actorId, fullName } = deletePending
-    const actorObj = allActorsRaw?.find(a => a.id === actorId);
+    const actorObj = allActorsRaw?.find(a => a.id === actorId)
     deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
-    
     if (actorObj) {
       import("@/lib/stats-service").then(({ updateStatsOnDelete }) => {
-        updateStatsOnDelete(database, actorObj).catch(e => console.error(e));
-      });
+        updateStatsOnDelete(database, actorObj).catch(e => console.error(e))
+      })
     }
-
     toast({ title: "Data Dihapus", description: `Data ${fullName} telah dihapus dari sistem.` })
     setViewingActor(null)
     setShowDeleteDialog(false)
     setDeletePending(null)
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 md:p-8 space-y-6">
-      <div className="hidden print:block text-center space-y-2 mb-8 border-b-2 border-black pb-4">
-        <h1 className="text-xl font-black uppercase">LAPORAN DATA PELAKU USAHA (SIMPU)</h1>
-        <p className="text-xs font-bold uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha</p>
-      </div>
-
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
-        <div className="flex items-center gap-3">
-          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
-          <BadgeCheck className="w-8 h-8 text-green-600" />
-          <div className="flex flex-col">
-            <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Finish</h1>
-            <p className="text-xs md:text-sm text-muted-foreground">Arsip data yang telah dinyatakan SELESAI.</p>
-            {filterCoordinator && (
-              <div className="flex items-center gap-2 mt-2 bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20 w-fit">
-                <span className="text-[10px] font-black text-primary uppercase">Filter Koordinator: {filterCoordinator}</span>
-                <Link href="/finish" className="text-primary hover:text-primary/70 transition-transform active:scale-90">
-                  <X className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            )}
+    <div className="flex flex-col h-screen bg-background">
+      {/* Header */}
+      <header className="flex items-center gap-3 px-4 py-3 border-b bg-card/80 backdrop-blur sticky top-0 z-10 shrink-0">
+        <SidebarTrigger />
+        <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2">
+          <div className="flex items-center gap-2">
+            <BadgeCheck className="w-5 h-5 text-green-600 shrink-0" />
+            <h1 className="font-black text-base md:text-lg uppercase text-green-700">Data Selesai</h1>
+            <Badge className="bg-green-600 text-white font-black text-xs">{actors?.length ?? 0}</Badge>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 md:ml-4">
+            <div className="relative flex-1 min-w-[160px]">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Cari nama / NIK / usaha…"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 text-xs"
+              />
+            </div>
+            <select
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              className="h-8 text-xs px-2 rounded-md border border-input bg-background"
+            >
+              <option value="">Semua Kategori</option>
+              <option value="Kuliner">Kuliner</option>
+              <option value="Bukan Kuliner">Bukan Kuliner</option>
+            </select>
           </div>
         </div>
-        <Button onClick={() => window.print()} className="bg-primary font-bold shadow-md w-full md:w-auto">
-          <Printer className="w-4 h-4 mr-2" /> CETAK
-        </Button>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 mb-4 print:hidden">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input 
-            placeholder="Cari Nama / Usaha / NIK..." 
-            className="pl-10 h-10 md:h-12 bg-card border-primary/20 focus-visible:ring-primary rounded-xl md:rounded-2xl"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2">
-          <select 
-            className="h-10 md:h-12 px-4 rounded-xl md:rounded-2xl border border-primary/20 bg-card text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
+        {isAdmin && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleExportExcel}
+            className="border-green-500 text-green-700 font-bold hover:bg-green-50 text-xs shrink-0"
+            disabled={!actors || actors.length === 0}
           >
-            <option value="">Semua Kategori</option>
-            <option value="Kuliner">Kuliner</option>
-            <option value="Bukan Kuliner">Bukan Kuliner</option>
-          </select>
-        </div>
-      </div>
+            <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
+            Export Excel
+          </Button>
+        )}
+      </header>
 
-      <div className="bg-card print:bg-transparent">
+      {/* Card Grid */}
+      <div className="flex-1 overflow-y-auto p-4">
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4">
-            {[...Array(12)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-4 flex flex-col items-center gap-3">
-                  <Skeleton className="w-12 h-12 rounded-full" />
-                  <div className="space-y-2 w-full">
-                    <Skeleton className="h-4 w-3/4 mx-auto" />
-                    <Skeleton className="h-3 w-1/2 mx-auto" />
-                  </div>
-                  <Skeleton className="h-5 w-full rounded-full" />
-                </CardContent>
-              </Card>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <Skeleton key={i} className="h-40 rounded-xl" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 print:flex print:flex-col print:gap-1">
-            {actors?.map((actor) => (
-              <Card 
-                key={actor.id} 
-                className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group relative overflow-hidden print:shadow-none print:border-b print:rounded-none"
-                onClick={() => {
-                  setViewingActor(actor)
-                  setIsEditMode(false)
-                }}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {actors?.map(actor => (
+              <Card
+                key={actor.id}
+                className="cursor-pointer hover:shadow-lg hover:border-green-400 transition-all group border-green-100"
+                onClick={() => setViewingActor(actor)}
               >
-                <CardContent className="p-4 flex flex-col items-center text-center gap-3 print:flex-row print:justify-between print:text-left print:p-2">
-                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-700 group-hover:scale-110 transition-transform print:hidden shrink-0">
-                    <BadgeCheck className="w-6 h-6" />
-                  </div>
-                  <div className="space-y-1 w-full justify-center">
-                    <p className="font-bold text-[13px] md:text-sm line-clamp-2 uppercase leading-tight print:line-clamp-none text-green-800" title={actor.businessName}>
+                <CardContent className="p-3 flex flex-col gap-1.5 h-full">
+                  <div className="flex-1">
+                    <p className="text-[11px] font-black uppercase line-clamp-2 leading-tight text-green-800 group-hover:text-green-600" title={actor.businessName}>
                       {actor.businessName || "NAMA USAHA KOSONG"}
                     </p>
-                    <p className="text-[10px] text-muted-foreground uppercase line-clamp-1 print:line-clamp-none font-bold flex items-center justify-center print:justify-start gap-1" title={actor.fullName}>
-                      <User className="w-3 h-3 print:hidden" /> {actor.fullName}
+                    <p className="text-[10px] text-muted-foreground uppercase line-clamp-1 font-bold flex items-center gap-1 mt-1" title={actor.fullName}>
+                      <User className="w-3 h-3 shrink-0" /> {actor.fullName}
                     </p>
-                    <p className="text-[9px] text-muted-foreground font-mono hidden print:block">
-                      NIK: {actor.nik} | Koor: {actor.coordinator} | Bank: {actor.bankName} - {actor.bankNumber}
+                    <p className="text-[9px] text-muted-foreground font-mono mt-0.5">
+                      NIK: {actor.nik || "-"}
                     </p>
+                    {actor.bankName && (
+                      <p className="text-[9px] text-muted-foreground mt-0.5">
+                        {actor.bankName} · {actor.bankNumber}
+                      </p>
+                    )}
                   </div>
-                  <div className="text-[9px] font-black uppercase bg-green-500 text-white w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
+                  <div className="text-[9px] font-black uppercase bg-green-500 text-white w-full justify-center shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
                     SELESAI
                   </div>
                 </CardContent>
@@ -500,11 +518,9 @@ ${a.verificationLocationDinas ? `
         )}
       </div>
 
+      {/* Detail Dialog */}
       <Dialog open={!!viewingActor} onOpenChange={(open) => {
-        if (!open) {
-          setViewingActor(null)
-          setIsEditMode(false)
-        }
+        if (!open) { setViewingActor(null); setIsEditMode(false) }
       }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           {viewingActor && (
@@ -515,8 +531,8 @@ ${a.verificationLocationDinas ? `
                 </DialogTitle>
                 <div className="flex flex-wrap gap-2">
                   {!isEditMode && (
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={() => handlePrintActor(viewingActor)}
                       className="border-green-600 text-green-700 font-bold hover:bg-green-50"
@@ -525,23 +541,23 @@ ${a.verificationLocationDinas ? `
                     </Button>
                   )}
                   {isAdmin && (
-                    <Button 
-                      variant={isEditMode ? "outline" : "default"} 
-                      size="sm" 
+                    <Button
+                      variant={isEditMode ? "outline" : "default"}
+                      size="sm"
                       onClick={() => setIsEditMode(!isEditMode)}
                       className={cn("font-bold", isEditMode ? "border-amber-500 text-amber-600" : "bg-primary")}
                     >
-                      {isEditMode ? "Batal Edit" : <><Edit3 className="w-4 h-4 mr-2"/> Edit Semua Data</>}
+                      {isEditMode ? "Batal Edit" : <><Edit3 className="w-4 h-4 mr-2" />Edit Semua Data</>}
                     </Button>
                   )}
                   {isAdmin && !isEditMode && (
-                    <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 font-bold" title="Kembalikan ke antrean awal (Pending)">
-                      <RotateCcw className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Revert</span>
+                    <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 font-bold" title="Kembalikan ke Pending">
+                      <RotateCcw className="w-4 h-4 mr-1" /> <span className="md:hidden">Revert</span>
                     </Button>
                   )}
                   {isAdmin && !isEditMode && (
                     <Button size="sm" variant="outline" onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="border-red-500 text-red-600 font-bold hover:bg-red-50" title="Hapus Data">
-                      <Trash2 className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Hapus</span>
+                      <Trash2 className="w-4 h-4 mr-1" /> <span className="md:hidden">Hapus</span>
                     </Button>
                   )}
                 </div>
@@ -555,54 +571,30 @@ ${a.verificationLocationDinas ? `
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Lengkap</Label><Input name="fullName" defaultValue={viewingActor.fullName} required /></div>
                       <div className="space-y-1">
                         <Label className="text-xs font-bold uppercase">NIK</Label>
-                        <Input 
-                          name="nik" 
-                          value={editNik} 
-                          required 
-                          onChange={(e) => {
-                            const cleanNik = e.target.value.replace(/[^0-9]/g, "");
-                            setEditNik(cleanNik);
-                            if (cleanNik.length >= 12) {
-                              const extracted = extractDobFromNik(cleanNik);
-                              if (extracted) {
-                                setEditDob(extracted);
-                              }
-                            } else {
-                              setEditDob("");
-                            }
-                          }}
-                        />
+                        <Input name="nik" value={editNik} required onChange={(e) => {
+                          const clean = e.target.value.replace(/[^0-9]/g, "")
+                          setEditNik(clean)
+                          if (clean.length >= 12) {
+                            const ex = extractDobFromNik(clean)
+                            if (ex) setEditDob(ex)
+                          } else setEditDob("")
+                        }} />
                       </div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor KK</Label><Input name="noKK" defaultValue={viewingActor.noKK} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Jenis Kelamin</Label>
-                        <select name="gender" defaultValue={viewingActor.gender || ""} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                        <select name="gender" defaultValue={viewingActor.gender || ""} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
                           <option value="L">Laki-Laki</option>
                           <option value="P">Perempuan</option>
                         </select>
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Tempat Lahir</Label>
-                        <Input 
-                          name="pob" 
-                          value={editPob} 
-                          onChange={(e) => setEditPob(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Tanggal Lahir (Otomatis)</Label>
-                        <Input 
-                          name="dob" 
-                          value={editDob} 
-                          readOnly 
-                          className="bg-muted font-semibold"
-                        />
-                      </div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Tempat Lahir</Label><Input name="pob" value={editPob} onChange={e => setEditPob(e.target.value)} /></div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Tanggal Lahir (Otomatis)</Label><Input name="dob" value={editDob} readOnly className="bg-muted font-semibold" /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor HP</Label><Input name="phone" defaultValue={viewingActor.phone} /></div>
                     </div>
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili (Edit)</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat &amp; Domisili (Edit)</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} /></div>
@@ -622,7 +614,7 @@ ${a.verificationLocationDinas ? `
                   </section>
 
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan & LPJ (Edit)</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan &amp; LPJ (Edit)</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Bank</Label><Input name="bankName" defaultValue={viewingActor.bankName} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor Rekening</Label><Input name="bankNumber" defaultValue={viewingActor.bankNumber} /></div>
@@ -641,6 +633,7 @@ ${a.verificationLocationDinas ? `
                 </form>
               ) : (
                 <div className="grid gap-6 py-4">
+                  {/* Informasi Pribadi */}
                   <section className="space-y-4">
                     <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
@@ -652,17 +645,12 @@ ${a.verificationLocationDinas ? `
                         { label: "Tempat Lahir", value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob },
                         { label: "Tanggal Lahir", value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob },
                         { label: "Usia", value: calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")) },
-                        { label: "Nomor HP", value: viewingActor.phone, isPhone: true }
+                        { label: "Nomor HP", value: viewingActor.phone, isPhone: true },
                       ].map((item, i) => (
-                         <div key={i} className="space-y-1">
+                        <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
                           {(item as any).isPhone && item.value ? (
-                            <a
-                              href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-sm font-bold text-green-600 hover:text-green-700 hover:underline flex items-center gap-1"
-                            >
+                            <a href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`} target="_blank" rel="noreferrer" className="text-sm font-bold text-green-600 hover:underline flex items-center gap-1">
                               {item.value}
                             </a>
                           ) : (
@@ -673,14 +661,15 @@ ${a.verificationLocationDinas ? `
                     </div>
                   </section>
 
+                  {/* Alamat */}
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat &amp; Domisili</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
                       {[
                         { label: "Kecamatan", value: viewingActor.kecamatan },
                         { label: "Kelurahan", value: viewingActor.kelurahan },
                         { label: "RT/RW", value: viewingActor.rtRw },
-                        { label: "Alamat Lengkap", value: viewingActor.address, fullWidth: true }
+                        { label: "Alamat Lengkap", value: viewingActor.address, fullWidth: true },
                       ].map((item, i) => (
                         <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
@@ -690,14 +679,15 @@ ${a.verificationLocationDinas ? `
                     </div>
                   </section>
 
+                  {/* Usaha */}
                   <section className="space-y-4">
                     <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
                       {[
-                        { label: "Usaha", value: viewingActor.businessName },
+                        { label: "Nama Usaha", value: viewingActor.businessName },
                         { label: "Kategori Usaha", value: viewingActor.businessCategory },
                         { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                        { label: "USULAN", value: viewingActor.coordinator }
+                        { label: "Pengusul / Koordinator", value: viewingActor.coordinator },
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
@@ -707,6 +697,7 @@ ${a.verificationLocationDinas ? `
                     </div>
                   </section>
 
+                  {/* Titik Lokasi */}
                   <section className="space-y-4">
                     <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Data Titik Lokasi Verifikasi</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -719,10 +710,10 @@ ${a.verificationLocationDinas ? `
                       )}
                       {(viewingActor as any).verificationBypass?.isBypassed && (
                         <div className="bg-amber-50 p-4 rounded-xl border border-amber-100">
-                          <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">Sumber: Verifikasi Admin (Bypass)</p>
+                          <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">Sumber: Bypass Admin</p>
                           <p className="text-xs text-amber-800 font-medium mb-2">Alasan: {(viewingActor as any).verificationBypass.reason}</p>
                           {(viewingActor as any).verificationBypass.fileBase64 && (
-                            <a href={(viewingActor as any).verificationBypass.fileBase64} target="_blank" rel="noreferrer" className="text-[10px] font-bold bg-amber-200 text-amber-800 px-3 py-1 rounded shadow-sm hover:bg-amber-300 transition-colors inline-block mt-1">Lihat Bukti Lampiran</a>
+                            <a href={(viewingActor as any).verificationBypass.fileBase64} target="_blank" rel="noreferrer" className="text-[10px] font-bold bg-amber-200 text-amber-800 px-3 py-1 rounded hover:bg-amber-300 transition-colors inline-block mt-1">Lihat Bukti Lampiran</a>
                           )}
                         </div>
                       )}
@@ -741,13 +732,14 @@ ${a.verificationLocationDinas ? `
                     </div>
                   </section>
 
+                  {/* Perbankan */}
                   <section className="space-y-4">
                     <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan</div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-primary/5 p-4 rounded-xl border border-primary/10">
                       {[
                         { label: "Nama Bank", value: viewingActor.bankName },
                         { label: "Nomor Rekening", value: viewingActor.bankNumber, isMono: true },
-                        { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner, isUpper: true }
+                        { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner, isUpper: true },
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
@@ -757,24 +749,24 @@ ${a.verificationLocationDinas ? `
                     </div>
                   </section>
 
+                  {/* LPJ */}
                   <section className="space-y-4">
                     <div className="flex items-center gap-2 text-emerald-600 font-black text-sm uppercase border-b pb-1">
                       <FileText className="w-4 h-4" /> Laporan Pertanggung Jawaban (LPJ)
                     </div>
                     <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 flex flex-col md:flex-row justify-between items-center gap-4">
                       <div>
-                          <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest mb-1">Nominal Terlaporkan</p>
-                          <p className="text-3xl font-black text-emerald-600 font-mono">
-                              RP {viewingActor.lpjNominal?.toLocaleString('id-ID') || "0"}
-                          </p>
+                        <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest mb-1">Nominal Terlaporkan</p>
+                        <p className="text-3xl font-black text-emerald-600 font-mono">RP {viewingActor.lpjNominal?.toLocaleString('id-ID') || "0"}</p>
                       </div>
                       <div className="text-right">
-                          <p className="text-[10px] font-bold text-emerald-800 uppercase">Status Verifikasi LPJ</p>
-                          <Badge className="bg-emerald-600 font-black uppercase text-[10px] mt-1 px-4 py-1 hover:bg-emerald-600">TELAH TERVERIFIKASI</Badge>
+                        <p className="text-[10px] font-bold text-emerald-800 uppercase">Status Verifikasi LPJ</p>
+                        <Badge className="bg-emerald-600 font-black uppercase text-[10px] mt-1 px-4 py-1 hover:bg-emerald-600">TELAH TERVERIFIKASI</Badge>
                       </div>
                     </div>
                   </section>
 
+                  {/* Google Drive */}
                   {viewingActor.googleDriveLink && (
                     <section className="space-y-4">
                       <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Folder className="w-4 h-4" /> Berkas Tambahan (Google Drive)</div>
@@ -790,12 +782,13 @@ ${a.verificationLocationDinas ? `
                     </section>
                   )}
 
+                  {/* Audit */}
                   <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Informasi Sistem & Audit</div>
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Informasi Sistem &amp; Audit</div>
                     <div className="bg-slate-50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
                       <div className="space-y-1">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Terakhir</p>
-                        <p className="capitalize text-primary">{viewingActor.status.replace('_', ' ')}</p>
+                        <p className="capitalize text-primary">{viewingActor.status?.replace('_', ' ')}</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Input</p>
@@ -817,10 +810,7 @@ ${a.verificationLocationDinas ? `
       {/* Confirm Dialogs */}
       <ConfirmDialog
         open={showRevertDialog}
-        onOpenChange={(open) => {
-          setShowRevertDialog(open)
-          if (!open) setRevertPending(null)
-        }}
+        onOpenChange={(open) => { setShowRevertDialog(open); if (!open) setRevertPending(null) }}
         icon={<RotateCcw className="w-6 h-6" />}
         title="Kembalikan ke Pending?"
         description={`Kembalikan ${revertPending?.fullName || ''} ke antrean awal (Pending)?`}
@@ -832,10 +822,7 @@ ${a.verificationLocationDinas ? `
 
       <ConfirmDialog
         open={showDeleteDialog}
-        onOpenChange={(open) => {
-          setShowDeleteDialog(open)
-          if (!open) setDeletePending(null)
-        }}
+        onOpenChange={(open) => { setShowDeleteDialog(open); if (!open) setDeletePending(null) }}
         icon={<Trash2 className="w-6 h-6" />}
         title="Hapus Permanen?"
         description={`HAPUS PERMANEN data ${deletePending?.fullName || ''}? Tindakan ini tidak dapat dibatalkan.`}
