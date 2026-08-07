@@ -48,6 +48,7 @@ export interface BusinessActor {
   businessName: string;
   businessLocation: string;
   coordinator: string;
+  petugasSurvey?: string;
   bankNumber?: string;
   bankOwner?: string;
   bankName?: string;

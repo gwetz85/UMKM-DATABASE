@@ -81,6 +81,7 @@ function ActorDataContent() {
   const isMonitoring = userProfile?.role === 'monitoring'
   const isKoordinator = userProfile?.role === 'koordinator'
   const isInspektorat = userProfile?.role === 'inspektorat'
+  const isPetugas = userProfile?.role === 'petugas'
 
   const [pageLimit, setPageLimit] = useState(50)
   
@@ -92,6 +93,10 @@ function ActorDataContent() {
     if (!database) return null
     
     // Optimize: Only fetch what's needed instead of the entire collection
+    if (isPetugas && userProfile?.fullName) {
+      return query(ref(database, 'businessActors'), orderByChild('petugasSurvey'), equalTo(userProfile.fullName.toUpperCase().trim()))
+    }
+
     if (isKoordinator && userProfile?.fullName) {
       return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(userProfile.fullName.toUpperCase().trim()))
     }
@@ -114,7 +119,7 @@ function ActorDataContent() {
     }
 
     return null
-  }, [database, isKoordinator, userProfile?.fullName, filterCoordinator, isInspektorat, isMonitoring, searchQuery])
+  }, [database, isPetugas, isKoordinator, userProfile?.fullName, filterCoordinator, isInspektorat, isMonitoring, searchQuery])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
@@ -149,13 +154,19 @@ function ActorDataContent() {
       if (!a) return false;
       const s = a.status || "";
       if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s)) return false;
+      if (isPetugas) {
+        if (!userProfile?.fullName) return false;
+        const userPetugasUpper = String(userProfile.fullName).toUpperCase().trim();
+        const actorPetugasUpper = String(a.petugasSurvey || a.createdBy || "").toUpperCase().trim();
+        return actorPetugasUpper === userPetugasUpper;
+      }
       if (isKoordinator) {
         if (!a.coordinator || !userProfile?.fullName) return false;
         return String(a.coordinator).toLowerCase() === String(userProfile.fullName).toLowerCase();
       }
       return true;
     });
-  }, [allActorsRaw, isKoordinator, userProfile?.fullName]);
+  }, [allActorsRaw, isPetugas, isKoordinator, userProfile?.fullName]);
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingBankMode, setEditingBankMode] = useState(false)

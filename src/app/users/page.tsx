@@ -419,7 +419,7 @@ export default function UserManagementPage() {
                   <Select name="role" defaultValue="petugas" required>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="petugas">Petugas</SelectItem>
+                      <SelectItem value="petugas">Petugas Survey</SelectItem>
                       <SelectItem value="koordinator">USULAN</SelectItem>
                       <SelectItem value="admin">Administrator</SelectItem>
                       <SelectItem value="monitoring">Monitoring</SelectItem>
@@ -484,7 +484,7 @@ export default function UserManagementPage() {
                         </Badge>
                       ) : u.role === 'petugas' ? (
                         <Badge variant="secondary" className="text-slate-600 bg-slate-100 font-black uppercase text-[9px] gap-1">
-                          <UserCheck className="w-3 h-3" /> Petugas
+                          <UserCheck className="w-3 h-3" /> Petugas Survey
                         </Badge>
                       ) : u.role === 'dinas' ? (
                         <Badge variant="outline" className="text-indigo-600 border-indigo-200 bg-indigo-50 font-black uppercase text-[9px] gap-1">
@@ -590,7 +590,7 @@ export default function UserManagementPage() {
                                     <Select name="role" defaultValue={u.role || "petugas"}>
                                       <SelectTrigger><SelectValue /></SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="petugas">Petugas</SelectItem>
+                                        <SelectItem value="petugas">Petugas Survey</SelectItem>
                                         <SelectItem value="koordinator">USULAN</SelectItem>
                                         <SelectItem value="admin">Administrator</SelectItem>
                                         <SelectItem value="monitoring">Monitoring</SelectItem>
