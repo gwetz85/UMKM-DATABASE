@@ -41,58 +41,10 @@ import {
   Folder,
   FileDown,
   Edit,
-  RotateCcw,
-  Mail
+  RotateCcw
 } from "lucide-react"
 import { generateBeritaAcaraPDF } from "@/lib/generate-berita-acara-pdf"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-
-function EmailLogStatus({ actorId }: { actorId: string }) {
-  const database = useDatabase()
-  const logRef = useMemoFirebase(() => {
-    if (!database || !actorId) return null
-    return ref(database, `email_logs/${actorId}`)
-  }, [database, actorId])
-  const { data: emailLog } = useObject(logRef)
-
-  if (!emailLog) {
-    return (
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between text-xs text-slate-500">
-        <span className="flex items-center gap-2 font-medium">
-          <Mail className="w-4 h-4 text-slate-400" /> Status Email Notifikasi:
-        </span>
-        <span className="font-semibold text-slate-400">Belum ada log pengiriman</span>
-      </div>
-    )
-  }
-
-  const isSent = emailLog.status === 'sent'
-  const isSkipped = emailLog.status === 'skipped'
-  const isFailed = emailLog.status === 'failed'
-
-  return (
-    <div className={`p-3 rounded-xl border flex flex-col gap-1 text-xs ${
-      isSent ? 'bg-emerald-50 border-emerald-200 text-emerald-900' :
-      isSkipped ? 'bg-amber-50 border-amber-200 text-amber-900' :
-      'bg-red-50 border-red-200 text-red-900'
-    }`}>
-      <div className="flex items-center justify-between font-bold">
-        <span className="flex items-center gap-2">
-          <Mail className="w-4 h-4" />
-          Status Email Notifikasi ({emailLog.email || '-'}):
-        </span>
-        {isSent && <span className="bg-emerald-600 text-white px-2 py-0.5 rounded-full text-[10px] font-black uppercase">Terkirim ✅</span>}
-        {isSkipped && <span className="bg-amber-500 text-white px-2 py-0.5 rounded-full text-[10px] font-black uppercase">Skipped ⚠️</span>}
-        {isFailed && <span className="bg-red-600 text-white px-2 py-0.5 rounded-full text-[10px] font-black uppercase">Gagal ❌</span>}
-      </div>
-      <div className="text-[11px] opacity-80 mt-0.5">
-        {isSent && `Terkirim pada: ${new Date(emailLog.sentAt || Date.now()).toLocaleString('id-ID')}`}
-        {isSkipped && (emailLog.note || 'Kredensial server email belum diatur.')}
-        {isFailed && `Gagal: ${emailLog.error || 'Terjadi kesalahan pengiriman email.'}`}
-      </div>
-    </div>
-  )
-}
 
 export default function VerifikasiDinasPage() {
   const { user, userProfile } = useUser()
@@ -402,70 +354,6 @@ export default function VerifikasiDinasPage() {
       method: 'SURVEY DINAS',
       userId: user?.email || user?.uid || 'Admin'
     })
-
-    // Kirim email notifikasi jika alamat email diisi pada surveyData
-    const recipientEmail = surveyData.email?.trim()
-    if (recipientEmail && recipientEmail.includes('@')) {
-      const emailLogRef = ref(database, `email_logs/${verifyingActor.id}`)
-      toast({ title: "📧 Mengirim Email Notifikasi...", description: `Mengirim pemberitahuan ke ${recipientEmail}` })
-      fetch('/api/send-survey-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          actorId: verifyingActor.id,
-          fullName: verifyingActor.fullName,
-          nik: verifyingActor.nik,
-          email: recipientEmail,
-          businessName: verifyingActor.businessName,
-          surveyData: surveyData,
-          verifiedBy: userProfile?.fullName || user?.email || 'Petugas Survey'
-        })
-      })
-      .then(res => res.json())
-      .then(resData => {
-        if (resData.success) {
-          if (resData.status === 'sent') {
-            updateDocumentNonBlocking(emailLogRef, {
-              actorId: verifyingActor.id,
-              fullName: verifyingActor.fullName,
-              nik: verifyingActor.nik,
-              email: recipientEmail,
-              status: 'sent',
-              sentAt: new Date().toISOString(),
-              verifiedBy: userProfile?.fullName || user?.email || 'Petugas Survey'
-            })
-            toast({ title: "✅ Email Terkirim", description: `Notifikasi hasil survey berhasil terkirim ke ${recipientEmail}.` })
-          } else if (resData.status === 'skipped') {
-            updateDocumentNonBlocking(emailLogRef, {
-              actorId: verifyingActor.id,
-              fullName: verifyingActor.fullName,
-              nik: verifyingActor.nik,
-              email: recipientEmail,
-              status: 'skipped',
-              note: 'Server email belum dikonfigurasi (EMAIL_PASS).',
-              timestamp: new Date().toISOString(),
-              verifiedBy: userProfile?.fullName || user?.email || 'Petugas Survey'
-            })
-            toast({ title: "⚠️ Email Skipped", description: `Server email belum dikonfigurasi (kredensial EMAIL_PASS). Log tersimpan sebagai skipped.` })
-          }
-        } else {
-          updateDocumentNonBlocking(emailLogRef, {
-            actorId: verifyingActor.id,
-            fullName: verifyingActor.fullName,
-            nik: verifyingActor.nik,
-            email: recipientEmail,
-            status: 'failed',
-            error: resData.error || "Gagal mengirim email.",
-            failedAt: new Date().toISOString(),
-            verifiedBy: userProfile?.fullName || user?.email || 'Petugas Survey'
-          })
-          toast({ variant: "destructive", title: "❌ Email Gagal Terkirim", description: resData.error || "Gagal mengirim email." })
-        }
-      })
-      .catch(err => {
-        console.error("Email send error:", err)
-      })
-    }
 
     toast({ title: "Survey Berhasil Disimpan", description: `Data pelaku usaha telah di-update.` })
     setVerifyingActor(null)
@@ -963,14 +851,6 @@ export default function VerifikasiDinasPage() {
                                             </div>
                                           )}
                                         </div>
-                                      </section>
-
-                                      {/* Status Email Notifikasi */}
-                                      <section className="space-y-2">
-                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
-                                          <Mail className="w-4 h-4" /> Log Pengiriman Email Notifikasi
-                                        </div>
-                                        <EmailLogStatus actorId={viewingActor.id} />
                                       </section>
 
                                       {viewingActor.googleDriveLink && (
