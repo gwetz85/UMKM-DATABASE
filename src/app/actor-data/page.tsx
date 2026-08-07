@@ -737,7 +737,18 @@ function ActorDataContent() {
         XLSX.utils.book_append_sheet(workbook, worksheet, "Data Pelaku")
       }
 
-      XLSX.writeFile(workbook, `Data_Pelaku_Usaha_${new Date().toISOString().split('T')[0]}.xlsx`)
+      // Generate binary dan download via Blob (kompatibel di semua browser)
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Data_Pelaku_Usaha_${new Date().toISOString().split('T')[0]}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+
       toast({ title: "Berhasil", description: "Data berhasil diekspor ke Excel." })
       setShowExportDialog(false)
     } catch (error) {

@@ -114,7 +114,16 @@ export default function BpjsPage() {
     ];
     worksheet['!cols'] = wscols;
 
-    XLSX.writeFile(workbook, `Data_BPJS_Ketenagakerjaan_${new Date().toISOString().split('T')[0]}.xlsx`)
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `Data_BPJS_Ketenagakerjaan_${new Date().toISOString().split('T')[0]}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 5000)
   }
 
   const handlePrintPDF = () => {
