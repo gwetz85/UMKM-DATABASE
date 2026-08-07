@@ -9,6 +9,41 @@ function splitLines(doc: jsPDF, text: string, maxWidth: number): string[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Helper: Load survey photo and convert to base64 with dimensions
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadSurveyPhoto(url: string): Promise<{ base64: string; format: string; w: number; h: number } | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "Anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          const isPng = blob.type.includes("png");
+          const format = isPng ? "PNG" : "JPEG";
+          const base64 = canvas.toDataURL(isPng ? "image/png" : "image/jpeg", 0.85);
+          resolve({ base64, format, w: img.width, h: img.height });
+        } else {
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = URL.createObjectURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main export - EXACT 1 PAGE A4
 // ─────────────────────────────────────────────────────────────────────────────
 export async function generateBeritaAcaraPDF(
@@ -25,7 +60,7 @@ export async function generateBeritaAcaraPDF(
 
   doc.setFont("helvetica");
 
-  // ── LOAD LOGO ──────────────────────────────────────────────────────────────
+  // ── LOAD LOGO & SURVEY PHOTO ────────────────────────────────────────────────
   let logoBase64: string | null = null;
   try {
     let res = await fetch("/logo-kepri.png");
@@ -42,6 +77,9 @@ export async function generateBeritaAcaraPDF(
     logoBase64 = null;
   }
 
+  const surveyPhotoUrl = surveyData?.fotoSurveyUrl || actor?.photoUsahaUri || actor?.comparisonPhotoUrl || "";
+  const surveyPhotoData = surveyPhotoUrl ? await loadSurveyPhoto(surveyPhotoUrl) : null;
+
   // ── 1. KOP SURAT (SAMA PERSIS DENGAN GAMBAR REFERENSI) ─────────────────────
   let y = 6;
   const logoH = 23;
@@ -53,7 +91,7 @@ export async function generateBeritaAcaraPDF(
   }
 
   // Center X untuk teks KOP (berada di tengah area sebelah kanan logo)
-  const kopTextCenterX = marginL + logoW + (contentW - logoW) / 2; // 15 + 23 + (180-23)/2 = 116.5 mm
+  const kopTextCenterX = marginL + logoW + (contentW - logoW) / 2; // 116.5 mm
 
   // Baris 1: P E M E R I N T A H   P R O V I N S I   K E P U L A U A N   R I A U
   doc.setFontSize(9.5);
@@ -70,7 +108,7 @@ export async function generateBeritaAcaraPDF(
   doc.setFont("helvetica", "normal");
   doc.text("Pusat Pemerintahan Provinsi Kepulauan Riau Bandar Seri Kota Piring", kopTextCenterX, y + 12, { align: "center" });
   doc.text("Kawasan Perkantoran Sultan Mahmud Riayat Syah Gedung Daeng Marewah B1", kopTextCenterX, y + 15.5, { align: "center" });
-  doc.text("Lantai 3 Pulau Dompak Seri Darul Makmur \u2013 Tanjungpinang Kode Pos 29124", kopTextCenterX, y + 19, { align: "center" });
+  doc.text("Lantai 3 Pulau Dompak Seri Darul Makmur – Tanjungpinang Kode Pos 29124", kopTextCenterX, y + 19, { align: "center" });
   doc.text("Pos-el : diskopukmsprovinsikepri@gmail.com Laman : www.dinaskoperasiukm.kepriprov.go.id", kopTextCenterX, y + 22.5, { align: "center" });
 
   // Garis Bawah KOP (Satu garis tebal hitam presisi)
@@ -114,7 +152,7 @@ export async function generateBeritaAcaraPDF(
   const afterHari = `   ,  tanggal  ${tgl} ${bln} ${thn}   ,  yang bertandatangan dibawah ini :`;
   doc.text(afterHari, marginL + prefixW + hariW, y);
 
-  // ── 4. PEJABAT 1, 2 (Dikosongkan) ───────────────────────────────────────
+  // ── 4. PEJABAT 1 & 2 (Dikosongkan) ─────────────────────────────────────────
   const pejabat = [
     { no: "1.", fields: ["NAMA", "NIPPPK", "Pangkat/Gol. Ruang", "Jabatan"] },
     { no: "2.", fields: ["NAMA", "NIPPPK", "Pangkat/Gol. Ruang", "Jabatan"] },
@@ -152,10 +190,9 @@ export async function generateBeritaAcaraPDF(
 
   // ── 6. DATA PELAKU USAHA (No 1-14) ─────────────────────────────────────────
   const noW = 5;
-  const dataLabelW = 68; // Lebar cukup untuk label panjang tanpa menabrak :
-  const dataColonX = marginL + noW + dataLabelW; // 15 + 5 + 68 = 88mm
+  const dataLabelW = 68;
+  const dataColonX = marginL + noW + dataLabelW; // 88mm
   const dataValueX = dataColonX + 3; // 91mm
-  const dataValueW = pageW - marginR - dataValueX; // 210 - 15 - 91 = 104mm
   const lineY_offset = 1.0;
 
   doc.setFontSize(8.5);
@@ -321,52 +358,132 @@ export async function generateBeritaAcaraPDF(
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
   y += 4.2;
 
-  // ── 7. TABEL TANDA TANGAN (SAMA PERSIS SESUAI GAMBAR 2) ───────────────────
-  y += 2.5; // Spasi pas di bawah poin 14 Hasil Survey
+  // ── 7. TABEL TANDA TANGAN ───────────────────────────────────────────────────
+  y += 2.5;
 
   const ttStartY = y;
-  const col1W = 45;
-  const col2W = 45;
-  const col3W = 45;
-  const col4W = 45; // total 180 mm
+  const colTimSurveyW = 110; // 2 Kolom x 55mm = 110mm
+  const colPenerimaW = 70;   // 1 Kolom = 70mm (Total 180mm)
+  const col1W = 55;
+  const col2W = 55;
 
   doc.setDrawColor(0, 0, 0);
   doc.setTextColor(0, 0, 0);
   doc.setLineWidth(0.4);
 
-  // --- HEADER 1: TIM SURVEY (3 Kolom) & CALON PENERIMA DANA HIBAH (1 Kolom) ---
+  // --- HEADER 1: TIM SURVEY (2 Kolom) & CALON PENERIMA DANA HIBAH (1 Kolom) ---
   const header1H = 6;
   doc.setFillColor(226, 239, 218); // Hijau muda #E2EFDA
   doc.setDrawColor(0, 0, 0);
   doc.setTextColor(0, 0, 0);
 
-  // Rect Header Tim Survey
-  doc.rect(marginL, ttStartY, col1W + col2W + col3W, header1H, "FD");
+  // Rect Header Tim Survey (2 Kolom = 110mm)
+  doc.rect(marginL, ttStartY, colTimSurveyW, header1H, "FD");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
-  doc.text("TIM SURVEY", marginL + (col1W + col2W + col3W) / 2, ttStartY + 4.2, { align: "center" });
+  doc.text("TIM SURVEY", marginL + colTimSurveyW / 2, ttStartY + 4.2, { align: "center" });
 
-  // Rect Header Calon Penerima Dana Hibah (juga hijau muda)
+  // Rect Header Calon Penerima Dana Hibah (70mm)
   doc.setFillColor(226, 239, 218);
-  doc.rect(marginL + col1W + col2W + col3W, ttStartY, col4W, header1H, "FD");
+  doc.rect(marginL + colTimSurveyW, ttStartY, colPenerimaW, header1H, "FD");
   doc.setFontSize(7.5);
-  doc.text("CALON PENERIMA DANA HIBAH", marginL + col1W + col2W + col3W + col4W / 2, ttStartY + 4.2, { align: "center" });
+  doc.text("CALON PENERIMA DANA HIBAH", marginL + colTimSurveyW + colPenerimaW / 2, ttStartY + 4.2, { align: "center" });
 
-  // --- BOX TTD TIM SURVEY (3 KOLOM) & PENERIMA (1 KOLOM) ---
-  const signBoxH = 22;
+  // --- BOX TTD TIM SURVEY (2 KOLOM) & PENERIMA (1 KOLOM DENGAN FOTO) ---
+  const signBoxH = 26;
   const signY = ttStartY + header1H;
 
+  // Box Tim Survey 1 & 2
   doc.rect(marginL, signY, col1W, signBoxH);
   doc.rect(marginL + col1W, signY, col2W, signBoxH);
-  doc.rect(marginL + col1W + col2W, signY, col3W, signBoxH);
-  doc.rect(marginL + col1W + col2W + col3W, signY, col4W, signBoxH);
 
-  // Nama Tim Survey 1, 2, 3 DIKOSONGKAN (siap diisi nanti).
-  // Hanya nama Calon Penerima Dana Hibah yang dicetak di kolom 4.
-  const nameLabelY = signY + signBoxH - 2.5;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
-  doc.text((actor.fullName || "").toUpperCase(), marginL + col1W + col2W + col3W + col4W / 2, nameLabelY, { align: "center" });
+  // Box Calon Penerima Dana Hibah
+  const penerimaX = marginL + colTimSurveyW;
+  doc.rect(penerimaX, signY, colPenerimaW, signBoxH);
+
+  // Content inside Calon Penerima Dana Hibah Box:
+  if (surveyPhotoData) {
+    const maxW = 64; // Max 64mm width inside 70mm box
+    const maxH = 14; // Max 14mm height inside 26mm box
+    let imgW = maxW;
+    let imgH = imgW * (surveyPhotoData.h / surveyPhotoData.w);
+    if (imgH > maxH) {
+      imgH = maxH;
+      imgW = imgH * (surveyPhotoData.w / surveyPhotoData.h);
+    }
+    const imgX = penerimaX + (colPenerimaW - imgW) / 2;
+    const imgY = signY + 1.5;
+
+    try {
+      doc.addImage(surveyPhotoData.base64, surveyPhotoData.format, imgX, imgY, imgW, imgH);
+    } catch (e) {
+      console.error("Error embedding survey photo:", e);
+    }
+
+    // Nama Calon Penerima Dana Hibah di bawah foto
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.text((actor.fullName || "").toUpperCase(), penerimaX + colPenerimaW / 2, signY + 18, { align: "center" });
+
+    // Badge: Centang Hijau + TERVERIFIKASI
+    const textVerif = "TERVERIFIKASI";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    const textVerifW = doc.getTextWidth(textVerif);
+    const iconW = 4;
+    const badgeTotalW = iconW + 1 + textVerifW;
+    const badgeStartX = penerimaX + (colPenerimaW - badgeTotalW) / 2;
+    const badgeY = signY + 22.5;
+
+    // Green Circle
+    doc.setFillColor(34, 197, 94);
+    doc.circle(badgeStartX + 1.8, badgeY - 1.0, 2.0, "F");
+
+    // White Checkmark
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.5);
+    doc.line(badgeStartX + 0.9, badgeY - 1.0, badgeStartX + 1.5, badgeY - 0.4);
+    doc.line(badgeStartX + 1.5, badgeY - 0.4, badgeStartX + 2.8, badgeY - 1.7);
+
+    // Green TERVERIFIKASI Text
+    doc.setTextColor(22, 163, 74);
+    doc.text(textVerif, badgeStartX + iconW + 1, badgeY, { align: "left" });
+
+    // Reset colors
+    doc.setTextColor(0, 0, 0);
+    doc.setDrawColor(0, 0, 0);
+  } else {
+    // Foto tidak tersedia: Tampilkan Nama & TERVERIFIKASI badge saja
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.text((actor.fullName || "").toUpperCase(), penerimaX + colPenerimaW / 2, signY + 14, { align: "center" });
+
+    const textVerif = "TERVERIFIKASI";
+    doc.setFontSize(7.5);
+    const textVerifW = doc.getTextWidth(textVerif);
+    const iconW = 4;
+    const badgeTotalW = iconW + 1 + textVerifW;
+    const badgeStartX = penerimaX + (colPenerimaW - badgeTotalW) / 2;
+    const badgeY = signY + 20;
+
+    // Green Circle
+    doc.setFillColor(34, 197, 94);
+    doc.circle(badgeStartX + 1.8, badgeY - 1.0, 2.0, "F");
+
+    // White Checkmark
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.5);
+    doc.line(badgeStartX + 0.9, badgeY - 1.0, badgeStartX + 1.5, badgeY - 0.4);
+    doc.line(badgeStartX + 1.5, badgeY - 0.4, badgeStartX + 2.8, badgeY - 1.7);
+
+    // Green TERVERIFIKASI Text
+    doc.setTextColor(22, 163, 74);
+    doc.text(textVerif, badgeStartX + iconW + 1, badgeY, { align: "left" });
+
+    // Reset colors
+    doc.setTextColor(0, 0, 0);
+    doc.setDrawColor(0, 0, 0);
+  }
 
   // --- HEADER 2: MENGETAHUI/VERIFIKATOR ---
   const metaHeaderY = signY + signBoxH;
@@ -381,36 +498,37 @@ export async function generateBeritaAcaraPDF(
   // --- BARIS BAWAH: 4 SUB-KOLOM (KORLAP / CATATAN) ---
   const metaSignY = metaHeaderY + metaHeaderH;
   const metaSignH = 26;
+  const subColW = 45; // 45mm x 4 = 180mm
 
-  // Box 1: Kosong + titik-titik di bawah (rapi di dalam kotak 45mm)
-  doc.rect(marginL, metaSignY, col1W, metaSignH);
+  // Box 1: Kosong + titik-titik
+  doc.rect(marginL, metaSignY, subColW, metaSignH);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.text("...................................................", marginL + col1W / 2, metaSignY + metaSignH - 3, { align: "center" });
+  doc.text("...................................................", marginL + subColW / 2, metaSignY + metaSignH - 3, { align: "center" });
 
-  // Box 2: Header Catatan :
-  doc.rect(marginL + col1W, metaSignY, col2W, metaSignH);
+  // Box 2: Catatan :
+  doc.rect(marginL + subColW, metaSignY, subColW, metaSignH);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.5);
-  doc.text("Catatan :", marginL + col1W + 2, metaSignY + 4);
+  doc.text("Catatan :", marginL + subColW + 2, metaSignY + 4);
 
-  // Box 3: Header KORLAP/RT/RW/LURAH/CAMAT SETEMPAT (light green fill) + titik-titik di bawah
+  // Box 3: KORLAP/RT/RW/LURAH/CAMAT SETEMPAT
   const subH3 = 5.5;
   doc.setFillColor(226, 239, 218);
-  doc.rect(marginL + col1W + col2W, metaSignY, col3W, subH3, "FD");
+  doc.rect(marginL + subColW * 2, metaSignY, subColW, subH3, "FD");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(5.2); // Font disesuaikan agar tidak melanggar garis batas kiri & kanan
-  doc.text("KORLAP/RT/RW/LURAH/CAMAT SETEMPAT", marginL + col1W + col2W + col3W / 2, metaSignY + 3.6, { align: "center" });
-  doc.rect(marginL + col1W + col2W, metaSignY + subH3, col3W, metaSignH - subH3);
+  doc.setFontSize(5.2);
+  doc.text("KORLAP/RT/RW/LURAH/CAMAT SETEMPAT", marginL + subColW * 2 + subColW / 2, metaSignY + 3.6, { align: "center" });
+  doc.rect(marginL + subColW * 2, metaSignY + subH3, subColW, metaSignH - subH3);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.text("...................................................", marginL + col1W + col2W + col3W / 2, metaSignY + metaSignH - 3, { align: "center" });
+  doc.text("...................................................", marginL + subColW * 2 + subColW / 2, metaSignY + metaSignH - 3, { align: "center" });
 
-  // Box 4: Header Catatan :
-  doc.rect(marginL + col1W + col2W + col3W, metaSignY, col4W, metaSignH);
+  // Box 4: Catatan :
+  doc.rect(marginL + subColW * 3, metaSignY, subColW, metaSignH);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.5);
-  doc.text("Catatan :", marginL + col1W + col2W + col3W + 2, metaSignY + 4);
+  doc.text("Catatan :", marginL + subColW * 3 + 2, metaSignY + 4);
 
   // BORDER TEBAL LUAR KESELURUHAN TABEL TANDA TANGAN
   const totalTtH = header1H + signBoxH + metaHeaderH + metaSignH;
