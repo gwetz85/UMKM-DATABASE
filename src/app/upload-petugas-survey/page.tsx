@@ -403,7 +403,12 @@ export default function UploadPetugasSurveyPage() {
   const handleResetUID = (id: string, fullName: string) => {
     if (!database) return
     const userRef = ref(database, `system_users/${id}`)
-    updateDocumentNonBlocking(userRef, { uid: null, addedAt: new Date().toISOString() })
+    // Clear both uid AND activeSessionId so the single-device lock is fully released
+    updateDocumentNonBlocking(userRef, {
+      uid: null,
+      activeSessionId: null,
+      addedAt: new Date().toISOString()
+    })
 
     logActivity({
       query: `RESET PERANGKAT PETUGAS SURVEY: ${fullName}`,
