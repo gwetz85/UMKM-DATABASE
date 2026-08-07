@@ -40,7 +40,8 @@ import {
   Upload,
   Folder,
   FileDown,
-  Edit
+  Edit,
+  RotateCcw
 } from "lucide-react"
 import { generateBeritaAcaraPDF } from "@/lib/generate-berita-acara-pdf"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -59,6 +60,8 @@ export default function VerifikasiDinasPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
   const [isDeletingAll, setIsDeletingAll] = useState(false)
   const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null)
+  const [resetSurveyActor, setResetSurveyActor] = useState<BusinessActor | null>(null)
+  const [isResettingSurvey, setIsResettingSurvey] = useState(false)
 
   // Choice dialog states
   const [choiceActor, setChoiceActor] = useState<BusinessActor | null>(null)
@@ -416,6 +419,22 @@ export default function VerifikasiDinasPage() {
     setShowPejabatModal(false)
   }
 
+  const handleResetSurveyData = async () => {
+    if (!resetSurveyActor || !database) return
+    setIsResettingSurvey(true)
+    const actorRef = ref(database, `businessActors/${resetSurveyActor.id}`)
+    await import('firebase/database').then(({ update }) =>
+      update(actorRef, {
+        surveyData: null,
+        surveyProgress: null,
+        verificationLocationDinas: null,
+      })
+    )
+    toast({ title: "✅ Data Survey Direset", description: `Data survey ${resetSurveyActor.fullName} berhasil dihapus (0%).` })
+    setIsResettingSurvey(false)
+    setResetSurveyActor(null)
+  }
+
   const handleDeleteAll = () => {
     if (!database || !isAdmin || deleteConfirmText !== 'HAPUS SEMUA') return
     
@@ -661,6 +680,19 @@ export default function VerifikasiDinasPage() {
                           </div>
 
                           <div className="flex gap-2">
+                            {/* Tombol Reset Survey Data - Admin Only */}
+                            {isAdmin && actor.surveyProgress != null && actor.surveyProgress > 0 && (
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                onClick={() => setResetSurveyActor(actor)}
+                                className="h-9 w-9 border-orange-100 text-orange-500 bg-orange-50 hover:bg-orange-500 hover:text-white rounded-xl shadow-sm transition-all duration-300"
+                                title="Reset Data Survey (Admin)"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </Button>
+                            )}
+
                             {/* Tombol Generate PDF Berita Acara */}
                             {(isAdmin || isDinas || isPetugas) && (
                               <Button
@@ -1264,6 +1296,50 @@ export default function VerifikasiDinasPage() {
                </div>
              </div>
            ))}
+        </div>
+      )}
+
+      {/* ─── RESET SURVEY CONFIRM DIALOG ─────────────────────────────── */}
+      {resetSurveyActor && (
+        <div className="fixed inset-0 z-[99] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 px-8 py-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
+                  <RotateCcw className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-white text-lg font-black uppercase tracking-wide">Reset Data Survey</h2>
+              </div>
+            </div>
+            <div className="px-8 py-6 space-y-4">
+              <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 space-y-2">
+                <p className="text-sm text-orange-700 font-semibold">Anda akan menghapus data survey untuk:</p>
+                <p className="text-base font-black text-orange-900 uppercase">{resetSurveyActor.fullName}</p>
+                <p className="text-xs text-orange-600">NIK: {resetSurveyActor.nik}</p>
+              </div>
+              <div className="space-y-2 text-sm text-slate-600">
+                <p className="font-bold text-slate-700">Data yang akan direset:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs text-slate-500 pl-2">
+                  <li>Semua isian form survey (kembali ke 0%)</li>
+                  <li>Foto survey yang sudah diupload</li>
+                  <li>Data titik lokasi GPS</li>
+                </ul>
+              </div>
+            </div>
+            <div className="px-8 py-5 border-t bg-slate-50 flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setResetSurveyActor(null)} disabled={isResettingSurvey}>
+                Batal
+              </Button>
+              <Button
+                onClick={handleResetSurveyData}
+                disabled={isResettingSurvey}
+                className="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl min-w-[160px]"
+              >
+                {isResettingSurvey ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
+                Ya, Reset Survey
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
