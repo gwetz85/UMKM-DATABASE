@@ -406,6 +406,7 @@ export default function VerifikasiDinasPage() {
     // Kirim email notifikasi jika alamat email diisi pada surveyData
     const recipientEmail = surveyData.email?.trim()
     if (recipientEmail && recipientEmail.includes('@')) {
+      const emailLogRef = ref(database, `email_logs/${verifyingActor.id}`)
       toast({ title: "📧 Mengirim Email Notifikasi...", description: `Mengirim pemberitahuan ke ${recipientEmail}` })
       fetch('/api/send-survey-email', {
         method: 'POST',
@@ -424,11 +425,40 @@ export default function VerifikasiDinasPage() {
       .then(resData => {
         if (resData.success) {
           if (resData.status === 'sent') {
+            updateDocumentNonBlocking(emailLogRef, {
+              actorId: verifyingActor.id,
+              fullName: verifyingActor.fullName,
+              nik: verifyingActor.nik,
+              email: recipientEmail,
+              status: 'sent',
+              sentAt: new Date().toISOString(),
+              verifiedBy: userProfile?.fullName || user?.email || 'Petugas Survey'
+            })
             toast({ title: "✅ Email Terkirim", description: `Notifikasi hasil survey berhasil terkirim ke ${recipientEmail}.` })
           } else if (resData.status === 'skipped') {
-            toast({ title: "⚠️ Email Skipped", description: `Server email belum dikonfigurasi. Log tersimpan sebagai skipped.` })
+            updateDocumentNonBlocking(emailLogRef, {
+              actorId: verifyingActor.id,
+              fullName: verifyingActor.fullName,
+              nik: verifyingActor.nik,
+              email: recipientEmail,
+              status: 'skipped',
+              note: 'Server email belum dikonfigurasi (EMAIL_PASS).',
+              timestamp: new Date().toISOString(),
+              verifiedBy: userProfile?.fullName || user?.email || 'Petugas Survey'
+            })
+            toast({ title: "⚠️ Email Skipped", description: `Server email belum dikonfigurasi (kredensial EMAIL_PASS). Log tersimpan sebagai skipped.` })
           }
         } else {
+          updateDocumentNonBlocking(emailLogRef, {
+            actorId: verifyingActor.id,
+            fullName: verifyingActor.fullName,
+            nik: verifyingActor.nik,
+            email: recipientEmail,
+            status: 'failed',
+            error: resData.error || "Gagal mengirim email.",
+            failedAt: new Date().toISOString(),
+            verifiedBy: userProfile?.fullName || user?.email || 'Petugas Survey'
+          })
           toast({ variant: "destructive", title: "❌ Email Gagal Terkirim", description: resData.error || "Gagal mengirim email." })
         }
       })

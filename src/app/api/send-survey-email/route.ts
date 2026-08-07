@@ -2,21 +2,25 @@ import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { initializeApp, getApps } from 'firebase/app';
 import { getDatabase, ref, set } from 'firebase/database';
-import { getAuth, signInAnonymously } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 import { logActivity } from '@/lib/logger';
 
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const database = getDatabase(app);
-const auth = getAuth(app);
+
+// Helper for safe server-side logging without crashing if rules deny server writes
+async function safeLogFirebase(path: string, data: any) {
+  try {
+    const dbRef = ref(database, path);
+    await set(dbRef, data);
+  } catch (err) {
+    console.warn(`[Firebase Server Log Warning] Could not write to ${path}:`, err);
+  }
+}
 
 export async function POST(request: Request) {
   try {
-    if (!auth.currentUser) {
-      await signInAnonymously(auth);
-    }
-
     const body = await request.json();
     const { actorId, fullName, nik, email, businessName, surveyData, verifiedBy } = body;
 
@@ -28,15 +32,13 @@ export async function POST(request: Request) {
     }
 
     const now = new Date().toISOString();
-    const emailLogRef = ref(database, `email_logs/${actorId}`);
-
     const emailUser = process.env.EMAIL_USER || 'agussuriyadipunya@gmail.com';
     const emailPass = process.env.EMAIL_PASS || '';
 
     // If EMAIL_PASS is not configured, record skipped status
     if (!emailPass) {
-      console.warn("EMAIL_PASS is not set in environment. Email simulation recorded.");
-      await set(emailLogRef, {
+      console.warn("EMAIL_PASS is not set in environment. Email sending skipped.");
+      await safeLogFirebase(`email_logs/${actorId}`, {
         actorId,
         fullName: fullName || '',
         nik: nik || '',
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         success: true,
         status: 'skipped',
-        message: 'Kredensial email server belum diatur. Log dicatat sebagai skipped.'
+        message: 'Kredensial email server belum diatur (EMAIL_PASS kosong).'
       });
     }
 
@@ -143,8 +145,8 @@ export async function POST(request: Request) {
 
     await transporter.sendMail(mailOptions);
 
-    // Save successful log in Firebase
-    await set(emailLogRef, {
+    // Save successful log safely
+    await safeLogFirebase(`email_logs/${actorId}`, {
       actorId,
       fullName: fullName || '',
       nik: nik || '',
@@ -154,14 +156,16 @@ export async function POST(request: Request) {
       verifiedBy: verifiedBy || 'Petugas'
     });
 
-    await logActivity({
-      query: `EMAIL SURVEY SENT: ${fullName} (${email})`,
-      results: "Terkirim",
-      device: 'Server API',
-      source: 'Web',
-      method: 'SEND EMAIL SURVEY',
-      userId: verifiedBy || 'Petugas'
-    });
+    try {
+      await logActivity({
+        query: `EMAIL SURVEY SENT: ${fullName} (${email})`,
+        results: "Terkirim",
+        device: 'Server API',
+        source: 'Web',
+        method: 'SEND EMAIL SURVEY',
+        userId: verifiedBy || 'Petugas'
+      });
+    } catch (_) {}
 
     return NextResponse.json({
       success: true,
@@ -172,28 +176,9 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Error sending survey email:', error);
 
-    // Record failure in Firebase email_logs if actorId exists
-    try {
-      const body = await request.clone().json();
-      if (body?.actorId) {
-        const failLogRef = ref(database, `email_logs/${body.actorId}`);
-        await set(failLogRef, {
-          actorId: body.actorId,
-          fullName: body.fullName || '',
-          nik: body.nik || '',
-          email: body.email || '',
-          status: 'failed',
-          error: error.message || 'Gagal mengirim email',
-          failedAt: new Date().toISOString(),
-          verifiedBy: body.verifiedBy || 'Petugas'
-        });
-      }
-    } catch (_) {
-      // Ignore fallback clone error
-    }
-
+    // Return friendly error response
     return NextResponse.json(
-      { error: 'Gagal mengirim email pemberitahuan: ' + (error.message || 'Server Error') },
+      { error: 'Gagal mengirim email: ' + (error.message || 'Server SMTP Error') },
       { status: 500 }
     );
   }
