@@ -84,7 +84,6 @@ function FinishContent() {
   const actors = allActorsRaw
     ? allActorsRaw
         .filter(a => {
-          if (!a.lpjNominal) return false
           const matchesSearch =
             a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             a.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -283,88 +282,112 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
 
   // ── Excel Export ──────────────────────────────────────────────────────────
   const handleExportExcel = () => {
-    if (!actors || actors.length === 0) {
-      toast({ variant: "destructive", title: "Data Kosong", description: "Tidak ada data selesai untuk di-export." })
-      return
-    }
-
-    const exportData = actors.map((actor, index) => {
-      const a = actor as any
-      const sd = a.surveyData || {}
-      const parsed = parsePobDob(actor.pobDob || "")
-      const dob = actor.dob || parsed.dob || "-"
-      const pob = actor.pob || parsed.pob || "-"
-      const locationGps = a.verificationLocationDinas
-        ? `${a.verificationLocationDinas.lat}, ${a.verificationLocationDinas.lon}`
-        : (a.verificationLocation ? `${a.verificationLocation.lat}, ${a.verificationLocation.lon}` : "-")
-      const mapsUrl = a.verificationLocationDinas
-        ? `https://maps.google.com/?q=${a.verificationLocationDinas.lat},${a.verificationLocationDinas.lon}`
-        : (a.verificationLocation ? `https://maps.google.com/?q=${a.verificationLocation.lat},${a.verificationLocation.lon}` : "-")
-
-      return {
-        "NO": index + 1,
-        "NOMOR REGISTRASI": actor.registrationCode || "-",
-        "NAMA LENGKAP": actor.fullName || "-",
-        "NIK": actor.nik || "-",
-        "NOMOR KK": actor.noKK || "-",
-        "JENIS KELAMIN": actor.gender || "-",
-        "TEMPAT LAHIR": pob,
-        "TANGGAL LAHIR": dob,
-        "NOMOR HP / WA": actor.phone || "-",
-        "ALAMAT LENGKAP": actor.address || "-",
-        "RT / RW": actor.rtRw || "-",
-        "KELURAHAN": actor.kelurahan || "-",
-        "KECAMATAN": actor.kecamatan || "-",
-        "NAMA USAHA": actor.businessName || "-",
-        "KATEGORI USAHA": actor.businessCategory || "-",
-        "LOKASI USAHA": actor.businessLocation || "-",
-        "PENGUSUL / KOORDINATOR": actor.coordinator || "-",
-        "NAMA BANK": actor.bankName || "-",
-        "NOMOR REKENING": actor.bankNumber || "-",
-        "PEMILIK REKENING": actor.bankOwner || "-",
-        "PETUGAS SURVEY": actor.petugasSurvey || sd.namaPemilik || "-",
-        "PETUGAS VERIFIKATOR": actor.createdBy || "Admin",
-        "BIDANG USAHA (SURVEY)": sd.bidangUsaha || "-",
-        "TAHUN BERDIRI": sd.tahunBerdiri || "-",
-        "PERALATAN USAHA": sd.peralatan || "-",
-        "IZIN USAHA": Array.isArray(sd.izin) ? sd.izin.join(", ") : (sd.izin || "-"),
-        "MODAL USAHA": sd.modalUsaha || "-",
-        "OMSET PER BULAN": sd.omset || "-",
-        "STATUS DTKS": sd.dtks?.masuk ? `Ya (${sd.dtks.jenis || 'DTKS'})` : "Tidak",
-        "RIWAYAT HIBAH": sd.hibah?.pernah ? `Pernah (${sd.hibah.dariMana || '-'}, ${sd.hibah.tahun || '-'})` : "Belum Pernah",
-        "RENCANA PENGGUNAAN": sd.rencanaPenggunaan || "-",
-        "HASIL REKOMENDASI SURVEY": sd.hasilSurvey || "-",
-        "LINK GOOGLE DRIVE BERKAS": actor.googleDriveLink || "-",
-        "URL FOTO SURVEY": sd.fotoSurveyUrl || "-",
-        "KOORDINAT MAP GPS": locationGps,
-        "LINK GOOGLE MAPS": mapsUrl,
-        "STATUS LPJ": "TELAH TERVERIFIKASI",
-        "NOMINAL LPJ (RP)": actor.lpjNominal || 0,
+    try {
+      if (!actors || actors.length === 0) {
+        toast({ variant: "destructive", title: "Data Kosong", description: "Tidak ada data selesai untuk di-export." })
+        return
       }
-    })
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Data Selesai UMKM")
+      const exportData = actors.map((actor, index) => {
+        const a = actor as any
+        const sd = a.surveyData || {}
+        const parsed = parsePobDob(actor.pobDob || "")
+        const dob = actor.dob || parsed.dob || "-"
+        const pob = actor.pob || parsed.pob || "-"
+        const locationGps = a.verificationLocationDinas
+          ? `${a.verificationLocationDinas.lat}, ${a.verificationLocationDinas.lon}`
+          : (a.verificationLocation ? `${a.verificationLocation.lat}, ${a.verificationLocation.lon}` : "-")
+        const mapsUrl = a.verificationLocationDinas
+          ? `https://maps.google.com/?q=${a.verificationLocationDinas.lat},${a.verificationLocationDinas.lon}`
+          : (a.verificationLocation ? `https://maps.google.com/?q=${a.verificationLocation.lat},${a.verificationLocation.lon}` : "-")
 
-    // Set lebar kolom
-    const colWidths = Object.keys(exportData[0] || {}).map(key => ({ wch: Math.max(key.length + 3, 16) }))
-    worksheet["!cols"] = colWidths
+        let dtksStatus = "Tidak"
+        if (sd.dtks && typeof sd.dtks === 'object' && sd.dtks.masuk) {
+          dtksStatus = `Ya (${sd.dtks.jenis || 'DTKS'})`
+        } else if (typeof sd.dtks === 'string') {
+          dtksStatus = sd.dtks
+        }
 
-    // Generate binary dan download via Blob (kompatibel di browser)
-    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
-    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    const nowStr = new Date().toISOString().split("T")[0]
-    a.href = url
-    a.download = `Data_Selesai_UMKM_${nowStr}.xlsx`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    setTimeout(() => URL.revokeObjectURL(url), 5000)
+        let hibahStatus = "Belum Pernah"
+        if (sd.hibah && typeof sd.hibah === 'object' && sd.hibah.pernah) {
+          hibahStatus = `Pernah (${sd.hibah.dariMana || '-'}, ${sd.hibah.tahun || '-'})`
+        } else if (typeof sd.hibah === 'string') {
+          hibahStatus = sd.hibah
+        }
 
-    toast({ title: "✅ Export Berhasil", description: `${exportData.length} data berhasil di-export ke Excel.` })
+        return {
+          "NO": index + 1,
+          "NOMOR REGISTRASI": actor.registrationCode || "-",
+          "NAMA LENGKAP": actor.fullName || "-",
+          "NIK": actor.nik || "-",
+          "NOMOR KK": actor.noKK || "-",
+          "JENIS KELAMIN": actor.gender || "-",
+          "TEMPAT LAHIR": pob,
+          "TANGGAL LAHIR": dob,
+          "NOMOR HP / WA": actor.phone || "-",
+          "ALAMAT LENGKAP": actor.address || "-",
+          "RT / RW": actor.rtRw || "-",
+          "KELURAHAN": actor.kelurahan || "-",
+          "KECAMATAN": actor.kecamatan || "-",
+          "NAMA USAHA": actor.businessName || "-",
+          "KATEGORI USAHA": actor.businessCategory || "-",
+          "LOKASI USAHA": actor.businessLocation || "-",
+          "PENGUSUL / KOORDINATOR": actor.coordinator || "-",
+          "NAMA BANK": actor.bankName || "-",
+          "NOMOR REKENING": actor.bankNumber || "-",
+          "PEMILIK REKENING": actor.bankOwner || "-",
+          "PETUGAS SURVEY": actor.petugasSurvey || sd.namaPemilik || "-",
+          "PETUGAS VERIFIKATOR": actor.createdBy || "Admin",
+          "BIDANG USAHA (SURVEY)": sd.bidangUsaha || "-",
+          "TAHUN BERDIRI": sd.tahunBerdiri || "-",
+          "PERALATAN USAHA": sd.peralatan || "-",
+          "IZIN USAHA": Array.isArray(sd.izin) ? sd.izin.join(", ") : (sd.izin || "-"),
+          "MODAL USAHA": sd.modalUsaha || "-",
+          "OMSET PER BULAN": sd.omset || "-",
+          "STATUS DTKS": dtksStatus,
+          "RIWAYAT HIBAH": hibahStatus,
+          "RENCANA PENGGUNAAN": sd.rencanaPenggunaan || "-",
+          "HASIL REKOMENDASI SURVEY": sd.hasilSurvey || "-",
+          "LINK GOOGLE DRIVE BERKAS": actor.googleDriveLink || "-",
+          "URL FOTO SURVEY": sd.fotoSurveyUrl || "-",
+          "KOORDINAT MAP GPS": locationGps,
+          "LINK GOOGLE MAPS": mapsUrl,
+          "STATUS LPJ": actor.lpjNominal ? "TELAH TERVERIFIKASI" : "BELUM LPJ",
+          "NOMINAL LPJ (RP)": actor.lpjNominal || 0,
+        }
+      })
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Selesai UMKM")
+
+      const colWidths = Object.keys(exportData[0] || {}).map(key => ({ wch: Math.max(key.length + 3, 16) }))
+      worksheet["!cols"] = colWidths
+
+      const nowStr = new Date().toISOString().split("T")[0]
+      const filename = `Data_Selesai_UMKM_${nowStr}.xlsx`
+
+      try {
+        XLSX.writeFile(workbook, filename)
+      } catch (err) {
+        console.warn("XLSX.writeFile fallback trigger:", err)
+        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        setTimeout(() => URL.revokeObjectURL(url), 5000)
+      }
+
+      toast({ title: "✅ Export Berhasil", description: `${exportData.length} data berhasil di-export ke Excel.` })
+    } catch (error: any) {
+      console.error("Export Excel Exception:", error)
+      toast({ variant: "destructive", title: "Gagal Export", description: error?.message || "Terjadi kesalahan saat membuat file Excel." })
+    }
   }
 
   // ── Edit ──────────────────────────────────────────────────────────────────
