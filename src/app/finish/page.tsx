@@ -18,6 +18,7 @@ import { useSearchParams } from "next/navigation"
 import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 export default function FinishPage() {
   return (
@@ -280,15 +281,71 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
     }, 500)
   }
 
-  // ── Excel Export ──────────────────────────────────────────────────────────
-  const handleExportExcel = () => {
+  // ── Excel Export (with embedded images using ExcelJS) ──────────────────────
+  const handleExportExcel = async () => {
     try {
       if (!actors || actors.length === 0) {
         toast({ variant: "destructive", title: "Data Kosong", description: "Tidak ada data selesai untuk di-export." })
         return
       }
 
-      const exportData = actors.map((actor, index) => {
+      toast({ title: "⏳ Memproses Excel", description: "Sedang menyusun file Excel beserta foto survey..." })
+
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet("Data Selesai UMKM")
+
+      const headers = [
+        { header: "NO", key: "no", width: 6 },
+        { header: "NOMOR REGISTRASI", key: "registrationCode", width: 18 },
+        { header: "NAMA LENGKAP", key: "fullName", width: 25 },
+        { header: "NIK", key: "nik", width: 20 },
+        { header: "NOMOR KK", key: "noKK", width: 20 },
+        { header: "JENIS KELAMIN", key: "gender", width: 15 },
+        { header: "TEMPAT LAHIR", key: "pob", width: 18 },
+        { header: "TANGGAL LAHIR", key: "dob", width: 15 },
+        { header: "NOMOR HP / WA", key: "phone", width: 16 },
+        { header: "ALAMAT LENGKAP", key: "address", width: 35 },
+        { header: "RT / RW", key: "rtRw", width: 10 },
+        { header: "KELURAHAN", key: "kelurahan", width: 18 },
+        { header: "KECAMATAN", key: "kecamatan", width: 18 },
+        { header: "NAMA USAHA", key: "businessName", width: 25 },
+        { header: "KATEGORI USAHA", key: "businessCategory", width: 18 },
+        { header: "LOKASI USAHA", key: "businessLocation", width: 25 },
+        { header: "PENGUSUL / KOORDINATOR", key: "coordinator", width: 22 },
+        { header: "NAMA BANK", key: "bankName", width: 15 },
+        { header: "NOMOR REKENING", key: "bankNumber", width: 20 },
+        { header: "PEMILIK REKENING", key: "bankOwner", width: 22 },
+        { header: "PETUGAS SURVEY", key: "petugasSurvey", width: 20 },
+        { header: "PETUGAS VERIFIKATOR", key: "createdBy", width: 20 },
+        { header: "BIDANG USAHA (SURVEY)", key: "bidangUsaha", width: 20 },
+        { header: "TAHUN BERDIRI", key: "tahunBerdiri", width: 15 },
+        { header: "PERALATAN USAHA", key: "peralatan", width: 20 },
+        { header: "IZIN USAHA", key: "izin", width: 20 },
+        { header: "MODAL USAHA", key: "modalUsaha", width: 18 },
+        { header: "OMSET PER BULAN", key: "omset", width: 18 },
+        { header: "STATUS DTKS", key: "dtks", width: 18 },
+        { header: "RIWAYAT HIBAH", key: "hibah", width: 25 },
+        { header: "RENCANA PENGGUNAAN", key: "rencanaPenggunaan", width: 25 },
+        { header: "HASIL REKOMENDASI SURVEY", key: "hasilSurvey", width: 25 },
+        { header: "LINK GOOGLE DRIVE BERKAS", key: "googleDriveLink", width: 30 },
+        { header: "FOTO SURVEY", key: "fotoSurvey", width: 22 },
+        { header: "KOORDINAT MAP GPS", key: "locationGps", width: 22 },
+        { header: "LINK GOOGLE MAPS", key: "mapsUrl", width: 30 },
+        { header: "STATUS LPJ", key: "statusLpj", width: 20 },
+        { header: "NOMINAL LPJ (RP)", key: "nominalLpj", width: 20 },
+      ]
+
+      worksheet.columns = headers
+
+      // Style header row
+      const headerRow = worksheet.getRow(1)
+      headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } }
+      headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1565C0" } }
+      headerRow.height = 25
+      headerRow.alignment = { vertical: "middle", horizontal: "center" }
+
+      for (let index = 0; index < actors.length; index++) {
+        const actor = actors[index]
         const a = actor as any
         const sd = a.surveyData || {}
         const parsed = parsePobDob(actor.pobDob || "")
@@ -315,99 +372,90 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
           hibahStatus = sd.hibah
         }
 
-        let rawFoto = sd.fotoSurveyUrl || "-"
-        if (typeof rawFoto === 'string' && rawFoto.startsWith('data:')) {
-          rawFoto = "[FOTO BASE64]"
-        }
+        const rawFotoUrl = sd.fotoSurveyUrl || ""
+        const isBase64Foto = typeof rawFotoUrl === 'string' && rawFotoUrl.startsWith('data:image/')
 
-        return {
-          "NO": index + 1,
-          "NOMOR REGISTRASI": actor.registrationCode || "-",
-          "NAMA LENGKAP": actor.fullName || "-",
-          "NIK": actor.nik || "-",
-          "NOMOR KK": actor.noKK || "-",
-          "JENIS KELAMIN": actor.gender || "-",
-          "TEMPAT LAHIR": pob,
-          "TANGGAL LAHIR": dob,
-          "NOMOR HP / WA": actor.phone || "-",
-          "ALAMAT LENGKAP": actor.address || "-",
-          "RT / RW": actor.rtRw || "-",
-          "KELURAHAN": actor.kelurahan || "-",
-          "KECAMATAN": actor.kecamatan || "-",
-          "NAMA USAHA": actor.businessName || "-",
-          "KATEGORI USAHA": actor.businessCategory || "-",
-          "LOKASI USAHA": actor.businessLocation || "-",
-          "PENGUSUL / KOORDINATOR": actor.coordinator || "-",
-          "NAMA BANK": actor.bankName || "-",
-          "NOMOR REKENING": actor.bankNumber || "-",
-          "PEMILIK REKENING": actor.bankOwner || "-",
-          "PETUGAS SURVEY": actor.petugasSurvey || sd.namaPemilik || "-",
-          "PETUGAS VERIFIKATOR": actor.createdBy || "Admin",
-          "BIDANG USAHA (SURVEY)": sd.bidangUsaha || "-",
-          "TAHUN BERDIRI": sd.tahunBerdiri || "-",
-          "PERALATAN USAHA": sd.peralatan || "-",
-          "IZIN USAHA": Array.isArray(sd.izin) ? sd.izin.join(", ") : (sd.izin || "-"),
-          "MODAL USAHA": sd.modalUsaha || "-",
-          "OMSET PER BULAN": sd.omset || "-",
-          "STATUS DTKS": dtksStatus,
-          "RIWAYAT HIBAH": hibahStatus,
-          "RENCANA PENGGUNAAN": sd.rencanaPenggunaan || "-",
-          "HASIL REKOMENDASI SURVEY": sd.hasilSurvey || "-",
-          "LINK GOOGLE DRIVE BERKAS": actor.googleDriveLink || "-",
-          "URL FOTO SURVEY": rawFoto,
-          "KOORDINAT MAP GPS": locationGps,
-          "LINK GOOGLE MAPS": mapsUrl,
-          "STATUS LPJ": actor.lpjNominal ? "TELAH TERVERIFIKASI" : "BELUM LPJ",
-          "NOMINAL LPJ (RP)": actor.lpjNominal || 0,
-        }
-      })
+        const row = worksheet.addRow({
+          no: index + 1,
+          registrationCode: actor.registrationCode || "-",
+          fullName: actor.fullName || "-",
+          nik: actor.nik || "-",
+          noKK: actor.noKK || "-",
+          gender: actor.gender || "-",
+          pob,
+          dob,
+          phone: actor.phone || "-",
+          address: actor.address || "-",
+          rtRw: actor.rtRw || "-",
+          kelurahan: actor.kelurahan || "-",
+          kecamatan: actor.kecamatan || "-",
+          businessName: actor.businessName || "-",
+          businessCategory: actor.businessCategory || "-",
+          businessLocation: actor.businessLocation || "-",
+          coordinator: actor.coordinator || "-",
+          bankName: actor.bankName || "-",
+          bankNumber: actor.bankNumber || "-",
+          bankOwner: actor.bankOwner || "-",
+          petugasSurvey: actor.petugasSurvey || sd.namaPemilik || "-",
+          createdBy: actor.createdBy || "Admin",
+          bidangUsaha: sd.bidangUsaha || "-",
+          tahunBerdiri: sd.tahunBerdiri || "-",
+          peralatan: sd.peralatan || "-",
+          izin: Array.isArray(sd.izin) ? sd.izin.join(", ") : (sd.izin || "-"),
+          modalUsaha: sd.modalUsaha || "-",
+          omset: sd.omset || "-",
+          dtks: dtksStatus,
+          hibah: hibahStatus,
+          rencanaPenggunaan: sd.rencanaPenggunaan || "-",
+          hasilSurvey: sd.hasilSurvey || "-",
+          googleDriveLink: actor.googleDriveLink || "-",
+          fotoSurvey: isBase64Foto ? "" : (rawFotoUrl || "-"),
+          locationGps,
+          mapsUrl,
+          statusLpj: actor.lpjNominal ? "TELAH TERVERIFIKASI" : "BELUM LPJ",
+          nominalLpj: actor.lpjNominal || 0,
+        })
 
-      // Sanitize all cell text values to ensure none exceed 32000 characters (Excel limit is 32767)
-      const safeExportData = exportData.map(row => {
-        const cleaned: Record<string, any> = {}
-        for (const [k, v] of Object.entries(row)) {
-          if (typeof v === 'string') {
-            if (v.startsWith('data:')) {
-              cleaned[k] = '[DATA BASE64]'
-            } else if (v.length > 32000) {
-              cleaned[k] = v.substring(0, 32000) + '...'
-            } else {
-              cleaned[k] = v
-            }
-          } else {
-            cleaned[k] = v
+        const rowIndex = index + 2 // row 1 is header
+
+        if (isBase64Foto) {
+          try {
+            const parts = rawFotoUrl.split(',')
+            const mimeMatch = parts[0].match(/data:image\/(png|jpeg|jpg|webp);base64/)
+            const ext = mimeMatch ? (mimeMatch[1] === 'jpg' ? 'jpeg' : mimeMatch[1]) : 'jpeg'
+            const base64Data = parts[1]
+
+            const imageId = workbook.addImage({
+              base64: base64Data,
+              extension: ext as 'jpeg' | 'png',
+            })
+
+            // col 33 (0-based) = 34th column (FOTO SURVEY)
+            worksheet.addImage(imageId, {
+              tl: { col: 33, row: rowIndex - 1 },
+              ext: { width: 120, height: 90 },
+              editAs: 'oneCell'
+            })
+            row.height = 95
+          } catch (imgErr) {
+            console.warn("Gagal menyematkan foto ke Excel:", imgErr)
           }
         }
-        return cleaned
-      })
-
-      const worksheet = XLSX.utils.json_to_sheet(safeExportData)
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Selesai UMKM")
-
-      const colWidths = Object.keys(exportData[0] || {}).map(key => ({ wch: Math.max(key.length + 3, 16) }))
-      worksheet["!cols"] = colWidths
-
-      const nowStr = new Date().toISOString().split("T")[0]
-      const filename = `Data_Selesai_UMKM_${nowStr}.xlsx`
-
-      try {
-        XLSX.writeFile(workbook, filename)
-      } catch (err) {
-        console.warn("XLSX.writeFile fallback trigger:", err)
-        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
-        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = filename
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        setTimeout(() => URL.revokeObjectURL(url), 5000)
       }
 
-      toast({ title: "✅ Export Berhasil", description: `${exportData.length} data berhasil di-export ke Excel.` })
+      const buffer = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const nowStr = new Date().toISOString().split("T")[0]
+      a.href = url
+      a.download = `Data_Selesai_UMKM_${nowStr}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+
+      toast({ title: "✅ Export Berhasil", description: `${actors.length} data pelaku usaha beserta foto survey berhasil di-export ke Excel.` })
     } catch (error: any) {
       console.error("Export Excel Exception:", error)
       toast({ variant: "destructive", title: "Gagal Export", description: error?.message || "Terjadi kesalahan saat membuat file Excel." })
