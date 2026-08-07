@@ -197,7 +197,7 @@ export async function generateBeritaAcaraPDF(
 
   doc.setFontSize(8.5);
 
-  // Row 1 & 2
+  // Row 1 & 2 & 3
   doc.setFont("helvetica", "normal");
   doc.text("1.", marginL, y);
   doc.text("Nama Usaha", marginL + noW, y);
@@ -205,17 +205,25 @@ export async function generateBeritaAcaraPDF(
   doc.text(surveyData.namaUsaha || "-", dataValueX, y);
   doc.setLineWidth(0.2);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 4.0;
 
   doc.text("2.", marginL, y);
   doc.text("Nama Pemilik Usaha", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text(surveyData.namaPemilik || actor.fullName || "-", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 4.0;
 
-  // Row 3: Jenis Kelamin-Status *
+  // Row 3: NIK
   doc.text("3.", marginL, y);
+  doc.text("NIK", marginL + noW, y);
+  doc.text(":", dataColonX, y);
+  doc.text(actor.nik || "-", dataValueX, y);
+  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
+  y += 4.0;
+
+  // Row 4: Jenis Kelamin-Status *
+  doc.text("4.", marginL, y);
   doc.text("Jenis Kelamin-Status *", marginL + noW, y);
   doc.text(":", dataColonX, y);
   const optJK = ["P", "L", "Janda", "Duda", "Lajang", "Kepala Keluarga"];
@@ -224,51 +232,51 @@ export async function generateBeritaAcaraPDF(
     doc.text(opt, oxJK, y);
     oxJK += doc.getTextWidth(opt) + 5;
   });
-  y += 4.2;
+  y += 4.0;
 
-  // Row 4: Alamat Usaha
-  doc.text("4.", marginL, y);
+  // Row 5: Alamat Usaha
+  doc.text("5.", marginL, y);
   doc.text("Alamat Usaha", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text(actor.businessLocation || actor.address || "-", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 4.0;
 
-  // Row 5: Alamat Rumah
-  doc.text("5.", marginL, y);
+  // Row 6: Alamat Rumah
+  doc.text("6.", marginL, y);
   doc.text("Alamat Rumah", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text(surveyData.alamatRumah || actor.address || "-", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 4.0;
 
   // No HP Pemilik Usaha
   doc.text("No HP Pemilik Usaha", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text(surveyData.noHp || actor.phone || "-", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 3.9;
+  y += 3.8;
 
   // Email
   doc.text("Email", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text(surveyData.email || "-", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 3.9;
+  y += 3.8;
 
   // Account Media Sosial
   doc.text("Account Media Sosial", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text(surveyData.sosmed || "-", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 3.9;
+  y += 3.8;
 
-  // Row 6: DTKS
-  doc.text("6.", marginL, y);
+  // Row 7: DTKS
+  doc.text("7.", marginL, y);
   doc.text("Apakah Saudara Masuk dalam DTKS ?", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 4.0;
 
   doc.text("Jika YA, DTKS Kategori *:", marginL + noW + 4, y);
   const optDTKS = ["PKH", "BPNT", "KIP", "LANSIA"];
@@ -279,34 +287,34 @@ export async function generateBeritaAcaraPDF(
     doc.setFont("helvetica", "normal");
     oxDTKS += doc.getTextWidth(opt) + 4;
   });
-  y += 4.2;
+  y += 4.0;
 
-  // Row 7: Bidang Usaha
-  doc.text("7.", marginL, y);
+  // Row 8: Bidang Usaha
+  doc.text("8.", marginL, y);
   doc.text("Bidang Usaha", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text(surveyData.bidangUsaha || "-", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 4.0;
 
-  // Row 8: Peralatan Yang Digunakan
-  doc.text("8.", marginL, y);
+  // Row 9: Peralatan Yang Digunakan
+  doc.text("9.", marginL, y);
   doc.text("Peralatan Yang Digunakan", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text(surveyData.peralatan || "-", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 4.0;
 
-  // Row 9: Tahun Berdiri
-  doc.text("9.", marginL, y);
+  // Row 10: Tahun Berdiri
+  doc.text("10.", marginL, y);
   doc.text("Tahun Berdiri", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text(surveyData.tahunBerdiri || "-", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 4.0;
 
-  // Row 10: Izin Yang dimiliki *
-  doc.text("10.", marginL, y);
+  // Row 11: Izin Yang dimiliki *
+  doc.text("11.", marginL, y);
   doc.text("Izin Yang dimiliki *", marginL + noW, y);
   doc.text(":", dataColonX, y);
   const optIzin = ["NIB", "HALAL", "PIRT", "Lainnya :"];
@@ -316,19 +324,19 @@ export async function generateBeritaAcaraPDF(
     oxIzin += doc.getTextWidth(opt) + 6;
   });
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 4.0;
 
-  // Row 11: Modal Usaha dan Omset per bulan
-  doc.text("11.", marginL, y);
+  // Row 12: Modal Usaha dan Omset per bulan
+  doc.text("12.", marginL, y);
   doc.text("Modal Usaha dan Omset per bulan", marginL + noW, y);
   doc.text(":", dataColonX, y);
   const val11 = `Modal: Rp ${surveyData.modalUsaha || "-"}  |  Omset: Rp ${surveyData.omset || "-"}`;
   doc.text(val11, dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 4.0;
 
-  // Row 12: Apakah Pernah Menerima Dana Hibah ?
-  doc.text("12.", marginL, y);
+  // Row 13: Apakah Pernah Menerima Dana Hibah ?
+  doc.text("13.", marginL, y);
   doc.text("Apakah Pernah Menerima Dana Hibah ?", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text("YA  dari mana :", dataValueX, y);
@@ -340,23 +348,23 @@ export async function generateBeritaAcaraPDF(
   y += 3.8;
 
   doc.text("TIDAK", dataValueX, y);
-  y += 4.2;
+  y += 4.0;
 
-  // Row 13: Rencana Penggunaan Dana Hibah
-  doc.text("13.", marginL, y);
+  // Row 14: Rencana Penggunaan Dana Hibah
+  doc.text("14.", marginL, y);
   doc.text("Rencana Penggunaan Dana Hibah", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text(surveyData.rencanaPenggunaan || "-", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 4.0;
 
-  // Row 14: Hasil Survey
-  doc.text("14.", marginL, y);
+  // Row 15: Hasil Survey
+  doc.text("15.", marginL, y);
   doc.text("Hasil Survey", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text(surveyData.hasilSurvey || "-", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.2;
+  y += 4.0;
 
   // ── 7. TABEL TANDA TANGAN ───────────────────────────────────────────────────
   y += 2.5;
