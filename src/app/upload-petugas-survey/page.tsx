@@ -67,6 +67,8 @@ export default function UploadPetugasSurveyPage() {
   const [addFullName, setAddFullName] = useState("")
   const [addPassword, setAddPassword] = useState("123456")
 
+  const [showResetConfirm, setShowResetConfirm] = useState<{id: string, fullName: string} | null>(null)
+
   const [summaryStats, setSummaryStats] = useState({
     totalRows: 0,
     uniquePetugas: 0,
@@ -402,7 +404,21 @@ export default function UploadPetugasSurveyPage() {
     if (!database) return
     const userRef = ref(database, `system_users/${id}`)
     updateDocumentNonBlocking(userRef, { uid: null, addedAt: new Date().toISOString() })
-    toast({ title: "Perangkat Direset", description: `Penguncian perangkat ${fullName} telah dihapus.` })
+
+    logActivity({
+      query: `RESET PERANGKAT PETUGAS SURVEY: ${fullName}`,
+      results: "Berhasil - Perangkat dilepas",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'MANAJEMEN PETUGAS SURVEY',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+
+    toast({
+      title: "✅ Perangkat Berhasil Direset",
+      description: `${fullName} kini dapat login di perangkat baru.`
+    })
+    setShowResetConfirm(null)
   }
 
   if (!isAllowed) {
@@ -716,17 +732,25 @@ export default function UploadPetugasSurveyPage() {
                               <Key className="w-3.5 h-3.5" /> Edit Password
                             </Button>
 
-                            {u.uid && (
-                              <Button 
-                                variant="outline" 
-                                size="icon" 
-                                onClick={() => handleResetUID(u.id, u.fullName)}
-                                className="h-8 w-8 text-amber-600 border-amber-200 hover:bg-amber-50"
-                                title="Reset Penguncian HP/Perangkat"
-                              >
-                                <RefreshCcw className="w-3.5 h-3.5" />
-                              </Button>
-                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (u.uid) {
+                                  setShowResetConfirm({ id: u.id, fullName: u.fullName })
+                                }
+                              }}
+                              disabled={!u.uid}
+                              className={`h-8 font-bold text-xs gap-1 ${
+                                u.uid
+                                  ? 'text-orange-600 border-orange-300 bg-orange-50 hover:bg-orange-100 hover:border-orange-400'
+                                  : 'text-slate-400 border-slate-200 bg-slate-50 cursor-not-allowed opacity-50'
+                              }`}
+                              title={u.uid ? 'Klik untuk melepas kunci perangkat agar bisa login di HP baru' : 'Belum ada perangkat yang terkunci'}
+                            >
+                              <RefreshCcw className="w-3.5 h-3.5" />
+                              {u.uid ? 'Reset Device' : 'Belum Login'}
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -775,6 +799,53 @@ export default function UploadPetugasSurveyPage() {
               <Button type="submit" className="font-bold">Simpan Password Baru</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset Device Confirmation Dialog */}
+      <Dialog open={!!showResetConfirm} onOpenChange={(open) => !open && setShowResetConfirm(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-orange-600 font-black uppercase flex items-center gap-2">
+              <RefreshCcw className="w-5 h-5" /> Konfirmasi Reset Perangkat
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-2">
+              <p className="font-bold text-slate-800 text-sm">
+                Anda akan mereset perangkat untuk:
+              </p>
+              <p className="text-xl font-black text-orange-700 uppercase">{showResetConfirm?.fullName}</p>
+              <p className="text-xs text-muted-foreground">
+                Username: <code className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">{showResetConfirm?.id}</code>
+              </p>
+            </div>
+
+            <div className="bg-slate-50 border rounded-xl p-4 space-y-1.5 text-xs text-slate-600">
+              <p className="font-bold text-slate-700">Setelah reset perangkat:</p>
+              <p>✅ Petugas survey dapat login di HP/tablet baru</p>
+              <p>✅ Penguncian perangkat lama akan dilepas</p>
+              <p>✅ Password tidak berubah, tetap sama</p>
+              <p className="text-amber-600 font-bold mt-2">⚠️ Jika saat ini petugas sedang aktif di perangkat lama, mereka akan otomatis logout.</p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowResetConfirm(null)}
+              className="font-bold"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={() => showResetConfirm && handleResetUID(showResetConfirm.id, showResetConfirm.fullName)}
+              className="font-bold bg-orange-600 hover:bg-orange-700 text-white gap-2"
+            >
+              <RefreshCcw className="w-4 h-4" /> Ya, Reset Perangkat Sekarang
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
