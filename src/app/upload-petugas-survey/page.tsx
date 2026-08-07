@@ -100,7 +100,7 @@ export default function UploadPetugasSurveyPage() {
     }
 
     return rawUsersList
-      .filter((u: any) => u.role === 'petugas' || u.role === 'petugas_survey')
+      .filter((u: any) => u.role === 'petugas_survey')
       .map((u: any) => {
         const upperName = (u.fullName || "").toUpperCase().trim()
         const linkedCount = actorCountsMap.get(upperName) || 0
@@ -261,7 +261,7 @@ export default function UploadPetugasSurveyPage() {
           setDocumentNonBlocking(newUserRef, {
             fullName: upperName,
             password: "123456", // Default temporary password
-            role: "petugas",
+            role: "petugas_survey",
             uid: null,
             addedAt: new Date().toISOString(),
             status: 'active'
@@ -367,7 +367,7 @@ export default function UploadPetugasSurveyPage() {
     setDocumentNonBlocking(userRef, {
       fullName: cleanName,
       password: addPassword.trim(),
-      role: "petugas",
+      role: "petugas_survey",
       uid: null,
       addedAt: new Date().toISOString(),
       status: 'active'

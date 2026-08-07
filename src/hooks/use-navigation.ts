@@ -38,7 +38,7 @@ export function useNavigation() {
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isMonitoring = userProfile?.role === 'monitoring'
   const isKoordinator = userProfile?.role === 'koordinator'
-  const isPetugas = userProfile?.role === 'petugas'
+  const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
   const isDinas = userProfile?.role === 'dinas'
   const isVerifikatorDinas = userProfile?.role === 'verifikator_dinas'
   const isInspektorat = userProfile?.role === 'inspektorat'

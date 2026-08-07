@@ -62,7 +62,7 @@ export default function CheckDataCollectivePage() {
   const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
-  const isPetugas = userProfile?.role === 'petugas'
+  const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
   const hasAccess = isAdmin || isPetugas
 
   const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])

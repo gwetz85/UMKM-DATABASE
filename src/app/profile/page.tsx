@@ -263,6 +263,7 @@ export default function ProfilePage() {
                     value={
                       profile.role === 'koordinator' ? "USULAN" : 
                       profile.role === 'petugas' ? "PETUGAS INPUT" :
+                      profile.role === 'petugas_survey' ? "PETUGAS SURVEY" :
                       profile.role?.toUpperCase() || "-"
                     } 
                     disabled 

@@ -54,7 +54,7 @@ export default function LPJPage() {
   const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
   const isAdmin = userProfile?.role === 'admin'
-  const isPetugas = userProfile?.role === 'petugas'
+  const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
   const isMonitoring = userProfile?.role === 'monitoring'
   const isKoordinator = userProfile?.role === 'koordinator'
   const canAccess = isAdmin || isPetugas || isMonitoring || isKoordinator

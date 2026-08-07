@@ -35,7 +35,7 @@ export default function CheckDataPage() {
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
   
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
-  const isPetugas = userProfile?.role === 'petugas'
+  const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
   const hasAccess = isAdmin || isPetugas
 
   const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])

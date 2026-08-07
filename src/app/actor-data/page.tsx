@@ -81,7 +81,7 @@ function ActorDataContent() {
   const isMonitoring = userProfile?.role === 'monitoring'
   const isKoordinator = userProfile?.role === 'koordinator'
   const isInspektorat = userProfile?.role === 'inspektorat'
-  const isPetugas = userProfile?.role === 'petugas'
+  const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
 
   const [pageLimit, setPageLimit] = useState(50)
   

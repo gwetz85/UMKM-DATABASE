@@ -76,7 +76,7 @@ export default function SettingsPage() {
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isKoordinator = userProfile?.role === 'koordinator'
-  const isPetugas = userProfile?.role === 'petugas'
+  const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
   const isMonitoring = userProfile?.role === 'monitoring'
   const isDinas = userProfile?.role === 'dinas'
   const isVerifikatorDinas = userProfile?.role === 'verifikator_dinas'

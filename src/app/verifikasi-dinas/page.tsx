@@ -238,7 +238,7 @@ export default function VerifikasiDinasPage() {
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isDinas = userProfile?.role === 'dinas'
-  const isPetugas = userProfile?.role === 'petugas'
+  const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null

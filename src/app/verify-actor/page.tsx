@@ -251,7 +251,7 @@ export default function VerifyActorPage() {
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isMonitoring = userProfile?.role === 'monitoring'
-  const isPetugas = userProfile?.role === 'petugas'
+  const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null

@@ -454,7 +454,7 @@ export default function UserManagementPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(systemUsers ? [...systemUsers].reverse() : []).map((u: any) => (
+                {(systemUsers ? [...systemUsers].filter((u: any) => u.role !== 'petugas_survey').reverse() : []).map((u: any) => (
                   <TableRow key={u.id} className="hover:bg-muted/10">
                     <TableCell className="font-bold text-slate-700">
                       <div className="flex flex-col">
