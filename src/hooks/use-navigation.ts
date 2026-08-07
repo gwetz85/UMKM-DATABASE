@@ -12,6 +12,7 @@ import {
   History,
   FileText,
   BarChart3,
+  FileSpreadsheet,
   ClipboardCheck,
   ListChecks,
   Calendar,
@@ -215,6 +216,14 @@ export function useNavigation() {
       show: isAdmin,
       color: "#1e293b", // slate-800
       description: "Kelola Pengguna Sistem"
+    },
+    {
+      name: "Upload Excel Petugas",
+      href: "/upload-petugas-survey",
+      icon: FileSpreadsheet,
+      show: isAdmin || isKoordinator || isMonitoring,
+      color: "#8b5cf6", // violet-500
+      description: "Import Pemetaan Data Petugas Survey"
     },
     {
       name: "Pengaturan",
