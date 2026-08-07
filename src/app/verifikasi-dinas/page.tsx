@@ -1300,25 +1300,23 @@ export default function VerifikasiDinasPage() {
       )}
 
       {/* ─── RESET SURVEY CONFIRM DIALOG ─────────────────────────────── */}
-      {resetSurveyActor && (
-        <div className="fixed inset-0 z-[99] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 px-8 py-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
-                  <RotateCcw className="w-5 h-5 text-white" />
-                </div>
-                <h2 className="text-white text-lg font-black uppercase tracking-wide">Reset Data Survey</h2>
-              </div>
-            </div>
-            <div className="px-8 py-6 space-y-4">
-              <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 space-y-2">
-                <p className="text-sm text-orange-700 font-semibold">Anda akan menghapus data survey untuk:</p>
+      <Dialog open={!!resetSurveyActor} onOpenChange={(open) => !open && setResetSurveyActor(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600 font-black uppercase">
+              <RotateCcw className="w-5 h-5" /> Reset Data Survey
+            </DialogTitle>
+            <DialogDescription className="sr-only">Konfirmasi reset data survey</DialogDescription>
+          </DialogHeader>
+          {resetSurveyActor && (
+            <div className="space-y-4 py-2">
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 space-y-1">
+                <p className="text-xs text-orange-600 font-semibold uppercase">Pelaku Usaha:</p>
                 <p className="text-base font-black text-orange-900 uppercase">{resetSurveyActor.fullName}</p>
-                <p className="text-xs text-orange-600">NIK: {resetSurveyActor.nik}</p>
+                <p className="text-xs text-orange-500">NIK: {resetSurveyActor.nik}</p>
               </div>
-              <div className="space-y-2 text-sm text-slate-600">
-                <p className="font-bold text-slate-700">Data yang akan direset:</p>
+              <div className="space-y-2">
+                <p className="text-sm font-bold text-slate-700">Data yang akan dihapus:</p>
                 <ul className="list-disc list-inside space-y-1 text-xs text-slate-500 pl-2">
                   <li>Semua isian form survey (kembali ke 0%)</li>
                   <li>Foto survey yang sudah diupload</li>
@@ -1326,112 +1324,114 @@ export default function VerifikasiDinasPage() {
                 </ul>
               </div>
             </div>
-            <div className="px-8 py-5 border-t bg-slate-50 flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setResetSurveyActor(null)} disabled={isResettingSurvey}>
-                Batal
-              </Button>
-              <Button
-                onClick={handleResetSurveyData}
-                disabled={isResettingSurvey}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl min-w-[160px]"
-              >
-                {isResettingSurvey ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
-                Ya, Reset Survey
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => setResetSurveyActor(null)} disabled={isResettingSurvey}>
+              Batal
+            </Button>
+            <Button
+              onClick={handleResetSurveyData}
+              disabled={isResettingSurvey}
+              className="bg-orange-500 hover:bg-orange-600 text-white font-bold min-w-[150px]"
+            >
+              {isResettingSurvey ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
+              Ya, Reset Survey
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ─── PEJABAT MODAL (First Login / Edit) ──────────────────────── */}
-      {showPejabatModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}>
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-600 to-violet-600 px-8 py-6">
-              <h2 className="text-white text-xl font-black uppercase tracking-wide">Data Pejabat Berita Acara</h2>
-              <p className="text-indigo-200 text-sm mt-1">Isi data pejabat yang akan ditampilkan pada dokumen Berita Acara Survey. Data hanya diisi sekali dan dapat diedit kapan saja.</p>
-            </div>
+      <Dialog open={showPejabatModal} onOpenChange={(open) => {
+        // Only allow close if data already exists (not first-time mandatory fill)
+        if (!open && (userProfile as any)?.pejabatData?.verifikator?.nama) setShowPejabatModal(false)
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-black uppercase text-indigo-700 flex items-center gap-2">
+              <Edit className="w-5 h-5" /> Data Pejabat Berita Acara
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-500">
+              Isi data pejabat yang akan ditampilkan pada dokumen Berita Acara Survey. Data hanya diisi sekali dan dapat diedit kapan saja.
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="px-8 py-6 space-y-6 max-h-[70vh] overflow-y-auto">
-              {/* Kolom 1 – Verifikator Dinas */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-black flex items-center justify-center">1</div>
-                  <h3 className="font-black text-sm uppercase tracking-wider text-indigo-800">Data Verifikator Dinas</h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
-                  {([
-                    { label: 'Nama', key: 'verifikatorNama', placeholder: 'Nama lengkap verifikator' },
-                    { label: 'NIPPPK', key: 'verifikatorNipppk', placeholder: 'Nomor NIPPPK' },
-                    { label: 'Pangkat / Gol. Ruang', key: 'verifikatorPangkat', placeholder: 'Contoh: Penata, III/c' },
-                    { label: 'Jabatan', key: 'verifikatorJabatan', placeholder: 'Jabatan verifikator' },
-                  ] as {label: string; key: keyof typeof pejabatForm; placeholder: string}[]).map(field => (
-                    <div key={field.key} className="space-y-1">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">{field.label} <span className="text-red-500">*</span></label>
-                      <input
-                        value={pejabatForm[field.key]}
-                        onChange={e => setPejabatForm(prev => ({ ...prev, [field.key]: e.target.value }))}
-                        placeholder={field.placeholder}
-                        className="flex h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
-                      />
-                    </div>
-                  ))}
-                </div>
+          <div className="space-y-6 py-2">
+            {/* Kolom 1 – Verifikator Dinas */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-black flex items-center justify-center">1</div>
+                <h3 className="font-black text-sm uppercase tracking-wider text-indigo-800">Data Verifikator Dinas</h3>
               </div>
-
-              <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
-
-              {/* Kolom 2 – Petugas Survey */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-violet-600 text-white text-xs font-black flex items-center justify-center">2</div>
-                  <h3 className="font-black text-sm uppercase tracking-wider text-violet-800">Data Petugas Survey</h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
-                  {([
-                    { label: 'Nama', key: 'petugasNama', placeholder: 'Nama lengkap petugas survey' },
-                    { label: 'NIPPPK', key: 'petugasNipppk', placeholder: 'Nomor NIPPPK' },
-                    { label: 'Pangkat / Gol. Ruang', key: 'petugasPangkat', placeholder: 'Contoh: Pengatur, II/c' },
-                    { label: 'Jabatan', key: 'petugasJabatan', placeholder: 'Jabatan petugas survey' },
-                  ] as {label: string; key: keyof typeof pejabatForm; placeholder: string}[]).map(field => (
-                    <div key={field.key} className="space-y-1">
-                      <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">{field.label} <span className="text-red-500">*</span></label>
-                      <input
-                        value={pejabatForm[field.key]}
-                        onChange={e => setPejabatForm(prev => ({ ...prev, [field.key]: e.target.value }))}
-                        placeholder={field.placeholder}
-                        className="flex h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-                      />
-                    </div>
-                  ))}
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
+                {([
+                  { label: 'Nama', key: 'verifikatorNama', placeholder: 'Nama lengkap verifikator' },
+                  { label: 'NIPPPK', key: 'verifikatorNipppk', placeholder: 'Nomor NIPPPK' },
+                  { label: 'Pangkat / Gol. Ruang', key: 'verifikatorPangkat', placeholder: 'Contoh: Penata, III/c' },
+                  { label: 'Jabatan', key: 'verifikatorJabatan', placeholder: 'Jabatan verifikator' },
+                ] as {label: string; key: keyof typeof pejabatForm; placeholder: string}[]).map(field => (
+                  <div key={field.key} className="space-y-1">
+                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">{field.label} <span className="text-red-500">*</span></label>
+                    <input
+                      value={pejabatForm[field.key]}
+                      onChange={e => setPejabatForm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      placeholder={field.placeholder}
+                      className="flex h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    />
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="px-8 py-5 border-t bg-slate-50 flex justify-between items-center">
-              <p className="text-xs text-slate-500">Data ini hanya diisi sekali dan akan otomatis terisi pada setiap Berita Acara Survey Anda.</p>
-              <div className="flex gap-3">
-                {/* Only allow close/skip if data already exists */}
-                {(userProfile as any)?.pejabatData?.verifikator?.nama && (
-                  <Button variant="ghost" onClick={() => setShowPejabatModal(false)} className="text-slate-500">
-                    Batal
-                  </Button>
-                )}
-                <Button
-                  onClick={handleSavePejabat}
-                  disabled={isSavingPejabat}
-                  className="min-w-[140px] bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold rounded-xl shadow-lg"
-                >
-                  {isSavingPejabat ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
-                  Simpan Data
-                </Button>
+            <div className="h-px bg-slate-200" />
+
+            {/* Kolom 2 – Petugas Survey */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-violet-600 text-white text-xs font-black flex items-center justify-center">2</div>
+                <h3 className="font-black text-sm uppercase tracking-wider text-violet-800">Data Petugas Survey</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
+                {([
+                  { label: 'Nama', key: 'petugasNama', placeholder: 'Nama lengkap petugas survey' },
+                  { label: 'NIPPPK', key: 'petugasNipppk', placeholder: 'Nomor NIPPPK' },
+                  { label: 'Pangkat / Gol. Ruang', key: 'petugasPangkat', placeholder: 'Contoh: Pengatur, II/c' },
+                  { label: 'Jabatan', key: 'petugasJabatan', placeholder: 'Jabatan petugas survey' },
+                ] as {label: string; key: keyof typeof pejabatForm; placeholder: string}[]).map(field => (
+                  <div key={field.key} className="space-y-1">
+                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wide">{field.label} <span className="text-red-500">*</span></label>
+                    <input
+                      value={pejabatForm[field.key]}
+                      onChange={e => setPejabatForm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      placeholder={field.placeholder}
+                      className="flex h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        </div>
-      )}
+
+          <DialogFooter className="flex-col sm:flex-row items-start sm:items-center gap-3 pt-2">
+            <p className="text-xs text-slate-400 flex-1">Data ini hanya diisi sekali dan akan otomatis terisi pada setiap Berita Acara Survey Anda.</p>
+            <div className="flex gap-2">
+              {(userProfile as any)?.pejabatData?.verifikator?.nama && (
+                <Button variant="ghost" onClick={() => setShowPejabatModal(false)} className="text-slate-500">
+                  Batal
+                </Button>
+              )}
+              <Button
+                onClick={handleSavePejabat}
+                disabled={isSavingPejabat}
+                className="min-w-[140px] bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold"
+              >
+                {isSavingPejabat ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                Simpan Data
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
