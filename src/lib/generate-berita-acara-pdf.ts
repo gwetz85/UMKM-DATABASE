@@ -114,11 +114,10 @@ export async function generateBeritaAcaraPDF(
   const afterHari = `   ,  tanggal  ${tgl} ${bln} ${thn}   ,  yang bertandatangan dibawah ini :`;
   doc.text(afterHari, marginL + prefixW + hariW, y);
 
-  // ── 4. PEJABAT 1, 2, 3 (Dikosongkan) ───────────────────────────────────────
+  // ── 4. PEJABAT 1, 2 (Dikosongkan) ───────────────────────────────────────
   const pejabat = [
     { no: "1.", fields: ["NAMA", "NIPPPK", "Pangkat/Gol. Ruang", "Jabatan"] },
-    { no: "2", fields: ["NAMA", "NIPPPK", "Pangkat/Gol. Ruang", "Jabatan"] },
-    { no: "3.", fields: ["NAMA", "NRTHL", "Pangkat/Gol. Ruang", "Jabatan"] },
+    { no: "2.", fields: ["NAMA", "NIPPPK", "Pangkat/Gol. Ruang", "Jabatan"] },
   ];
 
   const labelColW = 32;
