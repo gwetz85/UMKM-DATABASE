@@ -346,10 +346,24 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
     const worksheet = XLSX.utils.json_to_sheet(exportData)
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, "Data Selesai UMKM")
+
+    // Set lebar kolom
     const colWidths = Object.keys(exportData[0] || {}).map(key => ({ wch: Math.max(key.length + 3, 16) }))
     worksheet["!cols"] = colWidths
+
+    // Generate binary dan download via Blob (kompatibel di browser)
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
     const nowStr = new Date().toISOString().split("T")[0]
-    XLSX.writeFile(workbook, `Data_Selesai_UMKM_${nowStr}.xlsx`)
+    a.href = url
+    a.download = `Data_Selesai_UMKM_${nowStr}.xlsx`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 5000)
+
     toast({ title: "✅ Export Berhasil", description: `${exportData.length} data berhasil di-export ke Excel.` })
   }
 
