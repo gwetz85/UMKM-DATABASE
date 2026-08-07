@@ -315,6 +315,11 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
           hibahStatus = sd.hibah
         }
 
+        let rawFoto = sd.fotoSurveyUrl || "-"
+        if (typeof rawFoto === 'string' && rawFoto.startsWith('data:')) {
+          rawFoto = "[FOTO BASE64]"
+        }
+
         return {
           "NO": index + 1,
           "NOMOR REGISTRASI": actor.registrationCode || "-",
@@ -349,7 +354,7 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
           "RENCANA PENGGUNAAN": sd.rencanaPenggunaan || "-",
           "HASIL REKOMENDASI SURVEY": sd.hasilSurvey || "-",
           "LINK GOOGLE DRIVE BERKAS": actor.googleDriveLink || "-",
-          "URL FOTO SURVEY": sd.fotoSurveyUrl || "-",
+          "URL FOTO SURVEY": rawFoto,
           "KOORDINAT MAP GPS": locationGps,
           "LINK GOOGLE MAPS": mapsUrl,
           "STATUS LPJ": actor.lpjNominal ? "TELAH TERVERIFIKASI" : "BELUM LPJ",
@@ -357,7 +362,26 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
         }
       })
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData)
+      // Sanitize all cell text values to ensure none exceed 32000 characters (Excel limit is 32767)
+      const safeExportData = exportData.map(row => {
+        const cleaned: Record<string, any> = {}
+        for (const [k, v] of Object.entries(row)) {
+          if (typeof v === 'string') {
+            if (v.startsWith('data:')) {
+              cleaned[k] = '[DATA BASE64]'
+            } else if (v.length > 32000) {
+              cleaned[k] = v.substring(0, 32000) + '...'
+            } else {
+              cleaned[k] = v
+            }
+          } else {
+            cleaned[k] = v
+          }
+        }
+        return cleaned
+      })
+
+      const worksheet = XLSX.utils.json_to_sheet(safeExportData)
       const workbook = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(workbook, worksheet, "Data Selesai UMKM")
 
