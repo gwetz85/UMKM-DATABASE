@@ -94,6 +94,10 @@ export default function DashboardStatsPage() {
     if (userProfile?.role === 'koordinator') {
       router.push("/actor-data")
     }
+
+    if (userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas') {
+      router.push("/verifikasi-dinas")
+    }
   }, [user, isUserLoading, router, userProfile])
 
   // Auto-sync on mount for Admins

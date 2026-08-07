@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
-import { ref } from "firebase/database"
+import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -242,8 +242,11 @@ export default function VerifikasiDinasPage() {
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
+    if (isPetugas && userProfile?.fullName) {
+      return query(ref(database, 'businessActors'), orderByChild('petugasSurvey'), equalTo(userProfile.fullName.toUpperCase().trim()))
+    }
     return ref(database, 'businessActors')
-  }, [database])
+  }, [database, isPetugas, userProfile?.fullName])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
@@ -257,7 +260,16 @@ export default function VerifikasiDinasPage() {
   const { data: data2025 } = useList<any>(master2025Ref)
   const { data: dataBlacklist } = useList<any>(blacklistRef)
 
-  const actors = allActorsRaw?.filter(a => a.status === 'lpj_pending')
+  const actors = allActorsRaw?.filter(a => {
+    if (!a) return false;
+    if (isPetugas) {
+      if (!userProfile?.fullName) return false;
+      const userPetugasUpper = String(userProfile.fullName).toUpperCase().trim();
+      const actorPetugasUpper = String(a.petugasSurvey || a.createdBy || "").toUpperCase().trim();
+      return actorPetugasUpper === userPetugasUpper;
+    }
+    return a.status === 'lpj_pending';
+  })
 
   const filteredActors = actors?.filter(actor =>
     actor.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
