@@ -67,152 +67,125 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
 
   const isUrgent = timeLeft.days < 3
 
-  if (size === 'sm') {
+  // Unified Horizontal Layout Card (Judul di Kiri, Countdown di Kanan, 1 Kesatuan)
+  if (size === 'sm' || size === 'md') {
     return (
-      <div className="flex flex-col items-center gap-1 w-full">
-        {title && (
-          <>
-            <span className="text-[10px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-[0.15em] line-clamp-1 max-w-[220px] text-center">
-              {title}
-            </span>
-            <div className="w-full max-w-[160px] h-px bg-gradient-to-r from-transparent via-rose-300 dark:via-rose-700 to-transparent my-0.5" />
-          </>
-        )}
-        {startDate && (
-          <span className={cn(
-            "text-[8px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full border",
-            timeLeft.isStarted
-              ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
-              : "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
-          )}>
-            {timeLeft.isStarted ? "Berakhir Dalam" : "Dimulai Dalam"}
-          </span>
-        )}
-        <div className="flex items-center gap-1 bg-white/90 dark:bg-slate-900/90 border border-rose-200/80 dark:border-slate-800 p-1.5 rounded-xl shadow-sm backdrop-blur-md">
-          <div className="flex flex-col items-center justify-center min-w-[32px] px-1.5 py-0.5 rounded-lg bg-rose-50/80 dark:bg-slate-800 border border-rose-100 dark:border-slate-700">
-            <span className="text-xs font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.days}</span>
-            <span className="text-[7px] font-black text-rose-700/80 dark:text-rose-300 uppercase tracking-tighter">HARI</span>
-          </div>
-          <span className="text-[10px] font-black text-rose-400 animate-pulse -mt-1">:</span>
-          <div className="flex flex-col items-center justify-center min-w-[32px] px-1.5 py-0.5 rounded-lg bg-rose-50/80 dark:bg-slate-800 border border-rose-100 dark:border-slate-700">
-            <span className="text-xs font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
-            <span className="text-[7px] font-black text-rose-700/80 dark:text-rose-300 uppercase tracking-tighter">JAM</span>
-          </div>
-          <span className="text-[10px] font-black text-rose-400 animate-pulse -mt-1">:</span>
-          <div className="flex flex-col items-center justify-center min-w-[32px] px-1.5 py-0.5 rounded-lg bg-rose-50/80 dark:bg-slate-800 border border-rose-100 dark:border-slate-700">
-            <span className="text-xs font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-            <span className="text-[7px] font-black text-rose-700/80 dark:text-rose-300 uppercase tracking-tighter">MENIT</span>
-          </div>
-          <span className="text-[10px] font-black text-rose-400 animate-pulse -mt-1">:</span>
-          <div className="flex flex-col items-center justify-center min-w-[32px] px-1.5 py-0.5 rounded-lg bg-rose-50/80 dark:bg-slate-800 border border-rose-100 dark:border-slate-700">
-            <span className="text-xs font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-            <span className="text-[7px] font-black text-rose-700/80 dark:text-rose-300 uppercase tracking-tighter">DETIK</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (size === 'md') {
-    return (
-      <div className="flex flex-col items-center gap-2 w-full">
-        {title && (
-          <>
-            <h3 className="text-xs md:text-sm font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em] text-center max-w-xs leading-tight drop-shadow-sm px-2">
+      <div className={cn(
+        "flex flex-row items-center justify-between gap-3 md:gap-4 bg-white/95 dark:bg-slate-900/95 border p-2 md:p-2.5 px-3 md:px-4 rounded-2xl md:rounded-3xl shadow-lg backdrop-blur-xl transition-all",
+        isUrgent ? "border-rose-300 ring-2 ring-rose-400/30" : "border-slate-200 dark:border-slate-800"
+      )}>
+        {/* Left Side: Title & Status Badge */}
+        <div className="flex flex-col items-start justify-center gap-1 min-w-0 flex-1">
+          {title && (
+            <h3 className="text-xs md:text-sm font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.15em] leading-tight truncate max-w-[180px] md:max-w-[280px] drop-shadow-sm">
               {title}
             </h3>
-            <div className="w-full max-w-[200px] h-px bg-gradient-to-r from-transparent via-rose-300 dark:via-rose-700 to-transparent my-1" />
-          </>
+          )}
+          {startDate && (
+            <span className={cn(
+              "text-[8px] md:text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm",
+              timeLeft.isStarted
+                ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800"
+                : "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800"
+            )}>
+              {timeLeft.isStarted ? "Berakhir Dalam" : "Dimulai Dalam"}
+            </span>
+          )}
+        </div>
+
+        {/* Vertical Divider Line */}
+        {title && (
+          <div className="w-px h-7 md:h-9 bg-gradient-to-b from-transparent via-rose-300 dark:via-rose-700 to-transparent shrink-0 mx-1" />
         )}
-        {startDate && (
-          <span className={cn(
-            "text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full border shadow-sm",
-            timeLeft.isStarted
-              ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800"
-              : "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800"
-          )}>
-            {timeLeft.isStarted ? "Berakhir Dalam" : "Dimulai Dalam"}
-          </span>
-        )}
-        <div className={cn(
-          "flex items-center gap-1.5 md:gap-2 bg-white/95 dark:bg-slate-900/95 p-2 md:p-3 rounded-2xl md:rounded-3xl border shadow-xl backdrop-blur-xl transition-all",
-          isUrgent ? "border-rose-300 ring-2 ring-rose-400/30" : "border-slate-200 dark:border-slate-800"
-        )}>
-          <div className="flex flex-col items-center justify-center min-w-[44px] md:min-w-[56px] px-2 py-1.5 md:py-2 rounded-xl bg-gradient-to-b from-rose-50 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-100 dark:border-slate-700 shadow-sm">
-            <span className="text-base md:text-xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.days}</span>
-            <span className="text-[8px] md:text-[9px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider mt-1">HARI</span>
+
+        {/* Right Side: 4 Countdown Time Boxes */}
+        <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
+          <div className="flex flex-col items-center justify-center min-w-[34px] md:min-w-[44px] px-1.5 md:px-2 py-1 rounded-xl bg-gradient-to-b from-rose-50 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-100 dark:border-slate-700 shadow-sm">
+            <span className="text-xs md:text-base font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.days}</span>
+            <span className="text-[7px] md:text-[8px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider mt-0.5">HARI</span>
           </div>
-          <span className="text-sm md:text-lg font-black text-rose-400 animate-pulse -mt-2">:</span>
-          <div className="flex flex-col items-center justify-center min-w-[44px] md:min-w-[56px] px-2 py-1.5 md:py-2 rounded-xl bg-gradient-to-b from-rose-50 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-100 dark:border-slate-700 shadow-sm">
-            <span className="text-base md:text-xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
-            <span className="text-[8px] md:text-[9px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider mt-1">JAM</span>
+
+          <span className="text-xs md:text-sm font-black text-rose-400 animate-pulse -mt-1">:</span>
+
+          <div className="flex flex-col items-center justify-center min-w-[34px] md:min-w-[44px] px-1.5 md:px-2 py-1 rounded-xl bg-gradient-to-b from-rose-50 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-100 dark:border-slate-700 shadow-sm">
+            <span className="text-xs md:text-base font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
+            <span className="text-[7px] md:text-[8px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider mt-0.5">JAM</span>
           </div>
-          <span className="text-sm md:text-lg font-black text-rose-400 animate-pulse -mt-2">:</span>
-          <div className="flex flex-col items-center justify-center min-w-[44px] md:min-w-[56px] px-2 py-1.5 md:py-2 rounded-xl bg-gradient-to-b from-rose-50 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-100 dark:border-slate-700 shadow-sm">
-            <span className="text-base md:text-xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-            <span className="text-[8px] md:text-[9px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider mt-1">MENIT</span>
+
+          <span className="text-xs md:text-sm font-black text-rose-400 animate-pulse -mt-1">:</span>
+
+          <div className="flex flex-col items-center justify-center min-w-[34px] md:min-w-[44px] px-1.5 md:px-2 py-1 rounded-xl bg-gradient-to-b from-rose-50 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-100 dark:border-slate-700 shadow-sm">
+            <span className="text-xs md:text-base font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+            <span className="text-[7px] md:text-[8px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider mt-0.5">MENIT</span>
           </div>
-          <span className="text-sm md:text-lg font-black text-rose-400 animate-pulse -mt-2">:</span>
-          <div className="flex flex-col items-center justify-center min-w-[44px] md:min-w-[56px] px-2 py-1.5 md:py-2 rounded-xl bg-gradient-to-b from-rose-50 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-100 dark:border-slate-700 shadow-sm">
-            <span className="text-base md:text-xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-            <span className="text-[8px] md:text-[9px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider mt-1">DETIK</span>
+
+          <span className="text-xs md:text-sm font-black text-rose-400 animate-pulse -mt-1">:</span>
+
+          <div className="flex flex-col items-center justify-center min-w-[34px] md:min-w-[44px] px-1.5 md:px-2 py-1 rounded-xl bg-gradient-to-b from-rose-50 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-100 dark:border-slate-700 shadow-sm">
+            <span className="text-xs md:text-base font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+            <span className="text-[7px] md:text-[8px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-wider mt-0.5">DETIK</span>
           </div>
         </div>
       </div>
     )
   }
 
-  // Large size (Hero / Full Screen)
+  // Large size (Hero / Full Screen Modal)
   return (
-    <div className="flex flex-col items-center gap-3 md:gap-5 max-w-xl w-full">
-      {title && (
-        <>
-          <h2 className="text-xl md:text-3xl lg:text-4xl font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em] text-center leading-snug drop-shadow-md px-4">
+    <div className={cn(
+      "flex flex-col md:flex-row items-center justify-between gap-4 md:gap-6 max-w-3xl w-full bg-white/95 dark:bg-slate-900/95 border-2 p-4 md:p-6 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl backdrop-blur-2xl transition-all",
+      isUrgent ? "border-rose-400 ring-4 ring-rose-500/20 shadow-rose-500/10" : "border-rose-200/80 dark:border-slate-800"
+    )}>
+      {/* Left Side: Title & Status */}
+      <div className="flex flex-col items-center md:items-start text-center md:text-left gap-2 flex-1 min-w-0">
+        {title && (
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.15em] leading-snug drop-shadow-md">
             {title}
           </h2>
-          <div className="w-48 md:w-64 h-1 bg-gradient-to-r from-transparent via-rose-400 dark:via-rose-600 to-transparent rounded-full my-1" />
-        </>
+        )}
+        {startDate && (
+          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full border shadow-md backdrop-blur-md animate-pulse bg-rose-50/80 border-rose-200">
+            <span className={cn(
+              "text-xs font-black uppercase tracking-[0.2em]",
+              timeLeft.isStarted ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"
+            )}>
+              {timeLeft.isStarted ? "BERAKHIR DALAM" : "DIMULAI DALAM"}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Vertical Divider (Desktop) / Horizontal Divider (Mobile) */}
+      {title && (
+        <div className="w-full md:w-px h-px md:h-16 bg-gradient-to-r md:bg-gradient-to-b from-transparent via-rose-300 dark:via-rose-700 to-transparent shrink-0 my-1 md:my-0 md:mx-2" />
       )}
 
-      {startDate && (
-        <div className="inline-flex items-center gap-2 px-5 py-1.5 rounded-full border shadow-lg backdrop-blur-md animate-pulse bg-white/10 border-white/20">
-          <span className={cn(
-            "text-xs md:text-sm font-black uppercase tracking-[0.25em]",
-            timeLeft.isStarted ? "text-emerald-500 dark:text-emerald-400" : "text-amber-500 dark:text-amber-400"
-          )}>
-            {timeLeft.isStarted ? "BERAKHIR DALAM" : "DIMULAI DALAM"}
-          </span>
-        </div>
-      )}
-
-      <div className={cn(
-        "flex items-center justify-center gap-2 md:gap-4 p-3 md:p-6 bg-white/95 dark:bg-slate-900/95 border-2 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl backdrop-blur-2xl transition-all",
-        isUrgent ? "border-rose-400 ring-4 ring-rose-500/20 shadow-rose-500/10" : "border-rose-200/80 dark:border-slate-800"
-      )}>
-        <div className="flex flex-col items-center justify-center min-w-[64px] md:min-w-[96px] lg:min-w-[110px] px-3 py-3 md:py-4 rounded-2xl md:rounded-3xl bg-gradient-to-b from-rose-50/80 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-200/70 dark:border-slate-700 shadow-md hover:scale-105 transition-transform">
-          <span className="text-2xl md:text-4xl lg:text-5xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none drop-shadow-sm">{timeLeft.days}</span>
-          <span className="text-[9px] md:text-xs font-black text-rose-700 dark:text-rose-300 uppercase tracking-[0.2em] mt-2">HARI</span>
+      {/* Right Side: 4 Large Countdown Boxes */}
+      <div className="flex items-center justify-center gap-2 md:gap-3 shrink-0">
+        <div className="flex flex-col items-center justify-center min-w-[56px] md:min-w-[76px] lg:min-w-[86px] px-2.5 py-2 md:py-3 rounded-2xl bg-gradient-to-b from-rose-50/80 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-200/70 dark:border-slate-700 shadow-md hover:scale-105 transition-transform">
+          <span className="text-xl md:text-3xl lg:text-4xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none drop-shadow-sm">{timeLeft.days}</span>
+          <span className="text-[8px] md:text-[10px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-[0.15em] mt-1.5">HARI</span>
         </div>
 
-        <span className="text-xl md:text-3xl lg:text-4xl font-black text-rose-400 animate-pulse -mt-3 md:-mt-5">:</span>
+        <span className="text-lg md:text-2xl font-black text-rose-400 animate-pulse -mt-2 md:-mt-4">:</span>
 
-        <div className="flex flex-col items-center justify-center min-w-[64px] md:min-w-[96px] lg:min-w-[110px] px-3 py-3 md:py-4 rounded-2xl md:rounded-3xl bg-gradient-to-b from-rose-50/80 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-200/70 dark:border-slate-700 shadow-md hover:scale-105 transition-transform">
-          <span className="text-2xl md:text-4xl lg:text-5xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none drop-shadow-sm">{timeLeft.hours.toString().padStart(2, '0')}</span>
-          <span className="text-[9px] md:text-xs font-black text-rose-700 dark:text-rose-300 uppercase tracking-[0.2em] mt-2">JAM</span>
+        <div className="flex flex-col items-center justify-center min-w-[56px] md:min-w-[76px] lg:min-w-[86px] px-2.5 py-2 md:py-3 rounded-2xl bg-gradient-to-b from-rose-50/80 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-200/70 dark:border-slate-700 shadow-md hover:scale-105 transition-transform">
+          <span className="text-xl md:text-3xl lg:text-4xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none drop-shadow-sm">{timeLeft.hours.toString().padStart(2, '0')}</span>
+          <span className="text-[8px] md:text-[10px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-[0.15em] mt-1.5">JAM</span>
         </div>
 
-        <span className="text-xl md:text-3xl lg:text-4xl font-black text-rose-400 animate-pulse -mt-3 md:-mt-5">:</span>
+        <span className="text-lg md:text-2xl font-black text-rose-400 animate-pulse -mt-2 md:-mt-4">:</span>
 
-        <div className="flex flex-col items-center justify-center min-w-[64px] md:min-w-[96px] lg:min-w-[110px] px-3 py-3 md:py-4 rounded-2xl md:rounded-3xl bg-gradient-to-b from-rose-50/80 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-200/70 dark:border-slate-700 shadow-md hover:scale-105 transition-transform">
-          <span className="text-2xl md:text-4xl lg:text-5xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none drop-shadow-sm">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-          <span className="text-[9px] md:text-xs font-black text-rose-700 dark:text-rose-300 uppercase tracking-[0.2em] mt-2">MENIT</span>
+        <div className="flex flex-col items-center justify-center min-w-[56px] md:min-w-[76px] lg:min-w-[86px] px-2.5 py-2 md:py-3 rounded-2xl bg-gradient-to-b from-rose-50/80 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-200/70 dark:border-slate-700 shadow-md hover:scale-105 transition-transform">
+          <span className="text-xl md:text-3xl lg:text-4xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none drop-shadow-sm">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+          <span className="text-[8px] md:text-[10px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-[0.15em] mt-1.5">MENIT</span>
         </div>
 
-        <span className="text-xl md:text-3xl lg:text-4xl font-black text-rose-400 animate-pulse -mt-3 md:-mt-5">:</span>
+        <span className="text-lg md:text-2xl font-black text-rose-400 animate-pulse -mt-2 md:-mt-4">:</span>
 
-        <div className="flex flex-col items-center justify-center min-w-[64px] md:min-w-[96px] lg:min-w-[110px] px-3 py-3 md:py-4 rounded-2xl md:rounded-3xl bg-gradient-to-b from-rose-50/80 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-200/70 dark:border-slate-700 shadow-md hover:scale-105 transition-transform">
-          <span className="text-2xl md:text-4xl lg:text-5xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none drop-shadow-sm">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-          <span className="text-[9px] md:text-xs font-black text-rose-700 dark:text-rose-300 uppercase tracking-[0.2em] mt-2">DETIK</span>
+        <div className="flex flex-col items-center justify-center min-w-[56px] md:min-w-[76px] lg:min-w-[86px] px-2.5 py-2 md:py-3 rounded-2xl bg-gradient-to-b from-rose-50/80 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-200/70 dark:border-slate-700 shadow-md hover:scale-105 transition-transform">
+          <span className="text-xl md:text-3xl lg:text-4xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none drop-shadow-sm">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+          <span className="text-[8px] md:text-[10px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-[0.15em] mt-1.5">DETIK</span>
         </div>
       </div>
     </div>
