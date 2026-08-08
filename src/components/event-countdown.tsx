@@ -69,11 +69,14 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
 
   if (size === 'sm') {
     return (
-      <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-1 w-full">
         {title && (
-          <span className="text-[10px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-[0.15em] line-clamp-1 max-w-[220px] text-center">
-            {title}
-          </span>
+          <>
+            <span className="text-[10px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-[0.15em] line-clamp-1 max-w-[220px] text-center">
+              {title}
+            </span>
+            <div className="w-full max-w-[160px] h-px bg-gradient-to-r from-transparent via-rose-300 dark:via-rose-700 to-transparent my-0.5" />
+          </>
         )}
         {startDate && (
           <span className={cn(
@@ -112,11 +115,14 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
 
   if (size === 'md') {
     return (
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col items-center gap-2 w-full">
         {title && (
-          <h3 className="text-xs md:text-sm font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em] text-center max-w-xs leading-tight drop-shadow-sm">
-            {title}
-          </h3>
+          <>
+            <h3 className="text-xs md:text-sm font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em] text-center max-w-xs leading-tight drop-shadow-sm px-2">
+              {title}
+            </h3>
+            <div className="w-full max-w-[200px] h-px bg-gradient-to-r from-transparent via-rose-300 dark:via-rose-700 to-transparent my-1" />
+          </>
         )}
         {startDate && (
           <span className={cn(
@@ -158,11 +164,14 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
 
   // Large size (Hero / Full Screen)
   return (
-    <div className="flex flex-col items-center gap-4 md:gap-6 max-w-xl w-full">
+    <div className="flex flex-col items-center gap-3 md:gap-5 max-w-xl w-full">
       {title && (
-        <h2 className="text-xl md:text-3xl lg:text-4xl font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em] text-center leading-snug drop-shadow-md px-4">
-          {title}
-        </h2>
+        <>
+          <h2 className="text-xl md:text-3xl lg:text-4xl font-black text-rose-600 dark:text-rose-400 uppercase tracking-[0.2em] text-center leading-snug drop-shadow-md px-4">
+            {title}
+          </h2>
+          <div className="w-48 md:w-64 h-1 bg-gradient-to-r from-transparent via-rose-400 dark:via-rose-600 to-transparent rounded-full my-1" />
+        </>
       )}
 
       {startDate && (
