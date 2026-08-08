@@ -219,14 +219,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   <div className="hidden md:flex h-8 w-px bg-slate-200 mx-2" />
 
                   {currentTitle && (
-                    <h1 className="hidden md:block text-2xl font-black text-slate-800 tracking-tight uppercase">
+                    <h1 className="hidden xl:block text-xl md:text-2xl font-black text-slate-800 tracking-tight uppercase max-w-[220px] truncate">
                       {currentTitle}
                     </h1>
                   )}
                 </div>
 
                 {activeEvent && (
-                  <div className="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 animate-in fade-in zoom-in duration-1000">
+                  <div className="hidden xl:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 animate-in fade-in zoom-in duration-1000">
                     <EventCountdown 
                       targetDate={activeEvent.endDate || activeEvent.date} 
                       startDate={activeEvent.startDate} 
@@ -236,11 +236,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   </div>
                 )}
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 md:gap-4">
                   {!isRootPage && !isKoordinator && (
                     <button
                       onClick={() => router.push('/')}
-                      className="flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95 bg-primary text-white shadow-primary/20 hover:bg-primary/90"
+                      className="flex items-center gap-2 px-4 md:px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95 bg-primary text-white shadow-primary/20 hover:bg-primary/90 shrink-0"
                     >
                       <Home className="w-5 h-5" />
                       <span>Kembali ke Menu</span>

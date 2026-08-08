@@ -67,8 +67,70 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
 
   const isUrgent = timeLeft.days < 3
 
-  // Unified Horizontal Layout Card (Judul di Kiri, Countdown di Kanan, 1 Kesatuan)
-  if (size === 'sm' || size === 'md') {
+  // Ultra-Compact Horizontal Layout Card for Header (size="sm")
+  if (size === 'sm') {
+    return (
+      <div className={cn(
+        "flex flex-row items-center justify-between gap-2 bg-white/95 dark:bg-slate-900/95 border p-1.5 px-2.5 rounded-2xl shadow-md backdrop-blur-xl transition-all max-w-[340px]",
+        isUrgent ? "border-rose-300 ring-2 ring-rose-400/30" : "border-slate-200 dark:border-slate-800"
+      )}>
+        {/* Left Side: Title & Status Badge */}
+        <div className="flex flex-col items-start justify-center gap-0.5 min-w-0 flex-1">
+          {title && (
+            <h3 className="text-[10px] md:text-xs font-black text-rose-600 dark:text-rose-400 uppercase tracking-wider leading-tight truncate max-w-[120px] md:max-w-[140px] drop-shadow-sm">
+              {title}
+            </h3>
+          )}
+          {startDate && (
+            <span className={cn(
+              "text-[7px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-sm",
+              timeLeft.isStarted
+                ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800"
+                : "bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800"
+            )}>
+              {timeLeft.isStarted ? "Berakhir Dalam" : "Dimulai Dalam"}
+            </span>
+          )}
+        </div>
+
+        {/* Vertical Divider Line */}
+        {title && (
+          <div className="w-px h-6 bg-gradient-to-b from-transparent via-rose-300 dark:via-rose-700 to-transparent shrink-0 mx-0.5" />
+        )}
+
+        {/* Right Side: 4 Countdown Time Boxes */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          <div className="flex flex-col items-center justify-center min-w-[28px] md:min-w-[30px] px-1 py-0.5 rounded-lg bg-gradient-to-b from-rose-50 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-100 dark:border-slate-700 shadow-sm">
+            <span className="text-xs font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.days}</span>
+            <span className="text-[6px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-tighter mt-0.5">HARI</span>
+          </div>
+
+          <span className="text-[10px] font-black text-rose-400 animate-pulse -mt-0.5">:</span>
+
+          <div className="flex flex-col items-center justify-center min-w-[28px] md:min-w-[30px] px-1 py-0.5 rounded-lg bg-gradient-to-b from-rose-50 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-100 dark:border-slate-700 shadow-sm">
+            <span className="text-xs font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
+            <span className="text-[6px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-tighter mt-0.5">JAM</span>
+          </div>
+
+          <span className="text-[10px] font-black text-rose-400 animate-pulse -mt-0.5">:</span>
+
+          <div className="flex flex-col items-center justify-center min-w-[28px] md:min-w-[30px] px-1 py-0.5 rounded-lg bg-gradient-to-b from-rose-50 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-100 dark:border-slate-700 shadow-sm">
+            <span className="text-xs font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+            <span className="text-[6px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-tighter mt-0.5">MENIT</span>
+          </div>
+
+          <span className="text-[10px] font-black text-rose-400 animate-pulse -mt-0.5">:</span>
+
+          <div className="flex flex-col items-center justify-center min-w-[28px] md:min-w-[30px] px-1 py-0.5 rounded-lg bg-gradient-to-b from-rose-50 to-white dark:from-slate-800 dark:to-slate-900 border border-rose-100 dark:border-slate-700 shadow-sm">
+            <span className="text-xs font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+            <span className="text-[6px] font-black text-rose-700 dark:text-rose-300 uppercase tracking-tighter mt-0.5">DETIK</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (size === 'md') {
     return (
       <div className={cn(
         "flex flex-row items-center justify-between gap-3 md:gap-4 bg-white/95 dark:bg-slate-900/95 border p-2 md:p-2.5 px-3 md:px-4 rounded-2xl md:rounded-3xl shadow-lg backdrop-blur-xl transition-all",
