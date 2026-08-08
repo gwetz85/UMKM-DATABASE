@@ -82,8 +82,8 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
                 className="text-[10px] md:text-xs font-black text-rose-600 dark:text-rose-400 uppercase leading-tight drop-shadow-sm whitespace-nowrap"
                 style={{
                   display: 'inline-block',
-                  animation: 'marquee-scroll 12s linear infinite',
-                  paddingRight: '2rem'
+                  animation: 'marquee-scroll 25s linear infinite',
+                  paddingRight: '4rem'
                 }}
               >
                 {title}
