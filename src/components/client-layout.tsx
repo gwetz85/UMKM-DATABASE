@@ -205,7 +205,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
           {!isLoginPage && (
             <>
-              <header className="sticky top-0 z-50 flex items-center justify-between px-4 md:px-8 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 shrink-0 print:hidden">
+              <header className="sticky top-0 z-50 relative flex items-center justify-between px-4 md:px-8 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 shrink-0 print:hidden">
                 <div className="flex items-center gap-6">
                   <InfoDialog>
                     <div className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
@@ -226,7 +226,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 {activeEvent && (
-                  <div className="hidden lg:flex flex-col items-center justify-center animate-in fade-in zoom-in duration-1000">
+                  <div className="hidden lg:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 animate-in fade-in zoom-in duration-1000">
                     <EventCountdown 
                       targetDate={activeEvent.endDate || activeEvent.date} 
                       startDate={activeEvent.startDate} 
