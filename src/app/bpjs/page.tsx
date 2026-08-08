@@ -2,7 +2,11 @@
 
 import { useState, useMemo } from "react"
 import { useDatabase, useList, useMemoFirebase, useUser } from "@/firebase"
-import { ref } from "firebase/database"
+import { ref, update } from "firebase/database"
+
+  // Reference date for age calculations (1 Sep 2026)
+  const referenceDate = new Date(2026, 8, 1);
+
 import { addTunasBangsaHeader } from "@/lib/pdf-generator"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -69,24 +73,84 @@ export default function BpjsPage() {
   const actorsRef = useMemoFirebase(() => database ? ref(database, 'businessActors') : null, [database])
   const { data: allActors, isLoading } = useList<BusinessActor>(actorsRef)
 
-  const filteredActors = useMemo(() => {
-    if (!allActors) return []
-    return allActors
-      .filter(a => 
-        (a.hasilVerifikasiDinas === 'Lolos' && (a.status === 'verified_dinas' || a.status === 'finish')) &&
-        ((a.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (a.nik || "").includes(searchQuery))
-      )
-      .sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""))
-  }, [allActors, searchQuery])
+  // Calculate age as of a reference date (e.g., 1 Sep 2026)
+  const calculateAgeOn = (dobString: string, refDate: Date): number => {
+    if (!dobString || dobString === "-") return 0;
 
+    // Reuse existing parsing logic (same as calculateAge) to get a Date object
+    const monthsIndo: { [key: string]: number } = {
+      'JANUARI': 0, 'FEBRUARI': 1, 'MARET': 2, 'APRIL': 3, 'MEI': 4, 'JUNI': 5,
+      'JULI': 6, 'AGUSTUS': 7, 'SEPTEMBER': 8, 'OKTOBER': 9, 'NOVEMBER': 10, 'DESEMBER': 11
+    };
+
+    let day: number, month: number, year: number;
+    const datePart = dobString.includes(',') ? dobString.split(',').pop()?.trim() : dobString.trim();
+    if (!datePart) return 0;
+
+    if (datePart.includes('-')) {
+      const parts = datePart.split('-').map(Number);
+      day = parts[0];
+      month = parts[1] - 1;
+      year = parts[2];
+    } else {
+      const parts = datePart.split(' ');
+      if (parts.length < 3) return 0;
+      day = parseInt(parts[0]);
+      month = monthsIndo[parts[1].toUpperCase()];
+      year = parseInt(parts[2]);
+    }
+    if (isNaN(day) || month === undefined || isNaN(year)) return 0;
+
+    const birthDate = new Date(year, month, day);
+    let age = refDate.getFullYear() - birthDate.getFullYear();
+    const m = refDate.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && refDate.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const filteredActors = useMemo(() => {
+    if (!allActors) return [];
+    // Reference date: 1 September 2026
+    const refDate = new Date(2026, 8, 1); // month is 0-indexed
+    return allActors
+      .filter(a => {
+        const age = calculateAgeOn(a.pobDob || "", refDate);
+        return age <= 65;
+      })
+      .filter(a => {
+        // Keep search functionality across name or NIK
+        return (
+          (a.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (a.nik || "").includes(searchQuery)
+        );
+      })
+      .sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
+  }, [allActors, searchQuery]);
+
+  // Action handlers for accept / reject
+  const handleAccept = async (actorId: string) => {
+    if (!database) return;
+    const actorRef = ref(database, `businessActors/${actorId}`);
+    await update(actorRef, { bpjsSubmissionStatus: 'accepted' });
+  };
+
+  const handleReject = async (actorId: string) => {
+    if (!database) return;
+    const actorRef = ref(database, `businessActors/${actorId}`);
+    await update(actorRef, { bpjsSubmissionStatus: 'rejected' });
+  };
+
+  // Export to Excel using reference date (1 Sep 2026)
   const handleExportExcel = () => {
-    const eligibleActors = filteredActors.filter(a => calculateAge(a.pobDob || "") < 65)
-    if (eligibleActors.length === 0) return
-    
+    const refDate = new Date(2026, 8, 1);
+    const eligibleActors = filteredActors.filter(a => calculateAgeOn(a.pobDob || "", refDate) < 65);
+    if (eligibleActors.length === 0) return;
+
     const exportData = eligibleActors.map(actor => {
-      const age = calculateAge(actor.pobDob || "")
-      const parsed = parsePobDob(actor.pobDob || "")
+      const age = calculateAgeOn(actor.pobDob || "", refDate);
+      const parsed = parsePobDob(actor.pobDob || "");
       return {
         "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
         "NIK": actor.nik || "-",
@@ -100,53 +164,55 @@ export default function BpjsPage() {
         "KELURAHAN": (actor.kelurahan || "").toUpperCase(),
         "KOORDINATOR": (actor.coordinator || "").toUpperCase(),
         "NOTE": age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan"
-      }
-    })
+      };
+    });
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Data BPJS")
-    
-    // Auto-width
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data BPJS");
+
+    // Auto-width columns
     const wscols = [
-      {wch: 30}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 10}, 
-      {wch: 15}, {wch: 40}, {wch: 10}, {wch: 20}, {wch: 20}, {wch: 25}
+      { wch: 30 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 10 },
+      { wch: 15 }, { wch: 40 }, { wch: 10 }, { wch: 20 }, { wch: 20 }, { wch: 25 }
     ];
     worksheet['!cols'] = wscols;
 
-    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
-    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `Data_BPJS_Ketenagakerjaan_${new Date().toISOString().split('T')[0]}.xlsx`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    setTimeout(() => URL.revokeObjectURL(url), 5000)
-  }
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Data_BPJS_Ketenagakerjaan_${new Date().toISOString().split('T')[0]}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  };
 
+  // Print PDF using reference date (1 Sep 2026)
   const handlePrintPDF = () => {
-    const eligibleActors = filteredActors.filter(a => calculateAge(a.pobDob || "") < 65)
-    if (eligibleActors.length === 0) return
+    const refDate = new Date(2026, 8, 1);
+    const eligibleActors = filteredActors.filter(a => calculateAgeOn(a.pobDob || "", refDate) < 65);
+    if (eligibleActors.length === 0) return;
 
-    const doc = new jsPDF('p', 'mm', 'a4')
-    const pageWidth = doc.internal.pageSize.getWidth()
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
 
-    // Header Tunas Bangsa
-    addTunasBangsaHeader(doc)
-    
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10)
-    doc.setTextColor(0)
-    doc.text("DATA BPJS KETENAGAKERJAAN", pageWidth - 14, 17, { align: 'right' })
-    doc.setFontSize(7)
-    doc.setTextColor(150)
-    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, pageWidth - 14, 21, { align: 'right' })
-    doc.setTextColor(0)
+    // Header
+    addTunasBangsaHeader(doc);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+    doc.text('DATA BPJS KETENAGAKERJAAN', pageWidth - 14, 17, { align: 'right' });
+    doc.setFontSize(7);
+    doc.setTextColor(150);
+    doc.text(`Dicetak pada: ${new Date().toLocaleString('id-ID')}`, pageWidth - 14, 21, { align: 'right' });
+    doc.setTextColor(0);
 
     const tableData = eligibleActors.map((actor, index) => {
-      const age = calculateAge(actor.pobDob || "")
+      const age = calculateAgeOn(actor.pobDob || "", refDate);
       return [
         index + 1,
         (actor.fullName || "").toUpperCase(),
@@ -154,8 +220,8 @@ export default function BpjsPage() {
         age,
         (actor.coordinator || "-").toUpperCase(),
         "Bisa Didaftarkan"
-      ]
-    })
+      ];
+    });
 
     autoTable(doc, {
       startY: 30,
@@ -172,10 +238,13 @@ export default function BpjsPage() {
         4: { cellWidth: 35, halign: 'center' },
         5: { cellWidth: 48, halign: 'center' }
       }
-    })
+    });
 
-    doc.save(`Laporan_BPJS_${new Date().toISOString().split('T')[0]}.pdf`)
-  }
+    doc.save(`Laporan_BPJS_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+
+
 
   return (
     <div className="p-4 md:p-8 max-w-[90rem] mx-auto space-y-6">
@@ -227,6 +296,7 @@ export default function BpjsPage() {
                   <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">USIA</TableHead>
                   <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">KOORDINATOR</TableHead>
                   <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">NOTE / KETERANGAN</TableHead>
+                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">AKSI</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -269,12 +339,16 @@ export default function BpjsPage() {
                           {age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan"}
                         </Badge>
                       </TableCell>
+                      <TableCell className="py-4 text-center flex gap-2 justify-center">
+                        <Button size="sm" variant="outline" onClick={() => handleAccept(actor.id)}>Accept</Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleReject(actor.id)}>Reject</Button>
+                      </TableCell>
                     </TableRow>
                   )
                 })}
                 {filteredActors.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-24 text-center">
+                    <TableCell colSpan={9} className="py-24 text-center">
                       <div className="flex flex-col items-center gap-4">
                         <div className="bg-slate-100 p-4 rounded-full">
                           <Search className="w-10 h-10 text-slate-300" />
