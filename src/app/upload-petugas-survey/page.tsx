@@ -31,10 +31,12 @@ import {
   UserPlus,
   Edit3,
   Search,
-  Lock
+  Lock,
+  FileDown
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import Link from "next/link"
+import { addTunasBangsaHeader } from "@/lib/pdf-generator"
 
 interface ParsedPetugasRow {
   rowNum: number
@@ -68,6 +70,7 @@ export default function UploadPetugasSurveyPage() {
   const [addPassword, setAddPassword] = useState("123456")
 
   const [showResetConfirm, setShowResetConfirm] = useState<{id: string, fullName: string} | null>(null)
+  const [isExportingPdf, setIsExportingPdf] = useState(false)
 
   const [summaryStats, setSummaryStats] = useState({
     totalRows: 0,
@@ -119,6 +122,124 @@ export default function UploadPetugasSurveyPage() {
       (u.id || "").toLowerCase().includes(q)
     )
   }, [petugasAccounts, searchPetugasQuery])
+
+  const handleExportPDF = () => {
+    setIsExportingPdf(true)
+    import('jspdf').then(({ default: jsPDF }) => {
+      import('jspdf-autotable').then(({ default: autoTable }) => {
+        try {
+          const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+          const pageWidth = doc.internal.pageSize.getWidth()
+          const pageHeight = doc.internal.pageSize.getHeight()
+
+          // Header Tunas Bangsa
+          addTunasBangsaHeader(doc)
+          
+          // Header Info
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(10)
+          doc.setTextColor(0)
+          doc.text('DATA USERNAME DAN PASSWORD PETUGAS SURVEY', pageWidth - 14, 17, { align: 'right' })
+          doc.setFontSize(7)
+          doc.setTextColor(130)
+          doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, pageWidth - 14, 21, { align: 'right' })
+          doc.setTextColor(0)
+
+          // Table Rows
+          const tableBody = filteredPetugasAccounts.map((u: any, index: number) => [
+            index + 1,
+            u.fullName || '-',
+            u.id || '-',
+            u.password || '123456',
+            `${u.linkedCount || 0} Pelaku Usaha`,
+            u.uid ? 'Terkunci di HP/Device' : 'Siap Login'
+          ])
+
+          const margin = 14
+          const usableWidth = pageWidth - margin * 2
+
+          autoTable(doc, {
+            startY: 30,
+            margin: { left: margin, right: margin, bottom: 48 },
+            tableWidth: usableWidth,
+            head: [['No', 'Nama Petugas', 'Username', 'Password', 'Data Terhubung', 'Status Login']],
+            body: tableBody,
+            styles: { font: 'helvetica', fontSize: 8, cellPadding: 2.5, halign: 'center' },
+            headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold', halign: 'center' },
+            columnStyles: {
+              0: { cellWidth: 10 },
+              1: { halign: 'left', cellWidth: 54 },
+              2: { halign: 'left', cellWidth: 42 },
+              3: { cellWidth: 24 },
+              4: { cellWidth: 26 },
+              5: { cellWidth: 26 }
+            },
+            alternateRowStyles: { fillColor: [248, 250, 252] }
+          })
+
+          // Additional Information Section
+          let finalY = (doc as any).lastAutoTable.finalY + 6
+
+          if (finalY + 38 > pageHeight - 12) {
+            doc.addPage()
+            finalY = 20
+          }
+
+          // Card Background for Notes
+          doc.setFillColor(248, 250, 252)
+          doc.setDrawColor(226, 232, 240)
+          doc.roundedRect(margin, finalY, usableWidth, 34, 3, 3, 'FD')
+
+          // Title for Notes
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(8)
+          doc.setTextColor(15, 23, 42)
+          doc.text('CATATAN & PETUNJUK PENGGUNAAN AKUN PETUGAS SURVEY:', margin + 4, finalY + 5.5)
+
+          // Line divider
+          doc.setDrawColor(203, 213, 225)
+          doc.line(margin + 4, finalY + 7.5, margin + usableWidth - 4, finalY + 7.5)
+
+          // Notes List
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(7.5)
+          doc.setTextColor(51, 65, 85)
+
+          const notes = [
+            '1. Link Login : https://tb2026ukm.qzz.io/',
+            '2. Ketentuan 1 User 1 Perangkat',
+            '3. Bantuan Layanan : Senin - Sabtu : 10.00 - 16.00',
+            '4. Chat admin : 0817319885 , Email : simputeam@gmail.com',
+            '5. Mohon tidak menyebarkan semua isi data di dalam aplikasi guna menjaga kerahasiaan data yang di tampilkan'
+          ]
+
+          let currentNoteY = finalY + 12
+          notes.forEach(note => {
+            doc.text(note, margin + 4, currentNoteY)
+            currentNoteY += 4.5
+          })
+
+          doc.save(`DATA_USERNAME_DAN_PASSWORD_PETUGAS_SURVEY_${new Date().toISOString().split('T')[0]}.pdf`)
+
+          logActivity({
+            query: `DOWNLOAD PDF PETUGAS SURVEY (${filteredPetugasAccounts.length} akun)`,
+            results: "Berhasil",
+            device: getDeviceType(navigator.userAgent),
+            source: 'Web',
+            method: 'KELOLA AKUN PETUGAS SURVEY',
+            userId: user?.email || user?.uid || 'Admin'
+          })
+
+          toast({ title: "PDF Berhasil Diunduh", description: "Data akun petugas survey telah disimpan dalam file PDF." })
+        } catch (err: any) {
+          console.error("PDF Export error:", err)
+          toast({ variant: "destructive", title: "Gagal Membuat PDF", description: err.message || "Terjadi kesalahan." })
+        } finally {
+          setIsExportingPdf(false)
+        }
+      })
+    })
+  }
 
   // Extract flexible column value from raw excel row
   const getColValue = (row: any, candidates: string[]): string => {
@@ -611,6 +732,16 @@ export default function UploadPetugasSurveyPage() {
                   className="pl-9 bg-slate-700/60 border-slate-600 text-white placeholder:text-slate-400 h-9 text-xs" 
                 />
               </div>
+
+              <Button 
+                size="sm" 
+                onClick={handleExportPDF} 
+                disabled={isExportingPdf || filteredPetugasAccounts.length === 0} 
+                className="bg-red-600 hover:bg-red-700 text-white font-bold gap-1 shadow-sm"
+              >
+                {isExportingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                <span>Cetak PDF</span>
+              </Button>
 
               <Dialog open={isAddingPetugas} onOpenChange={setIsAddingPetugas}>
                 <DialogTrigger asChild>
