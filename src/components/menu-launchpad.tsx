@@ -53,7 +53,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 custom-scrollbar">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 pb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-5 pb-16">
         {navigation.map((item: any, index) => (
           <div
             key={item.name}
@@ -71,7 +71,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               borderColor: `${item.color}44`
             }}
             className={cn(
-              "group relative flex flex-col p-4 md:p-5 rounded-[2rem] transition-all duration-300 ease-out overflow-hidden shadow-lg border cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-4 h-[160px] md:h-[180px]",
+              "group relative flex flex-col p-4 md:p-5 rounded-[2rem] transition-all duration-300 ease-out overflow-hidden shadow-lg border cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-4 h-[135px] md:h-[150px] lg:h-[160px]",
               "hover:shadow-2xl hover:-translate-y-1.5 hover:brightness-110"
             )}
           >
