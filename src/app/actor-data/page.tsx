@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle } from "lucide-react"
 import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -1475,18 +1475,40 @@ function ActorDataContent() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
                       {(() => {
                         const coordPhone = kuotaData?.find((q: any) => (q.name || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim())?.phone;
+                        
+                        const getWaLink = (phoneStr: string) => {
+                          if (!phoneStr) return "#";
+                          let clean = phoneStr.replace(/\D/g, "");
+                          if (clean.startsWith("0")) clean = "62" + clean.slice(1);
+                          else if (!clean.startsWith("62")) clean = "62" + clean;
+                          return `https://wa.me/${clean}`;
+                        };
+
                         return [
                           { label: "Usaha", value: viewingActor.businessName },
                           { label: "Kategori Usaha", value: viewingActor.businessCategory },
                           { label: "Lokasi Usaha", value: viewingActor.businessLocation },
                           ...(!isInspektorat ? [
                             { label: "USULAN", value: viewingActor.coordinator },
-                            { label: "NO. HP USULAN", value: coordPhone }
+                            { label: "NO. HP USULAN", value: coordPhone, isPhone: true }
                           ] : [])
-                        ].map((item, i) => (
+                        ].map((item: any, i: number) => (
                           <div key={i} className="space-y-1">
                             <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                            <p className="text-sm font-bold">{item.value || "-"}</p>
+                            {item.isPhone && item.value ? (
+                              <a
+                                href={getWaLink(item.value)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 shadow-sm transition-all active:scale-95 w-fit"
+                                title="Klik untuk membuka obrolan WhatsApp"
+                              >
+                                <MessageCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
+                                <span>{item.value}</span>
+                              </a>
+                            ) : (
+                              <p className="text-sm font-bold">{item.value || "-"}</p>
+                            )}
                           </div>
                         ));
                       })()}

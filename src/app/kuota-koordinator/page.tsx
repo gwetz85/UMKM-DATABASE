@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
-import { ShieldAlert, Loader2, BarChart3, UserPlus, Edit, Trash2, FileDown, RefreshCw } from "lucide-react"
+import { ShieldAlert, Loader2, BarChart3, UserPlus, Edit, Trash2, FileDown, RefreshCw, MessageCircle } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 
@@ -480,7 +480,25 @@ export default function KuotaKorlapDewanAktifPage() {
                       {item.name}
                     </TableCell>
                     <TableCell className="font-semibold text-slate-600 text-xs">
-                      {item.phone || <span className="text-slate-300">-</span>}
+                      {item.phone ? (
+                        <a
+                          href={(() => {
+                            let clean = String(item.phone).replace(/\D/g, "");
+                            if (clean.startsWith("0")) clean = "62" + clean.slice(1);
+                            else if (!clean.startsWith("62")) clean = "62" + clean;
+                            return `https://wa.me/${clean}`;
+                          })()}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold hover:underline hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200/80 dark:border-emerald-800 transition-all active:scale-95"
+                          title="Klik untuk membuka WhatsApp"
+                        >
+                          <MessageCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
+                          <span>{item.phone}</span>
+                        </a>
+                      ) : (
+                        <span className="text-slate-300">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-center font-black text-slate-800">
                        <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
