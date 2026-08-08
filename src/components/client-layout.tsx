@@ -227,10 +227,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
                 {activeEvent && (
                   <div className="hidden lg:flex flex-col items-center justify-center animate-in fade-in zoom-in duration-1000">
-                    <span className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-1">
-                      {activeEvent.description || 'EVENT MENDATANG'}
-                    </span>
-                    <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} size="sm" />
+                    <EventCountdown 
+                      targetDate={activeEvent.endDate || activeEvent.date} 
+                      startDate={activeEvent.startDate} 
+                      title={activeEvent.description}
+                      size="sm" 
+                    />
                   </div>
                 )}
 

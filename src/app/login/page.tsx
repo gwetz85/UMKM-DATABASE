@@ -392,15 +392,12 @@ export default function LoginPage() {
             onClick={() => setShowFullEvent(true)}
           >
             <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl p-4 shadow-2xl hover:bg-white/20 transition-all duration-300 active:scale-95">
-              <div className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-2 text-white/90">
-                  <CalendarDays className="w-4 h-4" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">{activeEvent.description || "EVENT"}</span>
-                </div>
-                <div className="mt-1">
-                  <EventCountdown targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} size="sm" />
-                </div>
-              </div>
+              <EventCountdown 
+                targetDate={activeEvent.endDate || activeEvent.date} 
+                startDate={activeEvent.startDate} 
+                title={activeEvent.description}
+                size="sm" 
+              />
             </div>
           </div>
         )}
@@ -660,10 +657,11 @@ export default function LoginPage() {
               </h2>
               <div className="h-1.5 w-24 bg-white/20 mx-auto rounded-full" />
             </div>
-            <div className="scale-150 py-12">
+            <div className="py-6 w-full flex justify-center">
               <EventCountdown 
                 targetDate={activeEvent.endDate || activeEvent.date} 
                 startDate={activeEvent.startDate} 
+                title={activeEvent.description}
                 size="lg"
               />
             </div>
