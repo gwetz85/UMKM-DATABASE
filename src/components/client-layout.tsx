@@ -225,7 +225,16 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   )}
                 </div>
 
-
+                {activeEvent && (
+                  <div className="hidden lg:flex flex-col items-center justify-center animate-in fade-in zoom-in duration-1000">
+                    <EventCountdown 
+                      targetDate={activeEvent.endDate || activeEvent.date} 
+                      startDate={activeEvent.startDate} 
+                      title={activeEvent.description}
+                      size="sm" 
+                    />
+                  </div>
+                )}
 
                 <div className="flex items-center gap-4">
                   {!isRootPage && !isKoordinator && (
@@ -351,16 +360,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       </div>
                     </div>
                     <BackgroundMusic role={profile?.role} className="lg:static" />
-                    {activeEvent && (
-                      <div className="w-72 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-white/60 dark:border-slate-800/80 shadow-lg p-3 flex flex-col items-center justify-center transition-all hover:shadow-xl hover:bg-white dark:hover:bg-slate-900 animate-in fade-in zoom-in duration-500">
-                        <EventCountdown 
-                          targetDate={activeEvent.endDate || activeEvent.date} 
-                          startDate={activeEvent.startDate} 
-                          title={activeEvent.description}
-                          size="md" 
-                        />
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
