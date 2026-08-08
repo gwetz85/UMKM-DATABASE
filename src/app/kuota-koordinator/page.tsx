@@ -111,6 +111,7 @@ export default function KuotaKorlapDewanAktifPage() {
     const formData = new FormData(e.currentTarget)
     const name = formData.get("name") as string
     const quotaStr = formData.get("quota") as string
+    const phone = formData.get("phone") as string
     const quota = parseInt(quotaStr, 10)
 
     if (!name || isNaN(quota)) return
@@ -119,6 +120,7 @@ export default function KuotaKorlapDewanAktifPage() {
     set(newDataRef, {
       name,
       quota,
+      phone: phone || '',
       addedAt: new Date().toISOString()
     }).then(() => {
       logActivity({
@@ -145,12 +147,13 @@ export default function KuotaKorlapDewanAktifPage() {
     })
   }
 
-  const performUpdate = (name: string, quota: number) => {
+  const performUpdate = (name: string, quota: number, phone: string) => {
     if (!editingData || !database) return
     const dataRef = ref(database, `koordinator_kuotas/${editingData.id}`)
     set(dataRef, {
       name,
       quota,
+      phone: phone || '',
       addedAt: editingData.addedAt || new Date().toISOString()
     }).then(() => {
       logActivity({
@@ -180,6 +183,7 @@ export default function KuotaKorlapDewanAktifPage() {
     const formData = new FormData(e.currentTarget)
     const name = formData.get("name") as string
     const quotaStr = formData.get("quota") as string
+    const phone = formData.get("phone") as string
     const quota = parseInt(quotaStr, 10)
 
     if (!name || isNaN(quota)) return
@@ -198,7 +202,7 @@ export default function KuotaKorlapDewanAktifPage() {
     }
 
     // Only quota changed – no batch update needed
-    performUpdate(name, quota)
+    performUpdate(name, quota, phone || '')
   }
 
   const confirmRenameUpdate = async () => {
@@ -212,6 +216,7 @@ export default function KuotaKorlapDewanAktifPage() {
       await set(dataRef, {
         name: newName,
         quota,
+        phone: editingData.phone || '',
         addedAt: editingData.addedAt || new Date().toISOString()
       })
 
@@ -431,6 +436,10 @@ export default function KuotaKorlapDewanAktifPage() {
                   <Input name="name" placeholder="Nama Lengkap Koordinator" required />
                 </div>
                 <div className="space-y-2">
+                  <Label className="font-bold">Nomor Ponsel</Label>
+                  <Input name="phone" type="tel" placeholder="08xxxxxxxxxx" />
+                </div>
+                <div className="space-y-2">
                   <Label className="font-bold">Jumlah Kuota</Label>
                   <Input name="quota" type="number" min="0" placeholder="100" required />
                 </div>
@@ -454,6 +463,7 @@ export default function KuotaKorlapDewanAktifPage() {
                 <TableRow>
                   <TableHead className="font-bold uppercase text-[10px] w-[50px] text-center">No</TableHead>
                   <TableHead className="font-bold uppercase text-[10px]">USULAN</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px]">No. HP</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] text-center">Kuota USULAN</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] text-center">Tercapai</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] text-center">Sisa</TableHead>
@@ -468,6 +478,9 @@ export default function KuotaKorlapDewanAktifPage() {
                     </TableCell>
                     <TableCell className="font-bold text-primary">
                       {item.name}
+                    </TableCell>
+                    <TableCell className="font-semibold text-slate-600 text-xs">
+                      {item.phone || <span className="text-slate-300">-</span>}
                     </TableCell>
                     <TableCell className="text-center font-black text-slate-800">
                        <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
@@ -506,6 +519,10 @@ export default function KuotaKorlapDewanAktifPage() {
                                   <div className="space-y-2">
                                     <Label className="font-bold">Nama Koordinator</Label>
                                     <Input name="name" defaultValue={item.name} required />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="font-bold">Nomor Ponsel</Label>
+                                    <Input name="phone" type="tel" defaultValue={item.phone || ''} placeholder="08xxxxxxxxxx" />
                                   </div>
                                   <div className="space-y-2">
                                     <Label className="font-bold">Jumlah Kuota</Label>

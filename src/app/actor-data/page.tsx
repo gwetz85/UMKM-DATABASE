@@ -1473,17 +1473,23 @@ function ActorDataContent() {
                   <section className="space-y-4">
                     <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
-                      {[
-                        { label: "Usaha", value: viewingActor.businessName },
-                        { label: "Kategori Usaha", value: viewingActor.businessCategory },
-                        { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                        ...(!isInspektorat ? [{ label: "USULAN", value: viewingActor.coordinator }] : [])
-                      ].map((item, i) => (
-                        <div key={i} className="space-y-1">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                          <p className="text-sm font-bold">{item.value || "-"}</p>
-                        </div>
-                      ))}
+                      {(() => {
+                        const coordPhone = kuotaData?.find((q: any) => (q.name || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim())?.phone;
+                        return [
+                          { label: "Usaha", value: viewingActor.businessName },
+                          { label: "Kategori Usaha", value: viewingActor.businessCategory },
+                          { label: "Lokasi Usaha", value: viewingActor.businessLocation },
+                          ...(!isInspektorat ? [
+                            { label: "USULAN", value: viewingActor.coordinator },
+                            { label: "NO. HP USULAN", value: coordPhone }
+                          ] : [])
+                        ].map((item, i) => (
+                          <div key={i} className="space-y-1">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                            <p className="text-sm font-bold">{item.value || "-"}</p>
+                          </div>
+                        ));
+                      })()}
                     </div>
                   </section>
 
