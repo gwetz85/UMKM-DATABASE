@@ -291,6 +291,9 @@ function ActorDataContent() {
   const [deletePending, setDeletePending] = useState<{actorId: string, fullName: string} | null>(null)
   const [showLanjutDinasDialog, setShowLanjutDinasDialog] = useState(false)
   const [lanjutDinasPending, setLanjutDinasPending] = useState<{coordinator: string, eligibleActors: BusinessActor[]} | null>(null)
+  const [showSingleLanjutDinasDialog, setShowSingleLanjutDinasDialog] = useState(false)
+  const [singleLanjutDinasPending, setSingleLanjutDinasPending] = useState<BusinessActor | null>(null)
+  const [isSingleLanjutDinasSubmitting, setIsSingleLanjutDinasSubmitting] = useState(false)
   const [editNik, setEditNik] = useState("")
   const [editPob, setEditPob] = useState("")
   const [editDob, setEditDob] = useState("")
@@ -617,6 +620,51 @@ function ActorDataContent() {
     } finally {
       setIsLanjutDinasBatching(false)
       setLanjutDinasPending(null)
+    }
+  }
+
+  const handleSingleLanjutDinas = (actor: BusinessActor) => {
+    if (!isAdmin || !database) return
+    setSingleLanjutDinasPending(actor)
+    setShowSingleLanjutDinasDialog(true)
+  }
+
+  const executeSingleLanjutDinas = async () => {
+    if (!singleLanjutDinasPending || !database) return
+    const actor = singleLanjutDinasPending
+    setShowSingleLanjutDinasDialog(false)
+    setIsSingleLanjutDinasSubmitting(true)
+    try {
+      const { updateStatsOnStatusChange } = await import("@/lib/stats-service")
+      const oldStatus = actor.status || 'verified_actor'
+
+      updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), { 
+        status: 'lpj_pending',
+        pushedSusulanAt: new Date().toISOString(),
+        pushedSusulanBy: user?.email || user?.uid || 'Admin'
+      })
+
+      await updateStatsOnStatusChange(database, oldStatus, 'lpj_pending', actor)
+
+      logActivity({
+        query: `PUSH DATA SUSULAN DINAS: ${actor.fullName} (NIK: ${actor.nik})`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'DATA PELAKU USAHA',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+      
+      toast({ title: "Berhasil Push Susulan", description: `Data ${actor.fullName} berhasil dipush ke Verifikasi Dinas.` })
+      if (viewingActor?.id === actor.id) {
+        setViewingActor({ ...viewingActor, status: 'lpj_pending' })
+      }
+    } catch (error) {
+      console.error("Single push susulan error:", error)
+      toast({ variant: "destructive", title: "Error", description: "Terjadi kesalahan saat mempush data susulan." })
+    } finally {
+      setIsSingleLanjutDinasSubmitting(false)
+      setSingleLanjutDinasPending(null)
     }
   }
 
@@ -1102,6 +1150,17 @@ function ActorDataContent() {
                   >
                     <Folder className="w-4 h-4" />
                   </Button>
+                  {isAdmin && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-purple-600 hover:bg-purple-50"
+                      onClick={() => handleSingleLanjutDinas(actor)}
+                      title="Lanjut Dinas (Push Data Susulan)"
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="ghost"
@@ -1226,6 +1285,16 @@ function ActorDataContent() {
                       className="font-bold bg-blue-500 hover:bg-blue-600 text-white"
                     >
                       <Folder className="w-4 h-4 mr-2" /> Link Drive
+                    </Button>
+                  )}
+                  {isAdmin && !isEditMode && viewingActor && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleSingleLanjutDinas(viewingActor)}
+                      className="font-bold bg-purple-600 hover:bg-purple-700 text-white"
+                      title="Push Data Susulan ke Verifikasi Dinas"
+                    >
+                      <Send className="w-4 h-4 mr-2" /> Lanjut Dinas (Susulan)
                     </Button>
                   )}
                   {isAdmin && (
@@ -1621,6 +1690,21 @@ function ActorDataContent() {
         confirmIcon={<Send className="w-4 h-4" />}
         variant="default"
         onConfirm={executeLanjutDinas}
+      />
+
+      <ConfirmDialog
+        open={showSingleLanjutDinasDialog}
+        onOpenChange={(open) => {
+          setShowSingleLanjutDinasDialog(open)
+          if (!open) setSingleLanjutDinasPending(null)
+        }}
+        icon={<Send className="w-6 h-6 text-purple-600" />}
+        title="Push Data Susulan ke Dinas?"
+        description={`Apakah Anda yakin ingin mempush data ${singleLanjutDinasPending?.fullName || ''} (${singleLanjutDinasPending?.businessName || ''}) ke Verifikasi Dinas sebagai Data Susulan?`}
+        confirmText="Ya, Push Susulan"
+        confirmIcon={<Send className="w-4 h-4" />}
+        variant="default"
+        onConfirm={executeSingleLanjutDinas}
       />
     </div>
   )
