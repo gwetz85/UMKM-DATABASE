@@ -102,7 +102,7 @@ export default function VerifikasiDinasPage() {
 
   // Calculate progress
   const calculateProgress = () => {
-    let requiredFields = 18;
+    let requiredFields = 17; // email tidak wajib
     let filled = 0;
     if (surveyData.namaUsaha) filled++;
     if (surveyData.namaPemilik) filled++;
@@ -110,7 +110,7 @@ export default function VerifikasiDinasPage() {
     if (surveyData.status) filled++;
     if (surveyData.alamatRumah) filled++;
     if (surveyData.noHp) filled++;
-    if (surveyData.email) filled++;
+    // email: opsional, tidak dihitung dalam progress
     if (surveyData.sosmed) filled++;
     if (surveyData.dtks?.masuk !== undefined) {
       filled++;
@@ -1085,8 +1085,8 @@ export default function VerifikasiDinasPage() {
                                           <Input value={surveyData.noHp || ''} onChange={e => setSurveyData(prev => ({...prev, noHp: e.target.value}))} required />
                                         </div>
                                         <div className="space-y-2">
-                                          <Label>Email</Label>
-                                          <Input type="email" value={surveyData.email || ''} onChange={e => setSurveyData(prev => ({...prev, email: e.target.value}))} required />
+                                          <Label>Email <span className="text-muted-foreground text-xs">(opsional)</span></Label>
+                                          <Input type="email" value={surveyData.email || ''} onChange={e => setSurveyData(prev => ({...prev, email: e.target.value}))} />
                                         </div>
                                         <div className="space-y-2">
                                           <Label>Account Sosial Media</Label>
