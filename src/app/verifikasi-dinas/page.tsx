@@ -47,7 +47,7 @@ import { generateBeritaAcaraPDF } from "@/lib/generate-berita-acara-pdf"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function VerifikasiDinasPage() {
-  const { user, userProfile } = useUser()
+  const { user, userProfile, isProfileLoading } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
@@ -272,12 +272,14 @@ export default function VerifikasiDinasPage() {
   }, [isPetugas, userProfile?.id])
 
   const memoQuery = useMemoFirebase(() => {
-    if (!database) return null
+    // Tunggu sampai profile user selesai dimuat agar role (isPetugas/isDinas/isAdmin) sudah diketahui
+    // Ini mencegah load seluruh koleksi businessActors sebelum role diketahui
+    if (!database || isProfileLoading || !userProfile) return null
     if (isPetugas && userProfile?.fullName) {
       return query(ref(database, 'businessActors'), orderByChild('petugasSurvey'), equalTo(userProfile.fullName.toUpperCase().trim()))
     }
     return ref(database, 'businessActors')
-  }, [database, isPetugas, userProfile?.fullName])
+  }, [database, isProfileLoading, isPetugas, userProfile?.fullName])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
@@ -593,9 +595,10 @@ export default function VerifikasiDinasPage() {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="py-20 flex justify-center">
+      {(isLoading || isProfileLoading) ? (
+        <div className="py-20 flex flex-col items-center justify-center gap-3">
           <Loader2 className="animate-spin text-primary w-10 h-10" />
+          <p className="text-sm text-muted-foreground">{isProfileLoading ? "Memuat sesi pengguna..." : "Memuat data..."}</p>
         </div>
       ) : filteredActors?.length === 0 ? (
         <Card className="border-dashed border-2 flex flex-col items-center justify-center py-20 text-muted-foreground bg-slate-50/50 rounded-3xl">
