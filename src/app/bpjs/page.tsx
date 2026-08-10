@@ -117,7 +117,7 @@ export default function BpjsPage() {
     return allActors
       .filter(a => {
         const age = calculateAgeOn(a.pobDob || "", refDate);
-        return age <= 65;
+        return age < 65;
       })
       .filter(a => {
         // Keep search functionality across name or NIK
@@ -374,7 +374,7 @@ export default function BpjsPage() {
         <div className="space-y-1">
           <p className="text-xs font-black text-amber-900 uppercase">Informasi Kelayakan</p>
           <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
-            Kriteria kelayakan BPJS Ketenagakerjaan berdasarkan usia maksimal 65 tahun pada saat pendaftaran. 
+            Kriteria kelayakan BPJS Ketenagakerjaan berdasarkan usia di bawah 65 tahun (&lt;65) pada saat pendaftaran. 
             Data di atas diambil dari database pelaku usaha yang telah diverifikasi.
           </p>
         </div>
