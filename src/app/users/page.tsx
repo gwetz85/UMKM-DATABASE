@@ -423,6 +423,7 @@ export default function UserManagementPage() {
                       <SelectItem value="koordinator">USULAN</SelectItem>
                       <SelectItem value="admin">Administrator</SelectItem>
                       <SelectItem value="monitoring">Monitoring</SelectItem>
+                      <SelectItem value="staff">Staff</SelectItem>
                       <SelectItem value="dinas">Dinas</SelectItem>
                       <SelectItem value="verifikator_dinas">Verifikator Dinas</SelectItem>
                       <SelectItem value="inspektorat">Inspektorat</SelectItem>
@@ -497,6 +498,10 @@ export default function UserManagementPage() {
                       ) : u.role === 'inspektorat' ? (
                         <Badge variant="outline" className="text-slate-600 border-slate-300 bg-slate-50 font-black uppercase text-[9px] gap-1">
                           <ShieldCheck className="w-3 h-3" /> Inspektorat
+                        </Badge>
+                      ) : u.role === 'staff' ? (
+                        <Badge variant="outline" className="text-teal-700 border-teal-300 bg-teal-50 font-black uppercase text-[9px] gap-1">
+                          <UserCheck className="w-3 h-3" /> Staff
                         </Badge>
                       ) : (
                         <Badge variant="destructive" className="animate-pulse font-black uppercase text-[9px] gap-1 bg-red-100 text-red-600 border-red-200">
@@ -594,6 +599,7 @@ export default function UserManagementPage() {
                                         <SelectItem value="koordinator">USULAN</SelectItem>
                                         <SelectItem value="admin">Administrator</SelectItem>
                                         <SelectItem value="monitoring">Monitoring</SelectItem>
+                                        <SelectItem value="staff">Staff</SelectItem>
                                         <SelectItem value="dinas">Dinas</SelectItem>
                                         <SelectItem value="verifikator_dinas">Verifikator Dinas</SelectItem>
                                         <SelectItem value="inspektorat">Inspektorat</SelectItem>

@@ -93,7 +93,7 @@ export function AppSidebar() {
     setMounted(true)
   }, [])
 
-  const { navigation, isAdmin, isKoordinator, isMonitoring, isPetugas, isDinas, userProfile } = useNavigation()
+  const { navigation, isAdmin, isKoordinator, isMonitoring, isPetugas, isDinas, isStaff, userProfile } = useNavigation()
 
   const copyUid = () => {
     if (user?.uid) {
@@ -265,7 +265,7 @@ export function AppSidebar() {
                       {userProfile?.fullName?.toUpperCase() || user.email?.split('@')[0].toUpperCase()}
                     </span>
                     <span className="text-[8px] text-white/60 font-black uppercase tracking-tighter">
-                      {isAdmin ? "🛡️ Admin" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 USULAN" : isPetugas ? "📝 Petugas" : isDinas ? "🏢 Dinas" : "👤 User"}
+                      {isAdmin ? "🛡️ Admin" : isStaff ? "📋 Staff" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 USULAN" : isPetugas ? "📝 Petugas" : isDinas ? "🏢 Dinas" : "👤 User"}
                     </span>
                   </div>
                 </Link>

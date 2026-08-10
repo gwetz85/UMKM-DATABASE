@@ -42,6 +42,7 @@ export function useNavigation() {
   const isDinas = userProfile?.role === 'dinas'
   const isVerifikatorDinas = userProfile?.role === 'verifikator_dinas'
   const isInspektorat = userProfile?.role === 'inspektorat'
+  const isStaff = userProfile?.role === 'staff'
   
   // Real-time unread count
   const chatsRef = useMemoFirebase(() => {
@@ -61,7 +62,7 @@ export function useNavigation() {
       href: "/dashboard",
       icon: LayoutDashboard,
       show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
-      color: "#f59e0b", // amber-500
+      color: "#f59e0b",
       description: "Statistik & Ringkasan Data"
     },
     {
@@ -69,7 +70,7 @@ export function useNavigation() {
       href: "/messages",
       icon: MessageSquare,
       show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
-      color: "#4f46e5", // indigo-600
+      color: "#4f46e5",
       description: "Komunikasi Internal",
       badge: totalUnread > 0 ? totalUnread : undefined
     },
@@ -77,16 +78,16 @@ export function useNavigation() {
       name: "Cek Data",
       href: "/check-data",
       icon: SearchCheck,
-      show: isAdmin && !isDinas && !isVerifikatorDinas,
-      color: "#2563eb", // blue-600
+      show: (isAdmin || isStaff) && !isDinas && !isVerifikatorDinas,
+      color: "#2563eb",
       description: "Pencarian Data Pelaku Usaha"
     },
     {
       name: "Cek Data Kolektif",
       href: "/check-data-collective",
       icon: SearchCheck,
-      show: isAdmin && !isDinas && !isVerifikatorDinas,
-      color: "#0891b2", // cyan-600
+      show: (isAdmin || isStaff) && !isDinas && !isVerifikatorDinas,
+      color: "#0891b2",
       description: "Verifikasi Data Massal"
     },
     {
@@ -94,15 +95,15 @@ export function useNavigation() {
       href: "/input",
       icon: UserPlus,
       show: !!user && !isKoordinator && !isDinas && !isVerifikatorDinas && !isPetugas,
-      color: "#059669", // emerald-600
+      color: "#059669",
       description: "Pendaftaran Pelaku Usaha Baru"
     },
     {
       name: "Verifikasi Admin",
       href: "/verify-actor",
       icon: ShieldCheck,
-      show: (isAdmin || isMonitoring) && !isDinas && !isVerifikatorDinas && !isPetugas,
-      color: "#7c3aed", // violet-600
+      show: (isAdmin || isMonitoring || isStaff) && !isDinas && !isVerifikatorDinas && !isPetugas,
+      color: "#7c3aed",
       description: "Persetujuan Data Pendaftar"
     },
     {
@@ -110,7 +111,7 @@ export function useNavigation() {
       href: "/actor-data",
       icon: Users,
       show: (!!user && !isDinas && !isVerifikatorDinas && !isPetugas) || isInspektorat,
-      color: "#0284c7", // sky-600
+      color: "#0284c7",
       description: "Database Seluruh Pelaku Usaha"
     },
     {
@@ -118,31 +119,31 @@ export function useNavigation() {
       href: "/rejected",
       icon: Ban,
       show: !!user && !isDinas && !isVerifikatorDinas && !isKoordinator && !isPetugas,
-      color: "#f97316", // orange-500
+      color: "#f97316",
       description: "Arsip Data yang Tidak Disetujui"
     },
     {
       name: "Survey Dinas",
       href: "/verifikasi-dinas",
       icon: ClipboardCheck,
-      show: isAdmin || isDinas || isPetugas,
-      color: "#c026d3", // fuchsia-600
+      show: isAdmin || isDinas || isPetugas || isStaff,
+      color: "#c026d3",
       description: "Tahap Awal Verifikasi Dinas"
     },
     {
       name: "Verifikasi Dinas",
       href: "/verifikasi-dinas-berkas",
       icon: ClipboardCheck,
-      show: (isAdmin || isVerifikatorDinas) && !isPetugas,
-      color: "#9333ea", // purple-600
+      show: (isAdmin || isVerifikatorDinas || isStaff) && !isPetugas,
+      color: "#9333ea",
       description: "Cek Kelengkapan Berkas"
     },
     {
       name: "Hasil Verifikasi",
       href: "/hasil-verifikasi",
       icon: ListChecks,
-      show: isAdmin && !isDinas && !isVerifikatorDinas,
-      color: "#0d9488", // teal-600
+      show: (isAdmin || isStaff) && !isDinas && !isVerifikatorDinas,
+      color: "#0d9488",
       description: "Laporan Hasil Verifikasi"
     },
     {
@@ -150,7 +151,7 @@ export function useNavigation() {
       href: "/rekapan-data",
       icon: BarChart3,
       show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
-      color: "#d97706", // amber-600
+      color: "#d97706",
       description: "Rekap Semua Data Input (Per Wilayah)"
     },
     {
@@ -158,7 +159,7 @@ export function useNavigation() {
       href: "/bpjs",
       icon: ShieldCheck,
       show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
-      color: "#15803d", // green-700
+      color: "#15803d",
       description: "Monitoring BPJS Peserta"
     },
     {
@@ -166,7 +167,7 @@ export function useNavigation() {
       href: "/rekening-bank",
       icon: CreditCard,
       show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isPetugas,
-      color: "#475569", // slate-600
+      color: "#475569",
       description: "Daftar Rekening Per Bank",
       items: [
         { name: "BCA", href: "/rekening-bank?bank=BCA" },
@@ -189,16 +190,16 @@ export function useNavigation() {
       name: "LPJ",
       href: "/lpj",
       icon: FileText,
-      show: (isAdmin || isMonitoring || isKoordinator) && !isDinas && !isVerifikatorDinas && !isPetugas,
-      color: "#52525b", // zinc-600
+      show: (isAdmin || isMonitoring || isKoordinator || isStaff) && !isDinas && !isVerifikatorDinas && !isPetugas,
+      color: "#52525b",
       description: "Laporan Pertanggungjawaban"
     },
     {
       name: "Tanda Terima LPJ",
       href: "/lpj-receipt",
       icon: FileText,
-      show: (isAdmin || isMonitoring) && !isDinas && !isVerifikatorDinas && !isPetugas,
-      color: "#6366f1", // indigo-500
+      show: (isAdmin || isMonitoring || isStaff) && !isDinas && !isVerifikatorDinas && !isPetugas,
+      color: "#6366f1",
       description: "Cetak Tanda Terima LPJ Koordinator"
     },
     {
@@ -206,23 +207,24 @@ export function useNavigation() {
       href: "/finish",
       icon: CheckCircle2,
       show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
-      color: "#1d4ed8", // blue-700
+      color: "#1d4ed8",
       description: "Data yang Telah Selesai Diproses"
     },
+    // ─── Menu yang TIDAK boleh diakses STAFF ───────────────────────────────────
     {
       name: "Manajemen User",
       href: "/users",
       icon: UserCog,
-      show: isAdmin,
-      color: "#1e293b", // slate-800
+      show: isAdmin, // STAFF tidak bisa
+      color: "#1e293b",
       description: "Kelola Pengguna Sistem"
     },
     {
       name: "Upload Excel Petugas",
       href: "/upload-petugas-survey",
       icon: FileSpreadsheet,
-      show: isAdmin || isKoordinator || isMonitoring,
-      color: "#8b5cf6", // violet-500
+      show: isAdmin || isKoordinator || isMonitoring, // STAFF tidak bisa
+      color: "#8b5cf6",
       description: "Import Pemetaan Data Petugas Survey"
     },
     {
@@ -230,74 +232,74 @@ export function useNavigation() {
       href: "/settings",
       icon: UserCog,
       show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
-      color: "#94a3b8", // slate-400
+      color: "#94a3b8",
       description: "Konfigurasi Profil & Sistem"
     },
     {
       name: "Pengaturan Teks",
       href: "/settings-running-text",
       icon: MessageSquare,
-      show: isAdmin,
-      color: "#ec4899", // pink-500
+      show: isAdmin, // STAFF tidak bisa
+      color: "#ec4899",
       description: "Konfigurasi Teks Berjalan"
     },
     {
       name: "Pengaturan Slideshow",
       href: "/settings-slideshow",
       icon: Calendar,
-      show: isAdmin,
-      color: "#db2777", // pink-600
+      show: isAdmin, // STAFF tidak bisa
+      color: "#db2777",
       description: "Manajemen Slideshow Login"
     },
     {
       name: "Kuota USULAN",
       href: "/kuota-koordinator",
       icon: BarChart3,
-      show: isAdmin,
-      color: "#f59e0b", // amber-500
+      show: isAdmin, // STAFF tidak bisa
+      color: "#f59e0b",
       description: "Manajemen Kuota"
     },
     {
       name: "Pengaturan Event",
       href: "/settings-event",
       icon: Calendar,
-      show: isAdmin,
-      color: "#8b5cf6", // violet-500
+      show: isAdmin, // STAFF tidak bisa
+      color: "#8b5cf6",
       description: "Manajemen Event & Jadwal"
     },
     {
       name: "Jam & Libur Kantor",
       href: "/settings-office-hours",
       icon: Clock,
-      show: isAdmin,
-      color: "#10b981", // emerald-500
+      show: isAdmin, // STAFF tidak bisa
+      color: "#10b981",
       description: "Pengaturan Jam Operasional & Libur"
     },
     {
       name: "Maintenance Setting",
       href: "/settings-maintenance",
       icon: ShieldAlert,
-      show: isAdmin,
-      color: "#ef4444", // red-500
+      show: isAdmin, // STAFF tidak bisa
+      color: "#ef4444",
       description: "Pengaturan Mode Perbaikan Aplikasi"
     },
     {
       name: "Pengaturan Informasi",
       href: "/settings-info",
       icon: Info,
-      show: isAdmin,
-      color: "#64748b", // slate-500
+      show: isAdmin, // STAFF tidak bisa
+      color: "#64748b",
       description: "Kelola Konten Informasi Aplikasi"
     },
     {
       name: "LOG APLIKASI",
       href: "/app-logs",
       icon: History,
-      show: isAdmin,
-      color: "#000000", // black
+      show: isAdmin, // STAFF tidak bisa
+      color: "#000000",
       description: "Riwayat Aktivitas Sistem"
     },
-  ], [user, isAdmin, isMonitoring, isVerifikatorDinas, isDinas, userProfile, totalUnread])
+  ], [user, isAdmin, isMonitoring, isVerifikatorDinas, isDinas, isStaff, userProfile, totalUnread])
 
   return {
     navigation: navigation.filter(item => item.show),
@@ -308,6 +310,7 @@ export function useNavigation() {
     isDinas,
     isVerifikatorDinas,
     isInspektorat,
+    isStaff,
     userProfile
   }
 }

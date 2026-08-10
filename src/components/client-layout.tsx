@@ -57,19 +57,20 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const { data: systemConfig } = useObject(systemConfigRef);
 
   const isAdmin = profile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
+  const isStaff = profile?.role === 'staff';
   const isLoginPage = pathname === '/login'
   const isRootPage = pathname === '/'
 
   React.useEffect(() => {
     if (maintenanceData && typeof maintenanceData === 'object' && user && profile) {
       const isMaintenanceMode = maintenanceData.enabled === true;
-      if (isMaintenanceMode && !isAdmin && pathname !== '/maintenance' && pathname !== '/login') {
+      if (isMaintenanceMode && !isAdmin && !isStaff && pathname !== '/maintenance' && pathname !== '/login') {
         router.replace('/maintenance');
       } else if (!isMaintenanceMode && pathname === '/maintenance') {
         router.replace('/');
       }
     }
-  }, [maintenanceData, isAdmin, pathname, router, user, profile]);
+  }, [maintenanceData, isAdmin, isStaff, pathname, router, user, profile]);
 
   React.useEffect(() => {
     if (!database || !user || !profile?.id) return;
