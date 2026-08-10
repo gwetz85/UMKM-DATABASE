@@ -75,10 +75,22 @@ export default function SettingsMaintenance() {
     }
   }, [enabled]);
 
-  // Ensure editor retains HTML when toggling preview mode
+  // Callback ref to ensure innerHTML is set as soon as editor DOM element mounts
+  const setEditorRef = useCallback((node: HTMLDivElement | null) => {
+    editorRef.current = node;
+    if (node && message) {
+      if (!node.innerHTML || node.innerHTML === '<br>' || node.innerHTML === '') {
+        node.innerHTML = message;
+      }
+    }
+  }, [message]);
+
+  // Sync editor innerHTML when message or preview state changes
   useEffect(() => {
-    if (!showPreview && editorRef.current && editorRef.current.innerHTML !== message) {
-      editorRef.current.innerHTML = message;
+    if (!showPreview && editorRef.current && message) {
+      if (!editorRef.current.innerHTML || editorRef.current.innerHTML === '<br>' || editorRef.current.innerHTML === '') {
+        editorRef.current.innerHTML = message;
+      }
     }
   }, [showPreview, message]);
 
@@ -285,7 +297,7 @@ export default function SettingsMaintenance() {
 
                 {/* Editor Area */}
                 <div
-                  ref={editorRef}
+                  ref={setEditorRef}
                   contentEditable
                   suppressContentEditableWarning
                   onInput={handleEditorInput}
