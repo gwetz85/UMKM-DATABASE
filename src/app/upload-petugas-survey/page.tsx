@@ -47,6 +47,7 @@ interface ParsedPetugasRow {
   petugasSurvey: string
   statusMatch?: 'found' | 'not_found'
   actorId?: string
+  matchMethod?: string // 'regId' | 'nik' | 'nik_normalized' | 'name_exact' | 'name_fuzzy'
 }
 
 export default function UploadPetugasSurveyPage() {
@@ -61,6 +62,11 @@ export default function UploadPetugasSurveyPage() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [searchPetugasQuery, setSearchPetugasQuery] = useState("")
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({})
+
+  // Force Assign state
+  const [forceAssignRow, setForceAssignRow] = useState<ParsedPetugasRow | null>(null)
+  const [forceAssignSearch, setForceAssignSearch] = useState("")
+  const [allActorsCache, setAllActorsCache] = useState<any[]>([])
 
   // Dialog state for editing password
   const [editingPetugas, setEditingPetugas] = useState<any>(null)
@@ -241,6 +247,25 @@ export default function UploadPetugasSurveyPage() {
     })
   }
 
+  // === NORMALIZATION HELPERS ===
+  // Normalize NIK: keep digits only, remove leading zeros
+  const normalizeNik = (nik: string): string => nik.replace(/\D/g, '').replace(/^0+/, '')
+
+  // Normalize Name: uppercase, collapse multiple spaces, remove non-alphanumeric (except spaces)
+  const normalizeName = (name: string): string =>
+    name.toUpperCase().replace(/[^A-Z0-9\s]/g, '').replace(/\s+/g, ' ').trim()
+
+  // Fuzzy name match: all words in A must appear in B or vice versa
+  const fuzzyNameMatch = (a: string, b: string): boolean => {
+    const wa = normalizeName(a).split(' ').filter(Boolean)
+    const wb = normalizeName(b).split(' ').filter(Boolean)
+    if (wa.length === 0 || wb.length === 0) return false
+    // Check if all words of the shorter name exist in the longer
+    const shorter = wa.length <= wb.length ? wa : wb
+    const longer  = wa.length <= wb.length ? wb : wa
+    return shorter.every(word => longer.includes(word))
+  }
+
   // Extract flexible column value from raw excel row
   const getColValue = (row: any, candidates: string[]): string => {
     const keys = Object.keys(row)
@@ -289,6 +314,7 @@ export default function UploadPetugasSurveyPage() {
             allActors = Object.keys(val).map(k => ({ id: k, ...val[k] }))
           }
         }
+        setAllActorsCache(allActors)
 
         const rows: ParsedPetugasRow[] = []
         const uniquePetugasSet = new Set<string>()
@@ -305,16 +331,43 @@ export default function UploadPetugasSurveyPage() {
             uniquePetugasSet.add(petugasSurvey.toUpperCase().trim())
           }
 
-          // Match actor
+          // Match actor — multi-strategy with normalization
           let matchActor: any = null
-          if (regId) {
+          let matchMethod = ''
+
+          // Strategy 1: REG ID exact
+          if (!matchActor && regId) {
             matchActor = allActors.find(a => String(a.registrationCode || "").trim() === regId.trim())
+            if (matchActor) matchMethod = 'regId'
           }
+
+          // Strategy 2: NIK exact
           if (!matchActor && nik) {
             matchActor = allActors.find(a => String(a.nik || "").trim() === nik.trim())
+            if (matchActor) matchMethod = 'nik'
           }
+
+          // Strategy 3: NIK normalized (digits only, no leading zeros)
+          if (!matchActor && nik) {
+            const normNik = normalizeNik(nik)
+            if (normNik.length >= 10) {
+              matchActor = allActors.find(a => normalizeNik(String(a.nik || "")) === normNik)
+              if (matchActor) matchMethod = 'nik_normalized'
+            }
+          }
+
+          // Strategy 4: Full name exact (case-insensitive)
           if (!matchActor && fullName) {
-            matchActor = allActors.find(a => String(a.fullName || "").toLowerCase().trim() === fullName.toLowerCase().trim())
+            matchActor = allActors.find(a =>
+              normalizeName(String(a.fullName || "")) === normalizeName(fullName)
+            )
+            if (matchActor) matchMethod = 'name_exact'
+          }
+
+          // Strategy 5: Fuzzy name (all words match)
+          if (!matchActor && fullName) {
+            matchActor = allActors.find(a => fuzzyNameMatch(String(a.fullName || ""), fullName))
+            if (matchActor) matchMethod = 'name_fuzzy'
           }
 
           if (matchActor) {
@@ -329,7 +382,8 @@ export default function UploadPetugasSurveyPage() {
             coordinator: coordinator || "-",
             petugasSurvey: petugasSurvey || "-",
             statusMatch: matchActor ? 'found' : 'not_found',
-            actorId: matchActor?.id
+            actorId: matchActor?.id,
+            matchMethod
           })
         })
 
@@ -709,6 +763,63 @@ export default function UploadPetugasSurveyPage() {
         </Card>
       </div>
 
+      {/* ── UNMATCHED ROWS WARNING PANEL ── */}
+      {parsedData.length > 0 && parsedData.some(r => r.statusMatch === 'not_found') && (
+        <Card className="border-2 border-amber-400 bg-amber-50 shadow-md">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-black text-amber-800 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-600" />
+              ⚠️ {parsedData.filter(r => r.statusMatch === 'not_found').length} Baris Excel Tidak Ter-match ke Data Firebase
+            </CardTitle>
+            <CardDescription className="text-amber-700 text-xs">
+              Data di bawah ini tidak ditemukan di database (NIK/Nama berbeda). Klik <strong>Assign Manual</strong> untuk menghubungkan secara paksa, atau perbaiki NIK/Nama di file Excel lalu upload ulang.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-auto max-h-64">
+              <Table>
+                <TableHeader className="bg-amber-100">
+                  <TableRow>
+                    <TableHead className="font-bold text-amber-800 w-10">#</TableHead>
+                    <TableHead className="font-bold text-amber-800">Nama di Excel</TableHead>
+                    <TableHead className="font-bold text-amber-800">NIK di Excel</TableHead>
+                    <TableHead className="font-bold text-amber-800">Petugas Survey</TableHead>
+                    <TableHead className="font-bold text-amber-800 text-right pr-4">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {parsedData
+                    .filter(r => r.statusMatch === 'not_found')
+                    .map(row => (
+                      <TableRow key={row.rowNum} className="bg-white hover:bg-amber-50">
+                        <TableCell className="font-mono text-xs text-amber-600 font-bold">{row.rowNum}</TableCell>
+                        <TableCell className="font-bold text-sm text-slate-800">{row.fullName}</TableCell>
+                        <TableCell className="font-mono text-xs text-slate-500">{row.nik}</TableCell>
+                        <TableCell>
+                          <Badge className="bg-blue-100 text-blue-800 text-[10px] font-bold">{row.petugasSurvey}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right pr-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs font-bold border-amber-400 text-amber-700 hover:bg-amber-100 gap-1"
+                            onClick={() => {
+                              setForceAssignRow(row)
+                              setForceAssignSearch(row.fullName !== 'Tanpa Nama' ? row.fullName : row.nik)
+                            }}
+                          >
+                            <UserCheck className="w-3.5 h-3.5" /> Assign Manual
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Step 2: Dedicated Petugas Survey Accounts & Passwords Manager */}
       <Card className="border shadow-md overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6">
@@ -981,6 +1092,128 @@ export default function UploadPetugasSurveyPage() {
             >
               <RefreshCcw className="w-4 h-4" /> Ya, Reset Perangkat Sekarang
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* ── FORCE ASSIGN DIALOG ── */}
+      <Dialog open={!!forceAssignRow} onOpenChange={(open) => { if (!open) { setForceAssignRow(null); setForceAssignSearch('') } }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-amber-700 font-black uppercase flex items-center gap-2">
+              <UserCheck className="w-5 h-5" /> Assign Manual Pelaku Usaha
+            </DialogTitle>
+            <CardDescription>
+              Cari dan pilih data yang sesuai di Firebase untuk baris Excel:
+              <strong className="text-slate-800 ml-1">{forceAssignRow?.fullName}</strong>
+              <span className="text-slate-400 ml-1">(NIK: {forceAssignRow?.nik})</span>
+            </CardDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder="Cari nama / NIK di database Firebase..."
+                value={forceAssignSearch}
+                onChange={(e) => setForceAssignSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <div className="border rounded-lg overflow-auto max-h-72">
+              <Table>
+                <TableHeader className="bg-slate-100">
+                  <TableRow>
+                    <TableHead className="font-bold text-xs">Nama di Firebase</TableHead>
+                    <TableHead className="font-bold text-xs">NIK</TableHead>
+                    <TableHead className="font-bold text-xs text-right pr-4">Pilih</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allActorsCache
+                    .filter(a => {
+                      const q = forceAssignSearch.toLowerCase().trim()
+                      if (!q) return true
+                      return (
+                        (a.fullName || '').toLowerCase().includes(q) ||
+                        (a.nik || '').includes(q)
+                      )
+                    })
+                    .slice(0, 30)
+                    .map(a => (
+                      <TableRow key={a.id} className="hover:bg-blue-50">
+                        <TableCell className="font-bold text-sm">{a.fullName || '-'}</TableCell>
+                        <TableCell className="font-mono text-xs text-slate-500">{a.nik || '-'}</TableCell>
+                        <TableCell className="text-right pr-4">
+                          <Button
+                            size="sm"
+                            className="h-7 text-xs font-bold bg-primary hover:bg-primary/90 gap-1"
+                            onClick={() => {
+                              if (!forceAssignRow || !database) return
+
+                              // Update parsedData: set actorId & statusMatch for this row
+                              setParsedData(prev => prev.map(r =>
+                                r.rowNum === forceAssignRow.rowNum
+                                  ? { ...r, actorId: a.id, statusMatch: 'found', matchMethod: 'manual' }
+                                  : r
+                              ))
+
+                              // Immediately write petugasSurvey to Firebase
+                              const actorRef = ref(database, `businessActors/${a.id}`)
+                              const updates: any = {
+                                petugasSurvey: (forceAssignRow.petugasSurvey !== '-'
+                                  ? forceAssignRow.petugasSurvey
+                                  : forceAssignRow.petugasSurvey).toUpperCase().trim()
+                              }
+                              if (forceAssignRow.coordinator && forceAssignRow.coordinator !== '-') {
+                                updates.coordinator = forceAssignRow.coordinator.toUpperCase().trim()
+                              }
+                              updateDocumentNonBlocking(actorRef, updates)
+
+                              toast({
+                                title: '✅ Berhasil Di-assign Manual',
+                                description: `${forceAssignRow.fullName} → ${a.fullName} (${forceAssignRow.petugasSurvey})`
+                              })
+
+                              logActivity({
+                                query: `FORCE ASSIGN MANUAL: ${forceAssignRow.fullName} → ${a.fullName} (${forceAssignRow.petugasSurvey})`,
+                                results: 'Berhasil',
+                                device: getDeviceType(navigator.userAgent),
+                                source: 'Web',
+                                method: 'UPLOAD PETUGAS SURVEY',
+                                userId: user?.email || user?.uid || 'Admin'
+                              })
+
+                              setForceAssignRow(null)
+                              setForceAssignSearch('')
+                            }}
+                          >
+                            <UserCheck className="w-3.5 h-3.5" /> Pilih Ini
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  {allActorsCache.filter(a => {
+                    const q = forceAssignSearch.toLowerCase().trim()
+                    if (!q) return true
+                    return (a.fullName || '').toLowerCase().includes(q) || (a.nik || '').includes(q)
+                  }).length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center text-muted-foreground italic py-8">
+                        Tidak ada data ditemukan untuk pencarian "{forceAssignSearch}"
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Menampilkan maks. 30 hasil. Gunakan pencarian untuk mempersempit data.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setForceAssignRow(null); setForceAssignSearch('') }}>Tutup</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
