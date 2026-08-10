@@ -811,6 +811,7 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
                         { label: "Kategori Usaha", value: viewingActor.businessCategory },
                         { label: "Lokasi Usaha", value: viewingActor.businessLocation },
                         { label: "Pengusul / Koordinator", value: viewingActor.coordinator },
+                        { label: "Petugas Survey", value: viewingActor.petugasSurvey || "Belum ada" },
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>

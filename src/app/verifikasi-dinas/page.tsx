@@ -41,7 +41,8 @@ import {
   Folder,
   FileDown,
   Edit,
-  RotateCcw
+  RotateCcw,
+  UserCheck
 } from "lucide-react"
 import { generateBeritaAcaraPDF } from "@/lib/generate-berita-acara-pdf"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -674,15 +675,32 @@ export default function VerifikasiDinasPage() {
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between mt-2 pt-2">
-                          <div className="flex flex-col">
-                            <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">USULAN</span>
-                            <span className="text-[10px] font-black text-primary truncate max-w-[90px] uppercase">
-                              {actor.coordinator || "Tanpa Korlap"}
-                            </span>
+                        <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-slate-100">
+                          <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">USULAN</span>
+                              <span className="text-[10px] font-black text-primary truncate uppercase" title={actor.coordinator || "Tanpa Korlap"}>
+                                {actor.coordinator || "Tanpa Korlap"}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">PETUGAS SURVEY</span>
+                              {actor.petugasSurvey && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim() !== '' ? (
+                                <span className="text-[10px] font-black text-emerald-700 truncate uppercase flex items-center gap-1" title={actor.petugasSurvey}>
+                                  <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                                  <span className="truncate">{actor.petugasSurvey}</span>
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                  Belum Ada
+                                </span>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="flex gap-2">
+                          <div className="flex items-center justify-end gap-2 pt-1">
                             {/* Tombol Reset Survey Data - Admin Only */}
                             {isAdmin && actor.surveyProgress != null && actor.surveyProgress > 0 && (
                               <Button
@@ -796,7 +814,8 @@ export default function VerifikasiDinasPage() {
                                             { label: "Usaha", value: viewingActor.businessName },
                                             { label: "Kategori Usaha", value: viewingActor.businessCategory },
                                             { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                                            { label: "USULAN", value: viewingActor.coordinator }
+                                            { label: "USULAN", value: viewingActor.coordinator },
+                                            { label: "PETUGAS SURVEY", value: viewingActor.petugasSurvey || "Belum ada" }
                                           ].map((item, i) => (
                                             <div key={i} className="space-y-1">
                                               <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>

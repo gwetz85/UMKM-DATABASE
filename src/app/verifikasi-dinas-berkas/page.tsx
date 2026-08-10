@@ -28,7 +28,8 @@ import {
   Check,
   Trash2,
   AlertTriangle,
-  Folder
+  Folder,
+  UserCheck
 } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
@@ -347,15 +348,32 @@ export default function VerifikasiDinasBerkasPage() {
                           </div>
                         </div>
 
-                        <div className="flex items-center justify-between mt-2 pt-2">
-                          <div className="flex flex-col">
-                            <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">Koordinator</span>
-                            <span className="text-[10px] font-black text-primary truncate max-w-[120px] uppercase">
-                              {actor.coordinator || "Tanpa Korlap"}
-                            </span>
+                        <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-slate-100">
+                          <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">USULAN</span>
+                              <span className="text-[10px] font-black text-primary truncate uppercase" title={actor.coordinator || "Tanpa Korlap"}>
+                                {actor.coordinator || "Tanpa Korlap"}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">PETUGAS SURVEY</span>
+                              {actor.petugasSurvey && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim() !== '' ? (
+                                <span className="text-[10px] font-black text-emerald-700 truncate uppercase flex items-center gap-1" title={actor.petugasSurvey}>
+                                  <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                                  <span className="truncate">{actor.petugasSurvey}</span>
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                  Belum Ada
+                                </span>
+                              )}
+                            </div>
                           </div>
 
-                          <div className="flex gap-2 w-full">
+                          <div className="flex gap-2 w-full pt-1">
                             {(isAdmin || isVerifikatorDinas || isPetugas) && (
                               <Dialog open={!!verifyingActor && verifyingActor.id === actor.id} onOpenChange={(open) => {
                                 if (!open) {

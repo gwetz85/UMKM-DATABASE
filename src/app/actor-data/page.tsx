@@ -1490,7 +1490,8 @@ function ActorDataContent() {
                           { label: "Lokasi Usaha", value: viewingActor.businessLocation },
                           ...(!isInspektorat ? [
                             { label: "USULAN", value: viewingActor.coordinator },
-                            { label: "NO. HP USULAN", value: coordPhone, isPhone: true }
+                            { label: "NO. HP USULAN", value: coordPhone, isPhone: true },
+                            { label: "PETUGAS SURVEY", value: viewingActor.petugasSurvey || "Belum ada" }
                           ] : [])
                         ].map((item: any, i: number) => (
                           <div key={i} className="space-y-1">

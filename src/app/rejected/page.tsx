@@ -706,7 +706,8 @@ function RejectedContent() {
                         { label: "Usaha", value: viewingActor.businessName },
                         { label: "Kategori Usaha", value: viewingActor.businessCategory },
                         { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                        { label: "USULAN", value: viewingActor.coordinator }
+                        { label: "USULAN", value: viewingActor.coordinator },
+                        { label: "PETUGAS SURVEY", value: viewingActor.petugasSurvey || "Belum ada" }
                       ].map((item, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
