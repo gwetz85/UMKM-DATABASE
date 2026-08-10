@@ -91,7 +91,7 @@ function RejectedContent() {
   const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
   const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
   const blacklistRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
-  const kuotaRef = useMemoFirebase(() => database ? ref(database, 'kuotaKoordinator') : null, [database])
+  const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
 
   const { data: data2023 } = useList<any>(master2023Ref)
   const { data: data2024 } = useList<any>(master2024Ref)
@@ -705,7 +705,8 @@ function RejectedContent() {
                     <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
                       {(() => {
-                        const coordPhone = kuotaData?.find((q: any) => (q.name || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim())?.phone;
+                        const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim());
+                        const coordPhone = found?.phone || found?.noHp || found?.hp || "";
                         
                         const getWaLink = (phoneStr: string) => {
                           if (!phoneStr) return "#";
