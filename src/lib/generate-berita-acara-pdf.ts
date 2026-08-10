@@ -418,7 +418,7 @@ export async function generateBeritaAcaraPDF(
   doc.setFontSize(7.5);
   doc.text("CALON PENERIMA DANA HIBAH", marginL + colTimSurveyW + colPenerimaW / 2, ttStartY + 4.2, { align: "center" });
 
-  // --- BOX TTD TIM SURVEY (2 KOLOM) & PENERIMA (1 KOLOM DENGAN FOTO) ---
+  // --- BOX TTD TIM SURVEY (2 KOLOM) & PENERIMA (1 KOLOM – TANDA TANGAN BIASA) ---
   const signBoxH = 26;
   const signY = ttStartY + header1H;
 
@@ -437,85 +437,14 @@ export async function generateBeritaAcaraPDF(
     doc.text(p2.nama.toUpperCase(), marginL + col1W + col2W / 2, signY + signBoxH - 2.5, { align: "center" });
   }
 
-  // Box Calon Penerima Dana Hibah
+  // Box Calon Penerima Dana Hibah – kolom tanda tangan biasa (kosong)
   const penerimaX = marginL + colTimSurveyW;
   doc.rect(penerimaX, signY, colPenerimaW, signBoxH);
 
-  // Content inside Calon Penerima Dana Hibah Box:
-  if (surveyPhotoData) {
-    const maxW = 64; // Max 64mm width inside 70mm box
-    const maxH = 17; // Max 17mm height inside 26mm box
-    let imgW = maxW;
-    let imgH = imgW * (surveyPhotoData.h / surveyPhotoData.w);
-    if (imgH > maxH) {
-      imgH = maxH;
-      imgW = imgH * (surveyPhotoData.w / surveyPhotoData.h);
-    }
-    const imgX = penerimaX + (colPenerimaW - imgW) / 2;
-    const imgY = signY + 1.5;
-
-    try {
-      doc.addImage(surveyPhotoData.base64, surveyPhotoData.format, imgX, imgY, imgW, imgH);
-    } catch (e) {
-      console.error("Error embedding survey photo:", e);
-    }
-
-    // Badge: Centang Hijau + TERVERIFIKASI (di bawah foto)
-    const textVerif = "TERVERIFIKASI";
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    const textVerifW = doc.getTextWidth(textVerif);
-    const iconW = 4.5;
-    const badgeTotalW = iconW + 1.5 + textVerifW;
-    const badgeStartX = penerimaX + (colPenerimaW - badgeTotalW) / 2;
-    const badgeY = Math.min(signY + imgH + 4.5, signY + 23.5);
-
-    // Green Circle
-    doc.setFillColor(34, 197, 94);
-    doc.circle(badgeStartX + 2.0, badgeY - 1.2, 2.2, "F");
-
-    // White Checkmark
-    doc.setDrawColor(255, 255, 255);
-    doc.setLineWidth(0.6);
-    doc.line(badgeStartX + 1.0, badgeY - 1.2, badgeStartX + 1.7, badgeY - 0.5);
-    doc.line(badgeStartX + 1.7, badgeY - 0.5, badgeStartX + 3.1, badgeY - 1.9);
-
-    // Green TERVERIFIKASI Text
-    doc.setTextColor(22, 163, 74);
-    doc.text(textVerif, badgeStartX + iconW + 1.5, badgeY, { align: "left" });
-
-    // Reset colors
-    doc.setTextColor(0, 0, 0);
-    doc.setDrawColor(0, 0, 0);
-  } else {
-    // Foto tidak tersedia: Tampilkan TERVERIFIKASI badge di tengah kotak
-    const textVerif = "TERVERIFIKASI";
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.5);
-    const textVerifW = doc.getTextWidth(textVerif);
-    const iconW = 5;
-    const badgeTotalW = iconW + 1.5 + textVerifW;
-    const badgeStartX = penerimaX + (colPenerimaW - badgeTotalW) / 2;
-    const badgeY = signY + 14;
-
-    // Green Circle
-    doc.setFillColor(34, 197, 94);
-    doc.circle(badgeStartX + 2.2, badgeY - 1.4, 2.5, "F");
-
-    // White Checkmark
-    doc.setDrawColor(255, 255, 255);
-    doc.setLineWidth(0.7);
-    doc.line(badgeStartX + 1.1, badgeY - 1.4, badgeStartX + 1.9, badgeY - 0.6);
-    doc.line(badgeStartX + 1.9, badgeY - 0.6, badgeStartX + 3.4, badgeY - 2.1);
-
-    // Green TERVERIFIKASI Text
-    doc.setTextColor(22, 163, 74);
-    doc.text(textVerif, badgeStartX + iconW + 1.5, badgeY, { align: "left" });
-
-    // Reset colors
-    doc.setTextColor(0, 0, 0);
-    doc.setDrawColor(0, 0, 0);
-  }
+  // Titik-titik nama di bagian bawah kotak penerima
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7);
+  doc.text("...........................................", penerimaX + colPenerimaW / 2, signY + signBoxH - 2.5, { align: "center" });
 
   // --- HEADER 2: MENGETAHUI/VERIFIKATOR ---
   const metaHeaderY = signY + signBoxH;
@@ -567,7 +496,139 @@ export async function generateBeritaAcaraPDF(
   doc.setLineWidth(0.8);
   doc.rect(marginL, ttStartY, contentW, totalTtH);
 
+  // ── HALAMAN 2: FOTO SURVEY + BADGE TERVERIFIKASI ───────────────────────────
+  doc.addPage();
+  doc.setFont("helvetica");
+
+  // KOP halaman 2
+  let y2 = 6;
+  if (logoBase64) {
+    doc.addImage(logoBase64, "PNG", marginL, y2, logoW, logoH);
+  }
+  const kopTextCenterX2 = marginL + logoW + (contentW - logoW) / 2;
+  doc.setFontSize(9.5);
+  doc.setFont("helvetica", "normal");
+  doc.text("P E M E R I N T A H   P R O V I N S I   K E P U L A U A N   R I A U", kopTextCenterX2, y2 + 3, { align: "center" });
+  doc.setFontSize(13.5);
+  doc.setFont("helvetica", "bold");
+  doc.text("DINAS KOPERASI, USAHA KECIL DAN MENENGAH", kopTextCenterX2, y2 + 8, { align: "center" });
+  doc.setFontSize(7.5);
+  doc.setFont("helvetica", "normal");
+  doc.text("Pusat Pemerintahan Provinsi Kepulauan Riau Bandar Seri Kota Piring", kopTextCenterX2, y2 + 12, { align: "center" });
+  doc.text("Kawasan Perkantoran Sultan Mahmud Riayat Syah Gedung Daeng Marewah B1", kopTextCenterX2, y2 + 15.5, { align: "center" });
+  doc.text("Lantai 3 Pulau Dompak Seri Darul Makmur – Tanjungpinang Kode Pos 29124", kopTextCenterX2, y2 + 19, { align: "center" });
+  doc.text("Pos-el : diskopukmsprovinsikepri@gmail.com Laman : www.dinaskoperasiukm.kepriprov.go.id", kopTextCenterX2, y2 + 22.5, { align: "center" });
+
+  y2 = 30;
+  doc.setLineWidth(1.0);
+  doc.setDrawColor(0, 0, 0);
+  doc.line(marginL, y2, pageW - marginR, y2);
+
+  // Subjudul halaman 2
+  y2 += 7;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(0, 0, 0);
+  doc.text("FOTO SURVEY", pageW / 2, y2, { align: "center" });
+  y2 += 4.5;
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Pelaku Usaha: ${actor.fullName || "-"}`, pageW / 2, y2, { align: "center" });
+  y2 += 8;
+
+  if (surveyPhotoData) {
+    // Hitung dimensi foto agar proporsional, maks 140mm x 160mm
+    const maxImgW = 140;
+    const maxImgH = 160;
+    let imgW = maxImgW;
+    let imgH = imgW * (surveyPhotoData.h / surveyPhotoData.w);
+    if (imgH > maxImgH) {
+      imgH = maxImgH;
+      imgW = imgH * (surveyPhotoData.w / surveyPhotoData.h);
+    }
+    const imgX = (pageW - imgW) / 2;
+
+    // Border kotak foto
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.5);
+    doc.rect(imgX - 2, y2 - 2, imgW + 4, imgH + 4);
+
+    try {
+      doc.addImage(surveyPhotoData.base64, surveyPhotoData.format, imgX, y2, imgW, imgH);
+    } catch (e) {
+      console.error("Error embedding survey photo page 2:", e);
+    }
+
+    y2 += imgH + 8;
+
+    // Badge TERVERIFIKASI di bawah foto
+    const textVerif = "TERVERIFIKASI";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    const textVerifW = doc.getTextWidth(textVerif);
+    const iconW = 6;
+    const badgeTotalW = iconW + 2 + textVerifW;
+    const badgeStartX = (pageW - badgeTotalW) / 2;
+    const badgeY = y2;
+
+    // Lingkaran hijau
+    doc.setFillColor(34, 197, 94);
+    doc.circle(badgeStartX + 2.8, badgeY - 1.8, 3.0, "F");
+
+    // Centang putih
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.8);
+    doc.line(badgeStartX + 1.5, badgeY - 1.8, badgeStartX + 2.4, badgeY - 0.8);
+    doc.line(badgeStartX + 2.4, badgeY - 0.8, badgeStartX + 4.4, badgeY - 2.8);
+
+    // Teks TERVERIFIKASI hijau
+    doc.setTextColor(22, 163, 74);
+    doc.text(textVerif, badgeStartX + iconW + 2, badgeY, { align: "left" });
+
+    doc.setTextColor(0, 0, 0);
+    doc.setDrawColor(0, 0, 0);
+  } else {
+    // Tidak ada foto: tampilkan placeholder
+    const boxW = 120;
+    const boxH = 80;
+    const boxX = (pageW - boxW) / 2;
+    doc.setDrawColor(180, 180, 180);
+    doc.setLineWidth(0.5);
+    doc.setFillColor(248, 248, 248);
+    doc.rect(boxX, y2, boxW, boxH, "FD");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(150, 150, 150);
+    doc.text("[ Foto Survey Tidak Tersedia ]", pageW / 2, y2 + boxH / 2, { align: "center" });
+
+    y2 += boxH + 8;
+
+    // Badge TERVERIFIKASI tetap ditampilkan meski tanpa foto
+    const textVerif = "TERVERIFIKASI";
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    const textVerifW = doc.getTextWidth(textVerif);
+    const iconW = 6;
+    const badgeTotalW = iconW + 2 + textVerifW;
+    const badgeStartX = (pageW - badgeTotalW) / 2;
+    const badgeY = y2;
+
+    doc.setFillColor(34, 197, 94);
+    doc.circle(badgeStartX + 2.8, badgeY - 1.8, 3.0, "F");
+    doc.setDrawColor(255, 255, 255);
+    doc.setLineWidth(0.8);
+    doc.line(badgeStartX + 1.5, badgeY - 1.8, badgeStartX + 2.4, badgeY - 0.8);
+    doc.line(badgeStartX + 2.4, badgeY - 0.8, badgeStartX + 4.4, badgeY - 2.8);
+    doc.setTextColor(22, 163, 74);
+    doc.text(textVerif, badgeStartX + iconW + 2, badgeY, { align: "left" });
+
+    doc.setTextColor(0, 0, 0);
+    doc.setDrawColor(0, 0, 0);
+  }
+
   // ── SIMPAN PDF ─────────────────────────────────────────────────────────────
   const safeName = (actor.fullName || "Pelaku-Usaha").replace(/[^a-zA-Z0-9]/g, "_");
   doc.save(`Berita_Acara_Survey_${safeName}.pdf`);
 }
+
