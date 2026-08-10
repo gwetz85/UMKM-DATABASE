@@ -680,12 +680,39 @@ export default function VerifikasiDinasPage() {
 
                         <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-slate-100">
                           <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">USULAN</span>
-                              <span className="text-[10px] font-black text-primary truncate uppercase" title={actor.coordinator || "Tanpa Korlap"}>
-                                {actor.coordinator || "Tanpa Korlap"}
-                              </span>
-                            </div>
+                            {(() => {
+                              const coordPhone = kuotaData?.find((q: any) => (q.name || "").toUpperCase().trim() === (actor.coordinator || "").toUpperCase().trim())?.phone;
+                              const getWaLink = (phoneStr: string) => {
+                                if (!phoneStr) return "#";
+                                let clean = phoneStr.replace(/\D/g, "");
+                                if (clean.startsWith("0")) clean = "62" + clean.slice(1);
+                                else if (!clean.startsWith("62")) clean = "62" + clean;
+                                return `https://wa.me/${clean}`;
+                              };
+
+                              return (
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">USULAN</span>
+                                  <div className="flex items-center gap-1 min-w-0">
+                                    <span className="text-[10px] font-black text-primary truncate uppercase" title={actor.coordinator || "Tanpa Korlap"}>
+                                      {actor.coordinator || "Tanpa Korlap"}
+                                    </span>
+                                    {coordPhone && (
+                                      <a
+                                        href={getWaLink(coordPhone)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="inline-flex items-center gap-0.5 text-emerald-600 hover:text-emerald-700 hover:scale-105 transition-all bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200/80 shrink-0"
+                                        title={`Chat WA Usulan (${actor.coordinator}): ${coordPhone}`}
+                                      >
+                                        <MessageCircle className="w-3 h-3 text-emerald-600 fill-emerald-600/20" />
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })()}
 
                             <div className="flex flex-col min-w-0">
                               <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">PETUGAS SURVEY</span>
