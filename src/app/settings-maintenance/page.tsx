@@ -51,28 +51,25 @@ export default function SettingsMaintenance() {
     if (currentData) {
       setEnabled(currentData.enabled ?? false);
       setLastSaved({ enabled: currentData.enabled ?? false, updatedAt: currentData.updatedAt });
-      const msg = currentData.enabled ? (currentData.message || defaultMsg) : '';
+      const msg = currentData.message || defaultMsg;
       setMessage(msg);
       if (editorRef.current) {
         editorRef.current.innerHTML = msg;
       }
     } else {
       setEnabled(false);
-      setMessage('');
+      setMessage(defaultMsg);
       if (editorRef.current) {
-        editorRef.current.innerHTML = '';
+        editorRef.current.innerHTML = defaultMsg;
       }
     }
     initDoneRef.current = true;
   }, [currentData, dataLoading]);
 
-  // Handle toggling "enabled" to clear or show default message
+  // Handle toggling "enabled" to set default message if message is empty
   useEffect(() => {
     if (!initDoneRef.current) return;
-    if (!enabled) {
-      setMessage('');
-      if (editorRef.current) editorRef.current.innerHTML = '';
-    } else if (enabled && (!message || message.trim() === '')) {
+    if (enabled && (!message || message.trim() === '')) {
       setMessage(defaultMsg);
       if (editorRef.current) editorRef.current.innerHTML = defaultMsg;
     }
