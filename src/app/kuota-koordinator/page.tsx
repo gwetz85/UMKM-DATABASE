@@ -576,7 +576,7 @@ export default function KuotaKorlapDewanAktifPage() {
               </TableBody>
               <TableFooter>
                 <TableRow className="bg-primary/5 border-t-2 border-primary/20">
-                  <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs">
+                  <TableCell colSpan={3} className="font-black text-slate-800 uppercase text-right text-xs pr-6">
                     Total Keseluruhan Kuota Data
                   </TableCell>
                   <TableCell className="text-center font-black text-slate-600 text-base">
