@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useMemo, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { useDatabase, useList, useMemoFirebase, useUser } from "@/firebase"
+import { useDatabase, useList, useMemoFirebase, useUser, useAuth } from "@/firebase"
 import { ref } from "firebase/database"
+import { signInAnonymously } from "firebase/auth"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,20 +26,15 @@ import {
   Phone, 
   MapPin, 
   Store, 
-  Building2, 
   Printer, 
-  Share2, 
   Copy, 
   Check, 
   AlertTriangle,
   RotateCcw,
-  Sparkles,
-  ExternalLink,
-  ShieldAlert
 } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
-import { cn, formatCurrency, maskLast4Digits, maskPhoneNumber, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { cn, formatCurrency, maskLast4Digits, maskPhoneNumber } from "@/lib/utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useToast } from "@/hooks/use-toast"
 
@@ -48,7 +44,8 @@ function CekDataContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const database = useDatabase()
-  const { user } = useUser()
+  const auth = useAuth()
+  const { user, isUserLoading } = useUser()
   const { toast } = useToast()
 
   const [searchType, setSearchType] = useState<SearchType>(() => {
@@ -62,6 +59,17 @@ function CekDataContent() {
   const [selectedItem, setSelectedItem] = useState<any | null>(null)
   const [filterSource, setFilterSource] = useState<string>("ALL")
   const [hasCopied, setHasCopied] = useState(false)
+  const [apiResults, setApiResults] = useState<any[] | null>(null)
+  const [isApiLoading, setIsApiLoading] = useState(false)
+
+  // Ensure anonymous authentication for public visitors so RTDB rules grant read access
+  useEffect(() => {
+    if (!isUserLoading && !user && auth) {
+      signInAnonymously(auth).catch((err) => {
+        console.warn("Anonymous sign-in warning:", err)
+      })
+    }
+  }, [user, isUserLoading, auth])
 
   // Realtime Database Listeners for all synchronized sources
   const master2023Ref = useMemoFirebase(() => (database ? ref(database, "master_data_2023") : null), [database])
@@ -76,9 +84,10 @@ function CekDataContent() {
   const { data: allBlacklistData, isLoading: isBlacklistLoading } = useList(blacklistDataRef)
   const { data: allActorsData, isLoading: isActorsLoading } = useList(businessActorsRef)
 
-  const isDatabaseLoading = is2023Loading || is2024Loading || is2025Loading || isBlacklistLoading || isActorsLoading
+  const isClientDbLoading = is2023Loading || is2024Loading || is2025Loading || isBlacklistLoading || isActorsLoading
+  const isDatabaseLoading = isClientDbLoading || isApiLoading
 
-  // Combined synchronized data
+  // Combined client dataset
   const combinedDataset = useMemo(() => {
     const d2023 = (data2023 || []).map((m: any) => ({
       ...m,
@@ -173,19 +182,16 @@ function CekDataContent() {
     return [...dActors, ...d2025, ...d2024, ...d2023, ...dBlacklist]
   }, [data2023, data2024, data2025, allBlacklistData, allActorsData])
 
-  // Normalizer helper for phone numbers
-  const normalizePhone = (p: string) => {
-    return String(p || "").replace(/[^0-9]/g, "")
-  }
+  const normalizePhone = (p: string) => String(p || "").replace(/[^0-9]/g, "")
 
-  // Filtered search results
-  const searchResults = useMemo(() => {
+  // Search in client dataset
+  const clientResults = useMemo(() => {
     if (!submittedQuery || !submittedQuery.value) return []
 
     const queryVal = submittedQuery.value.trim().toLowerCase()
     const rawCleanDigits = submittedQuery.value.replace(/[^0-9]/g, "")
 
-    let matches = combinedDataset.filter((item: any) => {
+    return combinedDataset.filter((item: any) => {
       if (submittedQuery.type === "nama") {
         const name = String(item._displayName || "").toLowerCase()
         return name.includes(queryVal)
@@ -194,7 +200,6 @@ function CekDataContent() {
       if (submittedQuery.type === "nik") {
         const nikClean = String(item._displayNik || "").replace(/[^0-9]/g, "")
         if (!nikClean) return false
-        // Exact match or contains if user typed partial
         return nikClean === rawCleanDigits || (rawCleanDigits.length >= 6 && nikClean.includes(rawCleanDigits))
       }
 
@@ -207,23 +212,74 @@ function CekDataContent() {
       if (submittedQuery.type === "phone") {
         const phoneClean = normalizePhone(item._displayPhone)
         if (!phoneClean) return false
-        // Compare with or without leading zero / country code
-        const qPhone = normalizePhone(submittedQuery.value)
-        const qTrimmed = qPhone.startsWith("62") ? qPhone.slice(2) : qPhone.startsWith("0") ? qPhone.slice(1) : qPhone
-        return phoneClean.includes(qTrimmed)
+        const qTrimmed = rawCleanDigits.startsWith("62")
+          ? rawCleanDigits.slice(2)
+          : rawCleanDigits.startsWith("0")
+          ? rawCleanDigits.slice(1)
+          : rawCleanDigits
+        return phoneClean.includes(qTrimmed) || (qTrimmed.length >= 5 && rawCleanDigits.includes(phoneClean.slice(-5)))
       }
 
       return false
     })
+  }, [combinedDataset, submittedQuery])
 
-    if (filterSource !== "ALL") {
-      matches = matches.filter((m: any) => m._sourceType === filterSource)
+  // Fetch from server API as well to guarantee 100% complete records
+  useEffect(() => {
+    if (!submittedQuery || !submittedQuery.value) {
+      setApiResults(null)
+      return
     }
 
-    return matches
-  }, [combinedDataset, submittedQuery, filterSource])
+    let isMounted = true
+    setIsApiLoading(true)
 
-  // Handle URL params initialization
+    fetch(`/api/cek-data?type=${encodeURIComponent(submittedQuery.type)}&q=${encodeURIComponent(submittedQuery.value)}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (isMounted) {
+          if (json.success && Array.isArray(json.results)) {
+            setApiResults(json.results)
+          } else {
+            setApiResults([])
+          }
+          setIsApiLoading(false)
+        }
+      })
+      .catch((err) => {
+        console.error("API search error:", err)
+        if (isMounted) {
+          setIsApiLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [submittedQuery])
+
+  // Final unified results (merging client and server results without duplicates)
+  const searchResults = useMemo(() => {
+    let list: any[] = []
+
+    if (apiResults && apiResults.length > 0) {
+      list = apiResults
+    } else if (clientResults && clientResults.length > 0) {
+      list = clientResults
+    } else if (apiResults) {
+      list = []
+    } else {
+      list = clientResults
+    }
+
+    if (filterSource !== "ALL") {
+      list = list.filter((m: any) => m._sourceType === filterSource)
+    }
+
+    return list
+  }, [apiResults, clientResults, filterSource])
+
+  // Handle URL query parameters on initial page mount
   useEffect(() => {
     const urlQ = searchParams.get("q")
     const urlType = searchParams.get("type") as SearchType
@@ -246,13 +302,11 @@ function CekDataContent() {
     setSearchDone(true)
     setFilterSource("ALL")
 
-    // Update browser URL query params without reloading
     const params = new URLSearchParams()
     params.set("type", searchType)
     params.set("q", processed)
     router.replace(`/cek-data?${params.toString()}`)
 
-    // Log Activity to Firebase
     logActivity(
       {
         query: `CEK PUBLIK (${searchType.toUpperCase()}): ${processed}`,
@@ -300,7 +354,7 @@ Nama Usaha   : ${item._displayBusiness}
 Kelurahan    : ${item._displayKelurahan}
 Kecamatan    : ${item._displayKecamatan}
 Tahun        : ${item._displayYear}
-Nominal Bantuan: ${formatCurrency(item._displayNominal)}
+Nominal      : ${formatCurrency(item._displayNominal)}
 =================================
 Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
     `.trim()
@@ -314,17 +368,16 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
     setTimeout(() => setHasCopied(false), 2500)
   }
 
-  // Print helper
   const handlePrint = () => {
     window.print()
   }
 
-  // Reset form
   const handleReset = () => {
     setInputValue("")
     setSubmittedQuery(null)
     setSearchDone(false)
     setSelectedItem(null)
+    setApiResults(null)
     router.replace("/cek-data")
   }
 
@@ -407,6 +460,7 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                     setInputValue("")
                     setSubmittedQuery(null)
                     setSearchDone(false)
+                    setApiResults(null)
                   }}
                   className={cn(
                     "flex flex-col items-start p-3 sm:p-4 rounded-2xl border transition-all text-left group active:scale-98",
@@ -451,7 +505,7 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                         ? "Contoh: 3201019876540002..."
                         : searchType === "nama"
                         ? "Contoh: Budi Santoso / Siti Rahma..."
-                        : "Contoh: 081234567890..."
+                        : "Contoh: 081234567890 / 0851..."
                     }
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
@@ -480,7 +534,7 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                   {isDatabaseLoading ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Memuat Data...
+                      Mencari...
                     </>
                   ) : (
                     <>
@@ -627,6 +681,12 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                             <Database className="w-3.5 h-3.5 text-slate-400" />
                             KK: {maskLast4Digits(item._displayKk)}
                           </span>
+                          {item._displayPhone && item._displayPhone !== "-" && (
+                            <span className="flex items-center gap-1.5 text-slate-600">
+                              <Phone className="w-3.5 h-3.5 text-primary" />
+                              HP: {maskPhoneNumber(item._displayPhone)}
+                            </span>
+                          )}
                         </div>
                       </CardHeader>
 
@@ -680,9 +740,9 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                 <div className="mt-6 p-4 rounded-2xl bg-white border border-red-200 max-w-md w-full text-left space-y-2 text-xs font-semibold text-slate-700">
                   <span className="font-black uppercase tracking-wider text-slate-900 block mb-1">Saran Pengecekan:</span>
                   <ul className="list-disc pl-4 space-y-1 text-slate-600">
-                    <li>Pastikan 16 digit NIK atau Nomor KK yang dimasukkan sudah benar.</li>
-                    <li>Coba lakukan pencarian menggunakan metode lain (Nama Lengkap atau Nomor HP).</li>
-                    <li>Jika nama mengandung ejaan khusus, coba gunakan kata kunci nama depan saja.</li>
+                    <li>Pastikan nomor NIK, KK, atau Nomor HP yang dimasukkan sudah sesuai.</li>
+                    <li>Coba lakukan pencarian menggunakan metode lain (Nama Lengkap atau NIK).</li>
+                    <li>Jika mencari dengan nomor HP, pastikan diawali dengan 08 atau tanpa spasi.</li>
                   </ul>
                 </div>
               </Alert>
