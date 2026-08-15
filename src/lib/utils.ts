@@ -118,3 +118,18 @@ export function calculateAge(dobStr: string): string {
   return `${age} Tahun`;
 }
 
+export function maskLast4Digits(val: string | number | undefined | null): string {
+  if (!val) return "-";
+  const str = String(val).trim();
+  if (str.length <= 4) return "****";
+  return `${str.slice(0, -4)}****`;
+}
+
+export function maskPhoneNumber(phone: string | number | undefined | null): string {
+  if (!phone) return "-";
+  const str = String(phone).trim();
+  if (str.length <= 6) return str;
+  const start = str.slice(0, 4);
+  const end = str.slice(-3);
+  return `${start}****${end}`;
+}

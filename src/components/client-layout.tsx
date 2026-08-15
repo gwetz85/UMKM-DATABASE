@@ -58,19 +58,21 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
   const isAdmin = profile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
   const isStaff = profile?.role === 'staff';
-  const isLoginPage = pathname === '/login'
-  const isRootPage = pathname === '/'
+  const isLoginPage = pathname === '/login';
+  const isCekDataPage = pathname === '/cek-data' || pathname?.startsWith('/cek-data');
+  const isPublicPage = isLoginPage || isCekDataPage;
+  const isRootPage = pathname === '/';
 
   React.useEffect(() => {
     if (maintenanceData && typeof maintenanceData === 'object' && user && profile) {
       const isMaintenanceMode = maintenanceData.enabled === true;
-      if (isMaintenanceMode && !isAdmin && !isStaff && pathname !== '/maintenance' && pathname !== '/login') {
+      if (isMaintenanceMode && !isAdmin && !isStaff && pathname !== '/maintenance' && !isPublicPage) {
         router.replace('/maintenance');
       } else if (!isMaintenanceMode && pathname === '/maintenance') {
         router.replace('/');
       }
     }
-  }, [maintenanceData, isAdmin, isStaff, pathname, router, user, profile]);
+  }, [maintenanceData, isAdmin, isStaff, pathname, router, user, profile, isPublicPage]);
 
   React.useEffect(() => {
     if (!database || !user || !profile?.id) return;
@@ -94,7 +96,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [database, user, profile?.id]);
 
   React.useEffect(() => {
-    if (!isUserLoading && user && !isProfileLoading && pathname !== '/login') {
+    if (!isUserLoading && user && !isProfileLoading && !isPublicPage) {
        if (!profile) {
           // Add a grace period before signing out to prevent race condition on refresh
           // where Firebase Auth restores the user but profile data hasn't loaded yet
@@ -106,7 +108,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           return () => clearTimeout(timer);
        }
     }
-  }, [user, isUserLoading, isProfileLoading, profile, auth, router, pathname])
+  }, [user, isUserLoading, isProfileLoading, profile, auth, router, isPublicPage])
 
   // Single-device login enforcement: listen to activeSessionId in realtime.
   // If another device logs in and changes the sessionId, force this session out.
@@ -184,6 +186,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       case '/verify-actor': return 'Verifikasi Admin';
       case '/input': return 'Input Data';
       case '/check-data': return 'Cek Data';
+      case '/cek-data': return 'Cek Data Publik';
       case '/profile': return 'Profil Saya';
       case '/settings': return 'Pengaturan';
       case '/users': return 'Manajemen User';
@@ -206,16 +209,16 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
           {!isLoginPage && (
             <>
-              <header className="sticky top-0 z-50 relative flex items-center justify-between px-4 md:px-8 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 shrink-0 print:hidden">
-                <div className="flex items-center gap-6">
-                  <InfoDialog>
-                    <div className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
-                      <span className="text-3xl font-black tracking-tighter leading-none text-primary">
-                        SIMPU
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sistem Manajemen UMKM</span>
-                    </div>
-                  </InfoDialog>
+              <header className="sticky top-0 z-50 relative flex items-center justify-between px-4 md:px-8 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 shrink-0 print:hidden shadow-sm">
+                <div className="flex items-center gap-4 md:gap-6">
+                  <Link href={user ? "/" : "/cek-data"} className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
+                    <span className="text-2xl md:text-3xl font-black tracking-tighter leading-none text-primary">
+                      SIMPU
+                    </span>
+                    <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                      {isCekDataPage && !user ? "Portal Cek Data Publik" : "Sistem Manajemen UMKM"}
+                    </span>
+                  </Link>
 
                   <div className="hidden md:flex h-8 w-px bg-slate-200 mx-2" />
 
@@ -226,7 +229,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   )}
                 </div>
 
-                {activeEvent && (
+                {activeEvent && !isCekDataPage && (
                   <div className="hidden xl:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 animate-in fade-in zoom-in duration-1000">
                     <EventCountdown 
                       targetDate={activeEvent.endDate || activeEvent.date} 
@@ -238,72 +241,84 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 )}
 
                 <div className="flex items-center gap-3 md:gap-4">
-                  {!isRootPage && !isKoordinator && (
-                    <button
-                      onClick={() => router.push('/')}
-                      className="flex items-center gap-2 px-4 md:px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95 bg-primary text-white shadow-primary/20 hover:bg-primary/90 shrink-0"
-                    >
-                      <Home className="w-5 h-5" />
-                      <span>Kembali ke Menu</span>
-                    </button>
-                  )}
+                  {user ? (
+                    <>
+                      {!isRootPage && !isKoordinator && (
+                        <button
+                          onClick={() => router.push('/')}
+                          className="flex items-center gap-2 px-4 md:px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95 bg-primary text-white shadow-primary/20 hover:bg-primary/90 shrink-0"
+                        >
+                          <Home className="w-5 h-5" />
+                          <span className="hidden sm:inline">Kembali ke Menu</span>
+                        </button>
+                      )}
 
-                  <div className="hidden sm:flex h-8 w-px bg-slate-200 mx-2" />
+                      <div className="hidden sm:flex h-8 w-px bg-slate-200 mx-2" />
 
-                  <div className="hidden sm:flex flex-col items-end gap-1 translate-y-1">
-                    <OfficeHoursTimer />
-                  </div>
-
-                  <button
-                    onClick={() => setIsLogoutDialogOpen(true)}
-                    className="hidden sm:flex w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 items-center justify-center hover:bg-rose-100 transition-all active:scale-90 border border-rose-100 shadow-sm group"
-                    title="Logout / Keluar"
-                  >
-                    <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
-                  </button>
-
-                  <ConfirmDialog
-                    open={isLogoutDialogOpen}
-                    onOpenChange={setIsLogoutDialogOpen}
-                    icon={<AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />}
-                    title="Keluar dari Aplikasi?"
-                    description="Anda akan keluar dari sesi ini."
-                    cancelText="Batal"
-                    confirmText="Keluar"
-                    confirmIcon={<LogOut className="w-4 h-4" />}
-                    variant="destructive"
-                    onConfirm={() => {
-                      setIsLogoutDialogOpen(false);
-                      signOut(auth).then(() => router.push('/login'));
-                    }}
-                  />
-
-                  {!isKoordinator && (
-                    <Link 
-                      href="/profile" 
-                      className="flex items-center gap-3 group"
-                    >
-                      <div className="hidden md:flex flex-col items-end">
-                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Profil</span>
+                      <div className="hidden sm:flex flex-col items-end gap-1 translate-y-1">
+                        <OfficeHoursTimer />
                       </div>
-                      <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-100 flex items-center justify-center">
-                        {profile?.photoURL ? (
-                          <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                          <UserIcon className="w-5 h-5 text-primary/30" />
-                        )}
-                      </div>
+
+                      <button
+                        onClick={() => setIsLogoutDialogOpen(true)}
+                        className="hidden sm:flex w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 items-center justify-center hover:bg-rose-100 transition-all active:scale-90 border border-rose-100 shadow-sm group"
+                        title="Logout / Keluar"
+                      >
+                        <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
+                      </button>
+
+                      <ConfirmDialog
+                        open={isLogoutDialogOpen}
+                        onOpenChange={setIsLogoutDialogOpen}
+                        icon={<AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />}
+                        title="Keluar dari Aplikasi?"
+                        description="Anda akan keluar dari sesi ini."
+                        cancelText="Batal"
+                        confirmText="Keluar"
+                        confirmIcon={<LogOut className="w-4 h-4" />}
+                        variant="destructive"
+                        onConfirm={() => {
+                          setIsLogoutDialogOpen(false);
+                          signOut(auth).then(() => router.push('/login'));
+                        }}
+                      />
+
+                      {!isKoordinator && (
+                        <Link 
+                          href="/profile" 
+                          className="flex items-center gap-3 group"
+                        >
+                          <div className="hidden md:flex flex-col items-end">
+                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
+                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Profil</span>
+                          </div>
+                          <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-100 flex items-center justify-center">
+                            {profile?.photoURL ? (
+                              <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                              <UserIcon className="w-5 h-5 text-primary/30" />
+                            )}
+                          </div>
+                        </Link>
+                      )}
+                    </>
+                  ) : (
+                    <Link
+                      href="/login"
+                      className="flex items-center gap-2 px-4 md:px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 bg-primary text-white hover:bg-primary/90 shadow-primary/20 shrink-0"
+                    >
+                      <UserIcon className="w-4 h-4" />
+                      <span>Login Petugas</span>
                     </Link>
                   )}
                 </div>
               </header>
-              <ProfileStatusDialog />
+              {user && <ProfileStatusDialog />}
             </>
           )}
 
           <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
-            {!isLoginPage && (
+            {!isLoginPage && (!isCekDataPage || (user && !isCekDataPage)) && (
               <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50 pointer-events-none">
                 <div className="pointer-events-auto flex flex-col items-end gap-3">
                   <div className="hidden sm:block">
@@ -373,6 +388,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               <div key={pathname} className={cn(
                 "w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out",
                 isLoginPage ? "flex-1 flex flex-col min-h-0 p-0 overflow-hidden" : 
+                isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-20 max-w-7xl mx-auto" :
                 isRootPage ? "p-4 md:p-8 flex-1 flex flex-col min-h-0 pb-20 lg:pr-[320px]" : 
                 "p-4 md:p-8 min-h-full pb-20 lg:pr-[320px]"
               )}>

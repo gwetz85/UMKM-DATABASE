@@ -580,9 +580,10 @@ export default function LoginPage() {
                 </button>
                 <button 
                   type="button"
-                  onClick={() => setShowCheckDataModal(true)}
-                  className="text-[10px] font-black text-white/40 hover:text-white/80 uppercase tracking-[0.2em] transition-colors"
+                  onClick={() => router.push('/cek-data')}
+                  className="text-[10px] font-black text-white/40 hover:text-white/80 uppercase tracking-[0.2em] transition-colors flex items-center gap-1.5"
                 >
+                  <SearchCheck className="w-3.5 h-3.5" />
                   Cek Data Publik
                 </button>
               </div>
