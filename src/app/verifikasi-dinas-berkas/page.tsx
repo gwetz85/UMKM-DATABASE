@@ -34,7 +34,15 @@ import {
   Briefcase,
   BadgeCheck,
   Filter,
-  Users
+  Users,
+  Phone,
+  Home,
+  Landmark,
+  CalendarDays,
+  ShieldCheck,
+  Info,
+  ExternalLink,
+  Camera
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -56,6 +64,8 @@ export default function VerifikasiDinasBerkasPage() {
   const [isDeletingAll, setIsDeletingAll] = useState(false)
   const [checks, setChecks] = useState({ ktp: false, kk: false, nib: false, foto: false })
   const [showChecklist, setShowChecklist] = useState(false)
+  // State untuk modal View lengkap khusus admin
+  const [adminViewActor, setAdminViewActor] = useState<BusinessActor | null>(null)
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -588,6 +598,19 @@ export default function VerifikasiDinasBerkasPage() {
                               </div>
 
                               <div className="flex gap-2 w-full pt-1">
+                                {/* Tombol VIEW - Khusus Admin */}
+                                {isAdmin && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setAdminViewActor(actor)}
+                                    className="shrink-0 h-9 w-9 p-0 rounded-xl border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-400 transition-all duration-200"
+                                    title="Lihat Detail Lengkap (Admin)"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                )}
+
                                 {(isAdmin || isVerifikatorDinas || isPetugas) && (
                                   <Dialog open={!!verifyingActor && verifyingActor.id === actor.id} onOpenChange={(open) => {
                                     if (!open) {
@@ -597,7 +620,7 @@ export default function VerifikasiDinasBerkasPage() {
                                     }
                                   }}>
                                     <DialogTrigger asChild>
-                                      <Button size="sm" onClick={() => { setVerifyingActor(actor); setShowChecklist(false); }} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-all duration-300">
+                                      <Button size="sm" onClick={() => { setVerifyingActor(actor); setShowChecklist(false); }} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-all duration-300">
                                         <ClipboardCheck className="w-4 h-4 mr-2" /> Verifikasi Berkas
                                       </Button>
                                     </DialogTrigger>
@@ -838,6 +861,251 @@ export default function VerifikasiDinasBerkasPage() {
           })}
         </div>
       )}
+      {/* ─── DIALOG VIEW LENGKAP ADMIN ──────────────────────────────────── */}
+      <Dialog open={!!adminViewActor} onOpenChange={(open) => !open && setAdminViewActor(null)}>
+        <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
+          {adminViewActor && (() => {
+            const av = adminViewActor
+            const avPejabat = getActorPejabat(av)
+            const parsed = parsePobDob(av.pobDob || "")
+            const vName = getVerifikatorName(av)
+
+            const Section = ({ icon, title, color = "text-primary" }: { icon: React.ReactNode; title: string; color?: string }) => (
+              <div className={`flex items-center gap-2 ${color} font-black text-sm uppercase border-b pb-2 mb-3`}>
+                {icon} {title}
+              </div>
+            )
+
+            const Field = ({ label, value, mono = false }: { label: string; value?: string | null; mono?: boolean }) => (
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">{label}</p>
+                <p className={`text-xs font-bold text-slate-800 break-words ${mono ? 'font-mono' : ''}`}>{value || "-"}</p>
+              </div>
+            )
+
+            return (
+              <div className="space-y-1">
+                <DialogHeader className="pb-2 border-b">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+                      <Eye className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md uppercase tracking-wider">View Lengkap — Admin</span>
+                      </div>
+                      <DialogTitle className="text-xl font-black text-slate-900 uppercase mt-0.5">{av.fullName}</DialogTitle>
+                      <DialogDescription className="text-xs text-slate-500 font-mono">NIK: {av.nik} • ID: {av.id}</DialogDescription>
+                    </div>
+                  </div>
+                </DialogHeader>
+
+                <div className="grid gap-6 pt-4">
+
+                  {/* 1. STATUS & TRACKING */}
+                  <section>
+                    <Section icon={<Info className="w-4 h-4" />} title="Status & Tracking" color="text-blue-700" />
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <Field label="Status" value={(av.status || "-").replace(/_/g, " ").toUpperCase()} />
+                      <Field label="Hasil Verifikasi Dinas" value={av.hasilVerifikasiDinas} />
+                      <Field label="Keterangan Dinas" value={av.keteranganDinas} />
+                      <Field label="Progress Survey" value={av.surveyProgress ? `${av.surveyProgress}%` : "-"} />
+                      <Field label="Dibuat Pada" value={av.createdAt ? new Date(av.createdAt).toLocaleString('id-ID') : "-"} />
+                      <Field label="Diinput Oleh" value={av.createdBy} />
+                      <Field label="Kode Registrasi" value={av.registrationCode} />
+                      <Field label="Ready LPJ" value={av.readyForLPJ ? "Ya" : "Tidak"} />
+                    </div>
+                  </section>
+
+                  {/* 2. DATA PEJABAT BERITA ACARA */}
+                  <section>
+                    <Section icon={<BadgeCheck className="w-4 h-4" />} title="Data Pejabat Berita Acara Survey" color="text-indigo-700" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100 space-y-2">
+                        <p className="text-[10px] font-black text-indigo-700 uppercase flex items-center gap-1">
+                          <span className="w-4 h-4 rounded-full bg-indigo-600 text-white text-[9px] font-black flex items-center justify-center">1</span>
+                          Verifikator Dinas
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Field label="Nama" value={avPejabat?.verifikator?.nama || vName} />
+                          <Field label="NIPPPK" value={avPejabat?.verifikator?.nipppk} mono />
+                          <Field label="Pangkat / Golongan" value={avPejabat?.verifikator?.pangkat} />
+                          <Field label="Jabatan" value={avPejabat?.verifikator?.jabatan} />
+                        </div>
+                      </div>
+                      <div className="bg-violet-50 p-3 rounded-xl border border-violet-100 space-y-2">
+                        <p className="text-[10px] font-black text-violet-700 uppercase flex items-center gap-1">
+                          <span className="w-4 h-4 rounded-full bg-violet-600 text-white text-[9px] font-black flex items-center justify-center">2</span>
+                          Petugas Survey
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Field label="Nama" value={avPejabat?.petugas?.nama || av.petugasSurvey} />
+                          <Field label="NIPPPK" value={avPejabat?.petugas?.nipppk} mono />
+                          <Field label="Pangkat / Golongan" value={avPejabat?.petugas?.pangkat} />
+                          <Field label="Jabatan" value={avPejabat?.petugas?.jabatan} />
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* 3. INFORMASI PRIBADI */}
+                  <section>
+                    <Section icon={<User className="w-4 h-4" />} title="Informasi Pribadi" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border">
+                      <Field label="Nama Lengkap" value={av.fullName} />
+                      <Field label="NIK" value={av.nik} mono />
+                      <Field label="Nomor KK" value={av.noKK} mono />
+                      <Field label="Jenis Kelamin" value={av.gender} />
+                      <Field label="Tempat Lahir" value={av.pob || parsed.pob} />
+                      <Field label="Tanggal Lahir" value={av.dob || parsed.dob} />
+                      <Field label="Nomor HP" value={av.phone} />
+                      <Field label="Alamat" value={av.address} />
+                      <Field label="RT/RW" value={av.rtRw} />
+                      <Field label="Kelurahan" value={av.kelurahan} />
+                      <Field label="Kecamatan" value={av.kecamatan} />
+                    </div>
+                  </section>
+
+                  {/* 4. DATA USAHA */}
+                  <section>
+                    <Section icon={<Building2 className="w-4 h-4" />} title="Data Usaha" color="text-orange-700" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 bg-orange-50/50 p-4 rounded-xl border border-orange-100">
+                      <Field label="Nama Usaha" value={av.businessName} />
+                      <Field label="Kategori Usaha" value={av.businessCategory} />
+                      <Field label="Lokasi Usaha" value={av.businessLocation} />
+                      <Field label="Koordinator / Usulan" value={av.coordinator} />
+                      <Field label="Petugas Survey" value={av.petugasSurvey} />
+                    </div>
+                  </section>
+
+                  {/* 5. DATA HASIL SURVEY DINAS */}
+                  {av.surveyData && (
+                    <section>
+                      <Section icon={<ClipboardCheck className="w-4 h-4" />} title="Data Hasil Survey Dinas" color="text-emerald-700" />
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+                        <Field label="Tanggal Survey" value={av.surveyData.tanggalSurvey ? formatTanggalIndonesia(av.surveyData.tanggalSurvey).fullText : undefined} />
+                        <Field label="Nama Usaha (Survey)" value={av.surveyData.namaUsaha} />
+                        <Field label="Nama Pemilik" value={av.surveyData.namaPemilik} />
+                        <Field label="Jenis Kelamin" value={av.surveyData.jenisKelamin} />
+                        <Field label="Status Perkawinan" value={av.surveyData.status} />
+                        <Field label="Alamat Rumah" value={av.surveyData.alamatRumah} />
+                        <Field label="No HP" value={av.surveyData.noHp} />
+                        <Field label="Email" value={av.surveyData.email} />
+                        <Field label="Sosial Media" value={av.surveyData.sosmed} />
+                        <Field label="DTKS" value={av.surveyData.dtks?.masuk ? `Ya — ${av.surveyData.dtks.jenis || "-"}` : "Tidak"} />
+                        <Field label="Bidang Usaha" value={av.surveyData.bidangUsaha} />
+                        <Field label="Peralatan Usaha" value={av.surveyData.peralatan} />
+                        <Field label="Tahun Berdiri" value={av.surveyData.tahunBerdiri} />
+                        <Field label="Izin Usaha" value={av.surveyData.izin?.join(', ')} />
+                        <Field label="Modal Usaha" value={av.surveyData.modalUsaha} />
+                        <Field label="Omset" value={av.surveyData.omset} />
+                        <Field label="Pernah Terima Hibah" value={av.surveyData.hibah?.pernah ? `Ya — Dari: ${av.surveyData.hibah.dariMana || "-"}, Tahun: ${av.surveyData.hibah.tahun || "-"}` : "Tidak"} />
+                        <Field label="Rencana Penggunaan" value={av.surveyData.rencanaPenggunaan} />
+                        <Field label="Hasil Survey" value={av.surveyData.hasilSurvey} />
+                      </div>
+                    </section>
+                  )}
+
+                  {/* 6. REKENING BANK */}
+                  <section>
+                    <Section icon={<CreditCard className="w-4 h-4" />} title="Rekening Bank" color="text-cyan-700" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-cyan-50/50 p-4 rounded-xl border border-cyan-100">
+                      <Field label="Nama Bank" value={av.bankName} />
+                      <Field label="Nama Pemilik Rekening" value={av.bankOwner} />
+                      <Field label="Nomor Rekening" value={av.bankNumber} mono />
+                    </div>
+                  </section>
+
+                  {/* 7. DOKUMEN & FOTO */}
+                  <section>
+                    <Section icon={<Camera className="w-4 h-4" />} title="Dokumen & Foto" color="text-rose-700" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {[
+                        { label: "Foto KTP", url: av.ktpUri },
+                        { label: "Foto KK", url: av.kkUri },
+                        { label: "Foto NIB", url: av.nibUri },
+                        { label: "Foto Usaha", url: av.photoUsahaUri },
+                        { label: "Foto Perbandingan", url: av.comparisonPhotoUrl },
+                        { label: "Foto Survey Dinas", url: av.surveyData?.fotoSurveyUrl },
+                      ].map((doc, i) => (
+                        <div key={i} className="space-y-1">
+                          <p className="text-[10px] font-bold text-rose-700/80 uppercase">{doc.label}</p>
+                          {doc.url ? (
+                            <div className="space-y-1">
+                              <img src={doc.url} alt={doc.label} className="w-full h-28 object-cover rounded-lg border border-slate-200" />
+                              <a href={doc.url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 hover:underline flex items-center gap-1">
+                                <ExternalLink className="w-3 h-3" /> Buka penuh
+                              </a>
+                            </div>
+                          ) : (
+                            <div className="w-full h-14 rounded-lg border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center">
+                              <p className="text-[10px] text-slate-400 font-medium">Belum ada</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    {av.googleDriveLink && (
+                      <div className="mt-3 bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-bold text-blue-800 uppercase">Folder Google Drive</p>
+                          <p className="text-[10px] text-blue-600 mt-0.5">{av.googleDriveLink}</p>
+                        </div>
+                        <a href={av.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-lg shrink-0 flex items-center gap-1.5">
+                          <ExternalLink className="w-3.5 h-3.5" /> Buka Drive
+                        </a>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* 8. LOKASI SURVEY */}
+                  <section>
+                    <Section icon={<MapPin className="w-4 h-4" />} title="Lokasi Survey Dinas" color="text-teal-700" />
+                    <div className="bg-teal-50/50 p-4 rounded-xl border border-teal-100 space-y-2">
+                      {av.verificationLocationDinas ? (
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            <Field label="Latitude" value={String(av.verificationLocationDinas.lat)} mono />
+                            <Field label="Longitude" value={String(av.verificationLocationDinas.lon)} mono />
+                          </div>
+                          <a
+                            href={`https://www.google.com/maps?q=${av.verificationLocationDinas.lat},${av.verificationLocationDinas.lon}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 bg-white border border-teal-200 px-3 py-1.5 rounded-lg hover:bg-teal-50 transition-colors"
+                          >
+                            <MapPin className="w-3.5 h-3.5" /> Buka di Google Maps
+                          </a>
+                        </>
+                      ) : (
+                        <p className="text-xs text-slate-500">Belum ada titik lokasi yang direkam.</p>
+                      )}
+                    </div>
+                  </section>
+
+                  {/* 9. CATATAN & INFORMASI TAMBAHAN */}
+                  <section>
+                    <Section icon={<History className="w-4 h-4" />} title="Catatan & Informasi Tambahan" color="text-slate-600" />
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border">
+                      <Field label="Catatan Filing" value={av.filingNote} />
+                      <Field label="Alasan Penolakan" value={av.rejectionReason} />
+                      <Field label="Nominal LPJ" value={av.lpjNominal ? `Rp ${av.lpjNominal.toLocaleString('id-ID')}` : undefined} />
+                      <Field label="Tanggal Entry LPJ" value={av.lpjEntryDate} />
+                      <Field label="Owner ID" value={av.ownerId} mono />
+                    </div>
+                  </section>
+
+                </div>
+
+                <DialogFooter className="border-t pt-4 mt-4">
+                  <Button variant="ghost" onClick={() => setAdminViewActor(null)}>Tutup</Button>
+                </DialogFooter>
+              </div>
+            )
+          })()}
+        </DialogContent>
+      </Dialog>
+
     </div>
   )
 }
