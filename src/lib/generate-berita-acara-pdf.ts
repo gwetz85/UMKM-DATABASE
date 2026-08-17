@@ -350,9 +350,12 @@ export async function generateBeritaAcaraPDF(
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
   y += 3.8;
 
-  doc.text("Jika YA, DTKS Kategori *:", marginL + noW + 4, y);
+  // Teks "Jika YA, DTKS Kategori *:" berada tepat di bawah titik dua (:)
+  doc.setFont("helvetica", "normal");
+  const prefixDTKS = "Jika YA, DTKS Kategori *: ";
+  doc.text(prefixDTKS, dataColonX, y);
   const optDTKS = ["PKH", "BPNT", "KIP", "LANSIA"];
-  let oxDTKS = marginL + noW + 4 + doc.getTextWidth("Jika YA, DTKS Kategori *: ");
+  let oxDTKS = dataColonX + doc.getTextWidth(prefixDTKS);
   optDTKS.forEach((opt) => {
     doc.setFont("helvetica", "bold");
     doc.text(opt, oxDTKS, y);
