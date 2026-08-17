@@ -321,6 +321,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             {!isLoginPage && (!isCekDataPage || (user && !isCekDataPage)) && (
               <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50 pointer-events-none">
                 <div className="pointer-events-auto flex flex-col items-end gap-3">
+                  <div className="hidden lg:flex flex-col gap-3">
+                    <WeatherWidget className="w-72" />
+                  </div>
                   <div className="hidden sm:block">
                     <RealtimeClock 
                       className="bg-white/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200 shadow-sm hover:bg-white/80 transition-colors" 
@@ -329,7 +332,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     />
                   </div>
                   <div className="hidden lg:flex flex-col gap-3">
-                    <WeatherWidget className="w-72" />
                     <div className="w-72 bg-white/80 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg overflow-hidden flex flex-col transition-all hover:shadow-xl hover:bg-white">
                       <div className="p-4 border-b border-slate-300/50">
                         <div className="flex flex-col gap-3">
