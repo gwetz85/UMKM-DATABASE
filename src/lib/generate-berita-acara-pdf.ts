@@ -347,6 +347,7 @@ export async function generateBeritaAcaraPDF(
   doc.text("7.", marginL, y);
   doc.text("Apakah Saudara Masuk dalam DTKS ?", marginL + noW, y);
   doc.text(":", dataColonX, y);
+  doc.text("YA  /  TIDAK", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
   y += 3.8;
 
