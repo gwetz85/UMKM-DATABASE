@@ -229,25 +229,32 @@ export async function generateBeritaAcaraPDF(
   const labelColW = 32;
   const colonX = marginL + 6 + labelColW;
   const valueX = colonX + 4;
+  const maxPejabatValW = pageW - marginR - valueX; // 138 mm
 
   y += 4.5;
   doc.setFontSize(8.5);
 
   pejabatList.forEach((p, idx) => {
-    doc.setFont("helvetica", "normal");
-    doc.text(p.no, marginL, y);
-
     p.fields.forEach((item, fi) => {
       doc.setFont("helvetica", "normal");
+      if (fi === 0) {
+        doc.text(p.no, marginL, y);
+      }
       doc.text(item.label, marginL + 6, y);
       doc.text(":", colonX, y);
-      doc.setFont("helvetica", "bold");
-      doc.text(item.val, valueX, y);
 
-      if (fi < p.fields.length - 1) y += 3.8;
+      doc.setFont("helvetica", "bold");
+      const valStr = item.val && item.val.trim() ? item.val.trim() : "-";
+      const lines = doc.splitTextToSize(valStr, maxPejabatValW);
+      lines.forEach((lText: string, li: number) => {
+        if (li > 0) y += 3.5;
+        doc.text(lText, valueX, y);
+      });
+
+      y += 3.8;
     });
 
-    y += (idx < pejabatList.length - 1) ? 5 : 4;
+    if (idx < pejabatList.length - 1) y += 1.0;
   });
 
   // ── 5. KALIMAT PEMBUKA ─────────────────────────────────────────────────────
@@ -255,43 +262,64 @@ export async function generateBeritaAcaraPDF(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.text("Telah melaksanakan survey kepada calon penerima bantuan usaha Mikro dan Kecil Provinsi Kepulauan Riau yaitu :", marginL, y);
-  y += 4.5;
+  y += 4.2;
 
-  // ── 6. DATA PELAKU USAHA (No 1-14) ─────────────────────────────────────────
+  // ── 6. DATA PELAKU USAHA (No 1-15) ─────────────────────────────────────────
   const noW = 5;
   const dataLabelW = 68;
   const dataColonX = marginL + noW + dataLabelW; // 88mm
   const dataValueX = dataColonX + 3; // 91mm
+  const maxValW = pageW - marginR - dataValueX; // 104mm
   const lineY_offset = 1.0;
 
   doc.setFontSize(8.5);
 
-  // Row 1 & 2 & 3
-  doc.setFont("helvetica", "normal");
-  doc.text("1.", marginL, y);
-  doc.text("Nama Usaha", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(surveyData.namaUsaha || "-", dataValueX, y);
-  doc.setLineWidth(0.2);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+  const renderDataRow = (
+    noStr: string | null,
+    label: string,
+    val: string | null | undefined,
+    options?: {
+      lineSpacing?: number;
+      fontStyle?: string;
+      bold?: boolean;
+    }
+  ) => {
+    const fStyle = options?.fontStyle || (options?.bold ? "bold" : "normal");
+    const lSpacing = options?.lineSpacing || 3.6;
 
-  doc.text("2.", marginL, y);
-  doc.text("Nama Pemilik Usaha", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(surveyData.namaPemilik || actor.fullName || "-", dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+    doc.setFont("helvetica", "normal");
+    if (noStr) {
+      doc.text(noStr, marginL, y);
+    }
+    doc.text(label, marginL + noW, y);
+    doc.text(":", dataColonX, y);
+
+    doc.setFont("helvetica", fStyle);
+    const rawVal = val && val.trim() ? val.trim() : "-";
+    const lines = doc.splitTextToSize(rawVal, maxValW);
+
+    lines.forEach((lineText: string, li: number) => {
+      if (li > 0) y += lSpacing;
+      doc.setFont("helvetica", fStyle);
+      doc.text(lineText, dataValueX, y);
+      doc.setLineWidth(0.2);
+      doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
+    });
+
+    y += 3.8;
+  };
+
+  // Row 1: Nama Usaha
+  renderDataRow("1.", "Nama Usaha", surveyData.namaUsaha || actor.businessName);
+
+  // Row 2: Nama Pemilik Usaha
+  renderDataRow("2.", "Nama Pemilik Usaha", surveyData.namaPemilik || actor.fullName);
 
   // Row 3: NIK
-  doc.text("3.", marginL, y);
-  doc.text("NIK", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(actor.nik || "-", dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+  renderDataRow("3.", "NIK", actor.nik);
 
   // Row 4: Jenis Kelamin-Status *
+  doc.setFont("helvetica", "normal");
   doc.text("4.", marginL, y);
   doc.text("Jenis Kelamin-Status *", marginL + noW, y);
   doc.text(":", dataColonX, y);
@@ -299,53 +327,26 @@ export async function generateBeritaAcaraPDF(
   let oxJK = dataValueX;
   optJK.forEach((opt) => {
     doc.text(opt, oxJK, y);
-    oxJK += doc.getTextWidth(opt) + 5;
+    oxJK += doc.getTextWidth(opt) + 4.5;
   });
-  y += 4.0;
+  y += 3.8;
 
   // Row 5: Alamat Usaha
-  doc.text("5.", marginL, y);
-  doc.text("Alamat Usaha", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(actor.businessLocation || actor.address || "-", dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+  renderDataRow("5.", "Alamat Usaha", actor.businessLocation || actor.address);
 
-  // Row 6: Alamat Rumah
-  doc.text("6.", marginL, y);
-  doc.text("Alamat Rumah", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(surveyData.alamatRumah || actor.address || "-", dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
-
-  // No HP Pemilik Usaha
-  doc.text("No HP Pemilik Usaha", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(surveyData.noHp || actor.phone || "-", dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 3.8;
-
-  // Email
-  doc.text("Email", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(surveyData.email || "-", dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 3.8;
-
-  // Account Media Sosial
-  doc.text("Account Media Sosial", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(surveyData.sosmed || "-", dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 3.8;
+  // Row 6: Alamat Rumah & Kontak
+  renderDataRow("6.", "Alamat Rumah", surveyData.alamatRumah || actor.address);
+  renderDataRow(null, "No HP Pemilik Usaha", surveyData.noHp || actor.phone);
+  renderDataRow(null, "Email", surveyData.email);
+  renderDataRow(null, "Account Media Sosial", surveyData.sosmed);
 
   // Row 7: DTKS
+  doc.setFont("helvetica", "normal");
   doc.text("7.", marginL, y);
   doc.text("Apakah Saudara Masuk dalam DTKS ?", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+  y += 3.8;
 
   doc.text("Jika YA, DTKS Kategori *:", marginL + noW + 4, y);
   const optDTKS = ["PKH", "BPNT", "KIP", "LANSIA"];
@@ -356,33 +357,19 @@ export async function generateBeritaAcaraPDF(
     doc.setFont("helvetica", "normal");
     oxDTKS += doc.getTextWidth(opt) + 4;
   });
-  y += 4.0;
+  y += 3.8;
 
   // Row 8: Bidang Usaha
-  doc.text("8.", marginL, y);
-  doc.text("Bidang Usaha", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(surveyData.bidangUsaha || "-", dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+  renderDataRow("8.", "Bidang Usaha", surveyData.bidangUsaha);
 
   // Row 9: Peralatan Yang Digunakan
-  doc.text("9.", marginL, y);
-  doc.text("Peralatan Yang Digunakan", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(surveyData.peralatan || "-", dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+  renderDataRow("9.", "Peralatan Yang Digunakan", surveyData.peralatan);
 
   // Row 10: Tahun Berdiri
-  doc.text("10.", marginL, y);
-  doc.text("Tahun Berdiri", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(surveyData.tahunBerdiri || "-", dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+  renderDataRow("10.", "Tahun Berdiri", surveyData.tahunBerdiri);
 
   // Row 11: Izin Yang dimiliki *
+  doc.setFont("helvetica", "normal");
   doc.text("11.", marginL, y);
   doc.text("Izin Yang dimiliki *", marginL + noW, y);
   doc.text(":", dataColonX, y);
@@ -390,53 +377,39 @@ export async function generateBeritaAcaraPDF(
   let oxIzin = dataValueX;
   optIzin.forEach((opt) => {
     doc.text(opt, oxIzin, y);
-    oxIzin += doc.getTextWidth(opt) + 6;
+    oxIzin += doc.getTextWidth(opt) + 5;
   });
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+  y += 3.8;
 
   // Row 12: Modal Usaha dan Omset per bulan
-  doc.text("12.", marginL, y);
-  doc.text("Modal Usaha dan Omset per bulan", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  const val11 = `Modal: Rp ${surveyData.modalUsaha || "-"}  |  Omset: Rp ${surveyData.omset || "-"}`;
-  doc.text(val11, dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+  const val12 = `Modal: Rp ${surveyData.modalUsaha || "-"}  |  Omset: Rp ${surveyData.omset || "-"}`;
+  renderDataRow("12.", "Modal Usaha dan Omset per bulan", val12);
 
   // Row 13: Apakah Pernah Menerima Dana Hibah ?
+  doc.setFont("helvetica", "normal");
   doc.text("13.", marginL, y);
   doc.text("Apakah Pernah Menerima Dana Hibah ?", marginL + noW, y);
   doc.text(":", dataColonX, y);
   doc.text("YA  dari mana :", dataValueX, y);
   const ymW = doc.getTextWidth("YA  dari mana : ");
-  doc.line(dataValueX + ymW, y + lineY_offset, dataValueX + ymW + 38, y + lineY_offset);
-  doc.text("Tahun berapa :", dataValueX + ymW + 40, y);
+  doc.line(dataValueX + ymW, y + lineY_offset, dataValueX + ymW + 35, y + lineY_offset);
+  doc.text("Tahun berapa :", dataValueX + ymW + 37, y);
   const thnW = doc.getTextWidth("Tahun berapa : ");
-  doc.line(dataValueX + ymW + 40 + thnW, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 3.8;
+  doc.line(dataValueX + ymW + 37 + thnW, y + lineY_offset, pageW - marginR, y + lineY_offset);
+  y += 3.6;
 
   doc.text("TIDAK", dataValueX, y);
-  y += 4.0;
+  y += 3.8;
 
   // Row 14: Rencana Penggunaan Dana Hibah
-  doc.text("14.", marginL, y);
-  doc.text("Rencana Penggunaan Dana Hibah", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(surveyData.rencanaPenggunaan || "-", dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+  renderDataRow("14.", "Rencana Penggunaan Dana Hibah", surveyData.rencanaPenggunaan);
 
   // Row 15: Hasil Survey
-  doc.text("15.", marginL, y);
-  doc.text("Hasil Survey", marginL + noW, y);
-  doc.text(":", dataColonX, y);
-  doc.text(surveyData.hasilSurvey || "-", dataValueX, y);
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+  renderDataRow("15.", "Hasil Survey", surveyData.hasilSurvey);
 
   // ── 7. TABEL TANDA TANGAN ───────────────────────────────────────────────────
-  y += 2.5;
+  y += 2.0;
 
   const ttStartY = y;
   const colTimSurveyW = 110; // 2 Kolom x 55mm = 110mm
@@ -448,8 +421,15 @@ export async function generateBeritaAcaraPDF(
   doc.setTextColor(0, 0, 0);
   doc.setLineWidth(0.4);
 
+  // Dynamic calculation to ensure exact 1 page fit without bottom overflow
+  const availableBottomSpace = pageH - 12 - ttStartY;
+  const header1H = 5.5;
+  const metaHeaderH = 5.5;
+  const calculatedSignH = Math.min(25, Math.max(16, Math.floor((availableBottomSpace - header1H - metaHeaderH) / 2)));
+  const signBoxH = calculatedSignH;
+  const metaSignH = calculatedSignH;
+
   // --- HEADER 1: TIM SURVEY (2 Kolom) & CALON PENERIMA DANA HIBAH (1 Kolom) ---
-  const header1H = 6;
   doc.setFillColor(226, 239, 218); // Hijau muda #E2EFDA
   doc.setDrawColor(0, 0, 0);
   doc.setTextColor(0, 0, 0);
@@ -458,16 +438,15 @@ export async function generateBeritaAcaraPDF(
   doc.rect(marginL, ttStartY, colTimSurveyW, header1H, "FD");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
-  doc.text("TIM SURVEY", marginL + colTimSurveyW / 2, ttStartY + 4.2, { align: "center" });
+  doc.text("TIM SURVEY", marginL + colTimSurveyW / 2, ttStartY + 3.8, { align: "center" });
 
   // Rect Header Calon Penerima Dana Hibah (70mm)
   doc.setFillColor(226, 239, 218);
   doc.rect(marginL + colTimSurveyW, ttStartY, colPenerimaW, header1H, "FD");
   doc.setFontSize(7.5);
-  doc.text("CALON PENERIMA DANA HIBAH", marginL + colTimSurveyW + colPenerimaW / 2, ttStartY + 4.2, { align: "center" });
+  doc.text("CALON PENERIMA DANA HIBAH", marginL + colTimSurveyW + colPenerimaW / 2, ttStartY + 3.8, { align: "center" });
 
   // --- BOX TTD TIM SURVEY (2 KOLOM) & PENERIMA (1 KOLOM – TANDA TANGAN BIASA) ---
-  const signBoxH = 26;
   const signY = ttStartY + header1H;
 
   // Box Tim Survey 1 & 2
@@ -476,13 +455,29 @@ export async function generateBeritaAcaraPDF(
 
   if (p1.nama) {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(6.5);
-    doc.text(p1.nama.toUpperCase(), marginL + col1W / 2, signY + signBoxH - 2.5, { align: "center" });
+    const p1Lines = doc.splitTextToSize(p1.nama.toUpperCase(), col1W - 4);
+    if (p1Lines.length > 1) {
+      doc.setFontSize(5.5);
+      p1Lines.forEach((l: string, li: number) => {
+        doc.text(l, marginL + col1W / 2, signY + signBoxH - 2.0 - (p1Lines.length - 1 - li) * 2.2, { align: "center" });
+      });
+    } else {
+      doc.setFontSize(6.5);
+      doc.text(p1.nama.toUpperCase(), marginL + col1W / 2, signY + signBoxH - 2.0, { align: "center" });
+    }
   }
   if (p2.nama) {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(6.5);
-    doc.text(p2.nama.toUpperCase(), marginL + col1W + col2W / 2, signY + signBoxH - 2.5, { align: "center" });
+    const p2Lines = doc.splitTextToSize(p2.nama.toUpperCase(), col2W - 4);
+    if (p2Lines.length > 1) {
+      doc.setFontSize(5.5);
+      p2Lines.forEach((l: string, li: number) => {
+        doc.text(l, marginL + col1W + col2W / 2, signY + signBoxH - 2.0 - (p2Lines.length - 1 - li) * 2.2, { align: "center" });
+      });
+    } else {
+      doc.setFontSize(6.5);
+      doc.text(p2.nama.toUpperCase(), marginL + col1W + col2W / 2, signY + signBoxH - 2.0, { align: "center" });
+    }
   }
 
   // Box Calon Penerima Dana Hibah – kolom tanda tangan biasa (kosong)
@@ -496,17 +491,15 @@ export async function generateBeritaAcaraPDF(
 
   // --- HEADER 2: MENGETAHUI/VERIFIKATOR ---
   const metaHeaderY = signY + signBoxH;
-  const metaHeaderH = 6;
 
   doc.setFillColor(226, 239, 218);
   doc.rect(marginL, metaHeaderY, contentW, metaHeaderH, "FD");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
-  doc.text("MENGETAHUI/VERIFIKATOR", marginL + contentW / 2, metaHeaderY + 4.2, { align: "center" });
+  doc.text("MENGETAHUI/VERIFIKATOR", marginL + contentW / 2, metaHeaderY + 3.8, { align: "center" });
 
   // --- BARIS BAWAH: 4 SUB-KOLOM (KORLAP / CATATAN) ---
   const metaSignY = metaHeaderY + metaHeaderH;
-  const metaSignH = 26;
   const subColW = 45; // 45mm x 4 = 180mm
 
   // Box 1: Kosong + titik-titik
