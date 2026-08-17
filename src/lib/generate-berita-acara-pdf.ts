@@ -229,7 +229,7 @@ export async function generateBeritaAcaraPDF(
   const labelColW = 32;
   const colonX = marginL + 6 + labelColW;
   const valueX = colonX + 4;
-  const maxPejabatValW = pageW - marginR - valueX; // 138 mm
+  const maxPejabatValW = pageW - marginR - valueX - 4; // 134 mm (batas aman sebelum margin kanan)
 
   y += 4.5;
   doc.setFontSize(8.5);
@@ -269,7 +269,9 @@ export async function generateBeritaAcaraPDF(
   const dataLabelW = 68;
   const dataColonX = marginL + noW + dataLabelW; // 88mm
   const dataValueX = dataColonX + 3; // 91mm
-  const maxValW = pageW - marginR - dataValueX; // 104mm
+  // Batas lebar isian teks adalah 96mm (garis bawah total 104mm hingga x=195mm),
+  // sehingga teks otomatis pindah baris sebelum menabrak ujung garis
+  const maxValW = pageW - marginR - dataValueX - 8; // 96mm
   const lineY_offset = 1.0;
 
   doc.setFontSize(8.5);
