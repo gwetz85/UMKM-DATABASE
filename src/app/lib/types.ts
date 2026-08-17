@@ -75,6 +75,8 @@ export interface BusinessActor {
   surveyProgress?: number;
   verificationLocationDinas?: { lat: number; lon: number };
   googleDriveLink?: string;
+  verifikatorDinas?: string;
+  pejabatData?: PejabatData;
 }
 
 export interface PejabatItem {

@@ -382,7 +382,9 @@ export default function VerifikasiDinasPage() {
       hasilVerifikasiDinas: 'Lolos',
       surveyData: mergedSurveyData,
       surveyProgress: surveyProgress,
-      verificationLocationDinas: { lat: location.lat, lon: location.lon }
+      verificationLocationDinas: { lat: location.lat, lon: location.lon },
+      verifikatorDinas: activePejabat?.verifikator?.nama || undefined,
+      pejabatData: activePejabat || undefined
     })
 
     // Update global stats
@@ -423,7 +425,9 @@ export default function VerifikasiDinasPage() {
     const actorRef = ref(database, `businessActors/${verifyingActor.id}`);
     const updateData: any = {
       surveyData: mergedSurveyData,
-      surveyProgress: surveyProgress
+      surveyProgress: surveyProgress,
+      verifikatorDinas: activePejabat?.verifikator?.nama || undefined,
+      pejabatData: activePejabat || undefined
     };
     if (location) {
       updateData.verificationLocationDinas = { lat: location.lat, lon: location.lon };
