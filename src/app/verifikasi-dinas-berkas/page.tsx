@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { BusinessActor, PejabatData, PejabatItem } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { 
   ShieldAlert, 
   Loader2, 
@@ -42,11 +44,13 @@ import {
   ShieldCheck,
   Info,
   ExternalLink,
-  Camera
+  Camera,
+  FileDown,
+  Calendar
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
+import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 
 export default function VerifikasiDinasBerkasPage() {
   const { user, userProfile } = useUser()
@@ -66,6 +70,11 @@ export default function VerifikasiDinasBerkasPage() {
   const [showChecklist, setShowChecklist] = useState(false)
   // State untuk modal View lengkap khusus admin
   const [adminViewActor, setAdminViewActor] = useState<BusinessActor | null>(null)
+  // Print / Download Berita Acara Modal states
+  const [printModalActor, setPrintModalActor] = useState<BusinessActor | null>(null)
+  const [selectedPrintDate, setSelectedPrintDate] = useState<string>("")
+  const [saveDateToSurvey, setSaveDateToSurvey] = useState<boolean>(true)
+  const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null)
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -221,6 +230,87 @@ export default function VerifikasiDinasBerkasPage() {
     setVerifyingActor(null)
     setChecks({ ktp: false, kk: false, nib: false, foto: false })
     setIsSubmitting(false)
+  }
+
+  const resolvePejabatData = async (actor: BusinessActor): Promise<PejabatData | undefined> => {
+    // 1. From actor's own pejabatData or surveyData.pejabatData
+    const existing = getActorPejabat(actor);
+    if (existing?.verifikator?.nama && existing?.petugas?.nama) {
+      return existing;
+    }
+
+    // 2. From logged in user profile
+    const profilePd = (userProfile as any)?.pejabatData as PejabatData | undefined;
+    if (profilePd?.verifikator?.nama && profilePd?.petugas?.nama) {
+      return profilePd;
+    }
+
+    // 3. From localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = (user?.uid && localStorage.getItem(`pejabatData_${user.uid}`)) || localStorage.getItem('pejabatData');
+        if (cached) {
+          const parsed = JSON.parse(cached) as PejabatData;
+          if (parsed?.verifikator?.nama && parsed?.petugas?.nama) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.error("Error reading localStorage pejabatData:", e);
+      }
+    }
+
+    // 4. Construct from available data
+    const verifikatorNama = existing?.verifikator?.nama || (actor as any).verifikatorDinas || getVerifikatorName(actor);
+    const petugasNama = existing?.petugas?.nama || actor.petugasSurvey;
+
+    if (verifikatorNama && verifikatorNama !== "Belum Ditentukan") {
+      return {
+        verifikator: {
+          nama: verifikatorNama,
+          nipppk: existing?.verifikator?.nipppk || "",
+          pangkat: existing?.verifikator?.pangkat || "",
+          jabatan: existing?.verifikator?.jabatan || "Verifikator Dinas"
+        },
+        petugas: {
+          nama: petugasNama || "-",
+          nipppk: existing?.petugas?.nipppk || "",
+          pangkat: existing?.petugas?.pangkat || "",
+          jabatan: existing?.petugas?.jabatan || "Petugas Survey"
+        }
+      };
+    }
+
+    return existing || profilePd;
+  };
+
+  const handleGeneratePDF = async (actor: BusinessActor, customDate?: string, saveToSurvey?: boolean) => {
+    if (!actor.surveyData) {
+      toast({ variant: "destructive", title: "Data Survey Belum Ada", description: "Lakukan survey terlebih dahulu sebelum mendownload Berita Acara." })
+      return
+    }
+    setGeneratingPdfId(actor.id)
+    try {
+      const pejabatData = await resolvePejabatData(actor)
+      const targetDate = customDate || actor.surveyData.tanggalSurvey || new Date().toISOString().split('T')[0]
+      await generateBeritaAcaraPDF(actor, actor.surveyData, pejabatData, targetDate)
+
+      // Simpan tanggal ke database jika dipilih
+      if (saveToSurvey && customDate && database) {
+        const actorRef = ref(database, `businessActors/${actor.id}`)
+        updateDocumentNonBlocking(actorRef, {
+          "surveyData/tanggalSurvey": customDate
+        })
+      }
+
+      toast({ title: "PDF Berhasil Dibuat", description: `Berita Acara Survey untuk ${actor.fullName} telah diunduh.` })
+      setPrintModalActor(null)
+    } catch (err) {
+      console.error(err)
+      toast({ variant: "destructive", title: "Gagal Membuat PDF", description: "Terjadi kesalahan saat membuat dokumen PDF Berita Acara." })
+    } finally {
+      setGeneratingPdfId(null)
+    }
   }
 
   const handleDeleteAll = () => {
@@ -597,18 +687,38 @@ export default function VerifikasiDinasBerkasPage() {
                                 )}
                               </div>
 
-                              <div className="grid grid-cols-2 gap-2 w-full pt-1">
+                              <div className="flex items-center gap-2 w-full pt-1">
                                 {/* Tombol 1: VIEW DETAIL LENGKAP */}
                                 <Button
-                                  size="sm"
+                                  size="icon"
                                   variant="outline"
                                   type="button"
                                   onClick={() => setAdminViewActor(actor)}
-                                  className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300 font-bold rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-1.5"
+                                  className="h-9 w-9 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 border-blue-200 hover:border-blue-300 rounded-xl shadow-sm transition-all duration-200 shrink-0"
                                   title="Lihat Detail Lengkap Pelaku Usaha & Hasil Survey"
                                 >
-                                  <Eye className="w-4 h-4 text-blue-600 shrink-0" />
-                                  <span>View Detail</span>
+                                  <Eye className="w-4 h-4 shrink-0" />
+                                </Button>
+
+                                {/* Tombol PDF: DOWNLOAD / CETAK BERITA ACARA SURVEY */}
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  type="button"
+                                  onClick={() => {
+                                    setPrintModalActor(actor);
+                                    setSelectedPrintDate(actor.surveyData?.tanggalSurvey || new Date().toISOString().split('T')[0]);
+                                    setSaveDateToSurvey(true);
+                                  }}
+                                  disabled={generatingPdfId === actor.id || !actor.surveyData}
+                                  className="h-9 w-9 bg-purple-50 hover:bg-purple-600 hover:text-white text-purple-700 border-purple-200 hover:border-purple-300 rounded-xl shadow-sm transition-all duration-200 shrink-0 disabled:opacity-40"
+                                  title={actor.surveyData ? "Download Berita Acara Survey (PDF)" : "Data Survey belum ada"}
+                                >
+                                  {generatingPdfId === actor.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <FileDown className="w-4 h-4 shrink-0" />
+                                  )}
                                 </Button>
 
                                 {/* Tombol 2: VERIFIKASI BERKAS */}
@@ -625,10 +735,10 @@ export default function VerifikasiDinasBerkasPage() {
                                         size="sm" 
                                         type="button"
                                         onClick={() => { setVerifyingActor(actor); setShowChecklist(false); }} 
-                                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5"
+                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 h-9"
                                       >
                                         <ClipboardCheck className="w-4 h-4 shrink-0" />
-                                        <span>Verifikasi</span>
+                                        <span>Verifikasi Berkas</span>
                                       </Button>
                                     </DialogTrigger>
                                     <DialogContent className={`max-h-[95vh] overflow-y-auto transition-all duration-300 ${showChecklist ? 'max-w-[95vw] lg:max-w-7xl' : 'max-w-5xl'}`}>
@@ -794,9 +904,24 @@ export default function VerifikasiDinasBerkasPage() {
                                               </div>
                                               
                                               {!showChecklist && (
-                                                <DialogFooter className="border-t pt-4">
-                                                  <Button type="button" variant="ghost" onClick={() => setVerifyingActor(null)}>Tutup</Button>
-                                                  <Button type="button" onClick={() => setShowChecklist(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                                                <DialogFooter className="border-t pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+                                                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                                                    <Button type="button" variant="ghost" onClick={() => setVerifyingActor(null)}>Tutup</Button>
+                                                    <Button
+                                                      type="button"
+                                                      variant="outline"
+                                                      onClick={() => {
+                                                        setPrintModalActor(verifyingActor);
+                                                        setSelectedPrintDate(verifyingActor.surveyData?.tanggalSurvey || new Date().toISOString().split('T')[0]);
+                                                        setSaveDateToSurvey(true);
+                                                      }}
+                                                      disabled={!verifyingActor.surveyData}
+                                                      className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 font-bold"
+                                                    >
+                                                      <FileDown className="w-4 h-4 mr-1.5" /> Download Berita Acara
+                                                    </Button>
+                                                  </div>
+                                                  <Button type="button" onClick={() => setShowChecklist(true)} className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
                                                     Verifikasi Berkas <ClipboardCheck className="w-4 h-4 ml-2" />
                                                   </Button>
                                                 </DialogFooter>
@@ -1104,12 +1229,137 @@ export default function VerifikasiDinasBerkasPage() {
 
                 </div>
 
-                <DialogFooter className="border-t pt-4 mt-4">
+                <DialogFooter className="border-t pt-4 mt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setPrintModalActor(av);
+                      setSelectedPrintDate(av.surveyData?.tanggalSurvey || new Date().toISOString().split('T')[0]);
+                      setSaveDateToSurvey(true);
+                    }}
+                    disabled={!av.surveyData}
+                    className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-sm flex items-center gap-2"
+                  >
+                    <FileDown className="w-4 h-4" /> Download Berita Acara Survey (PDF)
+                  </Button>
                   <Button variant="ghost" onClick={() => setAdminViewActor(null)}>Tutup</Button>
                 </DialogFooter>
               </div>
             )
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── MODAL CETAK / DOWNLOAD BERITA ACARA SURVEY ────────────────── */}
+      <Dialog open={!!printModalActor} onOpenChange={(open) => !open && setPrintModalActor(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-purple-700 font-black uppercase">
+              <FileDown className="w-5 h-5" /> Download Berita Acara Survey
+            </DialogTitle>
+            <DialogDescription>
+              Pilih atau sesuaikan tanggal pelaksanaan survey untuk dokumen Berita Acara PDF.
+            </DialogDescription>
+          </DialogHeader>
+
+          {printModalActor && (() => {
+            const pmPejabat = getActorPejabat(printModalActor)
+            const pmVerifikator = pmPejabat?.verifikator?.nama || getVerifikatorName(printModalActor)
+            const pmPetugas = pmPejabat?.petugas?.nama || printModalActor.petugasSurvey || "-"
+
+            return (
+              <div className="space-y-4 py-2">
+                <div className="bg-purple-50/70 border border-purple-100 rounded-xl p-3.5 space-y-1">
+                  <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wider">Pelaku Usaha</p>
+                  <p className="text-sm font-black text-purple-950 uppercase">{printModalActor.fullName}</p>
+                  <p className="text-xs text-purple-700 font-medium">{printModalActor.businessName || printModalActor.surveyData?.namaUsaha || "Nama Usaha Belum Ada"}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="print-survey-date" className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4 text-purple-600" /> Tanggal Berita Acara / Survey
+                  </Label>
+                  <Input
+                    id="print-survey-date"
+                    type="date"
+                    value={selectedPrintDate}
+                    onChange={(e) => setSelectedPrintDate(e.target.value)}
+                    className="bg-slate-50 border-slate-200 focus-visible:ring-purple-500 font-semibold"
+                  />
+                </div>
+
+                {/* Preview teks format Bahasa Indonesia */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <Check className="w-3.5 h-3.5 text-emerald-600" /> Bunyi Kalimat Pada Berita Acara
+                  </p>
+                  <p className="text-xs text-slate-700 italic bg-white p-2.5 rounded-lg border border-slate-100 leading-relaxed">
+                    "Pada hari ini <strong className="text-purple-700 not-italic font-bold">{formatTanggalIndonesia(selectedPrintDate).hari}</strong>, tanggal <strong className="text-purple-700 not-italic font-bold">{formatTanggalIndonesia(selectedPrintDate).tanggal} {formatTanggalIndonesia(selectedPrintDate).bulan} {formatTanggalIndonesia(selectedPrintDate).tahun}</strong>, yang bertandatangan dibawah ini :"
+                  </p>
+                </div>
+
+                {/* Info Pejabat Penandatangan */}
+                <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
+                      <UserCheck className="w-3.5 h-3.5 text-indigo-600" /> Pejabat Penandatangan Berita Acara
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="bg-white p-2 rounded-lg border border-indigo-100/80 space-y-0.5">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">1. Verifikator</p>
+                      <p className="font-bold text-indigo-950 truncate">{pmVerifikator}</p>
+                      <p className="text-[9px] text-slate-500 truncate">{pmPejabat?.verifikator?.jabatan || (pmPejabat?.verifikator?.nipppk ? `NIP: ${pmPejabat.verifikator.nipppk}` : "Verifikator Dinas")}</p>
+                    </div>
+                    <div className="bg-white p-2 rounded-lg border border-indigo-100/80 space-y-0.5">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">2. Petugas Survey</p>
+                      <p className="font-bold text-indigo-950 truncate">{pmPetugas}</p>
+                      <p className="text-[9px] text-slate-500 truncate">{pmPejabat?.petugas?.jabatan || (pmPejabat?.petugas?.nipppk ? `NIP: ${pmPejabat.petugas.nipppk}` : "Petugas Survey")}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 pt-1">
+                  <Checkbox
+                    id="save-date-checkbox"
+                    checked={saveDateToSurvey}
+                    onCheckedChange={(c) => setSaveDateToSurvey(!!c)}
+                  />
+                  <Label htmlFor="save-date-checkbox" className="text-xs text-slate-600 cursor-pointer font-medium">
+                    Simpan tanggal ini ke data survey pelaku usaha
+                  </Label>
+                </div>
+              </div>
+            )
+          })()}
+
+          <DialogFooter className="gap-2 pt-2 border-t">
+            <Button variant="ghost" onClick={() => setPrintModalActor(null)} disabled={!!generatingPdfId}>
+              Batal
+            </Button>
+            <Button
+              onClick={() => {
+                if (printModalActor) {
+                  handleGeneratePDF(printModalActor, selectedPrintDate, saveDateToSurvey);
+                }
+              }}
+              disabled={!selectedPrintDate || (generatingPdfId === printModalActor?.id)}
+              className="bg-purple-600 hover:bg-purple-700 text-white font-bold gap-1.5"
+            >
+              {generatingPdfId === printModalActor?.id ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Membuat PDF...</span>
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-4 h-4" />
+                  <span>Download Berita Acara (PDF)</span>
+                </>
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
