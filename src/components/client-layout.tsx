@@ -209,8 +209,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
           {!isLoginPage && (
             <>
-              <header className="sticky top-0 z-50 relative flex items-center justify-between px-4 md:px-8 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 shrink-0 print:hidden shadow-sm">
-                <div className="flex items-center gap-4 md:gap-6">
+              <header className="sticky top-0 z-50 flex items-center justify-between px-4 md:px-6 lg:px-8 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 shrink-0 print:hidden shadow-sm gap-3 md:gap-4">
+                <div className="flex items-center gap-3 md:gap-5 shrink-0">
                   <Link href={user ? "/" : "/cek-data"} className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
                     <span className="text-2xl md:text-3xl font-black tracking-tighter leading-none text-primary">
                       SIMPU
@@ -220,17 +220,17 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     </span>
                   </Link>
 
-                  <div className="hidden md:flex h-8 w-px bg-slate-200 mx-2" />
+                  <div className="hidden md:flex h-8 w-px bg-slate-200 mx-1" />
 
                   {currentTitle && (
-                    <h1 className="hidden xl:block text-xl md:text-2xl font-black text-slate-800 tracking-tight uppercase max-w-[220px] truncate">
+                    <h1 className="hidden 2xl:block text-xl md:text-2xl font-black text-slate-800 tracking-tight uppercase max-w-[200px] truncate">
                       {currentTitle}
                     </h1>
                   )}
                 </div>
 
                 {activeEvent && !isCekDataPage && (
-                  <div className="hidden xl:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 animate-in fade-in zoom-in duration-1000">
+                  <div className="hidden 2xl:flex items-center justify-center flex-1 min-w-0 px-2 animate-in fade-in zoom-in duration-1000">
                     <EventCountdown 
                       targetDate={activeEvent.endDate || activeEvent.date} 
                       startDate={activeEvent.startDate} 
@@ -240,25 +240,25 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   </div>
                 )}
 
-                <div className="flex items-center gap-3 md:gap-4">
+                <div className="flex items-center gap-2 md:gap-3 shrink-0 ml-auto">
                   {user ? (
                     <>
                       {!isRootPage && !isKoordinator && (
                         <button
                           onClick={() => router.push('/')}
-                          className="flex items-center gap-2 px-4 md:px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95 bg-primary text-white shadow-primary/20 hover:bg-primary/90 shrink-0"
+                          className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95 bg-primary text-white shadow-primary/20 hover:bg-primary/90 shrink-0"
                         >
-                          <Home className="w-5 h-5" />
+                          <Home className="w-4 h-4 md:w-5 md:h-5" />
                           <span className="hidden sm:inline">Kembali ke Menu</span>
                         </button>
                       )}
 
-                      <div className="hidden sm:flex h-8 w-px bg-slate-200 mx-2" />
+                      <div className="hidden sm:flex h-8 w-px bg-slate-200 mx-1" />
 
-                      <div className="hidden sm:flex items-center gap-2.5">
+                      <div className="hidden sm:flex items-center gap-2">
                         <RealtimeClock 
-                          className="bg-white/95 backdrop-blur-md px-3 py-1.5 md:px-4 md:py-2 rounded-2xl border border-slate-200 shadow-md" 
-                          timeClassName="text-[13px] md:text-sm font-mono font-black text-slate-800 tracking-tight leading-none" 
+                          className="bg-white/95 backdrop-blur-md px-3 py-1.5 md:px-3.5 md:py-2 rounded-2xl border border-slate-200 shadow-md" 
+                          timeClassName="text-xs md:text-sm font-mono font-black text-slate-800 tracking-tight leading-none" 
                           dateClassName="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-0.5" 
                         />
                         <OfficeHoursTimer />
@@ -266,7 +266,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
                       <button
                         onClick={() => setIsLogoutDialogOpen(true)}
-                        className="hidden sm:flex w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 items-center justify-center hover:bg-rose-100 transition-all active:scale-90 border border-rose-100 shadow-sm group"
+                        className="hidden sm:flex w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-rose-50 text-rose-600 items-center justify-center hover:bg-rose-100 transition-all active:scale-90 border border-rose-100 shadow-sm group"
                         title="Logout / Keluar"
                       >
                         <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
