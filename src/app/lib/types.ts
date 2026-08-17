@@ -28,6 +28,7 @@ export interface SurveyDinasData {
   rencanaPenggunaan: string;
   hasilSurvey: string;
   fotoSurveyUrl?: string;
+  tanggalSurvey?: string;
 }
 
 export interface BusinessActor {

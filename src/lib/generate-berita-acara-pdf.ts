@@ -44,12 +44,64 @@ async function loadSurveyPhoto(url: string): Promise<{ base64: string; format: s
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Helper: Format Indonesian Date accurately (Senin-Minggu, Januari-Desember)
+// ─────────────────────────────────────────────────────────────────────────────
+export function formatTanggalIndonesia(dateStr?: string | Date | null): {
+  hari: string;
+  tanggal: number;
+  bulan: string;
+  tahun: number;
+  fullText: string;
+  formattedText: string;
+} {
+  let targetDate = new Date();
+  if (dateStr) {
+    if (dateStr instanceof Date) {
+      targetDate = dateStr;
+    } else if (typeof dateStr === "string" && dateStr.trim() !== "") {
+      const parts = dateStr.split("T")[0].split("-");
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        targetDate = new Date(y, m, d);
+      } else {
+        const parsed = new Date(dateStr);
+        if (!isNaN(parsed.getTime())) targetDate = parsed;
+      }
+    }
+  }
+
+  const hariNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+  const bulanNames = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+
+  const dayIndex = targetDate.getDay();
+  const hari = hariNames[dayIndex] || "Senin";
+  const tanggal = targetDate.getDate();
+  const bulan = bulanNames[targetDate.getMonth()] || "Januari";
+  const tahun = targetDate.getFullYear();
+
+  return {
+    hari,
+    tanggal,
+    bulan,
+    tahun,
+    fullText: `${hari}, ${tanggal} ${bulan} ${tahun}`,
+    formattedText: `Pada hari ini ${hari}, tanggal ${tanggal} ${bulan} ${tahun}, yang bertandatangan dibawah ini :`
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main export - EXACT 1 PAGE A4
 // ─────────────────────────────────────────────────────────────────────────────
 export async function generateBeritaAcaraPDF(
   actor: BusinessActor,
   surveyData: SurveyDinasData,
-  pejabatData?: PejabatData
+  pejabatData?: PejabatData,
+  customDate?: string | Date
 ): Promise<void> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
 
@@ -131,16 +183,8 @@ export async function generateBeritaAcaraPDF(
 
   // ── 3. TANGGAL ─────────────────────────────────────────────────────────────
   y += 5.5;
-  const now = new Date();
-  const hariNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-  const bulanNames = [
-    "Januari","Februari","Maret","April","Mei","Juni",
-    "Juli","Agustus","September","Oktober","November","Desember"
-  ];
-  const hari = hariNames[now.getDay()];
-  const tgl = now.getDate();
-  const bln = bulanNames[now.getMonth()];
-  const thn = now.getFullYear();
+  const surveyDateRaw = customDate || surveyData?.tanggalSurvey;
+  const { hari, tanggal: tgl, bulan: bln, tahun: thn } = formatTanggalIndonesia(surveyDateRaw);
 
   doc.setFontSize(8.5);
   doc.setFont("helvetica", "normal");

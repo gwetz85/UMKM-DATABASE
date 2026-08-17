@@ -43,9 +43,10 @@ import {
   Edit,
   RotateCcw,
   UserCheck,
-  MessageCircle
+  MessageCircle,
+  Calendar
 } from "lucide-react"
-import { generateBeritaAcaraPDF } from "@/lib/generate-berita-acara-pdf"
+import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function VerifikasiDinasPage() {
@@ -64,6 +65,11 @@ export default function VerifikasiDinasPage() {
   const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null)
   const [resetSurveyActor, setResetSurveyActor] = useState<BusinessActor | null>(null)
   const [isResettingSurvey, setIsResettingSurvey] = useState(false)
+
+  // Print Berita Acara Modal states
+  const [printModalActor, setPrintModalActor] = useState<BusinessActor | null>(null)
+  const [selectedPrintDate, setSelectedPrintDate] = useState<string>("")
+  const [saveDateToSurvey, setSaveDateToSurvey] = useState(true)
 
   // Choice dialog states
   const [choiceActor, setChoiceActor] = useState<BusinessActor | null>(null)
@@ -104,8 +110,9 @@ export default function VerifikasiDinasPage() {
 
   // Calculate progress
   const calculateProgress = () => {
-    let requiredFields = 17; // email tidak wajib
+    let requiredFields = 18; // email tidak wajib
     let filled = 0;
+    if (surveyData.tanggalSurvey) filled++;
     if (surveyData.namaUsaha) filled++;
     if (surveyData.namaPemilik) filled++;
     if (surveyData.jenisKelamin) filled++;
@@ -208,7 +215,12 @@ export default function VerifikasiDinasPage() {
     setPhotoPreview(actor.surveyData?.fotoSurveyUrl || null);
     
     // Auto fill data
-    setSurveyData(actor.surveyData || {
+    const todayStr = new Date().toISOString().split('T')[0];
+    setSurveyData(actor.surveyData ? {
+      ...actor.surveyData,
+      tanggalSurvey: actor.surveyData.tanggalSurvey || todayStr
+    } : {
+      tanggalSurvey: todayStr,
       namaUsaha: '',
       namaPemilik: actor.fullName || '',
       jenisKelamin: '',
@@ -385,7 +397,7 @@ export default function VerifikasiDinasPage() {
     setIsSubmitting(false);
   };
 
-  const handleGeneratePDF = async (actor: BusinessActor) => {
+  const handleGeneratePDF = async (actor: BusinessActor, customDate?: string, saveToSurvey?: boolean) => {
     if (!actor.surveyData) {
       toast({ variant: "destructive", title: "Data Survey Belum Ada", description: "Lakukan survey terlebih dahulu sebelum mencetak Berita Acara." })
       return
@@ -393,8 +405,19 @@ export default function VerifikasiDinasPage() {
     setGeneratingPdfId(actor.id)
     try {
       const pejabatData = (userProfile as any)?.pejabatData as PejabatData | undefined
-      await generateBeritaAcaraPDF(actor, actor.surveyData, pejabatData)
+      const targetDate = customDate || actor.surveyData.tanggalSurvey || new Date().toISOString().split('T')[0]
+      await generateBeritaAcaraPDF(actor, actor.surveyData, pejabatData, targetDate)
+
+      // Simpan tanggal ke database jika dipilih
+      if (saveToSurvey && customDate && database) {
+        const actorRef = ref(database, `businessActors/${actor.id}`)
+        updateDocumentNonBlocking(actorRef, {
+          "surveyData/tanggalSurvey": customDate
+        })
+      }
+
       toast({ title: "PDF Berhasil Dibuat", description: `Berita Acara Survey untuk ${actor.fullName} telah diunduh.` })
+      setPrintModalActor(null)
     } catch (err) {
       console.error(err)
       toast({ variant: "destructive", title: "Gagal Membuat PDF", description: "Terjadi kesalahan saat membuat dokumen PDF." })
@@ -750,7 +773,11 @@ export default function VerifikasiDinasPage() {
                               <Button
                                 size="icon"
                                 variant="outline"
-                                onClick={() => handleGeneratePDF(actor)}
+                                onClick={() => {
+                                  setPrintModalActor(actor);
+                                  setSelectedPrintDate(actor.surveyData?.tanggalSurvey || new Date().toISOString().split('T')[0]);
+                                  setSaveDateToSurvey(true);
+                                }}
                                 disabled={generatingPdfId === actor.id || !actor.surveyData}
                                 className="h-9 w-9 border-purple-100 text-purple-600 bg-purple-50 hover:bg-purple-600 hover:text-white rounded-xl shadow-sm transition-all duration-300 disabled:opacity-40"
                                 title={actor.surveyData ? "Cetak Berita Acara Survey (PDF)" : "Survey belum diisi"}
@@ -1114,6 +1141,28 @@ export default function VerifikasiDinasPage() {
 
                                     <div className="py-2 space-y-6 max-h-[75vh] overflow-y-auto px-1">
                                       
+                                      {/* Kolom Tanggal Survey / Berita Acara */}
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-emerald-50/70 p-4 rounded-xl border border-emerald-100 items-center">
+                                        <div className="space-y-2">
+                                          <Label className="flex items-center gap-1.5 font-bold text-emerald-800 text-xs uppercase tracking-wide">
+                                            <Calendar className="w-4 h-4 text-emerald-600" /> Tanggal Pelaksanaan Survey
+                                          </Label>
+                                          <Input
+                                            type="date"
+                                            value={surveyData.tanggalSurvey || ''}
+                                            onChange={e => setSurveyData(prev => ({...prev, tanggalSurvey: e.target.value}))}
+                                            className="bg-white border-emerald-200 focus-visible:ring-emerald-500 font-semibold"
+                                            required
+                                          />
+                                        </div>
+                                        <div className="space-y-1">
+                                          <span className="font-bold text-slate-500 text-[10px] uppercase tracking-wider">Format pada Berita Acara:</span>
+                                          <div className="p-2.5 bg-white rounded-lg border border-emerald-100 text-xs text-emerald-950 font-medium">
+                                            Pada hari ini <span className="font-bold text-emerald-700 underline">{formatTanggalIndonesia(surveyData.tanggalSurvey).hari}</span>, tanggal <span className="font-bold text-emerald-700">{formatTanggalIndonesia(surveyData.tanggalSurvey).tanggal} {formatTanggalIndonesia(surveyData.tanggalSurvey).bulan} {formatTanggalIndonesia(surveyData.tanggalSurvey).tahun}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                           <Label>Nama Usaha</Label>
@@ -1416,6 +1465,85 @@ export default function VerifikasiDinasPage() {
             >
               {isResettingSurvey ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RotateCcw className="w-4 h-4 mr-2" />}
               Ya, Reset Survey
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── CETAK BERITA ACARA MODAL WITH DATE OPTION ─────────────────── */}
+      <Dialog open={!!printModalActor} onOpenChange={(open) => !open && setPrintModalActor(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-purple-700 font-black uppercase">
+              <FileDown className="w-5 h-5" /> Cetak Berita Acara Survey
+            </DialogTitle>
+            <DialogDescription>
+              Pilih atau sesuaikan tanggal pelaksanaan survey untuk dokumen Berita Acara PDF.
+            </DialogDescription>
+          </DialogHeader>
+
+          {printModalActor && (
+            <div className="space-y-4 py-2">
+              <div className="bg-purple-50/70 border border-purple-100 rounded-xl p-3.5 space-y-1">
+                <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wider">Pelaku Usaha</p>
+                <p className="text-sm font-black text-purple-950 uppercase">{printModalActor.fullName}</p>
+                <p className="text-xs text-purple-700 font-medium">{printModalActor.businessName || printModalActor.surveyData?.namaUsaha || "Nama Usaha Belum Ada"}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="print-survey-date" className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-purple-600" /> Tanggal Berita Acara / Survey
+                </Label>
+                <Input
+                  id="print-survey-date"
+                  type="date"
+                  value={selectedPrintDate}
+                  onChange={(e) => setSelectedPrintDate(e.target.value)}
+                  className="bg-slate-50 border-slate-200 focus-visible:ring-purple-500 font-semibold"
+                />
+              </div>
+
+              {/* Preview teks format Bahasa Indonesia */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1.5">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" /> Bunyi Kalimat Pada Berita Acara
+                </p>
+                <p className="text-xs text-slate-700 italic bg-white p-2.5 rounded-lg border border-slate-100 leading-relaxed">
+                  "Pada hari ini <strong className="text-purple-700 not-italic font-bold">{formatTanggalIndonesia(selectedPrintDate).hari}</strong>, tanggal <strong className="text-purple-700 not-italic font-bold">{formatTanggalIndonesia(selectedPrintDate).tanggal} {formatTanggalIndonesia(selectedPrintDate).bulan} {formatTanggalIndonesia(selectedPrintDate).tahun}</strong>, yang bertandatangan dibawah ini :"
+                </p>
+              </div>
+
+              <div className="flex items-center space-x-2 pt-1">
+                <Checkbox
+                  id="save-date-checkbox"
+                  checked={saveDateToSurvey}
+                  onCheckedChange={(c) => setSaveDateToSurvey(!!c)}
+                />
+                <Label htmlFor="save-date-checkbox" className="text-xs text-slate-600 cursor-pointer font-medium">
+                  Simpan tanggal ini ke data survey pelaku usaha
+                </Label>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 pt-2 border-t">
+            <Button variant="ghost" onClick={() => setPrintModalActor(null)} disabled={!!generatingPdfId}>
+              Batal
+            </Button>
+            <Button
+              onClick={() => {
+                if (printModalActor) {
+                  handleGeneratePDF(printModalActor, selectedPrintDate, saveDateToSurvey);
+                }
+              }}
+              disabled={!selectedPrintDate || (generatingPdfId === printModalActor?.id)}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold min-w-[150px] shadow-sm"
+            >
+              {generatingPdfId === printModalActor?.id ? (
+                <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Menyiapkan PDF...</>
+              ) : (
+                <><FileDown className="w-4 h-4 mr-2" /> Unduh Dokumen (PDF)</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

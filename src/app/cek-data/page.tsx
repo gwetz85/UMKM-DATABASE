@@ -43,6 +43,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { cn, formatCurrency, maskLast4Digits, maskPhoneNumber } from "@/lib/utils"
+import { formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useToast } from "@/hooks/use-toast"
 
@@ -1041,6 +1042,12 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+                      {selectedItem.surveyData.tanggalSurvey && (
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase">Tanggal Survey</span>
+                          <p className="text-sm font-bold text-emerald-700">{formatTanggalIndonesia(selectedItem.surveyData.tanggalSurvey).fullText}</p>
+                        </div>
+                      )}
                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
                         <span className="text-[10px] font-bold text-slate-400 uppercase">Modal Usaha</span>
                         <p className="text-sm font-bold text-slate-900">{selectedItem.surveyData.modalUsaha || "-"}</p>

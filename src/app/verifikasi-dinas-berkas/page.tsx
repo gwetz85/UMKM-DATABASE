@@ -33,6 +33,7 @@ import {
   MessageCircle
 } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 
 export default function VerifikasiDinasBerkasPage() {
   const { user, userProfile } = useUser()
@@ -469,6 +470,7 @@ export default function VerifikasiDinasBerkasPage() {
                                             <div className="flex items-center gap-2 text-emerald-600 font-black text-sm uppercase border-b pb-1"><ClipboardCheck className="w-4 h-4" /> Data Hasil Survey Dinas</div>
                                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
                                               {[
+                                                { label: "Tanggal Survey", value: verifyingActor.surveyData?.tanggalSurvey ? formatTanggalIndonesia(verifyingActor.surveyData.tanggalSurvey).fullText : "-" },
                                                 { label: "Nama Usaha", value: verifyingActor.surveyData?.namaUsaha },
                                                 { label: "Nama Pemilik", value: verifyingActor.surveyData?.namaPemilik },
                                                 { label: "Jenis Kelamin", value: verifyingActor.surveyData?.jenisKelamin },
