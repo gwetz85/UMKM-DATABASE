@@ -19,7 +19,8 @@ import {
   Ban,
   Clock,
   ShieldAlert,
-  UserCheck
+  UserCheck,
+  Info
 } from "lucide-react"
 import { useUser, useObject, useMemoFirebase, useList, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
