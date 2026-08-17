@@ -32,7 +32,9 @@ import {
   Edit3,
   Search,
   Lock,
-  FileDown
+  FileDown,
+  Trash2,
+  AlertTriangle
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import Link from "next/link"
@@ -76,6 +78,8 @@ export default function UploadPetugasSurveyPage() {
   const [addPassword, setAddPassword] = useState("123456")
 
   const [showResetConfirm, setShowResetConfirm] = useState<{id: string, fullName: string} | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<{id: string, fullName: string, linkedCount: number} | null>(null)
+  const [isDeletingPetugas, setIsDeletingPetugas] = useState(false)
   const [isExportingPdf, setIsExportingPdf] = useState(false)
 
   const [summaryStats, setSummaryStats] = useState({
@@ -601,6 +605,68 @@ export default function UploadPetugasSurveyPage() {
     setShowResetConfirm(null)
   }
 
+  // Handle Delete Petugas Survey & Unassign linked business actors
+  const handleDeletePetugasSurvey = async () => {
+    if (!showDeleteConfirm || !database) return
+
+    setIsDeletingPetugas(true)
+    const { id, fullName } = showDeleteConfirm
+
+    try {
+      // 1. Unassign all businessActors that have petugasSurvey matching fullName or id
+      const normName = normalizeName(fullName)
+      const snap = await get(ref(database, 'businessActors'))
+      const updates: Record<string, any> = {}
+      let unassignedCount = 0
+
+      if (snap.exists()) {
+        const val = snap.val()
+        Object.keys(val).forEach(key => {
+          const actor = val[key]
+          if (
+            actor.petugasSurvey &&
+            (normalizeName(actor.petugasSurvey) === normName ||
+             String(actor.petugasSurvey).toLowerCase().trim() === id.toLowerCase().trim())
+          ) {
+            updates[`businessActors/${key}/petugasSurvey`] = ""
+            unassignedCount++
+          }
+        })
+      }
+
+      // 2. Remove user from system_users
+      updates[`system_users/${id}`] = null
+
+      const { update: updateDb } = await import("firebase/database")
+      await updateDb(ref(database), updates)
+
+      logActivity({
+        query: `HAPUS PETUGAS SURVEY: ${fullName} (${unassignedCount} Data Dikosongkan)`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'MANAJEMEN PETUGAS SURVEY',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+
+      toast({
+        title: "Petugas Survey Dihapus",
+        description: `Akun ${fullName} berhasil dihapus. ${unassignedCount} data pelaku usaha telah dikosongkan petugas survey-nya (data UMKM tetap aman).`
+      })
+
+      setShowDeleteConfirm(null)
+    } catch (err: any) {
+      console.error(err)
+      toast({
+        variant: "destructive",
+        title: "Gagal Menghapus Petugas",
+        description: err.message || "Terjadi kesalahan saat menghapus data petugas."
+      })
+    } finally {
+      setIsDeletingPetugas(false)
+    }
+  }
+
   if (!isAllowed) {
     return (
       <div className="p-8 max-w-4xl mx-auto text-center space-y-4">
@@ -998,6 +1064,23 @@ export default function UploadPetugasSurveyPage() {
                               <RefreshCcw className="w-3.5 h-3.5" />
                               {u.uid ? 'Reset Device' : 'Belum Login'}
                             </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setShowDeleteConfirm({
+                                  id: u.id,
+                                  fullName: u.fullName,
+                                  linkedCount: u.linkedCount || 0
+                                })
+                              }}
+                              className="h-8 font-bold text-xs gap-1 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                              title="Hapus akun petugas survey dan kosongkan status pembagian data"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Hapus
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -1214,6 +1297,72 @@ export default function UploadPetugasSurveyPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => { setForceAssignRow(null); setForceAssignSearch('') }}>Tutup</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog Modal */}
+      <Dialog open={!!showDeleteConfirm} onOpenChange={(open) => !open && setShowDeleteConfirm(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-2 mx-auto sm:mx-0">
+              <Trash2 className="w-6 h-6" />
+            </div>
+            <DialogTitle className="text-slate-900 font-black text-lg">
+              Hapus Petugas Survey & Pembagian Data?
+            </DialogTitle>
+            <DialogDescription className="text-slate-600 text-xs space-y-3 pt-2">
+              <div>
+                Apakah Anda yakin ingin menghapus petugas survey <span className="font-black text-slate-900">{showDeleteConfirm?.fullName}</span> (<span className="font-mono text-rose-600 font-semibold">{showDeleteConfirm?.id}</span>)?
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-2 text-amber-900">
+                <div className="flex items-center gap-1.5 font-bold text-xs">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  Konsekuensi Penghapusan:
+                </div>
+                <ul className="list-disc list-inside text-[11px] space-y-1 font-medium">
+                  <li>
+                    Akun login petugas survey ini akan <strong>dihapus</strong> dari sistem.
+                  </li>
+                  <li>
+                    Sebanyak <strong className="text-red-700">{showDeleteConfirm?.linkedCount || 0} Data Pelaku Usaha</strong> yang terhubung akan <strong>dikosongkan status petugas survey-nya</strong> (menjadi Belum Ada Petugas Survey).
+                  </li>
+                  <li className="text-emerald-800 font-bold">
+                    Data Pelaku Usaha (nama, NIK, KK, alamat, jenis usaha, rekening, dll) <u>TIDAK AKAN DIHAPUS</u> dan tetap tersimpan aman di database.
+                  </li>
+                </ul>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-4 gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(null)}
+              disabled={isDeletingPetugas}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={handleDeletePetugasSurvey}
+              disabled={isDeletingPetugas}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold"
+            >
+              {isDeletingPetugas ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Menghapus...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Ya, Hapus Petugas & Kosongkan Pembagian
+                </>
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

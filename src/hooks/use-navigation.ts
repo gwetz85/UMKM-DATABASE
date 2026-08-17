@@ -18,8 +18,8 @@ import {
   Calendar,
   Ban,
   Clock,
-  Info,
-  ShieldAlert
+  ShieldAlert,
+  UserCheck
 } from "lucide-react"
 import { useUser, useObject, useMemoFirebase, useList, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
@@ -220,12 +220,12 @@ export function useNavigation() {
       description: "Kelola Pengguna Sistem"
     },
     {
-      name: "Upload Excel Petugas",
+      name: "Pembagian Petugas Survey",
       href: "/upload-petugas-survey",
-      icon: FileSpreadsheet,
-      show: isAdmin || isKoordinator || isMonitoring, // STAFF tidak bisa
+      icon: UserCheck,
+      show: isAdmin || isKoordinator || isMonitoring,
       color: "#8b5cf6",
-      description: "Import Pemetaan Data Petugas Survey"
+      description: "Import Pemetaan & Kelola Petugas Survey"
     },
     {
       name: "Pengaturan",
