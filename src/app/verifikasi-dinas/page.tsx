@@ -272,18 +272,32 @@ export default function VerifikasiDinasPage() {
   const isDinas = userProfile?.role === 'dinas'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
 
-  // Auto-show pejabat modal on first petugas login if not yet filled
+  // Auto-show pejabat modal on first petugas login if not yet filled, or load existing pejabatData
   useEffect(() => {
-    if (isPetugas && userProfile) {
-      const pd = (userProfile as any).pejabatData as PejabatData | undefined
-      if (!pd?.verifikator?.nama) {
+    if (userProfile) {
+      const pd = (userProfile as any).pejabatData as PejabatData | undefined;
+      const cached = typeof window !== 'undefined' ? ((user?.uid ? localStorage.getItem(`pejabatData_${user.uid}`) : null) || localStorage.getItem('pejabatData')) : null;
+      const cachedPd = cached ? JSON.parse(cached) : null;
+      const activePd = pd || cachedPd;
+
+      if (activePd?.verifikator?.nama || activePd?.petugas?.nama) {
+        setPejabatForm({
+          verifikatorNama: activePd.verifikator?.nama || "",
+          verifikatorNipppk: activePd.verifikator?.nipppk || "",
+          verifikatorPangkat: activePd.verifikator?.pangkat || "",
+          verifikatorJabatan: activePd.verifikator?.jabatan || "",
+          petugasNama: activePd.petugas?.nama || userProfile.fullName || "",
+          petugasNipppk: activePd.petugas?.nipppk || "",
+          petugasPangkat: activePd.petugas?.pangkat || "",
+          petugasJabatan: activePd.petugas?.jabatan || "",
+        });
+      } else if (isPetugas) {
         // Pre-fill petugas nama from profile
-        setPejabatForm(prev => ({ ...prev, petugasNama: userProfile.fullName || "" }))
-        setShowPejabatModal(true)
+        setPejabatForm(prev => ({ ...prev, petugasNama: userProfile.fullName || "" }));
+        setShowPejabatModal(true);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPetugas, userProfile?.id])
+  }, [isPetugas, userProfile?.id, user?.uid])
 
   const memoQuery = useMemoFirebase(() => {
     // Tunggu sampai profile user selesai dimuat agar role (isPetugas/isDinas/isAdmin) sudah diketahui
@@ -350,11 +364,23 @@ export default function VerifikasiDinasPage() {
 
     setIsSubmitting(true)
 
+    const activePejabat = (pejabatForm.verifikatorNama && pejabatForm.petugasNama)
+      ? {
+          verifikator: { nama: pejabatForm.verifikatorNama, nipppk: pejabatForm.verifikatorNipppk, pangkat: pejabatForm.verifikatorPangkat, jabatan: pejabatForm.verifikatorJabatan },
+          petugas: { nama: pejabatForm.petugasNama, nipppk: pejabatForm.petugasNipppk, pangkat: pejabatForm.petugasPangkat, jabatan: pejabatForm.petugasJabatan }
+        }
+      : ((userProfile as any)?.pejabatData || undefined);
+
+    const mergedSurveyData = {
+      ...surveyData,
+      ...(activePejabat ? { pejabatData: activePejabat } : {})
+    };
+
     const actorRef = ref(database, `businessActors/${verifyingActor.id}`)
     updateDocumentNonBlocking(actorRef, {
       status: 'verified_dinas',
       hasilVerifikasiDinas: 'Lolos',
-      surveyData: surveyData,
+      surveyData: mergedSurveyData,
       surveyProgress: surveyProgress,
       verificationLocationDinas: { lat: location.lat, lon: location.lon }
     })
@@ -382,9 +408,21 @@ export default function VerifikasiDinasPage() {
     if (!verifyingActor || !database || (!isAdmin && !isDinas && !isPetugas)) return;
     setIsSubmitting(true);
 
+    const activePejabat = (pejabatForm.verifikatorNama && pejabatForm.petugasNama)
+      ? {
+          verifikator: { nama: pejabatForm.verifikatorNama, nipppk: pejabatForm.verifikatorNipppk, pangkat: pejabatForm.verifikatorPangkat, jabatan: pejabatForm.verifikatorJabatan },
+          petugas: { nama: pejabatForm.petugasNama, nipppk: pejabatForm.petugasNipppk, pangkat: pejabatForm.petugasPangkat, jabatan: pejabatForm.petugasJabatan }
+        }
+      : ((userProfile as any)?.pejabatData || undefined);
+
+    const mergedSurveyData = {
+      ...surveyData,
+      ...(activePejabat ? { pejabatData: activePejabat } : {})
+    };
+
     const actorRef = ref(database, `businessActors/${verifyingActor.id}`);
     const updateData: any = {
-      surveyData: surveyData,
+      surveyData: mergedSurveyData,
       surveyProgress: surveyProgress
     };
     if (location) {
@@ -397,6 +435,76 @@ export default function VerifikasiDinasPage() {
     setIsSubmitting(false);
   };
 
+  const resolvePejabatData = async (actor: BusinessActor): Promise<PejabatData | undefined> => {
+    // 1. Current form state if filled
+    if (pejabatForm.verifikatorNama && pejabatForm.petugasNama) {
+      return {
+        verifikator: {
+          nama: pejabatForm.verifikatorNama,
+          nipppk: pejabatForm.verifikatorNipppk,
+          pangkat: pejabatForm.verifikatorPangkat,
+          jabatan: pejabatForm.verifikatorJabatan
+        },
+        petugas: {
+          nama: pejabatForm.petugasNama,
+          nipppk: pejabatForm.petugasNipppk,
+          pangkat: pejabatForm.petugasPangkat,
+          jabatan: pejabatForm.petugasJabatan
+        }
+      };
+    }
+
+    // 2. From logged in user profile
+    const profilePd = (userProfile as any)?.pejabatData as PejabatData | undefined;
+    if (profilePd?.verifikator?.nama && profilePd?.petugas?.nama) {
+      return profilePd;
+    }
+
+    // 3. From localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = (user?.uid && localStorage.getItem(`pejabatData_${user.uid}`)) || localStorage.getItem('pejabatData');
+        if (cached) {
+          const parsed = JSON.parse(cached) as PejabatData;
+          if (parsed?.verifikator?.nama && parsed?.petugas?.nama) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.error("Error reading localStorage pejabatData:", e);
+      }
+    }
+
+    // 4. From surveyData of the business actor
+    const surveyPd = (actor.surveyData as any)?.pejabatData as PejabatData | undefined;
+    if (surveyPd?.verifikator?.nama && surveyPd?.petugas?.nama) {
+      return surveyPd;
+    }
+
+    // 5. From system_users matching actor.petugasSurvey
+    if (database && actor.petugasSurvey) {
+      try {
+        const { ref: dbRef, get: dbGet } = await import('firebase/database');
+        const usersSnap = await dbGet(dbRef(database, 'system_users'));
+        if (usersSnap.exists()) {
+          const allUsers = usersSnap.val();
+          const target = actor.petugasSurvey.toUpperCase().trim();
+          for (const k of Object.keys(allUsers)) {
+            const u = allUsers[k];
+            if (u?.fullName && u.fullName.toUpperCase().trim() === target && u.pejabatData) {
+              return u.pejabatData;
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Error finding petugas survey pejabatData:", e);
+      }
+    }
+
+    if (profilePd) return profilePd;
+    return undefined;
+  };
+
   const handleGeneratePDF = async (actor: BusinessActor, customDate?: string, saveToSurvey?: boolean) => {
     if (!actor.surveyData) {
       toast({ variant: "destructive", title: "Data Survey Belum Ada", description: "Lakukan survey terlebih dahulu sebelum mencetak Berita Acara." })
@@ -404,7 +512,7 @@ export default function VerifikasiDinasPage() {
     }
     setGeneratingPdfId(actor.id)
     try {
-      const pejabatData = (userProfile as any)?.pejabatData as PejabatData | undefined
+      const pejabatData = await resolvePejabatData(actor)
       const targetDate = customDate || actor.surveyData.tanggalSurvey || new Date().toISOString().split('T')[0]
       await generateBeritaAcaraPDF(actor, actor.surveyData, pejabatData, targetDate)
 
@@ -442,7 +550,27 @@ export default function VerifikasiDinasPage() {
       updatedAt: new Date().toISOString()
     }
     const { ref: dbRef, update } = await import('firebase/database')
-    await update(dbRef(database, `system_users/${user.uid}`), { pejabatData })
+
+    // 1. Simpan ke database berdasarkan userProfile.id (key username di system_users)
+    if (userProfile?.id) {
+      await update(dbRef(database, `system_users/${userProfile.id}`), { pejabatData }).catch(console.error)
+    }
+    // 2. Simpan juga berdasarkan email username
+    const emailUser = user?.email?.split('@')[0]?.toLowerCase()
+    if (emailUser && emailUser !== userProfile?.id) {
+      await update(dbRef(database, `system_users/${emailUser}`), { pejabatData }).catch(console.error)
+    }
+    // 3. Simpan juga berdasarkan user.uid
+    if (user.uid) {
+      await update(dbRef(database, `system_users/${user.uid}`), { pejabatData }).catch(console.error)
+    }
+    
+    // 4. Simpan ke LocalStorage agar langsung aktif secara instan pada browser petugas
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(`pejabatData_${user.uid}`, JSON.stringify(pejabatData))
+      localStorage.setItem('pejabatData', JSON.stringify(pejabatData))
+    }
+
     toast({ title: "Data Tersimpan", description: "Data pejabat berhasil disimpan dan akan otomatis muncul pada Berita Acara." })
     setIsSavingPejabat(false)
     setShowPejabatModal(false)
@@ -518,23 +646,26 @@ export default function VerifikasiDinasPage() {
           <p className="text-muted-foreground mt-1">Lakukan verifikasi tingkat dinas untuk data pelaku usaha yang telah diloloskan Admin.</p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
-          {/* Edit Pejabat Data Button for Petugas Survey */}
-          {isPetugas && (
+          {/* Edit Pejabat Data Button for Petugas Survey / Admin / Dinas */}
+          {(isAdmin || isDinas || isPetugas) && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
                 const pd = (userProfile as any)?.pejabatData as PejabatData | undefined
-                if (pd) {
+                const cached = typeof window !== 'undefined' ? ((user?.uid ? localStorage.getItem(`pejabatData_${user.uid}`) : null) || localStorage.getItem('pejabatData')) : null;
+                const cachedPd = cached ? JSON.parse(cached) : null;
+                const activePd = pd || cachedPd;
+                if (activePd) {
                   setPejabatForm({
-                    verifikatorNama: pd.verifikator?.nama || "",
-                    verifikatorNipppk: pd.verifikator?.nipppk || "",
-                    verifikatorPangkat: pd.verifikator?.pangkat || "",
-                    verifikatorJabatan: pd.verifikator?.jabatan || "",
-                    petugasNama: pd.petugas?.nama || "",
-                    petugasNipppk: pd.petugas?.nipppk || "",
-                    petugasPangkat: pd.petugas?.pangkat || "",
-                    petugasJabatan: pd.petugas?.jabatan || "",
+                    verifikatorNama: activePd.verifikator?.nama || "",
+                    verifikatorNipppk: activePd.verifikator?.nipppk || "",
+                    verifikatorPangkat: activePd.verifikator?.pangkat || "",
+                    verifikatorJabatan: activePd.verifikator?.jabatan || "",
+                    petugasNama: activePd.petugas?.nama || userProfile?.fullName || "",
+                    petugasNipppk: activePd.petugas?.nipppk || "",
+                    petugasPangkat: activePd.petugas?.pangkat || "",
+                    petugasJabatan: activePd.petugas?.jabatan || "",
                   })
                 }
                 setShowPejabatModal(true)
@@ -542,7 +673,7 @@ export default function VerifikasiDinasPage() {
               className="h-11 gap-2 rounded-xl border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 font-semibold shrink-0"
             >
               <Edit className="w-4 h-4" />
-              <span className="hidden sm:inline">Edit Data Pejabat</span>
+              <span className="hidden sm:inline">Data Pejabat Berita Acara</span>
               <span className="sm:hidden">Pejabat</span>
             </Button>
           )}
@@ -1511,6 +1642,42 @@ export default function VerifikasiDinasPage() {
                 <p className="text-xs text-slate-700 italic bg-white p-2.5 rounded-lg border border-slate-100 leading-relaxed">
                   "Pada hari ini <strong className="text-purple-700 not-italic font-bold">{formatTanggalIndonesia(selectedPrintDate).hari}</strong>, tanggal <strong className="text-purple-700 not-italic font-bold">{formatTanggalIndonesia(selectedPrintDate).tanggal} {formatTanggalIndonesia(selectedPrintDate).bulan} {formatTanggalIndonesia(selectedPrintDate).tahun}</strong>, yang bertandatangan dibawah ini :"
                 </p>
+              </div>
+
+              {/* Info Pejabat Penandatangan */}
+              <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
+                    <UserCheck className="w-3.5 h-3.5 text-indigo-600" /> Pejabat Penandatangan Berita Acara
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPejabatModal(true);
+                    }}
+                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 underline flex items-center gap-1"
+                  >
+                    <Edit className="w-3 h-3" /> Edit Pejabat
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="bg-white p-2 rounded-lg border border-indigo-100/80 space-y-0.5">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase">1. Verifikator</p>
+                    <p className="font-bold text-indigo-950 truncate">{pejabatForm.verifikatorNama || "(Belum diisi)"}</p>
+                    <p className="text-[9px] text-slate-500 truncate">{pejabatForm.verifikatorJabatan || (pejabatForm.verifikatorNipppk ? `NIP: ${pejabatForm.verifikatorNipppk}` : "-")}</p>
+                  </div>
+                  <div className="bg-white p-2 rounded-lg border border-indigo-100/80 space-y-0.5">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase">2. Petugas Survey</p>
+                    <p className="font-bold text-indigo-950 truncate">{pejabatForm.petugasNama || printModalActor.petugasSurvey || "(Belum diisi)"}</p>
+                    <p className="text-[9px] text-slate-500 truncate">{pejabatForm.petugasJabatan || (pejabatForm.petugasNipppk ? `NIP: ${pejabatForm.petugasNipppk}` : "-")}</p>
+                  </div>
+                </div>
+                {(!pejabatForm.verifikatorNama || !pejabatForm.petugasNama) && (
+                  <p className="text-[10px] text-amber-700 font-semibold bg-amber-50 p-1.5 rounded border border-amber-200">
+                    ⚠️ Data pejabat belum lengkap. Klik "Edit Pejabat" di atas untuk melengkapi.
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center space-x-2 pt-1">

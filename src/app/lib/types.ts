@@ -29,6 +29,7 @@ export interface SurveyDinasData {
   hasilSurvey: string;
   fotoSurveyUrl?: string;
   tanggalSurvey?: string;
+  pejabatData?: PejabatData;
 }
 
 export interface BusinessActor {

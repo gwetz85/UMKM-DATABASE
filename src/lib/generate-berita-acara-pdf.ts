@@ -198,8 +198,12 @@ export async function generateBeritaAcaraPDF(
   doc.text(afterHari, marginL + prefixW + hariW, y);
 
   // ── 4. PEJABAT 1 & 2 ───────────────────────────────────────────────────────
-  const p1 = pejabatData?.verifikator || { nama: "", nipppk: "", pangkat: "", jabatan: "" };
-  const p2 = pejabatData?.petugas || { nama: "", nipppk: "", pangkat: "", jabatan: "" };
+  const activePejabat = pejabatData || (surveyData as any)?.pejabatData;
+  const p1 = activePejabat?.verifikator || { nama: "", nipppk: "", pangkat: "", jabatan: "" };
+  let p2 = activePejabat?.petugas || { nama: "", nipppk: "", pangkat: "", jabatan: "" };
+  if (!p2.nama && actor.petugasSurvey) {
+    p2 = { ...p2, nama: actor.petugasSurvey };
+  }
 
   const pejabatList = [
     {
