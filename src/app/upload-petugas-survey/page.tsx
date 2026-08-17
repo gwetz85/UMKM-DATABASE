@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog"
 import { useToast } from "@/hooks/use-toast"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { logActivity, getDeviceType } from "@/lib/logger"
@@ -1311,27 +1311,29 @@ export default function UploadPetugasSurveyPage() {
             <DialogTitle className="text-slate-900 font-black text-lg">
               Hapus Petugas Survey & Pembagian Data?
             </DialogTitle>
-            <DialogDescription className="text-slate-600 text-xs space-y-3 pt-2">
-              <div>
-                Apakah Anda yakin ingin menghapus petugas survey <span className="font-black text-slate-900">{showDeleteConfirm?.fullName}</span> (<span className="font-mono text-rose-600 font-semibold">{showDeleteConfirm?.id}</span>)?
-              </div>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-2 text-amber-900">
-                <div className="flex items-center gap-1.5 font-bold text-xs">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                  Konsekuensi Penghapusan:
+            <DialogDescription asChild>
+              <div className="text-slate-600 text-xs space-y-3 pt-2">
+                <div>
+                  Apakah Anda yakin ingin menghapus petugas survey <span className="font-black text-slate-900">{showDeleteConfirm?.fullName}</span> (<span className="font-mono text-rose-600 font-semibold">{showDeleteConfirm?.id}</span>)?
                 </div>
-                <ul className="list-disc list-inside text-[11px] space-y-1 font-medium">
-                  <li>
-                    Akun login petugas survey ini akan <strong>dihapus</strong> dari sistem.
-                  </li>
-                  <li>
-                    Sebanyak <strong className="text-red-700">{showDeleteConfirm?.linkedCount || 0} Data Pelaku Usaha</strong> yang terhubung akan <strong>dikosongkan status petugas survey-nya</strong> (menjadi Belum Ada Petugas Survey).
-                  </li>
-                  <li className="text-emerald-800 font-bold">
-                    Data Pelaku Usaha (nama, NIK, KK, alamat, jenis usaha, rekening, dll) <u>TIDAK AKAN DIHAPUS</u> dan tetap tersimpan aman di database.
-                  </li>
-                </ul>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 space-y-2 text-amber-900">
+                  <div className="flex items-center gap-1.5 font-bold text-xs">
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                    Konsekuensi Penghapusan:
+                  </div>
+                  <ul className="list-disc list-inside text-[11px] space-y-1 font-medium">
+                    <li>
+                      Akun login petugas survey ini akan <strong>dihapus</strong> dari sistem.
+                    </li>
+                    <li>
+                      Sebanyak <strong className="text-red-700">{showDeleteConfirm?.linkedCount || 0} Data Pelaku Usaha</strong> yang terhubung akan <strong>dikosongkan status petugas survey-nya</strong> (menjadi Belum Ada Petugas Survey).
+                    </li>
+                    <li className="text-emerald-800 font-bold">
+                      Data Pelaku Usaha (nama, NIK, KK, alamat, jenis usaha, rekening, dll) <u>TIDAK AKAN DIHAPUS</u> dan tetap tersimpan aman di database.
+                    </li>
+                  </ul>
+                </div>
               </div>
             </DialogDescription>
           </DialogHeader>
