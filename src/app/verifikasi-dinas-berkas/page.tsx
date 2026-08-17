@@ -597,20 +597,21 @@ export default function VerifikasiDinasBerkasPage() {
                                 )}
                               </div>
 
-                              <div className="flex gap-2 w-full pt-1">
-                                {/* Tombol VIEW - Khusus Admin */}
-                                {isAdmin && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setAdminViewActor(actor)}
-                                    className="shrink-0 h-9 w-9 p-0 rounded-xl border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-400 transition-all duration-200"
-                                    title="Lihat Detail Lengkap (Admin)"
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
-                                )}
+                              <div className="grid grid-cols-2 gap-2 w-full pt-1">
+                                {/* Tombol 1: VIEW DETAIL LENGKAP */}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  type="button"
+                                  onClick={() => setAdminViewActor(actor)}
+                                  className="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300 font-bold rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-1.5"
+                                  title="Lihat Detail Lengkap Pelaku Usaha & Hasil Survey"
+                                >
+                                  <Eye className="w-4 h-4 text-blue-600 shrink-0" />
+                                  <span>View Detail</span>
+                                </Button>
 
+                                {/* Tombol 2: VERIFIKASI BERKAS */}
                                 {(isAdmin || isVerifikatorDinas || isPetugas) && (
                                   <Dialog open={!!verifyingActor && verifyingActor.id === actor.id} onOpenChange={(open) => {
                                     if (!open) {
@@ -620,8 +621,14 @@ export default function VerifikasiDinasBerkasPage() {
                                     }
                                   }}>
                                     <DialogTrigger asChild>
-                                      <Button size="sm" onClick={() => { setVerifyingActor(actor); setShowChecklist(false); }} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-all duration-300">
-                                        <ClipboardCheck className="w-4 h-4 mr-2" /> Verifikasi Berkas
+                                      <Button 
+                                        size="sm" 
+                                        type="button"
+                                        onClick={() => { setVerifyingActor(actor); setShowChecklist(false); }} 
+                                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5"
+                                      >
+                                        <ClipboardCheck className="w-4 h-4 shrink-0" />
+                                        <span>Verifikasi</span>
                                       </Button>
                                     </DialogTrigger>
                                     <DialogContent className={`max-h-[95vh] overflow-y-auto transition-all duration-300 ${showChecklist ? 'max-w-[95vw] lg:max-w-7xl' : 'max-w-5xl'}`}>
