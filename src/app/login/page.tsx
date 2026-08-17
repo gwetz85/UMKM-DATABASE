@@ -31,6 +31,7 @@ import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { OfficeHoursTimer } from "@/components/OfficeHoursTimer"
 import { EventCountdown } from "@/components/event-countdown"
+import { RealtimeClock } from "@/components/realtime-clock"
 import { useActiveEvent } from "@/hooks/use-active-event"
 import {
   Dialog,
@@ -402,7 +403,12 @@ export default function LoginPage() {
           </div>
         )}
         
-        <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl px-4 py-2 shadow-xl">
+        <div className="flex items-center gap-2.5">
+          <RealtimeClock 
+            className="bg-white/95 backdrop-blur-md px-3 py-1.5 md:px-4 md:py-2 rounded-2xl border border-slate-200 shadow-lg" 
+            timeClassName="text-[13px] md:text-sm font-mono font-black text-slate-800 tracking-tight leading-none" 
+            dateClassName="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-0.5" 
+          />
           <OfficeHoursTimer 
             onClick={() => setShowInfoModal(true)}
           />

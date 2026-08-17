@@ -255,7 +255,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
                       <div className="hidden sm:flex h-8 w-px bg-slate-200 mx-2" />
 
-                      <div className="hidden sm:flex flex-col items-end gap-1 translate-y-1">
+                      <div className="hidden sm:flex items-center gap-2.5">
+                        <RealtimeClock 
+                          className="bg-white/95 backdrop-blur-md px-3 py-1.5 md:px-4 md:py-2 rounded-2xl border border-slate-200 shadow-md" 
+                          timeClassName="text-[13px] md:text-sm font-mono font-black text-slate-800 tracking-tight leading-none" 
+                          dateClassName="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-0.5" 
+                        />
                         <OfficeHoursTimer />
                       </div>
 
@@ -323,13 +328,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 <div className="pointer-events-auto flex flex-col items-end gap-3">
                   <div className="hidden lg:flex flex-col gap-3">
                     <WeatherWidget className="w-72" />
-                  </div>
-                  <div className="hidden sm:block">
-                    <RealtimeClock 
-                      className="bg-white/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-200 shadow-sm hover:bg-white/80 transition-colors" 
-                      timeClassName="text-lg md:text-xl text-slate-700" 
-                      dateClassName="text-[8px] md:text-[10px]" 
-                    />
                   </div>
                   <div className="hidden lg:flex flex-col gap-3">
                     <div className="w-72 bg-white/80 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg overflow-hidden flex flex-col transition-all hover:shadow-xl hover:bg-white">

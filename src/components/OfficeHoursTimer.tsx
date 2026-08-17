@@ -14,26 +14,6 @@ export function OfficeHoursTimer({
 }) {
   const status = useOfficeStatus()
 
-  const [currentTime, setCurrentTime] = useState("")
-  const [currentDate, setCurrentDate] = useState("")
-
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date()
-      const hh = now.getHours().toString().padStart(2, "0")
-      const mm = now.getMinutes().toString().padStart(2, "0")
-      const ss = now.getSeconds().toString().padStart(2, "0")
-      const dd = now.getDate().toString().padStart(2, "0")
-      const mo = (now.getMonth() + 1).toString().padStart(2, "0")
-      const yy = now.getFullYear().toString().slice(-2)
-      setCurrentTime(`${hh}:${mm}:${ss}`)
-      setCurrentDate(`${dd}/${mo}/${yy}`)
-    }
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [])
-
   if (!status) return null
 
   return (
