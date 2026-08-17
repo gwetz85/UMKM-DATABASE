@@ -47,6 +47,7 @@ import {
   Calendar
 } from "lucide-react"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
+import { ensureVerifikatorUser } from "@/lib/verifikator-service"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function VerifikasiDinasPage() {
@@ -401,6 +402,11 @@ export default function VerifikasiDinasPage() {
       userId: user?.email || user?.uid || 'Admin'
     })
 
+    // Auto-generate account for Verifikator Dinas if present
+    if (activePejabat?.verifikator?.nama) {
+      ensureVerifikatorUser(database, activePejabat.verifikator).catch(console.error);
+    }
+
     toast({ title: "Survey Berhasil Disimpan", description: `Data pelaku usaha telah di-update.` })
     setVerifyingActor(null)
     setIsSubmitting(false)
@@ -573,6 +579,11 @@ export default function VerifikasiDinasPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem(`pejabatData_${user.uid}`, JSON.stringify(pejabatData))
       localStorage.setItem('pejabatData', JSON.stringify(pejabatData))
+    }
+
+    // 5. Auto-generate akun untuk Verifikator Dinas jika belum ada
+    if (pejabatData.verifikator?.nama) {
+      await ensureVerifikatorUser(database, pejabatData.verifikator).catch(console.error);
     }
 
     toast({ title: "Data Tersimpan", description: "Data pejabat berhasil disimpan dan akan otomatis muncul pada Berita Acara." })

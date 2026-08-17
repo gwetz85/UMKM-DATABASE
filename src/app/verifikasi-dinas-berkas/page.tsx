@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
 import { ref } from "firebase/database"
@@ -46,11 +46,14 @@ import {
   ExternalLink,
   Camera,
   FileDown,
-  Calendar
+  Calendar,
+  Key,
+  Copy
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
+import { ensureVerifikatorUser } from "@/lib/verifikator-service"
 
 export default function VerifikasiDinasBerkasPage() {
   const { user, userProfile } = useUser()
@@ -138,10 +141,55 @@ export default function VerifikasiDinasBerkasPage() {
     return "Belum Ditentukan"
   }
 
+  // Auto-generate akun untuk Verifikator Dinas yang terdeteksi pada data (hanya jika Admin yang membuka)
+  useEffect(() => {
+    if (!isAdmin || !database || !allActorsRaw) return
+
+    const verifikatorsToEnsure = new Map<string, PejabatItem>()
+
+    allActorsRaw.forEach(actor => {
+      const pd = getActorPejabat(actor)
+      const v = pd?.verifikator
+      if (v?.nama && v.nama.trim() && v.nama !== "Belum Ditentukan") {
+        const key = v.nipppk ? v.nipppk.trim().toLowerCase() : v.nama.trim().toUpperCase()
+        if (!verifikatorsToEnsure.has(key)) {
+          verifikatorsToEnsure.set(key, v)
+        }
+      }
+    })
+
+    verifikatorsToEnsure.forEach(v => {
+      ensureVerifikatorUser(database, v).catch(console.error)
+    })
+  }, [isAdmin, database, allActorsRaw])
+
   // Filter hanya data yang lolos survey dinas dan belum diverifikasi berkas
   const actors = useMemo(() => {
-    return allActorsRaw?.filter(a => a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos' && !(a as any).berkasDinasVerified)
-  }, [allActorsRaw])
+    const raw = allActorsRaw?.filter(a => a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos' && !(a as any).berkasDinasVerified)
+    if (!raw) return []
+
+    // ISOLASI DATA: Jika login sebagai Verifikator Dinas (dan bukan Admin), HANYA tampilkan data di bawah verifikator ini
+    if (isVerifikatorDinas && !isAdmin) {
+      const myNip = userProfile?.nipppk 
+        ? String(userProfile.nipppk).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase() 
+        : (userProfile?.username ? String(userProfile.username).trim().toLowerCase() : "")
+      const myName = String(userProfile?.fullName || userProfile?.name || "").trim().toUpperCase()
+
+      return raw.filter(actor => {
+        const pd = getActorPejabat(actor)
+        const aNip = pd?.verifikator?.nipppk 
+          ? String(pd.verifikator.nipppk).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase() 
+          : ""
+        const aName = String(pd?.verifikator?.nama || actor.verifikatorDinas || getVerifikatorName(actor) || "").trim().toUpperCase()
+
+        if (myNip && aNip && myNip === aNip) return true
+        if (myName && aName && (myName === aName || aName.includes(myName) || myName.includes(aName))) return true
+        return false
+      })
+    }
+
+    return raw
+  }, [allActorsRaw, isVerifikatorDinas, isAdmin, userProfile, systemUsers])
 
   // Daftar opsi Verifikator yang ada pada data
   const verifikatorOptions = useMemo(() => {
@@ -378,8 +426,8 @@ export default function VerifikasiDinasBerkasPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-          {/* Dropdown Filter Verifikator */}
-          {verifikatorOptions.length > 0 && (
+          {/* Dropdown Filter Verifikator - Hanya Admin */}
+          {isAdmin && verifikatorOptions.length > 0 && (
             <div className="flex items-center gap-2 min-w-[200px]">
               <Select value={selectedVerifikatorFilter} onValueChange={setSelectedVerifikatorFilter}>
                 <SelectTrigger className="h-11 rounded-xl border-purple-200 bg-purple-50/50 text-purple-900 font-semibold focus:ring-purple-500">
@@ -507,6 +555,15 @@ export default function VerifikasiDinasBerkasPage() {
             const vInfo = group.verifikatorInfo
             const isUnassigned = verifikatorNama === "Belum Ditentukan" || verifikatorNama === "Belum Ada Verifikator"
 
+            // Cari user verifikator di systemUsers
+            const foundUser = systemUsers?.find((u: any) => {
+              if (u.role !== 'verifikator_dinas') return false
+              const matchNip = vInfo?.nipppk && u.nipppk && String(u.nipppk).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase() === String(vInfo.nipppk).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
+              const matchUser = vInfo?.nipppk && u.username && String(u.username).trim().toLowerCase() === String(vInfo.nipppk).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
+              const matchName = u.fullName && String(u.fullName).trim().toUpperCase() === verifikatorNama.toUpperCase()
+              return matchNip || matchUser || matchName
+            })
+
             return (
               <div key={verifikatorNama} className="space-y-6">
                 {/* ─── HEADER GRUP VERIFIKATOR ──────────────────────────── */}
@@ -562,7 +619,56 @@ export default function VerifikasiDinasBerkasPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 self-start md:self-center">
+                  <div className="flex items-center gap-2.5 flex-wrap self-start md:self-center">
+                    {/* Info Akses Akun Login Verifikator - Khusus Admin */}
+                    {isAdmin && !isUnassigned && (
+                      foundUser ? (
+                        <div className="flex items-center gap-2 bg-white/95 border border-purple-200/90 px-3 py-1.5 rounded-xl text-xs shadow-sm">
+                          <div className="flex items-center gap-1 text-purple-800 font-bold">
+                            <Key className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                            <span className="font-mono">User: <strong>{foundUser.username || foundUser.id}</strong></span>
+                          </div>
+                          <span className="text-slate-300">|</span>
+                          <div className="flex items-center gap-1 font-mono">
+                            <span className="text-slate-500 font-bold">Sandi:</span>
+                            <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">{foundUser.password || "••••••"}</span>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            type="button"
+                            className="h-6 px-2 text-[10px] font-black text-purple-700 hover:bg-purple-100 rounded-lg ml-1"
+                            onClick={() => {
+                              const origin = typeof window !== 'undefined' ? window.location.origin : 'https://umkm-database.web.app'
+                              const textToCopy = `AKSES LOGIN VERIFIKATOR DINAS\nNama: ${verifikatorNama}\nUsername (NIPPPK): ${foundUser.username || foundUser.id}\nKata Sandi: ${foundUser.password}\nLink Login: ${origin}/login`
+                              navigator.clipboard.writeText(textToCopy)
+                              toast({ title: "Akses Tersalin", description: `Akses login untuk ${verifikatorNama} berhasil disalin.` })
+                            }}
+                            title="Salin Akun Login Verifikator"
+                          >
+                            <Copy className="w-3 h-3 mr-1" /> Salin Akses
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          type="button"
+                          className="h-8 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl gap-1 shadow-sm"
+                          onClick={async () => {
+                            if (vInfo) {
+                              const res = await ensureVerifikatorUser(database, vInfo)
+                              if (res) {
+                                toast({ title: "Akun Dibuat", description: `Username: ${res.username} | Sandi: ${res.password}` })
+                              }
+                            }
+                          }}
+                        >
+                          <Key className="w-3 h-3" /> Generate Akun Login
+                        </Button>
+                      )
+                    )}
+
                     <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-purple-600" />
                       <strong>{group.actors.length}</strong> Berkas

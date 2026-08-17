@@ -35,7 +35,8 @@ import {
   AlertCircle,
   RotateCcw,
   ClipboardCheck,
-  Power
+  Power,
+  Copy
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -460,7 +461,10 @@ export default function UserManagementPage() {
                     <TableCell className="font-bold text-slate-700">
                       <div className="flex flex-col">
                         <span>{u.fullName}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">{u.id}</span>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          {u.nipppk ? <strong className="text-purple-700">NIP: {u.nipppk} • </strong> : null}
+                          {u.username || u.id}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -740,6 +744,13 @@ export default function UserManagementPage() {
                   </span>
                 </div>
 
+                {detailUser.nipppk && (
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                    <span className="text-muted-foreground text-xs font-semibold">NIPPPK</span>
+                    <span className="font-mono font-bold text-purple-700 text-xs">{detailUser.nipppk}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
                   <span className="text-muted-foreground text-xs font-semibold">Nomor HP / WhatsApp</span>
                   <span className="font-medium text-slate-800 text-xs">{detailUser.phoneNumber || '-'}</span>
@@ -771,8 +782,23 @@ export default function UserManagementPage() {
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setDetailUser(null); setShowPassword(false); }} className="w-full font-bold">
+          <DialogFooter className="gap-2 sm:gap-0">
+            {detailUser && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => {
+                  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://umkm-database.web.app'
+                  const textToCopy = `AKSES LOGIN PENGGUNA\nNama: ${detailUser.fullName}\nUsername: ${detailUser.username || detailUser.id}\nKata Sandi: ${detailUser.password || '-'}\nRole: ${detailUser.role || '-'}\nLink: ${origin}/login`
+                  navigator.clipboard.writeText(textToCopy)
+                  toast({ title: "Akses Tersalin", description: `Akses login untuk ${detailUser.fullName} berhasil disalin.` })
+                }}
+                className="w-full sm:w-auto font-bold border-purple-200 text-purple-700 hover:bg-purple-50 gap-1.5"
+              >
+                <Copy className="w-4 h-4" /> Salin Akses
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => { setDetailUser(null); setShowPassword(false); }} className="w-full sm:w-auto font-bold">
               Tutup
             </Button>
           </DialogFooter>
