@@ -975,17 +975,17 @@ export default function UploadPetugasSurveyPage() {
               Belum ada akun Petugas Survey terdaftar. Upload file Excel di atas untuk membuat akun secara otomatis.
             </div>
           ) : (
-            <div className="max-h-[500px] overflow-auto">
-              <Table>
+            <div className="max-h-[500px] overflow-x-auto overflow-y-auto">
+              <Table className="min-w-[900px]">
                 <TableHeader className="bg-slate-100 sticky top-0 z-10">
                   <TableRow>
-                    <TableHead className="w-12 text-center font-bold">No</TableHead>
-                    <TableHead className="font-bold">Nama Petugas Survey</TableHead>
-                    <TableHead className="font-bold">Username Login</TableHead>
-                    <TableHead className="font-bold">Kata Sandi (Password)</TableHead>
-                    <TableHead className="font-bold text-center">Data Terhubung</TableHead>
-                    <TableHead className="font-bold text-center">Status Login</TableHead>
-                    <TableHead className="text-right font-bold pr-6">Aksi Pengaturan</TableHead>
+                    <TableHead className="w-10 text-center font-bold">No</TableHead>
+                    <TableHead className="font-bold min-w-[140px]">Nama Petugas</TableHead>
+                    <TableHead className="font-bold min-w-[140px]">Username</TableHead>
+                    <TableHead className="font-bold min-w-[130px]">Password</TableHead>
+                    <TableHead className="font-bold text-center min-w-[110px]">Data Terhubung</TableHead>
+                    <TableHead className="font-bold text-center min-w-[100px]">Status Login</TableHead>
+                    <TableHead className="text-center font-bold min-w-[160px]">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1031,8 +1031,8 @@ export default function UploadPetugasSurveyPage() {
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="text-right pr-6">
-                          <div className="flex justify-end gap-2">
+                        <TableCell className="text-center px-3">
+                          <div className="flex flex-wrap justify-center gap-1.5">
                             <Button 
                               variant="outline" 
                               size="sm" 
@@ -1040,9 +1040,9 @@ export default function UploadPetugasSurveyPage() {
                                 setEditingPetugas(u)
                                 setNewPasswordInput(u.password || "123456")
                               }}
-                              className="h-8 border-primary/30 text-primary hover:bg-primary/10 font-bold text-xs gap-1"
+                              className="h-7 border-primary/30 text-primary hover:bg-primary/10 font-bold text-[11px] gap-1 px-2"
                             >
-                              <Key className="w-3.5 h-3.5" /> Edit Password
+                              <Key className="w-3 h-3" /> Password
                             </Button>
 
                             <Button
@@ -1054,15 +1054,15 @@ export default function UploadPetugasSurveyPage() {
                                 }
                               }}
                               disabled={!u.uid}
-                              className={`h-8 font-bold text-xs gap-1 ${
+                              className={`h-7 font-bold text-[11px] gap-1 px-2 ${
                                 u.uid
                                   ? 'text-orange-600 border-orange-300 bg-orange-50 hover:bg-orange-100 hover:border-orange-400'
                                   : 'text-slate-400 border-slate-200 bg-slate-50 cursor-not-allowed opacity-50'
                               }`}
-                              title={u.uid ? 'Klik untuk melepas kunci perangkat agar bisa login di HP baru' : 'Belum ada perangkat yang terkunci'}
+                              title={u.uid ? 'Klik untuk melepas kunci perangkat' : 'Belum ada perangkat yang terkunci'}
                             >
-                              <RefreshCcw className="w-3.5 h-3.5" />
-                              {u.uid ? 'Reset Device' : 'Belum Login'}
+                              <RefreshCcw className="w-3 h-3" />
+                              {u.uid ? 'Reset' : 'Belum Login'}
                             </Button>
 
                             <Button
@@ -1075,10 +1075,10 @@ export default function UploadPetugasSurveyPage() {
                                   linkedCount: u.linkedCount || 0
                                 })
                               }}
-                              className="h-8 font-bold text-xs gap-1 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
-                              title="Hapus akun petugas survey dan kosongkan status pembagian data"
+                              className="h-7 font-bold text-[11px] gap-1 px-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                              title="Hapus akun petugas survey"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-3 h-3" />
                               Hapus
                             </Button>
                           </div>
