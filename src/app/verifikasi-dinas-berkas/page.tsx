@@ -611,7 +611,9 @@ export default function VerifikasiDinasBerkasPage() {
               return matchNip || matchUser || matchName
             })
 
-            const displayName = foundUser?.fullName || vInfo?.nama || (isUnassigned ? "Belum Ditentukan" : nipKey)
+            const displayName = (vInfo?.nama && vInfo.nama !== "Belum Ditentukan")
+              ? vInfo.nama
+              : (foundUser?.fullName || (isUnassigned ? "Belum Ditentukan" : nipKey))
 
             return (
               <div key={nipKey} className="space-y-6">

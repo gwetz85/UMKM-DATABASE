@@ -65,7 +65,7 @@ export async function ensureVerifikatorUser(
       if (existing.role !== "verifikator_dinas") {
         updates.role = "verifikator_dinas";
       }
-      if (rawName && existing.fullName !== rawName) {
+      if (rawName && (!existing.fullName || existing.fullName === "Belum Ditentukan")) {
         updates.fullName = rawName;
       }
       if (rawNip && existing.nipppk !== rawNip) {
