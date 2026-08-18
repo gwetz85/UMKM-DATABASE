@@ -47,7 +47,8 @@ import {
   FileDown,
   Calendar,
   Key,
-  Copy
+  Copy,
+  Edit
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -77,6 +78,23 @@ export default function VerifikasiDinasBerkasPage() {
   const [selectedPrintDate, setSelectedPrintDate] = useState<string>("")
   const [saveDateToSurvey, setSaveDateToSurvey] = useState<boolean>(true)
   const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null)
+
+  // Edit Pejabat Data Modal states (Admin / Verifikator)
+  const [showEditPejabatDialog, setShowEditPejabatDialog] = useState(false)
+  const [isSavingPejabat, setIsSavingPejabat] = useState(false)
+  const [pejabatEditForm, setPejabatEditForm] = useState({
+    verifikatorNama: "",
+    verifikatorNipppk: "",
+    verifikatorPangkat: "",
+    verifikatorJabatan: "",
+    petugasNama: "",
+    petugasNipppk: "",
+    petugasPangkat: "",
+    petugasJabatan: "",
+    targetGroupNipKey: "",
+    targetActorId: "",
+    syncAllInGroup: true
+  })
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -307,10 +325,184 @@ export default function VerifikasiDinasBerkasPage() {
     }
   }
 
+  const openEditPejabatForGroup = (nipKey: string, group: any, foundUser?: any) => {
+    const vInfo = group.verifikatorInfo;
+    const sampleActor = group.actors?.[0];
+    const samplePd = sampleActor ? getActorPejabat(sampleActor) : undefined;
+
+    setPejabatEditForm({
+      verifikatorNama: vInfo?.nama && vInfo.nama !== "Belum Ditentukan" ? vInfo.nama : (foundUser?.fullName || samplePd?.verifikator?.nama || ""),
+      verifikatorNipppk: vInfo?.nipppk || foundUser?.nipppk || samplePd?.verifikator?.nipppk || (nipKey !== "Belum Ditentukan" ? nipKey : ""),
+      verifikatorPangkat: vInfo?.pangkat || foundUser?.pangkat || samplePd?.verifikator?.pangkat || "",
+      verifikatorJabatan: vInfo?.jabatan || foundUser?.jabatan || samplePd?.verifikator?.jabatan || "Verifikator Dinas",
+      petugasNama: samplePd?.petugas?.nama || sampleActor?.petugasSurvey || "",
+      petugasNipppk: samplePd?.petugas?.nipppk || "",
+      petugasPangkat: samplePd?.petugas?.pangkat || "",
+      petugasJabatan: samplePd?.petugas?.jabatan || "Petugas Survey",
+      targetGroupNipKey: nipKey,
+      targetActorId: "",
+      syncAllInGroup: true
+    });
+    setShowEditPejabatDialog(true);
+  };
+
+  const openEditPejabatForActor = (actor: BusinessActor) => {
+    const pd = getActorPejabat(actor);
+    const nipKey = getVerifikatorNipppk(actor);
+    setPejabatEditForm({
+      verifikatorNama: pd?.verifikator?.nama || actor.verifikatorDinas || "",
+      verifikatorNipppk: pd?.verifikator?.nipppk || (nipKey !== "Belum Ditentukan" ? nipKey : ""),
+      verifikatorPangkat: pd?.verifikator?.pangkat || "",
+      verifikatorJabatan: pd?.verifikator?.jabatan || "Verifikator Dinas",
+      petugasNama: pd?.petugas?.nama || actor.petugasSurvey || "",
+      petugasNipppk: pd?.petugas?.nipppk || "",
+      petugasPangkat: pd?.petugas?.pangkat || "",
+      petugasJabatan: pd?.petugas?.jabatan || "Petugas Survey",
+      targetGroupNipKey: nipKey,
+      targetActorId: actor.id,
+      syncAllInGroup: false
+    });
+    setShowEditPejabatDialog(true);
+  };
+
+  const handleSavePejabatEdit = async () => {
+    if (!database) return;
+    const {
+      verifikatorNama, verifikatorNipppk, verifikatorPangkat, verifikatorJabatan,
+      petugasNama, petugasNipppk, petugasPangkat, petugasJabatan,
+      targetGroupNipKey, targetActorId, syncAllInGroup
+    } = pejabatEditForm;
+
+    if (!verifikatorNama.trim()) {
+      toast({ variant: "destructive", title: "Lengkapi Data", description: "Nama Verifikator wajib diisi." });
+      return;
+    }
+
+    setIsSavingPejabat(true);
+    try {
+      const updatedPejabatData: PejabatData = {
+        verifikator: {
+          nama: verifikatorNama.trim(),
+          nipppk: verifikatorNipppk.trim(),
+          pangkat: verifikatorPangkat.trim(),
+          jabatan: verifikatorJabatan.trim() || "Verifikator Dinas"
+        },
+        petugas: {
+          nama: petugasNama.trim(),
+          nipppk: petugasNipppk.trim(),
+          pangkat: petugasPangkat.trim(),
+          jabatan: petugasJabatan.trim() || "Petugas Survey"
+        },
+        updatedAt: new Date().toISOString()
+      };
+
+      const { ref: dbRef, update } = await import('firebase/database');
+
+      // 1. Update individual actor if targetActorId is set and syncAllInGroup is false
+      if (targetActorId && !syncAllInGroup) {
+        const updates: any = {
+          pejabatData: updatedPejabatData,
+          "surveyData/pejabatData": updatedPejabatData,
+          verifikatorDinas: updatedPejabatData.verifikator.nama
+        };
+        await update(dbRef(database, `businessActors/${targetActorId}`), updates);
+      } else {
+        // 2. Update all actors in the group
+        const targetActors = allActorsRaw?.filter(a => {
+          if (!a) return false;
+          if (targetGroupNipKey && targetGroupNipKey !== "Belum Ditentukan") {
+            return getVerifikatorNipppk(a) === targetGroupNipKey ||
+                   (a.verifikatorDinas && a.verifikatorDinas.toUpperCase().trim() === verifikatorNama.toUpperCase().trim());
+          }
+          return (a.verifikatorDinas && a.verifikatorDinas.toUpperCase().trim() === verifikatorNama.toUpperCase().trim()) ||
+                 (a.pejabatData?.verifikator?.nama && a.pejabatData.verifikator.nama.toUpperCase().trim() === verifikatorNama.toUpperCase().trim());
+        }) || [];
+
+        // If targetActorId was passed with syncAllInGroup, include it
+        if (targetActorId && !targetActors.some(a => a.id === targetActorId)) {
+          const specificActor = allActorsRaw?.find(a => a.id === targetActorId);
+          if (specificActor) targetActors.push(specificActor);
+        }
+
+        const batchUpdates: any = {};
+        targetActors.forEach(a => {
+          batchUpdates[`businessActors/${a.id}/pejabatData`] = updatedPejabatData;
+          batchUpdates[`businessActors/${a.id}/surveyData/pejabatData`] = updatedPejabatData;
+          batchUpdates[`businessActors/${a.id}/verifikatorDinas`] = updatedPejabatData.verifikator.nama;
+        });
+
+        if (Object.keys(batchUpdates).length > 0) {
+          await update(dbRef(database), batchUpdates);
+        }
+      }
+
+      // 3. Update system_users for the Verifikator
+      await ensureVerifikatorUser(database, updatedPejabatData.verifikator);
+
+      // 4. Update system_users if a user matching verifikator exists
+      if (systemUsers) {
+        const found = systemUsers.find((u: any) => 
+          (u.role === 'verifikator_dinas' && (
+            (u.nipppk && String(u.nipppk).trim() === targetGroupNipKey) ||
+            (u.fullName && String(u.fullName).trim().toUpperCase() === verifikatorNama.trim().toUpperCase())
+          ))
+        );
+        if (found) {
+          await update(dbRef(database, `system_users/${found.id}`), {
+            fullName: updatedPejabatData.verifikator.nama,
+            nipppk: updatedPejabatData.verifikator.nipppk,
+            pangkat: updatedPejabatData.verifikator.pangkat,
+            jabatan: updatedPejabatData.verifikator.jabatan,
+            pejabatData: updatedPejabatData
+          }).catch(console.error);
+        }
+      }
+
+      // 5. Update local storage if current user
+      if (typeof window !== 'undefined' && user?.uid) {
+        localStorage.setItem(`pejabatData_${user.uid}`, JSON.stringify(updatedPejabatData));
+        localStorage.setItem('pejabatData', JSON.stringify(updatedPejabatData));
+      }
+
+      logActivity({
+        query: `UPDATE PEJABAT / NIPPPK: ${updatedPejabatData.verifikator.nama} (NIP: ${updatedPejabatData.verifikator.nipppk})`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'VERIFIKASI DINAS BERKAS',
+        userId: user?.email || user?.uid || 'Admin'
+      });
+
+      toast({
+        title: "✅ Data Pejabat & NIPPPK Berhasil Diperbarui",
+        description: `NIPPPK ${updatedPejabatData.verifikator.nipppk || "-"} telah tersimpan dan otomatis tergenerate ke Berita Acara Survey.`
+      });
+
+      setShowEditPejabatDialog(false);
+    } catch (err: any) {
+      console.error("Error saving pejabat edit:", err);
+      toast({
+        variant: "destructive",
+        title: "Gagal Menyimpan",
+        description: err?.message || "Terjadi kesalahan saat memperbarui data pejabat."
+      });
+    } finally {
+      setIsSavingPejabat(false);
+    }
+  };
+
   const resolvePejabatData = async (actor: BusinessActor): Promise<PejabatData | undefined> => {
     // 1. From actor's own pejabatData or surveyData.pejabatData
     const existing = getActorPejabat(actor);
     if (existing?.verifikator?.nama && existing?.petugas?.nama) {
+      // Check if systemUsers has an updated NIPPPK for this verifikator or petugas
+      if (systemUsers) {
+        const vUpper = String(existing.verifikator.nama).trim().toUpperCase();
+        const foundVerif = systemUsers.find((u: any) => u.fullName && String(u.fullName).trim().toUpperCase() === vUpper);
+        if (foundVerif?.nipppk && !existing.verifikator.nipppk) {
+          existing.verifikator.nipppk = String(foundVerif.nipppk).trim();
+        }
+      }
       return existing;
     }
 
@@ -339,19 +531,48 @@ export default function VerifikasiDinasBerkasPage() {
     const verifikatorNama = existing?.verifikator?.nama || (actor as any).verifikatorDinas || getVerifikatorName(actor);
     const petugasNama = existing?.petugas?.nama || actor.petugasSurvey;
 
+    // Check systemUsers for NIPPPK
+    let resolvedVerifNip = existing?.verifikator?.nipppk || "";
+    let resolvedVerifPangkat = existing?.verifikator?.pangkat || "";
+    let resolvedVerifJabatan = existing?.verifikator?.jabatan || "Verifikator Dinas";
+
+    if (systemUsers && verifikatorNama && verifikatorNama !== "Belum Ditentukan") {
+      const vUpper = verifikatorNama.toUpperCase().trim();
+      const foundU = systemUsers.find((u: any) => u.fullName && String(u.fullName).trim().toUpperCase() === vUpper);
+      if (foundU) {
+        if (!resolvedVerifNip && foundU.nipppk) resolvedVerifNip = String(foundU.nipppk).trim();
+        if (!resolvedVerifPangkat && foundU.pangkat) resolvedVerifPangkat = String(foundU.pangkat).trim();
+        if (!resolvedVerifJabatan && foundU.jabatan) resolvedVerifJabatan = String(foundU.jabatan).trim();
+      }
+    }
+
+    let resolvedPetugasNip = existing?.petugas?.nipppk || "";
+    let resolvedPetugasPangkat = existing?.petugas?.pangkat || "";
+    let resolvedPetugasJabatan = existing?.petugas?.jabatan || "Petugas Survey";
+
+    if (systemUsers && petugasNama && petugasNama !== "-") {
+      const pUpper = petugasNama.toUpperCase().trim();
+      const foundP = systemUsers.find((u: any) => u.fullName && String(u.fullName).trim().toUpperCase() === pUpper);
+      if (foundP) {
+        if (!resolvedPetugasNip && foundP.nipppk) resolvedPetugasNip = String(foundP.nipppk).trim();
+        if (!resolvedPetugasPangkat && foundP.pangkat) resolvedPetugasPangkat = String(foundP.pangkat).trim();
+        if (!resolvedPetugasJabatan && foundP.jabatan) resolvedPetugasJabatan = String(foundP.jabatan).trim();
+      }
+    }
+
     if (verifikatorNama && verifikatorNama !== "Belum Ditentukan") {
       return {
         verifikator: {
           nama: verifikatorNama,
-          nipppk: existing?.verifikator?.nipppk || "",
-          pangkat: existing?.verifikator?.pangkat || "",
-          jabatan: existing?.verifikator?.jabatan || "Verifikator Dinas"
+          nipppk: resolvedVerifNip,
+          pangkat: resolvedVerifPangkat,
+          jabatan: resolvedVerifJabatan
         },
         petugas: {
           nama: petugasNama || "-",
-          nipppk: existing?.petugas?.nipppk || "",
-          pangkat: existing?.petugas?.pangkat || "",
-          jabatan: existing?.petugas?.jabatan || "Petugas Survey"
+          nipppk: resolvedPetugasNip,
+          pangkat: resolvedPetugasPangkat,
+          jabatan: resolvedPetugasJabatan
         }
       };
     }
@@ -720,6 +941,20 @@ export default function VerifikasiDinasBerkasPage() {
                       )
                     )}
 
+                    {/* Tombol Edit Pejabat / NIPPPK - Khusus Admin & Verifikator */}
+                    {(isAdmin || isVerifikatorDinas) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        type="button"
+                        className="h-8 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200 font-bold rounded-xl gap-1.5 shadow-sm"
+                        onClick={() => openEditPejabatForGroup(nipKey, group, foundUser)}
+                        title="Edit NIPPPK, Nama, Pangkat & Jabatan Pejabat untuk Berita Acara Survey"
+                      >
+                        <Edit className="w-3.5 h-3.5" /> Edit NIPPPK Pejabat
+                      </Button>
+                    )}
+
                     <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-purple-600" />
                       <strong>{group.actors.length}</strong> Berkas
@@ -907,8 +1142,21 @@ export default function VerifikasiDinasBerkasPage() {
                                               <div className="grid gap-6 py-4">
                                                 {/* DATA PEJABAT BERITA ACARA SURVEY */}
                                                 <section className="space-y-3">
-                                                  <div className="flex items-center gap-2 text-indigo-700 font-black text-sm uppercase border-b pb-1">
-                                                    <BadgeCheck className="w-4 h-4" /> Data Pejabat Berita Acara Survey
+                                                  <div className="flex items-center justify-between border-b pb-1">
+                                                    <div className="flex items-center gap-2 text-indigo-700 font-black text-sm uppercase">
+                                                      <BadgeCheck className="w-4 h-4" /> Data Pejabat Berita Acara Survey
+                                                    </div>
+                                                    {(isAdmin || isVerifikatorDinas) && (
+                                                      <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        type="button"
+                                                        className="h-7 px-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 rounded-lg gap-1"
+                                                        onClick={() => openEditPejabatForActor(verifyingActor)}
+                                                      >
+                                                        <Edit className="w-3.5 h-3.5" /> Edit NIPPPK
+                                                      </Button>
+                                                    )}
                                                   </div>
                                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                     {/* Kolom 1 - Verifikator Dinas */}
@@ -1199,8 +1447,21 @@ export default function VerifikasiDinasBerkasPage() {
 
                   {/* 2. DATA PEJABAT BERITA ACARA */}
                   <section>
-                    <Section icon={<BadgeCheck className="w-4 h-4" />} title="Data Pejabat Berita Acara Survey" color="text-indigo-700" />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="flex items-center justify-between border-b pb-1">
+                      <Section icon={<BadgeCheck className="w-4 h-4" />} title="Data Pejabat Berita Acara Survey" color="text-indigo-700" />
+                      {(isAdmin || isVerifikatorDinas) && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          type="button"
+                          className="h-7 px-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 rounded-lg gap-1"
+                          onClick={() => openEditPejabatForActor(av)}
+                        >
+                          <Edit className="w-3.5 h-3.5" /> Edit NIPPPK
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
                       <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100 space-y-2">
                         <p className="text-[10px] font-black text-indigo-700 uppercase flex items-center gap-1">
                           <span className="w-4 h-4 rounded-full bg-indigo-600 text-white text-[9px] font-black flex items-center justify-center">1</span>
@@ -1452,6 +1713,19 @@ export default function VerifikasiDinasBerkasPage() {
                     <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
                       <UserCheck className="w-3.5 h-3.5 text-indigo-600" /> Pejabat Penandatangan Berita Acara
                     </span>
+                    {(isAdmin || isVerifikatorDinas) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        type="button"
+                        className="h-6 px-2 text-[10px] font-bold text-indigo-700 hover:bg-indigo-100 rounded-lg gap-1"
+                        onClick={() => {
+                          if (printModalActor) openEditPejabatForActor(printModalActor);
+                        }}
+                      >
+                        <Edit className="w-3 h-3" /> Edit NIPPPK
+                      </Button>
+                    )}
                   </div>
                   
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
@@ -1507,6 +1781,149 @@ export default function VerifikasiDinasBerkasPage() {
                 </>
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── MODAL EDIT PEJABAT & NIPPPK (KHUSUS ADMIN / VERIFIKATOR) ──────────────── */}
+      <Dialog open={showEditPejabatDialog} onOpenChange={setShowEditPejabatDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-black uppercase text-indigo-700 flex items-center gap-2">
+              <Edit className="w-5 h-5" /> Edit Data Pejabat & NIPPPK
+            </DialogTitle>
+            <DialogDescription className="text-sm text-slate-500">
+              Perbarui NIPPPK, Nama, Pangkat, dan Jabatan pejabat. Perubahan otomatis tercetak pada dokumen Berita Acara Survey.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 py-2">
+            {/* Kolom 1 – Verifikator Dinas */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-indigo-600 text-white text-xs font-black flex items-center justify-center">1</div>
+                <h3 className="font-black text-sm uppercase tracking-wider text-indigo-800">Data Verifikator Dinas</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Nama Lengkap <span className="text-red-500">*</span></Label>
+                  <Input
+                    value={pejabatEditForm.verifikatorNama}
+                    onChange={e => setPejabatEditForm(prev => ({ ...prev, verifikatorNama: e.target.value }))}
+                    placeholder="Nama lengkap verifikator"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-sm focus-visible:ring-indigo-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">NIPPPK / NIP <span className="text-indigo-600 font-normal">(Otomatis ke Berita Acara)</span></Label>
+                  <Input
+                    value={pejabatEditForm.verifikatorNipppk}
+                    onChange={e => setPejabatEditForm(prev => ({ ...prev, verifikatorNipppk: e.target.value }))}
+                    placeholder="Nomor NIPPPK"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 font-mono text-sm focus-visible:ring-indigo-500 text-purple-700 font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Pangkat / Gol. Ruang</Label>
+                  <Input
+                    value={pejabatEditForm.verifikatorPangkat}
+                    onChange={e => setPejabatEditForm(prev => ({ ...prev, verifikatorPangkat: e.target.value }))}
+                    placeholder="Contoh: Penata, III/c"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-sm focus-visible:ring-indigo-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Jabatan</Label>
+                  <Input
+                    value={pejabatEditForm.verifikatorJabatan}
+                    onChange={e => setPejabatEditForm(prev => ({ ...prev, verifikatorJabatan: e.target.value }))}
+                    placeholder="Contoh: Verifikator Dinas"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-sm focus-visible:ring-indigo-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-200" />
+
+            {/* Kolom 2 – Petugas Survey */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-violet-600 text-white text-xs font-black flex items-center justify-center">2</div>
+                <h3 className="font-black text-sm uppercase tracking-wider text-violet-800">Data Petugas Survey</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8">
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Nama Petugas Survey</Label>
+                  <Input
+                    value={pejabatEditForm.petugasNama}
+                    onChange={e => setPejabatEditForm(prev => ({ ...prev, petugasNama: e.target.value }))}
+                    placeholder="Nama petugas survey"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-sm focus-visible:ring-violet-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">NIPPPK / NIP Petugas</Label>
+                  <Input
+                    value={pejabatEditForm.petugasNipppk}
+                    onChange={e => setPejabatEditForm(prev => ({ ...prev, petugasNipppk: e.target.value }))}
+                    placeholder="Nomor NIPPPK Petugas"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 font-mono text-sm focus-visible:ring-violet-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Pangkat / Gol. Ruang</Label>
+                  <Input
+                    value={pejabatEditForm.petugasPangkat}
+                    onChange={e => setPejabatEditForm(prev => ({ ...prev, petugasPangkat: e.target.value }))}
+                    placeholder="Contoh: Pengatur, II/c"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-sm focus-visible:ring-violet-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-bold text-slate-600 uppercase tracking-wide">Jabatan</Label>
+                  <Input
+                    value={pejabatEditForm.petugasJabatan}
+                    onChange={e => setPejabatEditForm(prev => ({ ...prev, petugasJabatan: e.target.value }))}
+                    placeholder="Contoh: Petugas Survey"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-sm focus-visible:ring-violet-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Checkbox Sinkronisasi ke Seluruh Berkas di Grup */}
+            {pejabatEditForm.targetGroupNipKey && (
+              <div className="p-3 bg-purple-50/80 rounded-xl border border-purple-200 flex items-center space-x-2.5">
+                <Checkbox
+                  id="sync-all-checkbox"
+                  checked={pejabatEditForm.syncAllInGroup}
+                  onCheckedChange={(c) => setPejabatEditForm(prev => ({ ...prev, syncAllInGroup: !!c }))}
+                />
+                <Label htmlFor="sync-all-checkbox" className="text-xs font-semibold text-purple-900 cursor-pointer">
+                  Terapkan perubahan NIPPPK ini secara otomatis ke seluruh berkas pelaku usaha di grup ini
+                </Label>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row items-start sm:items-center gap-3 pt-2">
+            <p className="text-xs text-slate-400 flex-1">
+              Perubahan NIPPPK akan otomatis terupdate pada Berita Acara Survey PDF.
+            </p>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button variant="ghost" onClick={() => setShowEditPejabatDialog(false)} disabled={isSavingPejabat}>
+                Batal
+              </Button>
+              <Button
+                onClick={handleSavePejabatEdit}
+                disabled={isSavingPejabat}
+                className="flex-1 sm:flex-initial min-w-[150px] bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold gap-2"
+              >
+                {isSavingPejabat ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                Simpan NIPPPK Pejabat
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

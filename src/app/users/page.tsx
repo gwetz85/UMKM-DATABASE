@@ -187,23 +187,47 @@ export default function UserManagementPage() {
     const fullName = formData.get("fullName") as string
     const password = formData.get("password") as string
     const role = formData.get("role") as string
+    const nipppk = (formData.get("nipppk") as string || "").trim()
+    const pangkat = (formData.get("pangkat") as string || "").trim()
+    const jabatan = (formData.get("jabatan") as string || "").trim()
 
     if (!fullName || !password || !role) return
 
-    const username = fullName.toLowerCase().trim().replace(/\s+/g, '_')
+    const username = (nipppk && nipppk.length >= 4)
+      ? nipppk.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
+      : fullName.toLowerCase().trim().replace(/\s+/g, '_')
     const userRef = ref(database, `system_users/${username}`)
     
-    setDocumentNonBlocking(userRef, {
+    const newUserData: any = {
       fullName,
       password,
       role,
+      nipppk,
+      pangkat,
+      jabatan,
       uid: null,
       addedAt: new Date().toISOString(),
       status: 'active'
-    })
+    }
+
+    if (role === 'verifikator_dinas') {
+      newUserData.pejabatData = {
+        verifikator: { nama: fullName, nipppk, pangkat, jabatan: jabatan || "Verifikator Dinas" },
+        petugas: { nama: "", nipppk: "", pangkat: "", jabatan: "Petugas Survey" },
+        updatedAt: new Date().toISOString()
+      }
+    } else if (role === 'petugas') {
+      newUserData.pejabatData = {
+        verifikator: { nama: "", nipppk: "", pangkat: "", jabatan: "Verifikator Dinas" },
+        petugas: { nama: fullName, nipppk, pangkat, jabatan: jabatan || "Petugas Survey" },
+        updatedAt: new Date().toISOString()
+      }
+    }
+
+    setDocumentNonBlocking(userRef, newUserData)
 
     logActivity({
-      query: `TAMBAH USER: ${username}`,
+      query: `TAMBAH USER: ${username} (NIP: ${nipppk || '-'})`,
       results: "Berhasil",
       device: getDeviceType(navigator.userAgent),
       source: 'Web',
@@ -213,7 +237,7 @@ export default function UserManagementPage() {
 
     toast({ 
       title: "User Terdaftar", 
-      description: `Akun untuk ${fullName} berhasil dibuat.`
+      description: `Akun untuk ${fullName} (NIP: ${nipppk || '-'}) berhasil dibuat.`
     })
     setIsDialogOpen(false)
   }
@@ -228,6 +252,9 @@ export default function UserManagementPage() {
     const phoneNumber = formData.get("phoneNumber") as string
     const nik = formData.get("nik") as string
     const address = formData.get("address") as string
+    const nipppk = (formData.get("nipppk") as string || "").trim()
+    const pangkat = (formData.get("pangkat") as string || "").trim()
+    const jabatan = (formData.get("jabatan") as string || "").trim()
     
     const userRef = ref(database, `system_users/${editingUser.id}`)
 
@@ -238,7 +265,38 @@ export default function UserManagementPage() {
       fullName,
       phoneNumber,
       nik,
-      address
+      address,
+      nipppk,
+      pangkat,
+      jabatan
+    }
+
+    // Update pejabatData if exists or applicable
+    const existingPd = editingUser.pejabatData || {}
+    if (role === 'verifikator_dinas' || existingPd.verifikator) {
+      updates.pejabatData = {
+        ...existingPd,
+        verifikator: {
+          nama: fullName,
+          nipppk: nipppk,
+          pangkat: pangkat,
+          jabatan: jabatan || "Verifikator Dinas"
+        },
+        petugas: existingPd.petugas || { nama: "", nipppk: "", pangkat: "", jabatan: "Petugas Survey" },
+        updatedAt: new Date().toISOString()
+      }
+    } else if (role === 'petugas' || existingPd.petugas) {
+      updates.pejabatData = {
+        ...existingPd,
+        verifikator: existingPd.verifikator || { nama: "", nipppk: "", pangkat: "", jabatan: "Verifikator Dinas" },
+        petugas: {
+          nama: fullName,
+          nipppk: nipppk,
+          pangkat: pangkat,
+          jabatan: jabatan || "Petugas Survey"
+        },
+        updatedAt: new Date().toISOString()
+      }
     }
 
     if (newPassword && newPassword.trim() !== '') {
@@ -257,7 +315,7 @@ export default function UserManagementPage() {
     }
 
     logActivity({
-      query: `UBAH AKSES: ${editingUser.fullName} (${role})`,
+      query: `UBAH AKSES / PEJABAT: ${editingUser.fullName} (NIP: ${nipppk || '-'})`,
       results: "Berhasil",
       device: getDeviceType(navigator.userAgent),
       source: 'Web',
@@ -265,7 +323,7 @@ export default function UserManagementPage() {
       userId: user?.email || user?.uid || 'Admin'
     })
 
-    toast({ title: "Akses Diperbarui", description: `Hak akses ${editingUser.fullName} telah diubah.` })
+    toast({ title: "Akses & Data Pejabat Diperbarui", description: `Data untuk ${editingUser.fullName} berhasil diperbarui.` })
     setEditingUser(null)
   }
 
@@ -415,6 +473,20 @@ export default function UserManagementPage() {
                     <Input name="password" type="password" placeholder="Buat Kata Sandi" className="pl-10" required />
                   </div>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-2">
+                    <Label className="font-bold text-xs">NIPPPK / NIP</Label>
+                    <Input name="nipppk" placeholder="Nomor NIPPPK" className="font-mono text-xs" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold text-xs">Pangkat / Golongan</Label>
+                    <Input name="pangkat" placeholder="Contoh: Penata, III/c" className="text-xs" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold text-xs">Jabatan</Label>
+                    <Input name="jabatan" placeholder="Contoh: Verifikator Dinas" className="text-xs" />
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label className="font-bold">Peranan / Jabatan</Label>
                   <Select name="role" defaultValue="petugas" required>
@@ -448,7 +520,7 @@ export default function UserManagementPage() {
             <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead className="font-bold uppercase text-[10px]">Nama User</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px]">Nama User & NIPPPK</TableHead>
                   <TableHead className="font-bold uppercase text-[10px]">Status</TableHead>
                   <TableHead className="font-bold uppercase text-[10px]">Role</TableHead>
                   <TableHead className="font-bold uppercase text-[10px]">Keamanan Perangkat</TableHead>
@@ -461,10 +533,19 @@ export default function UserManagementPage() {
                     <TableCell className="font-bold text-slate-700">
                       <div className="flex flex-col">
                         <span>{u.fullName}</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">
-                          {u.nipppk ? <strong className="text-purple-700">NIP: {u.nipppk} • </strong> : null}
-                          {u.username || u.id}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-muted-foreground font-mono">
+                          {u.nipppk && (
+                            <span className="text-purple-700 font-bold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                              NIP: {u.nipppk}
+                            </span>
+                          )}
+                          {u.pangkat && (
+                            <span className="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                              {u.pangkat}
+                            </span>
+                          )}
+                          <span className="text-slate-400 font-normal">@{u.username || u.id}</span>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -586,6 +667,20 @@ export default function UserManagementPage() {
                                   <div className="space-y-2">
                                     <Label className="font-bold">Alamat Lengkap</Label>
                                     <Textarea name="address" defaultValue={u.address} />
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                    <div className="space-y-2">
+                                      <Label className="font-bold text-xs">NIPPPK / NIP</Label>
+                                      <Input name="nipppk" defaultValue={u.nipppk || u.pejabatData?.verifikator?.nipppk || u.pejabatData?.petugas?.nipppk || ""} placeholder="Nomor NIPPPK" className="font-mono text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold text-xs">Pangkat / Golongan</Label>
+                                      <Input name="pangkat" defaultValue={u.pangkat || u.pejabatData?.verifikator?.pangkat || u.pejabatData?.petugas?.pangkat || ""} placeholder="Contoh: Penata, III/c" className="text-xs" />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label className="font-bold text-xs">Jabatan</Label>
+                                      <Input name="jabatan" defaultValue={u.jabatan || u.pejabatData?.verifikator?.jabatan || u.pejabatData?.petugas?.jabatan || ""} placeholder="Contoh: Verifikator Dinas" className="text-xs" />
+                                    </div>
                                   </div>
                                   <div className="space-y-2">
                                     <Label className="font-bold text-amber-600">Reset Kata Sandi</Label>
@@ -746,8 +841,22 @@ export default function UserManagementPage() {
 
                 {detailUser.nipppk && (
                   <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
-                    <span className="text-muted-foreground text-xs font-semibold">NIPPPK</span>
+                    <span className="text-muted-foreground text-xs font-semibold">NIPPPK / NIP</span>
                     <span className="font-mono font-bold text-purple-700 text-xs">{detailUser.nipppk}</span>
+                  </div>
+                )}
+
+                {detailUser.pangkat && (
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                    <span className="text-muted-foreground text-xs font-semibold">Pangkat / Gol. Ruang</span>
+                    <span className="font-semibold text-slate-800 text-xs">{detailUser.pangkat}</span>
+                  </div>
+                )}
+
+                {detailUser.jabatan && (
+                  <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                    <span className="text-muted-foreground text-xs font-semibold">Jabatan</span>
+                    <span className="font-semibold text-slate-800 text-xs">{detailUser.jabatan}</span>
                   </div>
                 )}
 

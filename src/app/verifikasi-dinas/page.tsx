@@ -572,7 +572,38 @@ export default function VerifikasiDinasPage() {
   };
 
   const resolvePejabatData = async (actor: BusinessActor): Promise<PejabatData | undefined> => {
-    // 1. Current form state if filled
+    // 1. From surveyData or actor's own pejabatData
+    const surveyPd = (actor.surveyData as any)?.pejabatData as PejabatData | undefined;
+    const actorPd = actor.pejabatData;
+    const directPd = surveyPd || actorPd;
+
+    if (directPd?.verifikator?.nama && directPd?.petugas?.nama) {
+      // Check if system_users has updated NIPPPK
+      if (database) {
+        try {
+          const { ref: dbRef, get: dbGet } = await import('firebase/database');
+          const usersSnap = await dbGet(dbRef(database, 'system_users'));
+          if (usersSnap.exists()) {
+            const allUsers = usersSnap.val();
+            const vUpper = String(directPd.verifikator.nama).toUpperCase().trim();
+            for (const k of Object.keys(allUsers)) {
+              const u = allUsers[k];
+              if (u?.fullName && u.fullName.toUpperCase().trim() === vUpper && u.nipppk) {
+                directPd.verifikator.nipppk = String(u.nipppk).trim();
+                if (u.pangkat) directPd.verifikator.pangkat = String(u.pangkat).trim();
+                if (u.jabatan) directPd.verifikator.jabatan = String(u.jabatan).trim();
+                break;
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Error finding updated NIPPPK in system_users:", e);
+        }
+      }
+      return directPd;
+    }
+
+    // 2. Current form state if filled
     if (pejabatForm.verifikatorNama && pejabatForm.petugasNama) {
       return {
         verifikator: {
@@ -590,13 +621,37 @@ export default function VerifikasiDinasPage() {
       };
     }
 
-    // 2. From logged in user profile
+    // 3. From system_users matching actor.petugasSurvey or actor.verifikatorDinas
+    if (database && (actor.petugasSurvey || actor.verifikatorDinas)) {
+      try {
+        const { ref: dbRef, get: dbGet } = await import('firebase/database');
+        const usersSnap = await dbGet(dbRef(database, 'system_users'));
+        if (usersSnap.exists()) {
+          const allUsers = usersSnap.val();
+          const pTarget = (actor.petugasSurvey || "").toUpperCase().trim();
+          const vTarget = (actor.verifikatorDinas || "").toUpperCase().trim();
+          for (const k of Object.keys(allUsers)) {
+            const u = allUsers[k];
+            if (pTarget && u?.fullName && u.fullName.toUpperCase().trim() === pTarget && u.pejabatData) {
+              return u.pejabatData;
+            }
+            if (vTarget && u?.fullName && u.fullName.toUpperCase().trim() === vTarget && u.pejabatData) {
+              return u.pejabatData;
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Error finding petugas/verifikator survey pejabatData:", e);
+      }
+    }
+
+    // 4. From logged in user profile
     const profilePd = (userProfile as any)?.pejabatData as PejabatData | undefined;
     if (profilePd?.verifikator?.nama && profilePd?.petugas?.nama) {
       return profilePd;
     }
 
-    // 3. From localStorage
+    // 5. From localStorage
     if (typeof window !== 'undefined') {
       try {
         const cached = (user?.uid && localStorage.getItem(`pejabatData_${user.uid}`)) || localStorage.getItem('pejabatData');
@@ -608,32 +663,6 @@ export default function VerifikasiDinasPage() {
         }
       } catch (e) {
         console.error("Error reading localStorage pejabatData:", e);
-      }
-    }
-
-    // 4. From surveyData of the business actor
-    const surveyPd = (actor.surveyData as any)?.pejabatData as PejabatData | undefined;
-    if (surveyPd?.verifikator?.nama && surveyPd?.petugas?.nama) {
-      return surveyPd;
-    }
-
-    // 5. From system_users matching actor.petugasSurvey
-    if (database && actor.petugasSurvey) {
-      try {
-        const { ref: dbRef, get: dbGet } = await import('firebase/database');
-        const usersSnap = await dbGet(dbRef(database, 'system_users'));
-        if (usersSnap.exists()) {
-          const allUsers = usersSnap.val();
-          const target = actor.petugasSurvey.toUpperCase().trim();
-          for (const k of Object.keys(allUsers)) {
-            const u = allUsers[k];
-            if (u?.fullName && u.fullName.toUpperCase().trim() === target && u.pejabatData) {
-              return u.pejabatData;
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Error finding petugas survey pejabatData:", e);
       }
     }
 
@@ -681,15 +710,20 @@ export default function VerifikasiDinasPage() {
     }
     setIsSavingPejabat(true)
     const pejabatData: PejabatData = {
-      verifikator: { nama: verifikatorNama, nipppk: verifikatorNipppk, pangkat: verifikatorPangkat, jabatan: verifikatorJabatan },
-      petugas: { nama: petugasNama, nipppk: petugasNipppk, pangkat: petugasPangkat, jabatan: petugasJabatan },
+      verifikator: { nama: verifikatorNama.trim(), nipppk: verifikatorNipppk.trim(), pangkat: verifikatorPangkat.trim(), jabatan: verifikatorJabatan.trim() },
+      petugas: { nama: petugasNama.trim(), nipppk: petugasNipppk.trim(), pangkat: petugasPangkat.trim(), jabatan: petugasJabatan.trim() },
       updatedAt: new Date().toISOString()
     }
     const { ref: dbRef, update } = await import('firebase/database')
 
     // 1. Simpan ke database berdasarkan userProfile.id (key username di system_users)
     if (userProfile?.id) {
-      await update(dbRef(database, `system_users/${userProfile.id}`), { pejabatData }).catch(console.error)
+      await update(dbRef(database, `system_users/${userProfile.id}`), {
+        pejabatData,
+        nipppk: isPetugas ? pejabatData.petugas.nipppk : pejabatData.verifikator.nipppk,
+        pangkat: isPetugas ? pejabatData.petugas.pangkat : pejabatData.verifikator.pangkat,
+        jabatan: isPetugas ? pejabatData.petugas.jabatan : pejabatData.verifikator.jabatan
+      }).catch(console.error)
     }
     // 2. Simpan juga berdasarkan email username
     const emailUser = user?.email?.split('@')[0]?.toLowerCase()
@@ -707,12 +741,28 @@ export default function VerifikasiDinasPage() {
       localStorage.setItem('pejabatData', JSON.stringify(pejabatData))
     }
 
-    // 5. Auto-generate akun untuk Verifikator Dinas jika belum ada
+    // 5. Update aktor yang sedang diverifikasi / dicetak jika ada
+    if (verifyingActor) {
+      updateDocumentNonBlocking(ref(database, `businessActors/${verifyingActor.id}`), {
+        pejabatData,
+        "surveyData/pejabatData": pejabatData,
+        verifikatorDinas: pejabatData.verifikator.nama
+      });
+    }
+    if (printModalActor) {
+      updateDocumentNonBlocking(ref(database, `businessActors/${printModalActor.id}`), {
+        pejabatData,
+        "surveyData/pejabatData": pejabatData,
+        verifikatorDinas: pejabatData.verifikator.nama
+      });
+    }
+
+    // 6. Auto-generate / ensure akun untuk Verifikator Dinas jika belum ada
     if (pejabatData.verifikator?.nama) {
       await ensureVerifikatorUser(database, pejabatData.verifikator).catch(console.error);
     }
 
-    toast({ title: "Data Tersimpan", description: "Data pejabat berhasil disimpan dan akan otomatis muncul pada Berita Acara." })
+    toast({ title: "✅ Data Pejabat & NIPPPK Tersimpan", description: "Data pejabat berhasil disimpan dan akan otomatis tergenerate pada Berita Acara Survey." })
     setIsSavingPejabat(false)
     setShowPejabatModal(false)
   }
