@@ -28,7 +28,6 @@ export interface SurveyDinasData {
   rencanaPenggunaan: string;
   hasilSurvey: string;
   fotoSurveyUrl?: string;
-  hasFotoSurvey?: boolean;
   tanggalSurvey?: string;
   pejabatData?: PejabatData;
 }

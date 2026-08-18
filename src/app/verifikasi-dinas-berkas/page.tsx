@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useDeferredValue } from "react"
 import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
-import { ref, query, orderByChild, equalTo, get } from "firebase/database"
+import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"

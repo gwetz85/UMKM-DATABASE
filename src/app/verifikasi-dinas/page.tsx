@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useDeferredValue } from "react"
 import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, sanitizeForFirebase } from "@/firebase"
-import { ref, query, orderByChild, equalTo, get, set } from "firebase/database"
+import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -173,31 +173,37 @@ export default function VerifikasiDinasPage() {
         img.src = rawResult
         img.onload = () => {
           try {
+            // Target: max 1MB raw ≈ 1,398,101 bytes base64
+            const MAX_B64_BYTES = 1_398_101
             const canvas = document.createElement('canvas')
-            const MAX_SIZE = 1000
+            // Start with max 1200px longest side
+            const MAX_DIM = 1200
             let width = img.width
             let height = img.height
-
             if (width > height) {
-              if (width > MAX_SIZE) {
-                height = Math.round((height * MAX_SIZE) / width)
-                width = MAX_SIZE
-              }
+              if (width > MAX_DIM) { height = Math.round(height * MAX_DIM / width); width = MAX_DIM }
             } else {
-              if (height > MAX_SIZE) {
-                width = Math.round((width * MAX_SIZE) / height)
-                height = MAX_SIZE
-              }
+              if (height > MAX_DIM) { width = Math.round(width * MAX_DIM / height); height = MAX_DIM }
             }
-
             canvas.width = width
             canvas.height = height
             const ctx = canvas.getContext('2d')
             ctx?.drawImage(img, 0, 0, width, height)
-            
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65)
-            setPhotoPreview(compressedBase64)
-            setSurveyData(prev => ({ ...prev, fotoSurveyUrl: compressedBase64 }))
+            // Try decreasing quality until under 1MB
+            let result = ''
+            for (const q of [0.85, 0.75, 0.65, 0.55, 0.45, 0.35]) {
+              result = canvas.toDataURL('image/jpeg', q)
+              if (result.length <= MAX_B64_BYTES) break
+            }
+            // If still over 1MB, reduce dimensions
+            if (result.length > MAX_B64_BYTES) {
+              const s2 = document.createElement('canvas')
+              s2.width = Math.round(width * 0.7); s2.height = Math.round(height * 0.7)
+              s2.getContext('2d')?.drawImage(canvas, 0, 0, s2.width, s2.height)
+              result = s2.toDataURL('image/jpeg', 0.5)
+            }
+            setPhotoPreview(result)
+            setSurveyData(prev => ({ ...prev, fotoSurveyUrl: result }))
           } catch {
             setPhotoPreview(rawResult)
             setSurveyData(prev => ({ ...prev, fotoSurveyUrl: rawResult }))
@@ -293,7 +299,6 @@ export default function VerifikasiDinasPage() {
       hibah: existing.hibah || { pernah: false },
       izin: existing.izin || [],
       fotoSurveyUrl: existing.fotoSurveyUrl || actor.photoUsahaUri || actor.comparisonPhotoUrl || undefined,
-      hasFotoSurvey: existing.hasFotoSurvey,
       pejabatData: existing.pejabatData || actor.pejabatData || undefined
     });
   };
