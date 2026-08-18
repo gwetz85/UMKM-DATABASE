@@ -257,3 +257,33 @@ export async function regenerateVerifikatorUser(
     return null;
   }
 }
+
+/**
+ * Delete a Verifikator Dinas user account permanently from system_users (and roles_admin if any)
+ * Digunakan ketika admin menghapus akun verifikator dinas secara permanen.
+ * Setelah dihapus, admin dapat generate akun baru (Generate ID) agar petugas dapat login kembali.
+ */
+export async function deleteVerifikatorUser(
+  database: any,
+  username: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!database || !username) {
+    return { success: false, error: "Invalid parameters" };
+  }
+  try {
+    const userRef = ref(database, `system_users/${username}`);
+    const snap = await get(userRef);
+    if (snap.exists()) {
+      const userData = snap.val();
+      // Also remove from roles_admin if user had a UID registered
+      if (userData?.uid) {
+        await remove(ref(database, `roles_admin/${userData.uid}`)).catch(console.error);
+      }
+    }
+    await remove(userRef);
+    return { success: true };
+  } catch (err) {
+    console.error("Error deleting Verifikator Dinas user account:", err);
+    return { success: false, error: String(err) };
+  }
+}

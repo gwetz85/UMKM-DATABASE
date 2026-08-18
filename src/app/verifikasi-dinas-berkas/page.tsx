@@ -49,12 +49,14 @@ import {
   Key,
   Copy,
   Edit,
-  RefreshCw
+  RefreshCw,
+  UserX
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
-import { ensureVerifikatorUser, regenerateVerifikatorUser } from "@/lib/verifikator-service"
+import { ensureVerifikatorUser, regenerateVerifikatorUser, deleteVerifikatorUser } from "@/lib/verifikator-service"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 
 export default function VerifikasiDinasBerkasPage() {
   const { user, userProfile } = useUser()
@@ -96,6 +98,11 @@ export default function VerifikasiDinasBerkasPage() {
     targetActorId: "",
     syncAllInGroup: true
   })
+
+  // Delete Account Verifikator Dinas states (Admin only)
+  const [showDeleteVerifikatorDialog, setShowDeleteVerifikatorDialog] = useState(false)
+  const [deleteVerifikatorTarget, setDeleteVerifikatorTarget] = useState<{ username: string; displayName: string } | null>(null)
+  const [isDeletingVerifikator, setIsDeletingVerifikator] = useState(false)
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -346,6 +353,54 @@ export default function VerifikasiDinasBerkasPage() {
     });
     setShowEditPejabatDialog(true);
   };
+
+  // Handler untuk membuka dialog konfirmasi hapus akun verifikator
+  const handleDeleteVerifikatorAccount = (username: string, displayName: string) => {
+    setDeleteVerifikatorTarget({ username, displayName });
+    setShowDeleteVerifikatorDialog(true);
+  };
+
+  // Handler eksekusi hapus akun verifikator dinas secara permanen
+  const executeDeleteVerifikatorAccount = async () => {
+    if (!deleteVerifikatorTarget || !database) return;
+    const { username, displayName } = deleteVerifikatorTarget;
+    setIsDeletingVerifikator(true);
+    setShowDeleteVerifikatorDialog(false);
+    try {
+      const result = await deleteVerifikatorUser(database, username);
+      if (result.success) {
+        logActivity({
+          query: `HAPUS AKUN VERIFIKATOR DINAS: ${displayName} (username: ${username})`,
+          results: "Berhasil",
+          device: getDeviceType(navigator.userAgent),
+          source: "Web",
+          method: "MANAJEMEN USER",
+          userId: user?.email || user?.uid || "Admin"
+        });
+        toast({
+          title: "✅ Akun Verifikator Dihapus",
+          description: `Akun login ${displayName} telah dihapus permanen. Admin dapat generate ID baru kapan saja.`
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Gagal Menghapus",
+          description: result.error || "Terjadi kesalahan saat menghapus akun."
+        });
+      }
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err?.message || "Terjadi kesalahan tidak terduga."
+      });
+    } finally {
+      setIsDeletingVerifikator(false);
+      setDeleteVerifikatorTarget(null);
+    }
+  };
+
+
 
   const openEditPejabatForActor = (actor: BusinessActor) => {
     const pd = getActorPejabat(actor);
@@ -934,6 +989,16 @@ export default function VerifikasiDinasBerkasPage() {
                             title={isNipMismatch ? "NIPPPK telah berubah! Klik untuk generate ulang ID User Login" : "Generate / Refresh ID Login sesuai NIPPPK"}
                           >
                             <RefreshCw className="w-3 h-3" /> {isNipMismatch ? "Generate ID Baru" : "Generate ID"}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            type="button"
+                            className="h-6 px-2 text-[10px] font-black text-rose-600 hover:bg-rose-50 hover:text-rose-700 rounded-lg gap-1 border border-rose-200"
+                            onClick={() => handleDeleteVerifikatorAccount(foundUser.username || foundUser.id, displayName)}
+                            title="Hapus Akun Verifikator Dinas Secara Permanen"
+                          >
+                            <Trash2 className="w-3 h-3 text-rose-500" /> Delete Account
                           </Button>
                         </div>
                       ) : (
@@ -1947,6 +2012,20 @@ export default function VerifikasiDinasBerkasPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog Konfirmasi Hapus Akun Verifikator Dinas */}
+      <ConfirmDialog
+        open={showDeleteVerifikatorDialog}
+        onOpenChange={setShowDeleteVerifikatorDialog}
+        title="Hapus Akun Verifikator"
+        description={`Hapus akun ${deleteVerifikatorTarget?.displayName} (${deleteVerifikatorTarget?.username}) secara permanen dari sistem? Akun baru dapat di-generate ulang kapan saja.`}
+        variant="destructive"
+        confirmText="Ya, Hapus Permanen"
+        icon={<UserX className="w-8 h-8 text-rose-500" />}
+        onConfirm={executeDeleteVerifikatorAccount}
+        isLoading={isDeletingVerifikator}
+      />
+
     </div>
   )
 }
+
