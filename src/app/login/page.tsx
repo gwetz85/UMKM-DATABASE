@@ -234,7 +234,8 @@ export default function LoginPage() {
             }
 
             if (preRegisteredData.password === password) {
-              const versionSuffix = preRegisteredData.pwdVersion ? `_v${preRegisteredData.pwdVersion}` : '';
+              const currentVersion = preRegisteredData.pwdVersion || 0;
+              const versionSuffix = currentVersion ? `_v${currentVersion}` : '';
               const actualEmail = `${username}${versionSuffix}@umkm.id`;
               
               let newUserCred;
@@ -242,7 +243,21 @@ export default function LoginPage() {
                 newUserCred = await signInWithEmailAndPassword(auth, actualEmail, password)
               } catch (e: any) {
                 if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
-                  newUserCred = await createUserWithEmailAndPassword(auth, actualEmail, password)
+                  try {
+                    newUserCred = await createUserWithEmailAndPassword(auth, actualEmail, password)
+                  } catch (createErr: any) {
+                    if (createErr.code === 'auth/email-already-in-use') {
+                      // Akun Firebase sudah ada dengan email ini tapi password berbeda.
+                      // Auto-bump pwdVersion agar email baru dibuat dan user bisa login.
+                      const nextVersion = currentVersion + 1;
+                      const nextEmail = `${username}_v${nextVersion}@umkm.id`;
+                      newUserCred = await createUserWithEmailAndPassword(auth, nextEmail, password)
+                      // Simpan versi baru ke system_users
+                      await update(tempUserRef, { pwdVersion: nextVersion })
+                    } else {
+                      throw createErr;
+                    }
+                  }
                 } else {
                   throw e;
                 }
@@ -299,7 +314,7 @@ export default function LoginPage() {
       router.push("/")
     } catch (error: any) {
       let message = `Kesalahan: ${error.message || String(error)}`
-      if (error.code === 'auth/invalid-credential' || error.message === 'auth/wrong-password') message = "Username atau kata sandi salah."
+      if (error.code === 'auth/invalid-credential' || error.message === 'auth/wrong-password' || error.code === 'auth/email-already-in-use') message = "Username atau kata sandi salah."
       
       toast({
         variant: "destructive",
