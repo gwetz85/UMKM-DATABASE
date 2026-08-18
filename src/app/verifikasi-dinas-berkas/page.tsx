@@ -1420,8 +1420,8 @@ export default function VerifikasiDinasBerkasPage() {
                         </div>
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-2 items-center justify-center">
                           <p className="text-[10px] font-bold text-slate-500 uppercase self-start">Foto Survey Dinas</p>
-                          {(surveyPhotoMap[verifyingActor.id] || verifyingActor.surveyData?.fotoSurveyUrl) ? (
-                            <img src={surveyPhotoMap[verifyingActor.id] || verifyingActor.surveyData?.fotoSurveyUrl} alt="Foto Survey" className="max-h-[200px] object-contain rounded-lg border border-slate-200" />
+                          {(surveyPhotoMap[verifyingActor.id] || verifyingActor.surveyData?.fotoSurveyUrl || verifyingActor.photoUsahaUri || verifyingActor.comparisonPhotoUrl) ? (
+                            <img src={surveyPhotoMap[verifyingActor.id] || verifyingActor.surveyData?.fotoSurveyUrl || verifyingActor.photoUsahaUri || verifyingActor.comparisonPhotoUrl} alt="Foto Survey" className="max-h-[200px] object-contain rounded-lg border border-slate-200" />
                           ) : (
                             <p className="text-xs font-medium text-slate-500">Tidak ada foto.</p>
                           )}
@@ -1700,7 +1700,7 @@ export default function VerifikasiDinasBerkasPage() {
                         { label: "Foto NIB", url: av.nibUri },
                         { label: "Foto Usaha", url: av.photoUsahaUri },
                         { label: "Foto Perbandingan", url: av.comparisonPhotoUrl },
-                        { label: "Foto Survey Dinas", url: surveyPhotoMap[av.id] || av.surveyData?.fotoSurveyUrl },
+                        { label: "Foto Survey Dinas", url: surveyPhotoMap[av.id] || av.surveyData?.fotoSurveyUrl || av.photoUsahaUri || av.comparisonPhotoUrl },
                       ].map((doc, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-rose-700/80 uppercase">{doc.label}</p>

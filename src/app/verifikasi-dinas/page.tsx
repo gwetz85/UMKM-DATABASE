@@ -174,7 +174,7 @@ export default function VerifikasiDinasPage() {
         img.onload = () => {
           try {
             const canvas = document.createElement('canvas')
-            const MAX_SIZE = 1280
+            const MAX_SIZE = 1000
             let width = img.width
             let height = img.height
 
@@ -195,7 +195,7 @@ export default function VerifikasiDinasPage() {
             const ctx = canvas.getContext('2d')
             ctx?.drawImage(img, 0, 0, width, height)
             
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8)
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65)
             setPhotoPreview(compressedBase64)
             setSurveyData(prev => ({ ...prev, fotoSurveyUrl: compressedBase64 }))
           } catch {
@@ -259,7 +259,7 @@ export default function VerifikasiDinasPage() {
     setVerifyingActor(actor);
     const existingLoc = actor.verificationLocationDinas || (actor.surveyData as any)?.location || null;
     setLocation(existingLoc);
-    setPhotoPreview(actor.surveyData?.fotoSurveyUrl || actor.photoUsahaUri || null);
+    setPhotoPreview(actor.surveyData?.fotoSurveyUrl || actor.photoUsahaUri || actor.comparisonPhotoUrl || null);
     
     // Auto fill data from surveyData or actor's existing profile
     const todayStr = new Date().toISOString().split('T')[0];
@@ -292,7 +292,7 @@ export default function VerifikasiDinasPage() {
       dtks: existing.dtks || { masuk: false },
       hibah: existing.hibah || { pernah: false },
       izin: existing.izin || [],
-      fotoSurveyUrl: existing.fotoSurveyUrl || actor.photoUsahaUri || undefined,
+      fotoSurveyUrl: existing.fotoSurveyUrl || actor.photoUsahaUri || actor.comparisonPhotoUrl || undefined,
       hasFotoSurvey: existing.hasFotoSurvey,
       pejabatData: existing.pejabatData || actor.pejabatData || undefined
     });
@@ -477,13 +477,6 @@ export default function VerifikasiDinasPage() {
       const mergedSurveyData: any = {
         ...surveyData,
       };
-      if (mergedSurveyData.fotoSurveyUrl) {
-        const photoUrl = mergedSurveyData.fotoSurveyUrl;
-        delete mergedSurveyData.fotoSurveyUrl;
-        mergedSurveyData.hasFotoSurvey = true;
-        const photoRef = ref(database, `survey_photos/${verifyingActor.id}`);
-        set(photoRef, { fotoSurveyUrl: photoUrl, updatedAt: new Date().toISOString() }).catch(console.error);
-      }
       if (activePejabat) {
         mergedSurveyData.pejabatData = activePejabat;
       }
@@ -573,13 +566,6 @@ export default function VerifikasiDinasPage() {
       const mergedSurveyData: any = {
         ...surveyData,
       };
-      if (mergedSurveyData.fotoSurveyUrl) {
-        const photoUrl = mergedSurveyData.fotoSurveyUrl;
-        delete mergedSurveyData.fotoSurveyUrl;
-        mergedSurveyData.hasFotoSurvey = true;
-        const photoRef = ref(database, `survey_photos/${verifyingActor.id}`);
-        set(photoRef, { fotoSurveyUrl: photoUrl, updatedAt: new Date().toISOString() }).catch(console.error);
-      }
       if (activePejabat) {
         mergedSurveyData.pejabatData = activePejabat;
       }
