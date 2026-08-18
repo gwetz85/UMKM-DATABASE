@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useDatabase, useList, useMemoFirebase, useUser } from "@/firebase"
-import { ref, update, query, orderByChild } from "firebase/database"
+import { ref, update } from "firebase/database"
 import { addTunasBangsaHeader } from "@/lib/pdf-generator"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -69,19 +69,13 @@ export default function BpjsPage() {
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
 
-  const actorsRef = useMemoFirebase(() => {
-    if (!database) return null
-    // Hanya ambil data dengan status 'verified_actor' — ini jauh lebih cepat daripada fetch seluruh database
-    // Status lain ('verified_dinas', 'bank_pending', 'lpj_pending', 'finish') juga relevan untuk BPJS
-    return query(ref(database, 'businessActors'), orderByChild('status'))
-  }, [database])
+  const actorsRef = useMemoFirebase(() => database ? ref(database, 'businessActors') : null, [database])
   const { data: allActors, isLoading } = useList<BusinessActor>(actorsRef)
 
   // Calculate age as of a reference date (e.g., 1 Sep 2026)
   const calculateAgeOn = (dobString: string, refDate: Date): number => {
     if (!dobString || dobString === "-") return 0;
 
-    // Reuse existing parsing logic (same as calculateAge) to get a Date object
     const monthsIndo: { [key: string]: number } = {
       'JANUARI': 0, 'FEBRUARI': 1, 'MARET': 2, 'APRIL': 3, 'MEI': 4, 'JUNI': 5,
       'JULI': 6, 'AGUSTUS': 7, 'SEPTEMBER': 8, 'OKTOBER': 9, 'NOVEMBER': 10, 'DESEMBER': 11
@@ -117,16 +111,16 @@ export default function BpjsPage() {
   const filteredActors = useMemo(() => {
     if (!allActors) return [];
     // Reference date: 1 September 2026
-    const refDate = new Date(2026, 8, 1); // month is 0-indexed
-    const validStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'];
+    const refDate = new Date(2026, 8, 1);
     return allActors
-      .filter(a => validStatuses.includes(a.status || ''))
       .filter(a => {
+        // Tampilkan semua pelaku usaha dengan usia di bawah 65 tahun
+        if (!a || !a.fullName) return false;
         const age = calculateAgeOn(a.pobDob || '', refDate);
-        return age < 65;
+        return age > 0 && age < 65;
       })
       .filter(a => {
-        // Keep search functionality across name or NIK
+        if (!searchQuery) return true;
         return (
           (a.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
           (a.nik || '').includes(searchQuery)
