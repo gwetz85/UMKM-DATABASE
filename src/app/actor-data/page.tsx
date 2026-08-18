@@ -87,7 +87,7 @@ function ActorDataContent() {
   
   // Use pre-calculated stats for the overview
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
-  const { data: systemStats } = useObject(statsRef)
+  const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
@@ -148,8 +148,7 @@ function ActorDataContent() {
   }
 
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
-  // kuotaData jarang berubah — gunakan once:true agar tidak buat real-time listener
-  const { data: kuotaData } = useList<any>(kuotaRef, { once: true })
+  const { data: kuotaData, isLoading: isKuotaLoading } = useList<any>(kuotaRef)
 
   const actors = useMemo(() => {
     if (!allActorsRaw) return undefined;
@@ -1199,7 +1198,17 @@ function ActorDataContent() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-            {coordinatorStats.filter(stat => stat.count > 0).map((stat) => (
+            {(isKuotaLoading || (!systemStats && isStatsLoading)) ? (
+              [...Array(12)].map((_, i) => (
+                <div 
+                  key={i} 
+                  className="flex flex-col p-4 md:p-5 rounded-[2rem] bg-slate-100 dark:bg-slate-800 animate-pulse h-[130px] md:h-[150px] justify-center items-center gap-3 border border-slate-200/50"
+                >
+                  <div className="w-16 h-3 bg-slate-300 dark:bg-slate-700 rounded-full" />
+                  <div className="w-24 h-5 bg-slate-300 dark:bg-slate-700 rounded-full" />
+                </div>
+              ))
+            ) : coordinatorStats.filter(stat => stat.count > 0).map((stat) => (
               <div 
                 key={stat.name}
                 onClick={() => router.push(`/actor-data?coordinator=${stat.name}`)}
@@ -1240,8 +1249,8 @@ function ActorDataContent() {
               </div>
             ))}
 
-            {coordinatorStats.filter(stat => stat.count > 0).length === 0 && (
-               <div className="py-20 text-center flex flex-col items-center gap-4 bg-white rounded-2xl border-2 border-dashed border-slate-200">
+            {!(isKuotaLoading || (!systemStats && isStatsLoading)) && coordinatorStats.filter(stat => stat.count > 0).length === 0 && (
+               <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 bg-white rounded-2xl border-2 border-dashed border-slate-200">
                  <div className="p-4 bg-slate-50 rounded-full">
                     <Search className="w-10 h-10 text-slate-300" />
                  </div>
