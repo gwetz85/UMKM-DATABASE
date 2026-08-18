@@ -105,28 +105,6 @@ export default function VerifikasiDinasBerkasPage() {
   const [deleteVerifikatorTarget, setDeleteVerifikatorTarget] = useState<{ username: string; displayName: string } | null>(null)
   const [isDeletingVerifikator, setIsDeletingVerifikator] = useState(false)
 
-  // Survey Photo Cache for on-demand photo loading
-  const [surveyPhotoMap, setSurveyPhotoMap] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    const targetId = verifyingActor?.id || adminViewActor?.id
-    if (!targetId || !database) return
-    if (surveyPhotoMap[targetId]) return
-
-    const direct = verifyingActor?.surveyData?.fotoSurveyUrl || adminViewActor?.surveyData?.fotoSurveyUrl
-    if (direct) {
-      setSurveyPhotoMap(prev => ({ ...prev, [targetId]: direct }))
-      return
-    }
-
-    const pRef = ref(database, `survey_photos/${targetId}/fotoSurveyUrl`)
-    get(pRef).then(snap => {
-      if (snap.exists()) {
-        setSurveyPhotoMap(prev => ({ ...prev, [targetId]: snap.val() }))
-      }
-    }).catch(console.error)
-  }, [verifyingActor?.id, adminViewActor?.id, database, verifyingActor?.surveyData?.fotoSurveyUrl, adminViewActor?.surveyData?.fotoSurveyUrl])
-
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
     return ref(database, `roles_admin/${user.uid}`)
@@ -1420,8 +1398,8 @@ export default function VerifikasiDinasBerkasPage() {
                         </div>
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-2 items-center justify-center">
                           <p className="text-[10px] font-bold text-slate-500 uppercase self-start">Foto Survey Dinas</p>
-                          {(surveyPhotoMap[verifyingActor.id] || verifyingActor.surveyData?.fotoSurveyUrl || verifyingActor.photoUsahaUri || verifyingActor.comparisonPhotoUrl) ? (
-                            <img src={surveyPhotoMap[verifyingActor.id] || verifyingActor.surveyData?.fotoSurveyUrl || verifyingActor.photoUsahaUri || verifyingActor.comparisonPhotoUrl} alt="Foto Survey" className="max-h-[200px] object-contain rounded-lg border border-slate-200" />
+                          {(verifyingActor.surveyData?.fotoSurveyUrl || verifyingActor.photoUsahaUri || verifyingActor.comparisonPhotoUrl) ? (
+                            <img src={verifyingActor.surveyData?.fotoSurveyUrl || verifyingActor.photoUsahaUri || verifyingActor.comparisonPhotoUrl} alt="Foto Survey" className="max-h-[200px] object-contain rounded-lg border border-slate-200" />
                           ) : (
                             <p className="text-xs font-medium text-slate-500">Tidak ada foto.</p>
                           )}
@@ -1700,7 +1678,7 @@ export default function VerifikasiDinasBerkasPage() {
                         { label: "Foto NIB", url: av.nibUri },
                         { label: "Foto Usaha", url: av.photoUsahaUri },
                         { label: "Foto Perbandingan", url: av.comparisonPhotoUrl },
-                        { label: "Foto Survey Dinas", url: surveyPhotoMap[av.id] || av.surveyData?.fotoSurveyUrl || av.photoUsahaUri || av.comparisonPhotoUrl },
+                        { label: "Foto Survey Dinas", url: av.surveyData?.fotoSurveyUrl || av.photoUsahaUri || av.comparisonPhotoUrl },
                       ].map((doc, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-rose-700/80 uppercase">{doc.label}</p>

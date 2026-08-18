@@ -130,19 +130,7 @@ export async function generateBeritaAcaraPDF(
     logoBase64 = null;
   }
 
-  let surveyPhotoUrl = surveyData?.fotoSurveyUrl || actor?.photoUsahaUri || actor?.comparisonPhotoUrl || "";
-  if (!surveyPhotoUrl && (surveyData?.hasFotoSurvey || (actor as any)?.hasFotoSurvey) && actor?.id) {
-    try {
-      const { getDatabase, ref, get } = await import("firebase/database");
-      const db = getDatabase();
-      const photoSnap = await get(ref(db, `survey_photos/${actor.id}`));
-      if (photoSnap.exists()) {
-        surveyPhotoUrl = photoSnap.val().fotoSurveyUrl || "";
-      }
-    } catch (e) {
-      console.warn("Could not fetch survey photo from survey_photos:", e);
-    }
-  }
+  const surveyPhotoUrl = surveyData?.fotoSurveyUrl || actor?.photoUsahaUri || actor?.comparisonPhotoUrl || "";
   const surveyPhotoData = surveyPhotoUrl ? await loadSurveyPhoto(surveyPhotoUrl) : null;
 
   // ── 1. KOP SURAT (PRESISI A4 WITH Standard MARGINS) ────────────────────────

@@ -296,17 +296,6 @@ export default function VerifikasiDinasPage() {
       hasFotoSurvey: existing.hasFotoSurvey,
       pejabatData: existing.pejabatData || actor.pejabatData || undefined
     });
-
-    if (!existing.fotoSurveyUrl && (existing.hasFotoSurvey || (actor as any).hasFotoSurvey) && database) {
-      const pRef = ref(database, `survey_photos/${actor.id}/fotoSurveyUrl`);
-      get(pRef).then(snap => {
-        if (snap.exists()) {
-          const fetchedPhoto = snap.val();
-          setPhotoPreview(fetchedPhoto);
-          setSurveyData(prev => ({ ...prev, fotoSurveyUrl: fetchedPhoto }));
-        }
-      }).catch(console.error);
-    }
   };
 
   const fetchLocation = () => {
