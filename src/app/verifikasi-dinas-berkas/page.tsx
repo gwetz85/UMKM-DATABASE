@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useDeferredValue } from "react"
 import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
-import { ref, query, orderByChild, equalTo } from "firebase/database"
+import { ref, query, orderByChild, equalTo, set } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -104,6 +104,9 @@ export default function VerifikasiDinasBerkasPage() {
   const [showDeleteVerifikatorDialog, setShowDeleteVerifikatorDialog] = useState(false)
   const [deleteVerifikatorTarget, setDeleteVerifikatorTarget] = useState<{ username: string; displayName: string } | null>(null)
   const [isDeletingVerifikator, setIsDeletingVerifikator] = useState(false)
+
+  // Admin: upload / ganti foto survey
+  const [adminPhotoUploading, setAdminPhotoUploading] = useState(false)
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -356,6 +359,64 @@ export default function VerifikasiDinasBerkasPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // Admin: handle upload/ganti foto survey untuk pelaku yang sudah terverifikasi dinas
+  const handleAdminPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, actorId: string, actorName: string) => {
+    const file = e.target.files?.[0]
+    if (!file || !database) return
+    if (!file.type.startsWith('image/')) {
+      toast({ variant: 'destructive', title: 'Format tidak didukung', description: 'Hanya file gambar yang diperbolehkan.' })
+      return
+    }
+    setAdminPhotoUploading(true)
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const rawResult = ev.target?.result as string
+      const img = new window.Image()
+      img.src = rawResult
+      img.onload = () => {
+        try {
+          const MAX_B64_BYTES = 1_398_101 // 1MB raw ≈ 1.37MB base64
+          const canvas = document.createElement('canvas')
+          const MAX_DIM = 1200
+          let width = img.width; let height = img.height
+          if (width > height) {
+            if (width > MAX_DIM) { height = Math.round(height * MAX_DIM / width); width = MAX_DIM }
+          } else {
+            if (height > MAX_DIM) { width = Math.round(width * MAX_DIM / height); height = MAX_DIM }
+          }
+          canvas.width = width; canvas.height = height
+          canvas.getContext('2d')?.drawImage(img, 0, 0, width, height)
+          let result = ''
+          for (const q of [0.85, 0.75, 0.65, 0.55, 0.45, 0.35]) {
+            result = canvas.toDataURL('image/jpeg', q)
+            if (result.length <= MAX_B64_BYTES) break
+          }
+          if (result.length > MAX_B64_BYTES) {
+            const s2 = document.createElement('canvas')
+            s2.width = Math.round(width * 0.7); s2.height = Math.round(height * 0.7)
+            s2.getContext('2d')?.drawImage(canvas, 0, 0, s2.width, s2.height)
+            result = s2.toDataURL('image/jpeg', 0.5)
+          }
+          // Save to businessActors/actorId/surveyData/fotoSurveyUrl
+          const photoRef = ref(database, `businessActors/${actorId}/surveyData/fotoSurveyUrl`)
+          set(photoRef, result).catch(console.error)
+          logActivity({ query: `ADMIN UPLOAD FOTO SURVEY: ${actorName}`, results: 'Berhasil', device: getDeviceType(navigator.userAgent), source: 'Web', method: 'UPLOAD FOTO ADMIN', userId: user?.email || user?.uid || 'Admin' })
+          toast({ title: '✅ Foto berhasil diupload', description: `Foto survey ${actorName} telah diperbarui. Muat ulang halaman untuk melihat perubahan.` })
+        } catch (err) {
+          toast({ variant: 'destructive', title: 'Gagal upload foto', description: 'Terjadi kesalahan saat memproses foto.' })
+        } finally {
+          setAdminPhotoUploading(false)
+        }
+      }
+      img.onerror = () => {
+        toast({ variant: 'destructive', title: 'Gagal memuat foto', description: 'File gambar tidak dapat dibaca.' })
+        setAdminPhotoUploading(false)
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
   }
 
   const openEditPejabatForGroup = (nipKey: string, group: any, foundUser?: any) => {
@@ -1396,12 +1457,35 @@ export default function VerifikasiDinasBerkasPage() {
                             <p className="text-xs font-medium text-slate-500">Belum ada titik lokasi yang direkam.</p>
                           )}
                         </div>
-                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-2 items-center justify-center">
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3 items-center justify-center">
                           <p className="text-[10px] font-bold text-slate-500 uppercase self-start">Foto Survey Dinas</p>
                           {(verifyingActor.surveyData?.fotoSurveyUrl || verifyingActor.photoUsahaUri || verifyingActor.comparisonPhotoUrl) ? (
-                            <img src={verifyingActor.surveyData?.fotoSurveyUrl || verifyingActor.photoUsahaUri || verifyingActor.comparisonPhotoUrl} alt="Foto Survey" className="max-h-[200px] object-contain rounded-lg border border-slate-200" />
+                            <img src={verifyingActor.surveyData?.fotoSurveyUrl || verifyingActor.photoUsahaUri || verifyingActor.comparisonPhotoUrl} alt="Foto Survey" className="max-h-[200px] w-full object-contain rounded-lg border border-slate-200" />
                           ) : (
                             <p className="text-xs font-medium text-slate-500">Tidak ada foto.</p>
+                          )}
+                          {isAdmin && (
+                            <div className="w-full mt-1">
+                              <label htmlFor={`admin-photo-upload-${verifyingActor.id}`} className="w-full cursor-pointer">
+                                <div className={`flex items-center justify-center gap-2 w-full py-2 px-3 rounded-lg border-2 border-dashed text-xs font-bold transition-colors ${adminPhotoUploading ? 'border-slate-200 text-slate-400 cursor-not-allowed' : 'border-amber-400 text-amber-600 hover:bg-amber-50'}`}>
+                                  {adminPhotoUploading ? (
+                                    <><span className="animate-spin">⏳</span> Mengupload foto...</>
+                                  ) : (
+                                    <><span>📷</span> {verifyingActor.surveyData?.fotoSurveyUrl ? 'Ganti Foto Survey' : 'Upload Foto Survey'}</>
+                                  )}
+                                </div>
+                                <input
+                                  id={`admin-photo-upload-${verifyingActor.id}`}
+                                  type="file"
+                                  accept="image/*"
+                                  capture="environment"
+                                  className="hidden"
+                                  disabled={adminPhotoUploading}
+                                  onChange={(e) => handleAdminPhotoUpload(e, verifyingActor.id, verifyingActor.fullName)}
+                                />
+                              </label>
+                              <p className="text-[9px] text-slate-400 text-center mt-1">Foto akan dikompres otomatis maksimal 1MB</p>
+                            </div>
                           )}
                         </div>
                       </div>
