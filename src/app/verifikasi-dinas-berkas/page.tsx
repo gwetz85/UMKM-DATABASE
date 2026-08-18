@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useDeferredValue } from "react"
 import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
 import { ref, query, orderByChild, equalTo } from "firebase/database"
@@ -63,6 +63,7 @@ export default function VerifikasiDinasBerkasPage() {
   const { toast } = useToast()
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
+  const deferredSearch = useDeferredValue(searchQuery)
   const [selectedVerifikatorFilter, setSelectedVerifikatorFilter] = useState<string>("ALL")
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [verifyingActor, setVerifyingActor] = useState<BusinessActor | null>(null)
@@ -127,18 +128,48 @@ export default function VerifikasiDinasBerkasPage() {
   const { data: kuotaData } = useList<any>(kuotaRef)
   const { data: systemUsers } = useList<any>(systemUsersRef)
 
+  // O(1) Precomputed Maps
+  const kuotaMap = useMemo(() => {
+    const map = new Map<string, string>()
+    if (kuotaData) {
+      kuotaData.forEach((q: any) => {
+        const name = (q.name || q.coordinator || "").toUpperCase().trim()
+        const phone = q.phone || q.noHp || q.hp || ""
+        if (name && phone) map.set(name, phone)
+      })
+    }
+    return map
+  }, [kuotaData])
+
+  const systemUsersMap = useMemo(() => {
+    const byFullName = new Map<string, any>()
+    const byNipppk = new Map<string, any>()
+    const byUsername = new Map<string, any>()
+    if (systemUsers) {
+      systemUsers.forEach((u: any) => {
+        if (u.fullName) byFullName.set(String(u.fullName).toUpperCase().trim(), u)
+        if (u.id) byFullName.set(String(u.id).toUpperCase().trim(), u)
+        if (u.nipppk) {
+          const clean = String(u.nipppk).replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
+          byNipppk.set(clean, u)
+        }
+        if (u.username) {
+          const clean = String(u.username).toLowerCase().trim()
+          byUsername.set(clean, u)
+        }
+      })
+    }
+    return { byFullName, byNipppk, byUsername }
+  }, [systemUsers])
+
   // Helper untuk mendapatkan PejabatData (Verifikator & Petugas) dari actor atau fallback system_users
   const getActorPejabat = (actor: BusinessActor): PejabatData | undefined => {
     if (actor.pejabatData?.verifikator?.nama) return actor.pejabatData
     if (actor.surveyData?.pejabatData?.verifikator?.nama) return actor.surveyData.pejabatData
 
-    // Fallback: cari dari system_users berdasarkan petugasSurvey atau createdBy
     const petugasUpper = String(actor.petugasSurvey || actor.createdBy || "").toUpperCase().trim()
-    if (petugasUpper && systemUsers) {
-      const found = systemUsers.find((u: any) => 
-        (u.fullName && String(u.fullName).toUpperCase().trim() === petugasUpper) ||
-        (u.id && String(u.id).toUpperCase().trim() === petugasUpper)
-      )
+    if (petugasUpper) {
+      const found = systemUsersMap.byFullName.get(petugasUpper)
       if (found?.pejabatData?.verifikator?.nama) {
         return found.pejabatData
       }
@@ -146,21 +177,16 @@ export default function VerifikasiDinasBerkasPage() {
     return undefined
   }
 
-  // Helper untuk mendapatkan NIPPPK Verifikator yang diisi oleh Petugas Survey (untuk pengelompokan presisi tanpa typo nama)
+  // Helper untuk mendapatkan NIPPPK Verifikator yang diisi oleh Petugas Survey
   const getVerifikatorNipppk = (actor: BusinessActor): string => {
     const pd = getActorPejabat(actor)
     const nip = pd?.verifikator?.nipppk ? String(pd.verifikator.nipppk).trim() : ""
     if (nip) return nip
 
-    // Fallback ke systemUsers jika NIPPPK tidak diisi di pejabatData tapi Nama ada
-    if (pd?.verifikator?.nama && systemUsers) {
+    if (pd?.verifikator?.nama) {
       const nameUpper = String(pd.verifikator.nama).trim().toUpperCase()
-      const found = systemUsers.find((u: any) => 
-        u.role === 'verifikator_dinas' && 
-        u.fullName && String(u.fullName).trim().toUpperCase() === nameUpper &&
-        u.nipppk
-      )
-      if (found?.nipppk) return String(found.nipppk).trim()
+      const found = systemUsersMap.byFullName.get(nameUpper)
+      if (found?.role === 'verifikator_dinas' && found?.nipppk) return String(found.nipppk).trim()
     }
 
     if (pd?.verifikator?.nama && pd.verifikator.nama.trim()) {
@@ -230,7 +256,7 @@ export default function VerifikasiDinasBerkasPage() {
     }
 
     return raw
-  }, [allActorsRaw, isVerifikatorDinas, isAdmin, userProfile, systemUsers])
+  }, [allActorsRaw, isVerifikatorDinas, isAdmin, userProfile, systemUsersMap])
 
   // Daftar opsi Verifikator (berdasarkan NIPPPK & Nama) yang ada pada data
   const verifikatorOptions = useMemo(() => {
@@ -244,7 +270,7 @@ export default function VerifikasiDinasBerkasPage() {
       }
     })
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
-  }, [actors, systemUsers])
+  }, [actors])
 
   // Filter berdasarkan search query dan pilihan verifikator
   const filteredActors = useMemo(() => {
@@ -259,7 +285,7 @@ export default function VerifikasiDinasBerkasPage() {
       }
 
       // Filter Pencarian
-      const q = searchQuery.toLowerCase().trim()
+      const q = deferredSearch.toLowerCase().trim()
       if (!q) return true
 
       const pd = getActorPejabat(actor)
@@ -276,7 +302,7 @@ export default function VerifikasiDinasBerkasPage() {
         (pd?.verifikator?.jabatan && pd.verifikator.jabatan.toLowerCase().includes(q))
       )
     })
-  }, [actors, searchQuery, selectedVerifikatorFilter, systemUsers])
+  }, [actors, deferredSearch, selectedVerifikatorFilter])
 
   // Mengelompokkan data berdasarkan NIPPPK Verifikator yang diisi oleh Petugas Survey
   const groupedActorsByVerifikator = useMemo(() => {
@@ -291,14 +317,13 @@ export default function VerifikasiDinasBerkasPage() {
           actors: []
         }
       }
-      // Update verifikator info jika sebelumnya belum ada info nama/pangkat/jabatan
       if ((!acc[nipKey].verifikatorInfo?.nama || !acc[nipKey].verifikatorInfo?.nipppk) && pd?.verifikator) {
         acc[nipKey].verifikatorInfo = pd.verifikator
       }
       acc[nipKey].actors.push(actor)
       return acc
     }, {} as Record<string, { nipKey: string; verifikatorInfo?: PejabatItem; actors: BusinessActor[] }>)
-  }, [filteredActors, systemUsers])
+  }, [filteredActors])
 
   const handleVerifyBerkas = () => {
     if (!verifyingActor || !database || (!isAdmin && !isVerifikatorDinas && !isPetugas)) return
@@ -1190,275 +1215,16 @@ export default function VerifikasiDinasBerkasPage() {
 
                                 {/* Tombol 2: VERIFIKASI BERKAS */}
                                 {(isAdmin || isVerifikatorDinas || isPetugas) && (
-                                  <Dialog open={!!verifyingActor && verifyingActor.id === actor.id} onOpenChange={(open) => {
-                                    if (!open) {
-                                      setVerifyingActor(null);
-                                      setShowChecklist(false);
-                                      setChecks({ ktp: false, kk: false, nib: false, foto: false });
-                                    }
-                                  }}>
-                                    <DialogTrigger asChild>
-                                      <Button 
-                                        size="sm" 
-                                        type="button"
-                                        onClick={() => { setVerifyingActor(actor); setShowChecklist(false); }} 
-                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 h-9"
-                                      >
-                                        <ClipboardCheck className="w-4 h-4 shrink-0" />
-                                        <span>Verifikasi Berkas</span>
-                                      </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className={`max-h-[95vh] overflow-y-auto transition-all duration-300 ${showChecklist ? 'max-w-[95vw] lg:max-w-7xl' : 'max-w-5xl'}`}>
-                                      {verifyingActor && (() => {
-                                        const modalPejabat = getActorPejabat(verifyingActor)
-
-                                        return (
-                                          <div className="flex flex-col lg:flex-row gap-6">
-                                            {/* Kiri: Detail Pelaku Usaha */}
-                                            <div className="flex flex-col flex-1">
-                                              <DialogHeader>
-                                                <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
-                                                  <FileText className="w-6 h-6" /> Detail Data & Hasil Survey
-                                                </DialogTitle>
-                                                <DialogDescription className="sr-only">Detail Pelaku Usaha</DialogDescription>
-                                              </DialogHeader>
-                                              
-                                              <div className="grid gap-6 py-4">
-                                                {/* DATA PEJABAT BERITA ACARA SURVEY */}
-                                                <section className="space-y-3">
-                                                  <div className="flex items-center justify-between border-b pb-1">
-                                                    <div className="flex items-center gap-2 text-indigo-700 font-black text-sm uppercase">
-                                                      <BadgeCheck className="w-4 h-4" /> Data Pejabat Berita Acara Survey
-                                                    </div>
-                                                    {(isAdmin || isVerifikatorDinas) && (
-                                                      <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        type="button"
-                                                        className="h-7 px-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 rounded-lg gap-1"
-                                                        onClick={() => openEditPejabatForActor(verifyingActor)}
-                                                      >
-                                                        <Edit className="w-3.5 h-3.5" /> Edit NIPPPK
-                                                      </Button>
-                                                    )}
-                                                  </div>
-                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                    {/* Kolom 1 - Verifikator Dinas */}
-                                                    <div className="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100 space-y-1">
-                                                      <div className="flex items-center gap-1.5 text-indigo-700 font-bold text-xs uppercase">
-                                                        <span className="w-4 h-4 rounded-full bg-indigo-600 text-white text-[10px] font-black flex items-center justify-center">1</span>
-                                                        Verifikator Dinas
-                                                      </div>
-                                                      <p className="text-xs font-black text-indigo-950 uppercase">{modalPejabat?.verifikator?.nama || getVerifikatorName(verifyingActor)}</p>
-                                                      <div className="text-[11px] text-indigo-900/80 space-y-0.5">
-                                                        <p><span className="text-slate-500">NIPPPK:</span> {modalPejabat?.verifikator?.nipppk || "-"}</p>
-                                                        <p><span className="text-slate-500">Pangkat/Gol:</span> {modalPejabat?.verifikator?.pangkat || "-"}</p>
-                                                        <p><span className="text-slate-500">Jabatan:</span> {modalPejabat?.verifikator?.jabatan || "-"}</p>
-                                                      </div>
-                                                    </div>
-
-                                                    {/* Kolom 2 - Petugas Survey */}
-                                                    <div className="bg-violet-50/60 p-3 rounded-xl border border-violet-100 space-y-1">
-                                                      <div className="flex items-center gap-1.5 text-violet-700 font-bold text-xs uppercase">
-                                                        <span className="w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-black flex items-center justify-center">2</span>
-                                                        Petugas Survey
-                                                      </div>
-                                                      <p className="text-xs font-black text-violet-950 uppercase">{modalPejabat?.petugas?.nama || verifyingActor.petugasSurvey || "-"}</p>
-                                                      <div className="text-[11px] text-violet-900/80 space-y-0.5">
-                                                        <p><span className="text-slate-500">NIPPPK:</span> {modalPejabat?.petugas?.nipppk || "-"}</p>
-                                                        <p><span className="text-slate-500">Pangkat/Gol:</span> {modalPejabat?.petugas?.pangkat || "-"}</p>
-                                                        <p><span className="text-slate-500">Jabatan:</span> {modalPejabat?.petugas?.jabatan || "-"}</p>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                </section>
-
-                                                {/* INFORMASI PRIBADI */}
-                                                <section className="space-y-4">
-                                                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
-                                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
-                                                    {(() => {
-                                                      const parsed = parsePobDob(verifyingActor.pobDob || "")
-                                                      return [
-                                                        { label: "Nama Lengkap", value: verifyingActor.fullName },
-                                                        { label: "NIK", value: verifyingActor.nik },
-                                                        { label: "Nomor KK", value: verifyingActor.noKK },
-                                                        { label: "Jenis Kelamin", value: verifyingActor.gender },
-                                                        { label: "Tempat Lahir", value: verifyingActor.pob || parsed.pob || "-" },
-                                                        { label: "Tanggal Lahir", value: verifyingActor.dob || parsed.dob || "-" },
-                                                        { label: "Nomor HP", value: verifyingActor.phone, isPhone: true }
-                                                      ]
-                                                    })().map((item, i) => (
-                                                      <div key={i} className="space-y-1">
-                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                                        {(item as any).isPhone && item.value ? (
-                                                          <a
-                                                            href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="text-xs font-bold text-green-600 hover:text-green-700 hover:underline flex items-center gap-1"
-                                                          >
-                                                            {item.value}
-                                                          </a>
-                                                        ) : (
-                                                          <p className="text-xs font-bold">{item.value || "-"}</p>
-                                                        )}
-                                                      </div>
-                                                    ))}
-                                                  </div>
-                                                </section>
-
-                                                {/* DATA HASIL SURVEY DINAS */}
-                                                <section className="space-y-4">
-                                                  <div className="flex items-center gap-2 text-emerald-600 font-black text-sm uppercase border-b pb-1"><ClipboardCheck className="w-4 h-4" /> Data Hasil Survey Dinas</div>
-                                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
-                                                    {[
-                                                      { label: "Tanggal Survey", value: verifyingActor.surveyData?.tanggalSurvey ? formatTanggalIndonesia(verifyingActor.surveyData.tanggalSurvey).fullText : "-" },
-                                                      { label: "Nama Usaha", value: verifyingActor.surveyData?.namaUsaha },
-                                                      { label: "Nama Pemilik", value: verifyingActor.surveyData?.namaPemilik },
-                                                      { label: "Jenis Kelamin", value: verifyingActor.surveyData?.jenisKelamin },
-                                                      { label: "Status", value: verifyingActor.surveyData?.status },
-                                                      { label: "Alamat Rumah", value: verifyingActor.surveyData?.alamatRumah },
-                                                      { label: "No HP", value: verifyingActor.surveyData?.noHp },
-                                                      { label: "Email", value: verifyingActor.surveyData?.email },
-                                                      { label: "Sosial Media", value: verifyingActor.surveyData?.sosmed },
-                                                      { label: "DTKS", value: verifyingActor.surveyData?.dtks?.masuk ? `Ya (${verifyingActor.surveyData.dtks.jenis})` : 'Tidak' },
-                                                      { label: "Bidang Usaha", value: verifyingActor.surveyData?.bidangUsaha },
-                                                      { label: "Peralatan", value: verifyingActor.surveyData?.peralatan },
-                                                      { label: "Tahun Berdiri", value: verifyingActor.surveyData?.tahunBerdiri },
-                                                      { label: "Izin", value: verifyingActor.surveyData?.izin?.join(', ') },
-                                                      { label: "Modal Usaha", value: verifyingActor.surveyData?.modalUsaha },
-                                                      { label: "Omset", value: verifyingActor.surveyData?.omset },
-                                                      { label: "Pernah Terima Hibah?", value: verifyingActor.surveyData?.hibah?.pernah ? `Ya (Dari: ${verifyingActor.surveyData.hibah.dariMana}, Tahun: ${verifyingActor.surveyData.hibah.tahun})` : 'Tidak' },
-                                                      { label: "Rencana Penggunaan", value: verifyingActor.surveyData?.rencanaPenggunaan },
-                                                      { label: "Hasil Survey", value: verifyingActor.surveyData?.hasilSurvey }
-                                                    ].map((item, i) => (
-                                                      <div key={i} className="space-y-1">
-                                                        <p className="text-[10px] font-bold text-emerald-700/80 uppercase">{item.label}</p>
-                                                        <p className="text-xs font-bold text-slate-800">{item.value || "-"}</p>
-                                                      </div>
-                                                    ))}
-                                                  </div>
-                                                </section>
-
-                                                {/* TITIK LOKASI & FOTO */}
-                                                <section className="space-y-4">
-                                                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Titik Lokasi & Foto Survey</div>
-                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-2">
-                                                      <p className="text-[10px] font-bold text-slate-500 uppercase">Titik Lokasi Survey Dinas</p>
-                                                      {verifyingActor.verificationLocationDinas ? (
-                                                        <>
-                                                          <p className="text-xs font-mono font-semibold">{verifyingActor.verificationLocationDinas.lat}, {verifyingActor.verificationLocationDinas.lon}</p>
-                                                          <a href={`https://www.google.com/maps?q=${verifyingActor.verificationLocationDinas.lat},${verifyingActor.verificationLocationDinas.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline inline-block mt-1">Buka di Google Maps</a>
-                                                        </>
-                                                      ) : (
-                                                        <p className="text-xs font-medium text-slate-500">Belum ada titik lokasi yang direkam.</p>
-                                                      )}
-                                                    </div>
-                                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-2 items-center justify-center">
-                                                      <p className="text-[10px] font-bold text-slate-500 uppercase self-start">Foto Survey Dinas</p>
-                                                      {verifyingActor.surveyData?.fotoSurveyUrl ? (
-                                                        <img src={verifyingActor.surveyData.fotoSurveyUrl} alt="Foto Survey" className="max-h-[200px] object-contain rounded-lg border border-slate-200" />
-                                                      ) : (
-                                                        <p className="text-xs font-medium text-slate-500">Tidak ada foto.</p>
-                                                      )}
-                                                    </div>
-                                                  </div>
-                                                </section>
-
-                                                {verifyingActor.googleDriveLink && (
-                                                  <section className="space-y-4">
-                                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Folder className="w-4 h-4" /> Berkas Tambahan (Google Drive)</div>
-                                                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                                      <div>
-                                                        <p className="text-xs font-bold text-blue-800 uppercase">Folder Google Drive Pelaku Usaha</p>
-                                                        <p className="text-[10px] font-medium text-blue-600 mt-1">Berisi foto, video, dokumen usulan, atau file lainnya</p>
-                                                      </div>
-                                                      <a href={verifyingActor.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold px-4 py-2.5 rounded-lg text-xs shadow flex items-center justify-center min-w-[140px]">
-                                                        Buka Folder Drive
-                                                      </a>
-                                                    </div>
-                                                  </section>
-                                                )}
-                                              </div>
-                                              
-                                              {!showChecklist && (
-                                                <DialogFooter className="border-t pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-                                                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                                                    <Button type="button" variant="ghost" onClick={() => setVerifyingActor(null)}>Tutup</Button>
-                                                    <Button
-                                                      type="button"
-                                                      variant="outline"
-                                                      onClick={() => {
-                                                        setPrintModalActor(verifyingActor);
-                                                        setSelectedPrintDate(verifyingActor.surveyData?.tanggalSurvey || new Date().toISOString().split('T')[0]);
-                                                        setSaveDateToSurvey(true);
-                                                      }}
-                                                      disabled={!verifyingActor.surveyData}
-                                                      className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 font-bold"
-                                                    >
-                                                      <FileDown className="w-4 h-4 mr-1.5" /> Download Berita Acara
-                                                    </Button>
-                                                  </div>
-                                                  <Button type="button" onClick={() => setShowChecklist(true)} className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
-                                                    Verifikasi Berkas <ClipboardCheck className="w-4 h-4 ml-2" />
-                                                  </Button>
-                                                </DialogFooter>
-                                              )}
-                                            </div>
-
-                                            {/* Kanan: Checklist Berkas */}
-                                            {showChecklist && (
-                                              <div className="w-full lg:w-[400px] shrink-0 lg:border-l lg:pl-6 flex flex-col gap-4 animate-in slide-in-from-right-8 duration-300">
-                                                <DialogHeader>
-                                                  <DialogTitle className="text-xl font-black text-emerald-600 uppercase">Cek Kelengkapan Berkas</DialogTitle>
-                                                  <DialogDescription>Pastikan 4 berkas ini lengkap.</DialogDescription>
-                                                </DialogHeader>
-                                                <div className="py-2 space-y-4">
-                                                  <div className="flex flex-col gap-3">
-                                                    <div className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-colors">
-                                                      <Checkbox id="ktp" checked={checks.ktp} onCheckedChange={(c) => setChecks(prev => ({...prev, ktp: !!c}))} />
-                                                      <label htmlFor="ktp" className="text-sm font-semibold cursor-pointer select-none">KTP</label>
-                                                    </div>
-                                                    <div className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-colors">
-                                                      <Checkbox id="kk" checked={checks.kk} onCheckedChange={(c) => setChecks(prev => ({...prev, kk: !!c}))} />
-                                                      <label htmlFor="kk" className="text-sm font-semibold cursor-pointer select-none">KK</label>
-                                                    </div>
-                                                    <div className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-colors">
-                                                      <Checkbox id="nib" checked={checks.nib} onCheckedChange={(c) => setChecks(prev => ({...prev, nib: !!c}))} />
-                                                      <label htmlFor="nib" className="text-sm font-semibold cursor-pointer select-none">NIB</label>
-                                                    </div>
-                                                    <div className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-colors">
-                                                      <Checkbox id="foto" checked={checks.foto} onCheckedChange={(c) => setChecks(prev => ({...prev, foto: !!c}))} />
-                                                      <label htmlFor="foto" className="text-sm font-semibold cursor-pointer select-none">Fhoto Pelaku Usaha</label>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                                <div className="mt-auto pt-4 border-t flex flex-col gap-2">
-                                                  {checks.ktp && checks.kk && checks.nib && checks.foto ? (
-                                                    <Button 
-                                                      type="button" 
-                                                      onClick={handleVerifyBerkas}
-                                                      disabled={isSubmitting} 
-                                                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-                                                    >
-                                                      {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />} BERHASIL VERIFIKASI
-                                                    </Button>
-                                                  ) : (
-                                                    <Button type="button" disabled className="w-full bg-slate-200 text-slate-500 font-bold">
-                                                      Ceklist 4 Berkas
-                                                    </Button>
-                                                  )}
-                                                  <Button type="button" variant="ghost" className="w-full" onClick={() => setShowChecklist(false)}>Tutup Checklist</Button>
-                                                </div>
-                                              </div>
-                                            )}
-                                          </div>
-                                        )
-                                      })()}
-                                    </DialogContent>
-                                  </Dialog>
+                                  <Button 
+                                    size="sm" 
+                                    type="button"
+                                    onClick={() => { setVerifyingActor(actor); setShowChecklist(false); }} 
+                                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold rounded-xl shadow-sm transition-all duration-200 flex items-center justify-center gap-1.5 h-9"
+                                    title="Verifikasi Berkas"
+                                  >
+                                    <ClipboardCheck className="w-4 h-4 shrink-0" />
+                                    <span>Verifikasi Berkas</span>
+                                  </Button>
                                 )}
                               </div>
                             </div>
@@ -1473,9 +1239,270 @@ export default function VerifikasiDinasBerkasPage() {
           })}
         </div>
       )}
+
+      {/* ─── SINGLE ROOT LEVEL VERIFIKASI BERKAS DIALOG ───────────────── */}
+      <Dialog open={!!verifyingActor} onOpenChange={(open) => {
+        if (!open) {
+          setVerifyingActor(null);
+          setShowChecklist(false);
+          setChecks({ ktp: false, kk: false, nib: false, foto: false });
+        }
+      }}>
+        <DialogContent className={`max-h-[92dvh] overflow-y-auto transition-all duration-300 ${showChecklist ? 'max-w-[95vw] lg:max-w-7xl' : 'max-w-5xl'}`}>
+          {verifyingActor && (() => {
+            const modalPejabat = getActorPejabat(verifyingActor)
+
+            return (
+              <div className="flex flex-col lg:flex-row gap-6">
+                {/* Kiri: Detail Pelaku Usaha */}
+                <div className="flex flex-col flex-1">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
+                      <FileText className="w-6 h-6" /> Detail Data & Hasil Survey
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">Detail Pelaku Usaha</DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="grid gap-6 py-4">
+                    {/* DATA PEJABAT BERITA ACARA SURVEY */}
+                    <section className="space-y-3">
+                      <div className="flex items-center justify-between border-b pb-1">
+                        <div className="flex items-center gap-2 text-indigo-700 font-black text-sm uppercase">
+                          <BadgeCheck className="w-4 h-4" /> Data Pejabat Berita Acara Survey
+                        </div>
+                        {(isAdmin || isVerifikatorDinas) && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            type="button"
+                            className="h-7 px-2.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100 rounded-lg gap-1"
+                            onClick={() => openEditPejabatForActor(verifyingActor)}
+                          >
+                            <Edit className="w-3.5 h-3.5" /> Edit NIPPPK
+                          </Button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* Kolom 1 - Verifikator Dinas */}
+                        <div className="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100 space-y-1">
+                          <div className="flex items-center gap-1.5 text-indigo-700 font-bold text-xs uppercase">
+                            <span className="w-4 h-4 rounded-full bg-indigo-600 text-white text-[10px] font-black flex items-center justify-center">1</span>
+                            Verifikator Dinas
+                          </div>
+                          <p className="text-xs font-black text-indigo-950 uppercase">{modalPejabat?.verifikator?.nama || getVerifikatorName(verifyingActor)}</p>
+                          <div className="text-[11px] text-indigo-900/80 space-y-0.5">
+                            <p><span className="text-slate-500">NIPPPK:</span> {modalPejabat?.verifikator?.nipppk || "-"}</p>
+                            <p><span className="text-slate-500">Pangkat/Gol:</span> {modalPejabat?.verifikator?.pangkat || "-"}</p>
+                            <p><span className="text-slate-500">Jabatan:</span> {modalPejabat?.verifikator?.jabatan || "-"}</p>
+                          </div>
+                        </div>
+
+                        {/* Kolom 2 - Petugas Survey */}
+                        <div className="bg-violet-50/60 p-3 rounded-xl border border-violet-100 space-y-1">
+                          <div className="flex items-center gap-1.5 text-violet-700 font-bold text-xs uppercase">
+                            <span className="w-4 h-4 rounded-full bg-violet-600 text-white text-[10px] font-black flex items-center justify-center">2</span>
+                            Petugas Survey
+                          </div>
+                          <p className="text-xs font-black text-violet-950 uppercase">{modalPejabat?.petugas?.nama || verifyingActor.petugasSurvey || "-"}</p>
+                          <div className="text-[11px] text-violet-900/80 space-y-0.5">
+                            <p><span className="text-slate-500">NIPPPK:</span> {modalPejabat?.petugas?.nipppk || "-"}</p>
+                            <p><span className="text-slate-500">Pangkat/Gol:</span> {modalPejabat?.petugas?.pangkat || "-"}</p>
+                            <p><span className="text-slate-500">Jabatan:</span> {modalPejabat?.petugas?.jabatan || "-"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* INFORMASI PRIBADI */}
+                    <section className="space-y-4">
+                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
+                        {(() => {
+                          const parsed = parsePobDob(verifyingActor.pobDob || "")
+                          return [
+                            { label: "Nama Lengkap", value: verifyingActor.fullName },
+                            { label: "NIK", value: verifyingActor.nik },
+                            { label: "Nomor KK", value: verifyingActor.noKK },
+                            { label: "Jenis Kelamin", value: verifyingActor.gender },
+                            { label: "Tempat Lahir", value: verifyingActor.pob || parsed.pob || "-" },
+                            { label: "Tanggal Lahir", value: verifyingActor.dob || parsed.dob || "-" },
+                            { label: "Nomor HP", value: verifyingActor.phone, isPhone: true }
+                          ]
+                        })().map((item, i) => (
+                          <div key={i} className="space-y-1">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                            {(item as any).isPhone && item.value ? (
+                              <a
+                                href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-xs font-bold text-green-600 hover:text-green-700 hover:underline flex items-center gap-1"
+                              >
+                                {item.value}
+                              </a>
+                            ) : (
+                              <p className="text-xs font-bold">{item.value || "-"}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* DATA HASIL SURVEY DINAS */}
+                    <section className="space-y-4">
+                      <div className="flex items-center gap-2 text-emerald-600 font-black text-sm uppercase border-b pb-1"><ClipboardCheck className="w-4 h-4" /> Data Hasil Survey Dinas</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+                        {[
+                          { label: "Tanggal Survey", value: verifyingActor.surveyData?.tanggalSurvey ? formatTanggalIndonesia(verifyingActor.surveyData.tanggalSurvey).fullText : "-" },
+                          { label: "Nama Usaha", value: verifyingActor.surveyData?.namaUsaha },
+                          { label: "Nama Pemilik", value: verifyingActor.surveyData?.namaPemilik },
+                          { label: "Jenis Kelamin", value: verifyingActor.surveyData?.jenisKelamin },
+                          { label: "Status", value: verifyingActor.surveyData?.status },
+                          { label: "Alamat Rumah", value: verifyingActor.surveyData?.alamatRumah },
+                          { label: "No HP", value: verifyingActor.surveyData?.noHp },
+                          { label: "Email", value: verifyingActor.surveyData?.email },
+                          { label: "Sosial Media", value: verifyingActor.surveyData?.sosmed },
+                          { label: "DTKS", value: verifyingActor.surveyData?.dtks?.masuk ? `Ya (${verifyingActor.surveyData.dtks.jenis})` : 'Tidak' },
+                          { label: "Bidang Usaha", value: verifyingActor.surveyData?.bidangUsaha },
+                          { label: "Peralatan", value: verifyingActor.surveyData?.peralatan },
+                          { label: "Tahun Berdiri", value: verifyingActor.surveyData?.tahunBerdiri },
+                          { label: "Izin", value: verifyingActor.surveyData?.izin?.join(', ') },
+                          { label: "Modal Usaha", value: verifyingActor.surveyData?.modalUsaha },
+                          { label: "Omset", value: verifyingActor.surveyData?.omset },
+                          { label: "Pernah Terima Hibah?", value: verifyingActor.surveyData?.hibah?.pernah ? `Ya (Dari: ${verifyingActor.surveyData.hibah.dariMana}, Tahun: ${verifyingActor.surveyData.hibah.tahun})` : 'Tidak' },
+                          { label: "Rencana Penggunaan", value: verifyingActor.surveyData?.rencanaPenggunaan },
+                          { label: "Hasil Survey", value: verifyingActor.surveyData?.hasilSurvey }
+                        ].map((item, i) => (
+                          <div key={i} className="space-y-1">
+                            <p className="text-[10px] font-bold text-emerald-700/80 uppercase">{item.label}</p>
+                            <p className="text-xs font-bold text-slate-800">{item.value || "-"}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+
+                    {/* TITIK LOKASI & FOTO */}
+                    <section className="space-y-4">
+                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Titik Lokasi & Foto Survey</div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-2">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase">Titik Lokasi Survey Dinas</p>
+                          {verifyingActor.verificationLocationDinas ? (
+                            <>
+                              <p className="text-xs font-mono font-semibold">{verifyingActor.verificationLocationDinas.lat}, {verifyingActor.verificationLocationDinas.lon}</p>
+                              <a href={`https://www.google.com/maps?q=${verifyingActor.verificationLocationDinas.lat},${verifyingActor.verificationLocationDinas.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline inline-block mt-1">Buka di Google Maps</a>
+                            </>
+                          ) : (
+                            <p className="text-xs font-medium text-slate-500">Belum ada titik lokasi yang direkam.</p>
+                          )}
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-2 items-center justify-center">
+                          <p className="text-[10px] font-bold text-slate-500 uppercase self-start">Foto Survey Dinas</p>
+                          {verifyingActor.surveyData?.fotoSurveyUrl ? (
+                            <img src={verifyingActor.surveyData.fotoSurveyUrl} alt="Foto Survey" className="max-h-[200px] object-contain rounded-lg border border-slate-200" />
+                          ) : (
+                            <p className="text-xs font-medium text-slate-500">Tidak ada foto.</p>
+                          )}
+                        </div>
+                      </div>
+                    </section>
+
+                    {verifyingActor.googleDriveLink && (
+                      <section className="space-y-4">
+                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Folder className="w-4 h-4" /> Berkas Tambahan (Google Drive)</div>
+                        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-bold text-blue-800 uppercase">Folder Google Drive Pelaku Usaha</p>
+                            <p className="text-[10px] font-medium text-blue-600 mt-1">Berisi foto, video, dokumen usulan, atau file lainnya</p>
+                          </div>
+                          <a href={verifyingActor.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold px-4 py-2.5 rounded-lg text-xs shadow flex items-center justify-center min-w-[140px]">
+                            Buka Folder Drive
+                          </a>
+                        </div>
+                      </section>
+                    )}
+                  </div>
+                  
+                  {!showChecklist && (
+                    <DialogFooter className="border-t pt-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <Button type="button" variant="ghost" onClick={() => setVerifyingActor(null)}>Tutup</Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setPrintModalActor(verifyingActor);
+                            setSelectedPrintDate(verifyingActor.surveyData?.tanggalSurvey || new Date().toISOString().split('T')[0]);
+                            setSaveDateToSurvey(true);
+                          }}
+                          disabled={!verifyingActor.surveyData}
+                          className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 font-bold"
+                        >
+                          <FileDown className="w-4 h-4 mr-1.5" /> Download Berita Acara
+                        </Button>
+                      </div>
+                      <Button type="button" onClick={() => setShowChecklist(true)} className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold">
+                        Verifikasi Berkas <ClipboardCheck className="w-4 h-4 ml-2" />
+                      </Button>
+                    </DialogFooter>
+                  )}
+                </div>
+
+                {/* Kanan: Checklist Berkas */}
+                {showChecklist && (
+                  <div className="w-full lg:w-[400px] shrink-0 lg:border-l lg:pl-6 flex flex-col gap-4 animate-in slide-in-from-right-8 duration-300">
+                    <DialogHeader>
+                      <DialogTitle className="text-xl font-black text-emerald-600 uppercase">Cek Kelengkapan Berkas</DialogTitle>
+                      <DialogDescription>Pastikan 4 berkas ini lengkap.</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-2 space-y-4">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-colors">
+                          <Checkbox id="ktp" checked={checks.ktp} onCheckedChange={(c) => setChecks(prev => ({...prev, ktp: !!c}))} />
+                          <label htmlFor="ktp" className="text-sm font-semibold cursor-pointer select-none">KTP</label>
+                        </div>
+                        <div className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-colors">
+                          <Checkbox id="kk" checked={checks.kk} onCheckedChange={(c) => setChecks(prev => ({...prev, kk: !!c}))} />
+                          <label htmlFor="kk" className="text-sm font-semibold cursor-pointer select-none">KK</label>
+                        </div>
+                        <div className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-colors">
+                          <Checkbox id="nib" checked={checks.nib} onCheckedChange={(c) => setChecks(prev => ({...prev, nib: !!c}))} />
+                          <label htmlFor="nib" className="text-sm font-semibold cursor-pointer select-none">NIB</label>
+                        </div>
+                        <div className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-colors">
+                          <Checkbox id="foto" checked={checks.foto} onCheckedChange={(c) => setChecks(prev => ({...prev, foto: !!c}))} />
+                          <label htmlFor="foto" className="text-sm font-semibold cursor-pointer select-none">Fhoto Pelaku Usaha</label>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-auto pt-4 border-t flex flex-col gap-2">
+                      {checks.ktp && checks.kk && checks.nib && checks.foto ? (
+                        <Button 
+                          type="button" 
+                          onClick={handleVerifyBerkas}
+                          disabled={isSubmitting} 
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                        >
+                          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />} BERHASIL VERIFIKASI
+                        </Button>
+                      ) : (
+                        <Button type="button" disabled className="w-full bg-slate-200 text-slate-500 font-bold">
+                          Ceklist 4 Berkas
+                        </Button>
+                      )}
+                      <Button type="button" variant="ghost" className="w-full" onClick={() => setShowChecklist(false)}>Tutup Checklist</Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+        </DialogContent>
+      </Dialog>
+
       {/* ─── DIALOG VIEW LENGKAP ADMIN ──────────────────────────────────── */}
       <Dialog open={!!adminViewActor} onOpenChange={(open) => !open && setAdminViewActor(null)}>
-        <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[92dvh] overflow-y-auto">
           {adminViewActor && (() => {
             const av = adminViewActor
             const avPejabat = getActorPejabat(av)

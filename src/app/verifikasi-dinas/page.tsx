@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useDeferredValue } from "react"
 import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, sanitizeForFirebase } from "@/firebase"
 import { ref, query, orderByChild, equalTo } from "firebase/database"
@@ -56,6 +56,7 @@ export default function VerifikasiDinasPage() {
   const { toast } = useToast()
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
+  const deferredSearch = useDeferredValue(searchQuery)
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [verifyingActor, setVerifyingActor] = useState<BusinessActor | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -401,7 +402,7 @@ export default function VerifikasiDinasPage() {
 
   const filteredActors = useMemo(() => {
     if (!actors) return []
-    const q = searchQuery.toLowerCase().trim()
+    const q = deferredSearch.toLowerCase().trim()
     if (!q) return actors
     return actors.filter(actor =>
       (actor.fullName && actor.fullName.toLowerCase().includes(q)) ||
@@ -409,7 +410,7 @@ export default function VerifikasiDinasPage() {
       (actor.businessName && actor.businessName.toLowerCase().includes(q)) ||
       (actor.kelurahan && actor.kelurahan.toLowerCase().includes(q))
     )
-  }, [actors, searchQuery])
+  }, [actors, deferredSearch])
 
   const groupedActors = useMemo(() => {
     if (!filteredActors) return {}
