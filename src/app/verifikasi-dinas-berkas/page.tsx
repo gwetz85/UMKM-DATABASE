@@ -107,6 +107,9 @@ export default function VerifikasiDinasBerkasPage() {
 
   // Admin: upload / ganti foto survey
   const [adminPhotoUploading, setAdminPhotoUploading] = useState(false)
+  const [photoEditActor, setPhotoEditActor] = useState<BusinessActor | null>(null)
+  const [photoEditPreview, setPhotoEditPreview] = useState<string | null>(null)
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false)
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -361,15 +364,12 @@ export default function VerifikasiDinasBerkasPage() {
     }
   }
 
-  // Admin: handle upload/ganti foto survey untuk pelaku yang sudah terverifikasi dinas
-  const handleAdminPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, actorId: string, actorName: string) => {
-    const file = e.target.files?.[0]
-    if (!file || !database) return
+  // Admin: proses kompresi gambar maksimal 1MB
+  const compressImageFile = (file: File, callback: (base64Result: string) => void) => {
     if (!file.type.startsWith('image/')) {
       toast({ variant: 'destructive', title: 'Format tidak didukung', description: 'Hanya file gambar yang diperbolehkan.' })
       return
     }
-    setAdminPhotoUploading(true)
     const reader = new FileReader()
     reader.onload = (ev) => {
       const rawResult = ev.target?.result as string
@@ -399,23 +399,105 @@ export default function VerifikasiDinasBerkasPage() {
             s2.getContext('2d')?.drawImage(canvas, 0, 0, s2.width, s2.height)
             result = s2.toDataURL('image/jpeg', 0.5)
           }
-          // Save to businessActors/actorId/surveyData/fotoSurveyUrl
-          const photoRef = ref(database, `businessActors/${actorId}/surveyData/fotoSurveyUrl`)
-          set(photoRef, result).catch(console.error)
-          logActivity({ query: `ADMIN UPLOAD FOTO SURVEY: ${actorName}`, results: 'Berhasil', device: getDeviceType(navigator.userAgent), source: 'Web', method: 'UPLOAD FOTO ADMIN', userId: user?.email || user?.uid || 'Admin' })
-          toast({ title: '✅ Foto berhasil diupload', description: `Foto survey ${actorName} telah diperbarui. Muat ulang halaman untuk melihat perubahan.` })
-        } catch (err) {
-          toast({ variant: 'destructive', title: 'Gagal upload foto', description: 'Terjadi kesalahan saat memproses foto.' })
-        } finally {
-          setAdminPhotoUploading(false)
+          callback(result)
+        } catch {
+          callback(rawResult)
         }
       }
       img.onerror = () => {
         toast({ variant: 'destructive', title: 'Gagal memuat foto', description: 'File gambar tidak dapat dibaca.' })
-        setAdminPhotoUploading(false)
       }
     }
     reader.readAsDataURL(file)
+  }
+
+  // Simpan foto dari modal edit foto survey
+  const handleSavePhotoModal = async () => {
+    if (!photoEditActor || !photoEditPreview || !database) return
+    setIsSavingPhoto(true)
+    try {
+      const actorId = photoEditActor.id
+      const photoRef = ref(database, `businessActors/${actorId}/surveyData/fotoSurveyUrl`)
+      await set(photoRef, photoEditPreview)
+
+      // Update local states jika dialog detail sedang terbuka
+      if (adminViewActor && adminViewActor.id === actorId) {
+        setAdminViewActor(prev => prev ? ({
+          ...prev,
+          surveyData: {
+            ...(prev.surveyData || ({} as any)),
+            fotoSurveyUrl: photoEditPreview
+          }
+        }) : null)
+      }
+      if (verifyingActor && verifyingActor.id === actorId) {
+        setVerifyingActor(prev => prev ? ({
+          ...prev,
+          surveyData: {
+            ...(prev.surveyData || ({} as any)),
+            fotoSurveyUrl: photoEditPreview
+          }
+        }) : null)
+      }
+
+      logActivity({
+        query: `ADMIN UPLOAD FOTO SURVEY: ${photoEditActor.fullName}`,
+        results: 'Berhasil',
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'UPLOAD FOTO ADMIN',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+
+      toast({
+        title: '✅ Foto Survey Berhasil Disimpan',
+        description: `Foto survey untuk ${photoEditActor.fullName} telah diperbarui (max 1MB).`
+      })
+      setPhotoEditActor(null)
+      setPhotoEditPreview(null)
+    } catch (err: any) {
+      console.error(err)
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Menyimpan Foto',
+        description: err?.message || 'Terjadi kesalahan saat menyimpan foto.'
+      })
+    } finally {
+      setIsSavingPhoto(false)
+    }
+  }
+
+  // Upload langsung dari file input (shortcut)
+  const handleAdminPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>, actorId: string, actorName: string) => {
+    const file = e.target.files?.[0]
+    if (!file || !database) return
+    setAdminPhotoUploading(true)
+    compressImageFile(file, async (compressedResult) => {
+      try {
+        const photoRef = ref(database, `businessActors/${actorId}/surveyData/fotoSurveyUrl`)
+        await set(photoRef, compressedResult)
+
+        if (adminViewActor && adminViewActor.id === actorId) {
+          setAdminViewActor(prev => prev ? ({
+            ...prev,
+            surveyData: { ...(prev.surveyData || ({} as any)), fotoSurveyUrl: compressedResult }
+          }) : null)
+        }
+        if (verifyingActor && verifyingActor.id === actorId) {
+          setVerifyingActor(prev => prev ? ({
+            ...prev,
+            surveyData: { ...(prev.surveyData || ({} as any)), fotoSurveyUrl: compressedResult }
+          }) : null)
+        }
+
+        logActivity({ query: `ADMIN UPLOAD FOTO SURVEY: ${actorName}`, results: 'Berhasil', device: getDeviceType(navigator.userAgent), source: 'Web', method: 'UPLOAD FOTO ADMIN', userId: user?.email || user?.uid || 'Admin' })
+        toast({ title: '✅ Foto berhasil diupload', description: `Foto survey ${actorName} telah diperbarui (max 1MB).` })
+      } catch (err) {
+        toast({ variant: 'destructive', title: 'Gagal upload foto', description: 'Terjadi kesalahan saat memproses foto.' })
+      } finally {
+        setAdminPhotoUploading(false)
+      }
+    })
     e.target.value = ''
   }
 
@@ -1253,6 +1335,27 @@ export default function VerifikasiDinasBerkasPage() {
                                   <Eye className="w-4 h-4 shrink-0" />
                                 </Button>
 
+                                {/* Tombol FOTO: UPLOAD / GANTI FOTO SURVEY */}
+                                {(isAdmin || isVerifikatorDinas) && (
+                                  <Button
+                                    size="icon"
+                                    variant="outline"
+                                    type="button"
+                                    onClick={() => {
+                                      setPhotoEditActor(actor);
+                                      setPhotoEditPreview(actor.surveyData?.fotoSurveyUrl || actor.photoUsahaUri || actor.comparisonPhotoUrl || null);
+                                    }}
+                                    className={`h-9 w-9 rounded-xl shadow-sm transition-all duration-200 shrink-0 ${
+                                      actor.surveyData?.fotoSurveyUrl
+                                        ? "bg-amber-50 hover:bg-amber-600 hover:text-white text-amber-700 border-amber-200 hover:border-amber-300"
+                                        : "bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border-rose-200 hover:border-rose-300 animate-pulse"
+                                    }`}
+                                    title={actor.surveyData?.fotoSurveyUrl ? "Ganti Foto Survey Dinas" : "Upload Foto Survey Dinas (Belum Ada Foto)"}
+                                  >
+                                    <Camera className="w-4 h-4 shrink-0" />
+                                  </Button>
+                                )}
+
                                 {/* Tombol PDF: DOWNLOAD / CETAK BERITA ACARA SURVEY */}
                                 <Button
                                   size="icon"
@@ -1778,6 +1881,20 @@ export default function VerifikasiDinasBerkasPage() {
                               <p className="text-[10px] text-slate-400 font-medium">Belum ada</p>
                             </div>
                           )}
+                          {doc.label === "Foto Survey Dinas" && (isAdmin || isVerifikatorDinas) && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setPhotoEditActor(av);
+                                setPhotoEditPreview(av.surveyData?.fotoSurveyUrl || av.photoUsahaUri || av.comparisonPhotoUrl || null);
+                              }}
+                              className="w-full text-[10px] h-7 bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 font-bold gap-1 mt-1"
+                            >
+                              <Camera className="w-3 h-3" /> {doc.url ? 'Ganti Foto Survey' : 'Upload Foto Survey'}
+                            </Button>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -2119,6 +2236,95 @@ export default function VerifikasiDinasBerkasPage() {
                 Simpan NIPPPK Pejabat
               </Button>
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── MODAL KHUSUS EDIT / UPLOAD FOTO SURVEY DINAS (ADMIN / VERIFIKATOR) ─── */}
+      <Dialog open={!!photoEditActor} onOpenChange={(open) => { if (!open) { setPhotoEditActor(null); setPhotoEditPreview(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700 font-black uppercase text-lg">
+              <Camera className="w-5 h-5" /> Edit / Upload Foto Survey Dinas
+            </DialogTitle>
+            <DialogDescription>
+              Upload atau ganti foto survey dinas. Foto akan dikompresi otomatis maksimal 1MB dan langsung terupdate di Berita Acara Survey PDF.
+            </DialogDescription>
+          </DialogHeader>
+
+          {photoEditActor && (
+            <div className="space-y-4 py-2">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Pelaku Usaha</p>
+                <p className="text-sm font-black text-slate-900 uppercase">{photoEditActor.fullName}</p>
+                <p className="text-xs text-slate-600">{photoEditActor.businessName || photoEditActor.surveyData?.namaUsaha || "Nama Usaha Belum Ada"}</p>
+              </div>
+
+              {/* Area Preview Foto */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                  Preview Foto Survey:
+                </Label>
+                <div className="w-full h-56 bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative group">
+                  {photoEditPreview ? (
+                    <img src={photoEditPreview} alt="Preview Foto Survey" className="w-full h-full object-contain bg-black/5" />
+                  ) : (
+                    <div className="text-center p-4">
+                      <Camera className="w-10 h-10 text-slate-400 mx-auto mb-2 opacity-50" />
+                      <p className="text-xs font-semibold text-slate-500">Belum ada foto survey dipilih</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Pilih foto dari galeri atau ambil dengan kamera HP</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Tombol Pilih File / Kamera */}
+              <div>
+                <label htmlFor="modal-photo-upload-input" className="cursor-pointer block">
+                  <div className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl border-2 border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs shadow-sm transition-all">
+                    <Camera className="w-4 h-4 text-amber-600" />
+                    <span>{photoEditPreview ? "Pilih / Ambil Foto Lain" : "Pilih dari Galeri / Ambil Foto Kamera"}</span>
+                  </div>
+                  <input
+                    id="modal-photo-upload-input"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        compressImageFile(file, (b64) => setPhotoEditPreview(b64))
+                      }
+                      e.target.value = ''
+                    }}
+                  />
+                </label>
+                <p className="text-[10px] text-slate-400 text-center mt-1.5">
+                  ✅ Otomatis dikompresi kualitas tinggi dengan ukuran maksimal 1MB
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row items-center justify-end gap-2 pt-3 border-t">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => { setPhotoEditActor(null); setPhotoEditPreview(null); }}
+              disabled={isSavingPhoto}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSavePhotoModal}
+              disabled={isSavingPhoto || !photoEditPreview}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold gap-2 min-w-[140px]"
+            >
+              {isSavingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              Simpan Foto
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

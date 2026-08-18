@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useDeferredValue } from "react"
 import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, sanitizeForFirebase } from "@/firebase"
-import { ref, query, orderByChild, equalTo } from "firebase/database"
+import { ref, query, orderByChild, equalTo, set } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -98,6 +98,11 @@ export default function VerifikasiDinasPage() {
 
   const [surveyData, setSurveyData] = useState<Partial<SurveyDinasData>>({})
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+
+  // Admin & Petugas: Modal khusus edit / upload foto survey
+  const [photoEditActor, setPhotoEditActor] = useState<BusinessActor | null>(null)
+  const [photoEditPreview, setPhotoEditPreview] = useState<string | null>(null)
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false)
   
   // Format rupiah
   const formatRupiah = (value: string) => {
@@ -216,6 +221,99 @@ export default function VerifikasiDinasPage() {
       }
       reader.readAsDataURL(file)
       e.target.value = ''
+    }
+  }
+
+  // Kompresi gambar umum maksimal 1MB
+  const compressImageFile = (file: File, callback: (base64Result: string) => void) => {
+    if (!file.type.startsWith('image/')) {
+      toast({ variant: 'destructive', title: 'Format tidak didukung', description: 'Hanya file gambar yang diperbolehkan.' })
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const rawResult = ev.target?.result as string
+      const img = new window.Image()
+      img.src = rawResult
+      img.onload = () => {
+        try {
+          const MAX_B64_BYTES = 1_398_101 // 1MB raw ≈ 1.37MB base64
+          const canvas = document.createElement('canvas')
+          const MAX_DIM = 1200
+          let width = img.width; let height = img.height
+          if (width > height) {
+            if (width > MAX_DIM) { height = Math.round(height * MAX_DIM / width); width = MAX_DIM }
+          } else {
+            if (height > MAX_DIM) { width = Math.round(width * MAX_DIM / height); height = MAX_DIM }
+          }
+          canvas.width = width; canvas.height = height
+          canvas.getContext('2d')?.drawImage(img, 0, 0, width, height)
+          let result = ''
+          for (const q of [0.85, 0.75, 0.65, 0.55, 0.45, 0.35]) {
+            result = canvas.toDataURL('image/jpeg', q)
+            if (result.length <= MAX_B64_BYTES) break
+          }
+          if (result.length > MAX_B64_BYTES) {
+            const s2 = document.createElement('canvas')
+            s2.width = Math.round(width * 0.7); s2.height = Math.round(height * 0.7)
+            s2.getContext('2d')?.drawImage(canvas, 0, 0, s2.width, s2.height)
+            result = s2.toDataURL('image/jpeg', 0.5)
+          }
+          callback(result)
+        } catch {
+          callback(rawResult)
+        }
+      }
+      img.onerror = () => {
+        toast({ variant: 'destructive', title: 'Gagal memuat foto', description: 'File gambar tidak dapat dibaca.' })
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Simpan foto dari modal edit foto survey
+  const handleSavePhotoModal = async () => {
+    if (!photoEditActor || !photoEditPreview || !database) return
+    setIsSavingPhoto(true)
+    try {
+      const actorId = photoEditActor.id
+      const photoRef = ref(database, `businessActors/${actorId}/surveyData/fotoSurveyUrl`)
+      await set(photoRef, photoEditPreview)
+
+      if (viewingActor && viewingActor.id === actorId) {
+        setViewingActor(prev => prev ? ({
+          ...prev,
+          surveyData: {
+            ...(prev.surveyData || ({} as any)),
+            fotoSurveyUrl: photoEditPreview
+          }
+        }) : null)
+      }
+
+      logActivity({
+        query: `ADMIN UPLOAD FOTO SURVEY: ${photoEditActor.fullName}`,
+        results: 'Berhasil',
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'UPLOAD FOTO ADMIN',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+
+      toast({
+        title: '✅ Foto Survey Berhasil Disimpan',
+        description: `Foto survey untuk ${photoEditActor.fullName} telah diperbarui (max 1MB).`
+      })
+      setPhotoEditActor(null)
+      setPhotoEditPreview(null)
+    } catch (err: any) {
+      console.error(err)
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Menyimpan Foto',
+        description: err?.message || 'Terjadi kesalahan saat menyimpan foto.'
+      })
+    } finally {
+      setIsSavingPhoto(false)
     }
   }
 
@@ -1174,6 +1272,27 @@ export default function VerifikasiDinasPage() {
                                 <Eye className="w-4 h-4" />
                               </Button>
 
+                              {/* Tombol FOTO: UPLOAD / GANTI FOTO SURVEY */}
+                              {(isAdmin || isDinas || isPetugas) && (
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  type="button"
+                                  onClick={() => {
+                                    setPhotoEditActor(actor);
+                                    setPhotoEditPreview(actor.surveyData?.fotoSurveyUrl || actor.photoUsahaUri || actor.comparisonPhotoUrl || null);
+                                  }}
+                                  className={`h-9 w-9 rounded-xl shadow-sm transition-all duration-300 shrink-0 ${
+                                    actor.surveyData?.fotoSurveyUrl
+                                      ? "border-amber-200 text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white"
+                                      : "border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white animate-pulse"
+                                  }`}
+                                  title={actor.surveyData?.fotoSurveyUrl ? "Ganti Foto Survey Dinas" : "Upload Foto Survey Dinas (Belum Ada Foto)"}
+                                >
+                                  <Camera className="w-4 h-4" />
+                                </Button>
+                              )}
+
                               {/* Verifikasi / Tindakan Dinas Trigger */}
                               {(isAdmin || isDinas || isPetugas) && (
                                 <Button
@@ -1344,6 +1463,51 @@ export default function VerifikasiDinasPage() {
                         <p className="text-xs font-medium text-slate-500 text-center">Belum ada titik lokasi yang direkam.</p>
                       </div>
                     )}
+                  </div>
+                </section>
+
+                {/* DOKUMEN & FOTO SURVEY */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Camera className="w-4 h-4 text-rose-600" /> Dokumen & Foto Survey</div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {[
+                      { label: "Foto KTP", url: viewingActor.ktpUri },
+                      { label: "Foto KK", url: viewingActor.kkUri },
+                      { label: "Foto NIB", url: viewingActor.nibUri },
+                      { label: "Foto Usaha", url: viewingActor.photoUsahaUri },
+                      { label: "Foto Perbandingan", url: viewingActor.comparisonPhotoUrl },
+                      { label: "Foto Survey Dinas", url: viewingActor.surveyData?.fotoSurveyUrl || viewingActor.photoUsahaUri || viewingActor.comparisonPhotoUrl },
+                    ].map((doc, i) => (
+                      <div key={i} className="space-y-1">
+                        <p className="text-[10px] font-bold text-rose-700/80 uppercase">{doc.label}</p>
+                        {doc.url ? (
+                          <div className="space-y-1">
+                            <img src={doc.url} alt={doc.label} className="w-full h-28 object-cover rounded-lg border border-slate-200" />
+                            <a href={doc.url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 hover:underline flex items-center gap-1">
+                              <Eye className="w-3 h-3" /> Buka penuh
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="w-full h-14 rounded-lg border border-dashed border-slate-200 bg-slate-50 flex items-center justify-center">
+                            <p className="text-[10px] text-slate-400 font-medium">Belum ada</p>
+                          </div>
+                        )}
+                        {doc.label === "Foto Survey Dinas" && (isAdmin || isDinas || isPetugas) && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setPhotoEditActor(viewingActor);
+                              setPhotoEditPreview(viewingActor.surveyData?.fotoSurveyUrl || viewingActor.photoUsahaUri || viewingActor.comparisonPhotoUrl || null);
+                            }}
+                            className="w-full text-[10px] h-7 bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 font-bold gap-1 mt-1"
+                          >
+                            <Camera className="w-3 h-3" /> {doc.url ? 'Ganti Foto Survey' : 'Upload Foto Survey'}
+                          </Button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </section>
 
@@ -1992,6 +2156,95 @@ export default function VerifikasiDinasPage() {
               ) : (
                 <><FileDown className="w-4 h-4 mr-2" /> Unduh Dokumen (PDF)</>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── MODAL KHUSUS EDIT / UPLOAD FOTO SURVEY DINAS (ADMIN / PETUGAS) ─── */}
+      <Dialog open={!!photoEditActor} onOpenChange={(open) => { if (!open) { setPhotoEditActor(null); setPhotoEditPreview(null); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700 font-black uppercase text-lg">
+              <Camera className="w-5 h-5" /> Edit / Upload Foto Survey Dinas
+            </DialogTitle>
+            <DialogDescription>
+              Upload atau ganti foto survey dinas. Foto akan dikompresi otomatis maksimal 1MB dan langsung terupdate di Berita Acara Survey PDF.
+            </DialogDescription>
+          </DialogHeader>
+
+          {photoEditActor && (
+            <div className="space-y-4 py-2">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Pelaku Usaha</p>
+                <p className="text-sm font-black text-slate-900 uppercase">{photoEditActor.fullName}</p>
+                <p className="text-xs text-slate-600">{photoEditActor.businessName || photoEditActor.surveyData?.namaUsaha || "Nama Usaha Belum Ada"}</p>
+              </div>
+
+              {/* Area Preview Foto */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                  Preview Foto Survey:
+                </Label>
+                <div className="w-full h-56 bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative group">
+                  {photoEditPreview ? (
+                    <img src={photoEditPreview} alt="Preview Foto Survey" className="w-full h-full object-contain bg-black/5" />
+                  ) : (
+                    <div className="text-center p-4">
+                      <Camera className="w-10 h-10 text-slate-400 mx-auto mb-2 opacity-50" />
+                      <p className="text-xs font-semibold text-slate-500">Belum ada foto survey dipilih</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Pilih foto dari galeri atau ambil dengan kamera HP</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Tombol Pilih File / Kamera */}
+              <div>
+                <label htmlFor="modal-photo-upload-input-vd" className="cursor-pointer block">
+                  <div className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl border-2 border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs shadow-sm transition-all">
+                    <Camera className="w-4 h-4 text-amber-600" />
+                    <span>{photoEditPreview ? "Pilih / Ambil Foto Lain" : "Pilih dari Galeri / Ambil Foto Kamera"}</span>
+                  </div>
+                  <input
+                    id="modal-photo-upload-input-vd"
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        compressImageFile(file, (b64) => setPhotoEditPreview(b64))
+                      }
+                      e.target.value = ''
+                    }}
+                  />
+                </label>
+                <p className="text-[10px] text-slate-400 text-center mt-1.5">
+                  ✅ Otomatis dikompresi kualitas tinggi dengan ukuran maksimal 1MB
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row items-center justify-end gap-2 pt-3 border-t">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => { setPhotoEditActor(null); setPhotoEditPreview(null); }}
+              disabled={isSavingPhoto}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSavePhotoModal}
+              disabled={isSavingPhoto || !photoEditPreview}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold gap-2 min-w-[140px]"
+            >
+              {isSavingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              Simpan Foto
             </Button>
           </DialogFooter>
         </DialogContent>
