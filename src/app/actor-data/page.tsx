@@ -201,20 +201,6 @@ function ActorDataContent() {
     }
   }, [viewId, actors, viewingActor])
 
-  // Auto-sync cerdas: hanya sync jika system_stats stale (> 10 menit) atau belum ada
-  // Mencegah fetch seluruh businessActors setiap kali halaman dibuka
-  const hasAutoSynced = useRef(false)
-  useEffect(() => {
-    if (!isAdmin || !database || hasAutoSynced.current || !systemStats) return
-    const lastUpdated = systemStats?.lastUpdated ? new Date((systemStats as any).lastUpdated).getTime() : 0
-    const tenMinutesAgo = Date.now() - 10 * 60 * 1000
-    if (!systemStats || lastUpdated < tenMinutesAgo) {
-      hasAutoSynced.current = true
-      handleSyncStats(true)
-    } else {
-      hasAutoSynced.current = true // data masih fresh
-    }
-  }, [isAdmin, database, systemStats])
 
 
   const { groupedActors, globalIndexMap } = useMemo(() => {
@@ -1208,7 +1194,7 @@ function ActorDataContent() {
                   <div className="w-24 h-5 bg-slate-300 dark:bg-slate-700 rounded-full" />
                 </div>
               ))
-            ) : coordinatorStats.filter(stat => stat.count > 0).map((stat) => (
+            ) : coordinatorStats.filter(stat => stat.count > 0 || stat.quota > 0).map((stat) => (
               <div 
                 key={stat.name}
                 onClick={() => router.push(`/actor-data?coordinator=${stat.name}`)}
@@ -1249,7 +1235,7 @@ function ActorDataContent() {
               </div>
             ))}
 
-            {!(isKuotaLoading || (!systemStats && isStatsLoading)) && coordinatorStats.filter(stat => stat.count > 0).length === 0 && (
+            {!(isKuotaLoading || (!systemStats && isStatsLoading)) && coordinatorStats.filter(stat => stat.count > 0 || stat.quota > 0).length === 0 && (
                <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 bg-white rounded-2xl border-2 border-dashed border-slate-200">
                  <div className="p-4 bg-slate-50 rounded-full">
                     <Search className="w-10 h-10 text-slate-300" />

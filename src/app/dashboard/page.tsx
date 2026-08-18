@@ -98,23 +98,7 @@ export default function DashboardStatsPage() {
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
 
-  // Auto-sync cerdas: hanya sync jika system_stats belum ada atau sudah lebih dari 10 menit
-  // Mencegah fetch seluruh businessActors setiap kali halaman dibuka
-  const hasAutoSynced = React.useRef(false)
-  useEffect(() => {
-    if (hasAutoSynced.current) return
-    if (userProfile?.role === 'admin' && !isSyncing && database && systemStats !== undefined) {
-      const lastUpdated = systemStats?.lastUpdated ? new Date(systemStats.lastUpdated).getTime() : 0
-      const tenMinutesAgo = Date.now() - 10 * 60 * 1000
-      const isStale = !systemStats || lastUpdated < tenMinutesAgo
-      if (isStale) {
-        hasAutoSynced.current = true
-        handleSyncStats()
-      } else {
-        hasAutoSynced.current = true // data masih fresh, tidak perlu sync
-      }
-    }
-  }, [userProfile?.role, database, systemStats])
+
 
 
 
