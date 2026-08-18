@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
-import { ref, query, equalTo, orderByChild } from "firebase/database"
+import { ref, query, equalTo, orderByChild, get } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -105,9 +105,20 @@ function FinishContent() {
     : undefined
 
   // ── Print ─────────────────────────────────────────────────────────────────
-  const handlePrintActor = (actor: BusinessActor) => {
+  const handlePrintActor = async (actor: BusinessActor) => {
     const a = actor as any
-    const sd = a.surveyData || {}
+    let sd = a.surveyData || {}
+    if (!sd.fotoSurveyUrl && (sd.hasFotoSurvey || a.hasFotoSurvey) && database) {
+      try {
+        const pRef = ref(database, `survey_photos/${actor.id}/fotoSurveyUrl`);
+        const pSnap = await get(pRef);
+        if (pSnap.exists()) {
+          sd = { ...sd, fotoSurveyUrl: pSnap.val() };
+        }
+      } catch (e) {
+        console.warn("Could not load photo for print:", e);
+      }
+    }
     const parsed = parsePobDob(actor.pobDob || "")
     const dob = actor.dob || parsed.dob || "-"
     const pob = actor.pob || parsed.pob || "-"

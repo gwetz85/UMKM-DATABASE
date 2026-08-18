@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useDeferredValue } from "react"
 import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, sanitizeForFirebase } from "@/firebase"
-import { ref, query, orderByChild, equalTo } from "firebase/database"
+import { ref, query, orderByChild, equalTo, get, set } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -293,8 +293,20 @@ export default function VerifikasiDinasPage() {
       hibah: existing.hibah || { pernah: false },
       izin: existing.izin || [],
       fotoSurveyUrl: existing.fotoSurveyUrl || actor.photoUsahaUri || undefined,
+      hasFotoSurvey: existing.hasFotoSurvey,
       pejabatData: existing.pejabatData || actor.pejabatData || undefined
     });
+
+    if (!existing.fotoSurveyUrl && (existing.hasFotoSurvey || (actor as any).hasFotoSurvey) && database) {
+      const pRef = ref(database, `survey_photos/${actor.id}/fotoSurveyUrl`);
+      get(pRef).then(snap => {
+        if (snap.exists()) {
+          const fetchedPhoto = snap.val();
+          setPhotoPreview(fetchedPhoto);
+          setSurveyData(prev => ({ ...prev, fotoSurveyUrl: fetchedPhoto }));
+        }
+      }).catch(console.error);
+    }
   };
 
   const fetchLocation = () => {
@@ -465,6 +477,13 @@ export default function VerifikasiDinasPage() {
       const mergedSurveyData: any = {
         ...surveyData,
       };
+      if (mergedSurveyData.fotoSurveyUrl) {
+        const photoUrl = mergedSurveyData.fotoSurveyUrl;
+        delete mergedSurveyData.fotoSurveyUrl;
+        mergedSurveyData.hasFotoSurvey = true;
+        const photoRef = ref(database, `survey_photos/${verifyingActor.id}`);
+        set(photoRef, { fotoSurveyUrl: photoUrl, updatedAt: new Date().toISOString() }).catch(console.error);
+      }
       if (activePejabat) {
         mergedSurveyData.pejabatData = activePejabat;
       }
@@ -554,6 +573,13 @@ export default function VerifikasiDinasPage() {
       const mergedSurveyData: any = {
         ...surveyData,
       };
+      if (mergedSurveyData.fotoSurveyUrl) {
+        const photoUrl = mergedSurveyData.fotoSurveyUrl;
+        delete mergedSurveyData.fotoSurveyUrl;
+        mergedSurveyData.hasFotoSurvey = true;
+        const photoRef = ref(database, `survey_photos/${verifyingActor.id}`);
+        set(photoRef, { fotoSurveyUrl: photoUrl, updatedAt: new Date().toISOString() }).catch(console.error);
+      }
       if (activePejabat) {
         mergedSurveyData.pejabatData = activePejabat;
       }

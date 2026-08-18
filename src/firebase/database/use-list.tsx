@@ -7,6 +7,8 @@ export interface UseListOptions {
   once?: boolean;
 }
 
+const memoryCache = new Map<string, any[]>();
+
 function getRefKey(refOrQuery: any): string {
   if (!refOrQuery) return '';
   const url = typeof refOrQuery.toString === 'function' ? refOrQuery.toString() : '';
@@ -18,11 +20,12 @@ export function useList<T = any>(
   memoizedRefOrQuery: DatabaseReference | Query | null | undefined,
   options: UseListOptions = {}
 ) {
-  const [data, setData] = useState<T[] | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(!!memoizedRefOrQuery);
-  const [error, setError] = useState<Error | null>(null);
-
   const refKey = getRefKey(memoizedRefOrQuery);
+  const cachedData = refKey ? memoryCache.get(refKey) : undefined;
+
+  const [data, setData] = useState<T[] | null>(cachedData ? (cachedData as T[]) : null);
+  const [isLoading, setIsLoading] = useState<boolean>(!cachedData && !!memoizedRefOrQuery);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!memoizedRefOrQuery) {
@@ -31,13 +34,22 @@ export function useList<T = any>(
       return;
     }
     
-    setIsLoading(true);
+    const cached = refKey ? memoryCache.get(refKey) : null;
+    if (cached) {
+      setData(cached as T[]);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
 
     const handleSnapshot = (snapshot: any) => {
       const results: any[] = [];
       snapshot.forEach((childSnap: any) => {
         results.push({ ...childSnap.val(), id: childSnap.key });
       });
+      if (refKey) {
+        memoryCache.set(refKey, results);
+      }
       setData(results);
       setIsLoading(false);
     };

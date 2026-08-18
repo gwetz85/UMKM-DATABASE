@@ -234,36 +234,46 @@ export default function LoginPage() {
             }
 
             if (preRegisteredData.password === password) {
-              const currentVersion = preRegisteredData.pwdVersion || 0;
-              const versionSuffix = currentVersion ? `_v${currentVersion}` : '';
-              const actualEmail = `${username}${versionSuffix}@umkm.id`;
-              
-              let newUserCred;
-              try {
-                newUserCred = await signInWithEmailAndPassword(auth, actualEmail, password)
-              } catch (e: any) {
-                if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
-                  try {
-                    newUserCred = await createUserWithEmailAndPassword(auth, actualEmail, password)
-                  } catch (createErr: any) {
-                    if (createErr.code === 'auth/email-already-in-use') {
-                      // Akun Firebase sudah ada dengan email ini tapi password berbeda.
-                      // Auto-bump pwdVersion agar email baru dibuat dan user bisa login.
-                      const nextVersion = currentVersion + 1;
-                      const nextEmail = `${username}_v${nextVersion}@umkm.id`;
-                      newUserCred = await createUserWithEmailAndPassword(auth, nextEmail, password)
-                      // Simpan versi baru ke system_users
-                      await update(tempUserRef, { pwdVersion: nextVersion })
-                    } else {
-                      throw createErr;
+              let currentVersion = preRegisteredData.pwdVersion || 0;
+              let newUserCred: any = null;
+              let attempts = 0;
+              const maxAttempts = 15;
+
+              while (!newUserCred && attempts < maxAttempts) {
+                attempts++;
+                const versionSuffix = currentVersion ? `_v${currentVersion}` : '';
+                const actualEmail = `${username}${versionSuffix}@umkm.id`;
+                
+                try {
+                  newUserCred = await signInWithEmailAndPassword(auth, actualEmail, password);
+                } catch (e: any) {
+                  if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
+                    try {
+                      newUserCred = await createUserWithEmailAndPassword(auth, actualEmail, password);
+                    } catch (createErr: any) {
+                      if (createErr.code === 'auth/email-already-in-use') {
+                        currentVersion++;
+                        continue;
+                      } else {
+                        throw createErr;
+                      }
                     }
+                  } else {
+                    throw e;
                   }
-                } else {
-                  throw e;
                 }
               }
-              user = newUserCred.user
-              finalUserRole = preRegisteredData.role || ''
+
+              if (!newUserCred) {
+                throw new Error("Gagal mengautentikasi akun. Silakan coba lagi.");
+              }
+
+              if (currentVersion !== (preRegisteredData.pwdVersion || 0)) {
+                await update(tempUserRef, { pwdVersion: currentVersion });
+              }
+
+              user = newUserCred.user;
+              finalUserRole = preRegisteredData.role || '';
 
               await update(tempUserRef, {
                 uid: user.uid,
