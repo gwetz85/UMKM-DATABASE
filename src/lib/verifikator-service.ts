@@ -1,4 +1,4 @@
-import { ref, get, set, update } from "firebase/database";
+import { ref, get, set, update, remove } from "firebase/database";
 import { PejabatItem } from "@/app/lib/types";
 
 /**
@@ -109,6 +109,30 @@ export async function ensureVerifikatorUser(
       }
 
       if (foundExistingKey && existingData) {
+        // If the old key is different from the new username (e.g. NIPPPK changed), migrate to the new username!
+        if (foundExistingKey !== username) {
+          const migratedUserData = {
+            ...existingData,
+            id: username,
+            username: username,
+            fullName: rawName,
+            nipppk: rawNip,
+            pangkat: verifikator.pangkat || existingData.pangkat || "",
+            jabatan: verifikator.jabatan || existingData.jabatan || "Verifikator Dinas",
+            role: "verifikator_dinas",
+            uid: null, // Reset device lock so they can log in with new ID
+            updatedAt: new Date().toISOString(),
+          };
+          await set(userRef, migratedUserData);
+          await remove(ref(database, `system_users/${foundExistingKey}`)).catch(console.error);
+          return {
+            created: true,
+            username,
+            password: existingData.password,
+            fullName: rawName,
+          };
+        }
+
         return {
           created: false,
           username: foundExistingKey,
@@ -143,6 +167,93 @@ export async function ensureVerifikatorUser(
     }
   } catch (err) {
     console.error("Error ensuring Verifikator Dinas user account:", err);
+    return null;
+  }
+}
+
+/**
+ * Explicitly generate / regenerate Verifikator Dinas login ID (Username = NIPPPK)
+ * Digunakan ketika ada perubahan NIPPPK pejabat agar username ID login otomatis mengikuti NIPPPK baru.
+ */
+export async function regenerateVerifikatorUser(
+  database: any,
+  verifikator: PejabatItem | { nama?: string; nipppk?: string; pangkat?: string; jabatan?: string },
+  oldUsernameOrNip?: string
+): Promise<EnsureVerifikatorResult | null> {
+  if (!database || !verifikator?.nama || verifikator.nama.trim() === "" || verifikator.nama === "Belum Ditentukan") {
+    return null;
+  }
+
+  const rawName = verifikator.nama.trim();
+  const rawNip = verifikator.nipppk ? verifikator.nipppk.trim() : "";
+  const newUsername = sanitizeUsername(rawNip, rawName);
+
+  try {
+    const allUsersSnap = await get(ref(database, "system_users"));
+    let oldPassword = "";
+    const keysToDelete: string[] = [];
+
+    if (allUsersSnap.exists()) {
+      const allUsers = allUsersSnap.val();
+      const oldClean = oldUsernameOrNip ? String(oldUsernameOrNip).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase() : "";
+
+      for (const k of Object.keys(allUsers)) {
+        const u = allUsers[k];
+        const matchOldKey = oldClean && k.toLowerCase() === oldClean;
+        const matchOldNip = oldClean && u?.nipppk && String(u.nipppk).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase() === oldClean;
+        const matchName = u?.fullName && String(u.fullName).trim().toUpperCase() === rawName.toUpperCase() && u?.role === "verifikator_dinas";
+
+        if (matchOldKey || matchOldNip || matchName) {
+          if (!oldPassword && u?.password) {
+            oldPassword = u.password;
+          }
+          if (k !== newUsername) {
+            keysToDelete.push(k);
+          }
+        }
+      }
+    }
+
+    const finalPassword = oldPassword || generateUniqueCode6();
+    const newUserData = {
+      id: newUsername,
+      username: newUsername,
+      fullName: rawName,
+      nipppk: rawNip,
+      pangkat: verifikator.pangkat || "",
+      jabatan: verifikator.jabatan || "Verifikator Dinas",
+      role: "verifikator_dinas",
+      password: finalPassword,
+      uid: null, // Reset device lock so they can log in seamlessly with new ID
+      updatedAt: new Date().toISOString(),
+      pejabatData: {
+        verifikator: {
+          nama: rawName,
+          nipppk: rawNip,
+          pangkat: verifikator.pangkat || "",
+          jabatan: verifikator.jabatan || "Verifikator Dinas",
+        },
+        petugas: { nama: "", nipppk: "", pangkat: "", jabatan: "Petugas Survey" },
+        updatedAt: new Date().toISOString(),
+      },
+    };
+
+    // Save to the new username key
+    await set(ref(database, `system_users/${newUsername}`), newUserData);
+
+    // Remove old stale keys if key changed
+    for (const oldKey of keysToDelete) {
+      await remove(ref(database, `system_users/${oldKey}`)).catch(console.error);
+    }
+
+    return {
+      created: true,
+      username: newUsername,
+      password: finalPassword,
+      fullName: rawName,
+    };
+  } catch (err) {
+    console.error("Error regenerating Verifikator Dinas user account:", err);
     return null;
   }
 }

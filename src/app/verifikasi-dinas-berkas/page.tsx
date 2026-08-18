@@ -48,12 +48,13 @@ import {
   Calendar,
   Key,
   Copy,
-  Edit
+  Edit,
+  RefreshCw
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
-import { ensureVerifikatorUser } from "@/lib/verifikator-service"
+import { ensureVerifikatorUser, regenerateVerifikatorUser } from "@/lib/verifikator-service"
 
 export default function VerifikasiDinasBerkasPage() {
   const { user, userProfile } = useUser()
@@ -436,27 +437,8 @@ export default function VerifikasiDinasBerkasPage() {
         }
       }
 
-      // 3. Update system_users for the Verifikator
-      await ensureVerifikatorUser(database, updatedPejabatData.verifikator);
-
-      // 4. Update system_users if a user matching verifikator exists
-      if (systemUsers) {
-        const found = systemUsers.find((u: any) => 
-          (u.role === 'verifikator_dinas' && (
-            (u.nipppk && String(u.nipppk).trim() === targetGroupNipKey) ||
-            (u.fullName && String(u.fullName).trim().toUpperCase() === verifikatorNama.trim().toUpperCase())
-          ))
-        );
-        if (found) {
-          await update(dbRef(database, `system_users/${found.id}`), {
-            fullName: updatedPejabatData.verifikator.nama,
-            nipppk: updatedPejabatData.verifikator.nipppk,
-            pangkat: updatedPejabatData.verifikator.pangkat,
-            jabatan: updatedPejabatData.verifikator.jabatan,
-            pejabatData: updatedPejabatData
-          }).catch(console.error);
-        }
-      }
+      // 3. Update / regenerate system_users for the Verifikator agar ID Login otomatis terupdate mengikuti NIPPPK baru
+      await regenerateVerifikatorUser(database, updatedPejabatData.verifikator, targetGroupNipKey);
 
       // 5. Update local storage if current user
       if (typeof window !== 'undefined' && user?.uid) {
@@ -893,9 +875,14 @@ export default function VerifikasiDinasBerkasPage() {
 
                   <div className="flex items-center gap-2.5 flex-wrap self-start md:self-center">
                     {/* Info Akses Akun Login Verifikator - Khusus Admin */}
-                    {isAdmin && !isUnassigned && (
-                      foundUser ? (
-                        <div className="flex items-center gap-2 bg-white/95 border border-purple-200/90 px-3 py-1.5 rounded-xl text-xs shadow-sm">
+                    {isAdmin && !isUnassigned && (() => {
+                      const currentNip = vInfo?.nipppk || (nipKey !== "Belum Ditentukan" ? nipKey : "");
+                      const currentNipClean = currentNip.trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+                      const userNipClean = (foundUser?.username || foundUser?.nipppk || "").trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+                      const isNipMismatch = !!(foundUser && currentNipClean && userNipClean && currentNipClean !== userNipClean);
+
+                      return foundUser ? (
+                        <div className="flex items-center gap-2 bg-white/95 border border-purple-200/90 px-3 py-1.5 rounded-xl text-xs shadow-sm flex-wrap">
                           <div className="flex items-center gap-1 text-purple-800 font-bold">
                             <Key className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                             <span className="font-mono">User: <strong>{foundUser.username || foundUser.id}</strong></span>
@@ -920,6 +907,34 @@ export default function VerifikasiDinasBerkasPage() {
                           >
                             <Copy className="w-3 h-3 mr-1" /> Salin Akses
                           </Button>
+                          <Button
+                            size="sm"
+                            variant={isNipMismatch ? "default" : "outline"}
+                            type="button"
+                            className={`h-6 px-2.5 text-[10px] font-black rounded-lg gap-1 shadow-sm transition-all ${
+                              isNipMismatch
+                                ? "bg-amber-600 hover:bg-amber-700 text-white border-amber-600 animate-pulse"
+                                : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200"
+                            }`}
+                            onClick={async () => {
+                              const targetPejabat = {
+                                nama: displayName,
+                                nipppk: currentNip || foundUser.nipppk || "",
+                                pangkat: vInfo?.pangkat || foundUser.pangkat || "",
+                                jabatan: vInfo?.jabatan || foundUser.jabatan || "Verifikator Dinas"
+                              };
+                              const res = await regenerateVerifikatorUser(database, targetPejabat, foundUser.username || foundUser.id);
+                              if (res) {
+                                toast({
+                                  title: "✅ ID Login Berhasil Di-generate",
+                                  description: `Username baru (NIPPPK): ${res.username} | Sandi: ${res.password}`
+                                });
+                              }
+                            }}
+                            title={isNipMismatch ? "NIPPPK telah berubah! Klik untuk generate ulang ID User Login" : "Generate / Refresh ID Login sesuai NIPPPK"}
+                          >
+                            <RefreshCw className="w-3 h-3" /> {isNipMismatch ? "Generate ID Baru" : "Generate ID"}
+                          </Button>
                         </div>
                       ) : (
                         <Button
@@ -928,18 +943,22 @@ export default function VerifikasiDinasBerkasPage() {
                           type="button"
                           className="h-8 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl gap-1 shadow-sm"
                           onClick={async () => {
-                            if (vInfo) {
-                              const res = await ensureVerifikatorUser(database, vInfo)
-                              if (res) {
-                                toast({ title: "Akun Dibuat", description: `Username: ${res.username} | Sandi: ${res.password}` })
-                              }
+                            const targetPejabat = vInfo || {
+                              nama: displayName,
+                              nipppk: currentNip || "",
+                              pangkat: "",
+                              jabatan: "Verifikator Dinas"
+                            };
+                            const res = await regenerateVerifikatorUser(database, targetPejabat, nipKey);
+                            if (res) {
+                              toast({ title: "Akun Dibuat", description: `Username: ${res.username} | Sandi: ${res.password}` });
                             }
                           }}
                         >
-                          <Key className="w-3 h-3" /> Generate Akun Login
+                          <Key className="w-3 h-3" /> Generate ID / Akun Login
                         </Button>
-                      )
-                    )}
+                      );
+                    })()}
 
                     {/* Tombol Edit Pejabat / NIPPPK - Khusus Admin & Verifikator */}
                     {(isAdmin || isVerifikatorDinas) && (
