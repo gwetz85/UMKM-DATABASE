@@ -44,7 +44,7 @@ const BANK_LIST = [
 
 
 function ActorDataContent() {
-  const { user, userProfile } = useUser()
+  const { user, userProfile, isProfileLoading } = useUser()
   const database = useDatabase()
   const { toast } = useToast()
   const router = useRouter()
@@ -90,7 +90,7 @@ function ActorDataContent() {
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
 
   const memoQuery = useMemoFirebase(() => {
-    if (!database) return null
+    if (!database || isProfileLoading) return null
     
     // Optimize: Only fetch what's needed instead of the entire collection
     if (isPetugas && userProfile?.fullName) {

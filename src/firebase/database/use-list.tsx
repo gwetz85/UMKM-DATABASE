@@ -7,6 +7,13 @@ export interface UseListOptions {
   once?: boolean;
 }
 
+function getRefKey(refOrQuery: any): string {
+  if (!refOrQuery) return '';
+  const url = typeof refOrQuery.toString === 'function' ? refOrQuery.toString() : '';
+  const params = refOrQuery._queryParams ? JSON.stringify(refOrQuery._queryParams) : '';
+  return `${url}::${params}`;
+}
+
 export function useList<T = any>(
   memoizedRefOrQuery: DatabaseReference | Query | null | undefined,
   options: UseListOptions = {}
@@ -15,7 +22,7 @@ export function useList<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(!!memoizedRefOrQuery);
   const [error, setError] = useState<Error | null>(null);
 
-  const refKey = memoizedRefOrQuery?.toString() || '';
+  const refKey = getRefKey(memoizedRefOrQuery);
 
   useEffect(() => {
     if (!memoizedRefOrQuery) {

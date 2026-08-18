@@ -3,6 +3,13 @@
 import { useState, useEffect } from 'react';
 import { DatabaseReference, onValue } from 'firebase/database';
 
+function getRefKey(refOrQuery: any): string {
+  if (!refOrQuery) return '';
+  const url = typeof refOrQuery.toString === 'function' ? refOrQuery.toString() : '';
+  const params = refOrQuery._queryParams ? JSON.stringify(refOrQuery._queryParams) : '';
+  return `${url}::${params}`;
+}
+
 export function useObject<T = any>(
   memoizedRef: DatabaseReference | null | undefined
 ) {
@@ -10,7 +17,7 @@ export function useObject<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(!!memoizedRef);
   const [error, setError] = useState<Error | null>(null);
 
-  const refKey = memoizedRef?.toString() || '';
+  const refKey = getRefKey(memoizedRef);
 
   useEffect(() => {
     if (!memoizedRef) {
