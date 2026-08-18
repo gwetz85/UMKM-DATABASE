@@ -133,10 +133,10 @@ export async function generateBeritaAcaraPDF(
   const surveyPhotoUrl = surveyData?.fotoSurveyUrl || actor?.photoUsahaUri || actor?.comparisonPhotoUrl || "";
   const surveyPhotoData = surveyPhotoUrl ? await loadSurveyPhoto(surveyPhotoUrl) : null;
 
-  // ── 1. KOP SURAT (SAMA PERSIS DENGAN GAMBAR REFERENSI) ─────────────────────
-  let y = 6;
-  const logoH = 23;
-  const logoW = 23;
+  // ── 1. KOP SURAT (PRESISI A4 WITH Standard MARGINS) ────────────────────────
+  let y = 7;
+  const logoH = 22;
+  const logoW = 22;
 
   // Logo Kepri (kiri)
   if (logoBase64) {
@@ -165,7 +165,7 @@ export async function generateBeritaAcaraPDF(
   doc.text("Pos-el : diskopukmsprovinsikepri@gmail.com Laman : www.dinaskoperasiukm.kepriprov.go.id", kopTextCenterX, y + 22.5, { align: "center" });
 
   // Garis Bawah KOP (Satu garis tebal hitam presisi)
-  y = 30;
+  y = 31;
   doc.setLineWidth(1.0);
   doc.setDrawColor(0, 0, 0);
   doc.line(marginL, y, pageW - marginR, y);
@@ -173,12 +173,12 @@ export async function generateBeritaAcaraPDF(
   // ── 2. JUDUL DOKUMEN ───────────────────────────────────────────────────────
   const kopX = pageW / 2;
   y += 4.5;
-  doc.setFontSize(10);
+  doc.setFontSize(10.5);
   doc.setFont("helvetica", "bold");
   doc.text("BERITA ACARA SURVEY", kopX, y, { align: "center" });
-  y += 4;
+  y += 4.2;
   doc.text("DANA HIBAH PENGUATAN MODAL KUMKM", kopX, y, { align: "center" });
-  y += 4;
+  y += 4.2;
   doc.text("PROVINSI KEPULAUAN RIAU", kopX, y, { align: "center" });
 
   // ── 3. TANGGAL ─────────────────────────────────────────────────────────────
@@ -229,7 +229,7 @@ export async function generateBeritaAcaraPDF(
   const labelColW = 32;
   const colonX = marginL + 6 + labelColW;
   const valueX = colonX + 4;
-  const maxPejabatValW = pageW - marginR - valueX - 4; // 134 mm (batas aman sebelum margin kanan)
+  const maxPejabatValW = pageW - marginR - valueX - 4; // 134 mm
 
   y += 4.5;
   doc.setFontSize(8.5);
@@ -247,30 +247,28 @@ export async function generateBeritaAcaraPDF(
       const valStr = item.val && item.val.trim() ? item.val.trim() : "-";
       const lines = doc.splitTextToSize(valStr, maxPejabatValW);
       lines.forEach((lText: string, li: number) => {
-        if (li > 0) y += 3.5;
+        if (li > 0) y += 3.8;
         doc.text(lText, valueX, y);
       });
 
-      y += 3.8;
+      y += 4.0;
     });
 
-    if (idx < pejabatList.length - 1) y += 1.0;
+    if (idx < pejabatList.length - 1) y += 1.5;
   });
 
   // ── 5. KALIMAT PEMBUKA ─────────────────────────────────────────────────────
-  y += 0.5;
+  y += 1.0;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.text("Telah melaksanakan survey kepada calon penerima bantuan usaha Mikro dan Kecil Provinsi Kepulauan Riau yaitu :", marginL, y);
-  y += 4.2;
+  y += 4.5;
 
   // ── 6. DATA PELAKU USAHA (No 1-15) ─────────────────────────────────────────
   const noW = 5;
   const dataLabelW = 68;
   const dataColonX = marginL + noW + dataLabelW; // 88mm
   const dataValueX = dataColonX + 3; // 91mm
-  // Batas lebar isian teks adalah 96mm (garis bawah total 104mm hingga x=195mm),
-  // sehingga teks otomatis pindah baris sebelum menabrak ujung garis
   const maxValW = pageW - marginR - dataValueX - 8; // 96mm
   const lineY_offset = 1.0;
 
@@ -287,7 +285,7 @@ export async function generateBeritaAcaraPDF(
     }
   ) => {
     const fStyle = options?.fontStyle || (options?.bold ? "bold" : "normal");
-    const lSpacing = options?.lineSpacing || 3.6;
+    const lSpacing = options?.lineSpacing || 4.0;
 
     doc.setFont("helvetica", "normal");
     if (noStr) {
@@ -308,7 +306,7 @@ export async function generateBeritaAcaraPDF(
       doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
     });
 
-    y += 3.8;
+    y += 4.3;
   };
 
   // Row 1: Nama Usaha
@@ -331,7 +329,7 @@ export async function generateBeritaAcaraPDF(
     doc.text(opt, oxJK, y);
     oxJK += doc.getTextWidth(opt) + 4.5;
   });
-  y += 3.8;
+  y += 4.3;
 
   // Row 5: Alamat Usaha
   renderDataRow("5.", "Alamat Usaha", actor.businessLocation || actor.address);
@@ -349,7 +347,7 @@ export async function generateBeritaAcaraPDF(
   doc.text(":", dataColonX, y);
   doc.text("YA  /  TIDAK", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 3.8;
+  y += 4.3;
 
   // Teks "Jika YA, DTKS Kategori *:" sejajar dengan isian data (dataValueX)
   doc.setFont("helvetica", "normal");
@@ -363,7 +361,7 @@ export async function generateBeritaAcaraPDF(
     doc.setFont("helvetica", "normal");
     oxDTKS += doc.getTextWidth(opt) + 4;
   });
-  y += 3.8;
+  y += 4.3;
 
   // Row 8: Bidang Usaha
   renderDataRow("8.", "Bidang Usaha", surveyData.bidangUsaha);
@@ -386,7 +384,7 @@ export async function generateBeritaAcaraPDF(
     oxIzin += doc.getTextWidth(opt) + 5;
   });
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 3.8;
+  y += 4.3;
 
   // Row 12: Modal Usaha dan Omset per bulan
   const val12 = `Modal: Rp ${surveyData.modalUsaha || "-"}  |  Omset: Rp ${surveyData.omset || "-"}`;
@@ -403,10 +401,10 @@ export async function generateBeritaAcaraPDF(
   doc.text("Tahun berapa :", dataValueX + ymW + 37, y);
   const thnW = doc.getTextWidth("Tahun berapa : ");
   doc.line(dataValueX + ymW + 37 + thnW, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 3.6;
+  y += 4.0;
 
   doc.text("TIDAK", dataValueX, y);
-  y += 3.8;
+  y += 4.3;
 
   // Row 14: Rencana Penggunaan Dana Hibah
   renderDataRow("14.", "Rencana Penggunaan Dana Hibah", surveyData.rencanaPenggunaan);
@@ -414,10 +412,18 @@ export async function generateBeritaAcaraPDF(
   // Row 15: Hasil Survey
   renderDataRow("15.", "Hasil Survey", surveyData.hasilSurvey);
 
-  // ── 7. TABEL TANDA TANGAN ───────────────────────────────────────────────────
-  y += 2.0;
+  // ── 7. TABEL TANDA TANGAN (PRESISI DI BAGIAN BAWAH KERTAS A4) ─────────────
+  const header1H = 5.5;
+  const signBoxH = 20.5;
+  const metaHeaderH = 5.5;
+  const metaSignH = 20.5;
+  const totalTtH = header1H + signBoxH + metaHeaderH + metaSignH; // 52.0 mm
 
-  const ttStartY = y;
+  // Anchor posisi bawah tabel tepat di margin bawah 12mm dari ujung kertas A4 (297 - 12 = 285mm)
+  const targetBottomY = 285;
+  const idealTtStartY = targetBottomY - totalTtH; // 233 mm
+  const ttStartY = Math.max(idealTtStartY, y + 3);
+
   const colTimSurveyW = 110; // 2 Kolom x 55mm = 110mm
   const colPenerimaW = 70;   // 1 Kolom = 70mm (Total 180mm)
   const col1W = 55;
@@ -426,14 +432,6 @@ export async function generateBeritaAcaraPDF(
   doc.setDrawColor(0, 0, 0);
   doc.setTextColor(0, 0, 0);
   doc.setLineWidth(0.4);
-
-  // Dynamic calculation to ensure exact 1 page fit without bottom overflow
-  const availableBottomSpace = pageH - 12 - ttStartY;
-  const header1H = 5.5;
-  const metaHeaderH = 5.5;
-  const calculatedSignH = Math.min(25, Math.max(16, Math.floor((availableBottomSpace - header1H - metaHeaderH) / 2)));
-  const signBoxH = calculatedSignH;
-  const metaSignH = calculatedSignH;
 
   // --- HEADER 1: TIM SURVEY (2 Kolom) & CALON PENERIMA DANA HIBAH (1 Kolom) ---
   doc.setFillColor(226, 239, 218); // Hijau muda #E2EFDA
@@ -539,7 +537,6 @@ export async function generateBeritaAcaraPDF(
   doc.text("Catatan :", marginL + subColW * 3 + 2, metaSignY + 4);
 
   // BORDER TEBAL LUAR KESELURUHAN TABEL TANDA TANGAN
-  const totalTtH = header1H + signBoxH + metaHeaderH + metaSignH;
   doc.setLineWidth(0.8);
   doc.rect(marginL, ttStartY, contentW, totalTtH);
 
