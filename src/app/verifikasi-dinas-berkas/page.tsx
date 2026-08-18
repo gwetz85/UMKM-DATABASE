@@ -120,7 +120,33 @@ export default function VerifikasiDinasBerkasPage() {
     return undefined
   }
 
-  // Helper untuk mendapatkan Nama Verifikator yang diisi oleh Petugas Survey
+  // Helper untuk mendapatkan NIPPPK Verifikator yang diisi oleh Petugas Survey (untuk pengelompokan presisi tanpa typo nama)
+  const getVerifikatorNipppk = (actor: BusinessActor): string => {
+    const pd = getActorPejabat(actor)
+    const nip = pd?.verifikator?.nipppk ? String(pd.verifikator.nipppk).trim() : ""
+    if (nip) return nip
+
+    // Fallback ke systemUsers jika NIPPPK tidak diisi di pejabatData tapi Nama ada
+    if (pd?.verifikator?.nama && systemUsers) {
+      const nameUpper = String(pd.verifikator.nama).trim().toUpperCase()
+      const found = systemUsers.find((u: any) => 
+        u.role === 'verifikator_dinas' && 
+        u.fullName && String(u.fullName).trim().toUpperCase() === nameUpper &&
+        u.nipppk
+      )
+      if (found?.nipppk) return String(found.nipppk).trim()
+    }
+
+    if (pd?.verifikator?.nama && pd.verifikator.nama.trim()) {
+      return pd.verifikator.nama.trim()
+    }
+    if (actor.verifikatorDinas && actor.verifikatorDinas.trim()) {
+      return actor.verifikatorDinas.trim()
+    }
+    return "Belum Ditentukan"
+  }
+
+  // Helper untuk mendapatkan Nama Verifikator
   const getVerifikatorName = (actor: BusinessActor): string => {
     const pd = getActorPejabat(actor)
     if (pd?.verifikator?.nama && pd.verifikator.nama.trim()) {
@@ -167,10 +193,8 @@ export default function VerifikasiDinasBerkasPage() {
       const myName = String(userProfile?.fullName || userProfile?.name || "").trim().toUpperCase()
 
       return raw.filter(actor => {
+        const aNip = getVerifikatorNipppk(actor).replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
         const pd = getActorPejabat(actor)
-        const aNip = pd?.verifikator?.nipppk 
-          ? String(pd.verifikator.nipppk).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase() 
-          : ""
         const aName = String(pd?.verifikator?.nama || actor.verifikatorDinas || getVerifikatorName(actor) || "").trim().toUpperCase()
 
         if (myNip && aNip && myNip === aNip) return true
@@ -182,25 +206,29 @@ export default function VerifikasiDinasBerkasPage() {
     return raw
   }, [allActorsRaw, isVerifikatorDinas, isAdmin, userProfile, systemUsers])
 
-  // Daftar opsi Verifikator yang ada pada data
+  // Daftar opsi Verifikator (berdasarkan NIPPPK & Nama) yang ada pada data
   const verifikatorOptions = useMemo(() => {
     if (!actors) return []
-    const names = new Set<string>()
+    const map = new Map<string, { nipKey: string; name: string }>()
     actors.forEach(actor => {
-      const vName = getVerifikatorName(actor)
-      names.add(vName)
+      const nipKey = getVerifikatorNipppk(actor)
+      const name = getVerifikatorName(actor)
+      if (!map.has(nipKey)) {
+        map.set(nipKey, { nipKey, name })
+      }
     })
-    return Array.from(names).sort()
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
   }, [actors, systemUsers])
 
   // Filter berdasarkan search query dan pilihan verifikator
   const filteredActors = useMemo(() => {
     if (!actors) return []
     return actors.filter(actor => {
+      const nipKey = getVerifikatorNipppk(actor)
       const vName = getVerifikatorName(actor)
       
       // Filter Verifikator
-      if (selectedVerifikatorFilter !== "ALL" && vName !== selectedVerifikatorFilter) {
+      if (selectedVerifikatorFilter !== "ALL" && nipKey !== selectedVerifikatorFilter) {
         return false
       }
 
@@ -217,30 +245,33 @@ export default function VerifikasiDinasBerkasPage() {
         (actor.coordinator && actor.coordinator.toLowerCase().includes(q)) ||
         (actor.petugasSurvey && actor.petugasSurvey.toLowerCase().includes(q)) ||
         vName.toLowerCase().includes(q) ||
+        nipKey.toLowerCase().includes(q) ||
         (pd?.verifikator?.nipppk && pd.verifikator.nipppk.includes(q)) ||
         (pd?.verifikator?.jabatan && pd.verifikator.jabatan.toLowerCase().includes(q))
       )
     })
   }, [actors, searchQuery, selectedVerifikatorFilter, systemUsers])
 
-  // Mengelompokkan data berdasarkan Nama Verifikator yang diisi oleh Petugas Survey
+  // Mengelompokkan data berdasarkan NIPPPK Verifikator yang diisi oleh Petugas Survey
   const groupedActorsByVerifikator = useMemo(() => {
     if (!filteredActors) return {}
     return filteredActors.reduce((acc, actor) => {
-      const vName = getVerifikatorName(actor)
-      if (!acc[vName]) {
-        acc[vName] = {
-          verifikatorInfo: getActorPejabat(actor)?.verifikator,
+      const nipKey = getVerifikatorNipppk(actor)
+      const pd = getActorPejabat(actor)
+      if (!acc[nipKey]) {
+        acc[nipKey] = {
+          nipKey,
+          verifikatorInfo: pd?.verifikator,
           actors: []
         }
       }
-      // Update verifikator info jika sebelumnya belum lengkap
-      if (!acc[vName].verifikatorInfo && getActorPejabat(actor)?.verifikator) {
-        acc[vName].verifikatorInfo = getActorPejabat(actor)?.verifikator
+      // Update verifikator info jika sebelumnya belum ada info nama/pangkat/jabatan
+      if ((!acc[nipKey].verifikatorInfo?.nama || !acc[nipKey].verifikatorInfo?.nipppk) && pd?.verifikator) {
+        acc[nipKey].verifikatorInfo = pd.verifikator
       }
-      acc[vName].actors.push(actor)
+      acc[nipKey].actors.push(actor)
       return acc
-    }, {} as Record<string, { verifikatorInfo?: PejabatItem; actors: BusinessActor[] }>)
+    }, {} as Record<string, { nipKey: string; verifikatorInfo?: PejabatItem; actors: BusinessActor[] }>)
   }, [filteredActors, systemUsers])
 
   const handleVerifyBerkas = () => {
@@ -417,7 +448,7 @@ export default function VerifikasiDinasBerkasPage() {
             )}
           </div>
           <p className="text-muted-foreground mt-1">
-            Data dikelompokkan berdasarkan <strong>Nama Verifikator</strong> yang diisi petugas survey pada Data Pejabat Berita Acara.
+            Data dikelompokkan berdasarkan <strong>NIPPPK Verifikator</strong> yang diisi petugas survey pada Data Pejabat Berita Acara.
           </p>
         </div>
 
@@ -436,11 +467,14 @@ export default function VerifikasiDinasBerkasPage() {
                   <SelectItem value="ALL" className="font-bold">
                     Semua Verifikator ({actors?.length || 0})
                   </SelectItem>
-                  {verifikatorOptions.map((vName) => {
-                    const count = actors?.filter(a => getVerifikatorName(a) === vName).length || 0
+                  {verifikatorOptions.map((vOpt) => {
+                    const count = actors?.filter(a => getVerifikatorNipppk(a) === vOpt.nipKey).length || 0
+                    const label = vOpt.nipKey !== vOpt.name && !vOpt.nipKey.includes("Belum")
+                      ? `${vOpt.name} (${vOpt.nipKey})`
+                      : vOpt.name
                     return (
-                      <SelectItem key={vName} value={vName} className="font-medium">
-                        {vName} ({count})
+                      <SelectItem key={vOpt.nipKey} value={vOpt.nipKey} className="font-medium">
+                        {label} ({count})
                       </SelectItem>
                     )
                   })}
@@ -453,7 +487,7 @@ export default function VerifikasiDinasBerkasPage() {
           <div className="relative flex-1 md:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
-              placeholder="Cari Verifikator, Nama, NIK..."
+              placeholder="Cari Verifikator, NIPPPK, Nama, NIK..."
               className="flex h-11 w-full rounded-xl border border-primary/20 bg-card px-3 py-2 pl-9 text-sm text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -564,21 +598,23 @@ export default function VerifikasiDinasBerkasPage() {
         </Card>
       ) : (
         <div className="space-y-12">
-          {Object.entries(groupedActorsByVerifikator).sort().map(([verifikatorNama, group]) => {
+          {Object.entries(groupedActorsByVerifikator).sort().map(([nipKey, group]) => {
             const vInfo = group.verifikatorInfo
-            const isUnassigned = verifikatorNama === "Belum Ditentukan" || verifikatorNama === "Belum Ada Verifikator"
+            const isUnassigned = nipKey === "Belum Ditentukan" || nipKey === "Belum Ada Verifikator"
 
-            // Cari user verifikator di systemUsers
+            // Cari user verifikator di systemUsers berdasarkan NIPPPK, Username, atau Nama
             const foundUser = systemUsers?.find((u: any) => {
               if (u.role !== 'verifikator_dinas') return false
-              const matchNip = vInfo?.nipppk && u.nipppk && String(u.nipppk).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase() === String(vInfo.nipppk).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
-              const matchUser = vInfo?.nipppk && u.username && String(u.username).trim().toLowerCase() === String(vInfo.nipppk).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
-              const matchName = u.fullName && String(u.fullName).trim().toUpperCase() === verifikatorNama.toUpperCase()
+              const matchNip = nipKey && u.nipppk && String(u.nipppk).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase() === String(nipKey).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
+              const matchUser = nipKey && u.username && String(u.username).trim().toLowerCase() === String(nipKey).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
+              const matchName = vInfo?.nama && u.fullName && String(u.fullName).trim().toUpperCase() === String(vInfo.nama).trim().toUpperCase()
               return matchNip || matchUser || matchName
             })
 
+            const displayName = foundUser?.fullName || vInfo?.nama || (isUnassigned ? "Belum Ditentukan" : nipKey)
+
             return (
-              <div key={verifikatorNama} className="space-y-6">
+              <div key={nipKey} className="space-y-6">
                 {/* ─── HEADER GRUP VERIFIKATOR ──────────────────────────── */}
                 <div className={`p-4 rounded-2xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${
                   isUnassigned 
@@ -599,25 +635,25 @@ export default function VerifikasiDinasBerkasPage() {
                           Verifikator Dinas
                         </span>
                         <h2 className="text-base md:text-lg font-black uppercase tracking-tight text-slate-900">
-                          {verifikatorNama}
+                          {displayName}
                         </h2>
                       </div>
                       
                       {/* Informasi NIPPPK, Pangkat, Jabatan Verifikator */}
-                      {vInfo && (vInfo.nipppk || vInfo.pangkat || vInfo.jabatan) ? (
+                      {(vInfo || !isUnassigned) ? (
                         <div className="flex items-center gap-3 mt-1 text-xs text-slate-600 flex-wrap font-medium">
-                          {vInfo.nipppk && (
+                          {(vInfo?.nipppk || !isUnassigned) && (
                             <span className="flex items-center gap-1">
-                              <span className="text-slate-400 font-bold">NIPPPK:</span> {vInfo.nipppk}
+                              <span className="text-slate-400 font-bold">NIPPPK:</span> {vInfo?.nipppk || nipKey}
                             </span>
                           )}
-                          {vInfo.pangkat && (
+                          {vInfo?.pangkat && (
                             <span className="flex items-center gap-1">
                               <span className="text-slate-400 font-bold">•</span>
                               <span className="text-slate-400 font-bold">Pangkat:</span> {vInfo.pangkat}
                             </span>
                           )}
-                          {vInfo.jabatan && (
+                          {vInfo?.jabatan && (
                             <span className="flex items-center gap-1">
                               <span className="text-slate-400 font-bold">•</span>
                               <span className="text-slate-400 font-bold">Jabatan:</span> {vInfo.jabatan}
@@ -653,9 +689,9 @@ export default function VerifikasiDinasBerkasPage() {
                             className="h-6 px-2 text-[10px] font-black text-purple-700 hover:bg-purple-100 rounded-lg ml-1"
                             onClick={() => {
                               const origin = typeof window !== 'undefined' ? window.location.origin : 'https://umkm-database.web.app'
-                              const textToCopy = `AKSES LOGIN VERIFIKATOR DINAS\nNama: ${verifikatorNama}\nUsername (NIPPPK): ${foundUser.username || foundUser.id}\nKata Sandi: ${foundUser.password}\nLink Login: ${origin}/login`
+                              const textToCopy = `AKSES LOGIN VERIFIKATOR DINAS\nNama: ${displayName}\nUsername (NIPPPK): ${foundUser.username || foundUser.id}\nKata Sandi: ${foundUser.password}\nLink Login: ${origin}/login`
                               navigator.clipboard.writeText(textToCopy)
-                              toast({ title: "Akses Tersalin", description: `Akses login untuk ${verifikatorNama} berhasil disalin.` })
+                              toast({ title: "Akses Tersalin", description: `Akses login untuk ${displayName} berhasil disalin.` })
                             }}
                             title="Salin Akun Login Verifikator"
                           >
@@ -785,8 +821,8 @@ export default function VerifikasiDinasBerkasPage() {
                                   <BadgeCheck className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                                   <div className="min-w-0">
                                     <p className="text-[8px] font-bold text-purple-600 uppercase tracking-tight">Verifikator Dinas</p>
-                                    <p className="text-[10px] font-black text-purple-950 truncate uppercase" title={vDinas?.nama || verifikatorNama}>
-                                      {vDinas?.nama || verifikatorNama}
+                                    <p className="text-[10px] font-black text-purple-950 truncate uppercase" title={vDinas?.nama || displayName}>
+                                      {vDinas?.nama || displayName}
                                     </p>
                                   </div>
                                 </div>
