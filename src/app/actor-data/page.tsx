@@ -92,7 +92,6 @@ function ActorDataContent() {
   const memoQuery = useMemoFirebase(() => {
     if (!database || isProfileLoading) return null
     
-    // Optimize: Only fetch what's needed instead of the entire collection
     if (isPetugas && userProfile?.fullName) {
       return query(ref(database, 'businessActors'), orderByChild('petugasSurvey'), equalTo(userProfile.fullName.toUpperCase().trim()))
     }
@@ -101,27 +100,15 @@ function ActorDataContent() {
       return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(userProfile.fullName.toUpperCase().trim()))
     }
     
-    if (filterCoordinator) {
-      return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(filterCoordinator.toUpperCase().trim()))
-    }
-    
-    if (isInspektorat || isMonitoring) {
-      return ref(database, 'businessActors') // Inspektorat/Monitoring need to see all
-    }
-    
-    // For Admin overview page, we don't need to fetch any actors initially.
-    // We can rely on systemStats for the quota counts.
-    // If they type a search query, we could potentially fetch, but RTDB doesn't support 
-    // text search well. For now, we only fetch if there's a specific filter.
-    // Admin hanya fetch data jika search >= 3 karakter (RTDB tidak support full-text search)
-    // Minimal 3 karakter mencegah download seluruh database dari keystroke pertama
-    if (searchQuery.length >= 3) {
-      // If searching, we unfortunately have to fetch all to filter client-side
+    // For Admin / Inspektorat / Monitoring / Filter Coordinator / Search:
+    // Using base ref and filtering client-side keeps Firebase RTDB cached in memory,
+    // making coordinator card switching 100% instant (0ms) without unindexed query delays!
+    if (filterCoordinator || isInspektorat || isMonitoring || searchQuery.length >= 3) {
       return ref(database, 'businessActors')
     }
 
     return null
-  }, [database, isPetugas, isKoordinator, userProfile?.fullName, filterCoordinator, isInspektorat, isMonitoring, searchQuery])
+  }, [database, isProfileLoading, isPetugas, isKoordinator, userProfile?.fullName, filterCoordinator, isInspektorat, isMonitoring, searchQuery])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
@@ -156,6 +143,13 @@ function ActorDataContent() {
       if (!a) return false;
       const s = a.status || "";
       if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s)) return false;
+      
+      if (filterCoordinator) {
+        const actorCoord = String(a.coordinator || "").toUpperCase().trim();
+        const targetCoord = String(filterCoordinator).toUpperCase().trim();
+        if (actorCoord !== targetCoord) return false;
+      }
+
       if (isPetugas) {
         if (!userProfile?.fullName) return false;
         const userPetugasUpper = String(userProfile.fullName).toUpperCase().trim();
@@ -168,7 +162,7 @@ function ActorDataContent() {
       }
       return true;
     });
-  }, [allActorsRaw, isPetugas, isKoordinator, userProfile?.fullName]);
+  }, [allActorsRaw, filterCoordinator, isPetugas, isKoordinator, userProfile?.fullName]);
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingBankMode, setEditingBankMode] = useState(false)
