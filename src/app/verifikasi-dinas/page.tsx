@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { parsePobDob } from "@/lib/utils"
-import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
+import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, sanitizeForFirebase } from "@/firebase"
 import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
@@ -58,6 +58,8 @@ export default function VerifikasiDinasPage() {
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [verifyingActor, setVerifyingActor] = useState<BusinessActor | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmittingDraft, setIsSubmittingDraft] = useState(false)
+  const [isSubmittingVerify, setIsSubmittingVerify] = useState(false)
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
   const [isFetchingLocation, setIsFetchingLocation] = useState(false)
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false)
@@ -212,28 +214,45 @@ export default function VerifikasiDinasPage() {
 
   const openSurveyDialog = (actor: BusinessActor) => {
     setVerifyingActor(actor);
-    setLocation(actor.verificationLocationDinas || null);
-    setPhotoPreview(actor.surveyData?.fotoSurveyUrl || null);
+    const existingLoc = actor.verificationLocationDinas || (actor.surveyData as any)?.location || null;
+    setLocation(existingLoc);
+    setPhotoPreview(actor.surveyData?.fotoSurveyUrl || actor.photoUsahaUri || null);
     
-    // Auto fill data
+    // Auto fill data from surveyData or actor's existing profile
     const todayStr = new Date().toISOString().split('T')[0];
-    setSurveyData(actor.surveyData ? {
-      ...actor.surveyData,
-      tanggalSurvey: actor.surveyData.tanggalSurvey || todayStr
-    } : {
-      tanggalSurvey: todayStr,
-      namaUsaha: '',
-      namaPemilik: actor.fullName || '',
-      jenisKelamin: '',
-      alamatRumah: '',
-      noHp: '',
-      bidangUsaha: '',
-      dtks: { masuk: false },
-      hibah: { pernah: false },
-      izin: []
+    const existing = actor.surveyData || {} as Partial<SurveyDinasData>;
+    
+    let defaultGender = '';
+    if (existing.jenisKelamin) {
+      defaultGender = existing.jenisKelamin;
+    } else if (actor.gender) {
+      defaultGender = actor.gender.toLowerCase().includes('perempuan') ? 'Perempuan' : 'Laki-Laki';
+    }
+
+    setSurveyData({
+      tanggalSurvey: existing.tanggalSurvey || todayStr,
+      namaUsaha: existing.namaUsaha || actor.businessName || '',
+      namaPemilik: existing.namaPemilik || actor.fullName || '',
+      jenisKelamin: defaultGender,
+      status: existing.status || '',
+      alamatRumah: existing.alamatRumah || actor.address || '',
+      noHp: existing.noHp || actor.phone || '',
+      email: existing.email || '',
+      sosmed: existing.sosmed || '',
+      bidangUsaha: existing.bidangUsaha || actor.businessCategory || '',
+      peralatan: existing.peralatan || '',
+      tahunBerdiri: existing.tahunBerdiri || '',
+      modalUsaha: existing.modalUsaha || '',
+      omset: existing.omset || '',
+      rencanaPenggunaan: existing.rencanaPenggunaan || '',
+      hasilSurvey: existing.hasilSurvey || '',
+      dtks: existing.dtks || { masuk: false },
+      hibah: existing.hibah || { pernah: false },
+      izin: existing.izin || [],
+      fotoSurveyUrl: existing.fotoSurveyUrl || actor.photoUsahaUri || undefined,
+      pejabatData: existing.pejabatData || actor.pejabatData || undefined
     });
   };
-
 
   const fetchLocation = () => {
     setIsFetchingLocation(true);
@@ -269,8 +288,8 @@ export default function VerifikasiDinasPage() {
   }, [user, database])
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
 
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
-  const isDinas = userProfile?.role === 'dinas'
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin' || userProfile?.role === 'superadmin'
+  const isDinas = userProfile?.role === 'dinas' || userProfile?.role === 'verifikator_dinas'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
 
   // Auto-show pejabat modal on first petugas login if not yet filled, or load existing pejabatData
@@ -351,98 +370,175 @@ export default function VerifikasiDinasPage() {
     }, {} as Record<string, BusinessActor[]>)
   }, [filteredActors])
 
-  const handleVerifyDinas = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!verifyingActor || !database || (!isAdmin && !isDinas && !isPetugas)) return
+  const handleVerifyDinas = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!verifyingActor || !database || (!isAdmin && !isDinas && !isPetugas)) return;
     if (surveyProgress < 100) {
-      toast({ variant: "destructive", title: "Data Belum Lengkap", description: "Progress harus 100% untuk menyimpan verifikasi." })
+      toast({ variant: "destructive", title: "Data Belum Lengkap", description: "Progress harus 100% untuk menyimpan verifikasi." });
       return;
     }
     if (!location) {
-      toast({ variant: "destructive", title: "Lokasi belum diambil", description: "Harap ambil lokasi sebelum menyimpan keputusan verifikasi." })
+      toast({ variant: "destructive", title: "Lokasi belum diambil", description: "Harap ambil lokasi sebelum menyimpan keputusan verifikasi." });
       return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmittingVerify(true);
 
-    const activePejabat = (pejabatForm.verifikatorNama && pejabatForm.petugasNama)
-      ? {
-          verifikator: { nama: pejabatForm.verifikatorNama, nipppk: pejabatForm.verifikatorNipppk, pangkat: pejabatForm.verifikatorPangkat, jabatan: pejabatForm.verifikatorJabatan },
-          petugas: { nama: pejabatForm.petugasNama, nipppk: pejabatForm.petugasNipppk, pangkat: pejabatForm.petugasPangkat, jabatan: pejabatForm.petugasJabatan }
-        }
-      : ((userProfile as any)?.pejabatData || undefined);
+    try {
+      const activePejabat = (pejabatForm.verifikatorNama && pejabatForm.petugasNama)
+        ? {
+            verifikator: { 
+              nama: pejabatForm.verifikatorNama || '', 
+              nipppk: pejabatForm.verifikatorNipppk || '', 
+              pangkat: pejabatForm.verifikatorPangkat || '', 
+              jabatan: pejabatForm.verifikatorJabatan || '' 
+            },
+            petugas: { 
+              nama: pejabatForm.petugasNama || '', 
+              nipppk: pejabatForm.petugasNipppk || '', 
+              pangkat: pejabatForm.petugasPangkat || '', 
+              jabatan: pejabatForm.petugasJabatan || '' 
+            }
+          }
+        : ((userProfile as any)?.pejabatData || null);
 
-    const mergedSurveyData = {
-      ...surveyData,
-      ...(activePejabat ? { pejabatData: activePejabat } : {})
-    };
+      const mergedSurveyData: any = {
+        ...surveyData,
+      };
+      if (activePejabat) {
+        mergedSurveyData.pejabatData = activePejabat;
+      }
+      if (location) {
+        mergedSurveyData.location = location;
+      }
 
-    const actorRef = ref(database, `businessActors/${verifyingActor.id}`)
-    updateDocumentNonBlocking(actorRef, {
-      status: 'verified_dinas',
-      hasilVerifikasiDinas: 'Lolos',
-      surveyData: mergedSurveyData,
-      surveyProgress: surveyProgress,
-      verificationLocationDinas: { lat: location.lat, lon: location.lon },
-      verifikatorDinas: activePejabat?.verifikator?.nama || undefined,
-      pejabatData: activePejabat || undefined
-    })
+      const actorRef = ref(database, `businessActors/${verifyingActor.id}`);
+      const currentOfficerName = isPetugas ? (userProfile?.fullName || pejabatForm.petugasNama) : (pejabatForm.petugasNama || userProfile?.fullName);
+      const updateData: any = {
+        status: 'verified_dinas',
+        hasilVerifikasiDinas: 'Lolos',
+        surveyData: mergedSurveyData,
+        surveyProgress: 100,
+        verificationLocationDinas: { lat: location.lat, lon: location.lon },
+        verifiedDinasAt: new Date().toISOString(),
+        verifiedDinasBy: userProfile?.fullName || user?.email || user?.uid || 'Admin',
+      };
+      if (currentOfficerName && (!verifyingActor.petugasSurvey || verifyingActor.petugasSurvey === '-' || verifyingActor.petugasSurvey.trim() === '')) {
+        updateData.petugasSurvey = currentOfficerName.toUpperCase().trim();
+      }
+      if (activePejabat?.verifikator?.nama) {
+        updateData.verifikatorDinas = activePejabat.verifikator.nama;
+        updateData.pejabatData = activePejabat;
+      }
 
-    // Update global stats
-    import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-      updateStatsOnStatusChange(database, verifyingActor.status || 'lpj_pending', 'verified_dinas', verifyingActor).catch(e => console.error(e));
-    });
+      const cleanData = sanitizeForFirebase(updateData);
+      const { update } = await import('firebase/database');
+      await update(actorRef, cleanData);
 
-    logActivity({
-      query: `SURVEY DINAS: ${verifyingActor.fullName} - LOLOS`,
-      results: "Berhasil",
-      device: getDeviceType(navigator.userAgent),
-      source: 'Web',
-      method: 'SURVEY DINAS',
-      userId: user?.email || user?.uid || 'Admin'
-    })
+      // Update global stats
+      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+        updateStatsOnStatusChange(database, verifyingActor.status || 'lpj_pending', 'verified_dinas', verifyingActor).catch(e => console.error(e));
+      });
 
-    // Auto-generate account for Verifikator Dinas if present
-    if (activePejabat?.verifikator?.nama) {
-      ensureVerifikatorUser(database, activePejabat.verifikator).catch(console.error);
+      logActivity({
+        query: `SURVEY DINAS: ${verifyingActor.fullName} - LOLOS`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'SURVEY DINAS',
+        userId: user?.email || user?.uid || 'Admin'
+      });
+
+      // Auto-generate account for Verifikator Dinas if present
+      if (activePejabat?.verifikator?.nama) {
+        ensureVerifikatorUser(database, activePejabat.verifikator).catch(console.error);
+      }
+
+      toast({ title: "Survey Berhasil Disimpan", description: `Data pelaku usaha telah di-update.` });
+      setVerifyingActor(null);
+    } catch (err: any) {
+      console.error("Error saving survey verification:", err);
+      toast({ variant: "destructive", title: "Gagal Menyimpan", description: err?.message || "Terjadi kesalahan saat menyimpan verifikasi." });
+    } finally {
+      setIsSubmittingVerify(false);
     }
+  };
 
-    toast({ title: "Survey Berhasil Disimpan", description: `Data pelaku usaha telah di-update.` })
-    setVerifyingActor(null)
-    setIsSubmitting(false)
-  }
-
-  const handleSimpanDraft = () => {
-    if (!verifyingActor || !database || (!isAdmin && !isDinas && !isPetugas)) return;
-    setIsSubmitting(true);
-
-    const activePejabat = (pejabatForm.verifikatorNama && pejabatForm.petugasNama)
-      ? {
-          verifikator: { nama: pejabatForm.verifikatorNama, nipppk: pejabatForm.verifikatorNipppk, pangkat: pejabatForm.verifikatorPangkat, jabatan: pejabatForm.verifikatorJabatan },
-          petugas: { nama: pejabatForm.petugasNama, nipppk: pejabatForm.petugasNipppk, pangkat: pejabatForm.petugasPangkat, jabatan: pejabatForm.petugasJabatan }
-        }
-      : ((userProfile as any)?.pejabatData || undefined);
-
-    const mergedSurveyData = {
-      ...surveyData,
-      ...(activePejabat ? { pejabatData: activePejabat } : {})
-    };
-
-    const actorRef = ref(database, `businessActors/${verifyingActor.id}`);
-    const updateData: any = {
-      surveyData: mergedSurveyData,
-      surveyProgress: surveyProgress,
-      verifikatorDinas: activePejabat?.verifikator?.nama || undefined,
-      pejabatData: activePejabat || undefined
-    };
-    if (location) {
-      updateData.verificationLocationDinas = { lat: location.lat, lon: location.lon };
+  const handleSimpanDraft = async () => {
+    if (!verifyingActor || !database) return;
+    if (!isAdmin && !isDinas && !isPetugas) {
+      toast({ variant: "destructive", title: "Akses Ditolak", description: "Anda tidak memiliki akses untuk menyimpan draft survey." });
+      return;
     }
-    updateDocumentNonBlocking(actorRef, updateData);
+    setIsSubmittingDraft(true);
 
-    toast({ title: "Draft Tersimpan", description: `Draft progress survey (${surveyProgress}%) telah disimpan.` });
-    setVerifyingActor(null);
-    setIsSubmitting(false);
+    try {
+      const activePejabat = (pejabatForm.verifikatorNama && pejabatForm.petugasNama)
+        ? {
+            verifikator: { 
+              nama: pejabatForm.verifikatorNama || '', 
+              nipppk: pejabatForm.verifikatorNipppk || '', 
+              pangkat: pejabatForm.verifikatorPangkat || '', 
+              jabatan: pejabatForm.verifikatorJabatan || '' 
+            },
+            petugas: { 
+              nama: pejabatForm.petugasNama || '', 
+              nipppk: pejabatForm.petugasNipppk || '', 
+              pangkat: pejabatForm.petugasPangkat || '', 
+              jabatan: pejabatForm.petugasJabatan || '' 
+            }
+          }
+        : ((userProfile as any)?.pejabatData || null);
+
+      const currentProgress = calculateProgress();
+      const mergedSurveyData: any = {
+        ...surveyData,
+      };
+      if (activePejabat) {
+        mergedSurveyData.pejabatData = activePejabat;
+      }
+      if (location) {
+        mergedSurveyData.location = location;
+      }
+
+      const actorRef = ref(database, `businessActors/${verifyingActor.id}`);
+      const currentOfficerName = isPetugas ? (userProfile?.fullName || pejabatForm.petugasNama) : (pejabatForm.petugasNama || userProfile?.fullName);
+      const updateData: any = {
+        surveyData: mergedSurveyData,
+        surveyProgress: currentProgress,
+        lastDraftBy: userProfile?.fullName || user?.email || 'Petugas',
+        lastDraftAt: new Date().toISOString(),
+      };
+      if (currentOfficerName && (!verifyingActor.petugasSurvey || verifyingActor.petugasSurvey === '-' || verifyingActor.petugasSurvey.trim() === '')) {
+        updateData.petugasSurvey = currentOfficerName.toUpperCase().trim();
+      }
+      if (activePejabat?.verifikator?.nama) {
+        updateData.verifikatorDinas = activePejabat.verifikator.nama;
+        updateData.pejabatData = activePejabat;
+      }
+      if (location) {
+        updateData.verificationLocationDinas = { lat: location.lat, lon: location.lon };
+      }
+
+      const cleanData = sanitizeForFirebase(updateData);
+      const { update } = await import('firebase/database');
+      await update(actorRef, cleanData);
+
+      toast({ 
+        title: "Draft Tersimpan", 
+        description: `Draft progress survey (${currentProgress}%) telah berhasil disimpan dan dapat dilanjutkan kapan saja.` 
+      });
+      setVerifyingActor(null);
+    } catch (err: any) {
+      console.error("Error saving draft:", err);
+      toast({ 
+        variant: "destructive", 
+        title: "Gagal Menyimpan Draft", 
+        description: err?.message || "Terjadi kesalahan saat menyimpan draft survey." 
+      });
+    } finally {
+      setIsSubmittingDraft(false);
+    }
   };
 
   const resolvePejabatData = async (actor: BusinessActor): Promise<PejabatData | undefined> => {
@@ -823,13 +919,23 @@ export default function VerifikasiDinasPage() {
                         </div>
 
                         <div className="pb-3">
-                          <div className="flex justify-between text-[10px] font-bold mb-1.5">
+                          <div className="flex justify-between items-center text-[10px] font-bold mb-1.5">
                             <span className="text-slate-600 uppercase tracking-wider">Progress Pengisian</span>
-                            <span className={(verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)) >= 100 ? 'text-emerald-600' : 'text-amber-600'}>
-                              {verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)}%
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              {(verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)) > 0 && (verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)) < 100 && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                  DRAFT
+                                </span>
+                              )}
+                              <span className={(verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)) >= 100 ? 'text-emerald-600' : 'text-amber-600'}>
+                                {verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)}%
+                              </span>
+                            </div>
                           </div>
                           <Progress value={verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)} className="h-2" />
+                          {actor.lastDraftBy && (
+                            <p className="text-[9px] text-slate-400 mt-1 truncate">Draft oleh: <span className="font-medium text-slate-600">{actor.lastDraftBy}</span></p>
+                          )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 py-4 border-y border-slate-100">
@@ -1540,15 +1646,23 @@ export default function VerifikasiDinasPage() {
                                     </div>
                                     <DialogFooter className="pt-4 border-t mt-2 flex flex-row justify-between items-center w-full">
                                       <div className="flex-1">
-                                        <Button type="button" variant="outline" onClick={handleSimpanDraft} disabled={isSubmitting} className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold shadow-sm">
-                                          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null} Simpan Draft
+                                        <Button 
+                                          type="button" 
+                                          variant="outline" 
+                                          onClick={handleSimpanDraft} 
+                                          disabled={isSubmittingDraft || isSubmittingVerify} 
+                                          className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold shadow-sm"
+                                        >
+                                          {isSubmittingDraft ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                                          {isSubmittingDraft ? "Menyimpan Draft..." : "Simpan Draft"}
                                         </Button>
                                       </div>
                                       <div className="flex gap-2">
-                                        <Button type="button" variant="ghost" onClick={() => setVerifyingActor(null)}>Batal</Button>
+                                        <Button type="button" variant="ghost" disabled={isSubmittingDraft || isSubmittingVerify} onClick={() => setVerifyingActor(null)}>Batal</Button>
                                       {surveyProgress >= 100 && location ? (
-                                        <Button type="submit" disabled={isSubmitting} className="min-w-[150px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-                                          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ClipboardCheck className="w-4 h-4 mr-2" />} Simpan Verifikasi
+                                        <Button type="submit" disabled={isSubmittingDraft || isSubmittingVerify} className="min-w-[150px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                                          {isSubmittingVerify ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ClipboardCheck className="w-4 h-4 mr-2" />}
+                                          {isSubmittingVerify ? "Menyimpan..." : "Simpan Verifikasi"}
                                         </Button>
                                       ) : (
                                         <Button type="button" disabled className="min-w-[150px] opacity-50 bg-slate-200 text-slate-500">

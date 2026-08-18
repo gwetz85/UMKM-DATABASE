@@ -46,9 +46,10 @@ export default function HasilVerifikasiPage() {
   const { data: allUsersForProfile } = useList(userProfileRef)
   const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
 
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin' || userProfile?.role === 'superadmin'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
   const isKoordinator = userProfile?.role === 'koordinator'
+  const isDinas = userProfile?.role === 'dinas' || userProfile?.role === 'verifikator_dinas'
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
@@ -105,37 +106,43 @@ export default function HasilVerifikasiPage() {
     if (!inputtingBankActor || !database) return
 
     setIsSubmittingBank(true)
-    const formData = new FormData(e.currentTarget)
-    const updates = {
-      status: 'finish',
-      readyForLPJ: false,
-      bankName: formData.get('bankName') as string,
-      bankNumber: formData.get('bankNumber') as string,
-      bankOwner: formData.get('bankOwner') as string,
+    try {
+      const formData = new FormData(e.currentTarget)
+      const updates = {
+        status: 'finish',
+        readyForLPJ: false,
+        bankName: formData.get('bankName') as string,
+        bankNumber: formData.get('bankNumber') as string,
+        bankOwner: formData.get('bankOwner') as string,
+      }
+
+      const actorRef = ref(database, `businessActors/${inputtingBankActor.id}`)
+      updateDocumentNonBlocking(actorRef, updates)
+
+      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+        updateStatsOnStatusChange(database, 'verified_dinas', 'finish', { id: inputtingBankActor.id }).catch(e => console.error(e));
+      });
+
+      logActivity({
+        query: `INPUT REKENING (HASIL VERIFIKASI): ${inputtingBankActor.fullName}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'HASIL VERIFIKASI',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+
+      toast({ title: "Data Diselesaikan", description: "Data telah dipindahkan ke menu Rekening Bank." })
+      setInputtingBankActor(null)
+    } catch (err: any) {
+      console.error("Error saving bank data:", err)
+      toast({ variant: "destructive", title: "Gagal Menyimpan", description: err?.message || "Terjadi kesalahan saat menyimpan data rekening." })
+    } finally {
+      setIsSubmittingBank(false)
     }
-
-    const actorRef = ref(database, `businessActors/${inputtingBankActor.id}`)
-    updateDocumentNonBlocking(actorRef, updates)
-
-    import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-      updateStatsOnStatusChange(database, 'verified_dinas', 'finish', { id: inputtingBankActor.id }).catch(e => console.error(e));
-    });
-
-    logActivity({
-      query: `INPUT REKENING (HASIL VERIFIKASI): ${inputtingBankActor.fullName}`,
-      results: "Berhasil",
-      device: getDeviceType(navigator.userAgent),
-      source: 'Web',
-      method: 'HASIL VERIFIKASI',
-      userId: user?.email || user?.uid || 'Admin'
-    })
-
-    toast({ title: "Data Diselesaikan", description: "Data telah dipindahkan ke menu Rekening Bank." })
-    setInputtingBankActor(null)
-    setIsSubmittingBank(false)
   }
 
-  if (!isAdmin && !isPetugas && !isKoordinator && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
+  if (!isAdmin && !isPetugas && !isKoordinator && !isDinas && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
 
   return (
     <div className="p-4 md:p-8 space-y-6">

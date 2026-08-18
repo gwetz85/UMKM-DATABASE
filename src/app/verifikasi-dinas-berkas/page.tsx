@@ -85,8 +85,8 @@ export default function VerifikasiDinasBerkasPage() {
   }, [user, database])
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
 
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
-  const isVerifikatorDinas = userProfile?.role === 'verifikator_dinas'
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin' || userProfile?.role === 'superadmin'
+  const isVerifikatorDinas = userProfile?.role === 'verifikator_dinas' || userProfile?.role === 'dinas'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
 
   const memoQuery = useMemoFirebase(() => {
@@ -257,27 +257,32 @@ export default function VerifikasiDinasBerkasPage() {
     if (!checks.ktp || !checks.kk || !checks.nib || !checks.foto) return
 
     setIsSubmitting(true)
+    try {
+      const actorRef = ref(database, `businessActors/${verifyingActor.id}`)
+      updateDocumentNonBlocking(actorRef, {
+        berkasDinasVerified: true,
+        berkasDinasVerifiedAt: new Date().toISOString(),
+        berkasDinasVerifiedBy: user?.email || user?.uid || 'Admin'
+      })
 
-    const actorRef = ref(database, `businessActors/${verifyingActor.id}`)
-    updateDocumentNonBlocking(actorRef, {
-      berkasDinasVerified: true,
-      berkasDinasVerifiedAt: new Date().toISOString(),
-      berkasDinasVerifiedBy: user?.email || user?.uid || 'Admin'
-    })
+      logActivity({
+        query: `VERIFIKASI BERKAS DINAS: ${verifyingActor.fullName}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'VERIFIKASI BERKAS',
+        userId: user?.email || user?.uid || 'Admin'
+      })
 
-    logActivity({
-      query: `VERIFIKASI BERKAS DINAS: ${verifyingActor.fullName}`,
-      results: "Berhasil",
-      device: getDeviceType(navigator.userAgent),
-      source: 'Web',
-      method: 'VERIFIKASI BERKAS',
-      userId: user?.email || user?.uid || 'Admin'
-    })
-
-    toast({ title: "Berhasil Diverifikasi", description: `Data pelaku usaha ${verifyingActor.fullName} telah diverifikasi berkas.` })
-    setVerifyingActor(null)
-    setChecks({ ktp: false, kk: false, nib: false, foto: false })
-    setIsSubmitting(false)
+      toast({ title: "Berhasil Diverifikasi", description: `Data pelaku usaha ${verifyingActor.fullName} telah diverifikasi berkas.` })
+      setVerifyingActor(null)
+      setChecks({ ktp: false, kk: false, nib: false, foto: false })
+    } catch (err: any) {
+      console.error("Error verifying berkas:", err)
+      toast({ variant: "destructive", title: "Gagal Verifikasi", description: err?.message || "Terjadi kesalahan saat memverifikasi berkas." })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const resolvePejabatData = async (actor: BusinessActor): Promise<PejabatData | undefined> => {

@@ -77,6 +77,8 @@ export interface BusinessActor {
   googleDriveLink?: string;
   verifikatorDinas?: string;
   pejabatData?: PejabatData;
+  lastDraftBy?: string;
+  lastDraftAt?: string;
 }
 
 export interface PejabatItem {
