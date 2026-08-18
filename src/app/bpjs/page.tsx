@@ -2,11 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useDatabase, useList, useMemoFirebase, useUser } from "@/firebase"
-import { ref, update } from "firebase/database"
-
-  // Reference date for age calculations (1 Sep 2026)
-  const referenceDate = new Date(2026, 8, 1);
-
+import { ref, update, query, orderByChild } from "firebase/database"
 import { addTunasBangsaHeader } from "@/lib/pdf-generator"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -20,6 +16,9 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { BusinessActor } from "../lib/types"
 import { cn, parsePobDob } from "@/lib/utils"
+
+// Reference date for age calculations (1 Sep 2026)
+const referenceDate = new Date(2026, 8, 1);
 
 const calculateAge = (dobString: string) => {
   if (!dobString || dobString === "-") return 0;
@@ -70,7 +69,12 @@ export default function BpjsPage() {
   const database = useDatabase()
   const [searchQuery, setSearchQuery] = useState("")
 
-  const actorsRef = useMemoFirebase(() => database ? ref(database, 'businessActors') : null, [database])
+  const actorsRef = useMemoFirebase(() => {
+    if (!database) return null
+    // Hanya ambil data dengan status 'verified_actor' — ini jauh lebih cepat daripada fetch seluruh database
+    // Status lain ('verified_dinas', 'bank_pending', 'lpj_pending', 'finish') juga relevan untuk BPJS
+    return query(ref(database, 'businessActors'), orderByChild('status'))
+  }, [database])
   const { data: allActors, isLoading } = useList<BusinessActor>(actorsRef)
 
   // Calculate age as of a reference date (e.g., 1 Sep 2026)
@@ -114,19 +118,21 @@ export default function BpjsPage() {
     if (!allActors) return [];
     // Reference date: 1 September 2026
     const refDate = new Date(2026, 8, 1); // month is 0-indexed
+    const validStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'];
     return allActors
+      .filter(a => validStatuses.includes(a.status || ''))
       .filter(a => {
-        const age = calculateAgeOn(a.pobDob || "", refDate);
+        const age = calculateAgeOn(a.pobDob || '', refDate);
         return age < 65;
       })
       .filter(a => {
         // Keep search functionality across name or NIK
         return (
-          (a.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (a.nik || "").includes(searchQuery)
+          (a.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (a.nik || '').includes(searchQuery)
         );
       })
-      .sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
+      .sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
   }, [allActors, searchQuery]);
 
   // Action handlers for accept / reject
@@ -279,91 +285,102 @@ export default function BpjsPage() {
 
       <Card className="border-none shadow-xl bg-white/80 backdrop-blur-md overflow-hidden rounded-2xl">
         <CardContent className="p-0 overflow-x-auto">
-          {isLoading ? (
-            <div className="py-20 flex flex-col justify-center items-center gap-3">
-              <Loader2 className="w-10 h-10 text-primary animate-spin" />
-              <span className="font-bold text-primary animate-pulse uppercase tracking-widest text-xs">Memuat Data Database...</span>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader className="bg-primary/5">
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="font-black text-primary py-4 pl-6 w-12 text-center uppercase text-[10px]">NO</TableHead>
-                  <TableHead className="font-black text-primary py-4 uppercase text-[10px]">NAMA LENGKAP</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">NIK</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">TEMPAT LAHIR</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">TANGGAL LAHIR</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">USIA</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">KOORDINATOR</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">NOTE / KETERANGAN</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">AKSI</TableHead>
+          <Table>
+            <TableHeader className="bg-primary/5">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="font-black text-primary py-4 pl-6 w-12 text-center uppercase text-[10px]">NO</TableHead>
+                <TableHead className="font-black text-primary py-4 uppercase text-[10px]">NAMA LENGKAP</TableHead>
+                <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">NIK</TableHead>
+                <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">TEMPAT LAHIR</TableHead>
+                <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">TANGGAL LAHIR</TableHead>
+                <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">USIA</TableHead>
+                <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">KOORDINATOR</TableHead>
+                <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">NOTE / KETERANGAN</TableHead>
+                <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">AKSI</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredActors.map((actor, index) => {
-                  const age = calculateAge(actor.pobDob || "")
-                  return (
-                    <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group">
-                      <TableCell className="py-4 pl-6 text-center font-bold text-slate-400 text-xs">{index + 1}</TableCell>
-                      <TableCell className="py-4">
-                        <div className="flex flex-col">
-                          <span className="font-black text-slate-800 uppercase text-[13px] tracking-tight">{actor.fullName}</span>
-                          <span className="text-[10px] text-muted-foreground font-medium uppercase">{actor.kelurahan}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <span className="font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">{actor.nik}</span>
-                      </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <span className="text-[11px] font-bold text-slate-600 uppercase">{actor.pob || parsePobDob(actor.pobDob || "").pob || "-"}</span>
-                      </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <span className="text-[11px] font-bold text-slate-600 uppercase">{actor.dob || parsePobDob(actor.pobDob || "").dob || "-"}</span>
-                      </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <div className="flex flex-col items-center">
-                          <span className="text-sm font-black text-slate-800 leading-none">{age}</span>
-                          <span className="text-[8px] font-black text-muted-foreground uppercase mt-0.5">TAHUN</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4 text-center">
-                         <span className="text-[11px] font-bold text-slate-600 uppercase">{actor.coordinator || "-"}</span>
-                      </TableCell>
-                      <TableCell className="py-4 text-center">
-                        <Badge className={cn(
-                          "font-black uppercase tracking-wider text-[9px] px-3 py-1.5 border shadow-sm",
-                          age < 65 
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" 
-                            : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
-                        )}>
-                          {age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-4 text-center flex gap-2 justify-center">
-                        <Button size="sm" variant="outline" onClick={() => handleAccept(actor.id)}>Accept</Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleReject(actor.id)}>Reject</Button>
-                      </TableCell>
+                {isLoading ? (
+                  Array.from({ length: 8 }).map((_, i) => (
+                    <TableRow key={i} className="animate-pulse">
+                      <TableCell className="py-4 pl-6 text-center"><div className="h-4 bg-slate-200 rounded w-6 mx-auto" /></TableCell>
+                      <TableCell className="py-4"><div className="h-4 bg-slate-200 rounded w-40" /></TableCell>
+                      <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-36 mx-auto" /></TableCell>
+                      <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-24 mx-auto" /></TableCell>
+                      <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-24 mx-auto" /></TableCell>
+                      <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-10 mx-auto" /></TableCell>
+                      <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-28 mx-auto" /></TableCell>
+                      <TableCell className="py-4 text-center"><div className="h-6 bg-slate-200 rounded-full w-32 mx-auto" /></TableCell>
+                      <TableCell className="py-4 text-center"><div className="h-8 bg-slate-200 rounded w-24 mx-auto" /></TableCell>
                     </TableRow>
-                  )
-                })}
-                {filteredActors.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={9} className="py-24 text-center">
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="bg-slate-100 p-4 rounded-full">
-                          <Search className="w-10 h-10 text-slate-300" />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="font-black text-slate-800 text-lg uppercase">Data Tidak Ditemukan</p>
-                          <p className="text-sm text-muted-foreground">Silakan coba kata kunci pencarian lain.</p>
-                        </div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  ))
+                ) : (
+                  <>
+                    {filteredActors.map((actor, index) => {
+                      const age = calculateAge(actor.pobDob || "")
+                      return (
+                        <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group">
+                          <TableCell className="py-4 pl-6 text-center font-bold text-slate-400 text-xs">{index + 1}</TableCell>
+                          <TableCell className="py-4">
+                            <div className="flex flex-col">
+                              <span className="font-black text-slate-800 uppercase text-[13px] tracking-tight">{actor.fullName}</span>
+                              <span className="text-[10px] text-muted-foreground font-medium uppercase">{actor.kelurahan}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-4 text-center">
+                            <span className="font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">{actor.nik}</span>
+                          </TableCell>
+                          <TableCell className="py-4 text-center">
+                            <span className="text-[11px] font-bold text-slate-600 uppercase">{actor.pob || parsePobDob(actor.pobDob || "").pob || "-"}</span>
+                          </TableCell>
+                          <TableCell className="py-4 text-center">
+                            <span className="text-[11px] font-bold text-slate-600 uppercase">{actor.dob || parsePobDob(actor.pobDob || "").dob || "-"}</span>
+                          </TableCell>
+                          <TableCell className="py-4 text-center">
+                            <div className="flex flex-col items-center">
+                              <span className="text-sm font-black text-slate-800 leading-none">{age}</span>
+                              <span className="text-[8px] font-black text-muted-foreground uppercase mt-0.5">TAHUN</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-4 text-center">
+                            <span className="text-[11px] font-bold text-slate-600 uppercase">{actor.coordinator || "-"}</span>
+                          </TableCell>
+                          <TableCell className="py-4 text-center">
+                            <Badge className={cn(
+                              "font-black uppercase tracking-wider text-[9px] px-3 py-1.5 border shadow-sm",
+                              age < 65
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                            )}>
+                              {age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="py-4 text-center flex gap-2 justify-center">
+                            <Button size="sm" variant="outline" onClick={() => handleAccept(actor.id)}>Accept</Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleReject(actor.id)}>Reject</Button>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                    {!isLoading && filteredActors.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={9} className="py-24 text-center">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="bg-slate-100 p-4 rounded-full">
+                              <Search className="w-10 h-10 text-slate-300" />
+                            </div>
+                            <div className="space-y-1">
+                              <p className="font-black text-slate-800 text-lg uppercase">Data Tidak Ditemukan</p>
+                              <p className="text-sm text-muted-foreground">Silakan coba kata kunci pencarian lain.</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
                 )}
               </TableBody>
             </Table>
-          )}
         </CardContent>
       </Card>
       
