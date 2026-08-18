@@ -270,7 +270,7 @@ export async function generateBeritaAcaraPDF(
   const dataColonX = marginL + noW + dataLabelW; // 88mm
   const dataValueX = dataColonX + 3; // 91mm
   const maxValW = pageW - marginR - dataValueX - 8; // 96mm
-  const lineY_offset = 1.0;
+  const lineY_offset = 1.6; // Garis berada 1.6mm di bawah baseline teks agar tidak menimpa huruf
 
   doc.setFontSize(8.5);
 
@@ -285,7 +285,7 @@ export async function generateBeritaAcaraPDF(
     }
   ) => {
     const fStyle = options?.fontStyle || (options?.bold ? "bold" : "normal");
-    const lSpacing = options?.lineSpacing || 4.0;
+    const lSpacing = options?.lineSpacing || 4.3;
 
     doc.setFont("helvetica", "normal");
     if (noStr) {
@@ -306,7 +306,7 @@ export async function generateBeritaAcaraPDF(
       doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
     });
 
-    y += 4.3;
+    y += 4.7;
   };
 
   // Row 1: Nama Usaha
@@ -329,7 +329,7 @@ export async function generateBeritaAcaraPDF(
     doc.text(opt, oxJK, y);
     oxJK += doc.getTextWidth(opt) + 4.5;
   });
-  y += 4.3;
+  y += 4.7;
 
   // Row 5: Alamat Usaha
   renderDataRow("5.", "Alamat Usaha", actor.businessLocation || actor.address);
@@ -347,7 +347,7 @@ export async function generateBeritaAcaraPDF(
   doc.text(":", dataColonX, y);
   doc.text("YA  /  TIDAK", dataValueX, y);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.3;
+  y += 4.7;
 
   // Teks "Jika YA, DTKS Kategori *:" sejajar dengan isian data (dataValueX)
   doc.setFont("helvetica", "normal");
@@ -361,7 +361,7 @@ export async function generateBeritaAcaraPDF(
     doc.setFont("helvetica", "normal");
     oxDTKS += doc.getTextWidth(opt) + 4;
   });
-  y += 4.3;
+  y += 4.7;
 
   // Row 8: Bidang Usaha
   renderDataRow("8.", "Bidang Usaha", surveyData.bidangUsaha);
@@ -384,7 +384,7 @@ export async function generateBeritaAcaraPDF(
     oxIzin += doc.getTextWidth(opt) + 5;
   });
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.3;
+  y += 4.7;
 
   // Row 12: Modal Usaha dan Omset per bulan
   const val12 = `Modal: Rp ${surveyData.modalUsaha || "-"}  |  Omset: Rp ${surveyData.omset || "-"}`;
@@ -401,10 +401,10 @@ export async function generateBeritaAcaraPDF(
   doc.text("Tahun berapa :", dataValueX + ymW + 37, y);
   const thnW = doc.getTextWidth("Tahun berapa : ");
   doc.line(dataValueX + ymW + 37 + thnW, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.0;
+  y += 4.3;
 
   doc.text("TIDAK", dataValueX, y);
-  y += 4.3;
+  y += 4.7;
 
   // Row 14: Rencana Penggunaan Dana Hibah
   renderDataRow("14.", "Rencana Penggunaan Dana Hibah", surveyData.rencanaPenggunaan);
