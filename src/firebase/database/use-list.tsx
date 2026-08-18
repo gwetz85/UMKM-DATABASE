@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Query, DatabaseReference, onValue } from 'firebase/database';
+import { Query, DatabaseReference, onValue, get } from 'firebase/database';
 
 export interface UseListOptions {
   once?: boolean;
@@ -41,11 +41,9 @@ export function useList<T = any>(
     };
     
     if (options.once) {
-      import('firebase/database').then(({ get }) => {
-        get(memoizedRefOrQuery as any)
-          .then(handleSnapshot)
-          .catch(handleError);
-      });
+      get(memoizedRefOrQuery as any)
+        .then(handleSnapshot)
+        .catch(handleError);
       return;
     }
 

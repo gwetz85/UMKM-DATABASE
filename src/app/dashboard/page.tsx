@@ -144,8 +144,7 @@ export default function DashboardStatsPage() {
     return ref(database, 'koordinator_kuotas')
   }, [database])
 
-  // kuotaData jarang berubah — gunakan once:true agar tidak buat real-time listener
-  const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery, { once: true })
+  const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery)
 
   // Use systemStats if available, otherwise fallback to 0 or calculate (one-time)
   const statsValues = useMemo(() => {
@@ -506,49 +505,68 @@ export default function DashboardStatsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {combinedKuotaData.map((item: any, index: number) => (
-                      <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                        <TableCell className="text-center font-bold text-slate-600 text-xs">{index + 1}</TableCell>
-                        <TableCell className="font-black text-primary text-xs tracking-tight">{item.name}</TableCell>
-                        <TableCell className="text-center">
-                          <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
-                            {item.quota}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
-                            {item.achieved}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className={cn(
-                            "inline-flex items-center justify-center font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border",
-                            item.remaining <= 0 
-                              ? "bg-rose-100 text-rose-700 border-rose-200" 
-                              : "bg-blue-100 text-blue-700 border-blue-200"
-                          )}>
-                            {item.remaining}
-                          </span>
+                    {isKuotaLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-12">
+                          <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            Memuat data kuota...
+                          </div>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : combinedKuotaData.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-12 text-muted-foreground italic font-medium text-xs">
+                          Belum ada data target kuota yang didaftarkan.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      combinedKuotaData.map((item: any, index: number) => (
+                        <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                          <TableCell className="text-center font-bold text-slate-600 text-xs">{index + 1}</TableCell>
+                          <TableCell className="font-black text-primary text-xs tracking-tight">{item.name}</TableCell>
+                          <TableCell className="text-center">
+                            <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
+                              {item.quota}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
+                              {item.achieved}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className={cn(
+                              "inline-flex items-center justify-center font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border",
+                              item.remaining <= 0 
+                                ? "bg-rose-100 text-rose-700 border-rose-200" 
+                                : "bg-blue-100 text-blue-700 border-blue-200"
+                            )}>
+                              {item.remaining}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
-                  <TableFooter>
-                    <TableRow className="bg-primary/5 border-t-2 border-primary/20">
-                      <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs py-3">
-                        Total Kuota Data
-                      </TableCell>
-                      <TableCell className="text-center font-black text-slate-600 text-sm">
-                        {totalKuotaDashboard}
-                      </TableCell>
-                      <TableCell className="text-center font-black text-emerald-600 text-sm">
-                        {totalAchievedDashboard}
-                      </TableCell>
-                      <TableCell className="text-center font-black text-primary text-sm">
-                        {totalKuotaDashboard - totalAchievedDashboard}
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
+                  {!isKuotaLoading && combinedKuotaData.length > 0 && (
+                    <TableFooter>
+                      <TableRow className="bg-primary/5 border-t-2 border-primary/20">
+                        <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs py-3">
+                          Total Kuota Data
+                        </TableCell>
+                        <TableCell className="text-center font-black text-slate-600 text-sm">
+                          {totalKuotaDashboard}
+                        </TableCell>
+                        <TableCell className="text-center font-black text-emerald-600 text-sm">
+                          {totalAchievedDashboard}
+                        </TableCell>
+                        <TableCell className="text-center font-black text-primary text-sm">
+                          {totalKuotaDashboard - totalAchievedDashboard}
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  )}
                 </Table>
               </div>
             </CardContent>
