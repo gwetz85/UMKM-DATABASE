@@ -157,7 +157,10 @@ export default function VerifikasiDinasPage() {
     return Math.min(100, Math.round((filled / requiredFields) * 100));
   };
 
-  const surveyProgress = calculateProgress();
+  const surveyProgress = useMemo(() => {
+    if (!verifyingActor) return 0;
+    return calculateProgress();
+  }, [surveyData, location, verifyingActor]);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -217,8 +220,9 @@ export default function VerifikasiDinasPage() {
 
   const handleProceedToSurvey = () => {
     if (!choiceActor) return
+    const targetActor = choiceActor
     setChoiceActor(null)
-    openSurveyDialog(choiceActor)
+    openSurveyDialog(targetActor)
   }
 
   const handleSubmitCancel = () => {
@@ -355,40 +359,57 @@ export default function VerifikasiDinasPage() {
         setShowPejabatModal(true);
       }
     }
-  }, [isPetugas, userProfile?.id, user?.uid])
+  }, [isPetugas, userProfile?.id, user?.uid, userProfile])
 
+  // Always query by indexed 'status: lpj_pending' to avoid downloading entire businessActors collection
   const memoQuery = useMemoFirebase(() => {
-    // Tunggu sampai profile user selesai dimuat agar role (isPetugas/isDinas/isAdmin) sudah diketahui
-    // Ini mencegah load seluruh koleksi businessActors sebelum role diketahui
     if (!database || isProfileLoading || !userProfile) return null
-    if (isPetugas && userProfile?.fullName) {
-      return query(ref(database, 'businessActors'), orderByChild('petugasSurvey'), equalTo(userProfile.fullName.toUpperCase().trim()))
-    }
     return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('lpj_pending'))
-  }, [database, isProfileLoading, isPetugas, userProfile?.fullName])
+  }, [database, isProfileLoading, userProfile])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
   const { data: kuotaData } = useList<any>(kuotaRef)
 
-
-  const actors = allActorsRaw?.filter(a => {
-    if (!a) return false;
-    if (isPetugas) {
-      if (!userProfile?.fullName) return false;
-      const userPetugasUpper = String(userProfile.fullName).toUpperCase().trim();
-      const actorPetugasUpper = String(a.petugasSurvey || a.createdBy || "").toUpperCase().trim();
-      return actorPetugasUpper === userPetugasUpper;
+  // O(1) Lookup Map for Coordinator Phone Numbers
+  const kuotaMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (kuotaData) {
+      kuotaData.forEach((q: any) => {
+        const name = (q.name || q.coordinator || "").toUpperCase().trim();
+        const phone = q.phone || q.noHp || q.hp || "";
+        if (name && phone) map.set(name, phone);
+      });
     }
-    return a.status === 'lpj_pending';
-  })
+    return map;
+  }, [kuotaData]);
 
-  const filteredActors = actors?.filter(actor =>
-    actor.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    actor.nik.includes(searchQuery) ||
-    actor.businessName.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const actors = useMemo(() => {
+    if (!allActorsRaw) return []
+    return allActorsRaw.filter(a => {
+      if (!a) return false;
+      if (isPetugas) {
+        if (!userProfile?.fullName) return false;
+        const userPetugasUpper = String(userProfile.fullName).toUpperCase().trim();
+        const actorPetugasUpper = String(a.petugasSurvey || a.createdBy || "").toUpperCase().trim();
+        return actorPetugasUpper === userPetugasUpper;
+      }
+      return a.status === 'lpj_pending';
+    })
+  }, [allActorsRaw, isPetugas, userProfile?.fullName])
+
+  const filteredActors = useMemo(() => {
+    if (!actors) return []
+    const q = searchQuery.toLowerCase().trim()
+    if (!q) return actors
+    return actors.filter(actor =>
+      (actor.fullName && actor.fullName.toLowerCase().includes(q)) ||
+      (actor.nik && actor.nik.includes(q)) ||
+      (actor.businessName && actor.businessName.toLowerCase().includes(q)) ||
+      (actor.kelurahan && actor.kelurahan.toLowerCase().includes(q))
+    )
+  }, [actors, searchQuery])
 
   const groupedActors = useMemo(() => {
     if (!filteredActors) return {}
@@ -399,6 +420,14 @@ export default function VerifikasiDinasPage() {
       return acc
     }, {} as Record<string, BusinessActor[]>)
   }, [filteredActors])
+
+  const getWaLink = (phoneStr: string) => {
+    if (!phoneStr) return "#";
+    let clean = phoneStr.replace(/\D/g, "");
+    if (clean.startsWith("0")) clean = "62" + clean.slice(1);
+    else if (!clean.startsWith("62")) clean = "62" + clean;
+    return `https://wa.me/${clean}`;
+  };
 
   const handleVerifyDinas = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -983,7 +1012,7 @@ export default function VerifikasiDinasPage() {
         </Card>
       ) : (
         <div className="space-y-12">
-          {Object.entries(groupedActors).sort().map(([kelurahan, actors]) => (
+          {Object.entries(groupedActors).sort().map(([kelurahan, groupActors]) => (
             <div key={kelurahan} className="space-y-6">
               <div className="flex items-center gap-4">
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
@@ -992,831 +1021,817 @@ export default function VerifikasiDinasPage() {
                 </h2>
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                 <span className="text-[10px] font-bold text-muted-foreground bg-white border px-3 py-1 rounded-full shadow-sm">
-                  {actors.length} Data
+                  {groupActors.length} Data
                 </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {actors.map((actor) => (
-                  <Card key={actor.id} className="group relative overflow-hidden border-slate-200/60 hover:border-primary/50 hover:shadow-2xl transition-all duration-500 rounded-[2rem] bg-white/80 backdrop-blur-sm">
-                    
-                    <CardContent className="p-6">
-                      <div className="flex flex-col h-full gap-4">
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors duration-500">
-                            <User className="w-6 h-6" />
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="font-black text-slate-800 uppercase text-sm truncate" title={actor.fullName}>
+                {groupActors.map((actor) => {
+                  const coordPhone = kuotaMap.get((actor.coordinator || "").toUpperCase().trim()) || "";
+                  const actorProg = verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0);
+
+                  return (
+                    <Card key={actor.id} className="group relative overflow-hidden border-slate-200/60 hover:border-primary/50 hover:shadow-2xl transition-all duration-500 rounded-[2rem] bg-white/80 backdrop-blur-sm">
+                      <CardContent className="p-6">
+                        <div className="flex flex-col h-full gap-4">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors duration-500">
+                              <User className="w-6 h-6" />
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="font-black text-slate-800 uppercase text-sm truncate" title={actor.fullName}>
                                 {actor.fullName}
                               </h3>
                               <p className="text-[10px] font-mono text-slate-500 mt-0.5 tracking-tighter">
                                 NIK: {actor.nik}
                               </p>
-                          </div>
-                        </div>
-
-                        <div className="pb-3">
-                          <div className="flex justify-between items-center text-[10px] font-bold mb-1.5">
-                            <span className="text-slate-600 uppercase tracking-wider">Progress Pengisian</span>
-                            <div className="flex items-center gap-1.5">
-                              {(verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)) > 0 && (verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)) < 100 && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
-                                  DRAFT
-                                </span>
-                              )}
-                              <span className={(verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)) >= 100 ? 'text-emerald-600' : 'text-amber-600'}>
-                                {verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)}%
-                              </span>
-                            </div>
-                          </div>
-                          <Progress value={verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0)} className="h-2" />
-                          {actor.lastDraftBy && (
-                            <p className="text-[9px] text-slate-400 mt-1 truncate">Draft oleh: <span className="font-medium text-slate-600">{actor.lastDraftBy}</span></p>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 py-4 border-y border-slate-100">
-                          <div className="space-y-1">
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Usaha</span>
-                            <p className="text-[11px] font-black text-slate-700 truncate uppercase">{actor.businessName}</p>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Kategori</span>
-                            <div className="flex">
-                              <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase">
-                                {actor.businessCategory}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-slate-100">
-                          <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
-                            {(() => {
-                              const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (actor.coordinator || "").toUpperCase().trim());
-                              const coordPhone = found?.phone || found?.noHp || found?.hp || "";
-                              const getWaLink = (phoneStr: string) => {
-                                if (!phoneStr) return "#";
-                                let clean = phoneStr.replace(/\D/g, "");
-                                if (clean.startsWith("0")) clean = "62" + clean.slice(1);
-                                else if (!clean.startsWith("62")) clean = "62" + clean;
-                                return `https://wa.me/${clean}`;
-                              };
-
-                              return (
-                                <div className="flex flex-col min-w-0">
-                                  <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">USULAN</span>
-                                  <div className="flex items-center gap-1 min-w-0">
-                                    <span className="text-[10px] font-black text-primary truncate uppercase" title={actor.coordinator || "Tanpa Korlap"}>
-                                      {actor.coordinator || "Tanpa Korlap"}
-                                    </span>
-                                    {coordPhone && (
-                                      <a
-                                        href={getWaLink(coordPhone)}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="inline-flex items-center gap-0.5 text-emerald-600 hover:text-emerald-700 hover:scale-105 transition-all bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200/80 shrink-0"
-                                        title={`Chat WA Usulan (${actor.coordinator}): ${coordPhone}`}
-                                      >
-                                        <MessageCircle className="w-3 h-3 text-emerald-600 fill-emerald-600/20" />
-                                      </a>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })()}
-
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">PETUGAS SURVEY</span>
-                              {actor.petugasSurvey && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim() !== '' ? (
-                                <span className="text-[10px] font-black text-emerald-700 truncate uppercase flex items-center gap-1" title={actor.petugasSurvey}>
-                                  <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
-                                  <span className="truncate">{actor.petugasSurvey}</span>
-                                </span>
-                              ) : (
-                                <span className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-1">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 animate-pulse" />
-                                  Belum Ada
-                                </span>
-                              )}
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-end gap-2 pt-1">
-                            {/* Tombol Reset Survey Data - Admin Only */}
-                            {isAdmin && actor.surveyProgress != null && actor.surveyProgress > 0 && (
-                              <Button
-                                size="icon"
-                                variant="outline"
-                                onClick={() => setResetSurveyActor(actor)}
-                                className="h-9 w-9 border-orange-100 text-orange-500 bg-orange-50 hover:bg-orange-500 hover:text-white rounded-xl shadow-sm transition-all duration-300"
-                                title="Reset Data Survey (Admin)"
-                              >
-                                <RotateCcw className="w-4 h-4" />
-                              </Button>
-                            )}
-
-                            {/* Tombol Generate PDF Berita Acara */}
-                            {(isAdmin || isDinas || isPetugas) && (
-                              <Button
-                                size="icon"
-                                variant="outline"
-                                onClick={() => {
-                                  setPrintModalActor(actor);
-                                  setSelectedPrintDate(actor.surveyData?.tanggalSurvey || new Date().toISOString().split('T')[0]);
-                                  setSaveDateToSurvey(true);
-                                }}
-                                disabled={generatingPdfId === actor.id || !actor.surveyData}
-                                className="h-9 w-9 border-purple-100 text-purple-600 bg-purple-50 hover:bg-purple-600 hover:text-white rounded-xl shadow-sm transition-all duration-300 disabled:opacity-40"
-                                title={actor.surveyData ? "Cetak Berita Acara Survey (PDF)" : "Survey belum diisi"}
-                              >
-                                {generatingPdfId === actor.id
-                                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                                  : <FileDown className="w-4 h-4" />}
-                              </Button>
-                            )}
-
-                            {/* Viewer Dialog */}
-                            <Dialog open={!!viewingActor && viewingActor.id === actor.id} onOpenChange={(open) => !open && setViewingActor(null)}>
-                              <DialogTrigger asChild>
-                                <Button size="icon" variant="outline" onClick={() => setViewingActor(actor)} className="h-9 w-9 border-blue-100 text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-xl shadow-sm transition-all duration-300" title="Lihat Detail">
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                                {viewingActor && (
-                                  <>
-                                    <DialogHeader>
-                                      <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
-                                        <FileText className="w-6 h-6" /> Detail Pelaku Usaha
-                                      </DialogTitle>
-                                      <DialogDescription className="sr-only">Detail Pelaku Usaha</DialogDescription>
-                                    </DialogHeader>
-                                    <div className="grid gap-6 py-4">
-                                      <section className="space-y-4">
-                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
-                                          {(() => {
-                                            const parsed = parsePobDob(viewingActor.pobDob || "")
-                                            return [
-                                              { label: "Nama Lengkap", value: viewingActor.fullName },
-                                              { label: "NIK", value: viewingActor.nik },
-                                              { label: "Nomor KK", value: viewingActor.noKK },
-                                              { label: "Jenis Kelamin", value: viewingActor.gender },
-                                              { label: "Tempat Lahir", value: viewingActor.pob || parsed.pob || "-" },
-                                              { label: "Tanggal Lahir", value: viewingActor.dob || parsed.dob || "-" },
-                                              { label: "Nomor HP", value: viewingActor.phone, isPhone: true }
-                                            ]
-                                          })().map((item, i) => (
-                                            <div key={i} className="space-y-1">
-                                              <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                              {(item as any).isPhone && item.value ? (
-                                                <a
-                                                  href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
-                                                  target="_blank"
-                                                  rel="noreferrer"
-                                                  className="text-xs font-bold text-green-600 hover:text-green-700 hover:underline flex items-center gap-1"
-                                                >
-                                                  {item.value}
-                                                </a>
-                                              ) : (
-                                                <p className="text-xs font-bold">{item.value || "-"}</p>
-                                              )}
-                                            </div>
-                                          ))}
-                                        
-                                        </div>
-                                      </section>
-    
-                                      <section className="space-y-4">
-                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
-                                          {[
-                                            { label: "Kecamatan", value: viewingActor.kecamatan },
-                                            { label: "Kelurahan", value: viewingActor.kelurahan },
-                                            { label: "RT/RW", value: viewingActor.rtRw },
-                                            { label: "Alamat", value: viewingActor.address, fullWidth: true }
-                                          ].map((item, i) => (
-                                            <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
-                                              <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                              <p className="text-xs font-bold">{item.value || "-"}</p>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </section>
-    
-                                      <section className="space-y-4">
-                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
-                                          {(() => {
-                                            const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim());
-                                            const coordPhone = found?.phone || found?.noHp || found?.hp || "";
-                                            
-                                            const getWaLink = (phoneStr: string) => {
-                                              if (!phoneStr) return "#";
-                                              let clean = phoneStr.replace(/\D/g, "");
-                                              if (clean.startsWith("0")) clean = "62" + clean.slice(1);
-                                              else if (!clean.startsWith("62")) clean = "62" + clean;
-                                              return `https://wa.me/${clean}`;
-                                            };
-
-                                            return [
-                                              { label: "Usaha", value: viewingActor.businessName },
-                                              { label: "Kategori Usaha", value: viewingActor.businessCategory },
-                                              { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                                              { label: "USULAN", value: viewingActor.coordinator },
-                                              { label: "NO. HP USULAN", value: coordPhone, isPhone: true },
-                                              { label: "PETUGAS SURVEY", value: viewingActor.petugasSurvey || "Belum ada" }
-                                            ].map((item: any, i: number) => (
-                                              <div key={i} className="space-y-1">
-                                                <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                                {item.isPhone && item.value ? (
-                                                  <a
-                                                    href={getWaLink(item.value)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 shadow-sm transition-all active:scale-95 w-fit"
-                                                    title="Klik untuk membuka obrolan WhatsApp"
-                                                  >
-                                                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
-                                                    <span>{item.value}</span>
-                                                  </a>
-                                                ) : (
-                                                  <p className="text-xs font-bold">{item.value || "-"}</p>
-                                                )}
-                                              </div>
-                                            ));
-                                          })()}
-                                        </div>
-                                      </section>
-    
-                                      <section className="space-y-4">
-                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Informasi Perbankan</div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-primary/5 p-4 rounded-xl border border-primary/10">
-                                          {[
-                                            { label: "Nama Bank", value: viewingActor.bankName },
-                                            { label: "Nomor Rekening", value: viewingActor.bankNumber },
-                                            { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner }
-                                          ].map((item, i) => (
-                                            <div key={i} className="space-y-1">
-                                              <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                                              <p className="text-xs font-black text-primary">{item.value || "BELUM TERISI"}</p>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </section>
-    
-                                      <section className="space-y-4">
-                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Data Titik Lokasi Verifikasi</div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          {(viewingActor as any).verificationLocation && (
-                                            <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                                              <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Sumber: Verifikasi Admin</p>
-                                              <p className="text-xs font-mono text-emerald-800 font-semibold">{(viewingActor as any).verificationLocation.lat}, {(viewingActor as any).verificationLocation.lon}</p>
-                                              <a href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocation.lat},${(viewingActor as any).verificationLocation.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline mt-2 inline-block">Lihat di Peta</a>
-                                            </div>
-                                          )}
-                                          {(viewingActor as any).verificationBypass?.isBypassed && (
-                                            <div className="bg-amber-50 p-4 rounded-xl border border-amber-100">
-                                              <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">Sumber: Verifikasi Admin (Bypass)</p>
-                                              <p className="text-xs text-amber-800 font-medium mb-2">Alasan: {(viewingActor as any).verificationBypass.reason}</p>
-                                              {(viewingActor as any).verificationBypass.fileBase64 && (
-                                                <a href={(viewingActor as any).verificationBypass.fileBase64} target="_blank" rel="noreferrer" className="text-[10px] font-bold bg-amber-200 text-amber-800 px-3 py-1 rounded shadow-sm hover:bg-amber-300 transition-colors inline-block mt-1">Lihat Bukti Lampiran</a>
-                                              )}
-                                            </div>
-                                          )}
-                                          {(viewingActor as any).verificationLocationDinas && (
-                                            <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                                              <p className="text-[10px] font-bold text-indigo-600 uppercase mb-1">Sumber: Verifikasi Dinas</p>
-                                              <p className="text-xs font-mono text-indigo-800 font-semibold">{(viewingActor as any).verificationLocationDinas.lat}, {(viewingActor as any).verificationLocationDinas.lon}</p>
-                                              <a href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocationDinas.lat},${(viewingActor as any).verificationLocationDinas.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline mt-2 inline-block">Lihat di Peta</a>
-                                            </div>
-                                          )}
-                                          {!(viewingActor as any).verificationLocation && !(viewingActor as any).verificationLocationDinas && !(viewingActor as any).verificationBypass?.isBypassed && (
-                                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 col-span-full">
-                                              <p className="text-xs font-medium text-slate-500 text-center">Belum ada titik lokasi yang direkam.</p>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </section>
-
-                                      {viewingActor.googleDriveLink && (
-                                        <section className="space-y-4">
-                                          <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Folder className="w-4 h-4" /> Berkas Tambahan (Google Drive)</div>
-                                          <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                            <div>
-                                              <p className="text-xs font-bold text-blue-800 uppercase">Folder Google Drive Pelaku Usaha</p>
-                                              <p className="text-[10px] font-medium text-blue-600 mt-1">Berisi foto, video, dokumen usulan, atau file lainnya</p>
-                                            </div>
-                                            <a href={viewingActor.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold px-4 py-2.5 rounded-lg text-xs shadow flex items-center justify-center min-w-[140px]">
-                                              Buka Folder Drive
-                                            </a>
-                                          </div>
-                                        </section>
-                                      )}
-
-                                      <section className="space-y-4">
-                                        <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem</div>
-                                        <div className="bg-slate-50 p-4 rounded-xl text-[10px] font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
-                                          <div className="space-y-1">
-                                            <p className="text-muted-foreground uppercase">Status</p>
-                                            <p className="text-primary">{(viewingActor.status || "").replace('_', ' ').toUpperCase()}</p>
-                                          </div>
-                                          <div className="space-y-1">
-                                            <p className="text-muted-foreground uppercase">Diinput Oleh</p>
-                                            <p>{viewingActor.createdBy || "System"}</p>
-                                          </div>
-                                          <div className="space-y-1">
-                                            <p className="text-muted-foreground uppercase">Waktu Input</p>
-                                            <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
-                                          </div>
-                                        </div>
-                                      </section>
-                                    </div>
-                                  </>
+                          <div className="pb-3">
+                            <div className="flex justify-between items-center text-[10px] font-bold mb-1.5">
+                              <span className="text-slate-600 uppercase tracking-wider">Progress Pengisian</span>
+                              <div className="flex items-center gap-1.5">
+                                {actorProg > 0 && actorProg < 100 && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                    DRAFT
+                                  </span>
                                 )}
-                              </DialogContent>
-                            </Dialog>
-                            
-                             {/* Verifikasi Dinas Dialog */}
+                                <span className={actorProg >= 100 ? 'text-emerald-600' : 'text-amber-600'}>
+                                  {actorProg}%
+                                </span>
+                              </div>
+                            </div>
+                            <Progress value={actorProg} className="h-2" />
+                            {actor.lastDraftBy && (
+                              <p className="text-[9px] text-slate-400 mt-1 truncate">Draft oleh: <span className="font-medium text-slate-600">{actor.lastDraftBy}</span></p>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 py-4 border-y border-slate-100">
+                            <div className="space-y-1">
+                              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Usaha</span>
+                              <p className="text-[11px] font-black text-slate-700 truncate uppercase">{actor.businessName}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Kategori</span>
+                              <div className="flex">
+                                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase">
+                                  {actor.businessCategory}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-slate-100">
+                            <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">USULAN</span>
+                                <div className="flex items-center gap-1 min-w-0">
+                                  <span className="text-[10px] font-black text-primary truncate uppercase" title={actor.coordinator || "Tanpa Korlap"}>
+                                    {actor.coordinator || "Tanpa Korlap"}
+                                  </span>
+                                  {coordPhone && (
+                                    <a
+                                      href={getWaLink(coordPhone)}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="inline-flex items-center gap-0.5 text-emerald-600 hover:text-emerald-700 hover:scale-105 transition-all bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200/80 shrink-0"
+                                      title={`Chat WA Usulan (${actor.coordinator}): ${coordPhone}`}
+                                    >
+                                      <MessageCircle className="w-3 h-3 text-emerald-600 fill-emerald-600/20" />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">PETUGAS SURVEY</span>
+                                {actor.petugasSurvey && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim() !== '' ? (
+                                  <span className="text-[10px] font-black text-emerald-700 truncate uppercase flex items-center gap-1" title={actor.petugasSurvey}>
+                                    <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                                    <span className="truncate">{actor.petugasSurvey}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                    Belum Ada
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-1">
+                              {/* Tombol Reset Survey Data - Admin Only */}
+                              {isAdmin && actor.surveyProgress != null && actor.surveyProgress > 0 && (
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  onClick={() => setResetSurveyActor(actor)}
+                                  className="h-9 w-9 border-orange-100 text-orange-500 bg-orange-50 hover:bg-orange-500 hover:text-white rounded-xl shadow-sm transition-all duration-300"
+                                  title="Reset Data Survey (Admin)"
+                                >
+                                  <RotateCcw className="w-4 h-4" />
+                                </Button>
+                              )}
+
+                              {/* Tombol Generate PDF Berita Acara */}
                               {(isAdmin || isDinas || isPetugas) && (
-                               <>
-                                 {/* Trigger Button - outside Dialog to avoid controlled/uncontrolled conflict */}
-                                 <Button
-                                   size="icon"
-                                   variant="outline"
-                                   onClick={() => openChoiceDialog(actor)}
-                                   className="h-9 w-9 border-emerald-100 text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl shadow-sm transition-all duration-300"
-                                   title="Verifikasi Dinas"
-                                 >
-                                   <ClipboardCheck className="w-4 h-4" />
-                                 </Button>
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setPrintModalActor(actor);
+                                    setSelectedPrintDate(actor.surveyData?.tanggalSurvey || new Date().toISOString().split('T')[0]);
+                                    setSaveDateToSurvey(true);
+                                  }}
+                                  disabled={generatingPdfId === actor.id || !actor.surveyData}
+                                  className="h-9 w-9 border-purple-100 text-purple-600 bg-purple-50 hover:bg-purple-600 hover:text-white rounded-xl shadow-sm transition-all duration-300 disabled:opacity-40"
+                                  title={actor.surveyData ? "Cetak Berita Acara Survey (PDF)" : "Survey belum diisi"}
+                                >
+                                  {generatingPdfId === actor.id
+                                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                                    : <FileDown className="w-4 h-4" />}
+                                </Button>
+                              )}
 
-                                 {/* Choice Dialog - purely controlled */}
-                                 <Dialog open={!!choiceActor && choiceActor.id === actor.id} onOpenChange={(open) => { if (!open) { setChoiceActor(null); setSelectedChoice(null); setCancelReason(""); } }}>
-                                    <DialogContent className="max-w-md">
-                                      <DialogHeader>
-                                        <DialogTitle className="text-xl font-black text-primary uppercase flex items-center gap-2">
-                                          <ClipboardCheck className="w-5 h-5" /> Tindakan Survey Dinas
-                                        </DialogTitle>
-                                        <DialogDescription>
-                                          Pilih tindakan untuk <span className="font-bold text-slate-800">{choiceActor?.fullName}</span>
-                                        </DialogDescription>
-                                      </DialogHeader>
+                              {/* Viewer Trigger */}
+                              <Button 
+                                size="icon" 
+                                variant="outline" 
+                                onClick={() => setViewingActor(actor)} 
+                                className="h-9 w-9 border-blue-100 text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white rounded-xl shadow-sm transition-all duration-300" 
+                                title="Lihat Detail"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
 
-                                      <div className="py-4 space-y-4">
-                                        {/* Choice Buttons */}
-                                        {!selectedChoice && (
-                                          <div className="grid grid-cols-2 gap-4">
-                                            <button
-                                              type="button"
-                                              onClick={() => setSelectedChoice('survey')}
-                                              className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-emerald-200 bg-emerald-50 hover:border-emerald-500 hover:bg-emerald-100 transition-all duration-200 cursor-pointer group"
-                                            >
-                                              <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                                <ClipboardCheck className="w-7 h-7 text-white" />
-                                              </div>
-                                              <div className="text-center">
-                                                <p className="font-black text-emerald-700 text-sm uppercase tracking-wide">Di Survey</p>
-                                                <p className="text-[10px] text-emerald-600 mt-0.5">Lanjut isi form survey</p>
-                                              </div>
-                                            </button>
-
-                                            <button
-                                              type="button"
-                                              onClick={() => setSelectedChoice('cancel')}
-                                              className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 transition-all duration-200 cursor-pointer group"
-                                            >
-                                              <div className="w-14 h-14 rounded-2xl bg-red-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                                <AlertTriangle className="w-7 h-7 text-white" />
-                                              </div>
-                                              <div className="text-center">
-                                                <p className="font-black text-red-700 text-sm uppercase tracking-wide">Cancel</p>
-                                                <p className="text-[10px] text-red-600 mt-0.5">Tolak &amp; isi alasan</p>
-                                              </div>
-                                            </button>
-                                          </div>
-                                        )}
-
-                                        {/* Cancel reason form */}
-                                        {selectedChoice === 'cancel' && (
-                                          <div className="space-y-4">
-                                            <div className="flex items-center gap-2 p-3 bg-red-50 rounded-xl border border-red-200">
-                                              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-                                              <p className="text-xs font-semibold text-red-700">Data akan dipindahkan ke menu Ditolak beserta alasan cancel.</p>
-                                            </div>
-                                            <div className="space-y-2">
-                                              <Label className="font-bold text-slate-700">Alasan Cancel Survey</Label>
-                                              <Textarea
-                                                placeholder="Tulis alasan cancel di sini..."
-                                                value={cancelReason}
-                                                onChange={(e) => setCancelReason(e.target.value)}
-                                                rows={4}
-                                                className="resize-none border-red-200 focus-visible:ring-red-400"
-                                              />
-                                            </div>
-                                            <div className="flex gap-2">
-                                              <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedChoice(null)} className="flex-1">
-                                                Kembali
-                                              </Button>
-                                              <Button
-                                                type="button"
-                                                onClick={handleSubmitCancel}
-                                                disabled={!cancelReason.trim() || isSubmittingCancel}
-                                                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold"
-                                              >
-                                                {isSubmittingCancel ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                                                Submit Cancel
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        )}
-
-                                        {/* Di Survey confirm */}
-                                        {selectedChoice === 'survey' && (
-                                          <div className="space-y-4">
-                                            <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
-                                              <ClipboardCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                                              <p className="text-xs font-semibold text-emerald-700">Anda akan membuka form survey untuk <strong>{choiceActor?.fullName}</strong></p>
-                                            </div>
-                                            <div className="flex gap-2">
-                                              <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedChoice(null)} className="flex-1">
-                                                Kembali
-                                              </Button>
-                                              <Button type="button" onClick={handleProceedToSurvey} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-                                                <ClipboardCheck className="w-4 h-4 mr-2" /> Buka Form Survey
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      {/* Footer only shown on initial choice */}
-                                      {!selectedChoice && (
-                                        <DialogFooter>
-                                          <Button type="button" variant="ghost" onClick={() => { setChoiceActor(null); setSelectedChoice(null); }} className="w-full">
-                                            Tutup
-                                          </Button>
-                                        </DialogFooter>
-                                      )}
-                                    </DialogContent>
-                                 </Dialog>
-
-                                 {/* Survey Form Dialog */}
-                                 <Dialog open={!!verifyingActor && verifyingActor.id === actor.id} onOpenChange={(open) => !open && setVerifyingActor(null)}>
-                                  <DialogContent className="max-w-4xl max-h-[95vh]">
-                                    <form onSubmit={handleVerifyDinas}>
-                                      <DialogHeader>
-                                        <DialogTitle className="text-xl font-black text-emerald-600 uppercase">Survey Dinas</DialogTitle>
-                                        <DialogDescription>Lengkapi form survey di bawah ini. Progress harus mencapai 100% untuk menyimpan.</DialogDescription>
-                                      </DialogHeader>
-                                    
-                                    <div className="sticky top-0 bg-white z-10 py-4 border-b border-slate-100 shadow-sm px-1 mb-4">
-                                      <div className="flex justify-between text-sm font-bold mb-2">
-                                        <span className="text-slate-600 uppercase">Progress Pengisian</span>
-                                        <span className={surveyProgress >= 100 ? 'text-emerald-600' : 'text-amber-600'}>{surveyProgress}%</span>
-                                      </div>
-                                      <Progress value={surveyProgress} className="h-2" />
-                                    </div>
-
-                                    <div className="py-2 space-y-6 max-h-[75vh] overflow-y-auto px-1">
-                                      
-                                      {/* Kolom Tanggal Survey / Berita Acara */}
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-emerald-50/70 p-4 rounded-xl border border-emerald-100 items-center">
-                                        <div className="space-y-2">
-                                          <Label className="flex items-center gap-1.5 font-bold text-emerald-800 text-xs uppercase tracking-wide">
-                                            <Calendar className="w-4 h-4 text-emerald-600" /> Tanggal Pelaksanaan Survey
-                                          </Label>
-                                          <Input
-                                            type="date"
-                                            value={surveyData.tanggalSurvey || ''}
-                                            onChange={e => setSurveyData(prev => ({...prev, tanggalSurvey: e.target.value}))}
-                                            className="bg-white border-emerald-200 focus-visible:ring-emerald-500 font-semibold"
-                                            required
-                                          />
-                                        </div>
-                                        <div className="space-y-1">
-                                          <span className="font-bold text-slate-500 text-[10px] uppercase tracking-wider">Format pada Berita Acara:</span>
-                                          <div className="p-2.5 bg-white rounded-lg border border-emerald-100 text-xs text-emerald-950 font-medium">
-                                            Pada hari ini <span className="font-bold text-emerald-700 underline">{formatTanggalIndonesia(surveyData.tanggalSurvey).hari}</span>, tanggal <span className="font-bold text-emerald-700">{formatTanggalIndonesia(surveyData.tanggalSurvey).tanggal} {formatTanggalIndonesia(surveyData.tanggalSurvey).bulan} {formatTanggalIndonesia(surveyData.tanggalSurvey).tahun}</span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                      
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                          <Label>Nama Usaha</Label>
-                                          <Input value={surveyData.namaUsaha || ''} onChange={e => setSurveyData(prev => ({...prev, namaUsaha: e.target.value}))} required />
-                                        </div>
-                                        <div className="space-y-2">
-                                          <Label>Nama Pemilik Usaha</Label>
-                                          <Input value={surveyData.namaPemilik || ''} onChange={e => setSurveyData(prev => ({...prev, namaPemilik: e.target.value}))} required />
-                                        </div>
-                                      </div>
-
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                          <Label>Jenis Kelamin</Label>
-                                          <Select value={surveyData.jenisKelamin} onValueChange={v => setSurveyData(prev => ({...prev, jenisKelamin: v}))} required>
-                                            <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="Laki-Laki">Laki-Laki</SelectItem>
-                                              <SelectItem value="Perempuan">Perempuan</SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                          <Label>Status</Label>
-                                          <Select value={surveyData.status || ''} onValueChange={v => setSurveyData(prev => ({...prev, status: v}))} required>
-                                            <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
-                                            <SelectContent>
-                                              <SelectItem value="Lajang">Lajang</SelectItem>
-                                              <SelectItem value="Menikah">Menikah</SelectItem>
-                                              <SelectItem value="Janda">Janda</SelectItem>
-                                              <SelectItem value="Duda">Duda</SelectItem>
-                                              <SelectItem value="Kepala Keluarga">Kepala Keluarga</SelectItem>
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
-                                      </div>
-
-                                      <div className="space-y-2">
-                                        <Label>Alamat Rumah</Label>
-                                        <Textarea value={surveyData.alamatRumah || ''} onChange={e => setSurveyData(prev => ({...prev, alamatRumah: e.target.value}))} required />
-                                      </div>
-
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div className="space-y-2">
-                                          <Label>No HP Pemilik Usaha</Label>
-                                          <Input value={surveyData.noHp || ''} onChange={e => setSurveyData(prev => ({...prev, noHp: e.target.value}))} required />
-                                        </div>
-                                        <div className="space-y-2">
-                                          <Label>Email <span className="text-muted-foreground text-xs">(opsional)</span></Label>
-                                          <Input type="email" value={surveyData.email || ''} onChange={e => setSurveyData(prev => ({...prev, email: e.target.value}))} />
-                                        </div>
-                                        <div className="space-y-2">
-                                          <Label>Account Sosial Media</Label>
-                                          <Input placeholder="@username" value={surveyData.sosmed || ''} onChange={e => setSurveyData(prev => ({...prev, sosmed: e.target.value}))} required />
-                                        </div>
-                                      </div>
-
-                                      <div className="p-4 border rounded-xl bg-slate-50 space-y-4">
-                                        <div className="space-y-2">
-                                          <Label className="text-sm font-bold">Apakah Saudara Masuk Dalam DTKS?</Label>
-                                          <RadioGroup value={surveyData.dtks?.masuk ? 'YA' : 'TIDAK'} onValueChange={v => setSurveyData(prev => ({...prev, dtks: { masuk: v === 'YA' }}))} className="flex gap-4">
-                                            <div className="flex items-center space-x-2"><RadioGroupItem value="YA" id="dtks-ya" /><Label htmlFor="dtks-ya">YA</Label></div>
-                                            <div className="flex items-center space-x-2"><RadioGroupItem value="TIDAK" id="dtks-tidak" /><Label htmlFor="dtks-tidak">TIDAK</Label></div>
-                                          </RadioGroup>
-                                        </div>
-                                        {surveyData.dtks?.masuk && (
-                                          <div className="space-y-2 pl-4 border-l-2 border-primary/20">
-                                            <Label>Pilih Jenis DTKS</Label>
-                                            <Select value={surveyData.dtks.jenis || ''} onValueChange={v => setSurveyData(prev => ({...prev, dtks: { ...prev.dtks, masuk: true, jenis: v }}))} required>
-                                              <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
-                                              <SelectContent>
-                                                <SelectItem value="PKH">PKH</SelectItem>
-                                                <SelectItem value="BPNT">BPNT</SelectItem>
-                                                <SelectItem value="KIP">KIP</SelectItem>
-                                                <SelectItem value="LANSIA">LANSIA</SelectItem>
-                                              </SelectContent>
-                                            </Select>
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                          <Label>Bidang Usaha</Label>
-                                          <Input value={surveyData.bidangUsaha || ''} onChange={e => setSurveyData(prev => ({...prev, bidangUsaha: e.target.value}))} required />
-                                        </div>
-                                        <div className="space-y-2">
-                                          <Label>Tahun Berdiri</Label>
-                                          <Input type="number" placeholder="2020" value={surveyData.tahunBerdiri || ''} onChange={e => setSurveyData(prev => ({...prev, tahunBerdiri: e.target.value}))} required />
-                                        </div>
-                                      </div>
-
-                                      <div className="space-y-2">
-                                        <Label>Peralatan Yang Digunakan</Label>
-                                        <Textarea value={surveyData.peralatan || ''} onChange={e => setSurveyData(prev => ({...prev, peralatan: e.target.value}))} required />
-                                      </div>
-
-                                      <div className="space-y-3">
-                                        <Label>Izin Yang Dimiliki (Bisa pilih lebih dari satu)</Label>
-                                        <div className="flex flex-wrap gap-4">
-                                          {['NIB', 'HALAL', 'PIRT', 'Lainnya'].map(izinOption => (
-                                            <div key={izinOption} className="flex items-center space-x-2">
-                                              <Checkbox 
-                                                id={`izin-${izinOption}`} 
-                                                checked={surveyData.izin?.includes(izinOption) || false}
-                                                onCheckedChange={(checked) => {
-                                                  setSurveyData(prev => {
-                                                    const current = prev.izin || [];
-                                                    return {
-                                                      ...prev,
-                                                      izin: checked ? [...current, izinOption] : current.filter(i => i !== izinOption)
-                                                    }
-                                                  })
-                                                }}
-                                              />
-                                              <Label htmlFor={`izin-${izinOption}`}>{izinOption}</Label>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                          <Label>Modal Usaha</Label>
-                                          <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">Rp</span>
-                                            <Input className="pl-9 font-mono" value={surveyData.modalUsaha || ''} onChange={e => setSurveyData(prev => ({...prev, modalUsaha: formatRupiah(e.target.value)}))} required />
-                                          </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                          <Label>Omset</Label>
-                                          <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">Rp</span>
-                                            <Input className="pl-9 font-mono" value={surveyData.omset || ''} onChange={e => setSurveyData(prev => ({...prev, omset: formatRupiah(e.target.value)}))} required />
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      <div className="p-4 border rounded-xl bg-slate-50 space-y-4">
-                                        <div className="space-y-2">
-                                          <Label className="text-sm font-bold">Apakah Pernah Menerima Dana Hibah?</Label>
-                                          <RadioGroup value={surveyData.hibah?.pernah ? 'YA' : 'TIDAK'} onValueChange={v => setSurveyData(prev => ({...prev, hibah: { pernah: v === 'YA' }}))} className="flex gap-4">
-                                            <div className="flex items-center space-x-2"><RadioGroupItem value="YA" id="hibah-ya" /><Label htmlFor="hibah-ya">YA</Label></div>
-                                            <div className="flex items-center space-x-2"><RadioGroupItem value="TIDAK" id="hibah-tidak" /><Label htmlFor="hibah-tidak">TIDAK</Label></div>
-                                          </RadioGroup>
-                                        </div>
-                                        {surveyData.hibah?.pernah && (
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-primary/20">
-                                            <div className="space-y-2">
-                                              <Label>Dari Mana</Label>
-                                              <Input value={surveyData.hibah.dariMana || ''} onChange={e => setSurveyData(prev => ({...prev, hibah: { ...prev.hibah, pernah: true, dariMana: e.target.value }}))} required />
-                                            </div>
-                                            <div className="space-y-2">
-                                              <Label>Tahun</Label>
-                                              <Input type="number" value={surveyData.hibah.tahun || ''} onChange={e => setSurveyData(prev => ({...prev, hibah: { ...prev.hibah, pernah: true, tahun: e.target.value }}))} required />
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="space-y-2">
-                                        <Label>Rencana Penggunaan Dana Hibah</Label>
-                                        <Textarea value={surveyData.rencanaPenggunaan || ''} onChange={e => setSurveyData(prev => ({...prev, rencanaPenggunaan: e.target.value}))} required />
-                                      </div>
-                                      
-                                      <div className="space-y-2">
-                                        <Label>Hasil Survey</Label>
-                                        <Textarea value={surveyData.hasilSurvey || ''} onChange={e => setSurveyData(prev => ({...prev, hasilSurvey: e.target.value}))} required />
-                                      </div>
-                                      
-                                      <div className="space-y-3 p-4 border rounded-xl bg-slate-50">
-                                        <div className="flex items-center justify-between">
-                                          <Label className="font-bold flex items-center gap-2"><Camera className="w-4 h-4 text-indigo-600" /> Foto Proses Survey</Label>
-                                          {photoPreview && (
-                                            <Button 
-                                              type="button" 
-                                              size="sm" 
-                                              variant="ghost" 
-                                              className="h-7 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-                                              onClick={() => { setPhotoPreview(null); setSurveyData(prev => ({ ...prev, fotoSurveyUrl: undefined })); }}
-                                            >
-                                              <Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus Foto
-                                            </Button>
-                                          )}
-                                        </div>
-
-                                        <div className="flex flex-col gap-3">
-                                          {photoPreview ? (
-                                            <div className="relative aspect-video rounded-xl overflow-hidden border bg-black/5 shadow-inner">
-                                              <img src={photoPreview} alt="Preview Foto Survey" className="w-full h-full object-cover" />
-                                            </div>
-                                          ) : (
-                                            <div className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-muted-foreground bg-white">
-                                              <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center mb-2">
-                                                <Camera className="w-6 h-6 text-indigo-500" />
-                                              </div>
-                                              <p className="text-sm font-semibold text-slate-700">Ambil Foto atau Upload Dokumen Survey</p>
-                                              <p className="text-xs text-slate-400 mt-0.5">Bisa ambil langsung dari kamera atau pilih file dari galeri ponsel</p>
-                                            </div>
-                                          )}
-
-                                          {/* Pilihan Upload: Kamera & Galeri */}
-                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                            {/* 1. Ambil dari Kamera Ponsel */}
-                                            <Input 
-                                              type="file" 
-                                              accept="image/*" 
-                                              capture="environment" 
-                                              onChange={handlePhotoUpload} 
-                                              className="hidden" 
-                                              id="photo-camera-upload" 
-                                            />
-                                            <Label htmlFor="photo-camera-upload" className="w-full cursor-pointer m-0">
-                                              <div className="flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.99] transition-all py-2.5 px-3 rounded-lg font-semibold text-xs sm:text-sm shadow-sm border border-indigo-700 text-center">
-                                                <Camera className="w-4 h-4 shrink-0" /> Ambil dari Kamera
-                                              </div>
-                                            </Label>
-
-                                            {/* 2. Upload dari Galeri Ponsel */}
-                                            <Input 
-                                              type="file" 
-                                              accept="image/*" 
-                                              onChange={handlePhotoUpload} 
-                                              className="hidden" 
-                                              id="photo-gallery-upload" 
-                                            />
-                                            <Label htmlFor="photo-gallery-upload" className="w-full cursor-pointer m-0">
-                                              <div className="flex items-center justify-center gap-2 bg-white text-indigo-700 hover:bg-indigo-50 active:scale-[0.99] transition-all py-2.5 px-3 rounded-lg font-semibold text-xs sm:text-sm border border-indigo-300 shadow-sm text-center">
-                                                <ImageIcon className="w-4 h-4 shrink-0 text-indigo-600" /> Upload dari Galeri
-                                              </div>
-                                            </Label>
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      <div className="space-y-3 pt-4 border-t">
-                                        <div className="text-sm font-semibold flex items-center gap-2 text-primary">
-                                          <MapPin className="w-4 h-4" /> Validasi Titik Lokasi (Wajib)
-                                        </div>
-                                        {location ? (
-                                           <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3">
-                                             <div className="flex items-center gap-3">
-                                               <div className="bg-emerald-100 p-2 rounded-lg">
-                                                 <Check className="w-5 h-5 text-emerald-600" />
-                                               </div>
-                                               <div className="space-y-1">
-                                                 <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Lokasi Tersimpan</p>
-                                                 <p className="text-[10px] text-emerald-600 font-mono bg-emerald-100/50 px-2 py-0.5 rounded w-fit">
-                                                   Lat: {location.lat.toFixed(6)}, Lon: {location.lon.toFixed(6)}
-                                                 </p>
-                                               </div>
-                                             </div>
-                                             <Button type="button" variant="outline" size="sm" onClick={fetchLocation} disabled={isFetchingLocation} className="text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-100">
-                                               {isFetchingLocation ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Ubah Titik
-                                             </Button>
-                                           </div>
-                                        ) : (
-                                          <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
-                                            <MapPin className="w-8 h-8 text-slate-400 mb-2" />
-                                            <p className="text-xs font-medium text-slate-500 mb-4 text-center">Data titik lokasi wajib diambil untuk proses verifikasi dinas. Tidak dapat dibypass.</p>
-                                            <Button type="button" onClick={fetchLocation} disabled={isFetchingLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
-                                              {isFetchingLocation ? (
-                                                <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sedang Mengambil...</>
-                                              ) : "Ambil Lokasi Sekarang"}
-                                            </Button>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <DialogFooter className="pt-4 border-t mt-2 flex flex-row justify-between items-center w-full">
-                                      <div className="flex-1">
-                                        <Button 
-                                          type="button" 
-                                          variant="outline" 
-                                          onClick={handleSimpanDraft} 
-                                          disabled={isSubmittingDraft || isSubmittingVerify} 
-                                          className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold shadow-sm"
-                                        >
-                                          {isSubmittingDraft ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                                          {isSubmittingDraft ? "Menyimpan Draft..." : "Simpan Draft"}
-                                        </Button>
-                                      </div>
-                                      <div className="flex gap-2">
-                                        <Button type="button" variant="ghost" disabled={isSubmittingDraft || isSubmittingVerify} onClick={() => setVerifyingActor(null)}>Batal</Button>
-                                      {surveyProgress >= 100 && location ? (
-                                        <Button type="submit" disabled={isSubmittingDraft || isSubmittingVerify} className="min-w-[150px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
-                                          {isSubmittingVerify ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ClipboardCheck className="w-4 h-4 mr-2" />}
-                                          {isSubmittingVerify ? "Menyimpan..." : "Simpan Verifikasi"}
-                                        </Button>
-                                      ) : (
-                                        <Button type="button" disabled className="min-w-[150px] opacity-50 bg-slate-200 text-slate-500">
-                                          Isi Form 100%
-                                        </Button>
-                                      )}
-                                      </div>
-                                    </DialogFooter>
-                                  </form>
-                                </DialogContent>
-                               </Dialog>
-                               </>
-                             )}
+                              {/* Verifikasi / Tindakan Dinas Trigger */}
+                              {(isAdmin || isDinas || isPetugas) && (
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  onClick={() => openChoiceDialog(actor)}
+                                  className="h-9 w-9 border-emerald-100 text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl shadow-sm transition-all duration-300"
+                                  title="Verifikasi Dinas"
+                                >
+                                  <ClipboardCheck className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                     </CardContent>
-                   </Card>
-                 ))}
-               </div>
-             </div>
-           ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
+
+      {/* ─── SINGLE ROOT LEVEL DETAIL VIEWER MODAL ─────────────────────── */}
+      <Dialog open={!!viewingActor} onOpenChange={(open) => !open && setViewingActor(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {viewingActor && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
+                  <FileText className="w-6 h-6" /> Detail Pelaku Usaha
+                </DialogTitle>
+                <DialogDescription className="sr-only">Detail Pelaku Usaha</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-6 py-4">
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
+                    {(() => {
+                      const parsed = parsePobDob(viewingActor.pobDob || "")
+                      return [
+                        { label: "Nama Lengkap", value: viewingActor.fullName },
+                        { label: "NIK", value: viewingActor.nik },
+                        { label: "Nomor KK", value: viewingActor.noKK },
+                        { label: "Jenis Kelamin", value: viewingActor.gender },
+                        { label: "Tempat Lahir", value: viewingActor.pob || parsed.pob || "-" },
+                        { label: "Tanggal Lahir", value: viewingActor.dob || parsed.dob || "-" },
+                        { label: "Nomor HP", value: viewingActor.phone, isPhone: true }
+                      ]
+                    })().map((item, i) => (
+                      <div key={i} className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                        {(item as any).isPhone && item.value ? (
+                          <a
+                            href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs font-bold text-green-600 hover:text-green-700 hover:underline flex items-center gap-1"
+                          >
+                            {item.value}
+                          </a>
+                        ) : (
+                          <p className="text-xs font-bold">{item.value || "-"}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
+                    {[
+                      { label: "Kecamatan", value: viewingActor.kecamatan },
+                      { label: "Kelurahan", value: viewingActor.kelurahan },
+                      { label: "RT/RW", value: viewingActor.rtRw },
+                      { label: "Alamat", value: viewingActor.address, fullWidth: true }
+                    ].map((item, i) => (
+                      <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                        <p className="text-xs font-bold">{item.value || "-"}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
+                    {(() => {
+                      const coordPhone = kuotaMap.get((viewingActor.coordinator || "").toUpperCase().trim()) || "";
+                      return [
+                        { label: "Usaha", value: viewingActor.businessName },
+                        { label: "Kategori Usaha", value: viewingActor.businessCategory },
+                        { label: "Lokasi Usaha", value: viewingActor.businessLocation },
+                        { label: "USULAN", value: viewingActor.coordinator },
+                        { label: "NO. HP USULAN", value: coordPhone, isPhone: true },
+                        { label: "PETUGAS SURVEY", value: viewingActor.petugasSurvey || "Belum ada" }
+                      ].map((item: any, i: number) => (
+                        <div key={i} className="space-y-1">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                          {item.isPhone && item.value ? (
+                            <a
+                              href={getWaLink(item.value)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 shadow-sm transition-all active:scale-95 w-fit"
+                              title="Klik untuk membuka obrolan WhatsApp"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
+                              <span>{item.value}</span>
+                            </a>
+                          ) : (
+                            <p className="text-xs font-bold">{item.value || "-"}</p>
+                          )}
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Informasi Perbankan</div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-primary/5 p-4 rounded-xl border border-primary/10">
+                    {[
+                      { label: "Nama Bank", value: viewingActor.bankName },
+                      { label: "Nomor Rekening", value: viewingActor.bankNumber },
+                      { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner }
+                    ].map((item, i) => (
+                      <div key={i} className="space-y-1">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                        <p className="text-xs font-black text-primary">{item.value || "BELUM TERISI"}</p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Data Titik Lokasi Verifikasi</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(viewingActor as any).verificationLocation && (
+                      <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+                        <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Sumber: Verifikasi Admin</p>
+                        <p className="text-xs font-mono text-emerald-800 font-semibold">{(viewingActor as any).verificationLocation.lat}, {(viewingActor as any).verificationLocation.lon}</p>
+                        <a href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocation.lat},${(viewingActor as any).verificationLocation.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline mt-2 inline-block">Lihat di Peta</a>
+                      </div>
+                    )}
+                    {(viewingActor as any).verificationBypass?.isBypassed && (
+                      <div className="bg-amber-50 p-4 rounded-xl border border-amber-100">
+                        <p className="text-[10px] font-bold text-amber-600 uppercase mb-1">Sumber: Verifikasi Admin (Bypass)</p>
+                        <p className="text-xs text-amber-800 font-medium mb-2">Alasan: {(viewingActor as any).verificationBypass.reason}</p>
+                        {(viewingActor as any).verificationBypass.fileBase64 && (
+                          <a href={(viewingActor as any).verificationBypass.fileBase64} target="_blank" rel="noreferrer" className="text-[10px] font-bold bg-amber-200 text-amber-800 px-3 py-1 rounded shadow-sm hover:bg-amber-300 transition-colors inline-block mt-1">Lihat Bukti Lampiran</a>
+                        )}
+                      </div>
+                    )}
+                    {(viewingActor as any).verificationLocationDinas && (
+                      <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                        <p className="text-[10px] font-bold text-indigo-600 uppercase mb-1">Sumber: Verifikasi Dinas</p>
+                        <p className="text-xs font-mono text-indigo-800 font-semibold">{(viewingActor as any).verificationLocationDinas.lat}, {(viewingActor as any).verificationLocationDinas.lon}</p>
+                        <a href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocationDinas.lat},${(viewingActor as any).verificationLocationDinas.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline mt-2 inline-block">Lihat di Peta</a>
+                      </div>
+                    )}
+                    {!(viewingActor as any).verificationLocation && !(viewingActor as any).verificationLocationDinas && !(viewingActor as any).verificationBypass?.isBypassed && (
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 col-span-full">
+                        <p className="text-xs font-medium text-slate-500 text-center">Belum ada titik lokasi yang direkam.</p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+
+                {viewingActor.googleDriveLink && (
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Folder className="w-4 h-4" /> Berkas Tambahan (Google Drive)</div>
+                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-bold text-blue-800 uppercase">Folder Google Drive Pelaku Usaha</p>
+                        <p className="text-[10px] font-medium text-blue-600 mt-1">Berisi foto, video, dokumen usulan, atau file lainnya</p>
+                      </div>
+                      <a href={viewingActor.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold px-4 py-2.5 rounded-lg text-xs shadow flex items-center justify-center min-w-[140px]">
+                        Buka Folder Drive
+                      </a>
+                    </div>
+                  </section>
+                )}
+
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem</div>
+                  <div className="bg-slate-50 p-4 rounded-xl text-[10px] font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground uppercase">Status</p>
+                      <p className="text-primary">{(viewingActor.status || "").replace('_', ' ').toUpperCase()}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground uppercase">Diinput Oleh</p>
+                      <p>{viewingActor.createdBy || "System"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground uppercase">Waktu Input</p>
+                      <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── SINGLE ROOT LEVEL CHOICE MODAL ────────────────────────────── */}
+      <Dialog open={!!choiceActor} onOpenChange={(open) => { if (!open) { setChoiceActor(null); setSelectedChoice(null); setCancelReason(""); } }}>
+        <DialogContent className="max-w-md">
+          {choiceActor && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-black text-primary uppercase flex items-center gap-2">
+                  <ClipboardCheck className="w-5 h-5" /> Tindakan Survey Dinas
+                </DialogTitle>
+                <DialogDescription>
+                  Pilih tindakan untuk <span className="font-bold text-slate-800">{choiceActor.fullName}</span>
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="py-4 space-y-4">
+                {/* Choice Buttons */}
+                {!selectedChoice && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedChoice('survey')}
+                      className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-emerald-200 bg-emerald-50 hover:border-emerald-500 hover:bg-emerald-100 transition-all duration-200 cursor-pointer group"
+                    >
+                      <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <ClipboardCheck className="w-7 h-7 text-white" />
+                      </div>
+                      <div className="text-center">
+                        <p className="font-black text-emerald-700 text-sm uppercase tracking-wide">Di Survey</p>
+                        <p className="text-[10px] text-emerald-600 mt-0.5">Lanjut isi form survey</p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedChoice('cancel')}
+                      className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-red-200 bg-red-50 hover:border-red-500 hover:bg-red-100 transition-all duration-200 cursor-pointer group"
+                    >
+                      <div className="w-14 h-14 rounded-2xl bg-red-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <AlertTriangle className="w-7 h-7 text-white" />
+                      </div>
+                      <div className="text-center">
+                        <p className="font-black text-red-700 text-sm uppercase tracking-wide">Cancel</p>
+                        <p className="text-[10px] text-red-600 mt-0.5">Tolak &amp; isi alasan</p>
+                      </div>
+                    </button>
+                  </div>
+                )}
+
+                {/* Cancel reason form */}
+                {selectedChoice === 'cancel' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 p-3 bg-red-50 rounded-xl border border-red-200">
+                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                      <p className="text-xs font-semibold text-red-700">Data akan dipindahkan ke menu Ditolak beserta alasan cancel.</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-bold text-slate-700">Alasan Cancel Survey</Label>
+                      <Textarea
+                        placeholder="Tulis alasan cancel di sini..."
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        rows={4}
+                        className="resize-none border-red-200 focus-visible:ring-red-400"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedChoice(null)} className="flex-1">
+                        Kembali
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleSubmitCancel}
+                        disabled={!cancelReason.trim() || isSubmittingCancel}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold"
+                      >
+                        {isSubmittingCancel ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                        Submit Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Di Survey confirm */}
+                {selectedChoice === 'survey' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                      <ClipboardCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <p className="text-xs font-semibold text-emerald-700">Anda akan membuka form survey untuk <strong>{choiceActor?.fullName}</strong></p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedChoice(null)} className="flex-1">
+                        Kembali
+                      </Button>
+                      <Button type="button" onClick={handleProceedToSurvey} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                        <ClipboardCheck className="w-4 h-4 mr-2" /> Buka Form Survey
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {!selectedChoice && (
+                <DialogFooter>
+                  <Button type="button" variant="ghost" onClick={() => { setChoiceActor(null); setSelectedChoice(null); }} className="w-full">
+                    Tutup
+                  </Button>
+                </DialogFooter>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── SINGLE ROOT LEVEL SURVEY FORM MODAL ───────────────────────── */}
+      <Dialog open={!!verifyingActor} onOpenChange={(open) => !open && setVerifyingActor(null)}>
+        <DialogContent className="max-w-4xl max-h-[95vh]">
+          {verifyingActor && (
+            <form onSubmit={handleVerifyDinas}>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-black text-emerald-600 uppercase">Survey Dinas</DialogTitle>
+                <DialogDescription>Lengkapi form survey di bawah ini untuk <strong>{verifyingActor.fullName}</strong>. Progress harus mencapai 100% untuk menyimpan.</DialogDescription>
+              </DialogHeader>
+            
+              <div className="sticky top-0 bg-white z-10 py-4 border-b border-slate-100 shadow-sm px-1 mb-4">
+                <div className="flex justify-between text-sm font-bold mb-2">
+                  <span className="text-slate-600 uppercase">Progress Pengisian</span>
+                  <span className={surveyProgress >= 100 ? 'text-emerald-600' : 'text-amber-600'}>{surveyProgress}%</span>
+                </div>
+                <Progress value={surveyProgress} className="h-2" />
+              </div>
+
+              <div className="py-2 space-y-6 max-h-[70vh] overflow-y-auto px-1">
+                {/* Kolom Tanggal Survey / Berita Acara */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-emerald-50/70 p-4 rounded-xl border border-emerald-100 items-center">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1.5 font-bold text-emerald-800 text-xs uppercase tracking-wide">
+                      <Calendar className="w-4 h-4 text-emerald-600" /> Tanggal Pelaksanaan Survey
+                    </Label>
+                    <Input
+                      type="date"
+                      value={surveyData.tanggalSurvey || ''}
+                      onChange={e => setSurveyData(prev => ({...prev, tanggalSurvey: e.target.value}))}
+                      className="bg-white border-emerald-200 focus-visible:ring-emerald-500 font-semibold"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="font-bold text-slate-500 text-[10px] uppercase tracking-wider">Format pada Berita Acara:</span>
+                    <div className="p-2.5 bg-white rounded-lg border border-emerald-100 text-xs text-emerald-950 font-medium">
+                      Pada hari ini <span className="font-bold text-emerald-700 underline">{formatTanggalIndonesia(surveyData.tanggalSurvey).hari}</span>, tanggal <span className="font-bold text-emerald-700">{formatTanggalIndonesia(surveyData.tanggalSurvey).tanggal} {formatTanggalIndonesia(surveyData.tanggalSurvey).bulan} {formatTanggalIndonesia(surveyData.tanggalSurvey).tahun}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Nama Usaha</Label>
+                    <Input value={surveyData.namaUsaha || ''} onChange={e => setSurveyData(prev => ({...prev, namaUsaha: e.target.value}))} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nama Pemilik Usaha</Label>
+                    <Input value={surveyData.namaPemilik || ''} onChange={e => setSurveyData(prev => ({...prev, namaPemilik: e.target.value}))} required />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Jenis Kelamin</Label>
+                    <Select value={surveyData.jenisKelamin} onValueChange={v => setSurveyData(prev => ({...prev, jenisKelamin: v}))} required>
+                      <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Laki-Laki">Laki-Laki</SelectItem>
+                        <SelectItem value="Perempuan">Perempuan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select value={surveyData.status || ''} onValueChange={v => setSurveyData(prev => ({...prev, status: v}))} required>
+                      <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Lajang">Lajang</SelectItem>
+                        <SelectItem value="Menikah">Menikah</SelectItem>
+                        <SelectItem value="Janda">Janda</SelectItem>
+                        <SelectItem value="Duda">Duda</SelectItem>
+                        <SelectItem value="Kepala Keluarga">Kepala Keluarga</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Alamat Rumah</Label>
+                  <Textarea value={surveyData.alamatRumah || ''} onChange={e => setSurveyData(prev => ({...prev, alamatRumah: e.target.value}))} required />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>No HP Pemilik Usaha</Label>
+                    <Input value={surveyData.noHp || ''} onChange={e => setSurveyData(prev => ({...prev, noHp: e.target.value}))} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email <span className="text-muted-foreground text-xs">(opsional)</span></Label>
+                    <Input type="email" value={surveyData.email || ''} onChange={e => setSurveyData(prev => ({...prev, email: e.target.value}))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Account Sosial Media</Label>
+                    <Input placeholder="@username" value={surveyData.sosmed || ''} onChange={e => setSurveyData(prev => ({...prev, sosmed: e.target.value}))} required />
+                  </div>
+                </div>
+
+                <div className="p-4 border rounded-xl bg-slate-50 space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold">Apakah Saudara Masuk Dalam DTKS?</Label>
+                    <RadioGroup value={surveyData.dtks?.masuk ? 'YA' : 'TIDAK'} onValueChange={v => setSurveyData(prev => ({...prev, dtks: { masuk: v === 'YA' }}))} className="flex gap-4">
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="YA" id="dtks-ya" /><Label htmlFor="dtks-ya">YA</Label></div>
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="TIDAK" id="dtks-tidak" /><Label htmlFor="dtks-tidak">TIDAK</Label></div>
+                    </RadioGroup>
+                  </div>
+                  {surveyData.dtks?.masuk && (
+                    <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                      <Label>Pilih Jenis DTKS</Label>
+                      <Select value={surveyData.dtks.jenis || ''} onValueChange={v => setSurveyData(prev => ({...prev, dtks: { ...prev.dtks, masuk: true, jenis: v }}))} required>
+                        <SelectTrigger><SelectValue placeholder="Pilih..." /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="PKH">PKH</SelectItem>
+                          <SelectItem value="BPNT">BPNT</SelectItem>
+                          <SelectItem value="KIP">KIP</SelectItem>
+                          <SelectItem value="LANSIA">LANSIA</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Bidang Usaha</Label>
+                    <Input value={surveyData.bidangUsaha || ''} onChange={e => setSurveyData(prev => ({...prev, bidangUsaha: e.target.value}))} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tahun Berdiri</Label>
+                    <Input type="number" placeholder="2020" value={surveyData.tahunBerdiri || ''} onChange={e => setSurveyData(prev => ({...prev, tahunBerdiri: e.target.value}))} required />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Peralatan Yang Digunakan</Label>
+                  <Textarea value={surveyData.peralatan || ''} onChange={e => setSurveyData(prev => ({...prev, peralatan: e.target.value}))} required />
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Izin Yang Dimiliki (Bisa pilih lebih dari satu)</Label>
+                  <div className="flex flex-wrap gap-4">
+                    {['NIB', 'HALAL', 'PIRT', 'Lainnya'].map(izinOption => (
+                      <div key={izinOption} className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`izin-${izinOption}`} 
+                          checked={surveyData.izin?.includes(izinOption) || false}
+                          onCheckedChange={(checked) => {
+                            setSurveyData(prev => {
+                              const current = prev.izin || [];
+                              return {
+                                ...prev,
+                                izin: checked ? [...current, izinOption] : current.filter(i => i !== izinOption)
+                              }
+                            })
+                          }}
+                        />
+                        <Label htmlFor={`izin-${izinOption}`}>{izinOption}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Modal Usaha</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">Rp</span>
+                      <Input className="pl-9 font-mono" value={surveyData.modalUsaha || ''} onChange={e => setSurveyData(prev => ({...prev, modalUsaha: formatRupiah(e.target.value)}))} required />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Omset</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">Rp</span>
+                      <Input className="pl-9 font-mono" value={surveyData.omset || ''} onChange={e => setSurveyData(prev => ({...prev, omset: formatRupiah(e.target.value)}))} required />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 border rounded-xl bg-slate-50 space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-bold">Apakah Pernah Menerima Dana Hibah?</Label>
+                    <RadioGroup value={surveyData.hibah?.pernah ? 'YA' : 'TIDAK'} onValueChange={v => setSurveyData(prev => ({...prev, hibah: { pernah: v === 'YA' }}))} className="flex gap-4">
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="YA" id="hibah-ya" /><Label htmlFor="hibah-ya">YA</Label></div>
+                      <div className="flex items-center space-x-2"><RadioGroupItem value="TIDAK" id="hibah-tidak" /><Label htmlFor="hibah-tidak">TIDAK</Label></div>
+                    </RadioGroup>
+                  </div>
+                  {surveyData.hibah?.pernah && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-primary/20">
+                      <div className="space-y-2">
+                        <Label>Dari Mana</Label>
+                        <Input value={surveyData.hibah.dariMana || ''} onChange={e => setSurveyData(prev => ({...prev, hibah: { ...prev.hibah, pernah: true, dariMana: e.target.value }}))} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Tahun</Label>
+                        <Input type="number" value={surveyData.hibah.tahun || ''} onChange={e => setSurveyData(prev => ({...prev, hibah: { ...prev.hibah, pernah: true, tahun: e.target.value }}))} required />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Rencana Penggunaan Dana Hibah</Label>
+                  <Textarea value={surveyData.rencanaPenggunaan || ''} onChange={e => setSurveyData(prev => ({...prev, rencanaPenggunaan: e.target.value}))} required />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Hasil Survey</Label>
+                  <Textarea value={surveyData.hasilSurvey || ''} onChange={e => setSurveyData(prev => ({...prev, hasilSurvey: e.target.value}))} required />
+                </div>
+                
+                <div className="space-y-3 p-4 border rounded-xl bg-slate-50">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-bold flex items-center gap-2"><Camera className="w-4 h-4 text-indigo-600" /> Foto Proses Survey</Label>
+                    {photoPreview && (
+                      <Button 
+                        type="button" 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-7 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                        onClick={() => { setPhotoPreview(null); setSurveyData(prev => ({ ...prev, fotoSurveyUrl: undefined })); }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus Foto
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    {photoPreview ? (
+                      <div className="relative aspect-video rounded-xl overflow-hidden border bg-black/5 shadow-inner">
+                        <img src={photoPreview} alt="Preview Foto Survey" className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-muted-foreground bg-white">
+                        <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center mb-2">
+                          <Camera className="w-6 h-6 text-indigo-500" />
+                        </div>
+                        <p className="text-sm font-semibold text-slate-700">Ambil Foto atau Upload Dokumen Survey</p>
+                        <p className="text-xs text-slate-400 mt-0.5">Bisa ambil langsung dari kamera atau pilih file dari galeri ponsel</p>
+                      </div>
+                    )}
+
+                    {/* Pilihan Upload: Kamera & Galeri */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {/* 1. Ambil dari Kamera Ponsel */}
+                      <Input 
+                        type="file" 
+                        accept="image/*" 
+                        capture="environment" 
+                        onChange={handlePhotoUpload} 
+                        className="hidden" 
+                        id="photo-camera-upload" 
+                      />
+                      <Label htmlFor="photo-camera-upload" className="w-full cursor-pointer m-0">
+                        <div className="flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.99] transition-all py-2.5 px-3 rounded-lg font-semibold text-xs sm:text-sm shadow-sm border border-indigo-700 text-center">
+                          <Camera className="w-4 h-4 shrink-0" /> Ambil dari Kamera
+                        </div>
+                      </Label>
+
+                      {/* 2. Upload dari Galeri Ponsel */}
+                      <Input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handlePhotoUpload} 
+                        className="hidden" 
+                        id="photo-gallery-upload" 
+                      />
+                      <Label htmlFor="photo-gallery-upload" className="w-full cursor-pointer m-0">
+                        <div className="flex items-center justify-center gap-2 bg-white text-indigo-700 hover:bg-indigo-50 active:scale-[0.99] transition-all py-2.5 px-3 rounded-lg font-semibold text-xs sm:text-sm border border-indigo-300 shadow-sm text-center">
+                          <ImageIcon className="w-4 h-4 shrink-0 text-indigo-600" /> Upload dari Galeri
+                        </div>
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-4 border-t">
+                  <div className="text-sm font-semibold flex items-center gap-2 text-primary">
+                    <MapPin className="w-4 h-4" /> Validasi Titik Lokasi (Wajib)
+                  </div>
+                  {location ? (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-emerald-100 p-2 rounded-lg">
+                          <Check className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Lokasi Tersimpan</p>
+                          <p className="text-[10px] text-emerald-600 font-mono bg-emerald-100/50 px-2 py-0.5 rounded w-fit">
+                            Lat: {location.lat.toFixed(6)}, Lon: {location.lon.toFixed(6)}
+                          </p>
+                        </div>
+                      </div>
+                      <Button type="button" variant="outline" size="sm" onClick={fetchLocation} disabled={isFetchingLocation} className="text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-100">
+                        {isFetchingLocation ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Ubah Titik
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
+                      <MapPin className="w-8 h-8 text-slate-400 mb-2" />
+                      <p className="text-xs font-medium text-slate-500 mb-4 text-center">Data titik lokasi wajib diambil untuk proses verifikasi dinas. Tidak dapat dibypass.</p>
+                      <Button type="button" onClick={fetchLocation} disabled={isFetchingLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
+                        {isFetchingLocation ? (
+                          <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sedang Mengambil...</>
+                        ) : "Ambil Lokasi Sekarang"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <DialogFooter className="pt-4 border-t mt-2 flex flex-row justify-between items-center w-full">
+                <div className="flex-1">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handleSimpanDraft} 
+                    disabled={isSubmittingDraft || isSubmittingVerify} 
+                    className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold shadow-sm"
+                  >
+                    {isSubmittingDraft ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    {isSubmittingDraft ? "Menyimpan Draft..." : "Simpan Draft"}
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button type="button" variant="ghost" disabled={isSubmittingDraft || isSubmittingVerify} onClick={() => setVerifyingActor(null)}>Batal</Button>
+                  {surveyProgress >= 100 && location ? (
+                    <Button type="submit" disabled={isSubmittingDraft || isSubmittingVerify} className="min-w-[150px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                      {isSubmittingVerify ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ClipboardCheck className="w-4 h-4 mr-2" />}
+                      {isSubmittingVerify ? "Menyimpan..." : "Simpan Verifikasi"}
+                    </Button>
+                  ) : (
+                    <Button type="button" disabled className="min-w-[150px] opacity-50 bg-slate-200 text-slate-500">
+                      Isi Form 100%
+                    </Button>
+                  )}
+                </div>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ─── RESET SURVEY CONFIRM DIALOG ─────────────────────────────── */}
       <Dialog open={!!resetSurveyActor} onOpenChange={(open) => !open && setResetSurveyActor(null)}>

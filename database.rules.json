@@ -8,7 +8,7 @@
     },
     "businessActors": {
       ".read": "true",
-      ".indexOn": ["ownerId", "status", "createdAt", "coordinator", "nik", "noKK", "phone"],
+      ".indexOn": ["ownerId", "status", "createdAt", "coordinator", "nik", "noKK", "phone", "petugasSurvey", "verifikatorDinas", "hasilVerifikasiDinas"],
       "$actorId": {
          ".write": "auth != null && (newData.exists() || root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')"
       }
