@@ -1194,7 +1194,7 @@ function ActorDataContent() {
                   <div className="w-24 h-5 bg-slate-300 dark:bg-slate-700 rounded-full" />
                 </div>
               ))
-            ) : coordinatorStats.filter(stat => stat.count > 0 || stat.quota > 0).map((stat) => (
+            ) : coordinatorStats.filter(stat => stat.count > 0).map((stat) => (
               <div 
                 key={stat.name}
                 onClick={() => router.push(`/actor-data?coordinator=${stat.name}`)}
@@ -1235,7 +1235,7 @@ function ActorDataContent() {
               </div>
             ))}
 
-            {!(isKuotaLoading || (!systemStats && isStatsLoading)) && coordinatorStats.filter(stat => stat.count > 0 || stat.quota > 0).length === 0 && (
+            {!(isKuotaLoading || (!systemStats && isStatsLoading)) && coordinatorStats.filter(stat => stat.count > 0).length === 0 && (
                <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 bg-white rounded-2xl border-2 border-dashed border-slate-200">
                  <div className="p-4 bg-slate-50 rounded-full">
                     <Search className="w-10 h-10 text-slate-300" />
