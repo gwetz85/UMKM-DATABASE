@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
-import { ref } from "firebase/database"
+import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,7 +11,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { BusinessActor, PejabatData, PejabatItem } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
-import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { 
@@ -91,22 +90,14 @@ export default function VerifikasiDinasBerkasPage() {
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    return ref(database, 'businessActors')
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'))
   }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
-  const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
-  const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
-  const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
-  const blacklistRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
   const systemUsersRef = useMemoFirebase(() => database ? ref(database, 'system_users') : null, [database])
 
-  const { data: data2023 } = useList<any>(master2023Ref)
-  const { data: data2024 } = useList<any>(master2024Ref)
-  const { data: data2025 } = useList<any>(master2025Ref)
-  const { data: dataBlacklist } = useList<any>(blacklistRef)
   const { data: kuotaData } = useList<any>(kuotaRef)
   const { data: systemUsers } = useList<any>(systemUsersRef)
 
@@ -706,15 +697,6 @@ export default function VerifikasiDinasBerkasPage() {
 
                     return (
                       <Card key={actor.id} className="group relative overflow-hidden border-slate-200/60 hover:border-primary/50 hover:shadow-2xl transition-all duration-500 rounded-[2rem] bg-white/80 backdrop-blur-sm">
-                        <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <CheckDataIndicator 
-                            actor={actor} 
-                            data2023={data2023}
-                            data2024={data2024}
-                            data2025={data2025}
-                            dataBlacklist={dataBlacklist}
-                          />
-                        </div>
                         
                         <CardContent className="p-6">
                           <div className="flex flex-col h-full gap-4">

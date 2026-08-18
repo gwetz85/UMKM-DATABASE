@@ -83,7 +83,7 @@ function RejectedContent() {
   // Query for Dinas-cancelled data (verified_dinas + Tidak Lolos)
   const dinasQuery = useMemoFirebase(() => {
     if (!database) return null
-    return ref(database, 'businessActors')
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'))
   }, [database])
   const { data: allActorsDinasRaw, isLoading: isLoadingDinas } = useList<BusinessActor>(dinasQuery)
   

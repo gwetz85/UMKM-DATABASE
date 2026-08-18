@@ -326,7 +326,7 @@ export default function VerifikasiDinasPage() {
     if (isPetugas && userProfile?.fullName) {
       return query(ref(database, 'businessActors'), orderByChild('petugasSurvey'), equalTo(userProfile.fullName.toUpperCase().trim()))
     }
-    return ref(database, 'businessActors')
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('lpj_pending'))
   }, [database, isProfileLoading, isPetugas, userProfile?.fullName])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)

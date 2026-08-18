@@ -2,20 +2,19 @@
 
 import { useState, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, useObject } from "@/firebase"
-import { ref } from "firebase/database"
+import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { ShieldAlert, Loader2, Eye, Search, User, FileText, Building2, MapPin, History, BadgeCheck, XSquare, CreditCard, ChevronRight, MessageCircle } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { BusinessActor } from "../lib/types"
 import { updateDocumentNonBlocking } from "@/firebase"
 import { useToast } from "@/hooks/use-toast"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { VerificationBadge } from "@/components/verification-badge"
 import { cn, parsePobDob } from "@/lib/utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
@@ -32,19 +31,13 @@ export default function HasilVerifikasiPage() {
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [inputtingBankActor, setInputtingBankActor] = useState<BusinessActor | null>(null)
   const [isSubmittingBank, setIsSubmittingBank] = useState(false)
-
+  
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
     return ref(database, `roles_admin/${user.uid}`)
   }, [user, database])
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
-
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-  const { data: allUsersForProfile } = useList(userProfileRef)
-  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
+  const { userProfile } = useUser()
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin' || userProfile?.role === 'superadmin'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
@@ -53,23 +46,14 @@ export default function HasilVerifikasiPage() {
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    return ref(database, 'businessActors')
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'))
   }, [database])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
-  const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
-  const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
-  const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
-  const blacklistRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
-
-  const { data: data2023 } = useList<any>(master2023Ref)
-  const { data: data2024 } = useList<any>(master2024Ref)
-  const { data: data2025 } = useList<any>(master2025Ref)
-  const { data: dataBlacklist } = useList<any>(blacklistRef)
   const { data: kuotaData } = useList<any>(kuotaRef)
-
+  
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     if (a.status !== 'verified_dinas' || a.hasilVerifikasiDinas !== 'Lolos' || !(a as any).berkasDinasVerified) return false;
     if (isPetugas) {
@@ -222,16 +206,6 @@ export default function HasilVerifikasiPage() {
                       <div className="flex flex-col">
                         <span className="font-black text-slate-800 uppercase text-sm leading-tight">{actor.fullName}</span>
                         <span className="text-[10px] font-mono text-slate-500 uppercase">{actor.nik}</span>
-                        <div className="mt-1">
-                          <CheckDataIndicator 
-                            actor={actor} 
-                            data2023={data2023}
-                            data2024={data2024}
-                            data2025={data2025}
-                            dataBlacklist={dataBlacklist}
-                            showText={false}
-                          />
-                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -319,15 +293,7 @@ export default function HasilVerifikasiPage() {
                                           )}
                                         </div>
                                       ))}
-                                      <div className="md:col-span-3 pt-2 border-t">
-                                        <CheckDataIndicator 
-                                          actor={viewingActor} 
-                                          data2023={data2023}
-                                          data2024={data2024}
-                                          data2025={data2025}
-                                          dataBlacklist={dataBlacklist}
-                                        />
-                                      </div>
+
                                     </div>
                                   </section>
 
