@@ -412,17 +412,26 @@ export async function generateBeritaAcaraPDF(
   // Row 15: Hasil Survey
   renderDataRow("15.", "Hasil Survey", surveyData.hasilSurvey);
 
-  // ── 7. TABEL TANDA TANGAN (PRESISI DI BAGIAN BAWAH KERTAS A4) ─────────────
+  // Tambah 2 garis kosong ke bawah untuk Hasil Survey
+  for (let extra = 0; extra < 2; extra++) {
+    doc.setLineWidth(0.2);
+    doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
+    if (extra < 1) {
+      y += 4.7;
+    }
+  }
+
+  // ── 7. TABEL TANDA TANGAN (TEPAT 5mm DI BAWAH GARIS TERAKHIR HASIL SURVEY) ─────
   const header1H = 5.5;
   const signBoxH = 20.5;
   const metaHeaderH = 5.5;
   const metaSignH = 20.5;
   const totalTtH = header1H + signBoxH + metaHeaderH + metaSignH; // 52.0 mm
 
-  // Anchor posisi bawah tabel tepat di margin bawah 12mm dari ujung kertas A4 (297 - 12 = 285mm)
-  const targetBottomY = 285;
-  const idealTtStartY = targetBottomY - totalTtH; // 233 mm
-  const ttStartY = Math.max(idealTtStartY, y + 3);
+  // Posisi garis terakhir Hasil Survey
+  const lastLineY = y + lineY_offset;
+  // Spasi dari batas garis ke tabel tanda tangan = 5mm
+  const ttStartY = lastLineY + 5.0;
 
   const colTimSurveyW = 110; // 2 Kolom x 55mm = 110mm
   const colPenerimaW = 70;   // 1 Kolom = 70mm (Total 180mm)
