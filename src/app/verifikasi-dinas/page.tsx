@@ -20,7 +20,7 @@ import { SurveyDinasData, PejabatData } from "../lib/types"
 import { Textarea } from "@/components/ui/textarea"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
-import { CheckDataIndicator } from "@/components/check-data-indicator"
+
 import { 
   ShieldAlert, 
   Loader2, 
@@ -331,17 +331,9 @@ export default function VerifikasiDinasPage() {
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
-  const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
-  const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
-  const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
-  const blacklistRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
-
-  const { data: data2023 } = useList<any>(master2023Ref)
-  const { data: data2024 } = useList<any>(master2024Ref)
-  const { data: data2025 } = useList<any>(master2025Ref)
-  const { data: dataBlacklist } = useList<any>(blacklistRef)
   const { data: kuotaData } = useList<any>(kuotaRef)
+
 
   const actors = allActorsRaw?.filter(a => {
     if (!a) return false;
@@ -865,9 +857,36 @@ export default function VerifikasiDinasPage() {
       </div>
 
       {(isLoading || isProfileLoading) ? (
-        <div className="py-20 flex flex-col items-center justify-center gap-3">
-          <Loader2 className="animate-spin text-primary w-10 h-10" />
-          <p className="text-sm text-muted-foreground">{isProfileLoading ? "Memuat sesi pengguna..." : "Memuat data..."}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="rounded-[2rem] border border-slate-200/60 bg-white/80 p-6 space-y-4 animate-pulse">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-slate-200 shrink-0" />
+                <div className="flex-1 space-y-2 pt-1">
+                  <div className="h-3.5 bg-slate-200 rounded-full w-3/4" />
+                  <div className="h-2.5 bg-slate-100 rounded-full w-1/2" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <div className="h-2 bg-slate-100 rounded w-1/3" />
+                  <div className="h-2 bg-slate-200 rounded w-10" />
+                </div>
+                <div className="h-2 bg-slate-200 rounded-full w-full" />
+              </div>
+              <div className="grid grid-cols-2 gap-3 py-4 border-y border-slate-100">
+                <div className="space-y-1.5">
+                  <div className="h-2 bg-slate-100 rounded w-1/2" />
+                  <div className="h-3 bg-slate-200 rounded w-3/4" />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-2 bg-slate-100 rounded w-1/2" />
+                  <div className="h-5 bg-slate-200 rounded-full w-2/3" />
+                </div>
+              </div>
+              <div className="h-9 bg-slate-200 rounded-2xl w-full" />
+            </div>
+          ))}
         </div>
       ) : filteredActors?.length === 0 ? (
         <Card className="border-dashed border-2 flex flex-col items-center justify-center py-20 text-muted-foreground bg-slate-50/50 rounded-3xl">
@@ -892,15 +911,6 @@ export default function VerifikasiDinasPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {actors.map((actor) => (
                   <Card key={actor.id} className="group relative overflow-hidden border-slate-200/60 hover:border-primary/50 hover:shadow-2xl transition-all duration-500 rounded-[2rem] bg-white/80 backdrop-blur-sm">
-                    <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <CheckDataIndicator 
-                        actor={actor} 
-                        data2023={data2023}
-                        data2024={data2024}
-                        data2025={data2025}
-                        dataBlacklist={dataBlacklist}
-                      />
-                    </div>
                     
                     <CardContent className="p-6">
                       <div className="flex flex-col h-full gap-4">
@@ -1088,15 +1098,7 @@ export default function VerifikasiDinasPage() {
                                               )}
                                             </div>
                                           ))}
-                                          <div className="md:col-span-3 pt-2 border-t">
-                                            <CheckDataIndicator 
-                                              actor={viewingActor} 
-                                              data2023={data2023}
-                                              data2024={data2024}
-                                              data2025={data2025}
-                                              dataBlacklist={dataBlacklist}
-                                            />
-                                          </div>
+                                        
                                         </div>
                                       </section>
     

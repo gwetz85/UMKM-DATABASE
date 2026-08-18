@@ -172,8 +172,28 @@ export default function HasilVerifikasiPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 flex justify-center">
-          <Loader2 className="animate-spin text-primary w-10 h-10" />
+        <div className="bg-white border rounded-2xl overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <tbody>
+                {[...Array(6)].map((_, i) => (
+                  <tr key={i} className="border-b last:border-0 animate-pulse">
+                    <td className="px-4 py-4 w-10"><div className="h-3 bg-slate-200 rounded w-6 mx-auto" /></td>
+                    <td className="px-4 py-4">
+                      <div className="space-y-1.5">
+                        <div className="h-3.5 bg-slate-200 rounded w-48" />
+                        <div className="h-2.5 bg-slate-100 rounded w-32" />
+                      </div>
+                    </td>
+                    <td className="px-4 py-4"><div className="h-3 bg-slate-200 rounded w-28" /></td>
+                    <td className="px-4 py-4 text-center"><div className="h-6 bg-slate-200 rounded-full w-20 mx-auto" /></td>
+                    <td className="px-4 py-4"><div className="h-3 bg-slate-100 rounded w-24" /></td>
+                    <td className="px-4 py-4 text-right"><div className="h-8 bg-slate-200 rounded-xl w-20 ml-auto" /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : filteredActors?.length === 0 ? (
         <Card className="border-dashed border-2 flex flex-col items-center justify-center py-20 text-muted-foreground bg-slate-50/50 rounded-3xl">

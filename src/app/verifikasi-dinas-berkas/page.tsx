@@ -536,8 +536,25 @@ export default function VerifikasiDinasBerkasPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 flex justify-center">
-          <Loader2 className="animate-spin text-primary w-10 h-10" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="rounded-2xl border border-slate-200/60 bg-white/80 p-5 space-y-4 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-slate-200 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-slate-200 rounded-full w-3/4" />
+                  <div className="h-2.5 bg-slate-100 rounded-full w-1/2" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="h-2.5 bg-slate-100 rounded w-full" />
+                <div className="h-2.5 bg-slate-200 rounded w-full" />
+                <div className="h-2.5 bg-slate-100 rounded w-3/4" />
+                <div className="h-2.5 bg-slate-200 rounded w-2/3" />
+              </div>
+              <div className="h-9 bg-slate-200 rounded-xl w-full" />
+            </div>
+          ))}
         </div>
       ) : filteredActors?.length === 0 ? (
         <Card className="border-dashed border-2 flex flex-col items-center justify-center py-20 text-muted-foreground bg-slate-50/50 rounded-3xl">
