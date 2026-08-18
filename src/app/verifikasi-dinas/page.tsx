@@ -44,7 +44,8 @@ import {
   RotateCcw,
   UserCheck,
   MessageCircle,
-  Calendar
+  Calendar,
+  Image as ImageIcon
 } from "lucide-react"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { ensureVerifikatorUser } from "@/lib/verifikator-service"
@@ -162,12 +163,49 @@ export default function VerifikasiDinasPage() {
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
-      reader.onloadend = () => {
-        const base64String = reader.result as string
-        setPhotoPreview(base64String)
-        setSurveyData(prev => ({ ...prev, fotoSurveyUrl: base64String }))
+      reader.onload = (event) => {
+        const rawResult = event.target?.result as string
+        const img = new window.Image()
+        img.src = rawResult
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas')
+            const MAX_SIZE = 1280
+            let width = img.width
+            let height = img.height
+
+            if (width > height) {
+              if (width > MAX_SIZE) {
+                height = Math.round((height * MAX_SIZE) / width)
+                width = MAX_SIZE
+              }
+            } else {
+              if (height > MAX_SIZE) {
+                width = Math.round((width * MAX_SIZE) / height)
+                height = MAX_SIZE
+              }
+            }
+
+            canvas.width = width
+            canvas.height = height
+            const ctx = canvas.getContext('2d')
+            ctx?.drawImage(img, 0, 0, width, height)
+            
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8)
+            setPhotoPreview(compressedBase64)
+            setSurveyData(prev => ({ ...prev, fotoSurveyUrl: compressedBase64 }))
+          } catch {
+            setPhotoPreview(rawResult)
+            setSurveyData(prev => ({ ...prev, fotoSurveyUrl: rawResult }))
+          }
+        }
+        img.onerror = () => {
+          setPhotoPreview(rawResult)
+          setSurveyData(prev => ({ ...prev, fotoSurveyUrl: rawResult }))
+        }
       }
       reader.readAsDataURL(file)
+      e.target.value = ''
     }
   }
 
@@ -1588,24 +1626,64 @@ export default function VerifikasiDinasPage() {
                                       </div>
                                       
                                       <div className="space-y-3 p-4 border rounded-xl bg-slate-50">
-                                        <Label className="font-bold flex items-center gap-2"><Camera className="w-4 h-4" /> Fhoto Proses Survey</Label>
-                                        <div className="flex flex-col gap-4">
+                                        <div className="flex items-center justify-between">
+                                          <Label className="font-bold flex items-center gap-2"><Camera className="w-4 h-4 text-indigo-600" /> Foto Proses Survey</Label>
+                                          {photoPreview && (
+                                            <Button 
+                                              type="button" 
+                                              size="sm" 
+                                              variant="ghost" 
+                                              className="h-7 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                              onClick={() => { setPhotoPreview(null); setSurveyData(prev => ({ ...prev, fotoSurveyUrl: undefined })); }}
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5 mr-1" /> Hapus Foto
+                                            </Button>
+                                          )}
+                                        </div>
+
+                                        <div className="flex flex-col gap-3">
                                           {photoPreview ? (
-                                            <div className="relative aspect-video rounded-xl overflow-hidden border">
+                                            <div className="relative aspect-video rounded-xl overflow-hidden border bg-black/5 shadow-inner">
                                               <img src={photoPreview} alt="Preview Foto Survey" className="w-full h-full object-cover" />
-                                              <Button type="button" size="sm" variant="destructive" className="absolute top-2 right-2 rounded-full" onClick={() => { setPhotoPreview(null); setSurveyData(prev => ({ ...prev, fotoSurveyUrl: undefined })); }}>Ganti</Button>
                                             </div>
                                           ) : (
-                                            <div className="border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-muted-foreground bg-white">
-                                              <Camera className="w-8 h-8 mb-2 opacity-50" />
-                                              <p className="text-sm font-medium">Ambil Gambar atau Upload File</p>
+                                            <div className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center text-muted-foreground bg-white">
+                                              <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center mb-2">
+                                                <Camera className="w-6 h-6 text-indigo-500" />
+                                              </div>
+                                              <p className="text-sm font-semibold text-slate-700">Ambil Foto atau Upload Dokumen Survey</p>
+                                              <p className="text-xs text-slate-400 mt-0.5">Bisa ambil langsung dari kamera atau pilih file dari galeri ponsel</p>
                                             </div>
                                           )}
-                                          <div className="flex items-center gap-2">
-                                            <Input type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} className="hidden" id="photo-upload" />
-                                            <Label htmlFor="photo-upload" className="w-full">
-                                              <div className="flex items-center justify-center gap-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer py-2 px-4 rounded-lg font-bold border border-indigo-200">
-                                                <Upload className="w-4 h-4" /> Pilih / Ambil Foto
+
+                                          {/* Pilihan Upload: Kamera & Galeri */}
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            {/* 1. Ambil dari Kamera Ponsel */}
+                                            <Input 
+                                              type="file" 
+                                              accept="image/*" 
+                                              capture="environment" 
+                                              onChange={handlePhotoUpload} 
+                                              className="hidden" 
+                                              id="photo-camera-upload" 
+                                            />
+                                            <Label htmlFor="photo-camera-upload" className="w-full cursor-pointer m-0">
+                                              <div className="flex items-center justify-center gap-2 bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.99] transition-all py-2.5 px-3 rounded-lg font-semibold text-xs sm:text-sm shadow-sm border border-indigo-700 text-center">
+                                                <Camera className="w-4 h-4 shrink-0" /> Ambil dari Kamera
+                                              </div>
+                                            </Label>
+
+                                            {/* 2. Upload dari Galeri Ponsel */}
+                                            <Input 
+                                              type="file" 
+                                              accept="image/*" 
+                                              onChange={handlePhotoUpload} 
+                                              className="hidden" 
+                                              id="photo-gallery-upload" 
+                                            />
+                                            <Label htmlFor="photo-gallery-upload" className="w-full cursor-pointer m-0">
+                                              <div className="flex items-center justify-center gap-2 bg-white text-indigo-700 hover:bg-indigo-50 active:scale-[0.99] transition-all py-2.5 px-3 rounded-lg font-semibold text-xs sm:text-sm border border-indigo-300 shadow-sm text-center">
+                                                <ImageIcon className="w-4 h-4 shrink-0 text-indigo-600" /> Upload dari Galeri
                                               </div>
                                             </Label>
                                           </div>
