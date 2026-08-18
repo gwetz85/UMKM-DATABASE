@@ -63,17 +63,11 @@ const categoryChartConfig = {
 } satisfies ChartConfig
 
 export default function DashboardStatsPage() {
-  const { user, isUserLoading } = useUser()
+  const { user, isUserLoading, userProfile } = useUser()
   const database = useDatabase()
   const router = useRouter()
   const { toast } = useToast()
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-  const { data: allUsersForDashboard } = useList(userProfileRef)
-  const userProfile = allUsersForDashboard?.find((u: any) => u.uid === user?.uid)
   const [selectedFilter, setSelectedFilter] = useState<{name: string, filterType: string} | null>(null)
   const [expandedActorId, setExpandedActorId] = useState<string | null>(null)
 
@@ -100,16 +94,29 @@ export default function DashboardStatsPage() {
     }
   }, [user, isUserLoading, router, userProfile])
 
-  // Auto-sync on mount for Admins
-  useEffect(() => {
-    if (userProfile?.role === 'admin' && !isSyncing && database) {
-      handleSyncStats();
-    }
-  }, [userProfile, database]);
-  
-  // Optimize: Fetch pre-calculated stats instead of all actors
+  // Fetch pre-calculated stats — dijaga di atas agar tersedia untuk auto-sync
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
+
+  // Auto-sync cerdas: hanya sync jika system_stats belum ada atau sudah lebih dari 10 menit
+  // Mencegah fetch seluruh businessActors setiap kali halaman dibuka
+  const hasAutoSynced = React.useRef(false)
+  useEffect(() => {
+    if (hasAutoSynced.current) return
+    if (userProfile?.role === 'admin' && !isSyncing && database && systemStats !== undefined) {
+      const lastUpdated = systemStats?.lastUpdated ? new Date(systemStats.lastUpdated).getTime() : 0
+      const tenMinutesAgo = Date.now() - 10 * 60 * 1000
+      const isStale = !systemStats || lastUpdated < tenMinutesAgo
+      if (isStale) {
+        hasAutoSynced.current = true
+        handleSyncStats()
+      } else {
+        hasAutoSynced.current = true // data masih fresh, tidak perlu sync
+      }
+    }
+  }, [userProfile?.role, database, systemStats])
+
+
 
   // On-demand fetch for modal data (only when a filter is selected)
   const modalQuery = useMemoFirebase(() => {
@@ -137,7 +144,8 @@ export default function DashboardStatsPage() {
     return ref(database, 'koordinator_kuotas')
   }, [database])
 
-  const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery)
+  // kuotaData jarang berubah — gunakan once:true agar tidak buat real-time listener
+  const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery, { once: true })
 
   // Use systemStats if available, otherwise fallback to 0 or calculate (one-time)
   const statsValues = useMemo(() => {

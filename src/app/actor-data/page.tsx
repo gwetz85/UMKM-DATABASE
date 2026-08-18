@@ -113,7 +113,9 @@ function ActorDataContent() {
     // We can rely on systemStats for the quota counts.
     // If they type a search query, we could potentially fetch, but RTDB doesn't support 
     // text search well. For now, we only fetch if there's a specific filter.
-    if (searchQuery.length > 0) {
+    // Admin hanya fetch data jika search >= 3 karakter (RTDB tidak support full-text search)
+    // Minimal 3 karakter mencegah download seluruh database dari keystroke pertama
+    if (searchQuery.length >= 3) {
       // If searching, we unfortunately have to fetch all to filter client-side
       return ref(database, 'businessActors')
     }
@@ -146,7 +148,8 @@ function ActorDataContent() {
   }
 
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
-  const { data: kuotaData } = useList<any>(kuotaRef)
+  // kuotaData jarang berubah — gunakan once:true agar tidak buat real-time listener
+  const { data: kuotaData } = useList<any>(kuotaRef, { once: true })
 
   const actors = useMemo(() => {
     if (!allActorsRaw) return undefined;
@@ -199,14 +202,20 @@ function ActorDataContent() {
     }
   }, [viewId, actors, viewingActor])
 
-  // Auto-sync stats on load
+  // Auto-sync cerdas: hanya sync jika system_stats stale (> 10 menit) atau belum ada
+  // Mencegah fetch seluruh businessActors setiap kali halaman dibuka
   const hasAutoSynced = useRef(false)
   useEffect(() => {
-    if (isAdmin && database && !hasAutoSynced.current && !isSyncing) {
-      hasAutoSynced.current = true;
-      handleSyncStats(true);
+    if (!isAdmin || !database || hasAutoSynced.current || !systemStats) return
+    const lastUpdated = systemStats?.lastUpdated ? new Date((systemStats as any).lastUpdated).getTime() : 0
+    const tenMinutesAgo = Date.now() - 10 * 60 * 1000
+    if (!systemStats || lastUpdated < tenMinutesAgo) {
+      hasAutoSynced.current = true
+      handleSyncStats(true)
+    } else {
+      hasAutoSynced.current = true // data masih fresh
     }
-  }, [isAdmin, database])
+  }, [isAdmin, database, systemStats])
 
 
   const { groupedActors, globalIndexMap } = useMemo(() => {
