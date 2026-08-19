@@ -23,6 +23,7 @@ import { VerificationBadge } from "@/components/verification-badge"
 import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { generateCancelDinasPDF } from "@/lib/generate-cancel-dinas-pdf"
 
 export default function RejectedPage() {
   return (
@@ -51,12 +52,41 @@ function RejectedContent() {
   const [printDate, setPrintDate] = useState<string>("")
   const [actorToPrint, setActorToPrint] = useState<BusinessActor | null>(null)
   const [activeTab, setActiveTab] = useState<'pendataan' | 'dinas'>('pendataan')
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
 
   useEffect(() => {
     setPrintDate(new Date().toLocaleString('id-ID'))
   }, [])
 
+  const handlePrintCancelDinas = async (actor: BusinessActor) => {
+    setIsGeneratingPdf(true)
+    try {
+      toast({
+        title: "Menyiapkan PDF...",
+        description: `Sedang membuat formulir cancel dinas untuk ${actor.fullName || 'pelaku usaha'}.`,
+      })
+      await generateCancelDinasPDF(actor)
+      toast({
+        title: "PDF Berhasil Dibuat",
+        description: "Formulir Pembatalan Dinas (A4) berhasil diunduh.",
+      })
+    } catch (error) {
+      console.error("Error generating Cancel Dinas PDF:", error)
+      toast({
+        variant: "destructive",
+        title: "Gagal Membuat PDF",
+        description: "Terjadi kesalahan saat memproses file PDF.",
+      })
+    } finally {
+      setIsGeneratingPdf(false)
+    }
+  }
+
   const handlePrintActorForm = (actor: BusinessActor) => {
+    if (actor.status === 'verified_dinas' || (actor as any).alasanCancelDinas) {
+      handlePrintCancelDinas(actor)
+      return
+    }
     setActorToPrint(actor)
     setTimeout(() => {
       window.print()
@@ -503,9 +533,27 @@ function RejectedContent() {
                         <span className="text-[9px] font-bold text-slate-500 uppercase">{(actor as any).cancelDinasBy || "-"}</span>
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-orange-400 hover:text-orange-600 hover:bg-orange-100 rounded-full transition-all" onClick={() => { setViewingActor(actor); setIsEditMode(false); }}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        <div className="flex justify-end items-center gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-orange-600 hover:text-orange-700 hover:bg-orange-100 rounded-full transition-all" 
+                            onClick={() => handlePrintCancelDinas(actor)} 
+                            title="Cetak Form Pembatalan Dinas (A4)"
+                            disabled={isGeneratingPdf}
+                          >
+                            <Printer className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-orange-400 hover:text-orange-600 hover:bg-orange-100 rounded-full transition-all" 
+                            onClick={() => { setViewingActor(actor); setIsEditMode(false); }}
+                            title="Lihat Detail"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -543,11 +591,18 @@ function RejectedContent() {
                     <Button 
                       variant="outline" 
                       size="sm" 
+                      disabled={isGeneratingPdf}
                       onClick={() => handlePrintActorForm(viewingActor)}
-                      className="border-blue-500 text-blue-600 bg-blue-50 hover:bg-blue-100 font-bold"
+                      className={cn(
+                        "font-bold",
+                        (viewingActor.status === 'verified_dinas' || !!(viewingActor as any).alasanCancelDinas || activeTab === 'dinas')
+                          ? "border-orange-500 text-orange-600 bg-orange-50 hover:bg-orange-100"
+                          : "border-blue-500 text-blue-600 bg-blue-50 hover:bg-blue-100"
+                      )}
                       title="Cetak Form Pembatalan"
                     >
-                      <Printer className="w-4 h-4 mr-2" /> Cetak Form
+                      {isGeneratingPdf ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Printer className="w-4 h-4 mr-2" />} 
+                      Cetak Form
                     </Button>
                   )}
                   {isAdmin && (
