@@ -20,7 +20,8 @@ import {
   Clock,
   ShieldAlert,
   UserCheck,
-  Info
+  Info,
+  FileDown
 } from "lucide-react"
 import { useUser, useObject, useMemoFirebase, useList, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
@@ -146,6 +147,14 @@ export function useNavigation() {
       show: (isAdmin || isStaff) && !isDinas && !isVerifikatorDinas,
       color: "#0d9488",
       description: "Laporan Hasil Verifikasi"
+    },
+    {
+      name: "GBAS",
+      href: "/gbas",
+      icon: FileDown,
+      show: isAdmin, // KHUSUS ADMINISTRATOR
+      color: "#6366f1",
+      description: "Download Berita Acara Survey"
     },
     {
       name: "Rekapan Data",
