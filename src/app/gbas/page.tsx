@@ -126,15 +126,17 @@ export default function GBASPage() {
     if (!allActorsRaw) return []
 
     // Saring data yang telah masuk ke Verifikasi Dinas atau Hasil Verifikasi
+    // Syarat: Berstatus verified_dinas dengan hasilVerifikasiDinas === 'Lolos', atau status finish dari verifikasi dinas
     const eligibleActors = allActorsRaw.filter(a => {
       if (!a) return false
       const s = a.status || ""
-      const hasSurvey = !!a.surveyData && Object.keys(a.surveyData).length > 0
-      const isVerifDinas = s === 'verified_dinas'
-      const isFinishWithSurvey = (s === 'finish' || s === 'bank_pending') && (hasSurvey || !!a.hasilVerifikasiDinas)
-      const hasDinasDecision = !!a.hasilVerifikasiDinas || !!(a as any).berkasDinasVerified
+      const isLolos = a.hasilVerifikasiDinas === 'Lolos'
       
-      return (isVerifDinas || isFinishWithSurvey || (hasSurvey && s !== 'pending' && s !== 'rejected' && s !== 'blacklist') || hasDinasDecision)
+      // Data yang masuk ke Menu Verifikasi Dinas (baik yang masih di Verifikasi Dinas maupun Hasil Verifikasi)
+      if (s === 'verified_dinas' && isLolos) return true
+      if ((s === 'finish' || s === 'bank_pending') && isLolos) return true
+      
+      return false
     })
 
     // Dedup ketat 1 per Pelaku Usaha berdasarkan NIK unik (atau ID jika NIK kosong)
