@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useMemoFirebase, useList, useUser, useDatabase, useObject } from "@/firebase"
+import { useMemoFirebase, useList, useUser, useDatabase, useObject, sanitizeForFirebase } from "@/firebase"
 import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ShieldAlert, Loader2, Eye, Search, User, FileText, Building2, MapPin, History, BadgeCheck, XSquare, CreditCard, ChevronRight, MessageCircle } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { ShieldAlert, Loader2, Eye, Search, User, FileText, Building2, MapPin, History, BadgeCheck, XSquare, CreditCard, ChevronRight, MessageCircle, RotateCcw } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { BusinessActor } from "../lib/types"
 import { updateDocumentNonBlocking } from "@/firebase"
@@ -31,6 +32,11 @@ export default function HasilVerifikasiPage() {
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [inputtingBankActor, setInputtingBankActor] = useState<BusinessActor | null>(null)
   const [isSubmittingBank, setIsSubmittingBank] = useState(false)
+  
+  // Kembalikan ke Petugas Survey states
+  const [returnTargetActor, setReturnTargetActor] = useState<BusinessActor | null>(null)
+  const [returnReason, setReturnReason] = useState<string>("")
+  const [isSubmittingReturn, setIsSubmittingReturn] = useState<boolean>(false)
   
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -123,6 +129,72 @@ export default function HasilVerifikasiPage() {
       toast({ variant: "destructive", title: "Gagal Menyimpan", description: err?.message || "Terjadi kesalahan saat menyimpan data rekening." })
     } finally {
       setIsSubmittingBank(false)
+    }
+  }
+
+  const handleKembalikanKePetugas = async () => {
+    if (!returnTargetActor || !database || (!isAdmin && !isDinas && !isPetugas)) return
+    if (!returnReason.trim()) {
+      toast({ variant: "destructive", title: "Alasan Wajib Diisi", description: "Harap masukkan catatan / alasan pengembalian data ke petugas survey." })
+      return
+    }
+
+    setIsSubmittingReturn(true)
+    try {
+      const actorRef = ref(database, `businessActors/${returnTargetActor.id}`)
+      const officerName = returnTargetActor.petugasSurvey || returnTargetActor.createdBy || returnTargetActor.surveyData?.pejabatData?.petugas?.nama || ''
+
+      const updates: any = {
+        status: 'lpj_pending',
+        hasilVerifikasiDinas: 'Dikembalikan',
+        keteranganDinas: returnReason.trim(),
+        catatanPengembalian: returnReason.trim(),
+        dikembalikanKePetugasAt: new Date().toISOString(),
+        dikembalikanKePetugasBy: userProfile?.fullName || user?.email || user?.uid || 'Verifikator Dinas',
+        dikembalikanKePetugasReason: returnReason.trim(),
+        berkasDinasVerified: false,
+        berkasDinasVerifiedAt: null,
+        berkasDinasVerifiedBy: null,
+        verifiedDinasAt: null,
+        verifiedDinasBy: null,
+      }
+
+      if (officerName && (!returnTargetActor.petugasSurvey || returnTargetActor.petugasSurvey.trim() === '-' || returnTargetActor.petugasSurvey.trim() === '')) {
+        updates.petugasSurvey = officerName.toUpperCase().trim()
+      }
+
+      const cleanData = sanitizeForFirebase(updates)
+      const { update } = await import('firebase/database')
+      await update(actorRef, cleanData)
+
+      logActivity({
+        query: `KEMBALIKAN KE PETUGAS SURVEY (HASIL VERIFIKASI): ${returnTargetActor.fullName}`,
+        results: `Petugas: ${officerName || 'Semua'} | Alasan: ${returnReason.trim()}`,
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'KEMBALIKAN KE PETUGAS',
+        userId: userProfile?.fullName || user?.email || user?.uid || 'Verifikator Dinas'
+      })
+
+      toast({
+        title: "✅ Berhasil Dikembalikan",
+        description: `Data ${returnTargetActor.fullName} berhasil dikembalikan ke antrean Petugas Survey (${officerName || 'Petugas Terkait'}).`
+      })
+
+      setReturnTargetActor(null)
+      setReturnReason("")
+      if (viewingActor?.id === returnTargetActor.id) {
+        setViewingActor(null)
+      }
+    } catch (err: any) {
+      console.error("Error returning actor to survey officer:", err)
+      toast({
+        variant: "destructive",
+        title: "Gagal Mengembalikan Data",
+        description: err?.message || "Terjadi kesalahan sistem saat mengembalikan data."
+      })
+    } finally {
+      setIsSubmittingReturn(false)
     }
   }
 
@@ -411,6 +483,22 @@ export default function HasilVerifikasiPage() {
                                     </div>
                                   </section>
                                 </div>
+                                <DialogFooter className="flex-col sm:flex-row items-center justify-between gap-2 border-t pt-4">
+                                  {(isAdmin || isDinas) && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setReturnTargetActor(viewingActor);
+                                        setReturnReason("");
+                                      }}
+                                      className="bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200 font-bold gap-1.5"
+                                    >
+                                      <RotateCcw className="w-4 h-4" /> Kembalikan ke Petugas Survey
+                                    </Button>
+                                  )}
+                                  <Button variant="ghost" onClick={() => setViewingActor(null)}>Tutup</Button>
+                                </DialogFooter>
                               </>
                             )}
                           </DialogContent>
@@ -477,6 +565,80 @@ export default function HasilVerifikasiPage() {
           </div>
         </div>
       )}
+
+      {/* ─── MODAL KEMBALIKAN KE PETUGAS SURVEY ─── */}
+      <Dialog open={!!returnTargetActor} onOpenChange={(open) => { if (!open) { setReturnTargetActor(null); setReturnReason(""); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-700 font-black uppercase text-lg">
+              <RotateCcw className="w-5 h-5 text-orange-600" /> Kembalikan ke Petugas Survey
+            </DialogTitle>
+            <DialogDescription>
+              Data pelaku usaha ini akan dikembalikan ke antrean status survey lapangan agar petugas survey dapat merevisi/memperbaiki data atau berkas.
+            </DialogDescription>
+          </DialogHeader>
+
+          {returnTargetActor && (
+            <div className="space-y-4 py-2">
+              <div className="bg-orange-50/80 border border-orange-200 rounded-xl p-3.5 space-y-2.5">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-[10px] text-orange-800 font-bold uppercase tracking-wider">Pelaku Usaha</p>
+                    <p className="text-sm font-black text-slate-900 uppercase">{returnTargetActor.fullName}</p>
+                    <p className="text-xs text-slate-600 font-mono">NIK: {returnTargetActor.nik}</p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2.5 py-1 bg-orange-200 text-orange-900 rounded-lg uppercase">
+                    {returnTargetActor.kelurahan || "Kelurahan"}
+                  </span>
+                </div>
+
+                <div className="pt-2 border-t border-orange-200 flex items-center justify-between text-xs">
+                  <span className="text-slate-600 font-bold uppercase text-[10px]">Tujuan Petugas Survey:</span>
+                  <span className="font-black text-emerald-800 uppercase flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                    {returnTargetActor.petugasSurvey || returnTargetActor.createdBy || returnTargetActor.surveyData?.pejabatData?.petugas?.nama || "Petugas Terkait"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="return-reason-hv" className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1">
+                  Catatan / Alasan Pengembalian <span className="text-rose-500">*</span>
+                </Label>
+                <Textarea
+                  id="return-reason-hv"
+                  value={returnReason}
+                  onChange={(e) => setReturnReason(e.target.value)}
+                  placeholder="Contoh: Foto usaha kurang jelas, alamat mohon disesuaikan dengan RT/RW terbaru, atau data peralatan perlu diperbaiki..."
+                  className="min-h-[110px] text-sm rounded-xl border-slate-300 focus-visible:ring-orange-500 bg-white"
+                />
+                <p className="text-[11px] text-slate-500">
+                  💡 Catatan ini akan langsung tampil pada akun Petugas Survey terkait sebagai instruksi perbaikan.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row items-center justify-end gap-2 pt-3 border-t">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => { setReturnTargetActor(null); setReturnReason(""); }}
+              disabled={isSubmittingReturn}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={handleKembalikanKePetugas}
+              disabled={isSubmittingReturn || !returnReason.trim()}
+              className="bg-orange-600 hover:bg-orange-700 text-white font-bold gap-2 min-w-[160px]"
+            >
+              {isSubmittingReturn ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+              Kembalikan Data
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

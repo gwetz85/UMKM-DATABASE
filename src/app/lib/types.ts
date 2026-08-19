@@ -79,6 +79,13 @@ export interface BusinessActor {
   pejabatData?: PejabatData;
   lastDraftBy?: string;
   lastDraftAt?: string;
+  dikembalikanKePetugasAt?: string;
+  dikembalikanKePetugasBy?: string;
+  dikembalikanKePetugasReason?: string;
+  catatanPengembalian?: string;
+  berkasDinasVerified?: boolean;
+  berkasDinasVerifiedAt?: string;
+  berkasDinasVerifiedBy?: string;
 }
 
 export interface PejabatItem {

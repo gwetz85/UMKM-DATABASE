@@ -1173,6 +1173,27 @@ export default function VerifikasiDinasPage() {
                             )}
                           </div>
 
+                          {(actor.dikembalikanKePetugasReason || (actor.hasilVerifikasiDinas === 'Dikembalikan' && actor.keteranganDinas)) && (
+                            <div className="bg-orange-50 border border-orange-200 rounded-xl p-2.5 flex items-start gap-2 text-orange-950">
+                              <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
+                              <div className="min-w-0 flex-1 text-xs">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-black text-[9px] uppercase bg-orange-200 text-orange-900 px-1.5 py-0.5 rounded">
+                                    Perlu Perbaikan / Revisi Dinas
+                                  </span>
+                                  {actor.dikembalikanKePetugasBy && (
+                                    <span className="text-[9px] text-orange-700 font-bold truncate">
+                                      ({actor.dikembalikanKePetugasBy})
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] font-medium text-orange-950 mt-1 leading-snug break-words">
+                                  {actor.dikembalikanKePetugasReason || actor.keteranganDinas}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
                           <div className="grid grid-cols-2 gap-3 py-4 border-y border-slate-100">
                             <div className="space-y-1">
                               <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Usaha</span>
