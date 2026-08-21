@@ -605,11 +605,17 @@ function HasilVerifikasiContent() {
                                   : (actor.verifiedDinasAt ? formatDateTimeIndo(actor.verifiedDinasAt) : "-")}
                               </span>
                             </div>
-                            {(actor.berkasDinasVerifiedBy || actor.verifikatorDinas) && (
-                              <span className="text-[9px] text-slate-400 font-medium pl-5 truncate max-w-[170px]" title={`Petugas: ${actor.berkasDinasVerifiedBy || actor.verifikatorDinas}`}>
-                                Oleh: {actor.berkasDinasVerifiedBy || actor.verifikatorDinas}
-                              </span>
-                            )}
+                            {(() => {
+                              const name = actor.verifikatorDinas ||
+                                (actor.berkasDinasVerifiedBy && !actor.berkasDinasVerifiedBy.includes('@')
+                                  ? actor.berkasDinasVerifiedBy
+                                  : null)
+                              return name ? (
+                                <span className="text-[9px] text-emerald-700 font-bold pl-5 truncate max-w-[170px] uppercase" title={name}>
+                                  {name}
+                                </span>
+                              ) : null
+                            })()}
                           </div>
                         </TableCell>
                         <TableCell>
