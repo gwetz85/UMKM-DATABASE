@@ -164,9 +164,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [playSound]);
 
 
-  // Toggle body background class — login page has its own background
+  // Toggle body background class — login and public cek-data pages have clean background
   useEffect(() => {
-    if (isLoginPage) {
+    if (isLoginPage || isCekDataPage) {
       document.body.classList.remove('app-bg');
     } else {
       document.body.classList.add('app-bg');
@@ -174,7 +174,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     return () => {
       document.body.classList.remove('app-bg');
     };
-  }, [isLoginPage]);
+  }, [isLoginPage, isCekDataPage]);
 
   const getPageTitle = (path: string) => {
     switch (path) {
