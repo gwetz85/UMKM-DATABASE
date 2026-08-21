@@ -530,7 +530,18 @@ function RejectedContent() {
                         </p>
                       </TableCell>
                       <TableCell>
-                        <span className="text-[9px] font-bold text-slate-500 uppercase">{(actor as any).cancelDinasBy || "-"}</span>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase">
+                          {(() => {
+                            const raw = (actor as any).cancelDinasBy || ""
+                            if (!raw) return "-"
+                            // Jika bukan email, tampilkan langsung (nama lengkap)
+                            if (!raw.includes('@')) return raw
+                            // Jika email, coba fallback ke verifikatorDinas
+                            if (actor.verifikatorDinas) return actor.verifikatorDinas
+                            // Fallback: ambil bagian sebelum @ dari email
+                            return raw.split('@')[0].toUpperCase()
+                          })()}
+                        </span>
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end items-center gap-1">

@@ -340,7 +340,7 @@ export default function VerifikasiDinasPage() {
       hasilVerifikasiDinas: 'Tidak Lolos',
       alasanCancelDinas: cancelReason.trim(),
       cancelDinasAt: new Date().toISOString(),
-      cancelDinasBy: user?.email || user?.uid || 'Dinas'
+      cancelDinasBy: userProfile?.fullName || user?.email || user?.uid || 'Dinas'
     })
 
     logActivity({
