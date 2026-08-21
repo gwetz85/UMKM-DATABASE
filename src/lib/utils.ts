@@ -133,3 +133,25 @@ export function maskPhoneNumber(phone: string | number | undefined | null): stri
   const end = str.slice(-3);
   return `${start}****${end}`;
 }
+
+export function formatDateTimeIndo(isoString?: string | null): string {
+  if (!isoString) return "-";
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return "-";
+    const dateStr = d.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+    const timeStr = d.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).replace(/\./g, ':');
+    return `${dateStr}, ${timeStr} WIB`;
+  } catch {
+    return "-";
+  }
+}
+

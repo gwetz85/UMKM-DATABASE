@@ -348,7 +348,7 @@ export default function VerifikasiDinasBerkasPage() {
       updateDocumentNonBlocking(actorRef, {
         berkasDinasVerified: true,
         berkasDinasVerifiedAt: new Date().toISOString(),
-        berkasDinasVerifiedBy: user?.email || user?.uid || 'Admin'
+        berkasDinasVerifiedBy: userProfile?.fullName || user?.email || user?.uid || 'Verifikator Dinas'
       })
 
       logActivity({

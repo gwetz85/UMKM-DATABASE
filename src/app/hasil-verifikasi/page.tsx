@@ -28,12 +28,14 @@ import {
   RotateCcw,
   ArrowLeft,
   FileSpreadsheet,
-  RefreshCw
+  RefreshCw,
+  Clock,
+  CalendarDays
 } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
-import { cn, parsePobDob, calculateAge, extractDobFromNik } from "@/lib/utils"
+import { cn, parsePobDob, calculateAge, extractDobFromNik, formatDateTimeIndo } from "@/lib/utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useSearchParams, useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
@@ -333,6 +335,10 @@ function HasilVerifikasiContent() {
         "LOKASI USAHA": (actor.businessLocation || "").toUpperCase(),
         "KOORDINATOR": (actor.coordinator || "").toUpperCase(),
         "KEPUTUSAN": "LOLOS",
+        "WAKTU LOLOS VERIFIKASI": actor.berkasDinasVerifiedAt
+          ? formatDateTimeIndo(actor.berkasDinasVerifiedAt)
+          : (actor.verifiedDinasAt ? formatDateTimeIndo(actor.verifiedDinasAt) : "-"),
+        "PETUGAS VERIFIKATOR": actor.berkasDinasVerifiedBy || actor.verifikatorDinas || "-",
       })
 
       const setColWidths = (ws: any, rows: ReturnType<typeof toRow>[]) => {
@@ -556,6 +562,7 @@ function HasilVerifikasiContent() {
                       <TableHead className="font-black uppercase text-[10px] text-slate-500">Pelaku Usaha</TableHead>
                       <TableHead className="font-black uppercase text-[10px] text-slate-500">Informasi Usaha</TableHead>
                       <TableHead className="font-black uppercase text-[10px] text-center text-slate-500">Keputusan</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] text-slate-500">Waktu Verifikasi</TableHead>
                       <TableHead className="font-black uppercase text-[10px] text-slate-500">Koordinator</TableHead>
                       <TableHead className="font-black uppercase text-[10px] text-right text-slate-500 pr-6">Aksi</TableHead>
                     </TableRow>
@@ -587,6 +594,23 @@ function HasilVerifikasiContent() {
                           <span className="text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase border bg-emerald-50 text-emerald-700 border-emerald-200">
                             LOLOS
                           </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-1.5 text-slate-700">
+                              <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              <span className="text-[11px] font-bold">
+                                {actor.berkasDinasVerifiedAt
+                                  ? formatDateTimeIndo(actor.berkasDinasVerifiedAt)
+                                  : (actor.verifiedDinasAt ? formatDateTimeIndo(actor.verifiedDinasAt) : "-")}
+                              </span>
+                            </div>
+                            {(actor.berkasDinasVerifiedBy || actor.verifikatorDinas) && (
+                              <span className="text-[9px] text-slate-400 font-medium pl-5 truncate max-w-[170px]" title={`Petugas: ${actor.berkasDinasVerifiedBy || actor.verifikatorDinas}`}>
+                                Oleh: {actor.berkasDinasVerifiedBy || actor.verifikatorDinas}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <span className="text-[10px] font-bold text-slate-600 uppercase">{actor.coordinator || "-"}</span>
@@ -843,8 +867,8 @@ function HasilVerifikasiContent() {
                 </section>
 
                 <section className="space-y-4">
-                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem</div>
-                  <div className="bg-slate-50 p-4 rounded-xl text-[10px] font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
+                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem & Verifikasi</div>
+                  <div className="bg-slate-50 p-4 rounded-xl text-[10px] font-bold grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 border">
                     <div className="space-y-1">
                       <p className="text-muted-foreground uppercase">Status</p>
                       <p className="text-primary">{viewingActor.status.toUpperCase()}</p>
@@ -855,7 +879,21 @@ function HasilVerifikasiContent() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-muted-foreground uppercase">Waktu Input</p>
-                      <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
+                      <p>{viewingActor.createdAt ? formatDateTimeIndo(viewingActor.createdAt) : "-"}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground uppercase">Waktu Lolos Verifikasi</p>
+                      <p className="text-emerald-700 font-black">
+                        {viewingActor.berkasDinasVerifiedAt
+                          ? formatDateTimeIndo(viewingActor.berkasDinasVerifiedAt)
+                          : (viewingActor.verifiedDinasAt ? formatDateTimeIndo(viewingActor.verifiedDinasAt) : "-")}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground uppercase">Petugas Verifikator</p>
+                      <p className="text-slate-800 font-bold">
+                        {viewingActor.berkasDinasVerifiedBy || viewingActor.verifikatorDinas || "-"}
+                      </p>
                     </div>
                   </div>
                 </section>

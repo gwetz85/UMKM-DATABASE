@@ -83,6 +83,8 @@ export interface BusinessActor {
   dikembalikanKePetugasBy?: string;
   dikembalikanKePetugasReason?: string;
   catatanPengembalian?: string;
+  verifiedDinasAt?: string;
+  verifiedDinasBy?: string;
   berkasDinasVerified?: boolean;
   berkasDinasVerifiedAt?: string;
   berkasDinasVerifiedBy?: string;
