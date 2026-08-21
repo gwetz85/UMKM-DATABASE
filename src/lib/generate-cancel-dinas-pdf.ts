@@ -116,17 +116,12 @@ export async function generateCancelDinasPDF(actor: BusinessActor): Promise<void
   // ── 2. JUDUL DOKUMEN & BADGE PEMBATALAN ──────────────────────────────────
   const titleY = lineY + 6;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11.5);
+  doc.setFontSize(12);
   doc.setTextColor(185, 28, 28); // red-700
-  doc.text('FORMULIR PEMBATALAN PENGAJUAN (CANCEL DINAS)', pageW / 2, titleY, { align: 'center' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(100, 116, 139); // slate-500
-  doc.text('Sistem Informasi Manajemen Pelaku Usaha (SIMPU) Provinsi Kepulauan Riau', pageW / 2, titleY + 3.8, { align: 'center' });
+  doc.text('FORM PEMBATALAN DINAS', pageW / 2, titleY, { align: 'center' });
 
   // Status Banner Box (Rose / Red Alert Styling)
-  const bannerY = titleY + 5.8;
+  const bannerY = titleY + 4;
   const bannerH = 7.5;
   doc.setFillColor(254, 242, 242); // red-50
   doc.setDrawColor(252, 165, 165); // red-300
@@ -151,7 +146,11 @@ export async function generateCancelDinasPDF(actor: BusinessActor): Promise<void
   const tempatTglLahir = `${tempatLahir} / ${tglLahir}`;
 
   const alasanCancel = (actor as any).alasanCancelDinas || actor.rejectionReason || actor.keteranganDinas || 'Tidak ada catatan alasan spesifik dari petugas.';
-  const petugasCancel = (actor as any).cancelDinasBy || actor.verifikatorDinas || (actor as any).lastDraftBy || 'Petugas Verifikator Dinas';
+  let rawPetugas = (actor as any).cancelDinasBy || actor.verifikatorDinas || (actor as any).lastDraftBy || 'Petugas Verifikator Dinas';
+  if (rawPetugas.includes('@')) {
+    rawPetugas = rawPetugas.split('@')[0].replace(/_/g, ' ').toUpperCase();
+  }
+  const petugasCancel = rawPetugas;
   const waktuCancel = (actor as any).cancelDinasAt ? formatTanggalIndo((actor as any).cancelDinasAt, true) : formatTanggalIndo(new Date(), true);
 
   const sectionStylePribadi = {
