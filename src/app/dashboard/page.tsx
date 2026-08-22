@@ -21,7 +21,8 @@ import {
   BadgeCheck, 
   AlertCircle,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  Clock
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useMemo, useState } from "react"
@@ -29,7 +30,7 @@ import { BusinessActor } from "../lib/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { MusicDashboardCard } from "@/components/MusicDashboardCard"
 import { MonitoringDialog } from "@/components/monitoring-dialog"
-import { cn } from "@/lib/utils"
+import { cn, formatDateTimeIndo } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
@@ -52,6 +53,7 @@ export default function DashboardStatsPage() {
 
   const [selectedFilter, setSelectedFilter] = useState<{ name: string; filterType: string; targetUrl?: string } | null>(null)
   const [expandedActorId, setExpandedActorId] = useState<string | null>(null)
+  const [detailActor, setDetailActor] = useState<BusinessActor | null>(null)
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -79,6 +81,44 @@ export default function DashboardStatsPage() {
   // Fetch pre-calculated stats
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
+
+  // Fetch verified_dinas actors for the 5 latest tables (real-time)
+  const verifiedDinasQuery = useMemoFirebase(() => {
+    if (!database) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'))
+  }, [database])
+
+  const { data: verifiedDinasData, isLoading: isVerifiedDinasLoading } = useList<BusinessActor>(verifiedDinasQuery)
+
+  // 5 Pelaku Usaha terbaru di menu Verifikasi Dinas (Tahap 2: Menunggu Cek Berkas)
+  const latestVerifikasiDinas = useMemo(() => {
+    if (!verifiedDinasData) return []
+    const isCancelDinas = (d: any) => (d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(d.alasanCancelDinas)
+    
+    return verifiedDinasData
+      .filter(d => d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && !d.berkasDinasVerified && !isCancelDinas(d))
+      .sort((a, b) => {
+        const timeA = new Date(a.verifiedDinasAt || (a.surveyData as any)?.tanggalSurvey || a.createdAt || 0).getTime()
+        const timeB = new Date(b.verifiedDinasAt || (b.surveyData as any)?.tanggalSurvey || b.createdAt || 0).getTime()
+        return timeB - timeA
+      })
+      .slice(0, 5)
+  }, [verifiedDinasData])
+
+  // 5 Pelaku Usaha terbaru di menu Hasil Verifikasi (Tahap 3: Selesai Cek Berkas / Lolos Final)
+  const latestHasilVerifikasi = useMemo(() => {
+    if (!verifiedDinasData) return []
+    const isCancelDinas = (d: any) => (d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(d.alasanCancelDinas)
+    
+    return verifiedDinasData
+      .filter(d => d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && Boolean(d.berkasDinasVerified) && !isCancelDinas(d))
+      .sort((a, b) => {
+        const timeA = new Date(a.berkasDinasVerifiedAt || a.verifiedDinasAt || a.createdAt || 0).getTime()
+        const timeB = new Date(b.berkasDinasVerifiedAt || b.verifiedDinasAt || b.createdAt || 0).getTime()
+        return timeB - timeA
+      })
+      .slice(0, 5)
+  }, [verifiedDinasData])
 
   // On-demand fetch for modal data (only when a filter is selected)
   const modalQuery = useMemoFirebase(() => {
@@ -655,6 +695,259 @@ export default function DashboardStatsPage() {
         </div>
       </div>
 
+      {/* ─── 5 DATA TERBARU VERIFIKASI DINAS & HASIL VERIFIKASI ─── */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+          <div>
+            <h2 className="text-base md:text-lg font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
+              <Clock className="w-5 h-5 text-indigo-600" />
+              Data Terkini Masuk Tahapan Dinas
+            </h2>
+            <p className="text-xs text-slate-500 font-semibold">
+              Daftar 5 pelaku usaha terbaru yang masuk menu Verifikasi Dinas dan Hasil Verifikasi beserta waktu data masuk.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+          {/* Card 1: 5 Data Terbaru Verifikasi Dinas (Tahap 2) */}
+          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-indigo-100/80 flex flex-col shadow-md">
+            <CardHeader className="bg-gradient-to-r from-indigo-50/90 to-violet-50/90 border-b border-indigo-100/70 p-4 pb-3 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-sm">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm md:text-base font-black text-indigo-950 uppercase tracking-tight flex items-center gap-2">
+                    Verifikasi Dinas
+                    <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-indigo-200 text-[10px] font-black px-2 py-0.5">
+                      Tahap 2
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-[11px] font-medium text-indigo-600/80">
+                    5 data terbaru lolos survey & menunggu cek berkas dinas
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/verifikasi-dinas-berkas')}
+                className="text-[11px] font-bold text-indigo-700 hover:bg-indigo-100/60 h-7 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
+              >
+                Lihat Semua <ArrowRight className="w-3 h-3" />
+              </Button>
+            </CardHeader>
+
+            <CardContent className="p-0 flex-1 flex flex-col justify-between">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-slate-50/80 border-b">
+                    <TableRow>
+                      <TableHead className="w-[40px] text-center font-black text-[10px] text-slate-700 uppercase">No</TableHead>
+                      <TableHead className="font-black text-[10px] text-slate-700 uppercase">Pelaku Usaha</TableHead>
+                      <TableHead className="font-black text-[10px] text-slate-700 uppercase">Usaha / Wilayah</TableHead>
+                      <TableHead className="font-black text-[10px] text-slate-700 uppercase">Waktu Masuk</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isVerifiedDinasLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8">
+                          <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
+                            <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                            Memuat data Verifikasi Dinas...
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : latestVerifikasiDinas.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
+                          Belum ada data pada menu Verifikasi Dinas.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      latestVerifikasiDinas.map((actor, idx) => {
+                        const masukTime = actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt
+                        return (
+                          <TableRow 
+                            key={actor.id} 
+                            onClick={() => setDetailActor(actor)}
+                            className="hover:bg-indigo-50/40 transition-colors cursor-pointer group"
+                          >
+                            <TableCell className="text-center font-bold text-slate-500 text-xs py-2.5">
+                              {idx + 1}
+                            </TableCell>
+                            <TableCell className="py-2.5">
+                              <div className="flex flex-col">
+                                <span className="font-black text-slate-800 text-xs uppercase group-hover:text-indigo-600 transition-colors">
+                                  {actor.fullName || "-"}
+                                </span>
+                                <span className="text-[10px] font-mono text-slate-500">
+                                  {actor.nik || "-"}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-2.5">
+                              <div className="flex flex-col">
+                                <span className="font-bold text-slate-700 text-xs uppercase truncate max-w-[130px]" title={actor.businessName}>
+                                  {actor.businessName || "-"}
+                                </span>
+                                <span className="text-[10px] text-slate-500 uppercase truncate max-w-[130px]">
+                                  {actor.kelurahan || actor.coordinator || "-"}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-2.5">
+                              <div className="flex items-center gap-1.5 text-indigo-900">
+                                <Clock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                <span className="text-[11px] font-bold whitespace-nowrap">
+                                  {formatDateTimeIndo(masukTime)}
+                                </span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="p-2.5 bg-slate-50/60 border-t flex items-center justify-between text-[11px] font-medium text-slate-600 px-4">
+                <span>Total antrean: <strong className="text-indigo-600 font-bold">{statsValues.verifikasiDinas}</strong> pelaku usaha</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => router.push('/verifikasi-dinas-berkas')}
+                  className="h-6 text-[10px] font-bold border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                >
+                  Buka Verifikasi Dinas <ExternalLink className="w-2.5 h-2.5 ml-1" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 2: 5 Data Terbaru Hasil Verifikasi (Tahap 3) */}
+          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-teal-100/80 flex flex-col shadow-md">
+            <CardHeader className="bg-gradient-to-r from-teal-50/90 to-emerald-50/90 border-b border-teal-100/70 p-4 pb-3 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-teal-600 text-white rounded-xl shadow-sm">
+                  <ListChecks className="w-4 h-4" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm md:text-base font-black text-teal-950 uppercase tracking-tight flex items-center gap-2">
+                    Hasil Verifikasi
+                    <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-100 border-teal-200 text-[10px] font-black px-2 py-0.5">
+                      Tahap 3 (Final)
+                    </Badge>
+                  </CardTitle>
+                  <p className="text-[11px] font-medium text-teal-600/80">
+                    5 data terbaru selesai verifikasi berkas & dinyatakan lolos
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/hasil-verifikasi')}
+                className="text-[11px] font-bold text-teal-700 hover:bg-teal-100/60 h-7 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
+              >
+                Lihat Semua <ArrowRight className="w-3 h-3" />
+              </Button>
+            </CardHeader>
+
+            <CardContent className="p-0 flex-1 flex flex-col justify-between">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-slate-50/80 border-b">
+                    <TableRow>
+                      <TableHead className="w-[40px] text-center font-black text-[10px] text-slate-700 uppercase">No</TableHead>
+                      <TableHead className="font-black text-[10px] text-slate-700 uppercase">Pelaku Usaha</TableHead>
+                      <TableHead className="font-black text-[10px] text-slate-700 uppercase">Usaha / Wilayah</TableHead>
+                      <TableHead className="font-black text-[10px] text-slate-700 uppercase">Waktu Masuk</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isVerifiedDinasLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8">
+                          <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
+                            <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
+                            Memuat data Hasil Verifikasi...
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : latestHasilVerifikasi.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
+                          Belum ada data pada menu Hasil Verifikasi.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      latestHasilVerifikasi.map((actor, idx) => {
+                        const masukTime = actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt
+                        return (
+                          <TableRow 
+                            key={actor.id} 
+                            onClick={() => setDetailActor(actor)}
+                            className="hover:bg-teal-50/40 transition-colors cursor-pointer group"
+                          >
+                            <TableCell className="text-center font-bold text-slate-500 text-xs py-2.5">
+                              {idx + 1}
+                            </TableCell>
+                            <TableCell className="py-2.5">
+                              <div className="flex flex-col">
+                                <span className="font-black text-slate-800 text-xs uppercase group-hover:text-teal-600 transition-colors">
+                                  {actor.fullName || "-"}
+                                </span>
+                                <span className="text-[10px] font-mono text-slate-500">
+                                  {actor.nik || "-"}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-2.5">
+                              <div className="flex flex-col">
+                                <span className="font-bold text-slate-700 text-xs uppercase truncate max-w-[130px]" title={actor.businessName}>
+                                  {actor.businessName || "-"}
+                                </span>
+                                <span className="text-[10px] text-slate-500 uppercase truncate max-w-[130px]">
+                                  {actor.kelurahan || actor.coordinator || "-"}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-2.5">
+                              <div className="flex items-center gap-1.5 text-teal-900">
+                                <Clock className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                                <span className="text-[11px] font-bold whitespace-nowrap">
+                                  {formatDateTimeIndo(masukTime)}
+                                </span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="p-2.5 bg-slate-50/60 border-t flex items-center justify-between text-[11px] font-medium text-slate-600 px-4">
+                <span>Total lolos: <strong className="text-teal-600 font-bold">{statsValues.hasilVerifikasi}</strong> pelaku usaha</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => router.push('/hasil-verifikasi')}
+                  className="h-6 text-[10px] font-bold border-teal-200 text-teal-700 hover:bg-teal-50"
+                >
+                  Buka Hasil Verifikasi <ExternalLink className="w-2.5 h-2.5 ml-1" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
       {/* Grid: Kuota & Sebaran Kelurahan */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 items-stretch">
         <div className="lg:col-span-2 space-y-6 flex flex-col h-full">
@@ -951,6 +1244,125 @@ export default function DashboardStatsPage() {
               </Table>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Detail Actor Dialog for 5 latest tables */}
+      <Dialog open={!!detailActor} onOpenChange={(open) => !open && setDetailActor(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          {detailActor && (
+            <>
+              <DialogHeader className="border-b pb-3">
+                <div className="flex items-center justify-between">
+                  <DialogTitle className="text-lg font-black uppercase text-primary flex items-center gap-2">
+                    <UserCheck className="w-5 h-5" /> Detail Pelaku Usaha
+                  </DialogTitle>
+                  <Badge className={cn(
+                    "text-[10px] font-black uppercase px-2.5 py-0.5",
+                    detailActor.berkasDinasVerified ? "bg-teal-100 text-teal-700 border-teal-300" : "bg-indigo-100 text-indigo-700 border-indigo-300"
+                  )}>
+                    {detailActor.berkasDinasVerified ? "Hasil Verifikasi (Lolos)" : "Verifikasi Dinas"}
+                  </Badge>
+                </div>
+                <DialogDescription className="text-xs text-slate-500 font-medium">
+                  Rincian data pelaku usaha pada alur verifikasi dinas.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4 py-3 text-xs">
+                {/* Informasi Masuk Menu */}
+                <div className="bg-slate-50 border rounded-xl p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Waktu Masuk Verifikasi Dinas</p>
+                    <p className="font-bold text-indigo-900 flex items-center gap-1.5 mt-0.5">
+                      <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                      {formatDateTimeIndo(detailActor.verifiedDinasAt || (detailActor.surveyData as any)?.tanggalSurvey || detailActor.createdAt)}
+                    </p>
+                  </div>
+                  {detailActor.berkasDinasVerified && (
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Waktu Lolos Hasil Verifikasi</p>
+                      <p className="font-bold text-teal-900 flex items-center gap-1.5 mt-0.5">
+                        <Clock className="w-3.5 h-3.5 text-teal-600" />
+                        {formatDateTimeIndo(detailActor.berkasDinasVerifiedAt || detailActor.verifiedDinasAt || detailActor.createdAt)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Profil & Usaha */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-white border rounded-xl p-3">
+                  <div>
+                    <p className="font-bold text-slate-400 text-[10px] uppercase">NAMA LENGKAP</p>
+                    <p className="font-black text-slate-800 uppercase">{detailActor.fullName || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-400 text-[10px] uppercase">NIK</p>
+                    <p className="font-mono font-bold text-slate-700">{detailActor.nik || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-400 text-[10px] uppercase">NO. KK</p>
+                    <p className="font-mono font-bold text-slate-700">{detailActor.noKK || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-400 text-[10px] uppercase">NAMA USAHA</p>
+                    <p className="font-black text-primary uppercase">{detailActor.businessName || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-400 text-[10px] uppercase">KATEGORI USAHA</p>
+                    <p className="font-bold text-slate-700 uppercase">{detailActor.businessCategory || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-400 text-[10px] uppercase">NO. HP</p>
+                    <p className="font-bold text-slate-700">{detailActor.phone || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-400 text-[10px] uppercase">KOORDINATOR</p>
+                    <p className="font-bold text-slate-700 uppercase">{detailActor.coordinator || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-400 text-[10px] uppercase">PETUGAS SURVEY</p>
+                    <p className="font-bold text-slate-700 uppercase">{detailActor.petugasSurvey || detailActor.createdBy || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-400 text-[10px] uppercase">VERIFIKATOR DINAS</p>
+                    <p className="font-bold text-slate-700 uppercase">{detailActor.verifikatorDinas || (detailActor as any).berkasDinasVerifiedBy || "-"}</p>
+                  </div>
+                  <div className="col-span-2 sm:col-span-3 border-t pt-2 mt-1">
+                    <p className="font-bold text-slate-400 text-[10px] uppercase">ALAMAT LENGKAP</p>
+                    <p className="font-bold text-slate-700 uppercase">
+                      {detailActor.address || "-"} RT/RW {detailActor.rtRw || "-"} Kel. {detailActor.kelurahan || "-"}, Kec. {detailActor.kecamatan || "-"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDetailActor(null)}
+                    className="font-bold"
+                  >
+                    Tutup
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const target = detailActor.berkasDinasVerified ? '/hasil-verifikasi' : '/verifikasi-dinas-berkas'
+                      setDetailActor(null)
+                      router.push(target)
+                    }}
+                    className={cn(
+                      "font-bold text-white shadow-sm",
+                      detailActor.berkasDinasVerified ? "bg-teal-600 hover:bg-teal-700" : "bg-indigo-600 hover:bg-indigo-700"
+                    )}
+                  >
+                    Buka Menu {detailActor.berkasDinasVerified ? "Hasil Verifikasi" : "Verifikasi Dinas"} <ExternalLink className="w-3 h-3 ml-1.5" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
