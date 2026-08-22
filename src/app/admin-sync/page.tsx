@@ -48,6 +48,7 @@ export default function AdminSyncPage() {
         totalActors: 0,
         gender: { 'Laki-laki': 0, 'Perempuan': 0, unknown: 0 },
         status: { pending: 0, verified: 0, rejected: 0, finish: 0 },
+        detailedStatus: { survey: 0, verifikasi: 0, hasilVerifikasi: 0, lpj: 0, selesai: 0 },
         kelurahan: {} as Record<string, number>,
         coordinator: {} as Record<string, number>,
         lastUpdated: new Date().toISOString()
@@ -63,8 +64,21 @@ export default function AdminSyncPage() {
         
         // Status counts
         const s = actor.status || 'pending'
-        if (['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)) {
+        const isCancelDinas = (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(actor.alasanCancelDinas)
+        const isRejected = s === 'rejected' || isCancelDinas
+        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s) && !isCancelDinas
+
+        if (isVerified) {
           stats.status.verified++
+
+          if (s === 'lpj_pending') stats.detailedStatus.survey++
+          if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && !actor.berkasDinasVerified) stats.detailedStatus.verifikasi++
+          if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && actor.berkasDinasVerified) {
+            stats.detailedStatus.hasilVerifikasi = (stats.detailedStatus.hasilVerifikasi || 0) + 1
+          }
+          if (s === 'bank_pending') stats.detailedStatus.verifikasi++
+          if (s === 'finish' && actor.readyForLPJ && !actor.lpjNominal) stats.detailedStatus.lpj++
+          if (s === 'finish' && (!actor.readyForLPJ || actor.lpjNominal)) stats.detailedStatus.selesai++
           
           if (actor.coordinator) {
             const coord = actor.coordinator.toUpperCase().trim()
@@ -80,10 +94,10 @@ export default function AdminSyncPage() {
             const k = actor.kelurahan.toUpperCase().trim()
             stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
           }
-        } else if (s === 'pending') {
-          stats.status.pending++
-        } else if (s === 'rejected') {
+        } else if (isRejected) {
           stats.status.rejected++
+        } else {
+          stats.status.pending++
         }
 
         // Gender counts

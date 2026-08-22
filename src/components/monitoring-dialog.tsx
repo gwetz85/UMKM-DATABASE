@@ -135,6 +135,10 @@ export function MonitoringDialog({
                         <td className="p-3 text-right font-black text-slate-800">{detailedStatus.verifikasi}</td>
                       </tr>
                       <tr className="border-b last:border-0 hover:bg-slate-50 transition-colors">
+                        <td className="p-3 font-semibold text-slate-600 text-xs">Hasil Verifikasi</td>
+                        <td className="p-3 text-right font-black text-teal-600">{(detailedStatus as any).hasilVerifikasi || 0}</td>
+                      </tr>
+                      <tr className="border-b last:border-0 hover:bg-slate-50 transition-colors">
                         <td className="p-3 font-semibold text-slate-600 text-xs">LPJ</td>
                         <td className="p-3 text-right font-black text-slate-800">{detailedStatus.lpj}</td>
                       </tr>

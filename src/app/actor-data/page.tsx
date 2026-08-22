@@ -328,8 +328,9 @@ function ActorDataContent() {
           stats.totalActors++
           
           const s = actor.status || 'pending'
-          const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s)
-          const isRejected = s === 'rejected'
+          const isCancelDinas = (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(actor.alasanCancelDinas)
+          const isRejected = s === 'rejected' || isCancelDinas
+          const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas
           
           if (isVerified || isRejected) {
             stats.status[isVerified ? 'verified' : 'rejected']++
@@ -343,8 +344,15 @@ function ActorDataContent() {
               // "Survey Dinas" menu queries lpj_pending
               if (s === 'lpj_pending') stats.detailedStatus.survey++
               
-              // "Verifikasi Dinas" menu queries verified_dinas
-              if (s === 'verified_dinas' || s === 'bank_pending') stats.detailedStatus.verifikasi++
+              // "Verifikasi Dinas" menu queries verified_dinas with Lolos and !berkasDinasVerified
+              if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && !actor.berkasDinasVerified) stats.detailedStatus.verifikasi++
+              
+              // "Hasil Verifikasi" menu queries verified_dinas with Lolos and berkasDinasVerified
+              if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && actor.berkasDinasVerified) {
+                stats.detailedStatus.hasilVerifikasi = (stats.detailedStatus.hasilVerifikasi || 0) + 1
+              }
+              
+              if (s === 'bank_pending') stats.detailedStatus.verifikasi++
               
               // "LPJ" menu queries finish + readyForLPJ + !lpjNominal
               if (s === 'finish' && actor.readyForLPJ && !actor.lpjNominal) stats.detailedStatus.lpj++

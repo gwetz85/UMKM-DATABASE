@@ -4,11 +4,29 @@ import { useMemoFirebase, useList, useUser, useDatabase, useObject } from "@/fir
 import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
-import { RefreshCw, Users, UserCheck, UserX, Loader2, Building2, TrendingUp, MapPin, BarChart3, User, Clock, History, MessageSquare } from "lucide-react"
+import { 
+  RefreshCw, 
+  Users, 
+  UserCheck, 
+  UserX, 
+  Loader2, 
+  Building2, 
+  TrendingUp, 
+  MapPin, 
+  BarChart3, 
+  ClipboardCheck, 
+  FileText, 
+  ListChecks, 
+  ArrowRight, 
+  BadgeCheck, 
+  AlertCircle,
+  ExternalLink,
+  ShieldCheck
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useMemo, useState } from "react"
 import { BusinessActor } from "../lib/types"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { MusicDashboardCard } from "@/components/MusicDashboardCard"
 import { MonitoringDialog } from "@/components/monitoring-dialog"
 import { cn } from "@/lib/utils"
@@ -16,21 +34,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  LabelList,
-  Tooltip as RechartsTooltip
-} from "recharts"
-import { 
-  ChartContainer, 
-  ChartTooltip, 
-  ChartTooltipContent,
-  type ChartConfig
+  ChartConfig
 } from "@/components/ui/chart"
 
 const KELURAHAN_LIST = [
@@ -40,35 +44,13 @@ const KELURAHAN_LIST = [
   "Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"
 ]
 
-const kelurahanChartConfig = {
-  count: {
-    label: "Jumlah Pelaku Usaha",
-    color: "hsl(var(--primary))",
-  },
-} satisfies ChartConfig
-
-const categoryChartConfig = {
-  kuliner: {
-    label: "Kuliner",
-    color: "hsl(var(--primary))",
-  },
-  bukan_kuliner: {
-    label: "Bukan Kuliner",
-    color: "hsl(var(--indigo-500))",
-  },
-  unknown: {
-    label: "Lainnya",
-    color: "hsl(var(--slate-400))",
-  },
-} satisfies ChartConfig
-
 export default function DashboardStatsPage() {
   const { user, isUserLoading, userProfile } = useUser()
   const database = useDatabase()
   const router = useRouter()
   const { toast } = useToast()
 
-  const [selectedFilter, setSelectedFilter] = useState<{name: string, filterType: string} | null>(null)
+  const [selectedFilter, setSelectedFilter] = useState<{ name: string; filterType: string; targetUrl?: string } | null>(null)
   const [expandedActorId, setExpandedActorId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -94,13 +76,9 @@ export default function DashboardStatsPage() {
     }
   }, [user, isUserLoading, router, userProfile])
 
-  // Fetch pre-calculated stats — dijaga di atas agar tersedia untuk auto-sync
+  // Fetch pre-calculated stats
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
-
-
-
-
 
   // On-demand fetch for modal data (only when a filter is selected)
   const modalQuery = useMemoFirebase(() => {
@@ -110,15 +88,14 @@ export default function DashboardStatsPage() {
     // Applying filters at the query level where possible
     if (selectedFilter.filterType === 'laki') return query(baseRef, orderByChild('gender'), equalTo('Laki-laki'))
     if (selectedFilter.filterType === 'perempuan') return query(baseRef, orderByChild('gender'), equalTo('Perempuan'))
-    if (selectedFilter.filterType === 'rejected') return query(baseRef, orderByChild('status'), equalTo('rejected'))
     if (selectedFilter.filterType === 'pending') return query(baseRef, orderByChild('status'), equalTo('pending'))
-    
-    // For filters that require client-side processing, fetch all.
-    if (selectedFilter.filterType === 'kelurahan' || selectedFilter.filterType === 'verified' || selectedFilter.filterType === 'total') {
-      return baseRef;
+    if (selectedFilter.filterType === 'survey_dinas') return query(baseRef, orderByChild('status'), equalTo('lpj_pending'))
+    if (selectedFilter.filterType === 'verifikasi_dinas' || selectedFilter.filterType === 'hasil_verifikasi') {
+      return query(baseRef, orderByChild('status'), equalTo('verified_dinas'))
     }
-
-    return query(baseRef, limitToFirst(100)) // Limit initial modal data
+    
+    // For filters that require custom / client-side processing (e.g. rejected + cancel dinas, kelurahan, total, verified), fetch baseRef
+    return baseRef
   }, [database, selectedFilter])
 
   const { data: modalData, isLoading: isModalLoading } = useList(modalQuery)
@@ -130,7 +107,7 @@ export default function DashboardStatsPage() {
 
   const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery)
 
-  // Use systemStats if available, otherwise fallback to 0 or calculate (one-time)
+  // Use systemStats if available
   const statsValues = useMemo(() => {
     if (systemStats) {
       return {
@@ -139,10 +116,27 @@ export default function DashboardStatsPage() {
         perempuan: systemStats.gender?.['Perempuan'] || systemStats.gender?.perempuan || 0,
         verified: systemStats.status?.verified || 0,
         rejected: systemStats.status?.rejected || 0,
-        pending: systemStats.status?.pending || 0
+        pending: systemStats.status?.pending || 0,
+        surveyDinas: systemStats.detailedStatus?.survey || 0,
+        verifikasiDinas: systemStats.detailedStatus?.verifikasi || 0,
+        hasilVerifikasi: systemStats.detailedStatus?.hasilVerifikasi || 0,
+        lpj: systemStats.detailedStatus?.lpj || 0,
+        selesai: systemStats.detailedStatus?.selesai || 0,
       }
     }
-    return { total: 0, laki: 0, perempuan: 0, verified: 0, rejected: 0, pending: 0 }
+    return {
+      total: 0,
+      laki: 0,
+      perempuan: 0,
+      verified: 0,
+      rejected: 0,
+      pending: 0,
+      surveyDinas: 0,
+      verifikasiDinas: 0,
+      hasilVerifikasi: 0,
+      lpj: 0,
+      selesai: 0,
+    }
   }, [systemStats])
 
   const [isSyncing, setIsSyncing] = useState(false)
@@ -155,13 +149,12 @@ export default function DashboardStatsPage() {
       const { get, ref } = await import("firebase/database")
       const snap = await get(ref(database, 'businessActors'))
       if (snap.exists()) {
-        const actors = Object.values(snap.val())
         const stats = {
           totalActors: 0,
           gender: { laki: 0, perempuan: 0, unknown: 0 },
           verifiedGender: { 'Laki-laki': 0, 'Perempuan': 0 },
           status: { pending: 0, verified: 0, rejected: 0, finish: 0 },
-          detailedStatus: { survey: 0, verifikasi: 0, lpj: 0, selesai: 0 },
+          detailedStatus: { survey: 0, verifikasi: 0, hasilVerifikasi: 0, lpj: 0, selesai: 0 },
           kelurahan: {},
           coordinator: {},
           lastUpdated: new Date().toISOString()
@@ -173,8 +166,11 @@ export default function DashboardStatsPage() {
         snap.forEach((child) => {
           const actor = child.val()
           const s = actor.status || 'pending'
-          const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s)
-          const isRejected = s === 'rejected'
+          
+          // Data yang di-cancel dinas: status verified_dinas + hasilVerifikasiDinas 'Tidak Lolos' ATAU punya alasanCancelDinas
+          const isCancelDinas = (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(actor.alasanCancelDinas)
+          const isRejected = s === 'rejected' || isCancelDinas
+          const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s) && !isCancelDinas
           
           if (isVerified || isRejected) {
             stats.totalActors++
@@ -195,10 +191,28 @@ export default function DashboardStatsPage() {
               stats.verifiedGender[genderKey] = (stats.verifiedGender[genderKey] || 0) + 1
 
               // Populate detailedStatus based on exact value matching the menus
-              if (s === 'lpj_pending') stats.detailedStatus.survey++
-              if (s === 'verified_dinas' || s === 'bank_pending') stats.detailedStatus.verifikasi++
-              if (s === 'finish' && actor.readyForLPJ && !actor.lpjNominal) stats.detailedStatus.lpj++
-              if (s === 'finish' && (!actor.readyForLPJ || actor.lpjNominal)) stats.detailedStatus.selesai++
+              // "Survey Dinas" menu queries lpj_pending
+              if (s === 'lpj_pending') {
+                stats.detailedStatus.survey++
+              } 
+              // "Verifikasi Dinas" menu queries verified_dinas with Lolos & !berkasDinasVerified
+              else if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && !actor.berkasDinasVerified) {
+                stats.detailedStatus.verifikasi++
+              } 
+              // "Hasil Verifikasi" menu queries verified_dinas with Lolos & berkasDinasVerified
+              else if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && actor.berkasDinasVerified) {
+                stats.detailedStatus.hasilVerifikasi = (stats.detailedStatus.hasilVerifikasi || 0) + 1
+              } 
+              else if (s === 'bank_pending') {
+                stats.detailedStatus.verifikasi++
+              } 
+              else if (s === 'finish' && actor.readyForLPJ && !actor.lpjNominal) {
+                stats.detailedStatus.lpj = (stats.detailedStatus.lpj || 0) + 1
+              } 
+              else if (s === 'finish' && (!actor.readyForLPJ || actor.lpjNominal)) {
+                stats.detailedStatus.selesai = (stats.detailedStatus.selesai || 0) + 1
+              }
+
               if (actor.coordinator) {
                 const coord = actor.coordinator.toUpperCase().trim()
                 stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
@@ -225,7 +239,7 @@ export default function DashboardStatsPage() {
         
         const { set } = await import("firebase/database")
         await set(ref(database, 'system_stats'), stats)
-        toast({ title: "Sinkronisasi Berhasil", description: "Statistik sistem telah diperbarui." })
+        toast({ title: "Sinkronisasi Berhasil", description: "Statistik sistem telah diperbarui dengan data Cancel Dinas & Tahapan Dinas terkini." })
       }
     } catch (err) {
       console.error(err)
@@ -284,25 +298,58 @@ export default function DashboardStatsPage() {
 
   const filteredModalData = useMemo(() => {
     if (!selectedFilter || !modalData) return []
-    // Since we fetch modalData on demand based on the filter, 
-    // we might still need some refinement here if the query was generic.
     const type = selectedFilter.filterType
-    if (type === "total") return modalData
-    if (type === "verified") return modalData.filter(d => {
-      const s = d.status || "";
-      return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
-    })
-    if (type === "pending") return modalData.filter(d => (d.status || 'pending') === 'pending')
-    if (type === "rejected") return modalData.filter(d => d.status === 'rejected')
-    if (type === "kelurahan") {
+
+    const isCancelDinas = (d: any) => {
+      const s = d.status || ""
+      return (s === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(d.alasanCancelDinas)
+    }
+
+    if (type === "total") {
       return modalData.filter(d => {
-        const k = d.kelurahan?.toLowerCase().trim() || "";
-        const targetK = selectedFilter.name.toLowerCase().trim();
-        const s = d.status || "pending";
-        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s);
-        return k === targetK && isVerified;
+        const s = d.status || ""
+        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s) && !isCancelDinas(d)
+        const isRejected = s === 'rejected' || isCancelDinas(d)
+        return isVerified || isRejected
       })
     }
+
+    if (type === "verified") {
+      return modalData.filter(d => {
+        const s = d.status || ""
+        return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s) && !isCancelDinas(d)
+      })
+    }
+
+    if (type === "pending") return modalData.filter(d => (d.status || 'pending') === 'pending')
+
+    if (type === "rejected") {
+      // Menampilkan DITOLAK ADMIN & CANCEL DINAS
+      return modalData.filter(d => d.status === 'rejected' || isCancelDinas(d))
+    }
+
+    if (type === "survey_dinas") {
+      return modalData.filter(d => (d.status || "") === 'lpj_pending')
+    }
+
+    if (type === "verifikasi_dinas") {
+      return modalData.filter(d => (d.status || "") === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && !d.berkasDinasVerified)
+    }
+
+    if (type === "hasil_verifikasi") {
+      return modalData.filter(d => (d.status || "") === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && Boolean(d.berkasDinasVerified))
+    }
+
+    if (type === "kelurahan") {
+      return modalData.filter(d => {
+        const k = d.kelurahan?.toLowerCase().trim() || ""
+        const targetK = selectedFilter.name.toLowerCase().trim()
+        const s = d.status || "pending"
+        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s) && !isCancelDinas(d)
+        return k === targetK && isVerified
+      })
+    }
+
     return modalData
   }, [modalData, selectedFilter])
 
@@ -321,7 +368,7 @@ export default function DashboardStatsPage() {
     return ((value / total) * 100).toFixed(1);
   };
 
-  const stats = [
+  const topStats = [
     { 
       name: "Total Data", 
       value: statsValues.total, 
@@ -385,19 +432,65 @@ export default function DashboardStatsPage() {
       border: "border-orange-400",
       filterType: "rejected",
       percentage: getPercentage(statsValues.rejected, totalKuotaDashboard),
-      detail: "DATA TERKINI"
+      detail: "ADMIN & DINAS"
+    }
+  ]
+
+  const dinasStageCards = [
+    {
+      name: "Survey Dinas",
+      stageTag: "Tahap 1",
+      value: statsValues.surveyDinas,
+      icon: ClipboardCheck,
+      cardBg: "bg-gradient-to-br from-fuchsia-600 to-purple-700",
+      hoverBorder: "hover:border-fuchsia-300",
+      textColor: "text-white",
+      badgeBg: "bg-fuchsia-500/40 text-fuchsia-100 border-fuchsia-300/30",
+      description: "Antrean & Proses Survey Lapangan Petugas",
+      filterType: "survey_dinas",
+      targetUrl: "/verifikasi-dinas",
+      percentage: getPercentage(statsValues.surveyDinas, statsValues.verified || 1)
+    },
+    {
+      name: "Verifikasi Dinas",
+      stageTag: "Tahap 2",
+      value: statsValues.verifikasiDinas,
+      icon: FileText,
+      cardBg: "bg-gradient-to-br from-indigo-600 to-violet-800",
+      hoverBorder: "hover:border-indigo-300",
+      textColor: "text-white",
+      badgeBg: "bg-indigo-500/40 text-indigo-100 border-indigo-300/30",
+      description: "Survey Lolos & Menunggu Cek Berkas Dinas",
+      filterType: "verifikasi_dinas",
+      targetUrl: "/verifikasi-dinas-berkas",
+      percentage: getPercentage(statsValues.verifikasiDinas, statsValues.verified || 1)
+    },
+    {
+      name: "Hasil Verifikasi",
+      stageTag: "Tahap 3 (Final)",
+      value: statsValues.hasilVerifikasi,
+      icon: ListChecks,
+      cardBg: "bg-gradient-to-br from-teal-600 to-emerald-700",
+      hoverBorder: "hover:border-teal-300",
+      textColor: "text-white",
+      badgeBg: "bg-teal-500/40 text-teal-100 border-teal-300/30",
+      description: "Lolos Survey & Selesai Verifikasi Berkas Dinas",
+      filterType: "hasil_verifikasi",
+      targetUrl: "/hasil-verifikasi",
+      percentage: getPercentage(statsValues.hasilVerifikasi, statsValues.verified || 1)
     }
   ]
 
   return (
     <div className="space-y-6 md:space-y-8 animate-in fade-in-up duration-700">
+      {/* Top Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div className="space-y-1 relative">
           <h1 className="text-3xl md:text-5xl font-black tracking-tight font-headline text-slate-800 uppercase drop-shadow-sm">
             Dashboard Statistik
           </h1>
           <p className="text-xs md:text-sm text-slate-600 font-semibold">
-            Monitor dan kelola pendaftaran pelaku usaha secara real-time.
+            Monitor pendaftaran, alur verifikasi dinas, dan status pelaku usaha secara real-time.
           </p>
         </div>
         <div className="flex items-center gap-2 lg:gap-3">
@@ -431,8 +524,9 @@ export default function DashboardStatsPage() {
         </div>
       </div>
 
+      {/* Top 5 KPI Stats Cards */}
       <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-5">
-        {stats.map((stat) => (
+        {topStats.map((stat) => (
           <Card 
             key={stat.name} 
             onClick={() => setSelectedFilter({ name: stat.name, filterType: stat.filterType })}
@@ -468,6 +562,100 @@ export default function DashboardStatsPage() {
         ))}
       </div>
 
+      {/* ─── TAHAPAN VERIFIKASI DINAS (3 CARDS) ─── */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+          <div>
+            <h2 className="text-base md:text-lg font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-indigo-600" />
+              Statistik Alur & Tahapan Dinas
+            </h2>
+            <p className="text-xs text-slate-500 font-semibold">
+              Progres verifikasi pelaku usaha pada menu Survey Dinas, Verifikasi Dinas, dan Hasil Verifikasi.
+            </p>
+          </div>
+          <div className="self-start sm:self-auto flex items-center gap-2">
+            <span className="text-[10px] md:text-xs font-bold text-slate-500 bg-white shadow-sm px-3 py-1 rounded-full border">
+              Total Terverifikasi: <strong className="text-emerald-600 font-black">{statsValues.verified}</strong>
+            </span>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:gap-5 grid-cols-1 md:grid-cols-3">
+          {dinasStageCards.map((stage) => (
+            <Card 
+              key={stage.name}
+              onClick={() => setSelectedFilter({ name: stage.name, filterType: stage.filterType, targetUrl: stage.targetUrl })}
+              className={cn(
+                "relative overflow-hidden border shadow-lg transition-all duration-300 cursor-pointer active:scale-95 group",
+                "hover:shadow-2xl hover:-translate-y-1.5",
+                stage.cardBg,
+                stage.hoverBorder
+              )}
+            >
+              {/* Background ambient shape */}
+              <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
+              
+              <CardHeader className="p-5 pb-3">
+                <div className="flex items-center justify-between">
+                  <span className={cn("text-[9px] md:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border backdrop-blur-sm", stage.badgeBg)}>
+                    {stage.stageTag}
+                  </span>
+                  <div className="p-2 bg-white/20 backdrop-blur-md rounded-xl text-white shadow-sm group-hover:scale-110 transition-transform">
+                    <stage.icon className="w-5 h-5" />
+                  </div>
+                </div>
+                <CardTitle className="text-lg md:text-xl font-black text-white uppercase tracking-tight mt-2 flex items-center gap-2">
+                  {stage.name}
+                </CardTitle>
+                <p className="text-[11px] font-semibold text-white/80 line-clamp-1">
+                  {stage.description}
+                </p>
+              </CardHeader>
+
+              <CardContent className="p-5 pt-0 space-y-4">
+                <div className="flex items-baseline justify-between">
+                  <div className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                    {isStatsLoading ? "..." : stage.value}
+                    <span className="text-xs font-bold text-white/70 ml-1.5">Pelaku Usaha</span>
+                  </div>
+                  <div className="text-xs font-black text-white bg-white/20 px-2 py-0.5 rounded-full">
+                    {stage.percentage}%
+                  </div>
+                </div>
+
+                {/* Progress bar relative to total verified */}
+                <div className="w-full bg-black/20 rounded-full h-2 overflow-hidden">
+                  <div 
+                    className="bg-white h-full rounded-full transition-all duration-700 ease-out" 
+                    style={{ width: `${Math.min(100, Math.max(2, Number(stage.percentage)))}%` }}
+                  />
+                </div>
+
+                {/* Card Action Link */}
+                <div className="pt-2 border-t border-white/20 flex items-center justify-between text-[11px] font-bold text-white/90 group-hover:text-white">
+                  <span className="flex items-center gap-1">
+                    Lihat Rincian Data
+                  </span>
+                  <Button 
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      router.push(stage.targetUrl)
+                    }}
+                    className="h-7 px-2.5 text-[10px] font-black bg-white/20 hover:bg-white text-white hover:text-slate-900 rounded-lg transition-all shadow-sm flex items-center gap-1"
+                  >
+                    Buka Menu <ArrowRight className="w-3 h-3" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Grid: Kuota & Sebaran Kelurahan */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 items-stretch">
         <div className="lg:col-span-2 space-y-6 flex flex-col h-full">
           <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
@@ -611,6 +799,7 @@ export default function DashboardStatsPage() {
         </div>
       </div>
 
+      {/* Detail Modal Dialog */}
       <Dialog open={!!selectedFilter} onOpenChange={(open) => {
         if (!open) {
           setSelectedFilter(null)
@@ -618,14 +807,34 @@ export default function DashboardStatsPage() {
         }
       }}>
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black uppercase text-primary">
-              DATA: {selectedFilter?.name}
-            </DialogTitle>
+          <DialogHeader className="flex flex-row items-center justify-between border-b pb-3 mr-6">
+            <div>
+              <DialogTitle className="text-xl font-black uppercase text-primary flex items-center gap-2">
+                DATA: {selectedFilter?.name}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-500 font-medium">
+                Menampilkan total <strong>{filteredModalData.length}</strong> data pelaku usaha.
+              </DialogDescription>
+            </div>
+            {selectedFilter?.targetUrl && (
+              <Button 
+                size="sm"
+                variant="outline"
+                onClick={() => router.push(selectedFilter.targetUrl!)}
+                className="text-xs font-bold border-primary text-primary hover:bg-primary hover:text-white transition-all flex items-center gap-1.5"
+              >
+                Menuju Menu <ExternalLink className="w-3.5 h-3.5" />
+              </Button>
+            )}
           </DialogHeader>
+
           <div className="flex-1 overflow-auto rounded-xl border">
             {isModalLoading ? (
               <div className="p-8 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+            ) : filteredModalData.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 font-medium text-xs">
+                Tidak ada data pelaku usaha yang sesuai dengan filter ini.
+              </div>
             ) : (
               <Table>
                 <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
@@ -637,54 +846,107 @@ export default function DashboardStatsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredModalData.map((d, i) => (
-                    <React.Fragment key={d.id}>
-                      <TableRow 
-                        className="cursor-pointer hover:bg-slate-100 transition-colors"
-                        onClick={() => setExpandedActorId(prev => prev === d.id ? null : d.id)}
-                      >
-                        <TableCell className="text-center font-bold text-slate-600 text-xs">{i + 1}</TableCell>
-                        <TableCell className="font-black text-slate-800 text-xs uppercase">{d.fullName || "-"}</TableCell>
-                        <TableCell className="font-mono text-slate-600 text-xs">{d.nik || "-"}</TableCell>
-                        <TableCell className="text-center">
-                           <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full border bg-slate-100 text-slate-600">
-                             {(d.status || "PENDING").replace(/_/g, " ")}
-                           </span>
-                        </TableCell>
-                      </TableRow>
-                      {expandedActorId === d.id && (
-                        <TableRow className="bg-slate-50 hover:bg-slate-50">
-                          <TableCell colSpan={4} className="p-0 border-b">
-                            <div className="p-4 animate-in slide-in-from-top-2 duration-200">
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                                <div>
-                                  <p className="font-bold text-slate-400 mb-1">USAHA</p>
-                                  <p className="font-black text-primary uppercase">{d.businessName || "-"}</p>
-                                  <p className="text-[10px] font-bold text-slate-500 uppercase">{d.businessCategory || "-"}</p>
-                                </div>
-                                <div>
-                                  <p className="font-bold text-slate-400 mb-1">NO. HP</p>
-                                  <p className="font-bold text-slate-700">{d.phone || "-"}</p>
-                                </div>
-                                <div>
-                                  <p className="font-bold text-slate-400 mb-1">GENDER</p>
-                                  <p className="font-bold text-slate-700 uppercase">{d.gender || "-"}</p>
-                                </div>
-                                <div>
-                                  <p className="font-bold text-slate-400 mb-1">KOORDINATOR</p>
-                                  <p className="font-bold text-slate-700 uppercase">{d.coordinator || "-"}</p>
-                                </div>
-                                <div className="col-span-2 md:col-span-4 border-t pt-2 mt-2">
-                                  <p className="font-bold text-slate-400 mb-1">ALAMAT LENGKAP</p>
-                                  <p className="font-bold text-slate-700 uppercase">{d.address || "-"} RT/RW {d.rtRw || "-"}</p>
-                                </div>
-                              </div>
-                            </div>
+                  {filteredModalData.map((d, i) => {
+                    const isCancelDinas = (d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean((d as any).alasanCancelDinas)
+                    const isRejectedAdmin = d.status === 'rejected'
+                    
+                    return (
+                      <React.Fragment key={d.id}>
+                        <TableRow 
+                          className="cursor-pointer hover:bg-slate-100 transition-colors"
+                          onClick={() => setExpandedActorId(prev => prev === d.id ? null : d.id)}
+                        >
+                          <TableCell className="text-center font-bold text-slate-600 text-xs">{i + 1}</TableCell>
+                          <TableCell className="font-black text-slate-800 text-xs uppercase">{d.fullName || "-"}</TableCell>
+                          <TableCell className="font-mono text-slate-600 text-xs">{d.nik || "-"}</TableCell>
+                          <TableCell className="text-center">
+                            {isCancelDinas ? (
+                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-rose-100 text-rose-700 border-rose-300">
+                                CANCEL DINAS
+                              </span>
+                            ) : isRejectedAdmin ? (
+                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-orange-100 text-orange-700 border-orange-300">
+                                DITOLAK ADMIN
+                              </span>
+                            ) : d.status === 'lpj_pending' ? (
+                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300">
+                                SURVEY DINAS
+                              </span>
+                            ) : d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && !d.berkasDinasVerified ? (
+                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-indigo-100 text-indigo-700 border-indigo-300">
+                                VERIFIKASI BERKAS
+                              </span>
+                            ) : d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && d.berkasDinasVerified ? (
+                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-teal-100 text-teal-700 border-teal-300">
+                                HASIL VERIFIKASI
+                              </span>
+                            ) : (
+                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600">
+                                {(d.status || "PENDING").replace(/_/g, " ")}
+                              </span>
+                            )}
                           </TableCell>
                         </TableRow>
-                      )}
-                    </React.Fragment>
-                  ))}
+
+                        {expandedActorId === d.id && (
+                          <TableRow className="bg-slate-50 hover:bg-slate-50">
+                            <TableCell colSpan={4} className="p-0 border-b">
+                              <div className="p-4 animate-in slide-in-from-top-2 duration-200">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                                  <div>
+                                    <p className="font-bold text-slate-400 mb-1">USAHA</p>
+                                    <p className="font-black text-primary uppercase">{d.businessName || "-"}</p>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase">{d.businessCategory || "-"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-slate-400 mb-1">NO. HP</p>
+                                    <p className="font-bold text-slate-700">{d.phone || "-"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-slate-400 mb-1">GENDER</p>
+                                    <p className="font-bold text-slate-700 uppercase">{d.gender || "-"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-slate-400 mb-1">KOORDINATOR</p>
+                                    <p className="font-bold text-slate-700 uppercase">{d.coordinator || "-"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-slate-400 mb-1">PETUGAS SURVEY</p>
+                                    <p className="font-bold text-slate-700 uppercase">{d.petugasSurvey || d.createdBy || "-"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-slate-400 mb-1">VERIFIKATOR DINAS</p>
+                                    <p className="font-bold text-slate-700 uppercase">{d.verifikatorDinas || (d as any).berkasDinasVerifiedBy || "-"}</p>
+                                  </div>
+
+                                  {(isCancelDinas || isRejectedAdmin) && (
+                                    <div className="col-span-2 md:col-span-4 bg-red-50 border border-red-200 p-3 rounded-lg">
+                                      <p className="font-black text-red-700 mb-1 flex items-center gap-1.5">
+                                        <AlertCircle className="w-4 h-4" /> ALASAN {isCancelDinas ? "CANCEL DINAS" : "PENOLAKAN"}
+                                      </p>
+                                      <p className="text-xs font-semibold text-red-800">
+                                        {(d as any).alasanCancelDinas || d.rejectionReason || d.keteranganDinas || "Tidak ada alasan spesifik tercatat."}
+                                      </p>
+                                      {(d as any).cancelDinasBy && (
+                                        <p className="text-[10px] text-red-600 mt-1">
+                                          Dibatalkan oleh: <strong>{(d as any).cancelDinasBy}</strong> ({(d as any).cancelDinasAt ? new Date((d as any).cancelDinasAt).toLocaleString('id-ID') : '-'})
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  <div className="col-span-2 md:col-span-4 border-t pt-2 mt-1">
+                                    <p className="font-bold text-slate-400 mb-1">ALAMAT LENGKAP</p>
+                                    <p className="font-bold text-slate-700 uppercase">{d.address || "-"} RT/RW {d.rtRw || "-"} Kel. {d.kelurahan || "-"}, Kec. {d.kecamatan || "-"}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
+                    )
+                  })}
                 </TableBody>
               </Table>
             )}
@@ -692,6 +954,7 @@ export default function DashboardStatsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Monitoring Dialog */}
       <MonitoringDialog 
         open={isMonitoringOpen} 
         onOpenChange={setIsMonitoringOpen} 

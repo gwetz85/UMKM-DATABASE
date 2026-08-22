@@ -334,13 +334,23 @@ export default function VerifikasiDinasPage() {
     if (!choiceActor || !database || !cancelReason.trim()) return
     setIsSubmittingCancel(true)
 
-    const actorRef = ref(database, `businessActors/${choiceActor.id}`)
-    updateDocumentNonBlocking(actorRef, {
-      status: 'verified_dinas',
+    const updatedData = {
+      status: 'verified_dinas' as const,
       hasilVerifikasiDinas: 'Tidak Lolos',
       alasanCancelDinas: cancelReason.trim(),
       cancelDinasAt: new Date().toISOString(),
       cancelDinasBy: userProfile?.fullName || user?.email || user?.uid || 'Dinas'
+    }
+
+    const actorRef = ref(database, `businessActors/${choiceActor.id}`)
+    updateDocumentNonBlocking(actorRef, updatedData)
+
+    // Update global stats
+    import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+      updateStatsOnStatusChange(database, choiceActor.status || 'lpj_pending', 'rejected', {
+        ...choiceActor,
+        ...updatedData
+      }).catch(e => console.error(e))
     })
 
     logActivity({
@@ -352,7 +362,7 @@ export default function VerifikasiDinasPage() {
       userId: user?.email || user?.uid || 'Dinas'
     })
 
-    toast({ title: "Data Berhasil Di-Cancel", description: `Data ${choiceActor.fullName} telah dipindahkan ke daftar Ditolak.` })
+    toast({ title: "Data Berhasil Di-Cancel", description: `Data ${choiceActor.fullName} telah dipindahkan ke daftar Ditolak / Cancel.` })
     setChoiceActor(null)
     setSelectedChoice(null)
     setCancelReason("")
