@@ -100,7 +100,8 @@ function RejectedContent() {
   }, [user, database])
   const { data: adminRole } = useObject(adminRef)
 
-  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
+  const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin' || userProfile?.role === 'superadmin'
+  const isDinas = userProfile?.role === 'dinas' || userProfile?.role === 'verifikator_dinas'
   const isKoordinator = userProfile?.role === 'koordinator'
 
   const memoQuery = useMemoFirebase(() => {
@@ -180,6 +181,9 @@ function RejectedContent() {
   const [revertPending, setRevertPending] = useState<{actorId: string, fullName: string} | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deletePending, setDeletePending] = useState<{actorId: string, fullName: string} | null>(null)
+  const [showRestoreDinasDialog, setShowRestoreDinasDialog] = useState(false)
+  const [restoreDinasPending, setRestoreDinasPending] = useState<BusinessActor | null>(null)
+  const [isRestoringDinas, setIsRestoringDinas] = useState(false)
   const [editNik, setEditNik] = useState("")
   const [editPob, setEditPob] = useState("")
   const [editDob, setEditDob] = useState("")
@@ -303,6 +307,69 @@ function RejectedContent() {
     setViewingActor(null)
     setShowDeleteDialog(false)
     setDeletePending(null)
+  }
+
+  const handleRestoreDinasToSurvey = (actor: BusinessActor) => {
+    if (!isAdmin && !isDinas) return
+    setRestoreDinasPending(actor)
+    setShowRestoreDinasDialog(true)
+  }
+
+  const executeRestoreDinasToSurvey = async () => {
+    if (!restoreDinasPending || !database) return
+    const actor = restoreDinasPending
+    setIsRestoringDinas(true)
+    try {
+      const updates: any = {
+        status: 'lpj_pending',
+        hasilVerifikasiDinas: null,
+        alasanCancelDinas: null,
+        cancelDinasAt: null,
+        cancelDinasBy: null,
+        rejectionReason: null,
+        keteranganDinas: null,
+      }
+
+      // Pastikan nama petugas survey tersimpan agar langsung masuk ke antrean petugas survey bersangkutan
+      const officerName = actor.petugasSurvey || actor.createdBy || (actor as any).surveyData?.pejabatData?.petugas?.nama || ''
+      if (officerName && (!actor.petugasSurvey || actor.petugasSurvey.trim() === '-' || actor.petugasSurvey.trim() === '')) {
+        updates.petugasSurvey = officerName.toUpperCase().trim()
+      }
+
+      updateDocumentNonBlocking(ref(database, `businessActors/${actor.id}`), updates)
+
+      // Update global stats
+      const { updateStatsOnStatusChange } = await import('@/lib/stats-service')
+      await updateStatsOnStatusChange(database, actor, { ...actor, ...updates, status: 'lpj_pending' }, actor)
+
+      logActivity({
+        query: `KEMBALIKAN CANCEL DINAS KE PETUGAS SURVEY: ${actor.fullName}`,
+        results: `Usaha: ${actor.businessName || '-'} | Petugas: ${updates.petugasSurvey || actor.petugasSurvey || 'Petugas Survey'}`,
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'KEMBALIKAN CANCEL DINAS',
+        userId: userProfile?.fullName || user?.email || user?.uid || 'Admin'
+      })
+
+      toast({
+        title: "✅ Berhasil Dikembalikan",
+        description: `Data ${actor.fullName} telah dikembalikan ke antrean Petugas Survey dan info cancel telah dihapus.`
+      })
+    } catch (error) {
+      console.error("Error restoring actor to survey:", error)
+      toast({
+        variant: "destructive",
+        title: "Gagal Mengembalikan Data",
+        description: "Terjadi kesalahan saat memproses pengembalian data."
+      })
+    } finally {
+      setIsRestoringDinas(false)
+      setShowRestoreDinasDialog(false)
+      setRestoreDinasPending(null)
+      if (viewingActor?.id === actor.id) {
+        setViewingActor(null)
+      }
+    }
   }
 
   return (
@@ -543,6 +610,17 @@ function RejectedContent() {
                       </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-end items-center gap-1">
+                          {(isAdmin || isDinas) && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 rounded-full transition-all" 
+                              onClick={() => handleRestoreDinasToSurvey(actor)} 
+                              title="Kembalikan ke Petugas Survey"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="icon" 
@@ -624,14 +702,28 @@ function RejectedContent() {
                       {isEditMode ? "Batal Edit" : <><Edit3 className="w-4 h-4 mr-2"/> Edit Semua Data</>}
                     </Button>
                   )}
-                  {isAdmin && !isEditMode && (
+                  {(isAdmin || isDinas) && !isEditMode && (
                     <>
-                      <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 font-bold" title="Kembalikan ke antrean awal (Pending)">
-                        <RotateCcw className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Revert</span>
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="font-bold" title="Hapus Permanen">
-                        <Trash2 className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Delete</span>
-                      </Button>
+                      {((viewingActor.status === 'verified_dinas' && viewingActor.hasilVerifikasiDinas === 'Tidak Lolos') || !!(viewingActor as any).alasanCancelDinas || activeTab === 'dinas') ? (
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleRestoreDinasToSurvey(viewingActor)} 
+                          className="border-emerald-500 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 font-bold" 
+                          title="Kembalikan ke Petugas Survey"
+                        >
+                          <RotateCcw className="w-4 h-4 mr-1" /> Kembalikan ke Survey
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 font-bold" title="Kembalikan ke antrean awal (Pending)">
+                          <RotateCcw className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Revert</span>
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="font-bold" title="Hapus Permanen">
+                          <Trash2 className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Delete</span>
+                        </Button>
+                      )}
                     </>
                   )}
                 </div>
@@ -897,6 +989,21 @@ function RejectedContent() {
         confirmIcon={<Trash2 className="w-4 h-4" />}
         variant="destructive"
         onConfirm={executeDelete}
+      />
+
+      <ConfirmDialog
+        open={showRestoreDinasDialog}
+        onOpenChange={(open) => {
+          setShowRestoreDinasDialog(open)
+          if (!open) setRestoreDinasPending(null)
+        }}
+        icon={<RotateCcw className="w-6 h-6 text-emerald-600" />}
+        title="Kembalikan ke Petugas Survey?"
+        description={`Apakah Anda yakin ingin mengembalikan data "${restoreDinasPending?.fullName || ''}" (${restoreDinasPending?.businessName || ''}) ke antrean Petugas Survey? Seluruh data dan status pembatalan dinas akan dihapus.`}
+        confirmText="Ya, Kembalikan ke Survey"
+        confirmIcon={<RotateCcw className="w-4 h-4" />}
+        variant="default"
+        onConfirm={executeRestoreDinasToSurvey}
       />
       </div>
 
