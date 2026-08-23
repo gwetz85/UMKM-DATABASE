@@ -470,7 +470,8 @@ export async function POST(req: NextRequest) {
               if (snapshot.exists()) {
                 snapshot.forEach((child) => {
                   const val = child.val();
-                  const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(val.status);
+                  const isCancelDinas = (val.status === 'verified_dinas' && val.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(val.alasanCancelDinas);
+                  const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(val.status) && !isCancelDinas;
                   if (isVerified && (val.coordinator || "").toUpperCase().trim() === selectedCoordinator) {
                     achieved++;
                   }
@@ -564,7 +565,8 @@ export async function POST(req: NextRequest) {
 
         const usageMap = new Map<string, number>();
         actors.forEach(actor => {
-            const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(actor.status);
+            const isCancelDinas = (actor.status === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(actor.alasanCancelDinas);
+            const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(actor.status) && !isCancelDinas;
             if (actor.coordinator && isVerified) {
                 const coordinatorName = (actor.coordinator || "").toUpperCase().trim();
                 usageMap.set(coordinatorName, (usageMap.get(coordinatorName) || 0) + 1);

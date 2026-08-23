@@ -142,7 +142,8 @@ function ActorDataContent() {
     return allActorsRaw.filter(a => {
       if (!a) return false;
       const s = a.status || "";
-      if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s)) return false;
+      const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+      if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) return false;
       
       if (filterCoordinator) {
         const actorCoord = String(a.coordinator || "").toUpperCase().trim();
@@ -701,7 +702,11 @@ function ActorDataContent() {
         const snap = await get(ref(database, 'businessActors'))
         if (snap.exists()) {
           const allActors = Object.values(snap.val()) as BusinessActor[]
-          dataToExport = allActors.filter(a => ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(a.status || ""))
+          dataToExport = allActors.filter(a => {
+            const s = a.status || "";
+            const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+            return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas;
+          })
         }
       }
 

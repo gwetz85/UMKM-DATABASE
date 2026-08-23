@@ -88,6 +88,11 @@ export interface BusinessActor {
   berkasDinasVerified?: boolean;
   berkasDinasVerifiedAt?: string;
   berkasDinasVerifiedBy?: string;
+  alasanCancelDinas?: string;
+  cancelDinasAt?: string;
+  cancelDinasBy?: string;
+  dihapusDinasAt?: string;
+  dihapusDinasBy?: string;
 }
 
 export interface PejabatItem {

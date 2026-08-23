@@ -62,7 +62,8 @@ export default function InputDataPage() {
     if (allActorsData) {
       const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas']
       allActorsData.forEach((d: any) => {
-        if (!activeStatuses.includes((d.status || 'pending').toLowerCase())) return
+        const isCancelDinas = (d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(d.alasanCancelDinas)
+        if (!activeStatuses.includes((d.status || 'pending').toLowerCase()) || isCancelDinas) return
         if (d.coordinator) {
           const name = d.coordinator.toUpperCase().trim()
           counts[name] = (counts[name] || 0) + 1
@@ -178,10 +179,12 @@ export default function InputDataPage() {
         duplicateInActors = allActors.find(a => a.nik === nik || a.noKK === noKK)
         if (selectedCoordinator) {
           const verifiedStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'];
-          currentCoordCount = allActors.filter(a => 
-            a.coordinator === selectedCoordinator && 
-            verifiedStatuses.includes((a.status || "pending").toLowerCase())
-          ).length
+          currentCoordCount = allActors.filter(a => {
+            const isCancelDinas = (a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+            return a.coordinator === selectedCoordinator && 
+              verifiedStatuses.includes((a.status || "pending").toLowerCase()) &&
+              !isCancelDinas;
+          }).length
         }
       }
 

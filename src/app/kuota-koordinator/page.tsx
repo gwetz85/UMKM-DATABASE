@@ -76,9 +76,10 @@ export default function KuotaKorlapDewanAktifPage() {
     const counts: Record<string, number> = {}
     if (allData) {
       allData.forEach((d: any) => {
-        // Only count Verified data (Cancell does not reduce quota)
-        const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'];
-        if (!activeStatuses.includes(d.status)) return;
+        // Only count Verified data (Cancell dinas & Rejected do not reduce quota)
+        const isCancelDinas = (d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(d.alasanCancelDinas)
+        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(d.status) && !isCancelDinas
+        if (!isVerified) return
         if (d.coordinator) {
           const name = d.coordinator.toUpperCase().trim()
           counts[name] = (counts[name] || 0) + 1
