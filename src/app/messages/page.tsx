@@ -24,7 +24,8 @@ import {
   ShieldQuestion,
   MessageCircle,
   MoreVertical,
-  Trash2
+  Trash2,
+  ClipboardCheck
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -50,6 +51,7 @@ import { useObject } from "@/firebase"
 const RoleBadge = ({ role }: { role?: string }) => {
   switch (role) {
     case 'admin':
+    case 'superadmin':
       return (
         <Badge className="bg-primary hover:bg-primary font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
           <Shield className="w-2 h-2" /> Admin
@@ -68,6 +70,7 @@ const RoleBadge = ({ role }: { role?: string }) => {
         </Badge>
       )
     case 'petugas':
+    case 'petugas_survey':
       return (
         <Badge variant="secondary" className="text-slate-600 bg-slate-100 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
           <UserCheck className="w-2 h-2" /> Petugas
@@ -77,6 +80,18 @@ const RoleBadge = ({ role }: { role?: string }) => {
       return (
         <Badge variant="outline" className="text-indigo-600 border-indigo-200 bg-indigo-50 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
           <Building2 className="w-2 h-2" /> Dinas
+        </Badge>
+      )
+    case 'verifikator_dinas':
+      return (
+        <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
+          <ClipboardCheck className="w-2 h-2" /> Verifikator Dinas
+        </Badge>
+      )
+    case 'staff':
+      return (
+        <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
+          <UserIcon className="w-2 h-2" /> Staff
         </Badge>
       )
     default:
@@ -104,7 +119,7 @@ function formatDateLabel(ts: number): string {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function PesanPage() {
-  const { user } = useUser()
+  const { user, userProfile } = useUser()
   const database = useDatabase()
   const { toast } = useToast()
   const [selectedContact, setSelectedContact] = useState<any>(null)
@@ -141,20 +156,31 @@ export default function PesanPage() {
   const { data: myChats } = useList(myChatsRef)
 
   // Cari profil user yang sedang login
-  const myProfile = (allUsers || []).find((u: any) => u.uid === user?.uid)
+  const myProfile = (allUsers || []).find((u: any) => u.uid === user?.uid) || userProfile
 
   const contacts = (allUsers || [])
     .filter((u: any) => u.uid && u.uid !== user?.uid)
     .filter((u: any) => {
+      // Jika ada kata kunci pencarian, cari dari seluruh data pengguna terdaftar
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        return (
+          u.fullName?.toLowerCase().includes(q) ||
+          u.role?.toLowerCase().includes(q) ||
+          u.username?.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q)
+        )
+      }
+
       const chatInfo = myChats?.find((c: any) => c.id === u.uid)
       const hasUnread = chatInfo?.unread === true
-      return u.isOnline || hasUnread // Show online users OR those with unread messages
+      const hasHistory = !!chatInfo?.lastMessage && chatInfo?.lastMessage !== "Obrolan dihapus"
+      const isTargetAdmin = u.role === 'admin' || u.role === 'superadmin' || u.email?.toLowerCase() === 'agus@umkm.id'
+
+      // Akun Admin selalu tampil (khususnya untuk Verifikator Dinas dan pengguna lain agar selalu bisa chat ke Admin),
+      // serta user yang sedang online atau memiliki riwayat chat / pesan unread
+      return isTargetAdmin || u.isOnline || hasUnread || hasHistory
     })
-    .filter((u: any) =>
-      !searchQuery ||
-      u.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.role?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
 
   // Ambil data live untuk selected contact agar status online/offline terupdate real-time
   const liveSelectedContact = (allUsers || []).find((u: any) => u.uid === selectedContact?.uid) || selectedContact

@@ -71,7 +71,7 @@ export function useNavigation() {
       name: "Pesan Chat",
       href: "/messages",
       icon: MessageSquare,
-      show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
+      show: !!user && !isDinas && !isInspektorat && !isKoordinator && !isPetugas,
       color: "#4f46e5",
       description: "Komunikasi Internal",
       badge: totalUnread > 0 ? totalUnread : undefined

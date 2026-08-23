@@ -192,6 +192,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       case '/users': return 'Manajemen User';
       case '/lpj': return 'LPJ';
       case '/hasil-verifikasi': return 'Hasil Verifikasi';
+      case '/messages': return 'Pesan Chat';
+      case '/verifikasi-dinas-berkas': return 'Verifikasi Dinas';
       default: return '';
     }
   };
