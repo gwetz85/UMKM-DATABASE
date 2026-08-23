@@ -881,8 +881,8 @@ export default function DashboardStatsPage() {
 
       {/* Grid: Kuota & Sebaran Kelurahan */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 items-stretch">
-        <div className="lg:col-span-2 space-y-6 flex flex-col h-full">
-          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-fit">
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none shrink-0">
             <CardHeader className="bg-primary/10 pb-4">
               <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
                 <BarChart3 className="w-5 h-5" /> Jumlah Kuota
@@ -969,7 +969,7 @@ export default function DashboardStatsPage() {
           </Card>
           
           {/* Music Player Section */}
-          <div className="grid grid-cols-1 gap-6 items-stretch">
+          <div className="flex-1 flex flex-col min-h-0">
             <MusicDashboardCard className="h-full" role={userProfile?.role} />
           </div>
         </div>

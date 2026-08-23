@@ -151,7 +151,7 @@ export function MusicDashboardCard({ className, role }: { className?: string, ro
   };
 
   return (
-    <Card className={cn("glass overflow-hidden transition-all hover:shadow-xl border-none", className)}>
+    <Card className={cn("glass overflow-hidden transition-all hover:shadow-xl border-none flex flex-col h-full", className)}>
       <CardHeader className="bg-primary/10 pb-4">
         <CardTitle className="text-base md:text-lg font-bold flex items-center justify-between text-primary">
           <div className="flex items-center gap-2">
@@ -257,7 +257,7 @@ export function MusicDashboardCard({ className, role }: { className?: string, ro
                 {isSyncing ? "Syncing..." : "Update Playlist"}
               </Button>
             </div>
-            <ScrollArea className="h-[550px] w-full rounded-xl border bg-slate-50/50 p-2">
+            <ScrollArea className="flex-1 min-h-[200px] w-full rounded-xl border bg-slate-50/50 p-2">
               <div className="space-y-1">
                 {playlist.map((song, index) => {
                   const isCurrent = currentTitle.toLowerCase().includes(song.toLowerCase()) || 
