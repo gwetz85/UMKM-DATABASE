@@ -983,46 +983,47 @@ export default function DashboardStatsPage() {
             </CardHeader>
             <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
               <div className="flex-1 min-h-0 overflow-y-auto">
-                <Table>
-                  <TableHeader className="bg-slate-100/50 sticky top-0 z-10">
-                    <TableRow>
-                      <TableHead className="w-[50px] text-center font-black text-[10px] uppercase">No</TableHead>
-                      <TableHead className="font-black text-[10px] uppercase">Nama Kelurahan</TableHead>
-                      <TableHead className="text-center font-black text-[10px] uppercase">Jumlah Pelaku</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <table className="w-full h-full border-collapse">
+                  <thead className="bg-slate-100/50 sticky top-0 z-10">
+                    <tr>
+                      <th className="w-[50px] text-center font-black text-xs uppercase py-3 text-slate-500">No</th>
+                      <th className="font-black text-xs uppercase py-3 text-left px-4 text-slate-500">Nama Kelurahan</th>
+                      <th className="text-center font-black text-xs uppercase py-3 text-slate-500">Jumlah Pelaku</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
                     {kelurahanStats.map((item, idx) => (
-                      <TableRow 
-                        key={item.name} 
+                      <tr
+                        key={item.name}
                         className="hover:bg-primary/5 cursor-pointer transition-colors group"
+                        style={{ height: `${100 / Math.max(kelurahanStats.length, 1)}%` }}
                         onClick={() => setSelectedFilter({ name: item.name, filterType: "kelurahan" })}
                       >
-                        <TableCell className="text-center font-bold text-xs text-slate-400">{idx + 1}</TableCell>
-                        <TableCell className="font-black text-xs text-slate-700 uppercase group-hover:text-primary transition-colors">
+                        <td className="text-center font-bold text-sm text-slate-400 py-3">{idx + 1}</td>
+                        <td className="font-black text-sm text-slate-700 uppercase group-hover:text-primary transition-colors px-4 py-3">
                           {item.name}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-2 py-0.5 rounded-full min-w-[2.5rem] text-[10px] border border-slate-200 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
+                        </td>
+                        <td className="text-center py-3">
+                          <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] text-sm border border-slate-200 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
                             {item.count}
                           </span>
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     ))}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               </div>
               <div className="shrink-0 border-t bg-slate-50/80">
-                <Table>
-                  <TableFooter className="bg-transparent">
-                    <TableRow className="border-none hover:bg-transparent">
-                      <TableCell colSpan={2} className="text-right font-black text-[10px] uppercase text-slate-500 py-3">Total Data Tersebar</TableCell>
-                      <TableCell className="text-center font-black text-primary text-xs w-[110px]">
+                <table className="w-full">
+                  <tfoot>
+                    <tr>
+                      <td colSpan={2} className="text-right font-black text-xs uppercase text-slate-500 py-3 px-4">Total Data Tersebar</td>
+                      <td className="text-center font-black text-primary text-sm w-[110px] py-3">
                         {kelurahanStats.reduce((acc, curr) => acc + curr.count, 0)}
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
-                </Table>
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             </CardContent>
           </Card>
