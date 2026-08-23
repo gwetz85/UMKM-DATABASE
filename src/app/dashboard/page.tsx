@@ -78,24 +78,27 @@ export default function DashboardStatsPage() {
     }
   }, [user, isUserLoading, router, userProfile])
 
-  // Fetch pre-calculated stats
-  const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
-  const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
-
-  // Fetch verified_dinas actors for the 5 latest tables (real-time)
-  const verifiedDinasQuery = useMemoFirebase(() => {
+  // Fetch all business actors with real-time websocket listener for 100% automatic live stats
+  const actorsQuery = useMemoFirebase(() => {
     if (!database) return null
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'))
+    return query(ref(database, 'businessActors'))
   }, [database])
 
-  const { data: verifiedDinasData, isLoading: isVerifiedDinasLoading } = useList<BusinessActor>(verifiedDinasQuery)
+  const { data: allActors, isLoading: isActorsLoading } = useList<BusinessActor>(actorsQuery)
 
-  // 5 Pelaku Usaha terbaru di menu Verifikasi Dinas (Tahap 2: Menunggu Cek Berkas)
+  // Fetch pre-calculated stats as instant fallback
+  const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
+  const { data: systemStats, isLoading: isStatsFallbackLoading } = useObject(statsRef)
+
+  const isCancelDinas = (d: any) => {
+    const s = (d?.status || "").toLowerCase()
+    return (s === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(d.alasanCancelDinas)
+  }
+
+  // 5 Pelaku Usaha terbaru di menu Verifikasi Dinas (Tahap 2: Menunggu Cek Berkas) - Realtime
   const latestVerifikasiDinas = useMemo(() => {
-    if (!verifiedDinasData) return []
-    const isCancelDinas = (d: any) => (d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(d.alasanCancelDinas)
-    
-    return verifiedDinasData
+    if (!allActors) return []
+    return allActors
       .filter(d => d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && !d.berkasDinasVerified && !isCancelDinas(d))
       .sort((a, b) => {
         const timeA = new Date(a.verifiedDinasAt || (a.surveyData as any)?.tanggalSurvey || a.createdAt || 0).getTime()
@@ -103,14 +106,12 @@ export default function DashboardStatsPage() {
         return timeB - timeA
       })
       .slice(0, 5)
-  }, [verifiedDinasData])
+  }, [allActors])
 
-  // 5 Pelaku Usaha terbaru di menu Hasil Verifikasi (Tahap 3: Selesai Cek Berkas / Lolos Final)
+  // 5 Pelaku Usaha terbaru di menu Hasil Verifikasi (Tahap 3: Selesai Cek Berkas / Lolos Final) - Realtime
   const latestHasilVerifikasi = useMemo(() => {
-    if (!verifiedDinasData) return []
-    const isCancelDinas = (d: any) => (d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(d.alasanCancelDinas)
-    
-    return verifiedDinasData
+    if (!allActors) return []
+    return allActors
       .filter(d => d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && Boolean(d.berkasDinasVerified) && !isCancelDinas(d))
       .sort((a, b) => {
         const timeA = new Date(a.berkasDinasVerifiedAt || a.verifiedDinasAt || a.createdAt || 0).getTime()
@@ -118,27 +119,7 @@ export default function DashboardStatsPage() {
         return timeB - timeA
       })
       .slice(0, 5)
-  }, [verifiedDinasData])
-
-  // On-demand fetch for modal data (only when a filter is selected)
-  const modalQuery = useMemoFirebase(() => {
-    if (!database || !selectedFilter) return null
-    const baseRef = ref(database, 'businessActors')
-    
-    // Applying filters at the query level where possible
-    if (selectedFilter.filterType === 'laki') return query(baseRef, orderByChild('gender'), equalTo('Laki-laki'))
-    if (selectedFilter.filterType === 'perempuan') return query(baseRef, orderByChild('gender'), equalTo('Perempuan'))
-    if (selectedFilter.filterType === 'pending') return query(baseRef, orderByChild('status'), equalTo('pending'))
-    if (selectedFilter.filterType === 'survey_dinas') return query(baseRef, orderByChild('status'), equalTo('lpj_pending'))
-    if (selectedFilter.filterType === 'verifikasi_dinas' || selectedFilter.filterType === 'hasil_verifikasi') {
-      return query(baseRef, orderByChild('status'), equalTo('verified_dinas'))
-    }
-    
-    // For filters that require custom / client-side processing (e.g. rejected + cancel dinas, kelurahan, total, verified), fetch baseRef
-    return baseRef
-  }, [database, selectedFilter])
-
-  const { data: modalData, isLoading: isModalLoading } = useList(modalQuery)
+  }, [allActors])
 
   const kuotaQuery = useMemoFirebase(() => {
     if (!database) return null
@@ -147,21 +128,102 @@ export default function DashboardStatsPage() {
 
   const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery)
 
-  // Use systemStats if available
+  // Real-time automatic stats calculation from live data
+  const computedStats = useMemo(() => {
+    if (!allActors) return null
+
+    const stats = {
+      totalActors: 0,
+      gender: { laki: 0, perempuan: 0, unknown: 0 },
+      verifiedGender: { 'Laki-laki': 0, 'Perempuan': 0 },
+      status: { pending: 0, verified: 0, rejected: 0, finish: 0 },
+      detailedStatus: { survey: 0, verifikasi: 0, hasilVerifikasi: 0, lpj: 0, selesai: 0 },
+      kelurahan: {} as Record<string, number>,
+      coordinator: {} as Record<string, number>,
+      lastUpdated: new Date().toISOString()
+    } as any
+
+    allActors.forEach((actor: any) => {
+      const s = actor.status || 'pending'
+      const isActorCancelDinas = (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(actor.alasanCancelDinas)
+      const isRejected = s === 'rejected' || isActorCancelDinas
+      const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isActorCancelDinas
+
+      if (isVerified || isRejected) {
+        stats.totalActors++
+        const g = (actor.gender || "").toLowerCase().trim()
+        const gender = (g === 'perempuan' || g === 'p') ? 'perempuan' : 'laki'
+        stats.gender[gender]++
+      }
+
+      if (isVerified) {
+        stats.status.verified++
+        const g = (actor.gender || "").toLowerCase().trim()
+        const genderKey = (g === 'perempuan' || g === 'p') ? 'Perempuan' : 'Laki-laki'
+        stats.verifiedGender[genderKey] = (stats.verifiedGender[genderKey] || 0) + 1
+
+        if (s === 'lpj_pending') {
+          stats.detailedStatus.survey++
+        } else if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && !actor.berkasDinasVerified) {
+          stats.detailedStatus.verifikasi++
+        } else if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && actor.berkasDinasVerified) {
+          stats.detailedStatus.hasilVerifikasi = (stats.detailedStatus.hasilVerifikasi || 0) + 1
+        } else if (s === 'bank_pending') {
+          stats.detailedStatus.verifikasi++
+        } else if (s === 'finish' && actor.readyForLPJ && !actor.lpjNominal) {
+          stats.detailedStatus.lpj = (stats.detailedStatus.lpj || 0) + 1
+        } else if (s === 'finish' && (!actor.readyForLPJ || actor.lpjNominal)) {
+          stats.detailedStatus.selesai = (stats.detailedStatus.selesai || 0) + 1
+        }
+
+        if (actor.coordinator) {
+          const coord = actor.coordinator.toUpperCase().trim()
+          stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
+        }
+        if (actor.kelurahan) {
+          const k = actor.kelurahan.toUpperCase().trim()
+          stats.kelurahan[k] = (stats.kelurahan[k] || 0) + 1
+        }
+      } else if (isRejected) {
+        stats.status.rejected++
+      } else {
+        stats.status.pending++
+      }
+    })
+
+    return stats
+  }, [allActors])
+
+  // Background auto-sync of system_stats node (debounced)
+  useEffect(() => {
+    if (!computedStats || !database) return
+    const timer = setTimeout(async () => {
+      try {
+        const { set } = await import("firebase/database")
+        await set(ref(database, 'system_stats'), computedStats)
+      } catch (e) {
+        console.error("Auto sync system_stats error:", e)
+      }
+    }, 2500)
+    return () => clearTimeout(timer)
+  }, [computedStats, database])
+
+  const effectiveStats = computedStats || systemStats
+
   const statsValues = useMemo(() => {
-    if (systemStats) {
+    if (effectiveStats) {
       return {
-        total: (systemStats.status?.verified || 0) + (systemStats.status?.rejected || 0),
-        laki: systemStats.gender?.['Laki-laki'] || systemStats.gender?.laki || 0,
-        perempuan: systemStats.gender?.['Perempuan'] || systemStats.gender?.perempuan || 0,
-        verified: systemStats.status?.verified || 0,
-        rejected: systemStats.status?.rejected || 0,
-        pending: systemStats.status?.pending || 0,
-        surveyDinas: systemStats.detailedStatus?.survey || 0,
-        verifikasiDinas: systemStats.detailedStatus?.verifikasi || 0,
-        hasilVerifikasi: systemStats.detailedStatus?.hasilVerifikasi || 0,
-        lpj: systemStats.detailedStatus?.lpj || 0,
-        selesai: systemStats.detailedStatus?.selesai || 0,
+        total: (effectiveStats.status?.verified || 0) + (effectiveStats.status?.rejected || 0),
+        laki: effectiveStats.verifiedGender?.['Laki-laki'] || effectiveStats.gender?.['Laki-laki'] || effectiveStats.gender?.laki || 0,
+        perempuan: effectiveStats.verifiedGender?.['Perempuan'] || effectiveStats.gender?.['Perempuan'] || effectiveStats.gender?.perempuan || 0,
+        verified: effectiveStats.status?.verified || 0,
+        rejected: effectiveStats.status?.rejected || 0,
+        pending: effectiveStats.status?.pending || 0,
+        surveyDinas: effectiveStats.detailedStatus?.survey || 0,
+        verifikasiDinas: effectiveStats.detailedStatus?.verifikasi || 0,
+        hasilVerifikasi: effectiveStats.detailedStatus?.hasilVerifikasi || 0,
+        lpj: effectiveStats.detailedStatus?.lpj || 0,
+        selesai: effectiveStats.detailedStatus?.selesai || 0,
       }
     }
     return {
@@ -177,7 +239,7 @@ export default function DashboardStatsPage() {
       lpj: 0,
       selesai: 0,
     }
-  }, [systemStats])
+  }, [effectiveStats])
 
   const [isSyncing, setIsSyncing] = useState(false)
   const [isMonitoringOpen, setIsMonitoringOpen] = useState(false)
@@ -186,7 +248,7 @@ export default function DashboardStatsPage() {
     if (!database || isSyncing) return
     setIsSyncing(true)
     try {
-      const { get, ref } = await import("firebase/database")
+      const { get, ref, set, update } = await import("firebase/database")
       const snap = await get(ref(database, 'businessActors'))
       if (snap.exists()) {
         const stats = {
@@ -207,19 +269,15 @@ export default function DashboardStatsPage() {
           const actor = child.val()
           const s = actor.status || 'pending'
           
-          // Data yang di-cancel dinas: status verified_dinas + hasilVerifikasiDinas 'Tidak Lolos' ATAU punya alasanCancelDinas
-          const isCancelDinas = (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(actor.alasanCancelDinas)
-          const isRejected = s === 'rejected' || isCancelDinas
-          const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s) && !isCancelDinas
+          const isActorCancelDinas = (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(actor.alasanCancelDinas)
+          const isRejected = s === 'rejected' || isActorCancelDinas
+          const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isActorCancelDinas
           
           if (isVerified || isRejected) {
             stats.totalActors++
             const g = (actor.gender || "").toLowerCase().trim()
             const gender = (g === 'perempuan' || g === 'p') ? 'perempuan' : 'laki'
             stats.gender[gender]++
-            if (actor.googleDriveLink) {
-              stats.googleDrive = (stats.googleDrive || 0) + 1
-            }
           }
           
           if (isVerified || isRejected) {
@@ -230,26 +288,17 @@ export default function DashboardStatsPage() {
               const genderKey = (g === 'perempuan' || g === 'p') ? 'Perempuan' : 'Laki-laki'
               stats.verifiedGender[genderKey] = (stats.verifiedGender[genderKey] || 0) + 1
 
-              // Populate detailedStatus based on exact value matching the menus
-              // "Survey Dinas" menu queries lpj_pending
               if (s === 'lpj_pending') {
                 stats.detailedStatus.survey++
-              } 
-              // "Verifikasi Dinas" menu queries verified_dinas with Lolos & !berkasDinasVerified
-              else if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && !actor.berkasDinasVerified) {
+              } else if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && !actor.berkasDinasVerified) {
                 stats.detailedStatus.verifikasi++
-              } 
-              // "Hasil Verifikasi" menu queries verified_dinas with Lolos & berkasDinasVerified
-              else if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && actor.berkasDinasVerified) {
+              } else if (s === 'verified_dinas' && actor.hasilVerifikasiDinas === 'Lolos' && actor.berkasDinasVerified) {
                 stats.detailedStatus.hasilVerifikasi = (stats.detailedStatus.hasilVerifikasi || 0) + 1
-              } 
-              else if (s === 'bank_pending') {
+              } else if (s === 'bank_pending') {
                 stats.detailedStatus.verifikasi++
-              } 
-              else if (s === 'finish' && actor.readyForLPJ && !actor.lpjNominal) {
+              } else if (s === 'finish' && actor.readyForLPJ && !actor.lpjNominal) {
                 stats.detailedStatus.lpj = (stats.detailedStatus.lpj || 0) + 1
-              } 
-              else if (s === 'finish' && (!actor.readyForLPJ || actor.lpjNominal)) {
+              } else if (s === 'finish' && (!actor.readyForLPJ || actor.lpjNominal)) {
                 stats.detailedStatus.selesai = (stats.detailedStatus.selesai || 0) + 1
               }
 
@@ -273,11 +322,9 @@ export default function DashboardStatsPage() {
         })
 
         if (fixCount > 0) {
-          const { update } = await import("firebase/database")
           await update(ref(database, 'businessActors'), updates)
         }
         
-        const { set } = await import("firebase/database")
         await set(ref(database, 'system_stats'), stats)
         toast({ title: "Sinkronisasi Berhasil", description: "Statistik sistem telah diperbarui dengan data Cancel Dinas & Tahapan Dinas terkini." })
       }
@@ -290,16 +337,16 @@ export default function DashboardStatsPage() {
   }
 
   const coordinatorStats = useMemo(() => {
-    if (!systemStats?.coordinator) return []
-    return Object.entries(systemStats.coordinator)
+    if (!effectiveStats?.coordinator) return []
+    return Object.entries(effectiveStats.coordinator)
       .map(([name, count]) => ({ name, count: count as number }))
       .sort((a, b) => b.count - a.count)
-  }, [systemStats])
+  }, [effectiveStats])
 
   const combinedKuotaData = useMemo(() => {
     if (!kuotaData) return []
     
-    const achievedMap = systemStats?.coordinator || {}
+    const achievedMap = effectiveStats?.coordinator || {}
 
     return kuotaData.map((item: any) => {
       const quota = item.quota || 0
@@ -317,7 +364,7 @@ export default function DashboardStatsPage() {
       const nameB = (b.name || "").toLowerCase()
       return nameA.localeCompare(nameB)
     })
-  }, [kuotaData, systemStats])
+  }, [kuotaData, effectiveStats])
 
   const totalKuotaDashboard = useMemo(() => {
     return combinedKuotaData.reduce((acc, curr) => acc + curr.quota, 0)
@@ -328,70 +375,94 @@ export default function DashboardStatsPage() {
   }, [combinedKuotaData])
 
   const kelurahanStats = useMemo(() => {
-    if (!systemStats?.kelurahan) return []
-    const stats = Object.entries(systemStats.kelurahan).map(([name, count]) => ({
+    if (!effectiveStats?.kelurahan) return []
+    const stats = Object.entries(effectiveStats.kelurahan).map(([name, count]) => ({
       name,
       count: count as number
     }))
     return stats.sort((a, b) => b.count - a.count);
-  }, [systemStats])
+  }, [effectiveStats])
 
   const filteredModalData = useMemo(() => {
-    if (!selectedFilter || !modalData) return []
+    if (!selectedFilter || !allActors) return []
     const type = selectedFilter.filterType
 
-    const isCancelDinas = (d: any) => {
-      const s = d.status || ""
-      return (s === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(d.alasanCancelDinas)
-    }
-
     if (type === "total") {
-      return modalData.filter(d => {
+      return allActors.filter(d => {
         const s = d.status || ""
-        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s) && !isCancelDinas(d)
+        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas(d)
         const isRejected = s === 'rejected' || isCancelDinas(d)
         return isVerified || isRejected
       })
     }
 
-    if (type === "verified") {
-      return modalData.filter(d => {
+    if (type === "laki") {
+      return allActors.filter(d => {
         const s = d.status || ""
-        return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s) && !isCancelDinas(d)
+        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas(d)
+        const isRejected = s === 'rejected' || isCancelDinas(d)
+        if (!isVerified && !isRejected) return false
+        const g = (d.gender || "").toLowerCase().trim()
+        return g !== 'perempuan' && g !== 'p'
       })
     }
 
-    if (type === "pending") return modalData.filter(d => (d.status || 'pending') === 'pending')
+    if (type === "perempuan") {
+      return allActors.filter(d => {
+        const s = d.status || ""
+        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas(d)
+        const isRejected = s === 'rejected' || isCancelDinas(d)
+        if (!isVerified && !isRejected) return false
+        const g = (d.gender || "").toLowerCase().trim()
+        return g === 'perempuan' || g === 'p'
+      })
+    }
+
+    if (type === "verified") {
+      return allActors.filter(d => {
+        const s = d.status || ""
+        return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas(d)
+      })
+    }
+
+    if (type === "pending") return allActors.filter(d => (d.status || 'pending') === 'pending')
 
     if (type === "rejected") {
       // Menampilkan DITOLAK ADMIN & CANCEL DINAS
-      return modalData.filter(d => d.status === 'rejected' || isCancelDinas(d))
+      return allActors.filter(d => d.status === 'rejected' || isCancelDinas(d))
     }
 
     if (type === "survey_dinas") {
-      return modalData.filter(d => (d.status || "") === 'lpj_pending')
+      return allActors.filter(d => (d.status || "") === 'lpj_pending')
     }
 
     if (type === "verifikasi_dinas") {
-      return modalData.filter(d => (d.status || "") === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && !d.berkasDinasVerified)
+      return allActors.filter(d => {
+        const s = d.status || ""
+        return ((s === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && !d.berkasDinasVerified) || s === 'bank_pending') && !isCancelDinas(d)
+      })
     }
 
     if (type === "hasil_verifikasi") {
-      return modalData.filter(d => (d.status || "") === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && Boolean(d.berkasDinasVerified))
+      return allActors.filter(d => (d.status || "") === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && Boolean(d.berkasDinasVerified) && !isCancelDinas(d))
     }
 
     if (type === "kelurahan") {
-      return modalData.filter(d => {
+      return allActors.filter(d => {
         const k = d.kelurahan?.toLowerCase().trim() || ""
         const targetK = selectedFilter.name.toLowerCase().trim()
         const s = d.status || "pending"
-        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish'].includes(s) && !isCancelDinas(d)
+        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas(d)
         return k === targetK && isVerified
       })
     }
 
-    return modalData
-  }, [modalData, selectedFilter])
+    return allActors
+  }, [allActors, selectedFilter])
+
+  const isStatsLoading = isActorsLoading && !allActors && !systemStats
+  const isVerifiedDinasLoading = isActorsLoading && !allActors
+  const isModalLoading = isActorsLoading && !allActors
 
   if (isUserLoading) {
     return (
@@ -1370,7 +1441,7 @@ export default function DashboardStatsPage() {
       <MonitoringDialog 
         open={isMonitoringOpen} 
         onOpenChange={setIsMonitoringOpen} 
-        systemStats={systemStats}
+        systemStats={effectiveStats}
         isLoading={isStatsLoading}
       />
     </div>
