@@ -71,7 +71,7 @@ export function useNavigation() {
       name: "Pesan Chat",
       href: "/messages",
       icon: MessageSquare,
-      show: !!user && !isDinas && !isInspektorat && !isKoordinator && !isPetugas,
+      show: !!user && !isDinas && !isInspektorat && !isKoordinator,
       color: "#4f46e5",
       description: "Komunikasi Internal",
       badge: totalUnread > 0 ? totalUnread : undefined
@@ -309,7 +309,7 @@ export function useNavigation() {
       color: "#000000",
       description: "Riwayat Aktivitas Sistem"
     },
-  ], [user, isAdmin, isMonitoring, isVerifikatorDinas, isDinas, isStaff, userProfile, totalUnread])
+  ], [user, isAdmin, isMonitoring, isKoordinator, isPetugas, isVerifikatorDinas, isDinas, isStaff, userProfile, totalUnread])
 
   return {
     navigation: navigation.filter(item => item.show),

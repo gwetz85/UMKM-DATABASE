@@ -73,7 +73,7 @@ const RoleBadge = ({ role }: { role?: string }) => {
     case 'petugas_survey':
       return (
         <Badge variant="secondary" className="text-slate-600 bg-slate-100 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
-          <UserCheck className="w-2 h-2" /> Petugas
+          <UserCheck className="w-2 h-2" /> Petugas Survey
         </Badge>
       )
     case 'dinas':
