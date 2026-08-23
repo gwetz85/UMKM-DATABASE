@@ -974,50 +974,56 @@ export default function DashboardStatsPage() {
           </div>
         </div>
 
-        <div className="space-y-6 flex flex-col">
-          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-full flex flex-col">
-            <CardHeader className="bg-slate-50/50 pb-4 border-b">
+        <div className="flex flex-col h-full min-h-0">
+          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-full min-h-[450px] lg:min-h-0 flex flex-col">
+            <CardHeader className="bg-slate-50/50 pb-4 border-b shrink-0">
               <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-primary" /> Sebaran per Kelurahan
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0 overflow-auto flex-1">
-              <Table>
-                <TableHeader className="bg-slate-100/50 sticky top-0 z-10">
-                  <TableRow>
-                    <TableHead className="w-[50px] text-center font-black text-[10px] uppercase">No</TableHead>
-                    <TableHead className="font-black text-[10px] uppercase">Nama Kelurahan</TableHead>
-                    <TableHead className="text-center font-black text-[10px] uppercase">Jumlah Pelaku</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {kelurahanStats.map((item, idx) => (
-                    <TableRow 
-                      key={item.name} 
-                      className="hover:bg-primary/5 cursor-pointer transition-colors group"
-                      onClick={() => setSelectedFilter({ name: item.name, filterType: "kelurahan" })}
-                    >
-                      <TableCell className="text-center font-bold text-xs text-slate-400">{idx + 1}</TableCell>
-                      <TableCell className="font-black text-xs text-slate-700 uppercase group-hover:text-primary transition-colors">
-                        {item.name}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-2 py-0.5 rounded-full min-w-[2.5rem] text-[10px] border border-slate-200 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
-                          {item.count}
-                        </span>
+            <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <Table>
+                  <TableHeader className="bg-slate-100/50 sticky top-0 z-10">
+                    <TableRow>
+                      <TableHead className="w-[50px] text-center font-black text-[10px] uppercase">No</TableHead>
+                      <TableHead className="font-black text-[10px] uppercase">Nama Kelurahan</TableHead>
+                      <TableHead className="text-center font-black text-[10px] uppercase">Jumlah Pelaku</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {kelurahanStats.map((item, idx) => (
+                      <TableRow 
+                        key={item.name} 
+                        className="hover:bg-primary/5 cursor-pointer transition-colors group"
+                        onClick={() => setSelectedFilter({ name: item.name, filterType: "kelurahan" })}
+                      >
+                        <TableCell className="text-center font-bold text-xs text-slate-400">{idx + 1}</TableCell>
+                        <TableCell className="font-black text-xs text-slate-700 uppercase group-hover:text-primary transition-colors">
+                          {item.name}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-2 py-0.5 rounded-full min-w-[2.5rem] text-[10px] border border-slate-200 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
+                            {item.count}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="shrink-0 border-t bg-slate-50/80">
+                <Table>
+                  <TableFooter className="bg-transparent">
+                    <TableRow className="border-none hover:bg-transparent">
+                      <TableCell colSpan={2} className="text-right font-black text-[10px] uppercase text-slate-500 py-3">Total Data Tersebar</TableCell>
+                      <TableCell className="text-center font-black text-primary text-xs w-[110px]">
+                        {kelurahanStats.reduce((acc, curr) => acc + curr.count, 0)}
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-                <TableFooter>
-                  <TableRow className="bg-slate-50/80 border-t-2">
-                    <TableCell colSpan={2} className="text-right font-black text-[10px] uppercase text-slate-500 py-3">Total Data Tersebar</TableCell>
-                    <TableCell className="text-center font-black text-primary text-xs">
-                      {kelurahanStats.reduce((acc, curr) => acc + curr.count, 0)}
-                    </TableCell>
-                  </TableRow>
-                </TableFooter>
-              </Table>
+                  </TableFooter>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </div>
