@@ -718,10 +718,8 @@ function ActorDataContent() {
         return
       }
 
+      // Sort: by coordinator name first, then by full name
       const sortedData = [...dataToExport].sort((a, b) => {
-        const indexA = globalIndexMap.get(a.id)
-        const indexB = globalIndexMap.get(b.id)
-        if (indexA !== undefined && indexB !== undefined) return indexA - indexB
         const coordA = String(a.coordinator || "Tanpa Koordinator")
         const coordB = String(b.coordinator || "Tanpa Koordinator")
         const coordCompare = coordA.localeCompare(coordB)
@@ -729,10 +727,11 @@ function ActorDataContent() {
         return String(a.fullName || "").localeCompare(String(b.fullName || ""))
       })
 
-      const toRow = (actor: BusinessActor, index: number) => {
+      // Build all rows in 1 combined sheet with sequential numbering (1, 2, 3, ...)
+      const exportData = sortedData.map((actor, index) => {
         const petugas = (actor.petugasSurvey || (actor.surveyData as any)?.pejabatData?.petugas?.nama || "").trim().toUpperCase()
         return {
-          "NO": globalIndexMap.get(actor.id) || (index + 1),
+          "NO": index + 1,
           "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
           "JENIS KELAMIN": actor.gender || "-",
           "NIK": actor.nik || "-",
@@ -751,47 +750,20 @@ function ActorDataContent() {
           "NAMA PETUGAS SURVEY": petugas || "-",
           "REG ID": actor.registrationCode || "-",
         }
-      }
+      })
 
-      const setColWidths = (ws: any, rows: ReturnType<typeof toRow>[]) => {
-        if (rows.length === 0) return
-        ws['!cols'] = Object.keys(rows[0]).map(key => {
+      // Auto-fit column widths
+      const worksheet = XLSX.utils.json_to_sheet(exportData)
+      if (exportData.length > 0) {
+        worksheet['!cols'] = Object.keys(exportData[0]).map(key => {
           let max = key.length
-          rows.forEach(row => { const v = String((row as any)[key] || ""); if (v.length > max) max = v.length })
+          exportData.forEach(row => { const v = String((row as any)[key] || ""); if (v.length > max) max = v.length })
           return { wch: max + 2 }
         })
       }
 
       const workbook = XLSX.utils.book_new()
-
-      if (sheetsToExport && sheetsToExport.length > 0) {
-        // Export per-sheet (per koordinator yang dipilih)
-        sheetsToExport.forEach(coordKey => {
-          const coordActors = sortedData.filter(a =>
-            String(a.coordinator || "Tanpa Koordinator").toUpperCase().trim() === coordKey
-          )
-          if (coordActors.length === 0) return
-          const rows = coordActors.map((a, i) => toRow(a, i))
-          const ws = XLSX.utils.json_to_sheet(rows)
-          setColWidths(ws, rows)
-          // Sheet name max 31 chars
-          const sheetName = coordKey.substring(0, 31)
-          XLSX.utils.book_append_sheet(workbook, ws, sheetName)
-        })
-        // Tambahkan sheet GABUNGAN juga
-        const allRows = sortedData
-          .filter(a => sheetsToExport.includes(String(a.coordinator || "Tanpa Koordinator").toUpperCase().trim()))
-          .map((a, i) => toRow(a, i))
-        const wsAll = XLSX.utils.json_to_sheet(allRows)
-        setColWidths(wsAll, allRows)
-        XLSX.utils.book_append_sheet(workbook, wsAll, "SEMUA")
-      } else {
-        // Export semua dalam satu sheet
-        const exportData = sortedData.map((actor, index) => toRow(actor, index))
-        const worksheet = XLSX.utils.json_to_sheet(exportData)
-        setColWidths(worksheet, exportData)
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Data Pelaku")
-      }
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Pelaku Usaha")
 
       // Generate binary dan download via Blob (kompatibel di semua browser)
       const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
@@ -805,7 +777,7 @@ function ActorDataContent() {
       document.body.removeChild(a)
       setTimeout(() => URL.revokeObjectURL(url), 5000)
 
-      toast({ title: "Berhasil", description: "Data berhasil diekspor ke Excel." })
+      toast({ title: "Berhasil", description: `${exportData.length} data berhasil diekspor ke Excel.` })
       setShowExportDialog(false)
     } catch (error) {
       console.error("Export Excel Error:", error)
@@ -859,11 +831,7 @@ function ActorDataContent() {
           </div>
 
           {!isMonitoring && (
-          <Button onClick={() => {
-            const allKeys = Object.keys(groupedActors).sort()
-            setSelectedExportSheets(allKeys)
-            setShowExportDialog(true)
-          }} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md w-full md:w-auto h-10 rounded-xl">
+          <Button onClick={() => handleExportExcel()} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md w-full md:w-auto h-10 rounded-xl">
             <FileSpreadsheet className="w-4 h-4 mr-2" /> EKSPOR EXCEL
           </Button>
         )}
@@ -883,69 +851,6 @@ function ActorDataContent() {
         )}
         </div>
       </div>
-
-      {/* Dialog Export Excel - Filter Sheet */}
-      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-black text-emerald-700 flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5" /> Pilih Sheet yang Diekspor
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-2 space-y-3">
-            <p className="text-xs text-slate-500 font-medium">Pilih koordinator yang data-nya akan dimasukkan sebagai sheet terpisah. Sheet <strong>SEMUA</strong> akan selalu disertakan sebagai gabungan.</p>
-            <div className="flex gap-2 mb-1">
-              <button onClick={() => setSelectedExportSheets(Object.keys(groupedActors).sort())} className="text-[11px] font-bold text-emerald-600 hover:underline">Pilih Semua</button>
-              <span className="text-slate-300">|</span>
-              <button onClick={() => setSelectedExportSheets([])} className="text-[11px] font-bold text-red-500 hover:underline">Batal Semua</button>
-            </div>
-            <div className="max-h-72 overflow-y-auto space-y-1 border rounded-xl p-2">
-              {isLoading || isProfileLoading ? (
-                <div className="py-8 text-center text-xs text-slate-500 font-bold flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
-                  Memuat data koordinator...
-                </div>
-              ) : Object.keys(groupedActors).length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400 font-medium">
-                  Tidak ada data koordinator ditemukan.
-                </div>
-              ) : (
-                Object.keys(groupedActors).sort().map(coordKey => (
-                  <label key={coordKey} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={selectedExportSheets.includes(coordKey)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedExportSheets(prev => [...prev, coordKey])
-                        } else {
-                          setSelectedExportSheets(prev => prev.filter(k => k !== coordKey))
-                        }
-                      }}
-                      className="w-4 h-4 accent-emerald-600"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-black uppercase truncate">{coordKey}</p>
-                      <p className="text-[10px] text-slate-400">{groupedActors[coordKey]?.length || 0} data</p>
-                    </div>
-                  </label>
-                ))
-              )}
-            </div>
-            <p className="text-[10px] text-slate-400">{selectedExportSheets.length} dari {Object.keys(groupedActors).length} koordinator dipilih</p>
-          </div>
-          <div className="flex gap-2 pt-2 border-t">
-            <Button variant="outline" onClick={() => setShowExportDialog(false)} className="flex-1 font-bold">Batal</Button>
-            <Button
-              disabled={selectedExportSheets.length === 0 || isLoading}
-              onClick={() => handleExportExcel(selectedExportSheets)}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-            >
-              <FileSpreadsheet className="w-4 h-4 mr-2" /> Ekspor {selectedExportSheets.length} Sheet
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
 
 
