@@ -100,15 +100,10 @@ function ActorDataContent() {
       return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(userProfile.fullName.toUpperCase().trim()))
     }
     
-    // For Admin / Inspektorat / Monitoring / Filter Coordinator / Search:
-    // Using base ref and filtering client-side keeps Firebase RTDB cached in memory,
-    // making coordinator card switching 100% instant (0ms) without unindexed query delays!
-    if (filterCoordinator || isInspektorat || isMonitoring || searchQuery.length >= 3) {
-      return ref(database, 'businessActors')
-    }
-
-    return null
-  }, [database, isProfileLoading, isPetugas, isKoordinator, userProfile?.fullName, filterCoordinator, isInspektorat, isMonitoring, searchQuery])
+    // For Admin / Inspektorat / Monitoring / Staff / General view:
+    // Load businessActors so all coordinator cards, global search, and export function with full data!
+    return ref(database, 'businessActors')
+  }, [database, isProfileLoading, isPetugas, isKoordinator, userProfile?.fullName])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
@@ -196,8 +191,6 @@ function ActorDataContent() {
     }
   }, [viewId, actors, viewingActor])
 
-
-
   const { groupedActors, globalIndexMap } = useMemo(() => {
     if (!filteredActors) return { groupedActors: {}, globalIndexMap: new Map<string, number>() }
     const sorted = [...filteredActors].sort((a, b) => {
@@ -219,6 +212,16 @@ function ActorDataContent() {
     })
     return { groupedActors: groups, globalIndexMap: indexMap }
   }, [filteredActors])
+
+  // Automatically select all coordinators when export dialog opens or when data finishes loading
+  useEffect(() => {
+    if (showExportDialog) {
+      const allKeys = Object.keys(groupedActors).sort()
+      if (allKeys.length > 0 && selectedExportSheets.length === 0) {
+        setSelectedExportSheets(allKeys)
+      }
+    }
+  }, [showExportDialog, groupedActors, selectedExportSheets.length])
 
   const coordinatorStats = useMemo(() => {
     // 1. Get all known coordinator names from kuotaData
@@ -897,33 +900,44 @@ function ActorDataContent() {
               <button onClick={() => setSelectedExportSheets([])} className="text-[11px] font-bold text-red-500 hover:underline">Batal Semua</button>
             </div>
             <div className="max-h-72 overflow-y-auto space-y-1 border rounded-xl p-2">
-              {Object.keys(groupedActors).sort().map(coordKey => (
-                <label key={coordKey} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={selectedExportSheets.includes(coordKey)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedExportSheets(prev => [...prev, coordKey])
-                      } else {
-                        setSelectedExportSheets(prev => prev.filter(k => k !== coordKey))
-                      }
-                    }}
-                    className="w-4 h-4 accent-emerald-600"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-black uppercase truncate">{coordKey}</p>
-                    <p className="text-[10px] text-slate-400">{groupedActors[coordKey]?.length || 0} data</p>
-                  </div>
-                </label>
-              ))}
+              {isLoading || isProfileLoading ? (
+                <div className="py-8 text-center text-xs text-slate-500 font-bold flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+                  Memuat data koordinator...
+                </div>
+              ) : Object.keys(groupedActors).length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400 font-medium">
+                  Tidak ada data koordinator ditemukan.
+                </div>
+              ) : (
+                Object.keys(groupedActors).sort().map(coordKey => (
+                  <label key={coordKey} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={selectedExportSheets.includes(coordKey)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedExportSheets(prev => [...prev, coordKey])
+                        } else {
+                          setSelectedExportSheets(prev => prev.filter(k => k !== coordKey))
+                        }
+                      }}
+                      className="w-4 h-4 accent-emerald-600"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-black uppercase truncate">{coordKey}</p>
+                      <p className="text-[10px] text-slate-400">{groupedActors[coordKey]?.length || 0} data</p>
+                    </div>
+                  </label>
+                ))
+              )}
             </div>
             <p className="text-[10px] text-slate-400">{selectedExportSheets.length} dari {Object.keys(groupedActors).length} koordinator dipilih</p>
           </div>
           <div className="flex gap-2 pt-2 border-t">
             <Button variant="outline" onClick={() => setShowExportDialog(false)} className="flex-1 font-bold">Batal</Button>
             <Button
-              disabled={selectedExportSheets.length === 0}
+              disabled={selectedExportSheets.length === 0 || isLoading}
               onClick={() => handleExportExcel(selectedExportSheets)}
               className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
             >
