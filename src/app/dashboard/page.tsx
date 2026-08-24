@@ -164,7 +164,7 @@ export default function DashboardStatsPage() {
         verifikasiDinas: systemStats.detailedStatus?.verifikasi || 0,
         hasilVerifikasi: systemStats.detailedStatus?.hasilVerifikasi || 0,
         lpj: systemStats.detailedStatus?.lpj || 0,
-        selesai: systemStats.detailedStatus?.selesai || 0,
+        selesai: systemStats.detailedStatus?.selesai || systemStats.status?.finish || 0,
       }
     }
     return {
@@ -311,6 +311,10 @@ export default function DashboardStatsPage() {
       return modalData.filter(d => (d.status || "") === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && Boolean(d.berkasDinasVerified) && !isCancelDinas(d))
     }
 
+    if (type === "selesai") {
+      return modalData.filter(d => (d.status || "") === 'finish' && !isCancelDinas(d))
+    }
+
     if (type === "kelurahan") {
       return modalData.filter(d => {
         const k = d.kelurahan?.toLowerCase().trim() || ""
@@ -438,17 +442,31 @@ export default function DashboardStatsPage() {
     },
     {
       name: "Hasil Verifikasi",
-      stageTag: "Tahap 3 (Final)",
+      stageTag: "Tahap 3",
       value: statsValues.hasilVerifikasi,
       icon: ListChecks,
       cardBg: "bg-gradient-to-br from-teal-600 to-emerald-700",
       hoverBorder: "hover:border-teal-300",
       textColor: "text-white",
       badgeBg: "bg-teal-500/40 text-teal-100 border-teal-300/30",
-      description: "Lolos Survey & Selesai Verifikasi Berkas Dinas",
+      description: "Lolos Survey & Selesai Verifikasi Berkas",
       filterType: "hasil_verifikasi",
       targetUrl: "/hasil-verifikasi",
       percentage: getPercentage(statsValues.hasilVerifikasi, statsValues.verified || 1)
+    },
+    {
+      name: "Selesai",
+      stageTag: "Tahap 4 (Final)",
+      value: statsValues.selesai,
+      icon: BadgeCheck,
+      cardBg: "bg-gradient-to-br from-sky-600 to-blue-700",
+      hoverBorder: "hover:border-sky-300",
+      textColor: "text-white",
+      badgeBg: "bg-sky-500/40 text-sky-100 border-sky-300/30",
+      description: "Data Lolos & Telah Selesai Diproses",
+      filterType: "selesai",
+      targetUrl: "/finish",
+      percentage: getPercentage(statsValues.selesai, statsValues.verified || 1)
     }
   ]
 
@@ -533,7 +551,7 @@ export default function DashboardStatsPage() {
         ))}
       </div>
 
-      {/* ─── TAHAPAN VERIFIKASI DINAS (3 CARDS) ─── */}
+      {/* ─── TAHAPAN VERIFIKASI DINAS (4 CARDS DALAM 1 BARIS) ─── */}
       <div className="space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <div>
@@ -542,7 +560,7 @@ export default function DashboardStatsPage() {
               Statistik Alur & Tahapan Dinas
             </h2>
             <p className="text-xs text-slate-500 font-semibold">
-              Progres verifikasi pelaku usaha pada menu Survey Dinas, Verifikasi Dinas, dan Hasil Verifikasi.
+              Progres verifikasi pelaku usaha pada menu Survey Dinas, Verifikasi Dinas, Hasil Verifikasi, dan Selesai.
             </p>
           </div>
           <div className="self-start sm:self-auto flex items-center gap-2">
@@ -552,7 +570,7 @@ export default function DashboardStatsPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:gap-5 grid-cols-1 md:grid-cols-3">
+        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {dinasStageCards.map((stage) => (
             <Card 
               key={stage.name}
@@ -1110,6 +1128,10 @@ export default function DashboardStatsPage() {
                             ) : d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && d.berkasDinasVerified ? (
                               <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-teal-100 text-teal-700 border-teal-300">
                                 HASIL VERIFIKASI
+                              </span>
+                            ) : d.status === 'finish' ? (
+                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-300">
+                                SELESAI
                               </span>
                             ) : (
                               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600">
