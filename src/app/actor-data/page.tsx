@@ -726,25 +726,29 @@ function ActorDataContent() {
         return String(a.fullName || "").localeCompare(String(b.fullName || ""))
       })
 
-      const toRow = (actor: BusinessActor, index: number) => ({
-        "NO": globalIndexMap.get(actor.id) || (index + 1),
-        "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
-        "JENIS KELAMIN": actor.gender || "-",
-        "NIK": actor.nik || "-",
-        "NOMOR KK": actor.noKK || "-",
-        "TEMPAT LAHIR": actor.pob || parsePobDob(actor.pobDob || "").pob || "-",
-        "TANGGAL LAHIR": actor.dob || parsePobDob(actor.pobDob || "").dob || "-",
-        "UMUR": calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || "")),
-        "NOMOR HP": actor.phone || "-",
-        "ALAMAT": (actor.address || "").toUpperCase(),
-        "RT/RW": actor.rtRw || "-",
-        "KELURAHAN": (actor.kelurahan || "").toUpperCase(),
-        "JENIS USAHA": (actor.businessCategory || "").toUpperCase(),
-        "USAHA": (actor.businessName || "").toUpperCase(),
-        "LOKASI USAHA": (actor.businessLocation || "").toUpperCase(),
-        "KOORDINATOR": (actor.coordinator || "").toUpperCase(),
-        "REG ID": actor.registrationCode || "-",
-      })
+      const toRow = (actor: BusinessActor, index: number) => {
+        const petugas = (actor.petugasSurvey || (actor.surveyData as any)?.pejabatData?.petugas?.nama || "").trim().toUpperCase()
+        return {
+          "NO": globalIndexMap.get(actor.id) || (index + 1),
+          "NAMA LENGKAP": (actor.fullName || "").toUpperCase(),
+          "JENIS KELAMIN": actor.gender || "-",
+          "NIK": actor.nik || "-",
+          "NOMOR KK": actor.noKK || "-",
+          "TEMPAT LAHIR": actor.pob || parsePobDob(actor.pobDob || "").pob || "-",
+          "TANGGAL LAHIR": actor.dob || parsePobDob(actor.pobDob || "").dob || "-",
+          "UMUR": calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || "")),
+          "NOMOR HP": actor.phone || "-",
+          "ALAMAT": (actor.address || "").toUpperCase(),
+          "RT/RW": actor.rtRw || "-",
+          "KELURAHAN": (actor.kelurahan || "").toUpperCase(),
+          "JENIS USAHA": (actor.businessCategory || "").toUpperCase(),
+          "USAHA": (actor.businessName || "").toUpperCase(),
+          "LOKASI USAHA": (actor.businessLocation || "").toUpperCase(),
+          "KOORDINATOR": (actor.coordinator || "").toUpperCase(),
+          "NAMA PETUGAS SURVEY": petugas || "-",
+          "REG ID": actor.registrationCode || "-",
+        }
+      }
 
       const setColWidths = (ws: any, rows: ReturnType<typeof toRow>[]) => {
         if (rows.length === 0) return
