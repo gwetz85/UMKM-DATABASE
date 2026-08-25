@@ -1070,20 +1070,7 @@ function HasilVerifikasiContent() {
                   </div>
                 </section>
               </div>
-              <DialogFooter className="flex-col sm:flex-row items-center justify-between gap-2 border-t pt-4">
-                {(isAdmin || isDinas) && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setReturnTargetActor(viewingActor)
-                      setReturnReason("")
-                    }}
-                    className="bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200 font-bold gap-1.5"
-                  >
-                    <RotateCcw className="w-4 h-4" /> Kembalikan ke Petugas Survey
-                  </Button>
-                )}
+              <DialogFooter className="flex-col sm:flex-row items-center justify-end gap-2 border-t pt-4">
                 <Button variant="ghost" onClick={() => setViewingActor(null)}>Tutup</Button>
               </DialogFooter>
             </>
