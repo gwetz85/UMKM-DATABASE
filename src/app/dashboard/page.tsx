@@ -82,14 +82,6 @@ export default function DashboardStatsPage() {
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
 
-  // 2. Auto-sync in the background once on mount to ensure system_stats is 100% fresh without UI lag
-  useEffect(() => {
-    if (!database) return
-    import("@/lib/stats-service").then(({ recalculateAndSaveSystemStats }) => {
-      recalculateAndSaveSystemStats(database).catch(console.error)
-    })
-  }, [database])
-
   // 3. Fetch ONLY verified_dinas actors for the 5 latest tables (targeted query, lightweight)
   const verifiedDinasQuery = useMemoFirebase(() => {
     if (!database) return null

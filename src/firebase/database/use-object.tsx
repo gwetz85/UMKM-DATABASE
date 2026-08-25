@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { DatabaseReference, onValue } from 'firebase/database';
 
+const objectMemoryCache = new Map<string, any>();
+
 function getRefKey(refOrQuery: any): string {
   if (!refOrQuery) return '';
   const url = typeof refOrQuery.toString === 'function' ? refOrQuery.toString() : '';
@@ -13,11 +15,12 @@ function getRefKey(refOrQuery: any): string {
 export function useObject<T = any>(
   memoizedRef: DatabaseReference | null | undefined
 ) {
-  const [data, setData] = useState<(T & {id: string}) | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(!!memoizedRef);
-  const [error, setError] = useState<Error | null>(null);
-
   const refKey = getRefKey(memoizedRef);
+  const cachedData = refKey ? objectMemoryCache.get(refKey) : undefined;
+
+  const [data, setData] = useState<(T & {id: string}) | null>(cachedData ? (cachedData as (T & {id: string})) : null);
+  const [isLoading, setIsLoading] = useState<boolean>(!cachedData && !!memoizedRef);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (!memoizedRef) {
@@ -25,13 +28,26 @@ export function useObject<T = any>(
       setIsLoading(false);
       return;
     }
-    
-    setIsLoading(true);
-    
+
+    const cached = refKey ? objectMemoryCache.get(refKey) : null;
+    if (cached) {
+      setData(cached as (T & {id: string}));
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+
     const unsubscribe = onValue(memoizedRef, (snapshot) => {
       if (snapshot.exists()) {
-        setData({ ...snapshot.val(), id: snapshot.key });
+        const val = { ...snapshot.val(), id: snapshot.key };
+        if (refKey) {
+          objectMemoryCache.set(refKey, val);
+        }
+        setData(val);
       } else {
+        if (refKey) {
+          objectMemoryCache.delete(refKey);
+        }
         setData(null);
       }
       setIsLoading(false);
@@ -41,7 +57,7 @@ export function useObject<T = any>(
     });
 
     return () => unsubscribe();
-  }, [refKey]); // Use refKey string to ensure stability
+  }, [refKey]);
 
   return { data, isLoading, error };
 }

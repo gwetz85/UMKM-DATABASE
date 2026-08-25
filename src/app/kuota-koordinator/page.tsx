@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, deleteDocumentNonBlocking, useObject, updateDocumentNonBlocking } from "@/firebase"
-import { ref, push, set, query, update } from "firebase/database"
+import { ref, push, set, query, update, orderByChild, equalTo, get } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { addTunasBangsaHeader } from "@/lib/pdf-generator"
 import { cn } from "@/lib/utils"
@@ -19,7 +19,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog"
 
 export default function KuotaKorlapDewanAktifPage() {
   const [mounted, setMounted] = useState(false)
-  const { user } = useUser()
+  const { user, userProfile } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -34,6 +34,9 @@ export default function KuotaKorlapDewanAktifPage() {
   } | null>(null)
   const [showRenameConfirm, setShowRenameConfirm] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
+  
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {
     setMounted(true)
@@ -46,14 +49,6 @@ export default function KuotaKorlapDewanAktifPage() {
 
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
   
-  const usersRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-  
-  const { data: allUsers } = useList(usersRef)
-  const userProfile = allUsers?.find((u: any) => u.uid === user?.uid)
-  
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin' || userProfile?.role === 'superadmin'
 
   const memoQuery = useMemoFirebase(() => {
@@ -63,34 +58,19 @@ export default function KuotaKorlapDewanAktifPage() {
 
   const { data: kuotaData, isLoading } = useList(memoQuery)
 
-  const memoQueryActor = useMemoFirebase(() => {
-    if (!database) return null
-    return query(ref(database, 'businessActors'))
-  }, [database])
-  
-  const { data: allData } = useList(memoQueryActor)
+  // Use pre-calculated system_stats for coordinator usage (ultra-fast, 1KB)
+  const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
+  const { data: systemStats } = useObject(statsRef)
 
   const combinedKuotaData = useMemo(() => {
     if (!kuotaData) return []
     
-    const counts: Record<string, number> = {}
-    if (allData) {
-      allData.forEach((d: any) => {
-        // Only count Verified data (Cancell dinas & Rejected do not reduce quota)
-        const isCancelDinas = (d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(d.alasanCancelDinas)
-        const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(d.status) && !isCancelDinas
-        if (!isVerified) return
-        if (d.coordinator) {
-          const name = d.coordinator.toUpperCase().trim()
-          counts[name] = (counts[name] || 0) + 1
-        }
-      })
-    }
+    const achievedMap = systemStats?.coordinator || {}
 
     return kuotaData.map((item: any) => {
       const quota = item.quota || 0
       const nameUpper = item.name ? item.name.toUpperCase().trim() : ''
-      const achieved = counts[nameUpper] || 0
+      const achieved = achievedMap[nameUpper] || 0
       const remaining = quota - achieved
       return {
         ...item,
@@ -103,7 +83,7 @@ export default function KuotaKorlapDewanAktifPage() {
       const nameB = (b.name || "").toLowerCase()
       return nameA.localeCompare(nameB)
     })
-  }, [kuotaData, allData])
+  }, [kuotaData, systemStats])
 
   const handleAddData = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -177,7 +157,7 @@ export default function KuotaKorlapDewanAktifPage() {
     })
   }
 
-  const handleUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!editingData || !database) return
 
@@ -193,10 +173,17 @@ export default function KuotaKorlapDewanAktifPage() {
     const nameChanged = name.toUpperCase().trim() !== oldName.toUpperCase().trim()
 
     if (nameChanged) {
-      // Count how many businessActors use the old name
-      const affectedCount = (allData || []).filter((actor: any) =>
-        (actor.coordinator || '').toUpperCase().trim() === oldName.toUpperCase().trim()
-      ).length
+      // Count how many businessActors use the old name via targeted query
+      let affectedCount = 0
+      try {
+        const q = query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(oldName.toUpperCase().trim()))
+        const snap = await get(q)
+        if (snap.exists()) {
+          affectedCount = Object.keys(snap.val()).length
+        }
+      } catch (err) {
+        console.error(err)
+      }
       setRenamePending({ oldName, newName: name, quota, affectedCount })
       setShowRenameConfirm(true)
       return
@@ -221,13 +208,15 @@ export default function KuotaKorlapDewanAktifPage() {
         addedAt: editingData.addedAt || new Date().toISOString()
       })
 
-      // 2. Batch-update all matching businessActors
+      // 2. Batch-update all matching businessActors via targeted query
       const updates: Record<string, any> = {}
-      ;(allData || []).forEach((actor: any) => {
-        if ((actor.coordinator || '').toUpperCase().trim() === oldName.toUpperCase().trim()) {
-          updates[`businessActors/${actor.id}/coordinator`] = newName
-        }
-      })
+      const q = query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(oldName.toUpperCase().trim()))
+      const snap = await get(q)
+      if (snap.exists()) {
+        Object.keys(snap.val()).forEach((actorId) => {
+          updates[`businessActors/${actorId}/coordinator`] = newName
+        })
+      }
 
       if (Object.keys(updates).length > 0) {
         await update(ref(database), updates)

@@ -78,9 +78,18 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     userError: null,
   });
 
-  const [userProfileState, setUserProfileState] = useState<{ profile: any; isProfileLoading: boolean }>({
-    profile: null,
-    isProfileLoading: false,
+  const [userProfileState, setUserProfileState] = useState<{ profile: any; isProfileLoading: boolean }>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('simpu_cached_profile');
+        if (cached) {
+          return { profile: JSON.parse(cached), isProfileLoading: false };
+        }
+      } catch (e) {
+        // ignore storage parse error
+      }
+    }
+    return { profile: null, isProfileLoading: false };
   });
 
   // Effect to subscribe to Firebase auth state changes
@@ -96,6 +105,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       auth,
       (firebaseUser) => { // Auth state determined
         setUserAuthState({ user: firebaseUser, isUserLoading: false, userError: null });
+        if (!firebaseUser && typeof window !== 'undefined') {
+          localStorage.removeItem('simpu_cached_profile');
+        }
       },
       (error) => { // Auth listener error
         console.error("FirebaseProvider: onAuthStateChanged error:", error);
@@ -108,11 +120,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   // Effect to fetch user profile efficiently using indexed query
   useEffect(() => {
     if (!userAuthState.user || !database) {
-      setUserProfileState({ profile: null, isProfileLoading: false });
+      if (!userAuthState.user) {
+        setUserProfileState({ profile: null, isProfileLoading: false });
+      }
       return;
     }
 
-    setUserProfileState(prev => ({ ...prev, isProfileLoading: true }));
+    // Only set loading if there is no cached profile yet
+    setUserProfileState(prev => ({ ...prev, isProfileLoading: !prev.profile }));
 
     // Primary: Query system_users by uid index
     const q = query(ref(database, 'system_users'), orderByChild('uid'), equalTo(userAuthState.user.uid));
@@ -122,6 +137,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         const val = snapshot.val();
         const keys = Object.keys(val);
         const first = { ...val[keys[0]], id: keys[0] };
+        if (typeof window !== 'undefined') {
+          try { localStorage.setItem('simpu_cached_profile', JSON.stringify(first)); } catch (e) {}
+        }
         setUserProfileState({ profile: first, isProfileLoading: false });
       } else {
         // Fallback: Check if username matches email username (e.g. agus@umkm.id -> system_users/agus)
@@ -130,7 +148,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           const directRef = ref(database, `system_users/${emailUsername}`);
           get(directRef).then((dirSnap) => {
             if (dirSnap.exists()) {
-              setUserProfileState({ profile: { ...dirSnap.val(), id: emailUsername }, isProfileLoading: false });
+              const fallbackProfile = { ...dirSnap.val(), id: emailUsername };
+              if (typeof window !== 'undefined') {
+                try { localStorage.setItem('simpu_cached_profile', JSON.stringify(fallbackProfile)); } catch (e) {}
+              }
+              setUserProfileState({ profile: fallbackProfile, isProfileLoading: false });
             } else {
               setUserProfileState({ profile: null, isProfileLoading: false });
             }
@@ -143,7 +165,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       }
     }, (err) => {
       console.error("Error fetching user profile:", err);
-      setUserProfileState({ profile: null, isProfileLoading: false });
+      setUserProfileState(prev => ({ ...prev, isProfileLoading: false }));
     });
 
     return () => unsubscribe();

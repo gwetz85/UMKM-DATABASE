@@ -44,37 +44,23 @@ export default function InputDataPage() {
   const [kkCheckResults, setKkCheckResults] = useState<any[]>([])
   const [isCheckingKk, setIsCheckingKk] = useState(false)
 
-  // Fetch Quotas - still needed for selection, but we'll optimize the usage calculation
+  // Fetch Quotas
   const quotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
   const { data: rawQuotaData } = useList<any>(quotaRef)
 
-  // NOTE: Removed full fetching of businessActors and master_data to improve performance.
-  // Duplicate checks and auto-verification will now use targeted queries.
-
-  // Fetch all actors for accurate quota calculation, mirroring kuota-koordinator
-  const actorsQueryRef = useMemoFirebase(() => database ? query(ref(database, 'businessActors')) : null, [database])
-  const { data: allActorsData } = useList<any>(actorsQueryRef)
+  // Use pre-calculated system_stats for coordinator usage (ultra-fast, 1KB)
+  const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
+  const { data: systemStats } = useObject(statsRef)
 
   const availableCoordinators = useMemo(() => {
     if (!rawQuotaData) return []
     
-    const counts: Record<string, number> = {}
-    if (allActorsData) {
-      const activeStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas']
-      allActorsData.forEach((d: any) => {
-        const isCancelDinas = (d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(d.alasanCancelDinas)
-        if (!activeStatuses.includes((d.status || 'pending').toLowerCase()) || isCancelDinas) return
-        if (d.coordinator) {
-          const name = d.coordinator.toUpperCase().trim()
-          counts[name] = (counts[name] || 0) + 1
-        }
-      })
-    }
+    const achievedMap = systemStats?.coordinator || {}
 
     return rawQuotaData
       .map((q: any) => {
         const nameUpper = (q.name || "").toUpperCase().trim()
-        const used = counts[nameUpper] || 0
+        const used = achievedMap[nameUpper] || 0
         const rawQuota = parseInt(String(q.quota)) || 0
         const remaining = rawQuota - used
         return { ...q, remaining: Math.max(0, remaining) }
@@ -86,7 +72,7 @@ export default function InputDataPage() {
                !nameUpper.includes('( DIHAPUS )')
       })
       .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))
-  }, [rawQuotaData, allActorsData])
+  }, [rawQuotaData, systemStats])
 
   const isMonitoring = currentUserProfile?.role === 'monitoring'
 
