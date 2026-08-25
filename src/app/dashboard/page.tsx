@@ -455,7 +455,7 @@ export default function DashboardStatsPage() {
       percentage: getPercentage(statsValues.hasilVerifikasi, statsValues.verified || 1)
     },
     {
-      name: "Selesai",
+      name: "Rekening Terinput",
       stageTag: "Tahap 4 (Final)",
       value: statsValues.selesai,
       icon: BadgeCheck,
@@ -463,7 +463,7 @@ export default function DashboardStatsPage() {
       hoverBorder: "hover:border-sky-300",
       textColor: "text-white",
       badgeBg: "bg-sky-500/40 text-sky-100 border-sky-300/30",
-      description: "Data Lolos & Telah Selesai Diproses",
+      description: "Data Lolos & Rekening Bank Telah Diinput",
       filterType: "selesai",
       targetUrl: "/finish",
       percentage: getPercentage(statsValues.selesai, statsValues.verified || 1)
