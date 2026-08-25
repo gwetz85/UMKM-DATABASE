@@ -30,7 +30,11 @@ import {
   FileSpreadsheet,
   RefreshCw,
   Clock,
-  CalendarDays
+  CalendarDays,
+  ClipboardList,
+  Camera,
+  CheckCircle2,
+  XCircle
 } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { BusinessActor } from "../lib/types"
@@ -846,6 +850,168 @@ function HasilVerifikasiContent() {
                     })()}
                   </div>
                 </section>
+
+                {/* ─── HASIL SURVEY SECTION ─── */}
+                {(viewingActor as any).surveyData && (
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
+                      <ClipboardList className="w-4 h-4" /> Hasil Survey
+                    </div>
+
+                    {/* Kesimpulan / Hasil Survey */}
+                    {(viewingActor as any).surveyData?.hasilSurvey && (
+                      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                        <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Kesimpulan / Hasil Survey</p>
+                        <p className="text-sm font-semibold text-blue-900">{(viewingActor as any).surveyData.hasilSurvey}</p>
+                      </div>
+                    )}
+
+                    {/* Grid data survey */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
+                      {[
+                        { label: "Status Perkawinan", value: (viewingActor as any).surveyData?.status },
+                        { label: "Email", value: (viewingActor as any).surveyData?.email },
+                        { label: "Media Sosial", value: (viewingActor as any).surveyData?.sosmed },
+                        { label: "Bidang Usaha", value: (viewingActor as any).surveyData?.bidangUsaha },
+                        { label: "Peralatan Usaha", value: (viewingActor as any).surveyData?.peralatan },
+                        { label: "Tahun Berdiri", value: (viewingActor as any).surveyData?.tahunBerdiri },
+                        { label: "Modal Usaha", value: (viewingActor as any).surveyData?.modalUsaha },
+                        { label: "Omset per Bulan", value: (viewingActor as any).surveyData?.omset },
+                        { label: "Rencana Penggunaan Modal", value: (viewingActor as any).surveyData?.rencanaPenggunaan },
+                        { label: "Tanggal Survey", value: (viewingActor as any).surveyData?.tanggalSurvey },
+                      ].map((item, i) => (
+                        item.value ? (
+                          <div key={i} className="space-y-1">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                            <p className="text-xs font-bold">{item.value}</p>
+                          </div>
+                        ) : null
+                      ))}
+                    </div>
+
+                    {/* Izin Usaha */}
+                    {Array.isArray((viewingActor as any).surveyData?.izin) && (viewingActor as any).surveyData.izin.length > 0 && (
+                      <div className="bg-muted/30 p-4 rounded-xl border space-y-2">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Izin Usaha</p>
+                        <div className="flex flex-wrap gap-2">
+                          {(viewingActor as any).surveyData.izin.map((iz: string, idx: number) => (
+                            <span key={idx} className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                              {iz}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* DTKS */}
+                    {(viewingActor as any).surveyData?.dtks !== undefined && (
+                      <div className="bg-muted/30 p-4 rounded-xl border space-y-2">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Status DTKS</p>
+                        <div className="flex items-center gap-2">
+                          {(viewingActor as any).surveyData.dtks?.masuk ? (
+                            <>
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                              <span className="text-xs font-bold text-emerald-700">
+                                Terdaftar DTKS
+                                {(viewingActor as any).surveyData.dtks?.jenis ? ` — ${(viewingActor as any).surveyData.dtks.jenis}` : ""}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-4 h-4 text-slate-400" />
+                              <span className="text-xs font-bold text-slate-500">Tidak Terdaftar DTKS</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pernah Hibah */}
+                    {(viewingActor as any).surveyData?.hibah !== undefined && (
+                      <div className="bg-muted/30 p-4 rounded-xl border space-y-2">
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Riwayat Bantuan / Hibah</p>
+                        {(viewingActor as any).surveyData.hibah?.pernah ? (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="w-4 h-4 text-amber-500" />
+                              <span className="text-xs font-bold text-amber-700">Pernah menerima bantuan</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 pl-6">
+                              {(viewingActor as any).surveyData.hibah?.dariMana && (
+                                <div className="space-y-0.5">
+                                  <p className="text-[9px] text-muted-foreground font-bold uppercase">Dari</p>
+                                  <p className="text-xs font-bold">{(viewingActor as any).surveyData.hibah.dariMana}</p>
+                                </div>
+                              )}
+                              {(viewingActor as any).surveyData.hibah?.tahun && (
+                                <div className="space-y-0.5">
+                                  <p className="text-[9px] text-muted-foreground font-bold uppercase">Tahun</p>
+                                  <p className="text-xs font-bold">{(viewingActor as any).surveyData.hibah.tahun}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <XCircle className="w-4 h-4 text-slate-400" />
+                            <span className="text-xs font-bold text-slate-500">Belum pernah menerima bantuan</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Foto Survey */}
+                    {(viewingActor as any).surveyData?.fotoSurveyUrl && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Camera className="w-3.5 h-3.5 text-primary" />
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Foto Survey Lapangan</p>
+                        </div>
+                        <a
+                          href={(viewingActor as any).surveyData.fotoSurveyUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={(viewingActor as any).surveyData.fotoSurveyUrl}
+                            alt="Foto Survey"
+                            className="w-full max-w-xs rounded-xl border shadow-md object-cover hover:opacity-90 transition-opacity cursor-zoom-in"
+                          />
+                        </a>
+                      </div>
+                    )}
+
+                    {/* Pejabat Data */}
+                    {((viewingActor as any).surveyData?.pejabatData || (viewingActor as any).pejabatData) && (() => {
+                      const pejabat = (viewingActor as any).surveyData?.pejabatData || (viewingActor as any).pejabatData
+                      return (
+                        <div className="bg-slate-50 border rounded-xl p-4 space-y-3">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Data Pejabat</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {pejabat?.petugas?.nama && (
+                              <div className="space-y-1">
+                                <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Survey</p>
+                                <p className="text-xs font-black">{pejabat.petugas.nama}</p>
+                                {pejabat.petugas.nipppk && <p className="text-[9px] text-slate-500 font-mono">{pejabat.petugas.nipppk}</p>}
+                                {pejabat.petugas.jabatan && <p className="text-[9px] text-slate-500">{pejabat.petugas.jabatan}</p>}
+                              </div>
+                            )}
+                            {pejabat?.verifikator?.nama && (
+                              <div className="space-y-1">
+                                <p className="text-[9px] font-bold text-muted-foreground uppercase">Verifikator</p>
+                                <p className="text-xs font-black">{pejabat.verifikator.nama}</p>
+                                {pejabat.verifikator.nipppk && <p className="text-[9px] text-slate-500 font-mono">{pejabat.verifikator.nipppk}</p>}
+                                {pejabat.verifikator.jabatan && <p className="text-[9px] text-slate-500">{pejabat.verifikator.jabatan}</p>}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })()}
+                  </section>
+                )}
 
                 <section className="space-y-4">
                   <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Data Titik Lokasi Verifikasi</div>
