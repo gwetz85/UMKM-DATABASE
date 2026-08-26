@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { useDatabase, useUser, addDocumentNonBlocking, useMemoFirebase, useList, useObject } from "@/firebase"
 import { ref, query, equalTo, get, limitToFirst, orderByChild } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,6 +28,7 @@ import { logActivity, getDeviceType } from "@/lib/logger"
 
 export default function InputDataPage() {
   const { toast } = useToast()
+  const router = useRouter()
   const { user, userProfile: currentUserProfile } = useUser()
   const database = useDatabase()
   const [loading, setLoading] = useState(false)
@@ -154,25 +156,22 @@ export default function InputDataPage() {
     try {
       const actorsRef = ref(database, 'businessActors')
       
-      // Tahap 1: Cek duplikasi di Database Aktif (businessActors)
-      // We fetch all to avoid Firebase index requirement errors since nik/noKK are not indexed
-      const snap = await get(actorsRef)
-      let duplicateInActors: any = null
-      let currentCoordCount = 0
-      
-      if (snap.exists()) {
-        const allActors = Object.values(snap.val()) as any[]
-        duplicateInActors = allActors.find(a => a.nik === nik || a.noKK === noKK)
-        if (selectedCoordinator) {
-          const verifiedStatuses = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'];
-          currentCoordCount = allActors.filter(a => {
-            const isCancelDinas = (a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
-            return a.coordinator === selectedCoordinator && 
-              verifiedStatuses.includes((a.status || "pending").toLowerCase()) &&
-              !isCancelDinas;
-          }).length
+      // Tahap 1: Cek duplikasi NIK & noKK via indexed query (CEPAT — tidak fetch semua data)
+      const checkDuplicateByField = async (field: 'nik' | 'noKK', value: string) => {
+        const q = query(actorsRef, orderByChild(field), equalTo(value), limitToFirst(1))
+        const snap = await get(q)
+        if (snap.exists()) {
+          const found = Object.values(snap.val())[0] as any
+          return found
         }
+        return null
       }
+
+      const [dupByNik, dupByKK] = await Promise.all([
+        checkDuplicateByField('nik', nik),
+        checkDuplicateByField('noKK', noKK),
+      ])
+      const duplicateInActors = dupByNik || dupByKK
 
       if (duplicateInActors) {
         toast({ 
@@ -198,9 +197,11 @@ export default function InputDataPage() {
         console.log("Data ditemukan di blacklist.")
       }
 
-      // Coordinator Quota Check (Safeguard)
+      // Coordinator Quota Check (Safeguard — pakai system_stats yang sudah ter-load di memori)
       if (selectedCoordinator) {
         const quotaItem = rawQuotaData?.find((q: any) => q.name === selectedCoordinator)
+        const achievedMap = (systemStats as any)?.coordinator || {}
+        const currentCoordCount = achievedMap[(selectedCoordinator || "").toUpperCase().trim()] || 0
         if (quotaItem && currentCoordCount >= quotaItem.quota) {
           toast({
             variant: "destructive",
@@ -245,19 +246,16 @@ export default function InputDataPage() {
         updateStatsOnNewActor(database, data).catch(err => console.error("Stats update error:", err));
       });
       
-      // Log Input Activity
-      await logActivity({
+      // Log Input Activity — fire and forget (tidak perlu ditunggu)
+      logActivity({
         query: `INPUT: ${data.fullName} (${nik})`,
         results: "Berhasil Simpan",
         device: getDeviceType(navigator.userAgent),
         source: 'Web',
         method: 'INPUT DATA',
         userId: data.createdBy
-      }, database)
+      }, database).catch(err => console.error("Log error:", err))
 
-      // Munculkan Pop Out Sukses
-      setShowSuccessDialog(true)
-      
       // Reset Form
       formElement.reset()
       setKelurahan("")
@@ -268,6 +266,9 @@ export default function InputDataPage() {
       setPob("")
       setDob("")
       setFormKey(prev => prev + 1)
+
+      // Munculkan Pop Out Sukses
+      setShowSuccessDialog(true)
     } catch (error: any) {
       console.error(error)
       toast({
@@ -547,7 +548,10 @@ export default function InputDataPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-6">
-            <AlertDialogAction className="w-full h-12 bg-primary hover:bg-primary/90 font-bold text-white rounded-xl">
+            <AlertDialogAction 
+              className="w-full h-12 bg-primary hover:bg-primary/90 font-bold text-white rounded-xl"
+              onClick={() => router.push('/verify-actor')}
+            >
               SAYA MENGERTI
             </AlertDialogAction>
           </AlertDialogFooter>
