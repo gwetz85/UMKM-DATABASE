@@ -11,7 +11,39 @@ import { Loader2, RefreshCw } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 
 
-const PLAYLIST_ITEMS_INITIAL: string[] = [];
+const PLAYLIST_ITEMS_INITIAL: string[] = [
+  "Bukan WG x fahmyfay x DJ Yasmin x Joana - hrny",
+  "MIXTAPE REMIX KOPLO 1 - GEMOY DJ GEMOY X ELEKTRO KOPLO STYLE",
+  "FRIDAY NIGHT KLIWON COVER REMIX DJ GEMOY X ELEKTRO KOPLO",
+  "GTA OST REMIX GEMOY DJ GEMOY",
+  "CRAZY FROG REMIX GEMOY DJ GEMOY",
+  "DJ SEDIA AKU SEBELUM HUJAN BREAKBEAT REMIX TERBARU 2025",
+  "PINK PHANTER REMIX GEMOY DJ GEMOY",
+  "PUNK ROCK JALANAN REMIX ELEKTRO KOPLO X DJ GEMOY",
+  "ONE PIECE OST REMIX GEMOY DJ GEMOY",
+  "Ost Mission Impossible Remix Gemoy Dj Gemoy",
+  "NARUTO OST REMIX GEMOY DJ GEMOY",
+  "KARABORUTO REMIX GEMOY DJ GEMOY NEW VERSION",
+  "BURUH TANI REMIX - GEMOY DJ GEMOY - HOREG VERSION",
+  "REMIX HOREG VERSION - GEMOY DJ GEMOY - INGKAR JANJI",
+  "2BM Serangnesia - Eh Abang Sayang (Lyric)",
+  "Orange - 7!! (Cover by Missing Madeline Feat. Frazi dRums)",
+  "Maki Otsuki - MEMORIES | cover by Amanda",
+  "Jablai—Titi Kamal • Popdut Funk Cover • KavSixNine",
+  "SIK ASIK - AYU TING TING | DJ REMIX DANGDUT KOPLO MODERN",
+  "Zaskia Gotik - Bang Jono Remix Version",
+  "Vita Alvia - Ikan Dalam Kolam",
+  "Cita Citata - Goyang Dumang",
+  "Shinta Arsinta - NEMEN - NDX AKA Version",
+  "KISINAN - Masdddho X Trio Macan",
+  "Dj Pantun Janda - Vita Alvia",
+  "The Pain is Right Here (Sakitnya Tuh Disini) - Cita Citata",
+  "Alololo Sayang - Gilga Sahid X Trio Macan",
+  "Hanin Dhiya - Pupus",
+  "Living Room Sessions : #12 Anak Sekolah, Hip Hip Hura (Chrisye)",
+  "Enau Feat. Ari Lesmana - Sesi Potret",
+  "Tegar - Aku Yang Dulu Bukan Yang Sekarang"
+];
 
 export function MusicDashboardCard({ className, role }: { className?: string, role?: string }) {
   const normalizedRole = role?.toLowerCase();
@@ -23,7 +55,18 @@ export function MusicDashboardCard({ className, role }: { className?: string, ro
   const [currentTitle, setCurrentTitle] = useState("");
   const [isReady, setIsReady] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [playlist, setPlaylist] = useState<string[]>(PLAYLIST_ITEMS_INITIAL);
+  const [playlist, setPlaylist] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('music-dashboard-playlist');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch (e) {}
+    }
+    return PLAYLIST_ITEMS_INITIAL;
+  });
 
   // Auto-sync playlist once when first video starts and title is known
   const hasAutoSynced = React.useRef(false);

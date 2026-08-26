@@ -68,8 +68,8 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
 
 
   // Configuration: YouTube Playlist
-  // Playlist ID: PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7
-  const playlistId = "PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7";
+  // Playlist ID: PLBDzcTxWPOhA
+  const playlistId = "PLBDzcTxWPOhA";
   const useShuffle = false; // Disabled shuffle to follow playlist order
 
   useEffect(() => {
@@ -102,19 +102,19 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
       const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
 
       playerRef.current = new window.YT.Player('youtube-player-container', {
-        height: '0',
-        width: '0',
+        height: '200',
+        width: '200',
         playerVars: {
           listType: 'playlist',
           list: playlistId,
           autoplay: 1, 
           loop: 1,
-          playlist: playlistId, // Required for loop to work with playlists
           controls: 0,
           showinfo: 0,
           modestbranding: 1,
           disablekb: 1,
           rel: 0,
+          enablejsapi: 1,
           origin: currentOrigin,
           mute: isMuted ? 1 : 0, // Set initial mute state in playerVars
         },
@@ -460,10 +460,10 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   return (
     <div className={cn("fixed bottom-24 right-6 z-[1000] print:hidden grid justify-items-end gap-2", className)}>
 
-      {/* Invisible YouTube Player Container */}
+      {/* Hidden YouTube Player Container with dimensions so browser allows media decoding */}
       <div 
         id="youtube-player-container" 
-        className="absolute w-0 h-0 opacity-0 pointer-events-none overflow-hidden"
+        className="fixed -left-[9999px] -top-[9999px] w-[200px] h-[200px] opacity-0 pointer-events-none"
       ></div>
       
       {/* Music Control Panel */}
@@ -516,7 +516,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
           {/* Bottom: Info & Progress */}
           <div className="flex flex-col w-full gap-2">
             <div className="text-xs font-semibold truncate text-slate-800 dark:text-slate-100 px-1">
-              {currentTitle || "Memuat musik..."}
+              {currentTitle || (isPlaying ? "Memutar musik..." : isPlayerReady ? "Musik Siap (Klik Putar)" : "Memuat musik...")}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-slate-500 tabular-nums w-8 text-right shrink-0">{formatTime(currentTime)}</span>
