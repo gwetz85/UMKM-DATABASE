@@ -62,9 +62,9 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   const volumeRef = useRef(50);
   const currentTitleRef = useRef("");
 
-  // Role check: Only Administrator can access
+  // Role check: Administrator and Petugas can access
   const normalizedRole = role?.toLowerCase();
-  const isAllowedRole = normalizedRole === 'admin';
+  const isAllowedRole = !normalizedRole || normalizedRole === 'admin' || normalizedRole === 'petugas';
 
 
   // Configuration: YouTube Playlist
@@ -123,40 +123,45 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
             setIsPlayerReady(true);
             isPlayerReadyRef.current = true;
             
-            // Set loop for the player
-            event.target.setLoop(true);
-            
-            // Handle shuffle if enabled
-            if (useShuffle) {
-              event.target.setShuffle(true);
-            }
-            
-            // Load or cue depending on interaction
-            // Note: loading might fail autoplay, but we handle it via interaction below
-            
-            if (isMuted) {
-              event.target.mute();
-            } else {
-              event.target.unMute();
-              event.target.setVolume(50);
-            }
+            try {
+              event.target.setLoop(true);
+              
+              if (useShuffle) {
+                event.target.setShuffle(true);
+              }
+              
+              event.target.cuePlaylist({
+                listType: 'playlist',
+                list: playlistId,
+              });
 
-            // Get initial title
-            const videoData = event.target.getVideoData();
-            if (videoData && videoData.title) {
-              currentTitleRef.current = videoData.title;
-              setCurrentTitle(videoData.title);
+              if (isMutedRef.current) {
+                event.target.mute();
+              } else {
+                event.target.unMute();
+                event.target.setVolume(volumeRef.current || 50);
+              }
+
+              const videoData = event.target.getVideoData?.();
+              if (videoData && videoData.title) {
+                currentTitleRef.current = videoData.title;
+                setCurrentTitle(videoData.title);
+              }
+            } catch (e) {
+              console.error("YouTube onReady error:", e);
             }
           },
           onStateChange: (event: any) => {
             const playerState = event.data;
             
             // Try updating title on any state change
-            const videoData = event.target.getVideoData();
-            if (videoData && videoData.title) {
-              currentTitleRef.current = videoData.title;
-              setCurrentTitle(videoData.title);
-            }
+            try {
+              const videoData = event.target.getVideoData?.();
+              if (videoData && videoData.title) {
+                currentTitleRef.current = videoData.title;
+                setCurrentTitle(videoData.title);
+              }
+            } catch (e) {}
 
             if (playerState === window.YT.PlayerState.PLAYING) {
               hasInteractedRef.current = true;
@@ -168,12 +173,11 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
               setIsPlaying(false);
             } else if (playerState === window.YT.PlayerState.ENDED) {
               // If it ended and didn't loop automatically, force it
-              event.target.playVideoAt(0);
+              try { event.target.playVideoAt(0); } catch (e) {}
             } else if (playerState === window.YT.PlayerState.UNSTARTED) {
               // Sometimes playlists get stuck at unstarted when moving between videos
-              // Use ref to avoid stale closure
               if (hasInteractedRef.current) {
-                event.target.playVideo();
+                try { event.target.playVideo(); } catch (e) {}
               }
             }
           },
@@ -209,16 +213,12 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         if (entry.contentRect) {
-          // Add padding (p-1.5 = 6px on each side approximately, plus border)
-          // Actually, just use offsetWidth for the whole container
           setPlayerWidth(playerContainerRef.current?.offsetWidth || 0);
         }
       }
     });
 
     resizeObserver.observe(playerContainerRef.current);
-    
-    // Initial measurement
     setPlayerWidth(playerContainerRef.current.offsetWidth);
 
     return () => resizeObserver.disconnect();
@@ -230,8 +230,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
 
     const handleWindowClick = () => {
       if (playerRef.current && !hasInteracted) {
-        playerRef.current.playVideo();
-        // The play event will setHasInteracted(true) in onStateChange
+        startPlaying();
       }
     };
 
@@ -239,7 +238,36 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
     return () => window.removeEventListener('click', handleWindowClick);
   }, [isAllowedRole, isPlayerReady, hasInteracted, isMuted]);
 
+  const startPlaying = (index?: number) => {
+    if (!playerRef.current) return;
+    try {
+      if (typeof index === 'number') {
+        if (typeof playerRef.current.playVideoAt === 'function') {
+          playerRef.current.playVideoAt(index);
+        }
+      } else {
+        if (typeof playerRef.current.playVideo === 'function') {
+          playerRef.current.playVideo();
+        }
+      }
 
+      if (typeof playerRef.current.unMute === 'function') {
+        playerRef.current.unMute();
+      }
+      if (typeof playerRef.current.setVolume === 'function') {
+        playerRef.current.setVolume(volumeRef.current || 50);
+      }
+
+      isPlayingRef.current = true;
+      hasInteractedRef.current = true;
+      setIsPlaying(true);
+      setHasInteracted(true);
+      setIsMuted(false);
+      isMutedRef.current = false;
+    } catch (e) {
+      console.error("Error in startPlaying:", e);
+    }
+  };
 
   const toggleMute = () => {
     if (playerRef.current && isPlayerReadyRef.current) {
@@ -248,11 +276,9 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
         playerRef.current.mute();
       } else {
         playerRef.current.unMute();
-        playerRef.current.setVolume(volumeRef.current);
+        playerRef.current.setVolume(volumeRef.current || 50);
         if (!hasInteractedRef.current) {
-          playerRef.current.playVideo();
-          hasInteractedRef.current = true;
-          setHasInteracted(true);
+          startPlaying();
         }
       }
       isMutedRef.current = nextMuteState;
@@ -266,11 +292,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   const handleManualPlayPause = (shouldPlay: boolean) => {
     if (playerRef.current && isPlayerReadyRef.current) {
       if (shouldPlay) {
-        playerRef.current.playVideo();
-        isPlayingRef.current = true;
-        hasInteractedRef.current = true;
-        setIsPlaying(true);
-        setHasInteracted(true);
+        startPlaying();
       } else {
         playerRef.current.pauseVideo();
         isPlayingRef.current = false;
@@ -287,19 +309,13 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
       if (!playerRef.current || !isPlayerReadyRef.current) return;
 
       switch(action) {
-        case 'play': handleManualPlayPause(true); break;
+        case 'play': startPlaying(); break;
         case 'pause': handleManualPlayPause(false); break;
         case 'stop': handleStop(); break;
         case 'next': handleNext(); break;
         case 'previous': handlePrevious(); break;
         case 'volume': handleVolumeChange([value]); break;
-        case 'playAt': 
-          playerRef.current.playVideoAt(value);
-          isPlayingRef.current = true;
-          hasInteractedRef.current = true;
-          setIsPlaying(true);
-          setHasInteracted(true);
-          break;
+        case 'playAt': startPlaying(value); break;
         case 'get-playlist':
           if (playerRef.current && typeof playerRef.current.getPlaylist === 'function') {
             const playlistIds = playerRef.current.getPlaylist();
@@ -439,18 +455,11 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
   };
 
   const togglePlayPause = () => {
-    if (playerRef.current && isPlayerReadyRef.current) {
-      if (isPlayingRef.current) {
-        playerRef.current.pauseVideo();
-        isPlayingRef.current = false;
-        setIsPlaying(false);
-      } else {
-        playerRef.current.playVideo();
-        isPlayingRef.current = true;
-        hasInteractedRef.current = true;
-        setIsPlaying(true);
-        setHasInteracted(true);
-      }
+    if (!playerRef.current || !isPlayerReadyRef.current) return;
+    if (isPlayingRef.current) {
+      handleManualPlayPause(false);
+    } else {
+      startPlaying();
     }
   };
 
