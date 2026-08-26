@@ -1038,132 +1038,142 @@ export default function UploadPetugasSurveyPage() {
                 <TableBody>
                   {filteredPetugasAccounts.map((u: any, idx: number) => {
                     const isPassVisible = !!visiblePasswords[u.id]
+                    const isInactive = u.status === 'inactive'
                     return (
-                      <TableRow key={u.id} className="hover:bg-slate-50">
-                        <TableCell className="text-center font-mono text-xs">{idx + 1}</TableCell>
-                        <TableCell className="font-black text-sm uppercase text-slate-800">
-                          {u.fullName}
+                      <TableRow key={u.id} className={`transition-colors ${isInactive ? 'bg-red-50/40 hover:bg-red-50/70' : 'hover:bg-slate-50'}`}>
+                        {/* No */}
+                        <TableCell className="text-center font-mono text-xs text-slate-500 w-10">{idx + 1}</TableCell>
+
+                        {/* Nama */}
+                        <TableCell>
+                          <div className="flex flex-col gap-0.5">
+                            <span className={`font-black text-sm uppercase leading-tight ${isInactive ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                              {u.fullName}
+                            </span>
+                            {isInactive && (
+                              <span className="text-[9px] font-bold text-red-400 uppercase tracking-wider">Akun Nonaktif</span>
+                            )}
+                          </div>
                         </TableCell>
-                        <TableCell className="font-mono text-xs text-primary font-bold">
+
+                        {/* Username */}
+                        <TableCell className={`font-mono text-xs font-bold ${isInactive ? 'text-slate-400' : 'text-primary'}`}>
                           {u.id}
                         </TableCell>
+
+                        {/* Password */}
                         <TableCell className="font-mono text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="bg-slate-100 px-2 py-1 rounded border font-mono">
+                          <div className="flex items-center gap-1.5">
+                            <span className="bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 font-mono tracking-widest text-slate-600">
                               {isPassVisible ? (u.password || "123456") : "••••••••"}
                             </span>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7 text-slate-500 hover:text-slate-800" 
+                            <button
+                              className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
                               onClick={() => togglePasswordVisibility(u.id)}
                             >
                               {isPassVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                            </Button>
+                            </button>
                           </div>
                         </TableCell>
+
+                        {/* Data Terhubung */}
                         <TableCell className="text-center">
-                          <Badge variant="secondary" className="bg-blue-100 text-blue-800 font-bold">
-                            {u.linkedCount} Pelaku Usaha
-                          </Badge>
+                          <div className="inline-flex items-center gap-1 bg-sky-100 text-sky-700 border border-sky-200 rounded-full px-2.5 py-1 text-[11px] font-bold">
+                            <Users className="w-3 h-3" />
+                            {u.linkedCount} Data
+                          </div>
                         </TableCell>
+
+                        {/* Status Login */}
                         <TableCell className="text-center">
                           {u.uid ? (
-                            <Badge className="bg-green-100 text-green-700 border-green-200 text-[10px] uppercase font-bold">
-                              Terkunci di HP/Device
-                            </Badge>
+                            <div className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full px-2.5 py-1 text-[10px] font-black uppercase">
+                              <Lock className="w-2.5 h-2.5" /> Terkunci
+                            </div>
                           ) : (
-                            <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 text-[10px] uppercase font-bold">
-                              Siap Login
-                            </Badge>
+                            <div className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 border border-amber-200 rounded-full px-2.5 py-1 text-[10px] font-black uppercase">
+                              <UserCheck className="w-2.5 h-2.5" /> Siap Login
+                            </div>
                           )}
                         </TableCell>
 
-                        {/* Status Akun: Aktif / Nonaktif */}
+                        {/* Status Akun */}
                         <TableCell className="text-center">
-                          {u.status === 'inactive' ? (
-                            <Badge className="bg-red-100 text-red-700 border-red-200 text-[10px] uppercase font-bold cursor-default">
-                              <PowerOff className="w-2.5 h-2.5 mr-1" /> Nonaktif
-                            </Badge>
+                          {isInactive ? (
+                            <div className="inline-flex items-center gap-1 bg-red-100 text-red-600 border border-red-200 rounded-full px-2.5 py-1 text-[10px] font-black uppercase shadow-sm">
+                              <PowerOff className="w-2.5 h-2.5" /> Nonaktif
+                            </div>
                           ) : (
-                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] uppercase font-bold cursor-default">
-                              <Power className="w-2.5 h-2.5 mr-1" /> Aktif
-                            </Badge>
+                            <div className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full px-2.5 py-1 text-[10px] font-black uppercase shadow-sm">
+                              <Power className="w-2.5 h-2.5" /> Aktif
+                            </div>
                           )}
                         </TableCell>
 
-                        <TableCell className="text-center px-3">
-                          <div className="flex flex-wrap justify-center gap-1.5">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => {
-                                setEditingPetugas(u)
-                                setNewPasswordInput(u.password || "123456")
-                              }}
-                              className="h-7 border-primary/30 text-primary hover:bg-primary/10 font-bold text-[11px] gap-1 px-2"
-                            >
-                              <Key className="w-3 h-3" /> Password
-                            </Button>
+                        {/* Aksi */}
+                        <TableCell className="text-center px-4">
+                          <div className="inline-flex flex-col gap-1.5 items-stretch min-w-[120px]">
+                            {/* Row 1: Password + Reset */}
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => {
+                                  setEditingPetugas(u)
+                                  setNewPasswordInput(u.password || "123456")
+                                }}
+                                className="flex-1 flex items-center justify-center gap-1 h-7 px-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 font-bold text-[10px] transition-all hover:shadow-sm"
+                                title="Ubah password"
+                              >
+                                <Key className="w-3 h-3 shrink-0" /> Password
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (u.uid) setShowResetConfirm({ id: u.id, fullName: u.fullName })
+                                }}
+                                disabled={!u.uid}
+                                title={u.uid ? 'Reset perangkat' : 'Belum ada perangkat terkunci'}
+                                className={`flex-1 flex items-center justify-center gap-1 h-7 px-2 rounded-lg font-bold text-[10px] border transition-all ${
+                                  u.uid
+                                    ? 'bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200 hover:shadow-sm'
+                                    : 'bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed opacity-60'
+                                }`}
+                              >
+                                <RefreshCcw className="w-3 h-3 shrink-0" />
+                                {u.uid ? 'Reset' : 'Belum Login'}
+                              </button>
+                            </div>
 
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                if (u.uid) {
-                                  setShowResetConfirm({ id: u.id, fullName: u.fullName })
+                            {/* Row 2: Toggle Status + Hapus */}
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => setShowStatusConfirm({
+                                  id: u.id,
+                                  fullName: u.fullName,
+                                  currentStatus: u.status || 'active'
+                                })}
+                                title={isInactive ? 'Aktifkan akun ini' : 'Nonaktifkan akun ini'}
+                                className={`flex-1 flex items-center justify-center gap-1 h-7 px-2 rounded-lg font-bold text-[10px] border transition-all hover:shadow-sm ${
+                                  isInactive
+                                    ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+                                    : 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200'
+                                }`}
+                              >
+                                {isInactive
+                                  ? <><Power className="w-3 h-3 shrink-0" /> Aktifkan</>
+                                  : <><PowerOff className="w-3 h-3 shrink-0" /> Nonaktif</>
                                 }
-                              }}
-                              disabled={!u.uid}
-                              className={`h-7 font-bold text-[11px] gap-1 px-2 ${
-                                u.uid
-                                  ? 'text-orange-600 border-orange-300 bg-orange-50 hover:bg-orange-100 hover:border-orange-400'
-                                  : 'text-slate-400 border-slate-200 bg-slate-50 cursor-not-allowed opacity-50'
-                              }`}
-                              title={u.uid ? 'Klik untuk melepas kunci perangkat' : 'Belum ada perangkat yang terkunci'}
-                            >
-                              <RefreshCcw className="w-3 h-3" />
-                              {u.uid ? 'Reset' : 'Belum Login'}
-                            </Button>
-
-                            {/* Toggle Aktif / Nonaktif */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setShowStatusConfirm({
-                                id: u.id,
-                                fullName: u.fullName,
-                                currentStatus: u.status || 'active'
-                              })}
-                              className={`h-7 font-bold text-[11px] gap-1 px-2 ${
-                                u.status === 'inactive'
-                                  ? 'text-emerald-700 border-emerald-300 bg-emerald-50 hover:bg-emerald-100'
-                                  : 'text-red-600 border-red-200 bg-red-50 hover:bg-red-100'
-                              }`}
-                              title={u.status === 'inactive' ? 'Aktifkan akun ini' : 'Nonaktifkan akun ini'}
-                            >
-                              {u.status === 'inactive'
-                                ? <><Power className="w-3 h-3" /> Aktifkan</>
-                                : <><PowerOff className="w-3 h-3" /> Nonaktif</>
-                              }
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setShowDeleteConfirm({
+                              </button>
+                              <button
+                                onClick={() => setShowDeleteConfirm({
                                   id: u.id,
                                   fullName: u.fullName,
                                   linkedCount: u.linkedCount || 0
-                                })
-                              }}
-                              className="h-7 font-bold text-[11px] gap-1 px-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
-                              title="Hapus akun petugas survey"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                              Hapus
-                            </Button>
+                                })}
+                                title="Hapus akun petugas survey"
+                                className="flex-1 flex items-center justify-center gap-1 h-7 px-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-[10px] transition-all hover:shadow-sm"
+                              >
+                                <Trash2 className="w-3 h-3 shrink-0" /> Hapus
+                              </button>
+                            </div>
                           </div>
                         </TableCell>
                       </TableRow>
