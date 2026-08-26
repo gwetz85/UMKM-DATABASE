@@ -19,7 +19,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 
 const BANK_LIST = [
-  "BCA", "BNI", "BRI", "BRK", "MANDIRI", "PANIN", "OCBC", "DANAMON", "BUKOPIN", "BTN"
+  "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA"
 ]
 
 export default function RekeningBankPage() {

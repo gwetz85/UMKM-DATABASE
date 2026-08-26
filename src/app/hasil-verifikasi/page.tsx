@@ -45,7 +45,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
 
 const BANK_LIST = [
-  "BCA", "BNI", "BRI", "BRK", "MANDIRI", "PANIN", "OCBC", "DANAMON", "BUKOPIN", "BTN"
+  "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA"
 ]
 
 const normalizeGender = (g: string) => {
