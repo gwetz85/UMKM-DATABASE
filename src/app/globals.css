@@ -590,3 +590,68 @@
 .dark table td .text-slate-900 {
   color: #1e293b !important;
 }
+
+/* ==========================================
+   DARK MODE DATA DETAIL BOXES & MODALS
+   ========================================== */
+
+.dark .bg-muted\/30,
+.dark .bg-muted\/40,
+.dark .bg-muted\/50,
+.dark .bg-muted\/20 {
+  background-color: rgba(30, 41, 59, 0.75) !important;
+  border: 1px solid rgba(51, 65, 85, 0.6) !important;
+}
+
+.dark .text-muted-foreground {
+  color: #94a3b8 !important;
+}
+
+.dark .bg-red-50 {
+  background-color: rgba(69, 10, 10, 0.45) !important;
+  border-color: rgba(153, 27, 27, 0.6) !important;
+}
+
+.dark .text-red-700 {
+  color: #fca5a5 !important;
+}
+
+.dark .text-red-600 {
+  color: #f87171 !important;
+}
+
+.dark .bg-emerald-50,
+.dark .bg-green-50 {
+  background-color: rgba(6, 78, 59, 0.4) !important;
+  border-color: rgba(5, 150, 105, 0.5) !important;
+}
+
+.dark .bg-blue-50 {
+  background-color: rgba(30, 58, 138, 0.4) !important;
+  border-color: rgba(37, 99, 235, 0.5) !important;
+}
+
+.dark .bg-amber-50,
+.dark .bg-yellow-50 {
+  background-color: rgba(120, 53, 15, 0.4) !important;
+  border-color: rgba(217, 119, 6, 0.5) !important;
+}
+
+.dark .space-y-1 p.text-sm.font-bold,
+.dark .space-y-1 .font-bold.text-sm {
+  color: #f8fafc !important;
+}
+
+.dark .space-y-1 p.text-\[10px\].font-bold,
+.dark .space-y-1 .text-\[10px\].font-bold,
+.dark .text-\[10px\].font-bold.text-muted-foreground {
+  color: #94a3b8 !important;
+}
+
+.dark .border-b {
+  border-color: rgba(51, 65, 85, 0.7) !important;
+}
+
+.dark .border-t {
+  border-color: rgba(51, 65, 85, 0.7) !important;
+}
