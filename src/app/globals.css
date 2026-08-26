@@ -323,12 +323,26 @@
   @apply text-xs font-black text-slate-800 uppercase tracking-tight block leading-none;
 }
 
+.dark .weather-city {
+  color: #f8fafc !important;
+}
+
 .weather-province {
   @apply text-[8px] font-bold text-slate-400 uppercase tracking-wider block leading-tight mt-0.5;
 }
 
+.dark .weather-province {
+  color: #94a3b8 !important;
+}
+
 .weather-update-badge {
   @apply flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider border border-emerald-100;
+}
+
+.dark .weather-update-badge {
+  background-color: rgba(6, 78, 59, 0.5) !important;
+  border-color: rgba(5, 150, 105, 0.5) !important;
+  color: #34d399 !important;
 }
 
 .weather-live-dot {
@@ -362,12 +376,24 @@
   @apply text-4xl md:text-5xl font-black text-slate-800 tracking-tighter leading-none;
 }
 
+.dark .weather-temp {
+  color: #f8fafc !important;
+}
+
 .weather-condition {
   @apply text-xs md:text-sm font-bold text-primary uppercase tracking-wider;
 }
 
+.dark .weather-condition {
+  color: #34d399 !important;
+}
+
 .weather-feels {
   @apply text-[9px] font-semibold text-slate-400 mt-0.5;
+}
+
+.dark .weather-feels {
+  color: #94a3b8 !important;
 }
 
 /* Detail Grid */
@@ -379,12 +405,30 @@
   @apply flex items-center gap-1.5 bg-white/60 rounded-lg px-2 py-1.5 border border-slate-100/60 transition-all hover:bg-white/80;
 }
 
+.dark .weather-detail-item {
+  background-color: rgba(30, 41, 59, 0.75) !important;
+  border-color: rgba(51, 65, 85, 0.6) !important;
+}
+
+.dark .weather-detail-item:hover {
+  background-color: rgba(30, 41, 59, 0.95) !important;
+}
+
 .weather-detail-rain {
   @apply col-span-2 bg-blue-50/60 border-blue-100/60;
 }
 
+.dark .weather-detail-rain {
+  background-color: rgba(30, 58, 138, 0.45) !important;
+  border-color: rgba(37, 99, 235, 0.5) !important;
+}
+
 .weather-detail-icon {
   @apply w-3.5 h-3.5 text-slate-400 shrink-0;
+}
+
+.dark .weather-detail-icon {
+  color: #38bdf8 !important;
 }
 
 .weather-detail-info {
@@ -395,8 +439,16 @@
   @apply text-[11px] font-black text-slate-700 leading-tight;
 }
 
+.dark .weather-detail-value {
+  color: #f8fafc !important;
+}
+
 .weather-detail-label {
   @apply text-[8px] font-bold text-slate-400 uppercase tracking-wider leading-tight;
+}
+
+.dark .weather-detail-label {
+  color: #94a3b8 !important;
 }
 
 /* Footer */
@@ -404,8 +456,25 @@
   @apply flex items-center justify-between px-3 py-1.5 bg-slate-50/60 border-t border-slate-100/60 text-[8px] font-bold text-slate-400 uppercase tracking-wider;
 }
 
+.dark .weather-footer {
+  background-color: rgba(15, 23, 42, 0.75) !important;
+  border-color: rgba(51, 65, 85, 0.6) !important;
+  color: #94a3b8 !important;
+}
+
 .weather-refresh-btn {
   @apply w-5 h-5 flex items-center justify-center rounded-full bg-white/80 text-slate-400 hover:text-primary hover:bg-primary/10 transition-all active:scale-90 border border-slate-100;
+}
+
+.dark .weather-refresh-btn {
+  background-color: rgba(30, 41, 59, 0.8) !important;
+  border-color: rgba(51, 65, 85, 0.7) !important;
+  color: #94a3b8 !important;
+}
+
+.dark .weather-refresh-btn:hover {
+  background-color: rgba(51, 65, 85, 0.9) !important;
+  color: #38bdf8 !important;
 }
 
 .weather-refresh-btn svg {
