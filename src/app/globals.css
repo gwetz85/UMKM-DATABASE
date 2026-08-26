@@ -539,3 +539,54 @@
 .animate-weather-snow {
   animation: weather-snow 3s ease-in-out infinite;
 }
+
+/* ==========================================
+   TABLES: ALWAYS WHITE BACKGROUND IN DARK MODE
+   ========================================== */
+
+.dark table,
+.dark .table-container,
+.dark [data-table],
+.dark table tbody,
+.dark table td {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+}
+
+.dark table thead,
+.dark table thead th,
+.dark table th {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+.dark table tr,
+.dark table tbody tr {
+  background-color: #ffffff !important;
+}
+
+.dark table tbody tr:nth-child(even),
+.dark table tbody tr.even {
+  background-color: #f8fafc !important;
+}
+
+.dark table tbody tr:hover,
+.dark table tbody tr:hover td {
+  background-color: #f1f5f9 !important;
+}
+
+.dark table td,
+.dark table th {
+  border-color: #e2e8f0 !important;
+}
+
+.dark table td .text-slate-500,
+.dark table td .text-muted-foreground {
+  color: #64748b !important;
+}
+
+.dark table td .text-slate-700,
+.dark table td .text-slate-800,
+.dark table td .text-slate-900 {
+  color: #1e293b !important;
+}
