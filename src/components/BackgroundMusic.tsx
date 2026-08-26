@@ -68,8 +68,8 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
 
 
   // Configuration: YouTube Playlist
-  // Playlist ID: PLBDzcTxWPOhA
-  const playlistId = "PLBDzcTxWPOhA";
+  // Playlist ID: PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7
+  const playlistId = "PLW77xtdIDKMuvscijYW1CQ8OCTdCrbLg7";
   const useShuffle = false; // Disabled shuffle to follow playlist order
 
   useEffect(() => {
@@ -121,6 +121,7 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
         events: {
           onReady: (event: any) => {
             setIsPlayerReady(true);
+            isPlayerReadyRef.current = true;
             
             // Set loop for the player
             event.target.setLoop(true);
@@ -143,23 +144,25 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
             // Get initial title
             const videoData = event.target.getVideoData();
             if (videoData && videoData.title) {
+              currentTitleRef.current = videoData.title;
               setCurrentTitle(videoData.title);
             }
           },
           onStateChange: (event: any) => {
             const playerState = event.data;
             
+            // Try updating title on any state change
+            const videoData = event.target.getVideoData();
+            if (videoData && videoData.title) {
+              currentTitleRef.current = videoData.title;
+              setCurrentTitle(videoData.title);
+            }
+
             if (playerState === window.YT.PlayerState.PLAYING) {
               hasInteractedRef.current = true;
               isPlayingRef.current = true;
               setHasInteracted(true);
               setIsPlaying(true);
-              
-              const videoData = event.target.getVideoData();
-              if (videoData && videoData.title) {
-                currentTitleRef.current = videoData.title;
-                setCurrentTitle(videoData.title);
-              }
             } else if (playerState === window.YT.PlayerState.PAUSED) {
               isPlayingRef.current = false;
               setIsPlaying(false);
@@ -178,8 +181,12 @@ export function BackgroundMusic({ className, role }: { className?: string, role?
             console.error("YouTube Player Error:", event.data);
             // On error, try to skip to next video after a short delay
             setTimeout(() => {
-              if (playerRef.current && isPlayerReady) {
-                playerRef.current.nextVideo();
+              if (playerRef.current && isPlayerReadyRef.current) {
+                try {
+                  playerRef.current.nextVideo();
+                } catch (err) {
+                  console.error("Failed to skip to next video:", err);
+                }
               }
             }, 2000);
           }
