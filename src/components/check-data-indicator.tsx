@@ -74,13 +74,13 @@ export function CheckDataIndicator({ actor, data2023, data2024, data2025, dataBl
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className={`max-w-3xl max-h-[90vh] overflow-y-auto ${hasBlacklistMatch ? "bg-rose-50/50" : "bg-slate-50/50"} border-none shadow-2xl rounded-2xl`}>
+        <DialogContent className={`max-w-3xl max-h-[90vh] overflow-y-auto ${hasBlacklistMatch ? "bg-rose-50/95 dark:bg-slate-900 border-red-200 dark:border-red-900/50" : "bg-slate-50/95 dark:bg-slate-900 border-slate-200 dark:border-slate-800"} shadow-2xl rounded-2xl`}>
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-slate-900 uppercase flex items-center gap-2">
-              <ShieldAlert className={`w-6 h-6 ${hasBlacklistMatch ? "text-red-600" : "text-amber-600"}`} /> 
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-slate-100 uppercase flex items-center gap-2">
+              <ShieldAlert className={`w-6 h-6 ${hasBlacklistMatch ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`} /> 
               {hasBlacklistMatch ? "PERINGATAN: DATA BLACKLIST DITEMUKAN" : "Data Master Pengecekkan"}
             </DialogTitle>
-            <DialogDescription className="text-slate-800 font-medium">
+            <DialogDescription className="text-slate-700 dark:text-slate-300 font-medium">
               Sistem mendeteksi NIK/KK ini memiliki {combinedMatches.length} riwayat pada database pembanding:
             </DialogDescription>
           </DialogHeader>
@@ -94,57 +94,57 @@ export function CheckDataIndicator({ actor, data2023, data2024, data2025, dataBl
               const bgBadge = itemIsBlacklist ? "bg-red-600" : (itemIs2025 ? "bg-blue-600" : "bg-amber-500");
 
               return (
-                <div key={idx} className={`relative grid gap-4 p-5 bg-white rounded-xl shadow-sm border ${borderCol} mt-2`}>
+                <div key={idx} className={`relative grid gap-4 p-5 bg-white dark:bg-slate-800/90 rounded-xl shadow-sm border ${borderCol} dark:border-slate-700 mt-2`}>
                   <div className={`absolute -top-3 left-4 ${bgBadge} text-white px-3 py-0.5 rounded-full text-[10px] font-black uppercase shadow-sm flex items-center gap-1.5`}>
                     {itemIsBlacklist ? <Info className="w-3 h-3"/> : <Database className="w-3 h-3"/>}
                     {data.source}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
-                    <div className="space-y-1 border-b pb-2 md:border-b-0 md:pb-0">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5"><User className="w-3 h-3"/> Nama Lengkap (Data Cek)</p>
-                      <p className={`text-sm font-bold uppercase ${itemIsBlacklist ? "text-red-700" : "text-slate-800"}`}>{data.nama || "-"}</p>
+                    <div className="space-y-1 border-b border-slate-200 dark:border-slate-700 pb-2 md:border-b-0 md:pb-0">
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5"><User className="w-3 h-3"/> Nama Lengkap (Data Cek)</p>
+                      <p className={`text-sm font-bold uppercase ${itemIsBlacklist ? "text-red-700 dark:text-red-400" : "text-slate-900 dark:text-slate-100"}`}>{data.nama || "-"}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5"><FileText className="w-3 h-3"/> No. KK / NIK</p>
-                      <p className="text-sm font-bold text-slate-800 font-mono">{data.noKK || "-"} <span className="opacity-40">/</span> {data.nik || "-"}</p>
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5"><FileText className="w-3 h-3"/> No. KK / NIK</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100 font-mono">{data.noKK || "-"} <span className="opacity-40">/</span> {data.nik || "-"}</p>
                     </div>
-                    <div className="space-y-1 border-b pb-2 md:border-b-0 md:pb-0">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5"><SearchCheck className="w-3 h-3"/> Nomor (ID Program)</p>
-                      <p className="text-sm font-bold text-slate-800">{data.nomor || "-"}</p>
+                    <div className="space-y-1 border-b border-slate-200 dark:border-slate-700 pb-2 md:border-b-0 md:pb-0">
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5"><SearchCheck className="w-3 h-3"/> Nomor (ID Program)</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{data.nomor || "-"}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5"><Database className="w-3 h-3"/> Sektor Usaha</p>
-                      <p className="text-sm font-bold text-slate-800 uppercase">{data.usaha || "-"}</p>
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5"><Database className="w-3 h-3"/> Sektor Usaha</p>
+                      <p className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase">{data.usaha || "-"}</p>
                     </div>
-                    <div className="space-y-1 md:col-span-2 border-t pt-2">
-                      <p className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5">📍 Alamat & Kelurahan</p>
-                      <p className="text-xs font-bold text-slate-800 uppercase">{data.alamat || "-"} <span className="text-primary px-1 font-black"> / </span> {data.kelurahan || "-"}</p>
+                    <div className="space-y-1 md:col-span-2 border-t border-slate-200 dark:border-slate-700 pt-2">
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5">📍 Alamat & Kelurahan</p>
+                      <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">{data.alamat || "-"} <span className="text-primary px-1 font-black"> / </span> {data.kelurahan || "-"}</p>
                     </div>
-                    <div className="space-y-1 border-t pt-2 md:col-span-2">
+                    <div className="space-y-1 border-t border-slate-200 dark:border-slate-700 pt-2 md:col-span-2">
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase">Tahun</p>
-                          <p className="text-xs font-bold">{data.tahunPengajuan || "-"}</p>
+                          <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Tahun</p>
+                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100">{data.tahunPengajuan || "-"}</p>
                         </div>
                         <div className="space-y-0.5">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Status</p>
-                          <p className={`text-xs font-bold ${itemIsBlacklist ? "text-red-600" : "text-primary"}`}>{data.status || "-"}</p>
+                          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Status</p>
+                          <p className={`text-xs font-bold ${itemIsBlacklist ? "text-red-600 dark:text-red-400" : "text-primary dark:text-blue-400"}`}>{data.status || "-"}</p>
                         </div>
                         <div className="space-y-0.5">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Status LPJ</p>
-                          <p className="text-[11px] font-bold text-amber-600">{data.statusLpj || "-"}</p>
+                          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Status LPJ</p>
+                          <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400">{data.statusLpj || "-"}</p>
                         </div>
                         <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase">Nominal</p>
-                          <p className="text-xs font-bold text-emerald-600">{formatCurrency(data.nominal)}</p>
+                          <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Nominal</p>
+                          <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(data.nominal)}</p>
                         </div>
                         <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase">Kecamatan</p>
-                          <p className="text-xs font-bold">{data.kecamatan || "-"}</p>
+                          <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Kecamatan</p>
+                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100">{data.kecamatan || "-"}</p>
                         </div>
                         <div className="space-y-0.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase">Koordinator</p>
-                          <p className="text-xs font-bold">{data.coordinator || "-"}</p>
+                          <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase">Koordinator</p>
+                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100">{data.coordinator || "-"}</p>
                         </div>
                       </div>
                     </div>
@@ -155,7 +155,7 @@ export function CheckDataIndicator({ actor, data2023, data2024, data2025, dataBl
           </div>
           
           <div className="pt-4">
-            <Button className="w-full font-bold h-12 bg-slate-900 hover:bg-slate-800 text-white" onClick={() => setIsDialogOpen(false)}>
+            <Button className="w-full font-bold h-12 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 text-white" onClick={() => setIsDialogOpen(false)}>
               TUTUP DATA PEMBANDING
             </Button>
           </div>

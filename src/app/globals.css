@@ -637,21 +637,20 @@
   border-color: rgba(217, 119, 6, 0.5) !important;
 }
 
-.dark .space-y-1 p.text-sm.font-bold,
-.dark .space-y-1 .font-bold.text-sm {
+.dark [role="dialog"] .space-y-1 p.text-sm.font-bold,
+.dark [role="dialog"] .space-y-1 .font-bold.text-sm,
+.dark [data-radix-dialog-content] .space-y-1 p.text-sm.font-bold,
+.dark [data-radix-dialog-content] .space-y-1 .font-bold.text-sm,
+.dark .bg-slate-800\/90 .space-y-1 p.text-sm.font-bold,
+.dark .bg-slate-800\/90 .space-y-1 .font-bold.text-sm {
   color: #f8fafc !important;
 }
 
-.dark .space-y-1 p.text-\[10px\].font-bold,
-.dark .space-y-1 .text-\[10px\].font-bold,
-.dark .text-\[10px\].font-bold.text-muted-foreground {
+.dark [role="dialog"] .space-y-1 p.text-\[10px\].font-bold,
+.dark [role="dialog"] .space-y-1 .text-\[10px\].font-bold,
+.dark [data-radix-dialog-content] .space-y-1 p.text-\[10px\].font-bold,
+.dark [data-radix-dialog-content] .space-y-1 .text-\[10px\].font-bold,
+.dark [data-radix-dialog-content] .text-\[10px\].font-bold.text-muted-foreground,
+.dark [role="dialog"] .text-\[10px\].font-bold.text-muted-foreground {
   color: #94a3b8 !important;
-}
-
-.dark .border-b {
-  border-color: rgba(51, 65, 85, 0.7) !important;
-}
-
-.dark .border-t {
-  border-color: rgba(51, 65, 85, 0.7) !important;
 }
