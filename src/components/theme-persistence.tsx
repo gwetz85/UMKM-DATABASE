@@ -46,8 +46,10 @@ export function ThemePersistence() {
     // Apply Mode (Light/Dark)
     if (themeData.mode === 'dark') {
       root.classList.add('dark');
+      document.body?.classList.add('dark');
     } else {
       root.classList.remove('dark');
+      document.body?.classList.remove('dark');
     }
 
     // Apply Palette
@@ -74,8 +76,7 @@ export function ThemePersistence() {
         }
         .dark {
           --primary: ${palette} !important;
-          --sidebar-background: ${palette} !important;
-          --sidebar-border: ${palette} !important;
+          --sidebar-primary: ${palette} !important;
           --ring: ${palette} !important;
           --accent: ${palette} !important;
         }

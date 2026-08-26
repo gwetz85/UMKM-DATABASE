@@ -211,7 +211,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
           {!isLoginPage && (
             <>
-              <header className="sticky top-0 z-50 flex items-center justify-between px-4 md:px-6 lg:px-8 h-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 shrink-0 print:hidden shadow-sm gap-3 md:gap-4">
+              <header className="sticky top-0 z-50 flex items-center justify-between px-4 md:px-6 lg:px-8 h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 shrink-0 print:hidden shadow-sm gap-3 md:gap-4">
                 <div className="flex items-center gap-3 md:gap-5 shrink-0">
                   <Link href={user ? "/" : "/cek-data"} className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
                     <span className="text-2xl md:text-3xl font-black tracking-tighter leading-none text-primary">
@@ -222,10 +222,10 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     </span>
                   </Link>
 
-                  <div className="hidden md:flex h-8 w-px bg-slate-200 mx-1" />
+                  <div className="hidden md:flex h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
 
                   {currentTitle && (
-                    <h1 className="hidden 2xl:block text-xl md:text-2xl font-black text-slate-800 tracking-tight uppercase max-w-[200px] truncate">
+                    <h1 className="hidden 2xl:block text-xl md:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight uppercase max-w-[200px] truncate">
                       {currentTitle}
                     </h1>
                   )}
@@ -255,20 +255,20 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                         </button>
                       )}
 
-                      <div className="hidden sm:flex h-8 w-px bg-slate-200 mx-1" />
+                      <div className="hidden sm:flex h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
 
                       <div className="hidden sm:flex items-center gap-2">
                         <RealtimeClock 
-                          className="bg-white/95 backdrop-blur-md px-3 py-1.5 md:px-3.5 md:py-2 rounded-2xl border border-slate-200 shadow-md" 
-                          timeClassName="text-xs md:text-sm font-mono font-black text-slate-800 tracking-tight leading-none" 
-                          dateClassName="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-0.5" 
+                          className="bg-white/95 dark:bg-slate-800/90 backdrop-blur-md px-3 py-1.5 md:px-3.5 md:py-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-md" 
+                          timeClassName="text-xs md:text-sm font-mono font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none" 
+                          dateClassName="text-[8px] md:text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5" 
                         />
                         <OfficeHoursTimer />
                       </div>
 
                       <button
                         onClick={() => setIsLogoutDialogOpen(true)}
-                        className="hidden sm:flex w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-rose-50 text-rose-600 items-center justify-center hover:bg-rose-100 transition-all active:scale-90 border border-rose-100 shadow-sm group"
+                        className="hidden sm:flex w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 items-center justify-center hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all active:scale-90 border border-rose-100 dark:border-rose-900/40 shadow-sm group"
                         title="Logout / Keluar"
                       >
                         <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
@@ -299,7 +299,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                             <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
                             <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Profil</span>
                           </div>
-                          <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-100 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-2xl overflow-hidden border-2 border-white dark:border-slate-700 ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                             {profile?.photoURL ? (
                               <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
@@ -332,39 +332,39 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     <WeatherWidget className="w-72" />
                   </div>
                   <div className="hidden lg:flex flex-col gap-3">
-                    <div className="w-72 bg-white/80 backdrop-blur-md rounded-2xl border border-white/60 shadow-lg overflow-hidden flex flex-col transition-all hover:shadow-xl hover:bg-white">
-                      <div className="p-4 border-b border-slate-300/50">
+                    <div className="w-72 bg-white/80 dark:bg-slate-900/85 backdrop-blur-md rounded-2xl border border-white/60 dark:border-slate-800/80 shadow-lg overflow-hidden flex flex-col transition-all hover:shadow-xl hover:bg-white dark:hover:bg-slate-900">
+                      <div className="p-4 border-b border-slate-300/50 dark:border-slate-800/50">
                         <div className="flex flex-col gap-3">
                           <div className="flex items-center justify-between w-full">
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Aplikasi</span>
-                            <span className="text-xs font-black text-blue-700 uppercase drop-shadow-sm">{systemConfig?.appName || 'SIMPU'}</span>
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Aplikasi</span>
+                            <span className="text-xs font-black text-blue-700 dark:text-blue-400 uppercase drop-shadow-sm">{systemConfig?.appName || 'SIMPU'}</span>
                           </div>
                           <div className="flex items-center justify-between w-full">
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Versi</span>
-                            <span className="text-xs font-black text-slate-800 bg-slate-200/80 border border-slate-300 px-2 py-1 rounded-md uppercase tracking-wider shadow-sm">{systemConfig?.version || '8.2.5 PRO'}</span>
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Versi</span>
+                            <span className="text-xs font-black text-slate-800 dark:text-slate-200 bg-slate-200/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2 py-1 rounded-md uppercase tracking-wider shadow-sm">{systemConfig?.version || '8.2.5 PRO'}</span>
                           </div>
                           <div className="flex items-center justify-between w-full">
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Pengguna</span>
-                            <span className="text-xs font-black text-slate-900 truncate max-w-[140px] text-right uppercase drop-shadow-sm">
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Pengguna</span>
+                            <span className="text-xs font-black text-slate-900 dark:text-slate-100 truncate max-w-[140px] text-right uppercase drop-shadow-sm">
                               {profile?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}
                             </span>
                           </div>
-                          <div className="flex items-center justify-between w-full pt-1 border-t border-slate-200/50">
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">Data Pembanding</span>
-                            <span className="text-xs font-black text-indigo-700 uppercase drop-shadow-sm">
+                          <div className="flex items-center justify-between w-full pt-1 border-t border-slate-200/50 dark:border-slate-800/50">
+                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Data Pembanding</span>
+                            <span className="text-xs font-black text-indigo-700 dark:text-indigo-400 uppercase drop-shadow-sm">
                               {systemConfig?.totalPembanding || '0 Data'}
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div className="p-4 bg-slate-100/80 flex flex-col gap-3">
-                        <span className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2 drop-shadow-sm">
+                      <div className="p-4 bg-slate-100/80 dark:bg-slate-800/80 flex flex-col gap-3">
+                        <span className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest flex items-center gap-2 drop-shadow-sm">
                           <div className="w-2 h-2 bg-blue-600 rounded-full shadow-sm"></div>
                           Kontak Admin
                         </span>
                         <a href={`mailto:${systemConfig?.adminEmail || 'simputeam@gmail.com'}`} className="flex items-center justify-between w-full group">
-                          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider group-hover:text-blue-700 transition-colors">Email</span>
-                          <span className="text-xs font-bold text-slate-800 group-hover:text-blue-700 transition-colors">{systemConfig?.adminEmail || 'simputeam@gmail.com'}</span>
+                          <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">Email</span>
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">{systemConfig?.adminEmail || 'simputeam@gmail.com'}</span>
                         </a>
                         <a 
                           href={systemConfig?.adminWhatsapp ? (systemConfig.adminWhatsapp.startsWith('http') ? systemConfig.adminWhatsapp : `https://${systemConfig.adminWhatsapp}`) : 'https://wa.me/62817319885'} 
@@ -372,8 +372,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                           rel="noopener noreferrer" 
                           className="flex items-center justify-between w-full group"
                         >
-                          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider group-hover:text-emerald-700 transition-colors">WhatsApp</span>
-                          <span className="text-xs font-black text-emerald-700 group-hover:text-emerald-800 transition-colors">{systemConfig?.adminWhatsapp || 'wa.me/62817319885'}</span>
+                          <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">WhatsApp</span>
+                          <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 group-hover:text-emerald-800 transition-colors">{systemConfig?.adminWhatsapp || 'wa.me/62817319885'}</span>
                         </a>
                       </div>
                     </div>

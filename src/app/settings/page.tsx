@@ -52,7 +52,19 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
   const [uploadingExcel, setUploadingExcel] = useState(false)
-  const [theme, setTheme] = useState<"light" | "dark">("light")
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('simpu-theme');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.mode === 'dark' || parsed.mode === 'light') return parsed.mode;
+        }
+        if (document.documentElement.classList.contains('dark')) return 'dark';
+      } catch (e) {}
+    }
+    return "light";
+  });
 
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [showResetSheetDialog, setShowResetSheetDialog] = useState(false)
@@ -117,8 +129,10 @@ export default function SettingsPage() {
 
     if (themeData.mode === 'dark') {
       root.classList.add('dark');
+      document.body?.classList.add('dark');
     } else {
       root.classList.remove('dark');
+      document.body?.classList.remove('dark');
     }
 
     if (themeData.palette) {
@@ -143,8 +157,7 @@ export default function SettingsPage() {
         }
         .dark {
           --primary: ${palette} !important;
-          --sidebar-background: ${palette} !important;
-          --sidebar-border: ${palette} !important;
+          --sidebar-primary: ${palette} !important;
           --ring: ${palette} !important;
           --accent: ${palette} !important;
         }
