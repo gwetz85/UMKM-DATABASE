@@ -233,6 +233,16 @@ export default function LoginPage() {
               return
             }
 
+            if (preRegisteredData.status === 'inactive') {
+              toast({
+                variant: "destructive",
+                title: "Akun Dinonaktifkan",
+                description: "User ini telah dinonaktifkan oleh Administrator."
+              })
+              setLoading(false)
+              return
+            }
+
             if (preRegisteredData.password === password) {
               let currentVersion = preRegisteredData.pwdVersion || 0;
               let newUserCred: any = null;

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useDatabase, useUser, setDocumentNonBlocking, updateDocumentNonBlocking, useList, useMemoFirebase } from "@/firebase"
-import { ref, get } from "firebase/database"
+import { ref, get, update } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { logActivity, getDeviceType } from "@/lib/logger"
@@ -34,7 +35,9 @@ import {
   Lock,
   FileDown,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  Power,
+  PowerOff
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import Link from "next/link"
@@ -78,6 +81,8 @@ export default function UploadPetugasSurveyPage() {
   const [addPassword, setAddPassword] = useState("123456")
 
   const [showResetConfirm, setShowResetConfirm] = useState<{id: string, fullName: string} | null>(null)
+  const [showStatusConfirm, setShowStatusConfirm] = useState<{id: string, fullName: string, currentStatus: string} | null>(null)
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<{id: string, fullName: string, linkedCount: number} | null>(null)
   const [isDeletingPetugas, setIsDeletingPetugas] = useState(false)
   const [isExportingPdf, setIsExportingPdf] = useState(false)
@@ -605,6 +610,47 @@ export default function UploadPetugasSurveyPage() {
     setShowResetConfirm(null)
   }
 
+  // Handle Toggle Aktif / Nonaktif Petugas Survey
+  const handleToggleStatus = async () => {
+    if (!showStatusConfirm || !database) return
+    setIsTogglingStatus(true)
+    const { id, fullName, currentStatus } = showStatusConfirm
+    const isCurrentlyInactive = currentStatus === 'inactive' || currentStatus === 'nonaktif'
+    const newStatus = isCurrentlyInactive ? 'active' : 'inactive'
+
+    try {
+      const userRef = ref(database, `system_users/${id}`)
+      await update(userRef, {
+        status: newStatus,
+        isActive: isCurrentlyInactive,
+        ...(newStatus === 'inactive' ? { activeSessionId: null } : {})
+      })
+
+      logActivity({
+        query: `UBAH STATUS PETUGAS SURVEY: ${fullName} -> ${newStatus.toUpperCase()}`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'MANAJEMEN PETUGAS SURVEY',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+
+      toast({
+        title: newStatus === 'inactive' ? "Akun Dinonaktifkan" : "Akun Diaktifkan",
+        description: `Petugas "${fullName}" sekarang ${newStatus === 'inactive' ? 'TIDAK BISA login ke aplikasi' : 'BISA login ke aplikasi'}.`
+      })
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Gagal Mengubah Status",
+        description: err.message || "Terjadi kesalahan saat mengubah status akun."
+      })
+    } finally {
+      setIsTogglingStatus(false)
+      setShowStatusConfirm(null)
+    }
+  }
+
   // Handle Delete Petugas Survey & Unassign linked business actors
   const handleDeletePetugasSurvey = async () => {
     if (!showDeleteConfirm || !database) return
@@ -985,7 +1031,8 @@ export default function UploadPetugasSurveyPage() {
                     <TableHead className="font-bold min-w-[130px]">Password</TableHead>
                     <TableHead className="font-bold text-center min-w-[110px]">Data Terhubung</TableHead>
                     <TableHead className="font-bold text-center min-w-[100px]">Status Login</TableHead>
-                    <TableHead className="text-center font-bold min-w-[160px]">Aksi</TableHead>
+                    <TableHead className="font-bold text-center min-w-[90px]">Status Akun</TableHead>
+                    <TableHead className="text-center font-bold min-w-[200px]">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1031,6 +1078,20 @@ export default function UploadPetugasSurveyPage() {
                             </Badge>
                           )}
                         </TableCell>
+
+                        {/* Status Akun: Aktif / Nonaktif */}
+                        <TableCell className="text-center">
+                          {u.status === 'inactive' ? (
+                            <Badge className="bg-red-100 text-red-700 border-red-200 text-[10px] uppercase font-bold cursor-default">
+                              <PowerOff className="w-2.5 h-2.5 mr-1" /> Nonaktif
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] uppercase font-bold cursor-default">
+                              <Power className="w-2.5 h-2.5 mr-1" /> Aktif
+                            </Badge>
+                          )}
+                        </TableCell>
+
                         <TableCell className="text-center px-3">
                           <div className="flex flex-wrap justify-center gap-1.5">
                             <Button 
@@ -1063,6 +1124,28 @@ export default function UploadPetugasSurveyPage() {
                             >
                               <RefreshCcw className="w-3 h-3" />
                               {u.uid ? 'Reset' : 'Belum Login'}
+                            </Button>
+
+                            {/* Toggle Aktif / Nonaktif */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowStatusConfirm({
+                                id: u.id,
+                                fullName: u.fullName,
+                                currentStatus: u.status || 'active'
+                              })}
+                              className={`h-7 font-bold text-[11px] gap-1 px-2 ${
+                                u.status === 'inactive'
+                                  ? 'text-emerald-700 border-emerald-300 bg-emerald-50 hover:bg-emerald-100'
+                                  : 'text-red-600 border-red-200 bg-red-50 hover:bg-red-100'
+                              }`}
+                              title={u.status === 'inactive' ? 'Aktifkan akun ini' : 'Nonaktifkan akun ini'}
+                            >
+                              {u.status === 'inactive'
+                                ? <><Power className="w-3 h-3" /> Aktifkan</>
+                                : <><PowerOff className="w-3 h-3" /> Nonaktif</>
+                              }
                             </Button>
 
                             <Button
@@ -1178,6 +1261,22 @@ export default function UploadPetugasSurveyPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── STATUS TOGGLE CONFIRM DIALOG ── */}
+      <ConfirmDialog
+        open={!!showStatusConfirm}
+        onOpenChange={(open) => !open && setShowStatusConfirm(null)}
+        title={showStatusConfirm?.currentStatus === 'inactive' ? 'Aktifkan Akun Petugas?' : 'Nonaktifkan Akun Petugas?'}
+        description={
+          showStatusConfirm?.currentStatus === 'inactive'
+            ? `Akun "${showStatusConfirm?.fullName}" akan DIAKTIFKAN. Petugas ini akan bisa login ke aplikasi kembali.`
+            : `Akun "${showStatusConfirm?.fullName}" akan DINONAKTIFKAN. Petugas ini TIDAK BISA login ke aplikasi sampai diaktifkan kembali.`
+        }
+        onConfirm={handleToggleStatus}
+        variant={showStatusConfirm?.currentStatus === 'inactive' ? 'default' : 'destructive'}
+        confirmText={showStatusConfirm?.currentStatus === 'inactive' ? 'Ya, Aktifkan' : 'Ya, Nonaktifkan'}
+      />
+
       {/* ── FORCE ASSIGN DIALOG ── */}
       <Dialog open={!!forceAssignRow} onOpenChange={(open) => { if (!open) { setForceAssignRow(null); setForceAssignSearch('') } }}>
         <DialogContent className="max-w-2xl">
