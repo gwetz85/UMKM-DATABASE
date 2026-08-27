@@ -58,6 +58,59 @@ async function loadLogoBase64(): Promise<string | null> {
 }
 
 /**
+ * Helper to fetch image (or process base64) and get dimensions/format
+ */
+async function loadPhotoBase64(urlOrBase64: string): Promise<{ data: string; format: 'JPEG' | 'PNG'; width: number; height: number } | null> {
+  if (!urlOrBase64) return null;
+  try {
+    if (urlOrBase64.startsWith('data:image/')) {
+      const format: 'JPEG' | 'PNG' = urlOrBase64.includes('image/png') ? 'PNG' : 'JPEG';
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          resolve({
+            data: urlOrBase64,
+            format,
+            width: img.naturalWidth || img.width || 400,
+            height: img.naturalHeight || img.height || 300,
+          });
+        };
+        img.onerror = () => resolve(null);
+        img.src = urlOrBase64;
+      });
+    }
+
+    const res = await fetch(urlOrBase64);
+    if (res.ok) {
+      const blob = await res.blob();
+      const format: 'JPEG' | 'PNG' = blob.type.includes('png') ? 'PNG' : 'JPEG';
+      const base64 = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          resolve({
+            data: base64,
+            format,
+            width: img.naturalWidth || img.width || 400,
+            height: img.naturalHeight || img.height || 300,
+          });
+        };
+        img.onerror = () => resolve(null);
+        img.src = base64;
+      });
+    }
+  } catch (e) {
+    console.warn('Gagal memuat foto cancel dinas:', e);
+  }
+  return null;
+}
+
+
+/**
  * Generate 1-Page A4 Modern PDF for Cancel Dinas
  */
 export async function generateCancelDinasPDF(actor: BusinessActor): Promise<void> {
@@ -277,52 +330,142 @@ export async function generateCancelDinasPDF(actor: BusinessActor): Promise<void
 
   const finalTableY = (doc as any).lastAutoTable.finalY || 205;
 
-  // ── 4. QR CODE & TANDA TANGAN PENGESAHAN ──────────────────────────────────
-  const bottomY = Math.max(finalTableY + 4, 215);
+  // ── 4. QR CODE, FOTO BUKTI & TANDA TANGAN PENGESAHAN ────────────────────
+  const rawCancelPhoto = (actor as any).cancelDinasPhotoUrl || (actor as any).fotoCancelDinas || (actor as any).cancelPhotoUri || (actor as any).photoCancel;
+  const cancelPhoto = rawCancelPhoto ? await loadPhotoBase64(rawCancelPhoto) : null;
+
+  const bottomY = Math.max(finalTableY + 4, cancelPhoto ? 208 : 215);
 
   // Generate QR Code with metadata
   const qrMetadata = `PEMBATALAN DINAS (SIMPU)\nNama: ${actor.fullName}\nNIK: ${actor.nik}\nUsaha: ${actor.businessName}\nStatus: CANCEL DINAS\nPetugas: ${petugasCancel}\nAlasan: ${alasanCancel}`;
   const qrBase64 = await generateQRCodeBase64(qrMetadata);
 
-  if (qrBase64) {
-    const qrSize = 22;
-    doc.addImage(qrBase64, 'PNG', marginL + 2, bottomY, qrSize, qrSize);
+  if (cancelPhoto) {
+    // ── LAYOUT 3 KOLOM: [QR CODE] [FOTO BUKTI LAPANGAN] [TANDA TANGAN] ──
+    // 1. QR Code (Kolom Kiri)
+    if (qrBase64) {
+      const qrSize = 19;
+      doc.addImage(qrBase64, 'PNG', marginL + 1, bottomY + 1, qrSize, qrSize);
 
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(15, 23, 42);
+      doc.text('VERIFIKASI DIGITAL', marginL + qrSize + 4, bottomY + 4.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(5.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Dokumen resmi SIMPU', marginL + qrSize + 4, bottomY + 8.5);
+      doc.text('Dinas KUKM Prov. Kepri', marginL + qrSize + 4, bottomY + 12);
+      doc.text(`ID: ${actor.id.slice(0, 10)}`, marginL + qrSize + 4, bottomY + 15.5);
+    }
+
+    // 2. Foto Bukti Lapangan / Pembatalan (Kolom Tengah)
+    const photoBoxX = 74;
+    const photoBoxW = 62;
+    const photoBoxH = 43;
+    const photoBoxY = bottomY;
+
+    // Container frame
+    doc.setFillColor(254, 242, 242); // red-50
+    doc.setDrawColor(252, 165, 165); // red-300
+    doc.setLineWidth(0.3);
+    doc.roundedRect(photoBoxX, photoBoxY, photoBoxW, photoBoxH, 1.5, 1.5, 'FD');
+
+    // Header label
+    doc.setFillColor(254, 226, 226); // red-100
+    doc.roundedRect(photoBoxX, photoBoxY, photoBoxW, 5, 1.5, 1.5, 'F');
     doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(185, 28, 28); // red-700
+    doc.text('FOTO BUKTI PEMBATALAN', photoBoxX + photoBoxW / 2, photoBoxY + 3.6, { align: 'center' });
+
+    // Embedded image
+    const availW = photoBoxW - 4; // 58 mm
+    const availH = photoBoxH - 8; // 35 mm
+    const imgAspect = cancelPhoto.width / cancelPhoto.height;
+    const boxAspect = availW / availH;
+    let drawW = availW;
+    let drawH = availH;
+    if (imgAspect > boxAspect) {
+      drawH = availW / imgAspect;
+      drawW = availW;
+    } else {
+      drawW = availH * imgAspect;
+      drawH = availH;
+    }
+    const imgX = photoBoxX + 2 + (availW - drawW) / 2;
+    const imgY = photoBoxY + 6 + (availH - drawH) / 2;
+
+    try {
+      doc.addImage(cancelPhoto.data, cancelPhoto.format, imgX, imgY, drawW, drawH);
+    } catch (e) {
+      console.warn('Gagal merender foto pembatalan ke PDF:', e);
+    }
+
+    // 3. Tanda Tangan Petugas (Kolom Kanan)
+    const sigRightX = pageW - marginR - 2;
+    const tglCetak = formatTanggalIndo(new Date(), false);
+
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(15, 23, 42);
-    doc.text('VERIFIKASI DIGITAL', marginL + qrSize + 5, bottomY + 5);
+    doc.text(`Tanjungpinang, ${tglCetak}`, sigRightX, bottomY + 2, { align: 'right' });
+    doc.text('Petugas Verifikator / Pembatal,', sigRightX, bottomY + 6.5, { align: 'right' });
+
+    // Area nama tanda tangan
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(15, 23, 42);
+    const namaPetugasTtd = (petugasCancel.includes('@') ? petugasCancel.split('@')[0] : petugasCancel).toUpperCase();
+    doc.text(`( ${namaPetugasTtd} )`, sigRightX, bottomY + 28, { align: 'right' });
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.5);
     doc.setTextColor(100, 116, 139);
-    doc.text('Dokumen ini diterbitkan secara elektronik', marginL + qrSize + 5, bottomY + 9);
-    doc.text('oleh Sistem SIMPU Dinas Koperasi & UKM', marginL + qrSize + 5, bottomY + 12.5);
-    doc.text('Provinsi Kepulauan Riau.', marginL + qrSize + 5, bottomY + 16);
-    doc.text(`Kode Otentikasi: ${actor.id.slice(0, 12)}`, marginL + qrSize + 5, bottomY + 19.5);
+    doc.text('Dinas Koperasi & UKM Prov. Kepri', sigRightX, bottomY + 31.5, { align: 'right' });
+  } else {
+    // ── LAYOUT STANDARD (TANPA FOTO): [QR CODE DENGAN DETAIL] [TANDA TANGAN] ──
+    if (qrBase64) {
+      const qrSize = 22;
+      doc.addImage(qrBase64, 'PNG', marginL + 2, bottomY, qrSize, qrSize);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text('VERIFIKASI DIGITAL', marginL + qrSize + 5, bottomY + 5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Dokumen ini diterbitkan secara elektronik', marginL + qrSize + 5, bottomY + 9);
+      doc.text('oleh Sistem SIMPU Dinas Koperasi & UKM', marginL + qrSize + 5, bottomY + 12.5);
+      doc.text('Provinsi Kepulauan Riau.', marginL + qrSize + 5, bottomY + 16);
+      doc.text(`Kode Otentikasi: ${actor.id.slice(0, 12)}`, marginL + qrSize + 5, bottomY + 19.5);
+    }
+
+    // Lembar Tanda Tangan Petugas di sisi kanan
+    const sigRightX = pageW - marginR - 5;
+    const tglCetak = formatTanggalIndo(new Date(), false);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Tanjungpinang, ${tglCetak}`, sigRightX, bottomY + 2, { align: 'right' });
+    doc.text('Petugas Verifikator / Pembatal,', sigRightX, bottomY + 6.5, { align: 'right' });
+
+    // Area tanda tangan
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(15, 23, 42);
+    const namaPetugasTtd = (petugasCancel.includes('@') ? petugasCancel.split('@')[0] : petugasCancel).toUpperCase();
+    doc.text(`( ${namaPetugasTtd} )`, sigRightX, bottomY + 26, { align: 'right' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Dinas Koperasi & UKM Prov. Kepri', sigRightX, bottomY + 29.5, { align: 'right' });
   }
-
-  // Lembar Tanda Tangan Petugas di sisi kanan
-  const sigRightX = pageW - marginR - 5;
-  const tglCetak = formatTanggalIndo(new Date(), false);
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(15, 23, 42);
-  doc.text(`Tanjungpinang, ${tglCetak}`, sigRightX, bottomY + 2, { align: 'right' });
-  doc.text('Petugas Verifikator / Pembatal,', sigRightX, bottomY + 6.5, { align: 'right' });
-
-  // Area tanda tangan
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.setTextColor(15, 23, 42);
-  const namaPetugasTtd = (petugasCancel.includes('@') ? petugasCancel.split('@')[0] : petugasCancel).toUpperCase();
-  doc.text(`( ${namaPetugasTtd} )`, sigRightX, bottomY + 26, { align: 'right' });
-
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.5);
-  doc.setTextColor(100, 116, 139);
-  doc.text('Dinas Koperasi & UKM Prov. Kepri', sigRightX, bottomY + 29.5, { align: 'right' });
 
   // ── 5. FOOTER DOKUMEN ────────────────────────────────────────────────────
   doc.setDrawColor(226, 232, 240);

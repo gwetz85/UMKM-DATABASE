@@ -89,6 +89,7 @@ export interface BusinessActor {
   berkasDinasVerifiedAt?: string;
   berkasDinasVerifiedBy?: string;
   alasanCancelDinas?: string;
+  cancelDinasPhotoUrl?: string;
   cancelDinasAt?: string;
   cancelDinasBy?: string;
   dihapusDinasAt?: string;

@@ -80,6 +80,7 @@ export default function VerifikasiDinasPage() {
   const [choiceActor, setChoiceActor] = useState<BusinessActor | null>(null)
   const [selectedChoice, setSelectedChoice] = useState<'survey' | 'cancel' | null>(null)
   const [cancelReason, setCancelReason] = useState("")
+  const [cancelPhotoPreview, setCancelPhotoPreview] = useState<string | null>(null)
   const [isSubmittingCancel, setIsSubmittingCancel] = useState(false)
 
   // Pejabat Modal (First Login for Petugas Survey)
@@ -317,16 +318,66 @@ export default function VerifikasiDinasPage() {
     }
   }
 
+  const handleCancelPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const rawResult = event.target?.result as string
+        const img = new window.Image()
+        img.src = rawResult
+        img.onload = () => {
+          try {
+            const MAX_B64_BYTES = 1_398_101
+            const canvas = document.createElement('canvas')
+            const MAX_DIM = 1200
+            let width = img.width
+            let height = img.height
+            if (width > height) {
+              if (width > MAX_DIM) { height = Math.round(height * MAX_DIM / width); width = MAX_DIM }
+            } else {
+              if (height > MAX_DIM) { width = Math.round(width * MAX_DIM / height); height = MAX_DIM }
+            }
+            canvas.width = width
+            canvas.height = height
+            const ctx = canvas.getContext('2d')
+            ctx?.drawImage(img, 0, 0, width, height)
+            let result = ''
+            for (const q of [0.85, 0.75, 0.65, 0.55, 0.45, 0.35]) {
+              result = canvas.toDataURL('image/jpeg', q)
+              if (result.length <= MAX_B64_BYTES) break
+            }
+            if (result.length > MAX_B64_BYTES) {
+              const s2 = document.createElement('canvas')
+              s2.width = Math.round(width * 0.7); s2.height = Math.round(height * 0.7)
+              s2.getContext('2d')?.drawImage(canvas, 0, 0, s2.width, s2.height)
+              result = s2.toDataURL('image/jpeg', 0.5)
+            }
+            setCancelPhotoPreview(result)
+          } catch {
+            setCancelPhotoPreview(rawResult)
+          }
+        }
+        img.onerror = () => {
+          setCancelPhotoPreview(rawResult)
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const openChoiceDialog = (actor: BusinessActor) => {
     setChoiceActor(actor)
     setSelectedChoice(null)
     setCancelReason("")
+    setCancelPhotoPreview(null)
   }
 
   const handleProceedToSurvey = () => {
     if (!choiceActor) return
     const targetActor = choiceActor
     setChoiceActor(null)
+    setCancelPhotoPreview(null)
     openSurveyDialog(targetActor)
   }
 
@@ -338,6 +389,7 @@ export default function VerifikasiDinasPage() {
       status: 'verified_dinas' as const,
       hasilVerifikasiDinas: 'Tidak Lolos',
       alasanCancelDinas: cancelReason.trim(),
+      cancelDinasPhotoUrl: cancelPhotoPreview || null,
       cancelDinasAt: new Date().toISOString(),
       cancelDinasBy: userProfile?.fullName || user?.email || user?.uid || 'Dinas'
     }
@@ -366,6 +418,7 @@ export default function VerifikasiDinasPage() {
     setChoiceActor(null)
     setSelectedChoice(null)
     setCancelReason("")
+    setCancelPhotoPreview(null)
     setIsSubmittingCancel(false)
   }
 
@@ -1582,7 +1635,7 @@ export default function VerifikasiDinasPage() {
       </Dialog>
 
       {/* ─── SINGLE ROOT LEVEL CHOICE MODAL ────────────────────────────── */}
-      <Dialog open={!!choiceActor} onOpenChange={(open) => { if (!open) { setChoiceActor(null); setSelectedChoice(null); setCancelReason(""); } }}>
+      <Dialog open={!!choiceActor} onOpenChange={(open) => { if (!open) { setChoiceActor(null); setSelectedChoice(null); setCancelReason(""); setCancelPhotoPreview(null); } }}>
         <DialogContent className="max-w-md">
           {choiceActor && (
             <>
@@ -1637,17 +1690,84 @@ export default function VerifikasiDinasPage() {
                       <p className="text-xs font-semibold text-red-700">Data akan dipindahkan ke menu Ditolak beserta alasan cancel.</p>
                     </div>
                     <div className="space-y-2">
-                      <Label className="font-bold text-slate-700">Alasan Cancel Survey</Label>
+                      <Label className="font-bold text-slate-700">Alasan Cancel Survey <span className="text-red-500">*</span></Label>
                       <Textarea
                         placeholder="Tulis alasan cancel di sini..."
                         value={cancelReason}
                         onChange={(e) => setCancelReason(e.target.value)}
-                        rows={4}
-                        className="resize-none border-red-200 focus-visible:ring-red-400"
+                        rows={3}
+                        className="resize-none border-red-200 focus-visible:ring-red-400 text-sm"
                       />
                     </div>
-                    <div className="flex gap-2">
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedChoice(null)} className="flex-1">
+
+                    {/* Foto Bukti Pembatalan (Opsional) */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="font-bold text-slate-700 text-xs flex items-center gap-1.5">
+                          <Camera className="w-3.5 h-3.5 text-red-600" />
+                          Foto Bukti / Lapangan <span className="text-slate-400 font-normal">(Opsional)</span>
+                        </Label>
+                        {cancelPhotoPreview && (
+                          <span className="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded-full">
+                            Foto Terlampir
+                          </span>
+                        )}
+                      </div>
+
+                      {cancelPhotoPreview ? (
+                        <div className="relative rounded-xl border border-red-200 overflow-hidden bg-slate-950 group">
+                          <img 
+                            src={cancelPhotoPreview} 
+                            alt="Foto Bukti Cancel" 
+                            className="w-full h-36 object-cover" 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setCancelPhotoPreview(null)}
+                            className="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 shadow-md transition-all active:scale-95"
+                            title="Hapus Foto"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            id="cancel-photo-camera"
+                            className="hidden"
+                            onChange={handleCancelPhotoUpload}
+                          />
+                          <Label
+                            htmlFor="cancel-photo-camera"
+                            className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs cursor-pointer transition-all active:scale-[0.98] text-center"
+                          >
+                            <Camera className="w-4 h-4 shrink-0 text-red-600" />
+                            <span>Ambil Kamera</span>
+                          </Label>
+
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            id="cancel-photo-gallery"
+                            className="hidden"
+                            onChange={handleCancelPhotoUpload}
+                          />
+                          <Label
+                            htmlFor="cancel-photo-gallery"
+                            className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs cursor-pointer transition-all active:scale-[0.98] text-center"
+                          >
+                            <ImageIcon className="w-4 h-4 shrink-0 text-slate-600" />
+                            <span>Dari Galeri</span>
+                          </Label>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => { setSelectedChoice(null); setCancelPhotoPreview(null); }} className="flex-1">
                         Kembali
                       </Button>
                       <Button

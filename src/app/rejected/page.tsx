@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Printer, Edit3, Loader2, Save, RotateCcw, Trash2, Eye, User, CreditCard, History, X, Building2, MapPin, Ban, AlertCircle, Search, Info, FileSpreadsheet, CheckCircle2, AlertTriangle, ChevronRight, Folder, ClipboardCheck, ShieldAlert, MessageCircle } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, RotateCcw, Trash2, Eye, User, CreditCard, History, X, Building2, MapPin, Ban, AlertCircle, Search, Info, FileSpreadsheet, CheckCircle2, AlertTriangle, ChevronRight, Folder, ClipboardCheck, ShieldAlert, MessageCircle, Camera } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
@@ -816,9 +816,33 @@ function RejectedContent() {
                   <section className="p-4 bg-red-50 border border-red-200 rounded-2xl">
                     <p className="text-[10px] font-black text-red-600 uppercase mb-2 tracking-widest flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Alasan Penolakan:</p>
                     <p className="text-sm font-black text-red-700 leading-relaxed italic">
-                      "{viewingActor.rejectionReason || viewingActor.keteranganDinas || "Tidak ada alasan spesifik."}"
+                      "{viewingActor.rejectionReason || viewingActor.keteranganDinas || (viewingActor as any).alasanCancelDinas || "Tidak ada alasan spesifik."}"
                     </p>
                   </section>
+
+                  {Boolean((viewingActor as any).cancelDinasPhotoUrl || (viewingActor as any).fotoCancelDinas) && (
+                    <section className="p-4 bg-red-50/60 border border-red-200 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-black text-red-600 uppercase tracking-widest flex items-center gap-1.5">
+                          <Camera className="w-3.5 h-3.5" /> Foto Bukti Pembatalan Dinas
+                        </p>
+                        <span className="text-[10px] bg-red-100 text-red-700 font-bold px-2 py-0.5 rounded-full border border-red-200">
+                          Dokumentasi Petugas
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="relative group max-w-sm rounded-xl overflow-hidden shadow-sm border border-red-200 bg-white">
+                          <img 
+                            src={(viewingActor as any).cancelDinasPhotoUrl || (viewingActor as any).fotoCancelDinas} 
+                            alt="Foto Bukti Cancel Dinas" 
+                            className="w-full max-h-56 object-cover rounded-xl cursor-pointer hover:scale-105 transition-transform duration-300"
+                            onClick={() => window.open((viewingActor as any).cancelDinasPhotoUrl || (viewingActor as any).fotoCancelDinas, '_blank')}
+                          />
+                        </div>
+                        <p className="text-[10px] font-medium text-slate-500 mt-2 italic">Klik foto untuk membuka gambar penuh di tab baru</p>
+                      </div>
+                    </section>
+                  )}
                   
                   <section className="space-y-4">
                     <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
