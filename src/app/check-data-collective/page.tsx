@@ -39,13 +39,13 @@ import {
 } from "@/components/ui/table"
 
 export default function CheckDataCollectivePage() {
-  const { user } = useUser()
+  const { user, userProfile } = useUser()
   const database = useDatabase()
   const [loading, setLoading] = useState(false)
   const [searchDone, setSearchDone] = useState(false)
   const [inputValue, setInputValue] = useState("")
   const [selectedResult, setSelectedResult] = useState<any | null>(null)
-  const [searchKks, setSearchKks] = useState<string[]>([])
+  const [results, setResults] = useState<any[]>([])
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -54,67 +54,9 @@ export default function CheckDataCollectivePage() {
 
   const { data: adminRole, isLoading: isAdminLoading } = useObject(adminRef)
   
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-  const { data: allUsersForProfile } = useList(userProfileRef)
-  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
-
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
   const hasAccess = isAdmin || isPetugas
-
-  const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
-  const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
-  const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
-  const blacklistDataRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
-
-  const { data: data2023, isLoading: is2023Loading } = useList(master2023Ref)
-  const { data: data2024, isLoading: is2024Loading } = useList(master2024Ref)
-  const { data: data2025, isLoading: is2025Loading } = useList(master2025Ref)
-  const { data: allBlacklistData, isLoading: isBlacklistLoading } = useList(blacklistDataRef)
-
-  const isDataLoading = is2023Loading || is2024Loading || is2025Loading || isBlacklistLoading
-
-  const results = React.useMemo(() => {
-    if (searchKks.length === 0) return []
-    
-    const d2023 = data2023 || []
-    const d2024 = data2024 || []
-    const d2025 = data2025 || []
-    const blacklist = allBlacklistData || []
-    
-    const combinedData = [
-      ...d2023.map(m => ({ ...m, _source: "SHEET 2023" })),
-      ...d2024.map(m => ({ ...m, _source: "SHEET 2024" })),
-      ...d2025.map(m => ({ ...m, _source: "SHEET 2025" })),
-      ...blacklist.map(m => ({ ...m, _source: "DATA BLACKLIST" }))
-    ]
-
-    const allMatches: any[] = []
-    
-    searchKks.forEach(kk => {
-      const matches = combinedData.filter((m: any) => m.noKK && String(m.noKK).trim() === kk.trim())
-      if (matches.length > 0) {
-        matches.forEach(match => {
-          allMatches.push({
-            ...match,
-            _searchKk: kk,
-            _isMultiple: matches.length > 1
-          })
-        })
-      } else {
-        allMatches.push({
-          noKK: kk,
-          _searchKk: kk,
-          _notFound: true
-        })
-      }
-    })
-
-    return allMatches
-  }, [data2023, data2024, data2025, allBlacklistData, searchKks])
 
   if (isAdminLoading) {
     return (
@@ -136,34 +78,81 @@ export default function CheckDataCollectivePage() {
     )
   }
 
-  const handleCheck = (e: React.FormEvent) => {
+  const handleCheck = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!inputValue.trim()) return
     
     setLoading(true)
+    setSearchDone(false)
     const kks = inputValue
       .split(/\n|,/)
       .map(kk => kk.trim())
       .filter(kk => kk.length > 0)
       .slice(0, 20)
-    
-    setSearchKks(kks)
-    setSearchDone(true)
-    setLoading(false)
-    
-    logActivity({
-      query: `CEK DATA KOLEKTIF: ${kks.length} KK`,
-      results: "Berhasil",
-      device: getDeviceType(navigator.userAgent),
-      source: 'Web',
-      method: 'CEK DATA KOLEKTIF',
-      userId: user?.email || user?.uid || 'Admin'
-    })
+
+    try {
+      const allMatches: any[] = []
+      
+      const fetchPromises = kks.map(async (kk) => {
+        try {
+          const res = await fetch(`/api/cek-data?type=noKK&q=${encodeURIComponent(kk)}`)
+          const json = await res.json()
+          const matches = json.success && Array.isArray(json.results) ? json.results : []
+          return { kk, matches }
+        } catch {
+          return { kk, matches: [] }
+        }
+      })
+
+      const responses = await Promise.all(fetchPromises)
+
+      responses.forEach(({ kk, matches }) => {
+        if (matches.length > 0) {
+          matches.forEach((match: any) => {
+            allMatches.push({
+              ...match,
+              _searchKk: kk,
+              _isMultiple: matches.length > 1,
+              nama: match._displayName || match.nama || match.fullName,
+              nik: match._displayNik || match.nik,
+              usaha: match._displayBusiness || match.usaha || match.businessName,
+              statusLpj: match.statusLpj || match._displayStatus || match.status || 'PENDING',
+              nominal: match._displayNominal || match.nominal || match.lpjNominal || 0,
+            })
+          })
+        } else {
+          allMatches.push({
+            noKK: kk,
+            _searchKk: kk,
+            _notFound: true
+          })
+        }
+      })
+
+      setResults(allMatches)
+      setSearchDone(true)
+
+      logActivity({
+        query: `CEK DATA KOLEKTIF: ${kks.length} KK`,
+        results: `Ditemukan ${allMatches.filter(m => !m._notFound).length} Data`,
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'CEK DATA KOLEKTIF',
+        userId: user?.email || user?.uid || 'Admin'
+      }, database || undefined).catch(err => console.error("Log error:", err))
+
+    } catch (err) {
+      console.error("Error in collective check:", err)
+      setResults([])
+      setSearchDone(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const resetSearch = () => {
     setSearchDone(false)
-    setSearchKks([])
+    setResults([])
     setInputValue("")
   }
 
@@ -275,8 +264,8 @@ export default function CheckDataCollectivePage() {
                 </p>
               </div>
 
-              <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20" disabled={loading || isDataLoading}>
-                {loading || isDataLoading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <SearchCheck className="w-5 h-5 mr-2" />}
+              <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20" disabled={loading}>
+                {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <SearchCheck className="w-5 h-5 mr-2" />}
                 Proses Pengecekkan
               </Button>
             </form>
@@ -284,7 +273,7 @@ export default function CheckDataCollectivePage() {
         </Card>
 
         <div className="lg:col-span-9 space-y-6">
-          {!searchDone && !loading && !isDataLoading && (
+          {!searchDone && !loading && (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed rounded-3xl border-muted bg-white/30 backdrop-blur-sm p-8 text-center">
               <div className="bg-white/50 p-4 rounded-full mb-4">
                 <TableIcon className="w-8 h-8 text-muted-foreground/60" />
@@ -296,14 +285,14 @@ export default function CheckDataCollectivePage() {
             </div>
           )}
 
-          {isDataLoading && (
+          {loading && (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border p-8 text-center">
               <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-              <p className="text-primary font-bold animate-pulse">Menyiapkan Database...</p>
+              <p className="text-primary font-bold animate-pulse">Memeriksa Database...</p>
             </div>
           )}
 
-          {searchDone && !isDataLoading && (
+          {searchDone && !loading && (
             <div className="animate-in fade-in duration-500 space-y-6">
               <Card className="border-none shadow-xl bg-white overflow-hidden rounded-2xl">
                 <div className="bg-primary/5 p-4 border-b border-primary/10 flex items-center justify-between">

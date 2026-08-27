@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, Suspense } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, deleteDocumentNonBlocking, useObject } from "@/firebase"
-import { ref, query, equalTo, limitToFirst, orderByChild } from "firebase/database"
+import { ref, query, equalTo, limitToFirst, orderByChild, get } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -82,17 +82,7 @@ function RejectedContent() {
     }
   }
 
-  const handlePrintActorForm = (actor: BusinessActor) => {
-    if (actor.status === 'verified_dinas' || (actor as any).alasanCancelDinas) {
-      handlePrintCancelDinas(actor)
-      return
-    }
-    setActorToPrint(actor)
-    setTimeout(() => {
-      window.print()
-      setActorToPrint(null)
-    }, 250)
-  }
+
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -118,24 +108,62 @@ function RejectedContent() {
   }, [database])
   const { data: allActorsDinasRaw, isLoading: isLoadingDinas } = useList<BusinessActor>(dinasQuery)
   
-  const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
-  const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
-  const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
-  const blacklistRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
-
-  const { data: data2023 } = useList<any>(master2023Ref)
-  const { data: data2024 } = useList<any>(master2024Ref)
-  const { data: data2025 } = useList<any>(master2025Ref)
-  const { data: dataBlacklist } = useList<any>(blacklistRef)
   const { data: kuotaData } = useList<any>(kuotaRef)
 
-  const blacklistMatches = useMemo(() => {
-    if (!actorToPrint || !dataBlacklist) return []
-    return dataBlacklist.filter((m: any) => 
-      (m.noKK && m.noKK === actorToPrint.noKK) || (m.nik && m.nik === actorToPrint.nik)
-    )
-  }, [actorToPrint, dataBlacklist])
+  // On-demand auxiliary data for selected actor detail & print
+  const [activeDetailData, setActiveDetailData] = useState<{
+    data2023: any[], data2024: any[], data2025: any[], dataBlacklist: any[]
+  }>({ data2023: [], data2024: [], data2025: [], dataBlacklist: [] })
+
+  const fetchAuxData = async (actor: BusinessActor) => {
+    if (!database || !actor?.nik) return;
+    const checkMaster = async (path: string, nik: string) => {
+      try {
+        const q = query(ref(database, path), orderByChild('nik'), equalTo(nik), limitToFirst(1))
+        const snap = await get(q)
+        return snap.exists() ? Object.values(snap.val()) : []
+      } catch {
+        return []
+      }
+    }
+    const [d23, d24, d25, dBl] = await Promise.all([
+      checkMaster('master_data_2023', actor.nik),
+      checkMaster('master_data_2024', actor.nik),
+      checkMaster('master_data_2025', actor.nik),
+      checkMaster('blacklist_data', actor.nik)
+    ])
+    setActiveDetailData({ data2023: d23, data2024: d24, data2025: d25, dataBlacklist: dBl })
+  }
+
+  const [blacklistMatches, setBlacklistMatches] = useState<any[]>([])
+
+  const handleOpenDetail = (actor: BusinessActor) => {
+    setViewingActor(actor)
+    setIsEditMode(false)
+    fetchAuxData(actor)
+  }
+
+  const handlePrintActorForm = async (actor: BusinessActor) => {
+    if (actor.status === 'verified_dinas' || (actor as any).alasanCancelDinas) {
+      handlePrintCancelDinas(actor)
+      return
+    }
+    if (database && actor.nik) {
+      try {
+        const q = query(ref(database, 'blacklist_data'), orderByChild('nik'), equalTo(actor.nik), limitToFirst(1))
+        const snap = await get(q)
+        setBlacklistMatches(snap.exists() ? Object.values(snap.val()) : [])
+      } catch {
+        setBlacklistMatches([])
+      }
+    }
+    setActorToPrint(actor)
+    setTimeout(() => {
+      window.print()
+      setActorToPrint(null)
+    }, 250)
+  }
   
   const actors = allActorsRaw ? allActorsRaw.filter(a => {
     const isRejected = a.status === 'rejected';
@@ -485,7 +513,7 @@ function RejectedContent() {
                     <TableRow
                       key={actor.id}
                       className="cursor-pointer hover:bg-red-50/30 border-red-50 transition-colors group print:border-b print:rounded-none"
-                      onClick={() => { setViewingActor(actor); setIsEditMode(false); }}
+                      onClick={() => handleOpenDetail(actor)}
                     >
                       <TableCell className="text-center font-bold text-slate-400 text-xs">{index + 1}</TableCell>
                       <TableCell>
@@ -493,9 +521,6 @@ function RejectedContent() {
                           <span className="font-black text-red-700 uppercase text-[12px] leading-tight">
                             {actor.businessName || "NAMA USAHA KOSONG"}
                           </span>
-                          <div className="flex items-center gap-1 mt-1 print:hidden">
-                             <CheckDataIndicator actor={actor} data2023={data2023} data2024={data2024} data2025={data2025} dataBlacklist={dataBlacklist} showText={false} />
-                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -522,7 +547,7 @@ function RejectedContent() {
                           <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all" onClick={() => handlePrintActorForm(actor)} title="Cetak Form">
                             <Printer className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-100 rounded-full transition-all" onClick={() => { setViewingActor(actor); setIsEditMode(false); }}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-100 rounded-full transition-all" onClick={() => handleOpenDetail(actor)}>
                             <Eye className="w-4 h-4" />
                           </Button>
                         </div>
@@ -564,7 +589,7 @@ function RejectedContent() {
                     <TableRow
                       key={actor.id}
                       className="cursor-pointer hover:bg-orange-50/30 border-orange-50 transition-colors"
-                      onClick={() => { setViewingActor(actor); setIsEditMode(false); }}
+                      onClick={() => handleOpenDetail(actor)}
                     >
                       <TableCell className="text-center font-bold text-slate-400 text-xs">{index + 1}</TableCell>
                       <TableCell>
@@ -572,9 +597,6 @@ function RejectedContent() {
                           <span className="font-black text-orange-700 uppercase text-[12px] leading-tight">
                             {actor.businessName || "NAMA USAHA KOSONG"}
                           </span>
-                          <div className="flex items-center gap-1 mt-1">
-                            <CheckDataIndicator actor={actor} data2023={data2023} data2024={data2024} data2025={data2025} dataBlacklist={dataBlacklist} showText={false} />
-                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -831,10 +853,10 @@ function RejectedContent() {
                       <div className="md:col-span-3 pt-2 border-t">
                         <CheckDataIndicator 
                           actor={viewingActor} 
-                          data2023={data2023}
-                          data2024={data2024}
-                          data2025={data2025}
-                          dataBlacklist={dataBlacklist}
+                          data2023={activeDetailData.data2023}
+                          data2024={activeDetailData.data2024}
+                          data2025={activeDetailData.data2025}
+                          dataBlacklist={activeDetailData.dataBlacklist}
                         />
                       </div>
                     </div>

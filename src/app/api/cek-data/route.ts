@@ -15,7 +15,7 @@ interface CacheItem {
   data: any[];
 }
 let cachedData: CacheItem | null = null;
-const CACHE_TTL_MS = 60 * 1000; // 60 seconds cache
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes in-memory cache
 
 async function ensureAuth() {
   if (!auth.currentUser) {

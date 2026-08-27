@@ -156,15 +156,30 @@ export default function InputDataPage() {
     try {
       const actorsRef = ref(database, 'businessActors')
       
-      // Tahap 1: Cek duplikasi NIK & noKK via indexed query (CEPAT — tidak fetch semua data)
+      // Tahap 1: Cek duplikasi NIK & noKK via indexed query dengan fallback
       const checkDuplicateByField = async (field: 'nik' | 'noKK', value: string) => {
-        const q = query(actorsRef, orderByChild(field), equalTo(value), limitToFirst(1))
-        const snap = await get(q)
-        if (snap.exists()) {
-          const found = Object.values(snap.val())[0] as any
-          return found
+        if (!value) return null
+        try {
+          const q = query(actorsRef, orderByChild(field), equalTo(value), limitToFirst(1))
+          const snap = await get(q)
+          if (snap.exists()) {
+            const found = Object.values(snap.val())[0] as any
+            return found
+          }
+          return null
+        } catch (err: any) {
+          console.warn(`Query index on ${field} failed, fallback to direct search:`, err)
+          try {
+            const snap = await get(actorsRef)
+            if (snap.exists()) {
+              const allActors = Object.values(snap.val()) as any[]
+              return allActors.find((a: any) => a && a[field] === value) || null
+            }
+          } catch (fallbackErr) {
+            console.error("Fallback search failed:", fallbackErr)
+          }
+          return null
         }
-        return null
       }
 
       const [dupByNik, dupByKK] = await Promise.all([
@@ -183,14 +198,20 @@ export default function InputDataPage() {
         return
       }
 
-      // Tahap 2: Cek di Database Pembanding (Informasi) secara efisien
+      // Tahap 2: Cek di Database Pembanding (Informasi) secara efisien dengan penanganan error
       const checkInMaster = async (path: string, field: string, value: string) => {
-        const q = query(ref(database, path), orderByChild(field), equalTo(value), limitToFirst(1))
-        const snap = await get(q)
-        return snap.exists()
+        if (!value) return false
+        try {
+          const q = query(ref(database, path), orderByChild(field), equalTo(value), limitToFirst(1))
+          const snap = await get(q)
+          return snap.exists()
+        } catch (err) {
+          console.warn(`Query ${path} on ${field} failed:`, err)
+          return false
+        }
       }
 
-      // Cek satu per satu untuk menghemat resource (bisa dioptimalkan lebih lanjut)
+      // Cek satu per satu untuk menghemat resource
       const isBlacklisted = await checkInMaster('blacklist_data', 'nik', nik) || await checkInMaster('blacklist_data', 'noKK', noKK)
       
       if (isBlacklisted) {

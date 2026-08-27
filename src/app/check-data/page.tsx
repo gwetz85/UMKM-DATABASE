@@ -38,96 +38,48 @@ export default function CheckDataPage() {
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
   const hasAccess = isAdmin || isPetugas
 
-  const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
-  const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
-  const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
-  const blacklistDataRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
+  const [searchResults, setSearchResults] = useState<any[]>([])
 
-  const { data: data2023, isLoading: is2023Loading } = useList(master2023Ref)
-  const { data: data2024, isLoading: is2024Loading } = useList(master2024Ref)
-  const { data: data2025, isLoading: is2025Loading } = useList(master2025Ref)
-  const { data: allBlacklistData, isLoading: isBlacklistLoading } = useList(blacklistDataRef)
-
-  const isSearchLoading = is2023Loading || is2024Loading || is2025Loading || isBlacklistLoading
-
-  const realTimeResults = React.useMemo(() => {
-    if (!searchCriteria || !searchCriteria.value) return null
-    
-    const d2023 = data2023 || []
-    const d2024 = data2024 || []
-    const d2025 = data2025 || []
-    const blacklist = allBlacklistData || []
-    
-    const combinedData = [
-      ...d2023.map(m => ({ ...m, _source: "SHEET 2023" })),
-      ...d2024.map(m => ({ ...m, _source: "SHEET 2024" })),
-      ...d2025.map(m => ({ ...m, _source: "SHEET 2025" })),
-      ...blacklist.map(m => ({ ...m, _source: "DATA BLACKLIST" }))
-    ]
-
-    let results = []
-
-    if (searchCriteria.type === 'nama') {
-      const searchVal = String(searchCriteria.value).toLowerCase()
-      results = combinedData.filter((m: any) => 
-        (m.nama && String(m.nama).toLowerCase().includes(searchVal)) || 
-        (m.fullName && String(m.fullName).toLowerCase().includes(searchVal))
-      )
-    } else if (searchCriteria.type === 'nik') {
-      results = combinedData.filter((m: any) => m.nik && String(m.nik).trim() === String(searchCriteria.value).trim())
-    } else if (searchCriteria.type === 'noKK') {
-      results = combinedData.filter((m: any) => m.noKK && String(m.noKK).trim() === String(searchCriteria.value).trim())
-    }
-
-    return results
-  }, [data2023, data2024, data2025, allBlacklistData, searchCriteria])
-
-  if (isAdminLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin text-primary" />
-      </div>
-    )
-  }
-
-  if (!hasAccess) {
-    return (
-      <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center">
-        <ShieldAlert className="w-16 h-16 text-destructive" />
-        <h1 className="text-2xl font-bold">Akses Ditolak</h1>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          Hanya Administrator dan Petugas yang dapat mengakses menu Master Data ini.
-        </p>
-      </div>
-    )
-  }
-
-  const handleCheck = (e: React.FormEvent) => {
+  const handleCheck = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputValue.trim()) return
-    
-    setSearchDone(false)
     const processedValue = inputValue.trim()
+    if (!processedValue) return
     
+    setLoading(true)
+    setSearchDone(false)
     setSearchCriteria({ 
       type: searchType, 
       value: processedValue 
     })
-    setSearchDone(true)
 
-    // Log Search Activity
-    const logResults = realTimeResults && realTimeResults.length > 0 
-      ? `Ditemukan ${realTimeResults.length} Data` 
-      : "Data Tidak Ditemukan";
-      
-    logActivity({
-      query: `CEK ${searchType.toUpperCase()}: ${processedValue}`,
-      results: logResults,
-      device: getDeviceType(navigator.userAgent),
-      source: 'Web',
-      method: 'CEK MASTER',
-      userId: userProfile?.fullName || user?.email || "Public"
-    }, database || undefined)
+    try {
+      const res = await fetch(`/api/cek-data?type=${searchType}&q=${encodeURIComponent(processedValue)}`)
+      const json = await res.json()
+      const results = json.success && Array.isArray(json.results) ? json.results : []
+      setSearchResults(results)
+      setSearchDone(true)
+
+      // Log Search Activity
+      const logResults = results.length > 0 
+        ? `Ditemukan ${results.length} Data` 
+        : "Data Tidak Ditemukan";
+        
+      logActivity({
+        query: `CEK ${searchType.toUpperCase()}: ${processedValue}`,
+        results: logResults,
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'CEK MASTER',
+        userId: userProfile?.fullName || user?.email || "Public"
+      }, database || undefined).catch(err => console.error("Log error:", err))
+
+    } catch (err) {
+      console.error("Error searching check-data:", err)
+      setSearchResults([])
+      setSearchDone(true)
+    } finally {
+      setLoading(false)
+    }
   }
 
 
@@ -208,7 +160,7 @@ export default function CheckDataPage() {
         </Card>
 
         <div className="lg:col-span-9 space-y-6">
-          {!searchDone && !loading && !isSearchLoading && (
+          {!searchDone && !loading && (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed rounded-3xl border-muted bg-white/30 backdrop-blur-sm p-8 text-center">
               <div className="bg-white/50 p-4 rounded-full mb-4">
                 <Info className="w-8 h-8 text-muted-foreground/60" />
@@ -220,27 +172,27 @@ export default function CheckDataPage() {
             </div>
           )}
 
-          {isSearchLoading && (
+          {loading && (
             <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border p-8 text-center">
               <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
               <p className="text-primary font-bold animate-pulse">Menghubungkan ke Database...</p>
             </div>
           )}
 
-          {searchDone && !isSearchLoading && (
+          {searchDone && !loading && (
             <div className="animate-in fade-in duration-500 space-y-6">
-              {realTimeResults && realTimeResults.length > 0 ? (
+              {searchResults && searchResults.length > 0 ? (
                 <div className="space-y-6">
                   <Alert className="bg-emerald-50/90 backdrop-blur-sm border-emerald-200 text-emerald-900 rounded-2xl p-6">
                     <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                     <AlertTitle className="text-xl font-black mb-1 uppercase">DATA DITEMUKAN!</AlertTitle>
                     <AlertDescription className="font-medium">
-                      Terdapat kecocokan data pada database sistem. Silakan tinjau detail di bawah.
+                      Terdapat kecocokan data pada database sistem ({searchResults.length} data ditemukan). Silakan tinjau detail di bawah.
                     </AlertDescription>
                   </Alert>
 
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {realTimeResults.map((res, idx) => (
+                    {searchResults.map((res, idx) => (
                       <Card 
                         key={idx} 
                         className="border-none shadow-md hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm cursor-pointer group active:scale-95"
@@ -254,26 +206,26 @@ export default function CheckDataPage() {
                             <div className="flex items-center gap-2 mb-1">
                               <span className={cn(
                                 "text-[10px] font-black uppercase tracking-widest",
-                                res._source === 'DATA BLACKLIST' ? "text-red-600" : "text-primary"
+                                String(res._source || '').includes('BLACKLIST') ? "text-red-600" : "text-primary"
                               )}>
-                                {res._source}
+                                {String(res._source || '').includes('BLACKLIST') ? "BLACKLIST / DITOLAK" : (res._source || "MASTER DATA")}
                               </span>
                               <span className={cn(
                                 "text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-tighter border",
-                                res._source === 'DATA CANCELL / BLACKLIST' 
+                                String(res._source || '').includes('BLACKLIST') 
                                   ? "bg-red-50 text-red-600 border-red-200"
-                                  : res.status?.toLowerCase().includes("terdaftar") || res.status?.toLowerCase().includes("finish") 
+                                  : String(res._displayStatus || res.status || '').toLowerCase().includes("terdaftar") || String(res._displayStatus || res.status || '').toLowerCase().includes("finish") 
                                     ? "bg-emerald-50 text-emerald-600 border-emerald-200" 
                                     : "bg-amber-50 text-amber-600 border-amber-200"
                               )}>
-                                {res._source === "DATA CANCELL / BLACKLIST" ? "DITOLAK" : (res.status || "PENDING")}
+                                {String(res._source || '').includes('BLACKLIST') ? "DITOLAK" : (res._displayStatus || res.status || "TERDAFTAR")}
                               </span>
                             </div>
                             <span className="text-sm font-black text-slate-800 uppercase truncate">
-                              {res.nama || res.fullName}
+                              {res._displayName || res.nama || res.fullName || "-"}
                             </span>
                             <span className="text-[10px] font-mono font-bold text-muted-foreground mt-0.5">
-                              NIK: {res.nik}
+                              NIK: {res._displayNik || res.nik || "-"}
                             </span>
                           </div>
                           <Eye className="w-4 h-4 ml-auto text-muted-foreground group-hover:text-primary transition-colors" />
@@ -330,19 +282,19 @@ export default function CheckDataPage() {
             <div className="py-4 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
-                   { label: "Nomor", value: selectedResult.nomor, icon: FileText },
-                   { label: "Nomor KK", value: selectedResult.noKK, icon: FileText },
-                   { label: "NIK", value: selectedResult.nik, icon: FileText },
-                   { label: "Nama Lengkap", value: selectedResult.nama || selectedResult.fullName, icon: User, full: true },
-                   { label: "Usaha", value: selectedResult.usaha || selectedResult.businessName, icon: Database, full: true },
-                   { label: "Kategori Status", value: selectedResult.status, icon: Info },
+                   { label: "Nomor", value: selectedResult.nomor || selectedResult.registrationCode, icon: FileText },
+                   { label: "Nomor KK", value: selectedResult._displayKk || selectedResult.noKK, icon: FileText },
+                   { label: "NIK", value: selectedResult._displayNik || selectedResult.nik, icon: FileText },
+                   { label: "Nama Lengkap", value: selectedResult._displayName || selectedResult.nama || selectedResult.fullName, icon: User, full: true },
+                   { label: "Usaha", value: selectedResult._displayBusiness || selectedResult.usaha || selectedResult.businessName, icon: Database, full: true },
+                   { label: "Kategori Status", value: selectedResult._displayStatus || selectedResult.status, icon: Info },
                    { label: "Status LPJ", value: selectedResult.statusLpj, icon: Info },
-                   { label: "Nominal", value: formatCurrency(selectedResult.nominal || selectedResult.lpjNominal), icon: SearchCheck },
-                   { label: "Tahun Pengajuan", value: selectedResult.tahunPengajuan, icon: SearchCheck },
-                   { label: "Kelurahan", value: selectedResult.kelurahan, icon: UserSearch },
-                   { label: "Kecamatan", value: selectedResult.kecamatan, icon: UserSearch },
+                   { label: "Nominal", value: formatCurrency(selectedResult._displayNominal || selectedResult.nominal || selectedResult.lpjNominal || 0), icon: SearchCheck },
+                   { label: "Tahun Pengajuan", value: selectedResult._displayYear || selectedResult.tahunPengajuan, icon: SearchCheck },
+                   { label: "Kelurahan", value: selectedResult._displayKelurahan || selectedResult.kelurahan, icon: UserSearch },
+                   { label: "Kecamatan", value: selectedResult._displayKecamatan || selectedResult.kecamatan, icon: UserSearch },
                    { label: "Koordinator", value: selectedResult.coordinator, icon: UserSearch },
-                   { label: "Alamat", value: selectedResult.alamat || selectedResult.address, icon: UserSearch, full: true },
+                   { label: "Alamat", value: selectedResult._displayAddress || selectedResult.alamat || selectedResult.address, icon: UserSearch, full: true },
                 ].map((item, i) => (
                   <div key={i} className={item.full ? "md:col-span-2 space-y-1" : "space-y-1"}>
                     <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
