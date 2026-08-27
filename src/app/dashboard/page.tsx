@@ -28,7 +28,6 @@ import { useRouter } from "next/navigation"
 import React, { useEffect, useMemo, useState } from "react"
 import { BusinessActor } from "../lib/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { MusicDashboardCard } from "@/components/MusicDashboardCard"
 import { cn, formatDateTimeIndo } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -891,15 +890,15 @@ export default function DashboardStatsPage() {
 
       {/* Grid: Kuota & Sebaran Kelurahan */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 items-stretch">
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none shrink-0">
-            <CardHeader className="bg-primary/10 pb-4">
+        <div className="lg:col-span-2 flex flex-col h-full min-h-0">
+          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-full min-h-[450px] lg:min-h-0 flex flex-col">
+            <CardHeader className="bg-primary/10 pb-4 shrink-0">
               <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
                 <BarChart3 className="w-5 h-5" /> Jumlah Kuota
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
-              <div className="max-h-[350px] overflow-auto">
+            <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-y-auto">
                 <Table>
                   <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
                     <TableRow className="hover:bg-transparent">
@@ -977,11 +976,6 @@ export default function DashboardStatsPage() {
               </div>
             </CardContent>
           </Card>
-          
-          {/* Music Player Section */}
-          <div className="flex-1 flex flex-col min-h-0">
-            <MusicDashboardCard className="h-full" role={userProfile?.role} />
-          </div>
         </div>
 
         <div className="flex flex-col h-full min-h-0">

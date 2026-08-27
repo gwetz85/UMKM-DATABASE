@@ -8,7 +8,6 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
-import { BackgroundMusic } from '@/components/BackgroundMusic';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
@@ -377,7 +376,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                         </a>
                       </div>
                     </div>
-                    <BackgroundMusic role={profile?.role} className="lg:static" />
                   </div>
                 </div>
               </div>
