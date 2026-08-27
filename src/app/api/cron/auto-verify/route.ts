@@ -187,6 +187,12 @@ export async function GET(req: NextRequest) {
     // 5. Apply Updates
     if (Object.keys(updates).length > 0) {
       await update(ref(database), updates);
+      try {
+        const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service");
+        await recalculateAndSaveSystemStats(database);
+      } catch (e) {
+        console.error("Auto-verify stats recalculation error:", e);
+      }
     }
 
     return NextResponse.json({

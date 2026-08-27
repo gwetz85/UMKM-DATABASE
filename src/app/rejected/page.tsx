@@ -283,11 +283,12 @@ function RejectedContent() {
   const executeRevert = () => {
     if (!revertPending || !database) return
     const { actorId, fullName } = revertPending
+    const actorObj = allActorsRaw?.find(a => a.id === actorId) || allActorsDinasRaw?.find(a => a.id === actorId) || viewingActor || { id: actorId, status: 'rejected' }
     updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
     
     // Update global stats
     import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-      updateStatsOnStatusChange(database, 'rejected', 'pending', { id: actorId }).catch(e => console.error(e));
+      updateStatsOnStatusChange(database, actorObj, { ...actorObj, status: 'pending' }, actorObj).catch(e => console.error(e));
     });
     
     logActivity({
@@ -314,7 +315,7 @@ function RejectedContent() {
   const executeDelete = () => {
     if (!deletePending || !database) return
     const { actorId, fullName } = deletePending
-    const actorToDelete = { id: actorId, status: 'rejected' }; // Minimal fallback
+    const actorToDelete = allActorsRaw?.find(a => a.id === actorId) || allActorsDinasRaw?.find(a => a.id === actorId) || viewingActor || { id: actorId, status: 'rejected' };
     deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
     
     // Update global stats

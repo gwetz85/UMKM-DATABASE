@@ -177,6 +177,17 @@ export default function DashboardStatsPage() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [isMonitoringOpen, setIsMonitoringOpen] = useState(false)
 
+  // Auto-heal / initialize stats if system_stats is empty or missing detailedStatus
+  useEffect(() => {
+    if (database && !isStatsLoading && systemStats !== undefined) {
+      if (!systemStats || !systemStats.detailedStatus || systemStats.detailedStatus.survey === undefined) {
+        import("@/lib/stats-service").then(({ recalculateAndSaveSystemStats }) => {
+          recalculateAndSaveSystemStats(database).catch(console.error);
+        });
+      }
+    }
+  }, [database, isStatsLoading, systemStats]);
+
   const handleSyncStats = async () => {
     if (!database || isSyncing) return
     setIsSyncing(true)

@@ -345,10 +345,17 @@ export default function VerifikasiDinasBerkasPage() {
     setIsSubmitting(true)
     try {
       const actorRef = ref(database, `businessActors/${verifyingActor.id}`)
-      updateDocumentNonBlocking(actorRef, {
+      const updates = {
         berkasDinasVerified: true,
         berkasDinasVerifiedAt: new Date().toISOString(),
         berkasDinasVerifiedBy: userProfile?.fullName || user?.email || user?.uid || 'Verifikator Dinas'
+      }
+      updateDocumentNonBlocking(actorRef, updates)
+
+      // Update global stats (Tahap 2 -> Tahap 3)
+      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+        const updatedActor = { ...verifyingActor, ...updates }
+        updateStatsOnStatusChange(database, verifyingActor, updatedActor, updatedActor).catch(e => console.error(e))
       })
 
       logActivity({
@@ -407,6 +414,12 @@ export default function VerifikasiDinasBerkasPage() {
       const cleanData = sanitizeForFirebase(updates)
       const { update } = await import('firebase/database')
       await update(actorRef, cleanData)
+
+      // Update global stats (Tahap 2 -> Tahap 1)
+      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+        const updatedActor = { ...returnTargetActor, ...updates }
+        updateStatsOnStatusChange(database, returnTargetActor, updatedActor, updatedActor).catch(e => console.error(e))
+      })
 
       logActivity({
         query: `KEMBALIKAN KE PETUGAS SURVEY: ${returnTargetActor.fullName}`,
@@ -918,6 +931,11 @@ export default function VerifikasiDinasBerkasPage() {
       method: 'HAPUS DARI VERIFIKASI DINAS',
       userId: user?.email || user?.uid || 'Admin'
     })
+
+    // Update global stats
+    import("@/lib/stats-service").then(({ recalculateAndSaveSystemStats }) => {
+      recalculateAndSaveSystemStats(database).catch(console.error);
+    });
 
     toast({ 
       title: "Data Berhasil Dihapus dari Daftar", 

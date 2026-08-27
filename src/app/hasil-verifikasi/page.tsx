@@ -213,8 +213,10 @@ function HasilVerifikasiContent() {
       const actorRef = ref(database, `businessActors/${inputtingBankActor.id}`)
       updateDocumentNonBlocking(actorRef, updates)
 
+      // Update global stats (Tahap 3 -> Tahap 4 / Selesai)
       import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-        updateStatsOnStatusChange(database, 'verified_dinas', 'finish', { id: inputtingBankActor.id }).catch(e => console.error(e))
+        const updatedActor = { ...inputtingBankActor, ...updates }
+        updateStatsOnStatusChange(database, inputtingBankActor, updatedActor, updatedActor).catch(e => console.error(e))
       })
 
       logActivity({
@@ -270,6 +272,12 @@ function HasilVerifikasiContent() {
       const cleanData = sanitizeForFirebase(updates)
       const { update } = await import('firebase/database')
       await update(actorRef, cleanData)
+
+      // Update global stats (Tahap 3 -> Tahap 1)
+      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+        const updatedActor = { ...returnTargetActor, ...updates }
+        updateStatsOnStatusChange(database, returnTargetActor, updatedActor, updatedActor).catch(e => console.error(e))
+      })
 
       logActivity({
         query: `KEMBALIKAN KE PETUGAS SURVEY (HASIL VERIFIKASI): ${returnTargetActor.fullName}`,

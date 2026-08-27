@@ -611,7 +611,8 @@ export default function VerifikasiDinasPage() {
 
       // Update global stats
       import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-        updateStatsOnStatusChange(database, verifyingActor.status || 'lpj_pending', 'verified_dinas', verifyingActor).catch(e => console.error(e));
+        const updatedActor = { ...verifyingActor, ...updateData };
+        updateStatsOnStatusChange(database, verifyingActor, updatedActor, updatedActor).catch(e => console.error(e));
       });
 
       logActivity({

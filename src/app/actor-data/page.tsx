@@ -522,10 +522,11 @@ function ActorDataContent() {
       createdAt: new Date().toISOString() 
     })
     
+    const actorObj = actors?.find(a => a.id === actorId) || viewingActor || { id: actorId, status: 'verified_actor' };
+    
     // Update global stats
     import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-      const actorObj = actors?.find(a => a.id === actorId) || { id: actorId, status: 'verified_actor' };
-      updateStatsOnStatusChange(database, 'verified_actor', 'pending', actorObj);
+      updateStatsOnStatusChange(database, actorObj, { ...actorObj, status: 'pending' }, actorObj);
     });
 
     logActivity({
@@ -553,7 +554,7 @@ function ActorDataContent() {
   const executeDelete = () => {
     if (!deletePending || !database) return
     const { actorId, fullName } = deletePending
-    const actorToDelete = viewingActor || {}; // Keep ref for stats
+    const actorToDelete = actors?.find(a => a.id === actorId) || viewingActor || {}; // Keep ref for stats
     deleteDocumentNonBlocking(ref(database, `businessActors/${actorId}`))
     
     // Update global stats

@@ -496,6 +496,12 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
     }
 
     updateDocumentNonBlocking(ref(database, `businessActors/${viewingActor.id}`), updates)
+    
+    // Update global stats
+    import("@/lib/stats-service").then(({ updateStatsOnEdit }) => {
+      updateStatsOnEdit(database, viewingActor, { ...viewingActor, ...updates }).catch(e => console.error(e))
+    })
+
     toast({ title: "Tersimpan", description: "Data pelaku usaha berhasil diperbarui." })
     setIsEditMode(false)
     setViewingActor({ ...viewingActor, ...updates } as BusinessActor)
