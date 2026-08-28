@@ -157,15 +157,15 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
   if (size === 'sm') {
     return (
       <div className={cn(
-        "relative flex items-center justify-between gap-3 overflow-hidden rounded-full shadow-[0_4px_25px_rgba(6,182,212,0.45)] border-[2.5px] border-cyan-300 dark:border-cyan-400 text-white transition-all duration-300 hover:shadow-[0_6px_30px_rgba(6,182,212,0.6)] hover:scale-[1.01]",
-        "bg-gradient-to-r from-[#0284c7] via-[#0d9488] to-[#10b981] px-3.5 py-1.5 md:px-4 md:py-2 max-w-[420px]"
+        "relative flex items-center justify-between gap-2 overflow-hidden rounded-full shadow-[0_4px_25px_rgba(6,182,212,0.45)] border-[2.5px] border-cyan-300 dark:border-cyan-400 text-white transition-all duration-300 hover:shadow-[0_6px_30px_rgba(6,182,212,0.6)] hover:scale-[1.01]",
+        "bg-gradient-to-r from-[#0284c7] via-[#0d9488] to-[#10b981] pl-4 pr-2 py-1.5 md:pl-5 md:pr-2.5 md:py-2 max-w-[440px]"
       )}>
-        {/* Left Side: Badge NEXT/NOW + Title + Countdown Numbers with Labels */}
-        <div className="flex flex-col items-start min-w-0 flex-1 pl-1">
-          {/* Row 1: Icon + NEXT / NOW Badge */}
-          <div className="flex items-center gap-1.5 leading-none">
+        {/* Center: Badge NEXT/NOW + Title + Countdown Numbers with Labels */}
+        <div className="flex flex-col items-center justify-center text-center min-w-0 flex-1">
+          {/* Row 1: Icon + NEXT / NOW Badge + Title */}
+          <div className="flex items-center justify-center gap-1.5 leading-none w-full">
             {timeLeft.isStarted ? (
-              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
+              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm shrink-0">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
@@ -173,23 +173,23 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
                 NOW
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
+              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm shrink-0">
                 <Calendar className="w-2.5 h-2.5 text-white" />
                 NEXT
               </span>
             )}
 
             {title && (
-              <span className="text-[10px] md:text-[11px] font-black text-white uppercase tracking-wider drop-shadow-sm truncate max-w-[170px] md:max-w-[220px]">
+              <span className="text-[10px] md:text-[11px] font-black text-white uppercase tracking-wider drop-shadow-sm truncate max-w-[160px] md:max-w-[210px]">
                 {title}
               </span>
             )}
           </div>
 
-          {/* Row 2: Big Countdown Numbers with Subtitles underneath */}
-          <div className="flex items-center gap-1.5 md:gap-2 mt-1">
+          {/* Row 2: Big Countdown Numbers with Subtitles underneath - CENTERED */}
+          <div className="flex items-center justify-center gap-1.5 md:gap-2.5 mt-1">
             {/* Hari */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center min-w-[28px]">
               <span className="text-sm md:text-base font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.days}</span>
               <span className="text-[8px] md:text-[9px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Hari</span>
             </div>
@@ -197,7 +197,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
             <span className="text-xs md:text-sm font-black text-cyan-200 animate-pulse -mt-2.5">:</span>
 
             {/* Jam */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center min-w-[28px]">
               <span className="text-sm md:text-base font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.hours.toString().padStart(2, '0')}</span>
               <span className="text-[8px] md:text-[9px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Jam</span>
             </div>
@@ -205,7 +205,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
             <span className="text-xs md:text-sm font-black text-cyan-200 animate-pulse -mt-2.5">:</span>
 
             {/* Menit */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center min-w-[28px]">
               <span className="text-sm md:text-base font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.minutes.toString().padStart(2, '0')}</span>
               <span className="text-[8px] md:text-[9px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Menit</span>
             </div>
@@ -213,7 +213,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
             <span className="text-xs md:text-sm font-black text-cyan-200 animate-pulse -mt-2.5">:</span>
 
             {/* Detik */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center min-w-[28px]">
               <span className="text-sm md:text-base font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.seconds.toString().padStart(2, '0')}</span>
               <span className="text-[8px] md:text-[9px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Detik</span>
             </div>
@@ -221,7 +221,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
         </div>
 
         {/* Right Side: Creative Graphic */}
-        <CreativeGraphic className="w-12 h-12 md:w-14 md:h-14 -mr-1" />
+        <CreativeGraphic className="w-12 h-12 md:w-14 md:h-14 shrink-0" />
       </div>
     )
   }
@@ -233,14 +233,14 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
     return (
       <div className={cn(
         "relative flex items-center justify-between gap-4 overflow-hidden rounded-full shadow-[0_6px_30px_rgba(6,182,212,0.45)] border-[3px] border-cyan-300 dark:border-cyan-400 text-white transition-all duration-300 hover:shadow-[0_8px_35px_rgba(6,182,212,0.6)] hover:scale-[1.01]",
-        "bg-gradient-to-r from-[#0284c7] via-[#0d9488] to-[#10b981] px-5 py-2.5 md:px-6 md:py-3 max-w-[520px]"
+        "bg-gradient-to-r from-[#0284c7] via-[#0d9488] to-[#10b981] pl-6 pr-3 py-2.5 md:pl-8 md:pr-4 md:py-3 max-w-[540px]"
       )}>
-        {/* Left Side */}
-        <div className="flex flex-col items-start min-w-0 flex-1 pl-1">
+        {/* Center: NEXT/NOW + Title + Numbers */}
+        <div className="flex flex-col items-center justify-center text-center min-w-0 flex-1">
           {/* Row 1: NEXT/NOW + Title */}
-          <div className="flex items-center gap-2 leading-none">
+          <div className="flex items-center justify-center gap-2 leading-none w-full">
             {timeLeft.isStarted ? (
-              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] md:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md">
+              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] md:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md shrink-0">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
@@ -248,23 +248,23 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
                 NOW
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-[10px] md:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md">
+              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-[10px] md:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md shrink-0">
                 <Calendar className="w-3 h-3 text-white" />
                 NEXT
               </span>
             )}
 
             {title && (
-              <span className="text-xs md:text-sm font-black text-white uppercase tracking-wider drop-shadow-md truncate max-w-[220px] md:max-w-[280px]">
+              <span className="text-xs md:text-sm font-black text-white uppercase tracking-wider drop-shadow-md truncate max-w-[200px] md:max-w-[260px]">
                 {title}
               </span>
             )}
           </div>
 
-          {/* Row 2: Countdown Digits with Labels */}
-          <div className="flex items-center gap-2 md:gap-3 mt-1.5">
+          {/* Row 2: Countdown Digits with Labels - CENTERED */}
+          <div className="flex items-center justify-center gap-2 md:gap-3.5 mt-1.5">
             {/* Hari */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center min-w-[36px]">
               <span className="text-lg md:text-2xl font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.days}</span>
               <span className="text-[9px] md:text-[10px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Hari</span>
             </div>
@@ -272,7 +272,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
             <span className="text-base md:text-xl font-black text-cyan-200 animate-pulse -mt-3">:</span>
 
             {/* Jam */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center min-w-[36px]">
               <span className="text-lg md:text-2xl font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.hours.toString().padStart(2, '0')}</span>
               <span className="text-[9px] md:text-[10px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Jam</span>
             </div>
@@ -280,7 +280,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
             <span className="text-base md:text-xl font-black text-cyan-200 animate-pulse -mt-3">:</span>
 
             {/* Menit */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center min-w-[36px]">
               <span className="text-lg md:text-2xl font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.minutes.toString().padStart(2, '0')}</span>
               <span className="text-[9px] md:text-[10px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Menit</span>
             </div>
@@ -288,7 +288,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
             <span className="text-base md:text-xl font-black text-cyan-200 animate-pulse -mt-3">:</span>
 
             {/* Detik */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center min-w-[36px]">
               <span className="text-lg md:text-2xl font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.seconds.toString().padStart(2, '0')}</span>
               <span className="text-[9px] md:text-[10px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Detik</span>
             </div>
@@ -296,7 +296,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
         </div>
 
         {/* Right Side: Creative Graphic */}
-        <CreativeGraphic className="w-16 h-16 md:w-20 md:h-20 -mr-1" />
+        <CreativeGraphic className="w-16 h-16 md:w-20 md:h-20 shrink-0" />
       </div>
     )
   }
@@ -307,12 +307,12 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
   return (
     <div className={cn(
       "relative flex items-center justify-between gap-6 overflow-hidden rounded-full shadow-[0_8px_40px_rgba(6,182,212,0.5)] border-[3.5px] border-cyan-300 dark:border-cyan-400 text-white transition-all duration-300 hover:shadow-[0_12px_50px_rgba(6,182,212,0.65)] hover:scale-[1.01] w-full max-w-2xl",
-      "bg-gradient-to-r from-[#0284c7] via-[#0d9488] to-[#10b981] px-6 py-3.5 md:px-9 md:py-5"
+      "bg-gradient-to-r from-[#0284c7] via-[#0d9488] to-[#10b981] pl-8 pr-4 py-3.5 md:pl-10 md:pr-6 md:py-5"
     )}>
-      {/* Left / Center Content */}
-      <div className="flex flex-col items-start min-w-0 flex-1 pl-1 md:pl-2">
+      {/* Center Content */}
+      <div className="flex flex-col items-center justify-center text-center min-w-0 flex-1">
         {/* Row 1: 🗓️ NEXT / NOW */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-center gap-2">
           {timeLeft.isStarted ? (
             <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-xs md:text-sm font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
               <span className="relative flex h-2 w-2">
@@ -331,15 +331,15 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
 
         {/* Row 2: Event Title */}
         {title && (
-          <h2 className="text-sm md:text-lg lg:text-xl font-black text-white uppercase tracking-wider drop-shadow-md mt-1.5 truncate max-w-[260px] md:max-w-[360px]">
+          <h2 className="text-sm md:text-lg lg:text-xl font-black text-white uppercase tracking-wider drop-shadow-md mt-1.5 truncate max-w-[280px] md:max-w-[380px]">
             {title}
           </h2>
         )}
 
-        {/* Row 3: Big Digits with Subtitle Labels */}
-        <div className="flex items-center gap-3 md:gap-4 mt-2">
+        {/* Row 3: Big Digits with Subtitle Labels - CENTERED */}
+        <div className="flex items-center justify-center gap-3 md:gap-5 mt-2">
           {/* Hari */}
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center min-w-[44px]">
             <span className="text-2xl md:text-3xl lg:text-4xl font-black text-white font-mono leading-none drop-shadow-lg">{timeLeft.days}</span>
             <span className="text-[10px] md:text-xs font-bold text-cyan-100 uppercase tracking-wider mt-1">Hari</span>
           </div>
@@ -347,7 +347,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
           <span className="text-xl md:text-2xl lg:text-3xl font-black text-cyan-200 animate-pulse -mt-4">:</span>
 
           {/* Jam */}
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center min-w-[44px]">
             <span className="text-2xl md:text-3xl lg:text-4xl font-black text-white font-mono leading-none drop-shadow-lg">{timeLeft.hours.toString().padStart(2, '0')}</span>
             <span className="text-[10px] md:text-xs font-bold text-cyan-100 uppercase tracking-wider mt-1">Jam</span>
           </div>
@@ -355,7 +355,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
           <span className="text-xl md:text-2xl lg:text-3xl font-black text-cyan-200 animate-pulse -mt-4">:</span>
 
           {/* Menit */}
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center min-w-[44px]">
             <span className="text-2xl md:text-3xl lg:text-4xl font-black text-white font-mono leading-none drop-shadow-lg">{timeLeft.minutes.toString().padStart(2, '0')}</span>
             <span className="text-[10px] md:text-xs font-bold text-cyan-100 uppercase tracking-wider mt-1">Menit</span>
           </div>
@@ -363,7 +363,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
           <span className="text-xl md:text-2xl lg:text-3xl font-black text-cyan-200 animate-pulse -mt-4">:</span>
 
           {/* Detik */}
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center min-w-[44px]">
             <span className="text-2xl md:text-3xl lg:text-4xl font-black text-white font-mono leading-none drop-shadow-lg">{timeLeft.seconds.toString().padStart(2, '0')}</span>
             <span className="text-[10px] md:text-xs font-bold text-cyan-100 uppercase tracking-wider mt-1">Detik</span>
           </div>
@@ -371,7 +371,7 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
       </div>
 
       {/* Right Side: Creative 3D Graphic */}
-      <CreativeGraphic className="w-20 h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 -mr-2" />
+      <CreativeGraphic className="w-20 h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 shrink-0" />
     </div>
   )
 }
