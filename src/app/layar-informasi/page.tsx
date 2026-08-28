@@ -386,41 +386,51 @@ export default function LayarInformasiPage() {
                       )}
                     >
                       {/* 1. No (Rata Tengah) */}
-                      <div className="text-center font-black font-mono text-slate-300 text-xs md:text-sm">
+                      <div className="text-center font-black font-mono text-slate-200 text-sm sm:text-base">
                         {idx + 1}
                       </div>
 
-                      {/* 2. Pelaku Usaha (Rata Kiri) */}
-                      <div className="min-w-0 pr-2 pl-2">
-                        <div className="font-black text-white uppercase text-xs md:text-[13px] tracking-tight truncate leading-tight drop-shadow-sm">
+                      {/* 2. Pelaku Usaha (Sangat Jelas, Besar & Terbaca) */}
+                      <div className="min-w-0 pr-2 pl-2 flex flex-col justify-center">
+                        <div className="font-black text-white uppercase text-sm sm:text-base md:text-[17px] tracking-normal truncate leading-snug drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                           {actor.fullName || '-'}
                         </div>
-                        <div className="text-[11px] md:text-xs text-cyan-300 font-bold truncate leading-tight mt-0.5">
-                          {actor.businessName || 'Usaha'} • <span className="text-slate-300 font-medium">{actor.kelurahan || '-'}</span>
+                        <div className="flex items-center gap-1.5 mt-0.5 truncate">
+                          <span className="text-xs sm:text-[13px] font-black text-cyan-300 uppercase tracking-tight truncate">
+                            {actor.businessName || 'USAHA'}
+                          </span>
+                          {actor.kelurahan && (
+                            <>
+                              <span className="text-slate-400 font-bold">•</span>
+                              <span className="text-[11px] sm:text-xs font-extrabold text-amber-300/90 uppercase tracking-wide truncate">
+                                {actor.kelurahan}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
 
                       {/* 3. Waktu Masuk (Rata Tengah 2 Baris) */}
                       <div className="text-center flex flex-col items-center justify-center leading-tight">
-                        <span className="text-xs md:text-[13px] font-bold text-amber-300 font-mono flex items-center justify-center gap-1">
+                        <span className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center gap-1">
                           <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                           {dt.time}
                         </span>
-                        <span className="text-[10px] md:text-[11px] font-semibold text-slate-300 mt-0.5">
+                        <span className="text-[11px] sm:text-xs font-bold text-slate-200 mt-0.5">
                           {dt.date}
                         </span>
                       </div>
 
                       {/* 4. Petugas Survey (Rata Tengah) */}
                       <div className="text-center flex items-center justify-center px-1">
-                        <span className="text-xs md:text-[12px] font-extrabold text-emerald-300 uppercase leading-tight line-clamp-2">
+                        <span className="text-xs sm:text-[13px] font-black text-emerald-300 uppercase leading-snug line-clamp-2 drop-shadow-sm">
                           {getSurveyorName(actor)}
                         </span>
                       </div>
 
                       {/* 5. Status (Rata Tengah) */}
                       <div className="text-center flex items-center justify-center">
-                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black uppercase tracking-wide bg-amber-500/25 text-amber-200 border border-amber-400/60 shadow-sm">
+                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-black uppercase tracking-wide bg-amber-500/30 text-amber-200 border-2 border-amber-400/80 shadow-md">
                           Cek Berkas
                         </span>
                       </div>
@@ -505,41 +515,51 @@ export default function LayarInformasiPage() {
                       )}
                     >
                       {/* 1. No (Rata Tengah) */}
-                      <div className="text-center font-black font-mono text-slate-300 text-xs md:text-sm">
+                      <div className="text-center font-black font-mono text-slate-300 text-sm sm:text-base">
                         {idx + 1}
                       </div>
 
-                      {/* 2. Pelaku Usaha (Rata Kiri) */}
-                      <div className="min-w-0 pr-2 pl-2">
-                        <div className="font-black text-white uppercase text-xs md:text-[13px] tracking-tight truncate leading-tight drop-shadow-sm">
+                      {/* 2. Pelaku Usaha (Sangat Jelas, Besar & Terbaca) */}
+                      <div className="min-w-0 pr-2 pl-2 flex flex-col justify-center">
+                        <div className="font-black text-white uppercase text-sm sm:text-base md:text-[17px] tracking-normal truncate leading-snug drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
                           {actor.fullName || '-'}
                         </div>
-                        <div className="text-[11px] md:text-xs text-teal-300 font-bold truncate leading-tight mt-0.5">
-                          {actor.businessName || 'Usaha'} • <span className="text-slate-300 font-medium">{actor.kelurahan || '-'}</span>
+                        <div className="flex items-center gap-1.5 mt-0.5 truncate">
+                          <span className="text-xs sm:text-[13px] font-black text-teal-300 uppercase tracking-tight truncate">
+                            {actor.businessName || 'USAHA'}
+                          </span>
+                          {actor.kelurahan && (
+                            <>
+                              <span className="text-slate-400 font-bold">•</span>
+                              <span className="text-[11px] sm:text-xs font-extrabold text-amber-300/90 uppercase tracking-wide truncate">
+                                {actor.kelurahan}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
 
                       {/* 3. Waktu Verifikasi (Rata Tengah 2 Baris) */}
                       <div className="text-center flex flex-col items-center justify-center leading-tight">
-                        <span className="text-xs md:text-[13px] font-bold text-amber-300 font-mono flex items-center justify-center gap-1">
+                        <span className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center gap-1">
                           <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                           {dt.time}
                         </span>
-                        <span className="text-[10px] md:text-[11px] font-semibold text-slate-300 mt-0.5">
+                        <span className="text-[11px] sm:text-xs font-bold text-slate-200 mt-0.5">
                           {dt.date}
                         </span>
                       </div>
 
                       {/* 4. Petugas Verifikator (Rata Tengah) */}
                       <div className="text-center flex items-center justify-center px-1">
-                        <span className="text-xs md:text-[12px] font-extrabold text-emerald-300 uppercase leading-tight line-clamp-2">
+                        <span className="text-xs sm:text-[13px] font-black text-emerald-300 uppercase leading-snug line-clamp-2 drop-shadow-sm">
                           {getVerifikatorName(actor)}
                         </span>
                       </div>
 
                       {/* 5. Status (Rata Tengah) */}
                       <div className="text-center flex items-center justify-center">
-                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black uppercase tracking-wide bg-emerald-500/25 text-emerald-200 border border-emerald-400/60 shadow-sm">
+                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-black uppercase tracking-wide bg-emerald-500/30 text-emerald-200 border-2 border-emerald-400/80 shadow-md">
                           ✓ Lolos Berkas
                         </span>
                       </div>
