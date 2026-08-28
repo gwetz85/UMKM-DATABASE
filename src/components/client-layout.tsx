@@ -60,7 +60,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const isStaff = profile?.role === 'staff';
   const isLoginPage = pathname === '/login';
   const isCekDataPage = pathname === '/cek-data' || pathname?.startsWith('/cek-data');
-  const isPublicPage = isLoginPage || isCekDataPage;
+  const isLayarInformasiPage = pathname === '/layar-informasi' || pathname?.startsWith('/layar-informasi');
+  const isPublicPage = isLoginPage || isCekDataPage || isLayarInformasiPage;
   const isRootPage = pathname === '/';
 
   React.useEffect(() => {
@@ -209,7 +210,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           <MessageNotification />
           <Toaster />
 
-          {!isLoginPage && (
+          {!isLoginPage && !isLayarInformasiPage && (
             <>
               <header className="sticky top-0 z-50 flex items-center justify-between px-4 md:px-6 lg:px-8 h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 shrink-0 print:hidden shadow-sm gap-3 md:gap-4">
                 <div className="flex items-center gap-3 md:gap-5 shrink-0">
@@ -325,7 +326,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
-            {!isLoginPage && (!isCekDataPage || (user && !isCekDataPage)) && (
+            {!isLoginPage && !isLayarInformasiPage && (!isCekDataPage || (user && !isCekDataPage)) && (
               <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50 pointer-events-none">
                 <div className="pointer-events-auto flex flex-col items-end gap-3 max-h-[calc(100dvh-5.5rem)] overflow-y-auto no-scrollbar pb-6 pr-1">
                   <div className="hidden lg:flex flex-col gap-3">
@@ -392,6 +393,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               <div key={pathname} className={cn(
                 "w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out",
                 isLoginPage ? "flex-1 flex flex-col min-h-0 p-0 overflow-hidden" : 
+                isLayarInformasiPage ? "p-0 min-h-full pb-0 flex-1 flex flex-col" :
                 isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-20 max-w-7xl mx-auto" :
                 isRootPage ? "p-4 md:p-8 flex-1 flex flex-col min-h-0 pb-20 lg:pr-[320px]" : 
                 "p-4 md:p-8 min-h-full pb-20 lg:pr-[320px]"
@@ -401,9 +403,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             </main>
           </div>
 
-          {!isLoginPage && <RunningText />}
+          {!isLoginPage && !isLayarInformasiPage && <RunningText />}
 
-          {!isLoginPage && !isRootPage && !isKoordinator && (
+          {!isLoginPage && !isLayarInformasiPage && !isRootPage && !isKoordinator && (
             <button 
               onClick={() => router.push('/')}
               className="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-primary text-white shadow-2xl flex items-center justify-center z-50 animate-in slide-in-from-bottom-10 duration-500 border-4 border-white active:scale-90"

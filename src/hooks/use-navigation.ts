@@ -21,7 +21,8 @@ import {
   ShieldAlert,
   UserCheck,
   Info,
-  FileDown
+  FileDown,
+  Tv
 } from "lucide-react"
 import { useUser, useObject, useMemoFirebase, useList, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
@@ -66,6 +67,14 @@ export function useNavigation() {
       show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
       color: "#f59e0b",
       description: "Statistik & Ringkasan Data"
+    },
+    {
+      name: "Layar Informasi",
+      href: "/layar-informasi",
+      icon: Tv,
+      show: !!user || true, // Can be accessed with or without login
+      color: "#06b6d4",
+      description: "Live Display & Layar Monitoring Realtime"
     },
     {
       name: "Pesan Chat",
