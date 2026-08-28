@@ -17,7 +17,6 @@ import {
   Minimize2, 
   Clock, 
   Calendar, 
-  Sparkles, 
   Building2, 
   Radio, 
   Loader2
@@ -127,47 +126,47 @@ export default function LayarInformasiPage() {
       title: "Total Data Terverifikasi",
       count: systemStats?.status?.verified ?? 0,
       icon: UserCheck,
-      cardBg: "from-emerald-700 to-emerald-900 border-emerald-500/50",
-      iconBg: "bg-emerald-500/20 text-emerald-300"
+      cardBg: "from-emerald-700 to-emerald-950 border-emerald-500/60 shadow-emerald-950/40",
+      iconBg: "bg-emerald-400/25 text-emerald-200"
     },
     {
       title: "Cancell",
       count: systemStats?.status?.rejected ?? 0,
       icon: UserX,
-      cardBg: "from-rose-700 to-red-950 border-rose-500/50",
-      iconBg: "bg-rose-500/20 text-rose-300"
+      cardBg: "from-rose-700 to-red-950 border-rose-500/60 shadow-rose-950/40",
+      iconBg: "bg-rose-400/25 text-rose-200"
     },
     {
       title: "Survey Dinas",
       subtitle: "Tahap 1",
       count: systemStats?.detailedStatus?.survey ?? 0,
       icon: ClipboardCheck,
-      cardBg: "from-fuchsia-700 to-purple-950 border-fuchsia-500/50",
-      iconBg: "bg-fuchsia-500/20 text-fuchsia-300"
+      cardBg: "from-fuchsia-700 to-purple-950 border-fuchsia-500/60 shadow-fuchsia-950/40",
+      iconBg: "bg-fuchsia-400/25 text-fuchsia-200"
     },
     {
       title: "Verifikasi Dinas",
       subtitle: "Tahap 2",
       count: systemStats?.detailedStatus?.verifikasi ?? 0,
       icon: FileText,
-      cardBg: "from-indigo-700 to-blue-950 border-indigo-500/50",
-      iconBg: "bg-indigo-500/20 text-indigo-300"
+      cardBg: "from-indigo-700 to-blue-950 border-indigo-500/60 shadow-indigo-950/40",
+      iconBg: "bg-indigo-400/25 text-indigo-200"
     },
     {
       title: "Hasil Dinas",
       subtitle: "Tahap 3",
       count: systemStats?.detailedStatus?.hasilVerifikasi ?? 0,
       icon: ListChecks,
-      cardBg: "from-teal-700 to-cyan-950 border-teal-500/50",
-      iconBg: "bg-teal-500/20 text-teal-300"
+      cardBg: "from-teal-700 to-cyan-950 border-teal-500/60 shadow-teal-950/40",
+      iconBg: "bg-teal-400/25 text-teal-200"
     },
     {
       title: "Rekening Terinput",
       subtitle: "Tahap 4 Final",
       count: systemStats?.detailedStatus?.selesai ?? systemStats?.status?.finish ?? 0,
       icon: CreditCard,
-      cardBg: "from-sky-700 to-blue-950 border-sky-500/50",
-      iconBg: "bg-sky-500/20 text-sky-300"
+      cardBg: "from-sky-700 to-blue-950 border-sky-500/60 shadow-sky-950/40",
+      iconBg: "bg-sky-400/25 text-sky-200"
     }
   ];
 
@@ -197,49 +196,49 @@ export default function LayarInformasiPage() {
   }, []);
 
   return (
-    <div className="h-[100dvh] w-full max-h-[100dvh] bg-[#070b14] text-white flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-white overflow-hidden select-none p-2 sm:p-3 md:p-3.5 gap-2">
+    <div className="h-[100dvh] w-full max-h-[100dvh] bg-[#060a12] text-white flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-white overflow-hidden select-none p-2 sm:p-3 md:p-3.5 gap-2">
       
       {/* ─────────────────────────────────────────────────────────────
-          1. HEADER (Compact & Elegant)
+          1. HEADER
       ────────────────────────────────────────────────────────────── */}
-      <header className="shrink-0 flex items-center justify-between px-3 py-1.5 md:px-4 md:py-2 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md ring-1 ring-white/20 shrink-0">
-            <Building2 className="w-4 h-4 md:w-5 md:h-5 text-white" />
+      <header className="shrink-0 flex items-center justify-between px-4 py-2 md:px-5 md:py-2.5 rounded-2xl bg-slate-900/95 border border-slate-700/80 shadow-lg">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg ring-2 ring-white/20 shrink-0">
+            <Building2 className="w-6 h-6 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 animate-pulse leading-none">
-                LIVE MONITORING
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 animate-pulse leading-none">
+                LIVE DISPLAY MONITORING
               </span>
-              <span className="text-[10px] md:text-xs font-semibold text-slate-400 hidden sm:inline leading-none">
+              <span className="text-xs font-bold text-slate-300 hidden sm:inline leading-none">
                 DINAS TENAGA KERJA, KOPERASI DAN USAHA MIKRO KOTA TANJUNGPINANG
               </span>
             </div>
-            <h1 className="text-sm md:text-base lg:text-lg font-black text-white uppercase tracking-tight font-headline leading-tight mt-0.5">
+            <h1 className="text-base md:text-xl lg:text-2xl font-black text-white uppercase tracking-tight font-headline leading-tight mt-0.5 drop-shadow">
               Layar Informasi Data Pelaku Usaha (SIMPU 2026)
             </h1>
           </div>
         </div>
 
         {/* Controls */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-600/40 px-2.5 py-1 rounded-xl">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 bg-emerald-950/80 border border-emerald-500/50 px-3 py-1.5 rounded-xl shadow-inner">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-90"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
-              Online
+            <span className="text-xs font-black uppercase tracking-wider text-emerald-300">
+              Realtime Online
             </span>
           </div>
 
           <button
             onClick={toggleFullscreen}
-            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all text-slate-200 border border-slate-700 px-3 py-1 rounded-xl font-bold text-[11px] uppercase tracking-wider shadow"
+            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all text-white border border-slate-600 px-3.5 py-1.5 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-md"
           >
-            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-cyan-400" /> : <Maximize2 className="w-3.5 h-3.5 text-cyan-400" />}
-            <span className="hidden sm:inline">{isFullscreen ? "Normal" : "Fullscreen"}</span>
+            {isFullscreen ? <Minimize2 className="w-4 h-4 text-cyan-400" /> : <Maximize2 className="w-4 h-4 text-cyan-400" />}
+            <span className="hidden sm:inline">{isFullscreen ? "Normal" : "Layar Penuh"}</span>
           </button>
         </div>
       </header>
@@ -247,36 +246,36 @@ export default function LayarInformasiPage() {
       {/* ─────────────────────────────────────────────────────────────
           2. BAGIAN ATAS: 6 CARD WIDGET STATISTIK REAL-TIME
       ────────────────────────────────────────────────────────────── */}
-      <section className="shrink-0 grid grid-cols-3 lg:grid-cols-6 gap-2">
+      <section className="shrink-0 grid grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
         {cardStats.map((item, idx) => {
           const Icon = item.icon;
           return (
             <div
               key={idx}
               className={cn(
-                "relative overflow-hidden rounded-2xl p-2 md:p-2.5 flex flex-col justify-between border shadow-lg bg-gradient-to-br transition-transform duration-200 hover:scale-[1.01]",
+                "relative overflow-hidden rounded-2xl p-2.5 md:p-3 flex flex-col justify-between border-2 shadow-xl bg-gradient-to-br transition-transform duration-200 hover:scale-[1.01]",
                 item.cardBg
               )}
             >
               <div className="flex items-center justify-between gap-1 relative z-10">
-                <span className="text-[10px] md:text-[11px] font-extrabold uppercase tracking-wide text-white line-clamp-1">
+                <span className="text-[11px] md:text-xs font-black uppercase tracking-wide text-white drop-shadow line-clamp-1">
                   {item.title}
                 </span>
                 <div className={cn("p-1.5 rounded-lg shrink-0", item.iconBg)}>
-                  <Icon className="w-3.5 h-3.5 text-white" />
+                  <Icon className="w-4 h-4 text-white" />
                 </div>
               </div>
 
-              <div className="mt-1 relative z-10 flex items-baseline justify-between">
-                <div className="text-xl md:text-2xl font-black text-white tracking-tight font-mono drop-shadow">
+              <div className="mt-1.5 relative z-10 flex items-baseline justify-between">
+                <div className="text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                   {isStatsLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-white/70" />
+                    <Loader2 className="w-5 h-5 animate-spin text-white" />
                   ) : (
                     (item.count || 0).toLocaleString('id-ID')
                   )}
                 </div>
-                <span className="text-[8px] md:text-[9px] font-bold text-white/80 uppercase">
-                  {item.subtitle || "Realtime"}
+                <span className="text-[10px] md:text-xs font-extrabold text-white/90 uppercase tracking-wider">
+                  {item.subtitle || "Data Realtime"}
                 </span>
               </div>
             </div>
@@ -285,43 +284,43 @@ export default function LayarInformasiPage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          3. BAGIAN TENGAH: 2 TABEL DENGAN ROWS YANG MENGISI 100% SPACE
+          3. BAGIAN TENGAH: 2 TABEL FULL SPACE DENGAN FONT JELAS & BOLD
       ────────────────────────────────────────────────────────────── */}
-      <section className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+      <section className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-2.5 md:gap-3">
         
         {/* TABEL 1: VERIFIKASI DINAS (TAHAP 2) */}
-        <div className="bg-[#0f172a] border border-indigo-500/40 rounded-2xl p-2.5 md:p-3 shadow-xl flex flex-col justify-between min-h-0 overflow-hidden">
+        <div className="bg-[#0b1329] border-2 border-indigo-500/50 rounded-2xl p-2.5 md:p-3 shadow-2xl flex flex-col justify-between min-h-0 overflow-hidden">
           
           {/* Table Header Top Bar */}
           <div className="shrink-0 flex items-center justify-between pb-1.5 mb-1.5 border-b border-indigo-500/30">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-indigo-300 shrink-0">
-                <FileText className="w-4 h-4" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/30 border border-indigo-400/50 flex items-center justify-center text-indigo-200 shrink-0 shadow">
+                <FileText className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-1.5">
-                  <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-tight">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm md:text-base font-black text-white uppercase tracking-tight drop-shadow">
                     Verifikasi Dinas
                   </h2>
-                  <span className="bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 text-[9px] font-black uppercase px-1.5 py-0.2 rounded">
+                  <span className="bg-indigo-500/40 text-indigo-100 border border-indigo-300/50 text-[10px] font-black uppercase px-2 py-0.5 rounded-md shadow-sm">
                     Tahap 2
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-300 font-medium leading-none">
+                <p className="text-[11px] text-slate-300 font-semibold leading-none mt-0.5">
                   10 Pelaku Usaha Terakhir Masuk Verifikasi Dinas (Menunggu Cek Berkas)
                 </p>
               </div>
             </div>
-            <span className="hidden sm:inline-flex text-[10px] font-bold text-indigo-300 bg-indigo-950/80 border border-indigo-800/80 px-2 py-0.5 rounded-lg">
+            <span className="hidden sm:inline-flex text-xs font-black text-indigo-200 bg-indigo-950 border border-indigo-600/60 px-2.5 py-1 rounded-xl shadow-sm">
               10 Terkini
             </span>
           </div>
 
-          {/* Table Container with 10 Flex Rows filling 100% height */}
-          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700/80 bg-[#090e1a] overflow-hidden">
+          {/* Table Container with 10 Stretched Rows */}
+          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700 bg-[#050a14] overflow-hidden shadow-inner">
             
             {/* Column Headers */}
-            <div className="shrink-0 grid grid-cols-[34px_1fr_150px_140px_90px] md:grid-cols-[38px_1fr_175px_150px_95px] items-center bg-[#1e293b] border-b border-slate-700 px-2 py-1.5 text-[10px] md:text-[11px] font-black uppercase text-indigo-300 tracking-wider">
+            <div className="shrink-0 grid grid-cols-[38px_1fr_165px_155px_100px] md:grid-cols-[42px_1fr_185px_170px_110px] items-center bg-[#18243e] border-b-2 border-indigo-500/40 px-2.5 py-2 text-xs font-black uppercase text-indigo-200 tracking-wider">
               <div className="text-center">No</div>
               <div className="pl-1">Pelaku Usaha</div>
               <div>Waktu Masuk</div>
@@ -330,14 +329,14 @@ export default function LayarInformasiPage() {
             </div>
 
             {/* 10 Stretch Rows */}
-            <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800/80">
+            <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800">
               {isTableLoading ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 font-bold">
-                  <Loader2 className="w-6 h-6 animate-spin text-indigo-400 mb-1" />
-                  <span>Memuat Data...</span>
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-300 font-bold text-sm">
+                  <Loader2 className="w-7 h-7 animate-spin text-indigo-400 mb-2" />
+                  <span>Memuat Data Verifikasi Dinas...</span>
                 </div>
               ) : latestVerifikasiDinas.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-slate-500 font-bold uppercase text-xs">
+                <div className="flex-1 flex items-center justify-center text-slate-400 font-bold uppercase text-sm">
                   Belum ada antrean data Verifikasi Dinas
                 </div>
               ) : (
@@ -345,39 +344,39 @@ export default function LayarInformasiPage() {
                   <div 
                     key={actor.id || idx}
                     className={cn(
-                      "flex-1 min-h-0 grid grid-cols-[34px_1fr_150px_140px_90px] md:grid-cols-[38px_1fr_175px_150px_95px] items-center px-2 transition-colors hover:bg-indigo-950/60",
-                      idx % 2 === 0 ? "bg-[#0b1329]" : "bg-[#0f172a]"
+                      "flex-1 min-h-0 grid grid-cols-[38px_1fr_165px_155px_100px] md:grid-cols-[42px_1fr_185px_170px_110px] items-center px-2.5 transition-colors hover:bg-indigo-950/70",
+                      idx % 2 === 0 ? "bg-[#0a1224]" : "bg-[#0d1830]"
                     )}
                   >
                     {/* No */}
-                    <div className="text-center font-bold font-mono text-slate-400 text-xs">
+                    <div className="text-center font-black font-mono text-slate-300 text-xs md:text-sm">
                       {idx + 1}
                     </div>
 
                     {/* Pelaku Usaha */}
                     <div className="min-w-0 pr-2 pl-1">
-                      <div className="font-extrabold text-white uppercase text-xs md:text-[13px] tracking-tight truncate leading-tight">
+                      <div className="font-black text-white uppercase text-xs md:text-sm tracking-tight truncate leading-tight drop-shadow-sm">
                         {actor.fullName || '-'}
                       </div>
-                      <div className="text-[10px] md:text-[11px] text-cyan-300 font-semibold truncate leading-tight mt-0.5">
-                        {actor.businessName || 'Usaha'} • <span className="text-slate-400 font-normal">{actor.kelurahan || '-'}</span>
+                      <div className="text-[11px] md:text-xs text-cyan-300 font-bold truncate leading-tight mt-0.5">
+                        {actor.businessName || 'Usaha'} • <span className="text-slate-300 font-medium">{actor.kelurahan || '-'}</span>
                       </div>
                     </div>
 
                     {/* Waktu Masuk */}
-                    <div className="whitespace-nowrap text-[11px] md:text-xs font-bold text-amber-300 font-mono flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <div className="whitespace-nowrap text-xs md:text-sm font-bold text-amber-300 font-mono flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-amber-400 shrink-0" />
                       <span>{formatDateTimeIndo(actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt)}</span>
                     </div>
 
                     {/* Petugas Survey */}
-                    <div className="text-[11px] md:text-xs font-bold text-emerald-300 uppercase truncate pr-2">
+                    <div className="text-xs md:text-sm font-extrabold text-emerald-300 uppercase truncate pr-2">
                       {getSurveyorName(actor)}
                     </div>
 
                     {/* Status Badge */}
                     <div className="text-center whitespace-nowrap">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] md:text-[10px] font-extrabold uppercase tracking-wide bg-amber-500/20 text-amber-300 border border-amber-400/50 shadow-sm">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black uppercase tracking-wide bg-amber-500/25 text-amber-200 border border-amber-400/60 shadow-sm">
                         Cek Berkas
                       </span>
                     </div>
@@ -389,48 +388,48 @@ export default function LayarInformasiPage() {
           </div>
 
           {/* Table Footer Stats */}
-          <div className="shrink-0 pt-1.5 mt-1 border-t border-indigo-500/20 flex items-center justify-between text-[10px] text-slate-400">
-            <span className="font-extrabold uppercase">
-              Total Antrean: <strong className="text-indigo-300 font-mono">{systemStats?.detailedStatus?.verifikasi ?? 0} Pelaku Usaha</strong>
+          <div className="shrink-0 pt-2 mt-1 border-t border-indigo-500/30 flex items-center justify-between text-xs text-slate-300">
+            <span className="font-black uppercase tracking-wide">
+              Total Antrean: <strong className="text-indigo-300 font-mono text-sm">{systemStats?.detailedStatus?.verifikasi ?? 0} Pelaku Usaha</strong>
             </span>
-            <span className="text-slate-500 text-[9px]">Pembaruan Otomatis Realtime</span>
+            <span className="text-slate-400 text-[11px] font-semibold">Pembaruan Otomatis Realtime</span>
           </div>
 
         </div>
 
         {/* TABEL 2: HASIL DINAS (TAHAP 3) */}
-        <div className="bg-[#0f172a] border border-teal-500/40 rounded-2xl p-2.5 md:p-3 shadow-xl flex flex-col justify-between min-h-0 overflow-hidden">
+        <div className="bg-[#081a24] border-2 border-teal-500/50 rounded-2xl p-2.5 md:p-3 shadow-2xl flex flex-col justify-between min-h-0 overflow-hidden">
           
           {/* Table Header Top Bar */}
           <div className="shrink-0 flex items-center justify-between pb-1.5 mb-1.5 border-b border-teal-500/30">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-teal-500/20 border border-teal-400/40 flex items-center justify-center text-teal-300 shrink-0">
-                <ListChecks className="w-4 h-4" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-teal-500/30 border border-teal-400/50 flex items-center justify-center text-teal-200 shrink-0 shadow">
+                <ListChecks className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-1.5">
-                  <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-tight">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm md:text-base font-black text-white uppercase tracking-tight drop-shadow">
                     Hasil Dinas
                   </h2>
-                  <span className="bg-teal-500/30 text-teal-200 border border-teal-400/40 text-[9px] font-black uppercase px-1.5 py-0.2 rounded">
+                  <span className="bg-teal-500/40 text-teal-100 border border-teal-300/50 text-[10px] font-black uppercase px-2 py-0.5 rounded-md shadow-sm">
                     Tahap 3
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-300 font-medium leading-none">
+                <p className="text-[11px] text-slate-300 font-semibold leading-none mt-0.5">
                   10 Pelaku Usaha Terakhir Selesai Verifikasi Berkas Dinas
                 </p>
               </div>
             </div>
-            <span className="hidden sm:inline-flex text-[10px] font-bold text-teal-300 bg-teal-950/80 border border-teal-800/80 px-2 py-0.5 rounded-lg">
+            <span className="hidden sm:inline-flex text-xs font-black text-teal-200 bg-teal-950 border border-teal-600/60 px-2.5 py-1 rounded-xl shadow-sm">
               10 Terkini
             </span>
           </div>
 
-          {/* Table Container with 10 Flex Rows filling 100% height */}
-          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700/80 bg-[#090e1a] overflow-hidden">
+          {/* Table Container with 10 Stretched Rows */}
+          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700 bg-[#040e14] overflow-hidden shadow-inner">
             
             {/* Column Headers */}
-            <div className="shrink-0 grid grid-cols-[34px_1fr_150px_140px_90px] md:grid-cols-[38px_1fr_175px_150px_95px] items-center bg-[#1e293b] border-b border-slate-700 px-2 py-1.5 text-[10px] md:text-[11px] font-black uppercase text-teal-300 tracking-wider">
+            <div className="shrink-0 grid grid-cols-[38px_1fr_165px_155px_100px] md:grid-cols-[42px_1fr_185px_170px_110px] items-center bg-[#112a38] border-b-2 border-teal-500/40 px-2.5 py-2 text-xs font-black uppercase text-teal-200 tracking-wider">
               <div className="text-center">No</div>
               <div className="pl-1">Pelaku Usaha</div>
               <div>Waktu Verifikasi</div>
@@ -439,14 +438,14 @@ export default function LayarInformasiPage() {
             </div>
 
             {/* 10 Stretch Rows */}
-            <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800/80">
+            <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800">
               {isTableLoading ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 font-bold">
-                  <Loader2 className="w-6 h-6 animate-spin text-teal-400 mb-1" />
-                  <span>Memuat Data...</span>
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-300 font-bold text-sm">
+                  <Loader2 className="w-7 h-7 animate-spin text-teal-400 mb-2" />
+                  <span>Memuat Data Hasil Dinas...</span>
                 </div>
               ) : latestHasilVerifikasi.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center text-slate-500 font-bold uppercase text-xs">
+                <div className="flex-1 flex items-center justify-center text-slate-400 font-bold uppercase text-sm">
                   Belum ada data Hasil Dinas terbaru
                 </div>
               ) : (
@@ -454,39 +453,39 @@ export default function LayarInformasiPage() {
                   <div 
                     key={actor.id || idx}
                     className={cn(
-                      "flex-1 min-h-0 grid grid-cols-[34px_1fr_150px_140px_90px] md:grid-cols-[38px_1fr_175px_150px_95px] items-center px-2 transition-colors hover:bg-teal-950/60",
-                      idx % 2 === 0 ? "bg-[#0b1329]" : "bg-[#0f172a]"
+                      "flex-1 min-h-0 grid grid-cols-[38px_1fr_165px_155px_100px] md:grid-cols-[42px_1fr_185px_170px_110px] items-center px-2.5 transition-colors hover:bg-teal-950/70",
+                      idx % 2 === 0 ? "bg-[#06151f]" : "bg-[#0a1e2c]"
                     )}
                   >
                     {/* No */}
-                    <div className="text-center font-bold font-mono text-slate-400 text-xs">
+                    <div className="text-center font-black font-mono text-slate-300 text-xs md:text-sm">
                       {idx + 1}
                     </div>
 
                     {/* Pelaku Usaha */}
                     <div className="min-w-0 pr-2 pl-1">
-                      <div className="font-extrabold text-white uppercase text-xs md:text-[13px] tracking-tight truncate leading-tight">
+                      <div className="font-black text-white uppercase text-xs md:text-sm tracking-tight truncate leading-tight drop-shadow-sm">
                         {actor.fullName || '-'}
                       </div>
-                      <div className="text-[10px] md:text-[11px] text-teal-300 font-semibold truncate leading-tight mt-0.5">
-                        {actor.businessName || 'Usaha'} • <span className="text-slate-400 font-normal">{actor.kelurahan || '-'}</span>
+                      <div className="text-[11px] md:text-xs text-teal-300 font-bold truncate leading-tight mt-0.5">
+                        {actor.businessName || 'Usaha'} • <span className="text-slate-300 font-medium">{actor.kelurahan || '-'}</span>
                       </div>
                     </div>
 
                     {/* Waktu Verifikasi */}
-                    <div className="whitespace-nowrap text-[11px] md:text-xs font-bold text-amber-300 font-mono flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <div className="whitespace-nowrap text-xs md:text-sm font-bold text-amber-300 font-mono flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-amber-400 shrink-0" />
                       <span>{formatDateTimeIndo(actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt)}</span>
                     </div>
 
                     {/* Petugas Verifikator */}
-                    <div className="text-[11px] md:text-xs font-bold text-emerald-300 uppercase truncate pr-2">
+                    <div className="text-xs md:text-sm font-extrabold text-emerald-300 uppercase truncate pr-2">
                       {getVerifikatorName(actor)}
                     </div>
 
                     {/* Status Badge */}
                     <div className="text-center whitespace-nowrap">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] md:text-[10px] font-extrabold uppercase tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 shadow-sm">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black uppercase tracking-wide bg-emerald-500/25 text-emerald-200 border border-emerald-400/60 shadow-sm">
                         ✓ Lolos Berkas
                       </span>
                     </div>
@@ -498,11 +497,11 @@ export default function LayarInformasiPage() {
           </div>
 
           {/* Table Footer Stats */}
-          <div className="shrink-0 pt-1.5 mt-1 border-t border-teal-500/20 flex items-center justify-between text-[10px] text-slate-400">
-            <span className="font-extrabold uppercase">
-              Total Selesai: <strong className="text-teal-300 font-mono">{systemStats?.detailedStatus?.hasilVerifikasi ?? 0} Pelaku Usaha</strong>
+          <div className="shrink-0 pt-2 mt-1 border-t border-teal-500/30 flex items-center justify-between text-xs text-slate-300">
+            <span className="font-black uppercase tracking-wide">
+              Total Selesai: <strong className="text-teal-300 font-mono text-sm">{systemStats?.detailedStatus?.hasilVerifikasi ?? 0} Pelaku Usaha</strong>
             </span>
-            <span className="text-slate-500 text-[9px]">Pembaruan Otomatis Realtime</span>
+            <span className="text-slate-400 text-[11px] font-semibold">Pembaruan Otomatis Realtime</span>
           </div>
 
         </div>
@@ -510,64 +509,64 @@ export default function LayarInformasiPage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          4. BAGIAN BAWAH: FOOTER (CLOCK, RUNNING TEXT & COUNTDOWN EVENT)
+          4. BAGIAN BAWAH: FOOTER (RUNNING TEXT, REALTIME CLOCK & COUNTDOWN EVENT)
       ────────────────────────────────────────────────────────────── */}
-      <footer className="shrink-0 rounded-2xl overflow-hidden bg-slate-900/95 border border-slate-800 shadow-2xl">
+      <footer className="shrink-0 rounded-2xl overflow-hidden bg-slate-900/95 border-2 border-slate-700 shadow-2xl">
         
         {/* Row 1: Running Text (Marquee) */}
-        <div className="w-full bg-[#042f2e] border-b border-cyan-500/30 py-1 overflow-hidden flex items-center">
-          <div className="bg-cyan-500 text-slate-950 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest shrink-0 flex items-center gap-1 shadow ml-1.5 rounded">
-            <Radio className="w-3 h-3 animate-pulse text-slate-950" />
+        <div className="w-full bg-[#022c2a] border-b border-cyan-500/40 py-1.5 overflow-hidden flex items-center">
+          <div className="bg-cyan-400 text-slate-950 px-3 py-0.5 text-xs font-black uppercase tracking-widest shrink-0 flex items-center gap-1.5 shadow-md ml-2 rounded-md">
+            <Radio className="w-3.5 h-3.5 animate-pulse text-slate-950" />
             PENGUMUMAN
           </div>
           <div className="relative flex overflow-x-hidden whitespace-nowrap flex-1">
             <div className="animate-marquee inline-block whitespace-nowrap">
-              <span className="text-[11px] font-extrabold text-cyan-200 uppercase tracking-widest px-6">
+              <span className="text-xs md:text-sm font-black text-cyan-100 uppercase tracking-widest px-8 drop-shadow">
                 {runningText}
               </span>
-              <span className="text-cyan-400/50 mx-3">•</span>
-              <span className="text-[11px] font-extrabold text-cyan-200 uppercase tracking-widest px-6">
+              <span className="text-cyan-400 mx-4 font-black">•</span>
+              <span className="text-xs md:text-sm font-black text-cyan-100 uppercase tracking-widest px-8 drop-shadow">
                 {runningText}
               </span>
-              <span className="text-cyan-400/50 mx-3">•</span>
+              <span className="text-cyan-400 mx-4 font-black">•</span>
             </div>
           </div>
         </div>
 
         {/* Row 2: Bottom Bar (Sudut Kiri Clock, Sudut Kanan Countdown Event) */}
-        <div className="px-3 py-1.5 md:px-4 md:py-1.5 flex items-center justify-between gap-2">
+        <div className="px-4 py-2 md:px-6 md:py-2.5 flex items-center justify-between gap-3 bg-[#0a101d]">
           
-          {/* SUDUT KIRI: REALTIME CLOCK */}
-          <div className="flex items-center gap-2 bg-slate-950/90 border border-slate-800 px-3 py-1 rounded-xl shrink-0">
-            <Clock className="w-4 h-4 text-cyan-400 animate-pulse" />
-            <div className="flex items-baseline gap-2">
-              <span className="text-sm md:text-base font-black text-white font-mono tracking-wider">
+          {/* SUDUT KIRI: REALTIME CLOCK (BESAR & JELAS) */}
+          <div className="flex items-center gap-3 bg-slate-950 border border-slate-700 px-4 py-1.5 rounded-2xl shadow-md shrink-0">
+            <Clock className="w-6 h-6 text-cyan-400 animate-pulse" />
+            <div className="flex items-baseline gap-2.5">
+              <span className="text-lg md:text-2xl font-black text-white font-mono tracking-wider">
                 {currentTime ? currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') : '--:--:--'}
-                <span className="text-[9px] text-cyan-400 font-bold ml-0.5">WIB</span>
+                <span className="text-xs text-cyan-400 font-black ml-1">WIB</span>
               </span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase hidden md:inline">
-                {currentTime ? currentTime.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+              <span className="text-xs md:text-sm font-black text-slate-300 uppercase tracking-wider hidden sm:inline">
+                {currentTime ? currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}
               </span>
             </div>
           </div>
 
-          {/* SUDUT KANAN: COUNTDOWN EVENT */}
+          {/* SUDUT KANAN: COUNTDOWN EVENT (BESAR & JELAS) */}
           {activeEvent ? (
-            <div className="flex items-center gap-2 bg-slate-950/90 border border-cyan-500/40 px-3 py-1 rounded-xl shrink-0">
-              <div className="flex items-center gap-1.5 leading-none">
-                <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-0.5">
-                  <Calendar className="w-2.5 h-2.5" />
+            <div className="flex items-center gap-3 bg-slate-950 border-2 border-cyan-500/60 px-4 py-1.5 rounded-2xl shadow-lg shrink-0">
+              <div className="flex items-center gap-2 leading-none">
+                <span className="px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black uppercase tracking-wider bg-rose-500/30 text-rose-200 border border-rose-400/60 flex items-center gap-1 shadow-sm">
+                  <Calendar className="w-3.5 h-3.5" />
                   EVENT
                 </span>
-                <span className="text-[10px] md:text-xs font-black text-cyan-200 uppercase truncate max-w-[150px] sm:max-w-[250px]">
+                <span className="text-xs md:text-sm lg:text-base font-black text-cyan-200 uppercase truncate max-w-[200px] sm:max-w-[320px] drop-shadow">
                   {activeEvent.description || 'Jadwal Event'}
                 </span>
               </div>
               <EventTimerDisplay targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 bg-slate-950/60 border border-slate-800 px-2.5 py-1 rounded-xl text-slate-500 text-[10px] font-bold uppercase shrink-0">
-              <Calendar className="w-3.5 h-3.5 text-slate-600" />
+            <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3.5 py-1.5 rounded-2xl text-slate-400 text-xs font-black uppercase tracking-wider shrink-0">
+              <Calendar className="w-4 h-4 text-slate-500" />
               <span>Tidak Ada Event Aktif</span>
             </div>
           )}
@@ -595,7 +594,7 @@ export default function LayarInformasiPage() {
   );
 }
 
-// Subcomponent for Event Timer Display (Compact)
+// Subcomponent for Event Timer Display (Large & Crisp)
 function EventTimerDisplay({ targetDate, startDate }: { targetDate: string; startDate?: string }) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
@@ -646,18 +645,22 @@ function EventTimerDisplay({ targetDate, startDate }: { targetDate: string; star
   }, [targetDate, startDate]);
 
   if (timeLeft.isEnded) {
-    return <span className="text-[10px] font-bold text-slate-500 uppercase">Selesai</span>;
+    return <span className="text-xs font-black text-slate-400 uppercase">Selesai</span>;
   }
 
   return (
-    <div className="flex items-center gap-1 font-mono text-[11px] font-black text-white">
-      <span className="text-amber-300">{timeLeft.days}h</span>
-      <span className="text-cyan-400">:</span>
-      <span className="text-white">{timeLeft.hours.toString().padStart(2, '0')}j</span>
-      <span className="text-cyan-400">:</span>
-      <span className="text-white">{timeLeft.minutes.toString().padStart(2, '0')}m</span>
-      <span className="text-cyan-400">:</span>
-      <span className="text-cyan-300">{timeLeft.seconds.toString().padStart(2, '0')}d</span>
+    <div className="flex items-center gap-1.5 font-mono text-sm md:text-base lg:text-lg font-black text-white">
+      <span className="text-amber-300 font-black">{timeLeft.days}</span>
+      <span className="text-[10px] text-amber-200 uppercase mr-0.5">h</span>
+      <span className="text-cyan-400 font-black">:</span>
+      <span className="text-white font-black">{timeLeft.hours.toString().padStart(2, '0')}</span>
+      <span className="text-[10px] text-slate-300 uppercase mr-0.5">j</span>
+      <span className="text-cyan-400 font-black">:</span>
+      <span className="text-white font-black">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+      <span className="text-[10px] text-slate-300 uppercase mr-0.5">m</span>
+      <span className="text-cyan-400 font-black">:</span>
+      <span className="text-cyan-300 font-black">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+      <span className="text-[10px] text-cyan-200 uppercase">d</span>
     </div>
   );
 }
