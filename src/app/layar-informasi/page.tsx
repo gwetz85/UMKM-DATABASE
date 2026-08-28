@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useDatabase, useObject, useList, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, equalTo } from 'firebase/database';
 import { BusinessActor } from '../lib/types';
-import { formatDateTimeIndo, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { useActiveEvent } from '@/hooks/use-active-event';
 import { 
   UserCheck, 
@@ -17,7 +17,6 @@ import {
   Minimize2, 
   Clock, 
   Calendar, 
-  Building2, 
   Radio, 
   Loader2
 } from 'lucide-react';
@@ -38,6 +37,28 @@ const SimpuLogo = ({ className }: { className?: string }) => (
     <path d="M2 12l10 5 10-5" />
   </svg>
 );
+
+// Helper to format date & time into two clean centered lines
+const formatDateTimeSplit = (isoString?: string | null) => {
+  if (!isoString) return { date: '-', time: '-' };
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return { date: '-', time: '-' };
+    const date = d.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+    const time = d.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).replace(/\./g, ':') + ' WIB';
+    return { date, time };
+  } catch {
+    return { date: '-', time: '-' };
+  }
+};
 
 export default function LayarInformasiPage() {
   const database = useDatabase();
@@ -64,7 +85,7 @@ export default function LayarInformasiPage() {
     return ref(database, 'settings/running_text');
   }, [database]);
   const { data: runningTextConfig } = useObject(runningTextRef);
-  const defaultRunningText = "SELAMAT DATANG DI APLIKASI SISTEM INFORMASI MANAJEMEN PELAKU USAHA (SIMPU) TAHUN 2026 • DINAS TENAGA KERJA, KOPERASI DAN USAHA MIKRO KOTA TANJUNGPINANG • STATUS VERIFIKASI DATA DAN SURVEY DINAS DIPERBARUI SECARA REALTIME";
+  const defaultRunningText = "SELAMAT DATANG DI APLIKASI SISTEM INFORMASI MANAJEMEN PELAKU USAHA (SIMPU) TAHUN 2026 • STATUS VERIFIKASI DATA DAN SURVEY DINAS DIPERBARUI SECARA REALTIME";
   const runningText = (typeof runningTextConfig === 'string' ? runningTextConfig : runningTextConfig?.text) || defaultRunningText;
 
   // 4. Event Countdown from Firebase
@@ -298,7 +319,7 @@ export default function LayarInformasiPage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          3. BAGIAN TENGAH: 2 TABEL FULL SPACE DENGAN FONT JELAS & BOLD
+          3. BAGIAN TENGAH: 2 TABEL DENGAN FORMAT PAS & RATA TENGAH
       ────────────────────────────────────────────────────────────── */}
       <section className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-2.5 md:gap-3">
         
@@ -330,19 +351,19 @@ export default function LayarInformasiPage() {
             </span>
           </div>
 
-          {/* Table Container with 10 Stretched Rows */}
+          {/* Table Container with Proportional Centered Columns */}
           <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700 bg-[#050a14] overflow-hidden shadow-inner">
             
             {/* Column Headers */}
-            <div className="shrink-0 grid grid-cols-[38px_1fr_165px_155px_100px] md:grid-cols-[42px_1fr_185px_170px_110px] items-center bg-[#18243e] border-b-2 border-indigo-500/40 px-2.5 py-2 text-xs font-black uppercase text-indigo-200 tracking-wider">
+            <div className="shrink-0 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center bg-[#18243e] border-b-2 border-indigo-500/40 px-2 py-2 text-xs font-black uppercase text-indigo-200 tracking-wider">
               <div className="text-center">No</div>
-              <div className="pl-1">Pelaku Usaha</div>
-              <div>Waktu Masuk</div>
-              <div>Petugas Survey</div>
+              <div className="text-left pl-2">Pelaku Usaha</div>
+              <div className="text-center">Waktu Masuk</div>
+              <div className="text-center">Petugas Survey</div>
               <div className="text-center">Status</div>
             </div>
 
-            {/* 10 Stretch Rows */}
+            {/* 10 Stretch Rows with Clean Center Alignment */}
             <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800">
               {isTableLoading ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-slate-300 font-bold text-sm">
@@ -354,48 +375,58 @@ export default function LayarInformasiPage() {
                   Belum ada antrean data Verifikasi Dinas
                 </div>
               ) : (
-                latestVerifikasiDinas.map((actor, idx) => (
-                  <div 
-                    key={actor.id || idx}
-                    className={cn(
-                      "flex-1 min-h-0 grid grid-cols-[38px_1fr_165px_155px_100px] md:grid-cols-[42px_1fr_185px_170px_110px] items-center px-2.5 transition-colors hover:bg-indigo-950/70",
-                      idx % 2 === 0 ? "bg-[#0a1224]" : "bg-[#0d1830]"
-                    )}
-                  >
-                    {/* No */}
-                    <div className="text-center font-black font-mono text-slate-300 text-xs md:text-sm">
-                      {idx + 1}
-                    </div>
-
-                    {/* Pelaku Usaha */}
-                    <div className="min-w-0 pr-2 pl-1">
-                      <div className="font-black text-white uppercase text-xs md:text-sm tracking-tight truncate leading-tight drop-shadow-sm">
-                        {actor.fullName || '-'}
+                latestVerifikasiDinas.map((actor, idx) => {
+                  const dt = formatDateTimeSplit(actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt);
+                  return (
+                    <div 
+                      key={actor.id || idx}
+                      className={cn(
+                        "flex-1 min-h-0 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center px-2 transition-colors hover:bg-indigo-950/70",
+                        idx % 2 === 0 ? "bg-[#0a1224]" : "bg-[#0d1830]"
+                      )}
+                    >
+                      {/* 1. No (Rata Tengah) */}
+                      <div className="text-center font-black font-mono text-slate-300 text-xs md:text-sm">
+                        {idx + 1}
                       </div>
-                      <div className="text-[11px] md:text-xs text-cyan-300 font-bold truncate leading-tight mt-0.5">
-                        {actor.businessName || 'Usaha'} • <span className="text-slate-300 font-medium">{actor.kelurahan || '-'}</span>
+
+                      {/* 2. Pelaku Usaha (Rata Kiri) */}
+                      <div className="min-w-0 pr-2 pl-2">
+                        <div className="font-black text-white uppercase text-xs md:text-[13px] tracking-tight truncate leading-tight drop-shadow-sm">
+                          {actor.fullName || '-'}
+                        </div>
+                        <div className="text-[11px] md:text-xs text-cyan-300 font-bold truncate leading-tight mt-0.5">
+                          {actor.businessName || 'Usaha'} • <span className="text-slate-300 font-medium">{actor.kelurahan || '-'}</span>
+                        </div>
+                      </div>
+
+                      {/* 3. Waktu Masuk (Rata Tengah 2 Baris) */}
+                      <div className="text-center flex flex-col items-center justify-center leading-tight">
+                        <span className="text-xs md:text-[13px] font-bold text-amber-300 font-mono flex items-center justify-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          {dt.time}
+                        </span>
+                        <span className="text-[10px] md:text-[11px] font-semibold text-slate-300 mt-0.5">
+                          {dt.date}
+                        </span>
+                      </div>
+
+                      {/* 4. Petugas Survey (Rata Tengah) */}
+                      <div className="text-center flex items-center justify-center px-1">
+                        <span className="text-xs md:text-[12px] font-extrabold text-emerald-300 uppercase leading-tight line-clamp-2">
+                          {getSurveyorName(actor)}
+                        </span>
+                      </div>
+
+                      {/* 5. Status (Rata Tengah) */}
+                      <div className="text-center flex items-center justify-center">
+                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black uppercase tracking-wide bg-amber-500/25 text-amber-200 border border-amber-400/60 shadow-sm">
+                          Cek Berkas
+                        </span>
                       </div>
                     </div>
-
-                    {/* Waktu Masuk */}
-                    <div className="whitespace-nowrap text-xs md:text-sm font-bold text-amber-300 font-mono flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span>{formatDateTimeIndo(actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt)}</span>
-                    </div>
-
-                    {/* Petugas Survey */}
-                    <div className="text-xs md:text-sm font-extrabold text-emerald-300 uppercase truncate pr-2">
-                      {getSurveyorName(actor)}
-                    </div>
-
-                    {/* Status Badge */}
-                    <div className="text-center whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black uppercase tracking-wide bg-amber-500/25 text-amber-200 border border-amber-400/60 shadow-sm">
-                        Cek Berkas
-                      </span>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
@@ -439,19 +470,19 @@ export default function LayarInformasiPage() {
             </span>
           </div>
 
-          {/* Table Container with 10 Stretched Rows */}
+          {/* Table Container with Proportional Centered Columns */}
           <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700 bg-[#040e14] overflow-hidden shadow-inner">
             
             {/* Column Headers */}
-            <div className="shrink-0 grid grid-cols-[38px_1fr_165px_155px_100px] md:grid-cols-[42px_1fr_185px_170px_110px] items-center bg-[#112a38] border-b-2 border-teal-500/40 px-2.5 py-2 text-xs font-black uppercase text-teal-200 tracking-wider">
+            <div className="shrink-0 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center bg-[#112a38] border-b-2 border-teal-500/40 px-2 py-2 text-xs font-black uppercase text-teal-200 tracking-wider">
               <div className="text-center">No</div>
-              <div className="pl-1">Pelaku Usaha</div>
-              <div>Waktu Verifikasi</div>
-              <div>Petugas Verifikator</div>
+              <div className="text-left pl-2">Pelaku Usaha</div>
+              <div className="text-center">Waktu Verifikasi</div>
+              <div className="text-center">Petugas Verifikator</div>
               <div className="text-center">Status</div>
             </div>
 
-            {/* 10 Stretch Rows */}
+            {/* 10 Stretch Rows with Clean Center Alignment */}
             <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800">
               {isTableLoading ? (
                 <div className="flex-1 flex flex-col items-center justify-center text-slate-300 font-bold text-sm">
@@ -463,48 +494,58 @@ export default function LayarInformasiPage() {
                   Belum ada data Hasil Dinas terbaru
                 </div>
               ) : (
-                latestHasilVerifikasi.map((actor, idx) => (
-                  <div 
-                    key={actor.id || idx}
-                    className={cn(
-                      "flex-1 min-h-0 grid grid-cols-[38px_1fr_165px_155px_100px] md:grid-cols-[42px_1fr_185px_170px_110px] items-center px-2.5 transition-colors hover:bg-teal-950/70",
-                      idx % 2 === 0 ? "bg-[#06151f]" : "bg-[#0a1e2c]"
-                    )}
-                  >
-                    {/* No */}
-                    <div className="text-center font-black font-mono text-slate-300 text-xs md:text-sm">
-                      {idx + 1}
-                    </div>
-
-                    {/* Pelaku Usaha */}
-                    <div className="min-w-0 pr-2 pl-1">
-                      <div className="font-black text-white uppercase text-xs md:text-sm tracking-tight truncate leading-tight drop-shadow-sm">
-                        {actor.fullName || '-'}
+                latestHasilVerifikasi.map((actor, idx) => {
+                  const dt = formatDateTimeSplit(actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt);
+                  return (
+                    <div 
+                      key={actor.id || idx}
+                      className={cn(
+                        "flex-1 min-h-0 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center px-2 transition-colors hover:bg-teal-950/70",
+                        idx % 2 === 0 ? "bg-[#06151f]" : "bg-[#0a1e2c]"
+                      )}
+                    >
+                      {/* 1. No (Rata Tengah) */}
+                      <div className="text-center font-black font-mono text-slate-300 text-xs md:text-sm">
+                        {idx + 1}
                       </div>
-                      <div className="text-[11px] md:text-xs text-teal-300 font-bold truncate leading-tight mt-0.5">
-                        {actor.businessName || 'Usaha'} • <span className="text-slate-300 font-medium">{actor.kelurahan || '-'}</span>
+
+                      {/* 2. Pelaku Usaha (Rata Kiri) */}
+                      <div className="min-w-0 pr-2 pl-2">
+                        <div className="font-black text-white uppercase text-xs md:text-[13px] tracking-tight truncate leading-tight drop-shadow-sm">
+                          {actor.fullName || '-'}
+                        </div>
+                        <div className="text-[11px] md:text-xs text-teal-300 font-bold truncate leading-tight mt-0.5">
+                          {actor.businessName || 'Usaha'} • <span className="text-slate-300 font-medium">{actor.kelurahan || '-'}</span>
+                        </div>
+                      </div>
+
+                      {/* 3. Waktu Verifikasi (Rata Tengah 2 Baris) */}
+                      <div className="text-center flex flex-col items-center justify-center leading-tight">
+                        <span className="text-xs md:text-[13px] font-bold text-amber-300 font-mono flex items-center justify-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                          {dt.time}
+                        </span>
+                        <span className="text-[10px] md:text-[11px] font-semibold text-slate-300 mt-0.5">
+                          {dt.date}
+                        </span>
+                      </div>
+
+                      {/* 4. Petugas Verifikator (Rata Tengah) */}
+                      <div className="text-center flex items-center justify-center px-1">
+                        <span className="text-xs md:text-[12px] font-extrabold text-emerald-300 uppercase leading-tight line-clamp-2">
+                          {getVerifikatorName(actor)}
+                        </span>
+                      </div>
+
+                      {/* 5. Status (Rata Tengah) */}
+                      <div className="text-center flex items-center justify-center">
+                        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black uppercase tracking-wide bg-emerald-500/25 text-emerald-200 border border-emerald-400/60 shadow-sm">
+                          ✓ Lolos Berkas
+                        </span>
                       </div>
                     </div>
-
-                    {/* Waktu Verifikasi */}
-                    <div className="whitespace-nowrap text-xs md:text-sm font-bold text-amber-300 font-mono flex items-center gap-1.5">
-                      <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span>{formatDateTimeIndo(actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt)}</span>
-                    </div>
-
-                    {/* Petugas Verifikator */}
-                    <div className="text-xs md:text-sm font-extrabold text-emerald-300 uppercase truncate pr-2">
-                      {getVerifikatorName(actor)}
-                    </div>
-
-                    {/* Status Badge */}
-                    <div className="text-center whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black uppercase tracking-wide bg-emerald-500/25 text-emerald-200 border border-emerald-400/60 shadow-sm">
-                        ✓ Lolos Berkas
-                      </span>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
@@ -550,7 +591,7 @@ export default function LayarInformasiPage() {
         {/* Row 2: Bottom Bar (Sudut Kiri Clock, Sudut Kanan Countdown Event) */}
         <div className="px-4 py-2 md:px-6 md:py-2.5 flex items-center justify-between gap-3 bg-[#0a101d]">
           
-          {/* SUDUT KIRI: REALTIME CLOCK (BESAR & JELAS) */}
+          {/* SUDUT KIRI: REALTIME CLOCK */}
           <div className="flex items-center gap-3 bg-slate-950 border border-slate-700 px-4 py-1.5 rounded-2xl shadow-md shrink-0">
             <Clock className="w-6 h-6 text-cyan-400 animate-pulse" />
             <div className="flex items-baseline gap-2.5">
@@ -564,7 +605,7 @@ export default function LayarInformasiPage() {
             </div>
           </div>
 
-          {/* SUDUT KANAN: COUNTDOWN EVENT (BESAR & JELAS) */}
+          {/* SUDUT KANAN: COUNTDOWN EVENT */}
           {activeEvent ? (
             <div className="flex items-center gap-3 bg-slate-950 border-2 border-cyan-500/60 px-4 py-1.5 rounded-2xl shadow-lg shrink-0">
               <div className="flex items-center gap-2 leading-none">
