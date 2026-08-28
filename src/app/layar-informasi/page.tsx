@@ -19,46 +19,45 @@ import {
   Calendar, 
   Sparkles, 
   Building2, 
-  Store, 
   Radio, 
-  ShieldCheck, 
-  CheckCircle2, 
   Loader2,
-  RefreshCw
+  CheckCircle2
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 export default function LayarInformasiPage() {
   const database = useDatabase();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
-  // 1. Fetch pre-calculated real-time statistics
+  // 1. Fetch real-time system stats
   const statsRef = useMemoFirebase(() => {
     if (!database) return null;
     return ref(database, 'system_stats');
   }, [database]);
-  const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef);
+  const { data: systemStats, isLoading: isStatsLoading } = useObject(systemStatsRefOrFallback(statsRef));
 
-  // 2. Fetch verified_dinas actors for the 10 latest tables
+  // Helper fallback for memo
+  function systemStatsRefOrFallback(r: any) {
+    return r;
+  }
+
+  // 2. Fetch verified_dinas actors
   const verifiedDinasQuery = useMemoFirebase(() => {
     if (!database) return null;
     return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'));
   }, [database]);
   const { data: verifiedDinasData, isLoading: isTableLoading } = useList<BusinessActor>(verifiedDinasQuery);
 
-  // 3. Running Text
+  // 3. Running Text from Firebase
   const runningTextRef = useMemoFirebase(() => {
     if (!database) return null;
     return ref(database, 'settings/running_text');
   }, [database]);
   const { data: runningTextConfig } = useObject(runningTextRef);
-  const defaultRunningText = "SELAMAT DATANG DI APLIKASI SISTEM INFORMASI MANAJEMEN PELAKU USAHA (SIMPU) TAHUN 2026 - DINAS TENAGA KERJA, KOPERASI DAN USAHA MIKRO KOTA TANJUNGPINANG • INFORMASI STATUS VERIFIKASI DATA DAN HASIL SURVEY DINAS DAPAT DIPANTAU SECARA REALTIME";
+  const defaultRunningText = "SELAMAT DATANG DI APLIKASI SISTEM INFORMASI MANAJEMEN PELAKU USAHA (SIMPU) TAHUN 2026 • DINAS TENAGA KERJA, KOPERASI DAN USAHA MIKRO KOTA TANJUNGPINANG • STATUS VERIFIKASI DATA DAN SURVEY DINAS DIPERBARUI SECARA REALTIME";
   const runningText = (typeof runningTextConfig === 'string' ? runningTextConfig : runningTextConfig?.text) || defaultRunningText;
 
-  // 4. Event Info Countdown
+  // 4. Event Countdown from Firebase
   const eventInfoRef = useMemoFirebase(() => {
     if (!database) return null;
     return ref(database, 'settings/event_info');
@@ -66,7 +65,7 @@ export default function LayarInformasiPage() {
   const { data: eventInfo } = useObject(eventInfoRef);
   const activeEvent = useActiveEvent(eventInfo);
 
-  // Clock interval
+  // Realtime Clock Tick
   useEffect(() => {
     setCurrentTime(new Date());
     const timer = setInterval(() => {
@@ -75,13 +74,13 @@ export default function LayarInformasiPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Check if actor is cancelled by dinas
+  // Helper isCancelDinas
   const isCancelDinas = (d: any) => {
     const s = (d?.status || '').toLowerCase();
     return (s === 'verified_dinas' && d.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(d.alasanCancelDinas);
   };
 
-  // Helper to extract surveyor name
+  // Helper surveyor name
   const getSurveyorName = (d: BusinessActor) => {
     return (
       d.petugasSurvey ||
@@ -92,7 +91,7 @@ export default function LayarInformasiPage() {
     );
   };
 
-  // Helper to extract verifikator name
+  // Helper verifikator name
   const getVerifikatorName = (d: BusinessActor) => {
     return (
       d.berkasDinasVerifiedBy ||
@@ -102,7 +101,7 @@ export default function LayarInformasiPage() {
     );
   };
 
-  // 10 Pelaku Usaha terakhir di Verifikasi Dinas (Tahap 2: Menunggu Cek Berkas)
+  // 10 Pelaku Usaha Terakhir Masuk Verifikasi Dinas (Tahap 2: Menunggu Cek Berkas)
   const latestVerifikasiDinas = useMemo(() => {
     if (!verifiedDinasData) return [];
     return verifiedDinasData
@@ -115,7 +114,7 @@ export default function LayarInformasiPage() {
       .slice(0, 10);
   }, [verifiedDinasData]);
 
-  // 10 Pelaku Usaha terakhir di Hasil Dinas (Tahap 3: Selesai Cek Berkas / Lolos Final)
+  // 10 Pelaku Usaha Terakhir Masuk Hasil Dinas (Tahap 3: Lolos Cek Berkas)
   const latestHasilVerifikasi = useMemo(() => {
     if (!verifiedDinasData) return [];
     return verifiedDinasData
@@ -128,75 +127,69 @@ export default function LayarInformasiPage() {
       .slice(0, 10);
   }, [verifiedDinasData]);
 
-  // Stats Card Values
+  // 6 Stats Cards
   const cardStats = [
     {
       title: "Total Data Terverifikasi",
       count: systemStats?.status?.verified ?? 0,
       icon: UserCheck,
-      bgGradient: "from-emerald-600 via-emerald-700 to-teal-800",
-      iconBg: "bg-emerald-400/20 text-emerald-300",
-      accentBorder: "border-emerald-400/30",
-      glowColor: "shadow-emerald-900/20"
+      cardBg: "from-emerald-700 to-emerald-900 border-emerald-500/50",
+      accentText: "text-emerald-300",
+      iconBg: "bg-emerald-500/20 text-emerald-300"
     },
     {
       title: "Cancell",
       count: systemStats?.status?.rejected ?? 0,
       icon: UserX,
-      bgGradient: "from-rose-600 via-red-700 to-orange-800",
-      iconBg: "bg-rose-400/20 text-rose-300",
-      accentBorder: "border-rose-400/30",
-      glowColor: "shadow-rose-900/20"
+      cardBg: "from-rose-700 to-red-950 border-rose-500/50",
+      accentText: "text-rose-300",
+      iconBg: "bg-rose-500/20 text-rose-300"
     },
     {
       title: "Survey Dinas",
       subtitle: "Tahap 1",
       count: systemStats?.detailedStatus?.survey ?? 0,
       icon: ClipboardCheck,
-      bgGradient: "from-fuchsia-600 via-purple-700 to-violet-800",
-      iconBg: "bg-fuchsia-400/20 text-fuchsia-300",
-      accentBorder: "border-fuchsia-400/30",
-      glowColor: "shadow-fuchsia-900/20"
+      cardBg: "from-fuchsia-700 to-purple-950 border-fuchsia-500/50",
+      accentText: "text-fuchsia-300",
+      iconBg: "bg-fuchsia-500/20 text-fuchsia-300"
     },
     {
       title: "Verifikasi Dinas",
       subtitle: "Tahap 2",
       count: systemStats?.detailedStatus?.verifikasi ?? 0,
       icon: FileText,
-      bgGradient: "from-indigo-600 via-blue-700 to-sky-800",
-      iconBg: "bg-indigo-400/20 text-indigo-300",
-      accentBorder: "border-indigo-400/30",
-      glowColor: "shadow-indigo-900/20"
+      cardBg: "from-indigo-700 to-blue-950 border-indigo-500/50",
+      accentText: "text-indigo-300",
+      iconBg: "bg-indigo-500/20 text-indigo-300"
     },
     {
       title: "Hasil Dinas",
       subtitle: "Tahap 3",
       count: systemStats?.detailedStatus?.hasilVerifikasi ?? 0,
       icon: ListChecks,
-      bgGradient: "from-teal-600 via-teal-700 to-cyan-800",
-      iconBg: "bg-teal-400/20 text-teal-300",
-      accentBorder: "border-teal-400/30",
-      glowColor: "shadow-teal-900/20"
+      cardBg: "from-teal-700 to-cyan-950 border-teal-500/50",
+      accentText: "text-teal-300",
+      iconBg: "bg-teal-500/20 text-teal-300"
     },
     {
       title: "Rekening Terinput",
       subtitle: "Tahap 4 Final",
       count: systemStats?.detailedStatus?.selesai ?? systemStats?.status?.finish ?? 0,
       icon: CreditCard,
-      bgGradient: "from-blue-600 via-sky-700 to-cyan-800",
-      iconBg: "bg-blue-400/20 text-blue-300",
-      accentBorder: "border-blue-400/30",
-      glowColor: "shadow-blue-900/20"
+      cardBg: "from-sky-700 to-blue-950 border-sky-500/50",
+      accentText: "text-sky-300",
+      iconBg: "bg-sky-500/20 text-sky-300"
     }
   ];
 
-  // Fullscreen toggle handler
+  // Fullscreen Handler
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().then(() => {
         setIsFullscreen(true);
       }).catch(err => {
-        console.error("Error attempting to enable fullscreen:", err);
+        console.error("Error fullscreen:", err);
       });
     } else {
       if (document.exitFullscreen) {
@@ -216,427 +209,381 @@ export default function LayarInformasiPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-white relative overflow-x-hidden">
-      {/* Background Glow effects */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[140px]" />
-        <div className="absolute top-1/3 right-10 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[130px]" />
-        <div className="absolute bottom-0 left-1/3 w-[700px] h-[400px] bg-teal-600/10 rounded-full blur-[150px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
-      </div>
-
-      {/* Main Container */}
-      <div className="relative z-10 flex-1 flex flex-col p-4 md:p-6 lg:p-8 space-y-6 max-w-[1920px] mx-auto w-full">
-        
-        {/* ─────────────────────────────────────────────────────────────
-            HEADER COMMAND CENTER
-        ────────────────────────────────────────────────────────────── */}
-        <header className="flex flex-col md:flex-row items-center justify-between gap-4 pb-4 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-xl p-4 md:px-6 md:py-4 rounded-3xl border shadow-2xl">
-          <div className="flex items-center gap-4 text-center md:text-left">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 ring-2 ring-white/20 shrink-0">
-              <Building2 className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 justify-center md:justify-start">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 animate-pulse">
-                  LIVE DISPLAY
-                </span>
-                <span className="text-xs font-semibold text-slate-400">
-                  DINAS TENAGA KERJA, KOPERASI DAN USAHA MIKRO
-                </span>
-              </div>
-              <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-cyan-300 uppercase tracking-tight font-headline">
-                Layar Informasi Pelaku Usaha (SIMPU)
-              </h1>
-            </div>
+    <div className="h-[100dvh] w-full max-h-[100dvh] bg-[#090d16] text-white flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-white overflow-hidden select-none p-2 sm:p-3 md:p-3.5 space-y-2">
+      
+      {/* ─────────────────────────────────────────────────────────────
+          1. HEADER (Compact & Elegant - Fits screen height)
+      ────────────────────────────────────────────────────────────── */}
+      <header className="shrink-0 flex items-center justify-between px-3 py-1.5 md:px-4 md:py-2 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md ring-1 ring-white/20 shrink-0">
+            <Building2 className="w-5 h-5 text-white" />
           </div>
-
-          {/* Action & Realtime Indicator */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/60 px-4 py-2 rounded-2xl shadow-inner">
-              <span className="relative flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 animate-pulse leading-none">
+                LIVE MONITORING
               </span>
-              <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
-                Sistem Terhubung
+              <span className="text-[10px] md:text-xs font-semibold text-slate-400 hidden sm:inline leading-none">
+                DINAS TENAGA KERJA, KOPERASI DAN USAHA MIKRO KOTA TANJUNGPINANG
               </span>
             </div>
-
-            <button
-              onClick={toggleFullscreen}
-              title={isFullscreen ? "Keluar Layar Penuh" : "Mode Layar Penuh (TV Display)"}
-              className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all text-slate-200 border border-slate-700 px-4 py-2 rounded-2xl font-bold text-xs uppercase tracking-wider shadow-lg"
-            >
-              {isFullscreen ? (
-                <>
-                  <Minimize2 className="w-4 h-4 text-cyan-400" />
-                  <span className="hidden sm:inline">Keluar Layar Penuh</span>
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="w-4 h-4 text-cyan-400" />
-                  <span className="hidden sm:inline">Layar Penuh (F11)</span>
-                </>
-              )}
-            </button>
+            <h1 className="text-sm md:text-lg font-black text-white uppercase tracking-tight font-headline leading-tight mt-0.5">
+              Layar Informasi Data Pelaku Usaha (SIMPU 2026)
+            </h1>
           </div>
-        </header>
+        </div>
 
-        {/* ─────────────────────────────────────────────────────────────
-            BAGIAN ATAS: 6 CARD WIDGET STATISTIK REAL-TIME
-        ────────────────────────────────────────────────────────────── */}
-        <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-          {cardStats.map((item, idx) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={idx}
-                className={cn(
-                  "relative overflow-hidden rounded-3xl p-4 md:p-5 flex flex-col justify-between border transition-all duration-300 hover:scale-[1.02] shadow-xl bg-gradient-to-br",
-                  item.bgGradient,
-                  item.accentBorder,
-                  item.glowColor
-                )}
-              >
-                {/* Background Decor */}
-                <div className="absolute top-0 right-0 translate-x-3 -translate-y-3 opacity-15 pointer-events-none">
-                  <Icon className="w-24 h-24 text-white" />
-                </div>
-
-                <div className="flex items-center justify-between gap-2 relative z-10">
-                  <span className="text-[10px] md:text-xs font-black uppercase tracking-wider text-white/80 line-clamp-1">
-                    {item.title}
-                  </span>
-                  <div className={cn("p-2 rounded-xl backdrop-blur-md shrink-0", item.iconBg)}>
-                    <Icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
-                  </div>
-                </div>
-
-                <div className="mt-4 relative z-10">
-                  <div className="text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight drop-shadow-md font-mono">
-                    {isStatsLoading ? (
-                      <Loader2 className="w-6 h-6 animate-spin text-white/70" />
-                    ) : (
-                      (item.count || 0).toLocaleString('id-ID')
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-[10px] font-bold text-white/70 uppercase tracking-wider">
-                      {item.subtitle || "Data Realtime"}
-                    </span>
-                    <span className="inline-flex items-center text-[9px] font-bold text-emerald-200 bg-black/20 px-2 py-0.5 rounded-full">
-                      ✓ Aktif
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </section>
-
-        {/* ─────────────────────────────────────────────────────────────
-            BAGIAN TENGAH: TABEL 10 PELAKU USAHA TERAKHIR
-            - Kiri: 10 Masuk Verifikasi Dinas (Tahap 2)
-            - Kanan: 10 Masuk Hasil Dinas (Tahap 3)
-        ────────────────────────────────────────────────────────────── */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 min-h-0">
-          
-          {/* TABEL 1: VERIFIKASI DINAS (10 NAMA TERAKHIR) */}
-          <div className="bg-slate-900/80 backdrop-blur-xl border border-indigo-500/30 rounded-3xl p-5 shadow-2xl flex flex-col justify-between overflow-hidden">
-            <div>
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-indigo-500/20">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-400 shadow-inner">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base md:text-lg font-black text-white uppercase tracking-tight">
-                        Verifikasi Dinas
-                      </h2>
-                      <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-400/30 text-[10px] font-black uppercase">
-                        Tahap 2
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-slate-400 font-medium">
-                      10 Pelaku Usaha Terakhir Masuk Verifikasi Dinas (Menunggu Cek Berkas)
-                    </p>
-                  </div>
-                </div>
-                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-indigo-950/60 border border-indigo-800/60 rounded-xl text-[10px] font-bold text-indigo-300">
-                  <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-                  10 Data Terkini
-                </div>
-              </div>
-
-              {/* Table Container */}
-              <div className="overflow-x-auto rounded-2xl border border-slate-800/80">
-                <Table>
-                  <TableHeader className="bg-slate-950/80">
-                    <TableRow className="border-b border-slate-800 hover:bg-transparent">
-                      <TableHead className="w-12 text-center text-xs font-black uppercase text-indigo-300">No</TableHead>
-                      <TableHead className="text-xs font-black uppercase text-indigo-300">Pelaku Usaha</TableHead>
-                      <TableHead className="text-xs font-black uppercase text-indigo-300">Waktu Masuk</TableHead>
-                      <TableHead className="text-xs font-black uppercase text-indigo-300">Petugas Survey</TableHead>
-                      <TableHead className="text-center text-xs font-black uppercase text-indigo-300">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isTableLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="h-48 text-center">
-                          <Loader2 className="w-8 h-8 animate-spin text-indigo-400 mx-auto mb-2" />
-                          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Memuat Data Verifikasi Dinas...</p>
-                        </TableCell>
-                      </TableRow>
-                    ) : latestVerifikasiDinas.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="h-48 text-center text-slate-500">
-                          <FileText className="w-10 h-10 mx-auto mb-2 opacity-30 text-slate-400" />
-                          <p className="text-xs font-bold uppercase tracking-wider">Belum ada antrean data Verifikasi Dinas</p>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      latestVerifikasiDinas.map((actor, idx) => (
-                        <TableRow 
-                          key={actor.id || idx} 
-                          className="border-b border-slate-800/50 hover:bg-indigo-950/30 transition-colors group"
-                        >
-                          <TableCell className="text-center font-bold font-mono text-xs text-slate-400">
-                            {idx + 1}
-                          </TableCell>
-                          <TableCell className="py-2.5">
-                            <div className="font-black text-xs md:text-sm text-slate-100 uppercase group-hover:text-indigo-300 transition-colors">
-                              {actor.fullName || '-'}
-                            </div>
-                            <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                              <span className="font-semibold text-slate-300">{actor.businessName || 'Usaha'}</span>
-                              <span>•</span>
-                              <span className="text-slate-400">{actor.kelurahan || '-'}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-2.5 whitespace-nowrap">
-                            <div className="text-[11px] font-bold text-slate-300 font-mono flex items-center gap-1.5">
-                              <Clock className="w-3 h-3 text-indigo-400" />
-                              {formatDateTimeIndo(actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt)}
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-2.5">
-                            <div className="text-xs font-bold text-indigo-200 uppercase tracking-wide">
-                              {getSurveyorName(actor)}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center py-2.5 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                              Cek Berkas
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
-              <span className="font-bold uppercase tracking-wider">
-                Total Antrean: <strong className="text-indigo-400 font-mono">{systemStats?.detailedStatus?.verifikasi ?? 0} Pelaku Usaha</strong>
-              </span>
-              <span className="text-slate-500 text-[10px]">Pembaruan Otomatis Realtime</span>
-            </div>
+        {/* Controls */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-emerald-950/60 border border-emerald-600/40 px-2.5 py-1 rounded-xl">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">
+              Online
+            </span>
           </div>
 
-          {/* TABEL 2: HASIL DINAS (10 NAMA TERAKHIR) */}
-          <div className="bg-slate-900/80 backdrop-blur-xl border border-teal-500/30 rounded-3xl p-5 shadow-2xl flex flex-col justify-between overflow-hidden">
-            <div>
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-teal-500/20">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-400 shadow-inner">
-                    <ListChecks className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-base md:text-lg font-black text-white uppercase tracking-tight">
-                        Hasil Dinas
-                      </h2>
-                      <Badge className="bg-teal-500/20 text-teal-300 border-teal-400/30 text-[10px] font-black uppercase">
-                        Tahap 3
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-slate-400 font-medium">
-                      10 Pelaku Usaha Terakhir Lolos Verifikasi Berkas Dinas
-                    </p>
-                  </div>
-                </div>
-                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-teal-950/60 border border-teal-800/60 rounded-xl text-[10px] font-bold text-teal-300">
-                  <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
-                  10 Data Terkini
-                </div>
-              </div>
-
-              {/* Table Container */}
-              <div className="overflow-x-auto rounded-2xl border border-slate-800/80">
-                <Table>
-                  <TableHeader className="bg-slate-950/80">
-                    <TableRow className="border-b border-slate-800 hover:bg-transparent">
-                      <TableHead className="w-12 text-center text-xs font-black uppercase text-teal-300">No</TableHead>
-                      <TableHead className="text-xs font-black uppercase text-teal-300">Pelaku Usaha</TableHead>
-                      <TableHead className="text-xs font-black uppercase text-teal-300">Waktu Verifikasi</TableHead>
-                      <TableHead className="text-xs font-black uppercase text-teal-300">Petugas Verifikator</TableHead>
-                      <TableHead className="text-center text-xs font-black uppercase text-teal-300">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isTableLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="h-48 text-center">
-                          <Loader2 className="w-8 h-8 animate-spin text-teal-400 mx-auto mb-2" />
-                          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Memuat Data Hasil Dinas...</p>
-                        </TableCell>
-                      </TableRow>
-                    ) : latestHasilVerifikasi.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="h-48 text-center text-slate-500">
-                          <ListChecks className="w-10 h-10 mx-auto mb-2 opacity-30 text-slate-400" />
-                          <p className="text-xs font-bold uppercase tracking-wider">Belum ada data Hasil Dinas terbaru</p>
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      latestHasilVerifikasi.map((actor, idx) => (
-                        <TableRow 
-                          key={actor.id || idx} 
-                          className="border-b border-slate-800/50 hover:bg-teal-950/30 transition-colors group"
-                        >
-                          <TableCell className="text-center font-bold font-mono text-xs text-slate-400">
-                            {idx + 1}
-                          </TableCell>
-                          <TableCell className="py-2.5">
-                            <div className="font-black text-xs md:text-sm text-slate-100 uppercase group-hover:text-teal-300 transition-colors">
-                              {actor.fullName || '-'}
-                            </div>
-                            <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                              <span className="font-semibold text-slate-300">{actor.businessName || 'Usaha'}</span>
-                              <span>•</span>
-                              <span className="text-slate-400">{actor.kelurahan || '-'}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-2.5 whitespace-nowrap">
-                            <div className="text-[11px] font-bold text-slate-300 font-mono flex items-center gap-1.5">
-                              <Clock className="w-3 h-3 text-teal-400" />
-                              {formatDateTimeIndo(actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt)}
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-2.5">
-                            <div className="text-xs font-bold text-teal-200 uppercase tracking-wide">
-                              {getVerifikatorName(actor)}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center py-2.5 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                              ✓ Lolos Berkas
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
-              <span className="font-bold uppercase tracking-wider">
-                Total Selesai Berkas: <strong className="text-teal-400 font-mono">{systemStats?.detailedStatus?.hasilVerifikasi ?? 0} Pelaku Usaha</strong>
-              </span>
-              <span className="text-slate-500 text-[10px]">Pembaruan Otomatis Realtime</span>
-            </div>
-          </div>
-
-        </section>
-
-      </div>
+          <button
+            onClick={toggleFullscreen}
+            className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all text-slate-200 border border-slate-700 px-3 py-1 rounded-xl font-bold text-[11px] uppercase tracking-wider shadow"
+          >
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-cyan-400" /> : <Maximize2 className="w-3.5 h-3.5 text-cyan-400" />}
+            <span className="hidden sm:inline">{isFullscreen ? "Normal" : "Fullscreen"}</span>
+          </button>
+        </div>
+      </header>
 
       {/* ─────────────────────────────────────────────────────────────
-          BAGIAN BAWAH: FOOTER BAR (CLOCK, RUNNING TEXT & COUNTDOWN EVENT)
+          2. BAGIAN ATAS: 6 CARD WIDGET STATISTIK REAL-TIME
       ────────────────────────────────────────────────────────────── */}
-      <footer className="relative z-20 w-full bg-slate-900/95 border-t border-slate-800 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] backdrop-blur-2xl">
+      <section className="shrink-0 grid grid-cols-3 lg:grid-cols-6 gap-2">
+        {cardStats.map((item, idx) => {
+          const Icon = item.icon;
+          return (
+            <div
+              key={idx}
+              className={cn(
+                "relative overflow-hidden rounded-2xl p-2.5 md:p-3 flex flex-col justify-between border shadow-lg bg-gradient-to-br transition-transform duration-200 hover:scale-[1.01]",
+                item.cardBg
+              )}
+            >
+              <div className="flex items-center justify-between gap-1 relative z-10">
+                <span className="text-[10px] md:text-[11px] font-extrabold uppercase tracking-wide text-white line-clamp-1">
+                  {item.title}
+                </span>
+                <div className={cn("p-1.5 rounded-lg shrink-0", item.iconBg)}>
+                  <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+                </div>
+              </div>
+
+              <div className="mt-1 relative z-10 flex items-baseline justify-between">
+                <div className="text-xl md:text-2xl lg:text-3xl font-black text-white tracking-tight font-mono drop-shadow">
+                  {isStatsLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-white/70" />
+                  ) : (
+                    (item.count || 0).toLocaleString('id-ID')
+                  )}
+                </div>
+                <span className="text-[9px] font-bold text-white/80 uppercase">
+                  {item.subtitle || "Realtime"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────
+          3. BAGIAN TENGAH: TABEL 10 PELAKU USAHA TERAKHIR (HIGH CONTRAST)
+      ────────────────────────────────────────────────────────────── */}
+      <section className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-2.5">
+        
+        {/* TABEL 1: VERIFIKASI DINAS */}
+        <div className="bg-[#0f172a] border border-indigo-500/40 rounded-2xl p-2.5 md:p-3 shadow-xl flex flex-col justify-between overflow-hidden">
+          {/* Table Header Info */}
+          <div className="shrink-0 flex items-center justify-between pb-1.5 mb-1.5 border-b border-indigo-500/30">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-indigo-300">
+                <FileText className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-tight">
+                    Verifikasi Dinas
+                  </h2>
+                  <span className="bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 text-[9px] font-black uppercase px-1.5 py-0.2 rounded">
+                    Tahap 2
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-300 font-medium leading-none">
+                  10 Pelaku Usaha Terakhir Masuk Verifikasi Dinas (Menunggu Cek Berkas)
+                </p>
+              </div>
+            </div>
+            <span className="hidden sm:inline-flex text-[10px] font-bold text-indigo-300 bg-indigo-950/80 border border-indigo-800/80 px-2 py-0.5 rounded-lg">
+              10 Terkini
+            </span>
+          </div>
+
+          {/* Table Content (Custom Dark / Ultra Crisp) */}
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden rounded-xl border border-slate-700/80 bg-[#090e1a]">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-[#1e293b] sticky top-0 z-10 text-[10px] md:text-[11px] font-black uppercase text-indigo-300 tracking-wider border-b border-slate-700">
+                <tr>
+                  <th className="py-1 px-2 text-center w-8">No</th>
+                  <th className="py-1 px-2">Pelaku Usaha</th>
+                  <th className="py-1 px-2">Waktu Masuk</th>
+                  <th className="py-1 px-2">Petugas Survey</th>
+                  <th className="py-1 px-2 text-center w-24">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80 text-[11px]">
+                {isTableLoading ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-400 font-bold">
+                      <Loader2 className="w-6 h-6 animate-spin text-indigo-400 mx-auto mb-1" />
+                      Memuat Data...
+                    </td>
+                  </tr>
+                ) : latestVerifikasiDinas.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-400 font-bold uppercase text-[10px]">
+                      Belum ada antrean data Verifikasi Dinas
+                    </td>
+                  </tr>
+                ) : (
+                  latestVerifikasiDinas.map((actor, idx) => (
+                    <tr 
+                      key={actor.id || idx}
+                      className={cn(
+                        "transition-colors hover:bg-indigo-950/50",
+                        idx % 2 === 0 ? "bg-[#0b1329]" : "bg-[#0f172a]"
+                      )}
+                    >
+                      <td className="py-1.5 px-2 text-center font-bold font-mono text-slate-400 text-[11px]">
+                        {idx + 1}
+                      </td>
+                      <td className="py-1.5 px-2">
+                        <div className="font-extrabold text-white uppercase text-[11px] md:text-xs tracking-tight">
+                          {actor.fullName || '-'}
+                        </div>
+                        <div className="text-[10px] text-cyan-300/90 font-medium truncate max-w-[200px]">
+                          {actor.businessName || 'Usaha'} • <span className="text-slate-400">{actor.kelurahan || '-'}</span>
+                        </div>
+                      </td>
+                      <td className="py-1.5 px-2 whitespace-nowrap">
+                        <div className="text-[10px] md:text-[11px] font-bold text-amber-300 font-mono flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-amber-400 shrink-0" />
+                          {formatDateTimeIndo(actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt)}
+                        </div>
+                      </td>
+                      <td className="py-1.5 px-2">
+                        <div className="text-[11px] font-bold text-emerald-300 uppercase truncate max-w-[130px]">
+                          {getSurveyorName(actor)}
+                        </div>
+                      </td>
+                      <td className="py-1.5 px-2 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide bg-amber-500/20 text-amber-300 border border-amber-400/40">
+                          Cek Berkas
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Table Footer Stats */}
+          <div className="shrink-0 pt-1.5 mt-1 border-t border-indigo-500/20 flex items-center justify-between text-[10px] text-slate-400">
+            <span className="font-extrabold uppercase">
+              Total Antrean: <strong className="text-indigo-300 font-mono">{systemStats?.detailedStatus?.verifikasi ?? 0} Pelaku Usaha</strong>
+            </span>
+            <span className="text-slate-500 text-[9px]">Pembaruan Otomatis</span>
+          </div>
+        </div>
+
+        {/* TABEL 2: HASIL DINAS */}
+        <div className="bg-[#0f172a] border border-teal-500/40 rounded-2xl p-2.5 md:p-3 shadow-xl flex flex-col justify-between overflow-hidden">
+          {/* Table Header Info */}
+          <div className="shrink-0 flex items-center justify-between pb-1.5 mb-1.5 border-b border-teal-500/30">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-teal-500/20 border border-teal-400/40 flex items-center justify-center text-teal-300">
+                <ListChecks className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <h2 className="text-xs md:text-sm font-black text-white uppercase tracking-tight">
+                    Hasil Dinas
+                  </h2>
+                  <span className="bg-teal-500/30 text-teal-200 border border-teal-400/40 text-[9px] font-black uppercase px-1.5 py-0.2 rounded">
+                    Tahap 3
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-300 font-medium leading-none">
+                  10 Pelaku Usaha Terakhir Selesai Verifikasi Berkas Dinas
+                </p>
+              </div>
+            </div>
+            <span className="hidden sm:inline-flex text-[10px] font-bold text-teal-300 bg-teal-950/80 border border-teal-800/80 px-2 py-0.5 rounded-lg">
+              10 Terkini
+            </span>
+          </div>
+
+          {/* Table Content (Custom Dark / Ultra Crisp) */}
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden rounded-xl border border-slate-700/80 bg-[#090e1a]">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-[#1e293b] sticky top-0 z-10 text-[10px] md:text-[11px] font-black uppercase text-teal-300 tracking-wider border-b border-slate-700">
+                <tr>
+                  <th className="py-1 px-2 text-center w-8">No</th>
+                  <th className="py-1 px-2">Pelaku Usaha</th>
+                  <th className="py-1 px-2">Waktu Verifikasi</th>
+                  <th className="py-1 px-2">Petugas Verifikator</th>
+                  <th className="py-1 px-2 text-center w-24">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/80 text-[11px]">
+                {isTableLoading ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-400 font-bold">
+                      <Loader2 className="w-6 h-6 animate-spin text-teal-400 mx-auto mb-1" />
+                      Memuat Data...
+                    </td>
+                  </tr>
+                ) : latestHasilVerifikasi.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-400 font-bold uppercase text-[10px]">
+                      Belum ada data Hasil Dinas terbaru
+                    </td>
+                  </tr>
+                ) : (
+                  latestHasilVerifikasi.map((actor, idx) => (
+                    <tr 
+                      key={actor.id || idx}
+                      className={cn(
+                        "transition-colors hover:bg-teal-950/50",
+                        idx % 2 === 0 ? "bg-[#0b1329]" : "bg-[#0f172a]"
+                      )}
+                    >
+                      <td className="py-1.5 px-2 text-center font-bold font-mono text-slate-400 text-[11px]">
+                        {idx + 1}
+                      </td>
+                      <td className="py-1.5 px-2">
+                        <div className="font-extrabold text-white uppercase text-[11px] md:text-xs tracking-tight">
+                          {actor.fullName || '-'}
+                        </div>
+                        <div className="text-[10px] text-teal-300/90 font-medium truncate max-w-[200px]">
+                          {actor.businessName || 'Usaha'} • <span className="text-slate-400">{actor.kelurahan || '-'}</span>
+                        </div>
+                      </td>
+                      <td className="py-1.5 px-2 whitespace-nowrap">
+                        <div className="text-[10px] md:text-[11px] font-bold text-amber-300 font-mono flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-amber-400 shrink-0" />
+                          {formatDateTimeIndo(actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt)}
+                        </div>
+                      </td>
+                      <td className="py-1.5 px-2">
+                        <div className="text-[11px] font-bold text-emerald-300 uppercase truncate max-w-[130px]">
+                          {getVerifikatorName(actor)}
+                        </div>
+                      </td>
+                      <td className="py-1.5 px-2 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+                          ✓ Lolos Berkas
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Table Footer Stats */}
+          <div className="shrink-0 pt-1.5 mt-1 border-t border-teal-500/20 flex items-center justify-between text-[10px] text-slate-400">
+            <span className="font-extrabold uppercase">
+              Total Selesai: <strong className="text-teal-300 font-mono">{systemStats?.detailedStatus?.hasilVerifikasi ?? 0} Pelaku Usaha</strong>
+            </span>
+            <span className="text-slate-500 text-[9px]">Pembaruan Otomatis</span>
+          </div>
+        </div>
+
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────
+          4. BAGIAN BAWAH: FOOTER (CLOCK, RUNNING TEXT & COUNTDOWN EVENT)
+      ────────────────────────────────────────────────────────────── */}
+      <footer className="shrink-0 rounded-2xl overflow-hidden bg-slate-900/95 border border-slate-800 shadow-2xl">
         
         {/* Row 1: Running Text (Marquee) */}
-        <div className="w-full bg-gradient-to-r from-teal-900 via-cyan-900 to-blue-950 border-b border-cyan-500/20 py-2 overflow-hidden flex items-center">
-          <div className="bg-cyan-500 text-slate-950 px-4 py-0.5 text-[11px] font-black uppercase tracking-widest shrink-0 flex items-center gap-1.5 shadow-md ml-2 rounded-lg">
-            <Radio className="w-3.5 h-3.5 animate-pulse text-slate-950" />
+        <div className="w-full bg-[#042f2e] border-b border-cyan-500/30 py-1 overflow-hidden flex items-center">
+          <div className="bg-cyan-500 text-slate-950 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest shrink-0 flex items-center gap-1 shadow ml-1.5 rounded">
+            <Radio className="w-3 h-3 animate-pulse text-slate-950" />
             PENGUMUMAN
           </div>
           <div className="relative flex overflow-x-hidden whitespace-nowrap flex-1">
             <div className="animate-marquee inline-block whitespace-nowrap">
-              <span className="text-xs font-bold text-cyan-100 uppercase tracking-widest px-8 drop-shadow">
+              <span className="text-[11px] font-extrabold text-cyan-200 uppercase tracking-widest px-6">
                 {runningText}
               </span>
-              <span className="text-cyan-400/50 mx-4">•</span>
-              <span className="text-xs font-bold text-cyan-100 uppercase tracking-widest px-8 drop-shadow">
+              <span className="text-cyan-400/50 mx-3">•</span>
+              <span className="text-[11px] font-extrabold text-cyan-200 uppercase tracking-widest px-6">
                 {runningText}
               </span>
-              <span className="text-cyan-400/50 mx-4">•</span>
+              <span className="text-cyan-400/50 mx-3">•</span>
             </div>
           </div>
         </div>
 
-        {/* Row 2: Bottom Bar (Realtime Clock di Sudut Kiri, Countdown Event di Sudut Kanan) */}
-        <div className="p-3 md:px-8 md:py-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+        {/* Row 2: Bottom Bar (Sudut Kiri Clock, Sudut Kanan Countdown Event) */}
+        <div className="px-3 py-1.5 md:px-4 md:py-1.5 flex items-center justify-between gap-2">
           
           {/* SUDUT KIRI: REALTIME CLOCK */}
-          <div className="flex items-center gap-3 bg-slate-950/80 border border-slate-800 px-4 py-2 rounded-2xl shadow-inner shrink-0">
-            <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-400">
-              <Clock className="w-6 h-6 animate-pulse" />
-            </div>
-            <div>
-              <div className="text-xl md:text-2xl font-black text-white font-mono tracking-wider leading-none">
+          <div className="flex items-center gap-2 bg-slate-950/90 border border-slate-800 px-3 py-1 rounded-xl shrink-0">
+            <Clock className="w-4 h-4 text-cyan-400 animate-pulse" />
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm md:text-base font-black text-white font-mono tracking-wider">
                 {currentTime ? currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') : '--:--:--'}
-                <span className="text-xs font-bold text-cyan-400 ml-1">WIB</span>
-              </div>
-              <div className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mt-0.5">
-                {currentTime ? currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : 'Memuat Waktu...'}
-              </div>
+                <span className="text-[9px] text-cyan-400 font-bold ml-0.5">WIB</span>
+              </span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase hidden md:inline">
+                {currentTime ? currentTime.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : ''}
+              </span>
             </div>
           </div>
 
           {/* SUDUT KANAN: COUNTDOWN EVENT */}
           {activeEvent ? (
-            <div className="flex items-center gap-3 bg-gradient-to-r from-slate-950 via-slate-900 to-cyan-950/80 border border-cyan-500/30 px-4 py-2 rounded-2xl shadow-lg shrink-0">
-              <div className="flex flex-col items-start sm:items-end">
-                <div className="flex items-center gap-1.5 leading-none">
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
-                    <Calendar className="w-2.5 h-2.5" />
-                    EVENT MENDATANG
-                  </span>
-                  <span className="text-xs font-black text-cyan-200 uppercase tracking-tight truncate max-w-[200px] md:max-w-[280px]">
-                    {activeEvent.description || 'Jadwal Event'}
-                  </span>
-                </div>
-                {/* Event Timer Display */}
-                <EventTimerDisplay targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
+            <div className="flex items-center gap-2 bg-slate-950/90 border border-cyan-500/40 px-3 py-1 rounded-xl shrink-0">
+              <div className="flex items-center gap-1.5 leading-none">
+                <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-0.5">
+                  <Calendar className="w-2.5 h-2.5" />
+                  EVENT
+                </span>
+                <span className="text-[10px] md:text-xs font-black text-cyan-200 uppercase truncate max-w-[150px] sm:max-w-[250px]">
+                  {activeEvent.description || 'Jadwal Event'}
+                </span>
               </div>
-              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-400/20 text-cyan-400 hidden sm:flex">
-                <Sparkles className="w-6 h-6 text-yellow-400 animate-spin" style={{ animationDuration: '6s' }} />
-              </div>
+              <EventTimerDisplay targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
             </div>
           ) : (
-            <div className="flex items-center gap-2 bg-slate-950/60 border border-slate-800/80 px-4 py-2 rounded-2xl text-slate-500 text-xs font-bold uppercase tracking-wider shrink-0">
-              <Calendar className="w-4 h-4 text-slate-600" />
-              <span>Tidak Ada Event Aktif Saat Ini</span>
+            <div className="flex items-center gap-1.5 bg-slate-950/60 border border-slate-800 px-2.5 py-1 rounded-xl text-slate-500 text-[10px] font-bold uppercase shrink-0">
+              <Calendar className="w-3.5 h-3.5 text-slate-600" />
+              <span>Tidak Ada Event Aktif</span>
             </div>
           )}
 
         </div>
       </footer>
 
-      {/* Marquee Animation Keyframes */}
+      {/* Marquee Keyframes */}
       <style jsx>{`
         .animate-marquee {
           display: inline-block;
-          animation: marquee 75s linear infinite;
+          animation: marquee 70s linear infinite;
         }
 
         @keyframes marquee {
@@ -652,7 +599,7 @@ export default function LayarInformasiPage() {
   );
 }
 
-// Subcomponent for Event Countdown Timer Display
+// Subcomponent for Event Timer Display (Compact)
 function EventTimerDisplay({ targetDate, startDate }: { targetDate: string; startDate?: string }) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
@@ -703,37 +650,18 @@ function EventTimerDisplay({ targetDate, startDate }: { targetDate: string; star
   }, [targetDate, startDate]);
 
   if (timeLeft.isEnded) {
-    return <span className="text-xs font-bold text-slate-500 uppercase mt-1">Event Telah Berakhir</span>;
+    return <span className="text-[10px] font-bold text-slate-500 uppercase">Selesai</span>;
   }
 
   return (
-    <div className="flex items-center gap-1.5 md:gap-2 mt-1">
-      {/* Hari */}
-      <div className="flex flex-col items-center min-w-[28px]">
-        <span className="text-sm md:text-base font-black text-white font-mono leading-none">{timeLeft.days}</span>
-        <span className="text-[8px] font-bold text-cyan-200 uppercase tracking-tighter">Hari</span>
-      </div>
-      <span className="text-xs font-black text-cyan-400 animate-pulse -mt-2">:</span>
-
-      {/* Jam */}
-      <div className="flex flex-col items-center min-w-[28px]">
-        <span className="text-sm md:text-base font-black text-white font-mono leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
-        <span className="text-[8px] font-bold text-cyan-200 uppercase tracking-tighter">Jam</span>
-      </div>
-      <span className="text-xs font-black text-cyan-400 animate-pulse -mt-2">:</span>
-
-      {/* Menit */}
-      <div className="flex flex-col items-center min-w-[28px]">
-        <span className="text-sm md:text-base font-black text-white font-mono leading-none">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-        <span className="text-[8px] font-bold text-cyan-200 uppercase tracking-tighter">Menit</span>
-      </div>
-      <span className="text-xs font-black text-cyan-400 animate-pulse -mt-2">:</span>
-
-      {/* Detik */}
-      <div className="flex flex-col items-center min-w-[28px]">
-        <span className="text-sm md:text-base font-black text-cyan-300 font-mono leading-none">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-        <span className="text-[8px] font-bold text-cyan-200 uppercase tracking-tighter">Detik</span>
-      </div>
+    <div className="flex items-center gap-1 font-mono text-[11px] font-black text-white">
+      <span className="text-amber-300">{timeLeft.days}h</span>
+      <span className="text-cyan-400">:</span>
+      <span className="text-white">{timeLeft.hours.toString().padStart(2, '0')}j</span>
+      <span className="text-cyan-400">:</span>
+      <span className="text-white">{timeLeft.minutes.toString().padStart(2, '0')}m</span>
+      <span className="text-cyan-400">:</span>
+      <span className="text-cyan-300">{timeLeft.seconds.toString().padStart(2, '0')}d</span>
     </div>
   );
 }
