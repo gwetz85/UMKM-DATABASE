@@ -22,6 +22,23 @@ import {
   Loader2
 } from 'lucide-react';
 
+// SIMPU Icon SVG Logo
+const SimpuLogo = ({ className }: { className?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+    <path d="M2 17l10 5 10-5" />
+    <path d="M2 12l10 5 10-5" />
+  </svg>
+);
+
 export default function LayarInformasiPage() {
   const database = useDatabase();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -204,19 +221,16 @@ export default function LayarInformasiPage() {
       <header className="shrink-0 flex items-center justify-between px-4 py-2 md:px-5 md:py-2.5 rounded-2xl bg-slate-900/95 border border-slate-700/80 shadow-lg">
         <div className="flex items-center gap-3.5">
           <div className="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg ring-2 ring-white/20 shrink-0">
-            <Building2 className="w-6 h-6 text-white" />
+            <SimpuLogo className="w-6 h-6 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 animate-pulse leading-none">
                 LIVE DISPLAY MONITORING
               </span>
-              <span className="text-xs font-bold text-slate-300 hidden sm:inline leading-none">
-                DINAS TENAGA KERJA, KOPERASI DAN USAHA MIKRO KOTA TANJUNGPINANG
-              </span>
             </div>
             <h1 className="text-base md:text-xl lg:text-2xl font-black text-white uppercase tracking-tight font-headline leading-tight mt-0.5 drop-shadow">
-              Layar Informasi Data Pelaku Usaha (SIMPU 2026)
+              SISTEM INFORMASI MANAGEMEN PELAKU USAHA 2026
             </h1>
           </div>
         </div>
