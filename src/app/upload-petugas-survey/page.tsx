@@ -99,21 +99,21 @@ export default function UploadPetugasSurveyPage() {
   const [isProcessingTahap2, setIsProcessingTahap2] = useState(false)
   const [progressTahap2, setProgressTahap2] = useState(0)
   const [summaryTahap2, setSummaryTahap2] = useState<{
-    totalRows: number; matchedActors: number; petugasCounts: Record<string, number>
+    totalRows: number; matchedActors: number; petugasCounts: Record<string, number>; createdUsers: number
   } | null>(null)
 
   const [fileTahap3, setFileTahap3] = useState<File | null>(null)
   const [isProcessingTahap3, setIsProcessingTahap3] = useState(false)
   const [progressTahap3, setProgressTahap3] = useState(0)
   const [summaryTahap3, setSummaryTahap3] = useState<{
-    totalRows: number; matchedActors: number; petugasCounts: Record<string, number>
+    totalRows: number; matchedActors: number; petugasCounts: Record<string, number>; createdUsers: number
   } | null>(null)
 
   const [fileTahap4, setFileTahap4] = useState<File | null>(null)
   const [isProcessingTahap4, setIsProcessingTahap4] = useState(false)
   const [progressTahap4, setProgressTahap4] = useState(0)
   const [summaryTahap4, setSummaryTahap4] = useState<{
-    totalRows: number; matchedActors: number; petugasCounts: Record<string, number>
+    totalRows: number; matchedActors: number; petugasCounts: Record<string, number>; createdUsers: number
   } | null>(null)
 
   const isAllowed = userProfile?.role === 'admin' || userProfile?.role === 'koordinator' || userProfile?.role === 'monitoring' || user?.email?.toLowerCase() === 'agus@umkm.id'
@@ -531,21 +531,15 @@ export default function UploadPetugasSurveyPage() {
   }
 
   // ── PROSES EXCEL TAHAP LANJUTAN (2, 3, 4) ──
+  // Logika identik dengan Step 1: update petugasSurvey + buat akun baru jika belum ada
   const handleProcessTahapLanjutan = async (
     tahap: 2 | 3 | 4,
     file: File | null,
     setIsProcessing: (v: boolean) => void,
     setProgress: (v: number) => void,
-    setSummary: (v: { totalRows: number; matchedActors: number; petugasCounts: Record<string, number> } | null) => void
+    setSummary: (v: { totalRows: number; matchedActors: number; petugasCounts: Record<string, number>; createdUsers: number } | null) => void
   ) => {
     if (!database || !file) return
-
-    const tahapConfig: Record<number, { fieldName: string; label: string; color: string }> = {
-      2: { fieldName: 'petugasVerifikasiDinas', label: 'Verifikasi Dinas', color: 'indigo' },
-      3: { fieldName: 'petugasHasilVerifikasi', label: 'Hasil Verifikasi', color: 'teal' },
-      4: { fieldName: 'petugasSelesai', label: 'Rekening/Selesai', color: 'sky' },
-    }
-    const config = tahapConfig[tahap]
 
     setIsProcessing(true)
     setProgress(0)
@@ -565,24 +559,35 @@ export default function UploadPetugasSurveyPage() {
           return
         }
 
-        // Fetch current businessActors for matching
-        const snap = await get(ref(database, 'businessActors'))
-        const allActors: any[] = snap.exists()
-          ? Object.keys(snap.val()).map(k => ({ id: k, ...snap.val()[k] }))
+        // Fetch businessActors & existing system_users
+        const [actorsSnap, usersSnap] = await Promise.all([
+          get(ref(database, 'businessActors')),
+          get(ref(database, 'system_users'))
+        ])
+        const allActors: any[] = actorsSnap.exists()
+          ? Object.keys(actorsSnap.val()).map(k => ({ id: k, ...actorsSnap.val()[k] }))
           : []
+        const existingUsers: Record<string, any> = usersSnap.exists() ? usersSnap.val() : {}
 
         const petugasCounts: Record<string, number> = {}
+        const uniquePetugasMap = new Map<string, string>() // UpperName -> username
         let matchedCount = 0
         const updates: Record<string, any> = {}
         const total = rawJson.length
 
         rawJson.forEach((r, idx) => {
-          const regId = getColValue(r, ["REG ID", "REGISTRATION CODE", "REG_ID", "REGISTRATIONCODE"])
-          const nik = getColValue(r, ["NIK", "NO NIK", "NOMOR NIK"])
-          const fullName = getColValue(r, ["NAMA LENGKAP", "NAMA", "PEMILIK", "NAMA PEMILIK"])
+          const regId      = getColValue(r, ["REG ID", "REGISTRATION CODE", "REG_ID", "REGISTRATIONCODE"])
+          const nik        = getColValue(r, ["NIK", "NO NIK", "NOMOR NIK"])
+          const fullName   = getColValue(r, ["NAMA LENGKAP", "NAMA", "PEMILIK", "NAMA PEMILIK"])
+          const coordinator = getColValue(r, ["KOORDINATOR", "NAMA KOORDINATOR"])
           const petugasSurvey = getColValue(r, ["PETUGAS SURVEY", "PETUGAS", "PETUGAS_SURVEY", "SURVEYOR"])
 
           if (!petugasSurvey) return
+
+          // Kumpulkan semua nama petugas unik untuk pembuatan akun
+          const cleanName = petugasSurvey.trim()
+          const username  = cleanName.toLowerCase().replace(/\s+/g, '_')
+          uniquePetugasMap.set(cleanName.toUpperCase(), username)
 
           // Multi-strategy matching: REG ID → NIK → NIK normalized → Nama exact → Nama fuzzy
           let matchActor: any = null
@@ -614,9 +619,13 @@ export default function UploadPetugasSurveyPage() {
             })
           }
 
-          if (matchActor) {
+          if (matchActor && petugasSurvey) {
             const petugasUpper = petugasSurvey.toUpperCase().trim()
-            updates[`businessActors/${matchActor.id}/${config.fieldName}`] = petugasUpper
+            // Update petugasSurvey (field SAMA dengan Step 1)
+            updates[`businessActors/${matchActor.id}/petugasSurvey`] = petugasUpper
+            if (coordinator && coordinator !== '-') {
+              updates[`businessActors/${matchActor.id}/coordinator`] = coordinator.toUpperCase().trim()
+            }
             petugasCounts[petugasUpper] = (petugasCounts[petugasUpper] || 0) + 1
             matchedCount++
           }
@@ -626,28 +635,44 @@ export default function UploadPetugasSurveyPage() {
           }
         })
 
+        // Buat akun baru untuk petugas yang belum terdaftar (sama dengan Step 1)
+        let createdUsers = 0
+        for (const [upperName, username] of Array.from(uniquePetugasMap.entries())) {
+          if (!existingUsers[username]) {
+            updates[`system_users/${username}`] = {
+              fullName: upperName,
+              password: "123456",
+              role: "petugas_survey",
+              uid: null,
+              addedAt: new Date().toISOString(),
+              status: 'active'
+            }
+            createdUsers++
+          }
+        }
+
         if (Object.keys(updates).length > 0) {
           await update(ref(database), updates)
         }
 
-        setSummary({ totalRows: rawJson.length, matchedActors: matchedCount, petugasCounts })
+        setSummary({ totalRows: rawJson.length, matchedActors: matchedCount, petugasCounts, createdUsers })
 
         logActivity({
-          query: `IMPORT EXCEL TAHAP ${tahap} (${config.label}): ${rawJson.length} Baris, ${matchedCount} Data Dipetakan`,
-          results: `Berhasil update field ${config.fieldName}`,
+          query: `IMPORT EXCEL GELOMBANG ${tahap}: ${rawJson.length} Baris, ${matchedCount} Dipetakan, ${createdUsers} Akun Baru`,
+          results: 'Berhasil update petugasSurvey & buat akun',
           device: getDeviceType(navigator.userAgent),
           source: 'Web',
-          method: `PEMBAGIAN PETUGAS TAHAP ${tahap}`,
+          method: `PEMBAGIAN PETUGAS SURVEY - GELOMBANG ${tahap}`,
           userId: user?.email || user?.uid || 'Admin'
         })
 
         toast({
-          title: `✅ Tahap ${tahap}: Pembagian Berhasil!`,
-          description: `${matchedCount} data pelaku usaha berhasil dipetakan ke Petugas Survey ${config.label}.`
+          title: `✅ Gelombang ${tahap}: Pembagian Berhasil!`,
+          description: `${matchedCount} data dipetakan ke petugas survey.${createdUsers > 0 ? ` ${createdUsers} akun baru dibuat.` : ''}`
         })
       } catch (err: any) {
         console.error("Tahap lanjutan error:", err)
-        toast({ variant: "destructive", title: `Gagal Proses Tahap ${tahap}`, description: err.message || "Terjadi kesalahan saat memproses Excel." })
+        toast({ variant: "destructive", title: `Gagal Proses Gelombang ${tahap}`, description: err.message || "Terjadi kesalahan saat memproses Excel." })
       } finally {
         setIsProcessing(false)
       }
@@ -1080,24 +1105,24 @@ export default function UploadPetugasSurveyPage() {
       )}
 
       {/* ══════════════════════════════════════════════════════════════ */}
-      {/* TAHAP 2: Verifikasi Dinas                                    */}
+      {/* GELOMBANG 2: Upload Excel Pembagian Data                     */}
       {/* ══════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 border-dashed border-2 border-indigo-300 hover:border-indigo-500 transition-colors shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center gap-2 text-indigo-700">
               <UploadCloud className="w-5 h-5" />
-              Step 1b: Upload Excel Pembagian Tahap 2 — Verifikasi Dinas
+              Step 1b: Upload Excel Pembagian Data — Gelombang 2
             </CardTitle>
             <CardDescription>
-              Memetakan data ke field <strong>petugasVerifikasiDinas</strong> di database. Format Excel sama dengan Tahap 1 (kolom <strong>PETUGAS SURVEY</strong>, REG ID/NIK/Nama).
+              Upload file Excel gelombang ke-2. Sistem akan membagi data pelaku usaha ke petugas survey, dan <strong>otomatis membuat akun</strong> untuk petugas baru yang belum terdaftar.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="relative border-2 border-dashed border-indigo-200 hover:border-indigo-400 rounded-xl p-8 text-center flex flex-col items-center justify-center cursor-pointer bg-indigo-50/30 hover:bg-indigo-50/60 transition-all">
               <FileSpreadsheet className="w-12 h-12 text-indigo-500 mb-3" />
               <p className="font-bold text-slate-700">Klik untuk memilih file Excel atau seret ke sini</p>
-              <p className="text-xs text-muted-foreground mt-1">Sistem akan memetakan data ke Petugas Verifikasi Dinas</p>
+              <p className="text-xs text-muted-foreground mt-1">Format sama dengan Gelombang 1 — kolom PETUGAS SURVEY, REG ID/NIK/Nama</p>
               <input
                 type="file"
                 accept=".xlsx, .xls, .csv"
@@ -1118,16 +1143,20 @@ export default function UploadPetugasSurveyPage() {
             {summaryTahap2 && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-2">
                 <p className="text-xs font-black text-emerald-700 uppercase flex items-center gap-1">
-                  <CheckCircle2 className="w-4 h-4" /> Hasil Upload Terakhir — Tahap 2
+                  <CheckCircle2 className="w-4 h-4" /> Hasil Upload Terakhir — Gelombang 2
                 </p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div className="bg-white rounded-lg p-2 border text-center">
                     <p className="text-[10px] text-muted-foreground font-bold uppercase">Total Baris</p>
                     <p className="text-lg font-black text-slate-800">{summaryTahap2.totalRows}</p>
                   </div>
                   <div className="bg-emerald-100 rounded-lg p-2 border border-emerald-200 text-center">
-                    <p className="text-[10px] text-emerald-700 font-bold uppercase">Berhasil Dipetakan</p>
+                    <p className="text-[10px] text-emerald-700 font-bold uppercase">Dipetakan</p>
                     <p className="text-lg font-black text-emerald-700">{summaryTahap2.matchedActors}</p>
+                  </div>
+                  <div className="bg-indigo-100 rounded-lg p-2 border border-indigo-200 text-center">
+                    <p className="text-[10px] text-indigo-700 font-bold uppercase">Akun Baru</p>
+                    <p className="text-lg font-black text-indigo-700">{summaryTahap2.createdUsers}</p>
                   </div>
                 </div>
                 <div className="max-h-32 overflow-y-auto border rounded-lg divide-y bg-white">
@@ -1146,26 +1175,28 @@ export default function UploadPetugasSurveyPage() {
         <Card className="border-indigo-100 shadow-sm flex flex-col justify-between">
           <CardHeader>
             <CardTitle className="text-base font-bold flex items-center gap-2 text-indigo-700">
-              <ShieldCheck className="w-5 h-5" /> Tahap 2: Verifikasi Dinas
+              <ShieldCheck className="w-5 h-5" /> Gelombang 2 — Informasi
             </CardTitle>
             <CardDescription className="text-xs">
-              Field yang akan diperbarui: <code className="bg-indigo-50 text-indigo-700 px-1 rounded font-mono text-[11px]">petugasVerifikasiDinas</code>
+              Sama persis dengan Gelombang 1. Update field <code className="bg-indigo-50 text-indigo-700 px-1 rounded font-mono text-[11px]">petugasSurvey</code> di database.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-xs">
             <div className="space-y-1.5 bg-indigo-50 p-3 rounded-lg border border-indigo-100 font-mono">
               <p className="text-indigo-700 font-bold">✓ PETUGAS SURVEY (Kolom R)</p>
+              <p className="text-slate-500">✓ KOORDINATOR (Kolom P)</p>
               <p className="text-slate-500">✓ REG ID / NIK / NAMA LENGKAP</p>
             </div>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              *Tidak membuat akun baru. Menggunakan petugas yang sudah terdaftar di Step 2.
+              ✅ Petugas lama → langsung tampil data baru.<br/>
+              ✅ Petugas baru → akun dibuat otomatis (password: 123456).
             </p>
           </CardContent>
           <div className="p-6 pt-0 mt-auto">
             {isProcessingTahap2 && (
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-xs font-bold text-slate-700">
-                  <span>Memproses Tahap 2...</span><span>{progressTahap2}%</span>
+                  <span>Memproses Gelombang 2...</span><span>{progressTahap2}%</span>
                 </div>
                 <Progress value={progressTahap2} className="h-2" />
               </div>
@@ -1176,11 +1207,11 @@ export default function UploadPetugasSurveyPage() {
               className="w-full font-bold h-11 text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-md"
             >
               {isProcessingTahap2 ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses Tahap 2...</>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses Gelombang 2...</>
               ) : summaryTahap2 ? (
-                <><CheckCircle2 className="w-4 h-4 mr-2" /> Selesai! Upload Ulang Tahap 2</>
+                <><CheckCircle2 className="w-4 h-4 mr-2" /> Selesai! Upload Ulang Gelombang 2</>
               ) : (
-                <><UploadCloud className="w-4 h-4 mr-2" /> Proses Pembagian Tahap 2</>
+                <><UploadCloud className="w-4 h-4 mr-2" /> Proses Pembagian Gelombang 2</>
               )}
             </Button>
           </div>
@@ -1188,24 +1219,24 @@ export default function UploadPetugasSurveyPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════ */}
-      {/* TAHAP 3: Hasil Verifikasi                                    */}
+      {/* GELOMBANG 3: Upload Excel Pembagian Data                     */}
       {/* ══════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 border-dashed border-2 border-teal-300 hover:border-teal-500 transition-colors shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center gap-2 text-teal-700">
               <UploadCloud className="w-5 h-5" />
-              Step 1c: Upload Excel Pembagian Tahap 3 — Hasil Verifikasi
+              Step 1c: Upload Excel Pembagian Data — Gelombang 3
             </CardTitle>
             <CardDescription>
-              Memetakan data ke field <strong>petugasHasilVerifikasi</strong> di database. Format Excel sama dengan Tahap 1 (kolom <strong>PETUGAS SURVEY</strong>, REG ID/NIK/Nama).
+              Upload file Excel gelombang ke-3. Sistem akan membagi data pelaku usaha ke petugas survey, dan <strong>otomatis membuat akun</strong> untuk petugas baru yang belum terdaftar.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="relative border-2 border-dashed border-teal-200 hover:border-teal-400 rounded-xl p-8 text-center flex flex-col items-center justify-center cursor-pointer bg-teal-50/30 hover:bg-teal-50/60 transition-all">
               <FileSpreadsheet className="w-12 h-12 text-teal-500 mb-3" />
               <p className="font-bold text-slate-700">Klik untuk memilih file Excel atau seret ke sini</p>
-              <p className="text-xs text-muted-foreground mt-1">Sistem akan memetakan data ke Petugas Hasil Verifikasi</p>
+              <p className="text-xs text-muted-foreground mt-1">Format sama dengan Gelombang 1 — kolom PETUGAS SURVEY, REG ID/NIK/Nama</p>
               <input
                 type="file"
                 accept=".xlsx, .xls, .csv"
@@ -1226,16 +1257,20 @@ export default function UploadPetugasSurveyPage() {
             {summaryTahap3 && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-2">
                 <p className="text-xs font-black text-emerald-700 uppercase flex items-center gap-1">
-                  <CheckCircle2 className="w-4 h-4" /> Hasil Upload Terakhir — Tahap 3
+                  <CheckCircle2 className="w-4 h-4" /> Hasil Upload Terakhir — Gelombang 3
                 </p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div className="bg-white rounded-lg p-2 border text-center">
                     <p className="text-[10px] text-muted-foreground font-bold uppercase">Total Baris</p>
                     <p className="text-lg font-black text-slate-800">{summaryTahap3.totalRows}</p>
                   </div>
                   <div className="bg-emerald-100 rounded-lg p-2 border border-emerald-200 text-center">
-                    <p className="text-[10px] text-emerald-700 font-bold uppercase">Berhasil Dipetakan</p>
+                    <p className="text-[10px] text-emerald-700 font-bold uppercase">Dipetakan</p>
                     <p className="text-lg font-black text-emerald-700">{summaryTahap3.matchedActors}</p>
+                  </div>
+                  <div className="bg-teal-100 rounded-lg p-2 border border-teal-200 text-center">
+                    <p className="text-[10px] text-teal-700 font-bold uppercase">Akun Baru</p>
+                    <p className="text-lg font-black text-teal-700">{summaryTahap3.createdUsers}</p>
                   </div>
                 </div>
                 <div className="max-h-32 overflow-y-auto border rounded-lg divide-y bg-white">
@@ -1254,26 +1289,28 @@ export default function UploadPetugasSurveyPage() {
         <Card className="border-teal-100 shadow-sm flex flex-col justify-between">
           <CardHeader>
             <CardTitle className="text-base font-bold flex items-center gap-2 text-teal-700">
-              <ShieldCheck className="w-5 h-5" /> Tahap 3: Hasil Verifikasi
+              <ShieldCheck className="w-5 h-5" /> Gelombang 3 — Informasi
             </CardTitle>
             <CardDescription className="text-xs">
-              Field yang akan diperbarui: <code className="bg-teal-50 text-teal-700 px-1 rounded font-mono text-[11px]">petugasHasilVerifikasi</code>
+              Sama persis dengan Gelombang 1. Update field <code className="bg-teal-50 text-teal-700 px-1 rounded font-mono text-[11px]">petugasSurvey</code> di database.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-xs">
             <div className="space-y-1.5 bg-teal-50 p-3 rounded-lg border border-teal-100 font-mono">
               <p className="text-teal-700 font-bold">✓ PETUGAS SURVEY (Kolom R)</p>
+              <p className="text-slate-500">✓ KOORDINATOR (Kolom P)</p>
               <p className="text-slate-500">✓ REG ID / NIK / NAMA LENGKAP</p>
             </div>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              *Tidak membuat akun baru. Menggunakan petugas yang sudah terdaftar di Step 2.
+              ✅ Petugas lama → langsung tampil data baru.<br/>
+              ✅ Petugas baru → akun dibuat otomatis (password: 123456).
             </p>
           </CardContent>
           <div className="p-6 pt-0 mt-auto">
             {isProcessingTahap3 && (
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-xs font-bold text-slate-700">
-                  <span>Memproses Tahap 3...</span><span>{progressTahap3}%</span>
+                  <span>Memproses Gelombang 3...</span><span>{progressTahap3}%</span>
                 </div>
                 <Progress value={progressTahap3} className="h-2" />
               </div>
@@ -1284,11 +1321,11 @@ export default function UploadPetugasSurveyPage() {
               className="w-full font-bold h-11 text-sm bg-teal-600 hover:bg-teal-700 text-white shadow-md"
             >
               {isProcessingTahap3 ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses Tahap 3...</>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses Gelombang 3...</>
               ) : summaryTahap3 ? (
-                <><CheckCircle2 className="w-4 h-4 mr-2" /> Selesai! Upload Ulang Tahap 3</>
+                <><CheckCircle2 className="w-4 h-4 mr-2" /> Selesai! Upload Ulang Gelombang 3</>
               ) : (
-                <><UploadCloud className="w-4 h-4 mr-2" /> Proses Pembagian Tahap 3</>
+                <><UploadCloud className="w-4 h-4 mr-2" /> Proses Pembagian Gelombang 3</>
               )}
             </Button>
           </div>
@@ -1296,24 +1333,24 @@ export default function UploadPetugasSurveyPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════ */}
-      {/* TAHAP 4: Rekening / Selesai                                  */}
+      {/* GELOMBANG 4: Upload Excel Pembagian Data                     */}
       {/* ══════════════════════════════════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 border-dashed border-2 border-sky-300 hover:border-sky-500 transition-colors shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-bold flex items-center gap-2 text-sky-700">
               <UploadCloud className="w-5 h-5" />
-              Step 1d: Upload Excel Pembagian Tahap 4 — Rekening / Selesai
+              Step 1d: Upload Excel Pembagian Data — Gelombang 4
             </CardTitle>
             <CardDescription>
-              Memetakan data ke field <strong>petugasSelesai</strong> di database. Format Excel sama dengan Tahap 1 (kolom <strong>PETUGAS SURVEY</strong>, REG ID/NIK/Nama).
+              Upload file Excel gelombang ke-4. Sistem akan membagi data pelaku usaha ke petugas survey, dan <strong>otomatis membuat akun</strong> untuk petugas baru yang belum terdaftar.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="relative border-2 border-dashed border-sky-200 hover:border-sky-400 rounded-xl p-8 text-center flex flex-col items-center justify-center cursor-pointer bg-sky-50/30 hover:bg-sky-50/60 transition-all">
               <FileSpreadsheet className="w-12 h-12 text-sky-500 mb-3" />
               <p className="font-bold text-slate-700">Klik untuk memilih file Excel atau seret ke sini</p>
-              <p className="text-xs text-muted-foreground mt-1">Sistem akan memetakan data ke Petugas Rekening / Selesai</p>
+              <p className="text-xs text-muted-foreground mt-1">Format sama dengan Gelombang 1 — kolom PETUGAS SURVEY, REG ID/NIK/Nama</p>
               <input
                 type="file"
                 accept=".xlsx, .xls, .csv"
@@ -1334,16 +1371,20 @@ export default function UploadPetugasSurveyPage() {
             {summaryTahap4 && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-2">
                 <p className="text-xs font-black text-emerald-700 uppercase flex items-center gap-1">
-                  <CheckCircle2 className="w-4 h-4" /> Hasil Upload Terakhir — Tahap 4
+                  <CheckCircle2 className="w-4 h-4" /> Hasil Upload Terakhir — Gelombang 4
                 </p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div className="bg-white rounded-lg p-2 border text-center">
                     <p className="text-[10px] text-muted-foreground font-bold uppercase">Total Baris</p>
                     <p className="text-lg font-black text-slate-800">{summaryTahap4.totalRows}</p>
                   </div>
                   <div className="bg-emerald-100 rounded-lg p-2 border border-emerald-200 text-center">
-                    <p className="text-[10px] text-emerald-700 font-bold uppercase">Berhasil Dipetakan</p>
+                    <p className="text-[10px] text-emerald-700 font-bold uppercase">Dipetakan</p>
                     <p className="text-lg font-black text-emerald-700">{summaryTahap4.matchedActors}</p>
+                  </div>
+                  <div className="bg-sky-100 rounded-lg p-2 border border-sky-200 text-center">
+                    <p className="text-[10px] text-sky-700 font-bold uppercase">Akun Baru</p>
+                    <p className="text-lg font-black text-sky-700">{summaryTahap4.createdUsers}</p>
                   </div>
                 </div>
                 <div className="max-h-32 overflow-y-auto border rounded-lg divide-y bg-white">
@@ -1362,26 +1403,28 @@ export default function UploadPetugasSurveyPage() {
         <Card className="border-sky-100 shadow-sm flex flex-col justify-between">
           <CardHeader>
             <CardTitle className="text-base font-bold flex items-center gap-2 text-sky-700">
-              <ShieldCheck className="w-5 h-5" /> Tahap 4: Rekening / Selesai
+              <ShieldCheck className="w-5 h-5" /> Gelombang 4 — Informasi
             </CardTitle>
             <CardDescription className="text-xs">
-              Field yang akan diperbarui: <code className="bg-sky-50 text-sky-700 px-1 rounded font-mono text-[11px]">petugasSelesai</code>
+              Sama persis dengan Gelombang 1. Update field <code className="bg-sky-50 text-sky-700 px-1 rounded font-mono text-[11px]">petugasSurvey</code> di database.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-xs">
             <div className="space-y-1.5 bg-sky-50 p-3 rounded-lg border border-sky-100 font-mono">
               <p className="text-sky-700 font-bold">✓ PETUGAS SURVEY (Kolom R)</p>
+              <p className="text-slate-500">✓ KOORDINATOR (Kolom P)</p>
               <p className="text-slate-500">✓ REG ID / NIK / NAMA LENGKAP</p>
             </div>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              *Tidak membuat akun baru. Menggunakan petugas yang sudah terdaftar di Step 2.
+              ✅ Petugas lama → langsung tampil data baru.<br/>
+              ✅ Petugas baru → akun dibuat otomatis (password: 123456).
             </p>
           </CardContent>
           <div className="p-6 pt-0 mt-auto">
             {isProcessingTahap4 && (
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-xs font-bold text-slate-700">
-                  <span>Memproses Tahap 4...</span><span>{progressTahap4}%</span>
+                  <span>Memproses Gelombang 4...</span><span>{progressTahap4}%</span>
                 </div>
                 <Progress value={progressTahap4} className="h-2" />
               </div>
@@ -1392,11 +1435,11 @@ export default function UploadPetugasSurveyPage() {
               className="w-full font-bold h-11 text-sm bg-sky-600 hover:bg-sky-700 text-white shadow-md"
             >
               {isProcessingTahap4 ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses Tahap 4...</>
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses Gelombang 4...</>
               ) : summaryTahap4 ? (
-                <><CheckCircle2 className="w-4 h-4 mr-2" /> Selesai! Upload Ulang Tahap 4</>
+                <><CheckCircle2 className="w-4 h-4 mr-2" /> Selesai! Upload Ulang Gelombang 4</>
               ) : (
-                <><UploadCloud className="w-4 h-4 mr-2" /> Proses Pembagian Tahap 4</>
+                <><UploadCloud className="w-4 h-4 mr-2" /> Proses Pembagian Gelombang 4</>
               )}
             </Button>
           </div>
