@@ -94,6 +94,28 @@ export default function UploadPetugasSurveyPage() {
     provisionedUsers: 0
   })
 
+  // ── STATE TAHAP LANJUTAN (2, 3, 4) ──
+  const [fileTahap2, setFileTahap2] = useState<File | null>(null)
+  const [isProcessingTahap2, setIsProcessingTahap2] = useState(false)
+  const [progressTahap2, setProgressTahap2] = useState(0)
+  const [summaryTahap2, setSummaryTahap2] = useState<{
+    totalRows: number; matchedActors: number; petugasCounts: Record<string, number>
+  } | null>(null)
+
+  const [fileTahap3, setFileTahap3] = useState<File | null>(null)
+  const [isProcessingTahap3, setIsProcessingTahap3] = useState(false)
+  const [progressTahap3, setProgressTahap3] = useState(0)
+  const [summaryTahap3, setSummaryTahap3] = useState<{
+    totalRows: number; matchedActors: number; petugasCounts: Record<string, number>
+  } | null>(null)
+
+  const [fileTahap4, setFileTahap4] = useState<File | null>(null)
+  const [isProcessingTahap4, setIsProcessingTahap4] = useState(false)
+  const [progressTahap4, setProgressTahap4] = useState(0)
+  const [summaryTahap4, setSummaryTahap4] = useState<{
+    totalRows: number; matchedActors: number; petugasCounts: Record<string, number>
+  } | null>(null)
+
   const isAllowed = userProfile?.role === 'admin' || userProfile?.role === 'koordinator' || userProfile?.role === 'monitoring' || user?.email?.toLowerCase() === 'agus@umkm.id'
 
   // Fetch all system users to manage Petugas Survey accounts
@@ -506,6 +528,131 @@ export default function UploadPetugasSurveyPage() {
     } finally {
       setIsProcessing(false)
     }
+  }
+
+  // ── PROSES EXCEL TAHAP LANJUTAN (2, 3, 4) ──
+  const handleProcessTahapLanjutan = async (
+    tahap: 2 | 3 | 4,
+    file: File | null,
+    setIsProcessing: (v: boolean) => void,
+    setProgress: (v: number) => void,
+    setSummary: (v: { totalRows: number; matchedActors: number; petugasCounts: Record<string, number> } | null) => void
+  ) => {
+    if (!database || !file) return
+
+    const tahapConfig: Record<number, { fieldName: string; label: string; color: string }> = {
+      2: { fieldName: 'petugasVerifikasiDinas', label: 'Verifikasi Dinas', color: 'indigo' },
+      3: { fieldName: 'petugasHasilVerifikasi', label: 'Hasil Verifikasi', color: 'teal' },
+      4: { fieldName: 'petugasSelesai', label: 'Rekening/Selesai', color: 'sky' },
+    }
+    const config = tahapConfig[tahap]
+
+    setIsProcessing(true)
+    setProgress(0)
+
+    const reader = new FileReader()
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result
+        const workbook = XLSX.read(bstr, { type: 'binary' })
+        const firstSheetName = workbook.SheetNames[0]
+        const worksheet = workbook.Sheets[firstSheetName]
+        const rawJson: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: "" })
+
+        if (!rawJson || rawJson.length === 0) {
+          toast({ variant: "destructive", title: "File Kosong", description: "Tidak ada data yang dapat dibaca dari file Excel ini." })
+          setIsProcessing(false)
+          return
+        }
+
+        // Fetch current businessActors for matching
+        const snap = await get(ref(database, 'businessActors'))
+        const allActors: any[] = snap.exists()
+          ? Object.keys(snap.val()).map(k => ({ id: k, ...snap.val()[k] }))
+          : []
+
+        const petugasCounts: Record<string, number> = {}
+        let matchedCount = 0
+        const updates: Record<string, any> = {}
+        const total = rawJson.length
+
+        rawJson.forEach((r, idx) => {
+          const regId = getColValue(r, ["REG ID", "REGISTRATION CODE", "REG_ID", "REGISTRATIONCODE"])
+          const nik = getColValue(r, ["NIK", "NO NIK", "NOMOR NIK"])
+          const fullName = getColValue(r, ["NAMA LENGKAP", "NAMA", "PEMILIK", "NAMA PEMILIK"])
+          const petugasSurvey = getColValue(r, ["PETUGAS SURVEY", "PETUGAS", "PETUGAS_SURVEY", "SURVEYOR"])
+
+          if (!petugasSurvey) return
+
+          // Multi-strategy matching: REG ID → NIK → NIK normalized → Nama exact → Nama fuzzy
+          let matchActor: any = null
+          if (!matchActor && regId) {
+            matchActor = allActors.find(a => String(a.registrationCode || "").trim() === regId.trim())
+          }
+          if (!matchActor && nik) {
+            matchActor = allActors.find(a => String(a.nik || "").trim() === nik.trim())
+          }
+          if (!matchActor && nik) {
+            const normNik = (v: string) => v.replace(/\D/g, '').replace(/^0+/, '')
+            const normNikVal = normNik(nik)
+            if (normNikVal.length >= 10) {
+              matchActor = allActors.find(a => normNik(String(a.nik || "")) === normNikVal)
+            }
+          }
+          if (!matchActor && fullName) {
+            const normName = (n: string) => n.toUpperCase().replace(/[^A-Z0-9\s]/g, '').replace(/\s+/g, ' ').trim()
+            matchActor = allActors.find(a => normName(String(a.fullName || "")) === normName(fullName))
+          }
+          if (!matchActor && fullName) {
+            const normName = (n: string) => n.toUpperCase().replace(/[^A-Z0-9\s]/g, '').replace(/\s+/g, ' ').trim()
+            const wb = normName(fullName).split(' ').filter(Boolean)
+            matchActor = allActors.find(a => {
+              const wa = normName(String(a.fullName || '')).split(' ').filter(Boolean)
+              const shorter = wa.length <= wb.length ? wa : wb
+              const longer  = wa.length <= wb.length ? wb : wa
+              return shorter.length > 0 && shorter.every(w => longer.includes(w))
+            })
+          }
+
+          if (matchActor) {
+            const petugasUpper = petugasSurvey.toUpperCase().trim()
+            updates[`businessActors/${matchActor.id}/${config.fieldName}`] = petugasUpper
+            petugasCounts[petugasUpper] = (petugasCounts[petugasUpper] || 0) + 1
+            matchedCount++
+          }
+
+          if (idx % 50 === 0 || idx === total - 1) {
+            setProgress(Math.round(((idx + 1) / total) * 100))
+          }
+        })
+
+        if (Object.keys(updates).length > 0) {
+          await update(ref(database), updates)
+        }
+
+        setSummary({ totalRows: rawJson.length, matchedActors: matchedCount, petugasCounts })
+
+        logActivity({
+          query: `IMPORT EXCEL TAHAP ${tahap} (${config.label}): ${rawJson.length} Baris, ${matchedCount} Data Dipetakan`,
+          results: `Berhasil update field ${config.fieldName}`,
+          device: getDeviceType(navigator.userAgent),
+          source: 'Web',
+          method: `PEMBAGIAN PETUGAS TAHAP ${tahap}`,
+          userId: user?.email || user?.uid || 'Admin'
+        })
+
+        toast({
+          title: `✅ Tahap ${tahap}: Pembagian Berhasil!`,
+          description: `${matchedCount} data pelaku usaha berhasil dipetakan ke Petugas Survey ${config.label}.`
+        })
+      } catch (err: any) {
+        console.error("Tahap lanjutan error:", err)
+        toast({ variant: "destructive", title: `Gagal Proses Tahap ${tahap}`, description: err.message || "Terjadi kesalahan saat memproses Excel." })
+      } finally {
+        setIsProcessing(false)
+      }
+    }
+    reader.readAsBinaryString(file)
   }
 
   // Handle Edit Password for Petugas Survey
@@ -932,7 +1079,332 @@ export default function UploadPetugasSurveyPage() {
         </Card>
       )}
 
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* TAHAP 2: Verifikasi Dinas                                    */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 border-dashed border-2 border-indigo-300 hover:border-indigo-500 transition-colors shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold flex items-center gap-2 text-indigo-700">
+              <UploadCloud className="w-5 h-5" />
+              Step 1b: Upload Excel Pembagian Tahap 2 — Verifikasi Dinas
+            </CardTitle>
+            <CardDescription>
+              Memetakan data ke field <strong>petugasVerifikasiDinas</strong> di database. Format Excel sama dengan Tahap 1 (kolom <strong>PETUGAS SURVEY</strong>, REG ID/NIK/Nama).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="relative border-2 border-dashed border-indigo-200 hover:border-indigo-400 rounded-xl p-8 text-center flex flex-col items-center justify-center cursor-pointer bg-indigo-50/30 hover:bg-indigo-50/60 transition-all">
+              <FileSpreadsheet className="w-12 h-12 text-indigo-500 mb-3" />
+              <p className="font-bold text-slate-700">Klik untuk memilih file Excel atau seret ke sini</p>
+              <p className="text-xs text-muted-foreground mt-1">Sistem akan memetakan data ke Petugas Verifikasi Dinas</p>
+              <input
+                type="file"
+                accept=".xlsx, .xls, .csv"
+                onChange={(e) => setFileTahap2(e.target.files?.[0] || null)}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+            </div>
+            {fileTahap2 && (
+              <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                <div className="flex items-center gap-2">
+                  <FileCheck className="w-5 h-5 text-indigo-600" />
+                  <span className="font-bold text-sm text-slate-800">{fileTahap2.name}</span>
+                  <span className="text-xs text-muted-foreground">({(fileTahap2.size / 1024).toFixed(1)} KB)</span>
+                </div>
+                <Badge variant="secondary" className="font-mono">Siap Diproses</Badge>
+              </div>
+            )}
+            {summaryTahap2 && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-2">
+                <p className="text-xs font-black text-emerald-700 uppercase flex items-center gap-1">
+                  <CheckCircle2 className="w-4 h-4" /> Hasil Upload Terakhir — Tahap 2
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-white rounded-lg p-2 border text-center">
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase">Total Baris</p>
+                    <p className="text-lg font-black text-slate-800">{summaryTahap2.totalRows}</p>
+                  </div>
+                  <div className="bg-emerald-100 rounded-lg p-2 border border-emerald-200 text-center">
+                    <p className="text-[10px] text-emerald-700 font-bold uppercase">Berhasil Dipetakan</p>
+                    <p className="text-lg font-black text-emerald-700">{summaryTahap2.matchedActors}</p>
+                  </div>
+                </div>
+                <div className="max-h-32 overflow-y-auto border rounded-lg divide-y bg-white">
+                  {Object.entries(summaryTahap2.petugasCounts).map(([name, count]) => (
+                    <div key={name} className="flex justify-between items-center px-3 py-1.5 text-xs">
+                      <span className="font-bold text-slate-700">{name}</span>
+                      <Badge className="bg-indigo-100 text-indigo-700 border-none font-bold">{count} Data</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-indigo-100 shadow-sm flex flex-col justify-between">
+          <CardHeader>
+            <CardTitle className="text-base font-bold flex items-center gap-2 text-indigo-700">
+              <ShieldCheck className="w-5 h-5" /> Tahap 2: Verifikasi Dinas
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Field yang akan diperbarui: <code className="bg-indigo-50 text-indigo-700 px-1 rounded font-mono text-[11px]">petugasVerifikasiDinas</code>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-xs">
+            <div className="space-y-1.5 bg-indigo-50 p-3 rounded-lg border border-indigo-100 font-mono">
+              <p className="text-indigo-700 font-bold">✓ PETUGAS SURVEY (Kolom R)</p>
+              <p className="text-slate-500">✓ REG ID / NIK / NAMA LENGKAP</p>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              *Tidak membuat akun baru. Menggunakan petugas yang sudah terdaftar di Step 2.
+            </p>
+          </CardContent>
+          <div className="p-6 pt-0 mt-auto">
+            {isProcessingTahap2 && (
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between text-xs font-bold text-slate-700">
+                  <span>Memproses Tahap 2...</span><span>{progressTahap2}%</span>
+                </div>
+                <Progress value={progressTahap2} className="h-2" />
+              </div>
+            )}
+            <Button
+              onClick={() => handleProcessTahapLanjutan(2, fileTahap2, setIsProcessingTahap2, setProgressTahap2, setSummaryTahap2)}
+              disabled={!fileTahap2 || isProcessingTahap2}
+              className="w-full font-bold h-11 text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-md"
+            >
+              {isProcessingTahap2 ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses Tahap 2...</>
+              ) : summaryTahap2 ? (
+                <><CheckCircle2 className="w-4 h-4 mr-2" /> Selesai! Upload Ulang Tahap 2</>
+              ) : (
+                <><UploadCloud className="w-4 h-4 mr-2" /> Proses Pembagian Tahap 2</>
+              )}
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* TAHAP 3: Hasil Verifikasi                                    */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 border-dashed border-2 border-teal-300 hover:border-teal-500 transition-colors shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold flex items-center gap-2 text-teal-700">
+              <UploadCloud className="w-5 h-5" />
+              Step 1c: Upload Excel Pembagian Tahap 3 — Hasil Verifikasi
+            </CardTitle>
+            <CardDescription>
+              Memetakan data ke field <strong>petugasHasilVerifikasi</strong> di database. Format Excel sama dengan Tahap 1 (kolom <strong>PETUGAS SURVEY</strong>, REG ID/NIK/Nama).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="relative border-2 border-dashed border-teal-200 hover:border-teal-400 rounded-xl p-8 text-center flex flex-col items-center justify-center cursor-pointer bg-teal-50/30 hover:bg-teal-50/60 transition-all">
+              <FileSpreadsheet className="w-12 h-12 text-teal-500 mb-3" />
+              <p className="font-bold text-slate-700">Klik untuk memilih file Excel atau seret ke sini</p>
+              <p className="text-xs text-muted-foreground mt-1">Sistem akan memetakan data ke Petugas Hasil Verifikasi</p>
+              <input
+                type="file"
+                accept=".xlsx, .xls, .csv"
+                onChange={(e) => setFileTahap3(e.target.files?.[0] || null)}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+            </div>
+            {fileTahap3 && (
+              <div className="flex items-center justify-between p-3 bg-teal-50 rounded-lg border border-teal-200">
+                <div className="flex items-center gap-2">
+                  <FileCheck className="w-5 h-5 text-teal-600" />
+                  <span className="font-bold text-sm text-slate-800">{fileTahap3.name}</span>
+                  <span className="text-xs text-muted-foreground">({(fileTahap3.size / 1024).toFixed(1)} KB)</span>
+                </div>
+                <Badge variant="secondary" className="font-mono">Siap Diproses</Badge>
+              </div>
+            )}
+            {summaryTahap3 && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-2">
+                <p className="text-xs font-black text-emerald-700 uppercase flex items-center gap-1">
+                  <CheckCircle2 className="w-4 h-4" /> Hasil Upload Terakhir — Tahap 3
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-white rounded-lg p-2 border text-center">
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase">Total Baris</p>
+                    <p className="text-lg font-black text-slate-800">{summaryTahap3.totalRows}</p>
+                  </div>
+                  <div className="bg-emerald-100 rounded-lg p-2 border border-emerald-200 text-center">
+                    <p className="text-[10px] text-emerald-700 font-bold uppercase">Berhasil Dipetakan</p>
+                    <p className="text-lg font-black text-emerald-700">{summaryTahap3.matchedActors}</p>
+                  </div>
+                </div>
+                <div className="max-h-32 overflow-y-auto border rounded-lg divide-y bg-white">
+                  {Object.entries(summaryTahap3.petugasCounts).map(([name, count]) => (
+                    <div key={name} className="flex justify-between items-center px-3 py-1.5 text-xs">
+                      <span className="font-bold text-slate-700">{name}</span>
+                      <Badge className="bg-teal-100 text-teal-700 border-none font-bold">{count} Data</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-teal-100 shadow-sm flex flex-col justify-between">
+          <CardHeader>
+            <CardTitle className="text-base font-bold flex items-center gap-2 text-teal-700">
+              <ShieldCheck className="w-5 h-5" /> Tahap 3: Hasil Verifikasi
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Field yang akan diperbarui: <code className="bg-teal-50 text-teal-700 px-1 rounded font-mono text-[11px]">petugasHasilVerifikasi</code>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-xs">
+            <div className="space-y-1.5 bg-teal-50 p-3 rounded-lg border border-teal-100 font-mono">
+              <p className="text-teal-700 font-bold">✓ PETUGAS SURVEY (Kolom R)</p>
+              <p className="text-slate-500">✓ REG ID / NIK / NAMA LENGKAP</p>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              *Tidak membuat akun baru. Menggunakan petugas yang sudah terdaftar di Step 2.
+            </p>
+          </CardContent>
+          <div className="p-6 pt-0 mt-auto">
+            {isProcessingTahap3 && (
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between text-xs font-bold text-slate-700">
+                  <span>Memproses Tahap 3...</span><span>{progressTahap3}%</span>
+                </div>
+                <Progress value={progressTahap3} className="h-2" />
+              </div>
+            )}
+            <Button
+              onClick={() => handleProcessTahapLanjutan(3, fileTahap3, setIsProcessingTahap3, setProgressTahap3, setSummaryTahap3)}
+              disabled={!fileTahap3 || isProcessingTahap3}
+              className="w-full font-bold h-11 text-sm bg-teal-600 hover:bg-teal-700 text-white shadow-md"
+            >
+              {isProcessingTahap3 ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses Tahap 3...</>
+              ) : summaryTahap3 ? (
+                <><CheckCircle2 className="w-4 h-4 mr-2" /> Selesai! Upload Ulang Tahap 3</>
+              ) : (
+                <><UploadCloud className="w-4 h-4 mr-2" /> Proses Pembagian Tahap 3</>
+              )}
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════════════ */}
+      {/* TAHAP 4: Rekening / Selesai                                  */}
+      {/* ══════════════════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 border-dashed border-2 border-sky-300 hover:border-sky-500 transition-colors shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold flex items-center gap-2 text-sky-700">
+              <UploadCloud className="w-5 h-5" />
+              Step 1d: Upload Excel Pembagian Tahap 4 — Rekening / Selesai
+            </CardTitle>
+            <CardDescription>
+              Memetakan data ke field <strong>petugasSelesai</strong> di database. Format Excel sama dengan Tahap 1 (kolom <strong>PETUGAS SURVEY</strong>, REG ID/NIK/Nama).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="relative border-2 border-dashed border-sky-200 hover:border-sky-400 rounded-xl p-8 text-center flex flex-col items-center justify-center cursor-pointer bg-sky-50/30 hover:bg-sky-50/60 transition-all">
+              <FileSpreadsheet className="w-12 h-12 text-sky-500 mb-3" />
+              <p className="font-bold text-slate-700">Klik untuk memilih file Excel atau seret ke sini</p>
+              <p className="text-xs text-muted-foreground mt-1">Sistem akan memetakan data ke Petugas Rekening / Selesai</p>
+              <input
+                type="file"
+                accept=".xlsx, .xls, .csv"
+                onChange={(e) => setFileTahap4(e.target.files?.[0] || null)}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+            </div>
+            {fileTahap4 && (
+              <div className="flex items-center justify-between p-3 bg-sky-50 rounded-lg border border-sky-200">
+                <div className="flex items-center gap-2">
+                  <FileCheck className="w-5 h-5 text-sky-600" />
+                  <span className="font-bold text-sm text-slate-800">{fileTahap4.name}</span>
+                  <span className="text-xs text-muted-foreground">({(fileTahap4.size / 1024).toFixed(1)} KB)</span>
+                </div>
+                <Badge variant="secondary" className="font-mono">Siap Diproses</Badge>
+              </div>
+            )}
+            {summaryTahap4 && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-2">
+                <p className="text-xs font-black text-emerald-700 uppercase flex items-center gap-1">
+                  <CheckCircle2 className="w-4 h-4" /> Hasil Upload Terakhir — Tahap 4
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-white rounded-lg p-2 border text-center">
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase">Total Baris</p>
+                    <p className="text-lg font-black text-slate-800">{summaryTahap4.totalRows}</p>
+                  </div>
+                  <div className="bg-emerald-100 rounded-lg p-2 border border-emerald-200 text-center">
+                    <p className="text-[10px] text-emerald-700 font-bold uppercase">Berhasil Dipetakan</p>
+                    <p className="text-lg font-black text-emerald-700">{summaryTahap4.matchedActors}</p>
+                  </div>
+                </div>
+                <div className="max-h-32 overflow-y-auto border rounded-lg divide-y bg-white">
+                  {Object.entries(summaryTahap4.petugasCounts).map(([name, count]) => (
+                    <div key={name} className="flex justify-between items-center px-3 py-1.5 text-xs">
+                      <span className="font-bold text-slate-700">{name}</span>
+                      <Badge className="bg-sky-100 text-sky-700 border-none font-bold">{count} Data</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="border-sky-100 shadow-sm flex flex-col justify-between">
+          <CardHeader>
+            <CardTitle className="text-base font-bold flex items-center gap-2 text-sky-700">
+              <ShieldCheck className="w-5 h-5" /> Tahap 4: Rekening / Selesai
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Field yang akan diperbarui: <code className="bg-sky-50 text-sky-700 px-1 rounded font-mono text-[11px]">petugasSelesai</code>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-xs">
+            <div className="space-y-1.5 bg-sky-50 p-3 rounded-lg border border-sky-100 font-mono">
+              <p className="text-sky-700 font-bold">✓ PETUGAS SURVEY (Kolom R)</p>
+              <p className="text-slate-500">✓ REG ID / NIK / NAMA LENGKAP</p>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              *Tidak membuat akun baru. Menggunakan petugas yang sudah terdaftar di Step 2.
+            </p>
+          </CardContent>
+          <div className="p-6 pt-0 mt-auto">
+            {isProcessingTahap4 && (
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between text-xs font-bold text-slate-700">
+                  <span>Memproses Tahap 4...</span><span>{progressTahap4}%</span>
+                </div>
+                <Progress value={progressTahap4} className="h-2" />
+              </div>
+            )}
+            <Button
+              onClick={() => handleProcessTahapLanjutan(4, fileTahap4, setIsProcessingTahap4, setProgressTahap4, setSummaryTahap4)}
+              disabled={!fileTahap4 || isProcessingTahap4}
+              className="w-full font-bold h-11 text-sm bg-sky-600 hover:bg-sky-700 text-white shadow-md"
+            >
+              {isProcessingTahap4 ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Memproses Tahap 4...</>
+              ) : summaryTahap4 ? (
+                <><CheckCircle2 className="w-4 h-4 mr-2" /> Selesai! Upload Ulang Tahap 4</>
+              ) : (
+                <><UploadCloud className="w-4 h-4 mr-2" /> Proses Pembagian Tahap 4</>
+              )}
+            </Button>
+          </div>
+        </Card>
+      </div>
+
       {/* Step 2: Dedicated Petugas Survey Accounts & Passwords Manager */}
+
       <Card className="border shadow-md overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
