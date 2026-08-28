@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { Flame, Radio, Clock, Sparkles } from "lucide-react"
+import { Calendar, Radio, Sparkles } from "lucide-react"
 
 interface EventCountdownProps {
   targetDate: string
@@ -66,140 +66,255 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
 
   if (!mounted || timeLeft.isEnded) return null
 
-  const isUrgent = timeLeft.days < 3
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SVG Graphic Illustration (Pen tool, pencil, floating spheres & bezier curve)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const CreativeGraphic = ({ className = "w-14 h-14" }: { className?: string }) => (
+    <div className={cn("relative shrink-0 flex items-center justify-center select-none pointer-events-none", className)}>
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-[0_4px_12px_rgba(0,0,0,0.25)]">
+        {/* Glowing aura */}
+        <circle cx="60" cy="60" r="45" fill="url(#aura_glow)" opacity="0.35" />
+        
+        {/* Bezier Vector curve */}
+        <path d="M 20 85 C 35 45, 85 45, 100 85" stroke="#38bdf8" strokeWidth="2.5" strokeDasharray="3 3" />
+        <path d="M 25 78 Q 60 30 95 78" stroke="#facc15" strokeWidth="2" opacity="0.85" />
+        
+        {/* Vector Anchor Points */}
+        <rect x="26" y="58" width="6" height="6" rx="1.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1" />
+        <rect x="88" y="58" width="6" height="6" rx="1.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1" />
+
+        {/* Floating 3D Geometric shapes */}
+        {/* Yellow 3D Cube (top left) */}
+        <g transform="translate(18, 22) rotate(-15)">
+          <path d="M 8 0 L 16 4.5 L 8 9 L 0 4.5 Z" fill="#fbbf24" />
+          <path d="M 0 4.5 L 8 9 L 8 18 L 0 13.5 Z" fill="#f59e0b" />
+          <path d="M 8 9 L 16 4.5 L 16 13.5 L 8 18 Z" fill="#d97706" />
+        </g>
+        
+        {/* Blue/Cyan Sphere (top right) */}
+        <circle cx="85" cy="24" r="5.5" fill="url(#cyan_ball)" />
+        
+        {/* Pink Sphere (bottom right) */}
+        <circle cx="102" cy="74" r="6" fill="url(#pink_ball)" />
+
+        {/* Small Yellow Star/Dot */}
+        <circle cx="28" cy="76" r="3" fill="#fef08a" />
+
+        {/* Diagonal Pencil (Yellow & Pink Eraser) */}
+        <g transform="translate(68, 12) rotate(42)">
+          {/* Eraser */}
+          <rect x="0" y="0" width="8" height="6" rx="2" fill="#f472b6" />
+          {/* Metal Band */}
+          <rect x="0" y="6" width="8" height="3" fill="#cbd5e1" />
+          {/* Body */}
+          <rect x="0" y="9" width="8" height="24" fill="#fbbf24" />
+          <rect x="3" y="9" width="2" height="24" fill="#f59e0b" />
+          {/* Wooden Tip */}
+          <polygon points="0,33 8,33 4,41" fill="#fed7aa" />
+          {/* Graphite Lead */}
+          <polygon points="3,38 5,38 4,41" fill="#334155" />
+        </g>
+
+        {/* Pen Tool / Nib (Foreground Left) */}
+        <g transform="translate(42, 42)">
+          {/* Nib Body */}
+          <path d="M 18 10 L 26 28 C 26 34 22 38 18 42 C 14 38 10 34 10 28 Z" fill="url(#nib_gradient)" stroke="#ffffff" strokeWidth="1.5" />
+          {/* Nib Center Line */}
+          <line x1="18" y1="12" x2="18" y2="28" stroke="#0f766e" strokeWidth="1.5" />
+          <circle cx="18" cy="28" r="2" fill="#0f766e" />
+          {/* Base Mount Ring */}
+          <rect x="12" y="40" width="12" height="4" rx="2" fill="#6366f1" stroke="#ffffff" strokeWidth="1" />
+          {/* Pen Handle Base */}
+          <rect x="14" y="44" width="8" height="10" rx="3" fill="#4338ca" />
+        </g>
+
+        {/* Gradients */}
+        <defs>
+          <radialGradient id="aura_glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
+          </radialGradient>
+          <radialGradient id="cyan_ball" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#67e8f9" />
+            <stop offset="100%" stopColor="#0891b2" />
+          </radialGradient>
+          <radialGradient id="pink_ball" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#f472b6" />
+            <stop offset="100%" stopColor="#db2777" />
+          </radialGradient>
+          <linearGradient id="nib_gradient" x1="10" y1="10" x2="26" y2="42" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#2dd4bf" />
+            <stop offset="100%" stopColor="#0f766e" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  )
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Ultra-Compact Horizontal Layout Card for Header & Widgets (size="sm")
+  // Size SM: Compact Header & Floating Widget (Pill Capsule Layout)
   // ─────────────────────────────────────────────────────────────────────────────
   if (size === 'sm') {
     return (
       <div className={cn(
-        "relative flex flex-row items-center justify-between gap-2.5 bg-white/95 dark:bg-slate-900/95 border p-2 md:p-2.5 pl-3.5 pr-2.5 rounded-2xl shadow-xl backdrop-blur-2xl transition-all duration-300 hover:shadow-2xl max-w-[420px]",
-        timeLeft.isStarted
-          ? "border-emerald-300 dark:border-emerald-700/60 ring-2 ring-emerald-500/20"
-          : isUrgent
-            ? "border-rose-300 dark:border-rose-700/60 ring-2 ring-rose-500/20"
-            : "border-slate-200 dark:border-slate-800"
+        "relative flex items-center justify-between gap-3 overflow-hidden rounded-full shadow-[0_4px_25px_rgba(6,182,212,0.45)] border-[2.5px] border-cyan-300 dark:border-cyan-400 text-white transition-all duration-300 hover:shadow-[0_6px_30px_rgba(6,182,212,0.6)] hover:scale-[1.01]",
+        "bg-gradient-to-r from-[#0284c7] via-[#0d9488] to-[#10b981] px-3.5 py-1.5 md:px-4 md:py-2 max-w-[420px]"
       )}>
-        {/* ── TOP-LEFT CORNER BADGE: NEXT (RED) / NOW (GREEN) ── */}
-        <div className="absolute -top-2.5 -left-1.5 z-20 pointer-events-none drop-shadow-md">
-          {timeLeft.isStarted ? (
-            <span className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-500 text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-lg ring-2 ring-white dark:ring-slate-900 animate-pulse">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+        {/* Left Side: Badge NEXT/NOW + Title + Countdown Numbers with Labels */}
+        <div className="flex flex-col items-start min-w-0 flex-1 pl-1">
+          {/* Row 1: Icon + NEXT / NOW Badge */}
+          <div className="flex items-center gap-1.5 leading-none">
+            {timeLeft.isStarted ? (
+              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                </span>
+                NOW
               </span>
-              NOW
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-lg ring-2 ring-white dark:ring-slate-900">
-              <Sparkles className="w-2.5 h-2.5 fill-white text-white" />
-              NEXT
-            </span>
-          )}
-        </div>
+            ) : (
+              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
+                <Calendar className="w-2.5 h-2.5 text-white" />
+                NEXT
+              </span>
+            )}
 
-        {/* Left Side: Title & Status Indicator */}
-        <div className="flex flex-col items-start justify-center gap-1 min-w-0 flex-1 overflow-hidden pt-1">
-          {title && (
-            <div className="w-full overflow-hidden">
-              <h3
-                className="text-[10px] md:text-xs font-black text-slate-800 dark:text-slate-100 uppercase leading-tight drop-shadow-sm whitespace-nowrap"
-                style={{
-                  display: 'inline-block',
-                  animation: 'marquee-scroll 25s linear infinite',
-                  paddingRight: '3rem'
-                }}
-              >
+            {title && (
+              <span className="text-[10px] md:text-[11px] font-black text-white uppercase tracking-wider drop-shadow-sm truncate max-w-[170px] md:max-w-[220px]">
                 {title}
-              </h3>
+              </span>
+            )}
+          </div>
+
+          {/* Row 2: Big Countdown Numbers with Subtitles underneath */}
+          <div className="flex items-center gap-1.5 md:gap-2 mt-1">
+            {/* Hari */}
+            <div className="flex flex-col items-center">
+              <span className="text-sm md:text-base font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.days}</span>
+              <span className="text-[8px] md:text-[9px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Hari</span>
             </div>
-          )}
-          {startDate && (
-            <span className={cn(
-              "inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-sm shrink-0",
-              timeLeft.isStarted
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-            )}>
-              {timeLeft.isStarted ? (
-                <>
-                  <Radio className="w-2.5 h-2.5 text-emerald-600 animate-pulse shrink-0" />
-                  <span>BERAKHIR DALAM</span>
-                </>
-              ) : (
-                <>
-                  <Clock className="w-2.5 h-2.5 text-amber-600 shrink-0" />
-                  <span>DIMULAI DALAM</span>
-                </>
-              )}
-            </span>
-          )}
-        </div>
 
-        {/* Vertical Divider */}
-        <div className="w-px h-8 bg-gradient-to-b from-transparent via-slate-300 dark:via-slate-700 to-transparent shrink-0 mx-0.5" />
+            <span className="text-xs md:text-sm font-black text-cyan-200 animate-pulse -mt-2.5">:</span>
 
-        {/* Right Side: 4 Countdown Time Boxes */}
-        <div className="flex items-center gap-1 shrink-0">
-          {/* Hari */}
-          <div className="flex flex-col items-center justify-center min-w-[36px] md:min-w-[40px] px-1.5 py-1 rounded-xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200/80 dark:border-slate-700 shadow-sm">
-            <span className="text-sm md:text-base font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.days}</span>
-            <span className="text-[7px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tight mt-0.5">HARI</span>
-          </div>
+            {/* Jam */}
+            <div className="flex flex-col items-center">
+              <span className="text-sm md:text-base font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.hours.toString().padStart(2, '0')}</span>
+              <span className="text-[8px] md:text-[9px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Jam</span>
+            </div>
 
-          <span className="text-sm font-black text-rose-400 dark:text-rose-500 animate-pulse -mt-1">:</span>
+            <span className="text-xs md:text-sm font-black text-cyan-200 animate-pulse -mt-2.5">:</span>
 
-          {/* Jam */}
-          <div className="flex flex-col items-center justify-center min-w-[36px] md:min-w-[40px] px-1.5 py-1 rounded-xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200/80 dark:border-slate-700 shadow-sm">
-            <span className="text-sm md:text-base font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
-            <span className="text-[7px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tight mt-0.5">JAM</span>
-          </div>
+            {/* Menit */}
+            <div className="flex flex-col items-center">
+              <span className="text-sm md:text-base font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+              <span className="text-[8px] md:text-[9px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Menit</span>
+            </div>
 
-          <span className="text-sm font-black text-rose-400 dark:text-rose-500 animate-pulse -mt-1">:</span>
+            <span className="text-xs md:text-sm font-black text-cyan-200 animate-pulse -mt-2.5">:</span>
 
-          {/* Menit */}
-          <div className="flex flex-col items-center justify-center min-w-[36px] md:min-w-[40px] px-1.5 py-1 rounded-xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200/80 dark:border-slate-700 shadow-sm">
-            <span className="text-sm md:text-base font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-            <span className="text-[7px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tight mt-0.5">MENIT</span>
-          </div>
-
-          <span className="text-sm font-black text-rose-400 dark:text-rose-500 animate-pulse -mt-1">:</span>
-
-          {/* Detik */}
-          <div className="flex flex-col items-center justify-center min-w-[36px] md:min-w-[40px] px-1.5 py-1 rounded-xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200/80 dark:border-slate-700 shadow-sm">
-            <span className="text-sm md:text-base font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-            <span className="text-[7px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tight mt-0.5">DETIK</span>
+            {/* Detik */}
+            <div className="flex flex-col items-center">
+              <span className="text-sm md:text-base font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+              <span className="text-[8px] md:text-[9px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Detik</span>
+            </div>
           </div>
         </div>
 
-        <style>{`
-          @keyframes marquee-scroll {
-            0%   { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-          }
-        `}</style>
+        {/* Right Side: Creative Graphic */}
+        <CreativeGraphic className="w-12 h-12 md:w-14 md:h-14 -mr-1" />
       </div>
     )
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // Medium Card Layout (size="md")
+  // Size MD: Medium Capsule Card
   // ─────────────────────────────────────────────────────────────────────────────
   if (size === 'md') {
     return (
       <div className={cn(
-        "relative flex flex-row items-center justify-between gap-3 md:gap-4 bg-white/95 dark:bg-slate-900/95 border p-2.5 md:p-3.5 pl-4 pr-3 rounded-2xl md:rounded-3xl shadow-xl backdrop-blur-2xl transition-all duration-300 hover:shadow-2xl",
-        timeLeft.isStarted
-          ? "border-emerald-300 dark:border-emerald-700/60 ring-2 ring-emerald-500/20"
-          : isUrgent
-            ? "border-rose-300 dark:border-rose-700/60 ring-2 ring-rose-500/20"
-            : "border-slate-200 dark:border-slate-800"
+        "relative flex items-center justify-between gap-4 overflow-hidden rounded-full shadow-[0_6px_30px_rgba(6,182,212,0.45)] border-[3px] border-cyan-300 dark:border-cyan-400 text-white transition-all duration-300 hover:shadow-[0_8px_35px_rgba(6,182,212,0.6)] hover:scale-[1.01]",
+        "bg-gradient-to-r from-[#0284c7] via-[#0d9488] to-[#10b981] px-5 py-2.5 md:px-6 md:py-3 max-w-[520px]"
       )}>
-        {/* ── TOP-LEFT CORNER BADGE: NEXT (RED) / NOW (GREEN) ── */}
-        <div className="absolute -top-3 -left-2 z-20 pointer-events-none drop-shadow-md">
+        {/* Left Side */}
+        <div className="flex flex-col items-start min-w-0 flex-1 pl-1">
+          {/* Row 1: NEXT/NOW + Title */}
+          <div className="flex items-center gap-2 leading-none">
+            {timeLeft.isStarted ? (
+              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] md:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                </span>
+                NOW
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-[10px] md:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md">
+                <Calendar className="w-3 h-3 text-white" />
+                NEXT
+              </span>
+            )}
+
+            {title && (
+              <span className="text-xs md:text-sm font-black text-white uppercase tracking-wider drop-shadow-md truncate max-w-[220px] md:max-w-[280px]">
+                {title}
+              </span>
+            )}
+          </div>
+
+          {/* Row 2: Countdown Digits with Labels */}
+          <div className="flex items-center gap-2 md:gap-3 mt-1.5">
+            {/* Hari */}
+            <div className="flex flex-col items-center">
+              <span className="text-lg md:text-2xl font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.days}</span>
+              <span className="text-[9px] md:text-[10px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Hari</span>
+            </div>
+
+            <span className="text-base md:text-xl font-black text-cyan-200 animate-pulse -mt-3">:</span>
+
+            {/* Jam */}
+            <div className="flex flex-col items-center">
+              <span className="text-lg md:text-2xl font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.hours.toString().padStart(2, '0')}</span>
+              <span className="text-[9px] md:text-[10px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Jam</span>
+            </div>
+
+            <span className="text-base md:text-xl font-black text-cyan-200 animate-pulse -mt-3">:</span>
+
+            {/* Menit */}
+            <div className="flex flex-col items-center">
+              <span className="text-lg md:text-2xl font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+              <span className="text-[9px] md:text-[10px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Menit</span>
+            </div>
+
+            <span className="text-base md:text-xl font-black text-cyan-200 animate-pulse -mt-3">:</span>
+
+            {/* Detik */}
+            <div className="flex flex-col items-center">
+              <span className="text-lg md:text-2xl font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+              <span className="text-[9px] md:text-[10px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Detik</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Creative Graphic */}
+        <CreativeGraphic className="w-16 h-16 md:w-20 md:h-20 -mr-1" />
+      </div>
+    )
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Size LG: Large Hero / Modal Capsule (Exact matching reference image)
+  // ─────────────────────────────────────────────────────────────────────────────
+  return (
+    <div className={cn(
+      "relative flex items-center justify-between gap-6 overflow-hidden rounded-full shadow-[0_8px_40px_rgba(6,182,212,0.5)] border-[3.5px] border-cyan-300 dark:border-cyan-400 text-white transition-all duration-300 hover:shadow-[0_12px_50px_rgba(6,182,212,0.65)] hover:scale-[1.01] w-full max-w-2xl",
+      "bg-gradient-to-r from-[#0284c7] via-[#0d9488] to-[#10b981] px-6 py-3.5 md:px-9 md:py-5"
+    )}>
+      {/* Left / Center Content */}
+      <div className="flex flex-col items-start min-w-0 flex-1 pl-1 md:pl-2">
+        {/* Row 1: 🗓️ NEXT / NOW */}
+        <div className="flex items-center gap-2">
           {timeLeft.isStarted ? (
-            <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-500 text-white text-[10px] md:text-xs font-black uppercase tracking-wider px-3 py-0.5 rounded-full shadow-lg ring-2 ring-white dark:ring-slate-900 animate-pulse">
+            <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-xs md:text-sm font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
@@ -207,176 +322,58 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
               NOW
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-[10px] md:text-xs font-black uppercase tracking-wider px-3 py-0.5 rounded-full shadow-lg ring-2 ring-white dark:ring-slate-900">
-              <Sparkles className="w-3 h-3 fill-white text-white" />
+            <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-xs md:text-sm font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
+              <Calendar className="w-3.5 h-3.5 text-white" />
               NEXT
             </span>
           )}
         </div>
 
-        {/* Left Side: Title & Status Badge */}
-        <div className="flex flex-col items-start justify-center gap-1 min-w-0 flex-1 pt-1">
-          {title && (
-            <h3 className="text-xs md:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider leading-tight truncate max-w-[180px] md:max-w-[280px] drop-shadow-sm">
-              {title}
-            </h3>
-          )}
-          {startDate && (
-            <span className={cn(
-              "inline-flex items-center gap-1.5 text-[8px] md:text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm",
-              timeLeft.isStarted
-                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
-            )}>
-              {timeLeft.isStarted ? (
-                <>
-                  <Radio className="w-3 h-3 text-emerald-600 animate-pulse shrink-0" />
-                  <span>BERAKHIR DALAM</span>
-                </>
-              ) : (
-                <>
-                  <Clock className="w-3 h-3 text-amber-600 shrink-0" />
-                  <span>DIMULAI DALAM</span>
-                </>
-              )}
-            </span>
-          )}
-        </div>
-
-        {/* Vertical Divider */}
-        <div className="w-px h-8 md:h-10 bg-gradient-to-b from-transparent via-slate-300 dark:via-slate-700 to-transparent shrink-0 mx-1" />
-
-        {/* Right Side: 4 Countdown Time Boxes */}
-        <div className="flex items-center gap-1 md:gap-1.5 shrink-0">
-          {/* Hari */}
-          <div className="flex flex-col items-center justify-center min-w-[36px] md:min-w-[46px] px-1.5 md:px-2 py-1.5 rounded-xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm">
-            <span className="text-xs md:text-base font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.days}</span>
-            <span className="text-[7px] md:text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">HARI</span>
-          </div>
-
-          <span className="text-xs md:text-sm font-black text-rose-400 dark:text-rose-500 animate-pulse -mt-1">:</span>
-
-          {/* Jam */}
-          <div className="flex flex-col items-center justify-center min-w-[36px] md:min-w-[46px] px-1.5 md:px-2 py-1.5 rounded-xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm">
-            <span className="text-xs md:text-base font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
-            <span className="text-[7px] md:text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">JAM</span>
-          </div>
-
-          <span className="text-xs md:text-sm font-black text-rose-400 dark:text-rose-500 animate-pulse -mt-1">:</span>
-
-          {/* Menit */}
-          <div className="flex flex-col items-center justify-center min-w-[36px] md:min-w-[46px] px-1.5 md:px-2 py-1.5 rounded-xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm">
-            <span className="text-xs md:text-base font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-            <span className="text-[7px] md:text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">MENIT</span>
-          </div>
-
-          <span className="text-xs md:text-sm font-black text-rose-400 dark:text-rose-500 animate-pulse -mt-1">:</span>
-
-          {/* Detik */}
-          <div className="flex flex-col items-center justify-center min-w-[36px] md:min-w-[46px] px-1.5 md:px-2 py-1.5 rounded-xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm">
-            <span className="text-xs md:text-base font-black text-rose-600 dark:text-rose-400 font-mono leading-none">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-            <span className="text-[7px] md:text-[8px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">DETIK</span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Large Hero / Modal Layout (size="lg")
-  // ─────────────────────────────────────────────────────────────────────────────
-  return (
-    <div className={cn(
-      "relative flex flex-col md:flex-row items-center justify-between gap-5 md:gap-7 max-w-3xl w-full bg-white/95 dark:bg-slate-900/95 border-2 p-5 md:p-8 pt-7 md:pt-8 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl backdrop-blur-2xl transition-all duration-300",
-      timeLeft.isStarted
-        ? "border-emerald-400 dark:border-emerald-600 ring-4 ring-emerald-500/20 shadow-emerald-500/10"
-        : isUrgent
-          ? "border-rose-400 dark:border-rose-600 ring-4 ring-rose-500/20 shadow-rose-500/10"
-          : "border-rose-200/80 dark:border-slate-800"
-    )}>
-      {/* ── TOP-LEFT CORNER BADGE: NEXT (RED) / NOW (GREEN) ── */}
-      <div className="absolute -top-4 -left-3 md:-top-5 md:-left-4 z-20 pointer-events-none drop-shadow-xl">
-        {timeLeft.isStarted ? (
-          <span className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 via-green-600 to-emerald-500 text-white text-xs md:text-sm font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-2xl ring-4 ring-white dark:ring-slate-900 animate-pulse">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
-            </span>
-            NOW
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-xs md:text-sm font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-2xl ring-4 ring-white dark:ring-slate-900">
-            <Sparkles className="w-3.5 h-3.5 fill-white text-white" />
-            NEXT
-          </span>
-        )}
-      </div>
-
-      {/* Left Side: Title & Status Indicator */}
-      <div className="flex flex-col items-center md:items-start text-center md:text-left gap-3 flex-1 min-w-0">
+        {/* Row 2: Event Title */}
         {title && (
-          <h2 className="text-xl md:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-wider leading-snug drop-shadow-md">
+          <h2 className="text-sm md:text-lg lg:text-xl font-black text-white uppercase tracking-wider drop-shadow-md mt-1.5 truncate max-w-[260px] md:max-w-[360px]">
             {title}
           </h2>
         )}
-        {startDate && (
-          <div className={cn(
-            "inline-flex items-center gap-2 px-4 py-1.5 rounded-full border shadow-md backdrop-blur-md",
-            timeLeft.isStarted
-              ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-700"
-              : "bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-700"
-          )}>
-            {timeLeft.isStarted ? (
-              <>
-                <Radio className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
-                <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em]">BERAKHIR DALAM</span>
-              </>
-            ) : (
-              <>
-                <Clock className="w-3.5 h-3.5 text-amber-600" />
-                <span className="text-xs md:text-sm font-black uppercase tracking-[0.2em]">DIMULAI DALAM</span>
-              </>
-            )}
+
+        {/* Row 3: Big Digits with Subtitle Labels */}
+        <div className="flex items-center gap-3 md:gap-4 mt-2">
+          {/* Hari */}
+          <div className="flex flex-col items-center">
+            <span className="text-2xl md:text-3xl lg:text-4xl font-black text-white font-mono leading-none drop-shadow-lg">{timeLeft.days}</span>
+            <span className="text-[10px] md:text-xs font-bold text-cyan-100 uppercase tracking-wider mt-1">Hari</span>
           </div>
-        )}
-      </div>
 
-      {/* Vertical Divider (Desktop) / Horizontal Divider (Mobile) */}
-      <div className="w-full md:w-px h-px md:h-20 bg-gradient-to-r md:bg-gradient-to-b from-transparent via-slate-300 dark:via-slate-700 to-transparent shrink-0 my-1 md:my-0 md:mx-2" />
+          <span className="text-xl md:text-2xl lg:text-3xl font-black text-cyan-200 animate-pulse -mt-4">:</span>
 
-      {/* Right Side: 4 Large Countdown Boxes */}
-      <div className="flex items-center justify-center gap-2 md:gap-3 shrink-0">
-        {/* Hari */}
-        <div className="flex flex-col items-center justify-center min-w-[58px] md:min-w-[78px] lg:min-w-[88px] px-2.5 py-2 md:py-3.5 rounded-2xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200/90 dark:border-slate-700 shadow-md hover:scale-105 transition-transform">
-          <span className="text-2xl md:text-3xl lg:text-4xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none drop-shadow-sm">{timeLeft.days}</span>
-          <span className="text-[8px] md:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mt-1.5">HARI</span>
-        </div>
+          {/* Jam */}
+          <div className="flex flex-col items-center">
+            <span className="text-2xl md:text-3xl lg:text-4xl font-black text-white font-mono leading-none drop-shadow-lg">{timeLeft.hours.toString().padStart(2, '0')}</span>
+            <span className="text-[10px] md:text-xs font-bold text-cyan-100 uppercase tracking-wider mt-1">Jam</span>
+          </div>
 
-        <span className="text-lg md:text-2xl font-black text-rose-400 dark:text-rose-500 animate-pulse -mt-2 md:-mt-4">:</span>
+          <span className="text-xl md:text-2xl lg:text-3xl font-black text-cyan-200 animate-pulse -mt-4">:</span>
 
-        {/* Jam */}
-        <div className="flex flex-col items-center justify-center min-w-[58px] md:min-w-[78px] lg:min-w-[88px] px-2.5 py-2 md:py-3.5 rounded-2xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200/90 dark:border-slate-700 shadow-md hover:scale-105 transition-transform">
-          <span className="text-2xl md:text-3xl lg:text-4xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none drop-shadow-sm">{timeLeft.hours.toString().padStart(2, '0')}</span>
-          <span className="text-[8px] md:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mt-1.5">JAM</span>
-        </div>
+          {/* Menit */}
+          <div className="flex flex-col items-center">
+            <span className="text-2xl md:text-3xl lg:text-4xl font-black text-white font-mono leading-none drop-shadow-lg">{timeLeft.minutes.toString().padStart(2, '0')}</span>
+            <span className="text-[10px] md:text-xs font-bold text-cyan-100 uppercase tracking-wider mt-1">Menit</span>
+          </div>
 
-        <span className="text-lg md:text-2xl font-black text-rose-400 dark:text-rose-500 animate-pulse -mt-2 md:-mt-4">:</span>
+          <span className="text-xl md:text-2xl lg:text-3xl font-black text-cyan-200 animate-pulse -mt-4">:</span>
 
-        {/* Menit */}
-        <div className="flex flex-col items-center justify-center min-w-[58px] md:min-w-[78px] lg:min-w-[88px] px-2.5 py-2 md:py-3.5 rounded-2xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200/90 dark:border-slate-700 shadow-md hover:scale-105 transition-transform">
-          <span className="text-2xl md:text-3xl lg:text-4xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none drop-shadow-sm">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-          <span className="text-[8px] md:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mt-1.5">MENIT</span>
-        </div>
-
-        <span className="text-lg md:text-2xl font-black text-rose-400 dark:text-rose-500 animate-pulse -mt-2 md:-mt-4">:</span>
-
-        {/* Detik */}
-        <div className="flex flex-col items-center justify-center min-w-[58px] md:min-w-[78px] lg:min-w-[88px] px-2.5 py-2 md:py-3.5 rounded-2xl bg-gradient-to-b from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200/90 dark:border-slate-700 shadow-md hover:scale-105 transition-transform">
-          <span className="text-2xl md:text-3xl lg:text-4xl font-black text-rose-600 dark:text-rose-400 font-mono leading-none drop-shadow-sm">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-          <span className="text-[8px] md:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.15em] mt-1.5">DETIK</span>
+          {/* Detik */}
+          <div className="flex flex-col items-center">
+            <span className="text-2xl md:text-3xl lg:text-4xl font-black text-white font-mono leading-none drop-shadow-lg">{timeLeft.seconds.toString().padStart(2, '0')}</span>
+            <span className="text-[10px] md:text-xs font-bold text-cyan-100 uppercase tracking-wider mt-1">Detik</span>
+          </div>
         </div>
       </div>
+
+      {/* Right Side: Creative 3D Graphic */}
+      <CreativeGraphic className="w-20 h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 -mr-2" />
     </div>
   )
 }
+
 

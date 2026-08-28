@@ -427,7 +427,7 @@ export default function LoginPage() {
             className="group cursor-pointer pointer-events-auto"
             onClick={() => setShowFullEvent(true)}
           >
-            <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl p-4 shadow-2xl hover:bg-white/20 transition-all duration-300 active:scale-95">
+            <div className="rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95">
               <EventCountdown 
                 targetDate={activeEvent.endDate || activeEvent.date} 
                 startDate={activeEvent.startDate} 
