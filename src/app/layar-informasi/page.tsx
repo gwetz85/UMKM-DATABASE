@@ -158,6 +158,12 @@ export default function LayarInformasiPage() {
       .slice(0, 10);
   }, [verifiedDinasData]);
 
+  // Total Cancel Dinas
+  const cancelDinasCount = useMemo(() => {
+    if (!verifiedDinasData) return 0;
+    return verifiedDinasData.filter(d => isCancelDinas(d)).length;
+  }, [verifiedDinasData]);
+
   // 6 Stats Cards
   const cardStats = [
     {
@@ -168,8 +174,8 @@ export default function LayarInformasiPage() {
       iconBg: "bg-emerald-400/25 text-emerald-200"
     },
     {
-      title: "Cancell",
-      count: systemStats?.status?.rejected ?? 0,
+      title: "Cancell Dinas",
+      count: cancelDinasCount,
       icon: UserX,
       cardBg: "from-rose-700 to-red-950 border-rose-500/60 shadow-rose-950/40",
       iconBg: "bg-rose-400/25 text-rose-200"
