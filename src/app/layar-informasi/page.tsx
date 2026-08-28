@@ -20,8 +20,7 @@ import {
   Sparkles, 
   Building2, 
   Radio, 
-  Loader2,
-  CheckCircle2
+  Loader2
 } from 'lucide-react';
 
 export default function LayarInformasiPage() {
@@ -34,12 +33,7 @@ export default function LayarInformasiPage() {
     if (!database) return null;
     return ref(database, 'system_stats');
   }, [database]);
-  const { data: systemStats, isLoading: isStatsLoading } = useObject(systemStatsRefOrFallback(statsRef));
-
-  // Helper fallback for memo
-  function systemStatsRefOrFallback(r: any) {
-    return r;
-  }
+  const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef);
 
   // 2. Fetch verified_dinas actors
   const verifiedDinasQuery = useMemoFirebase(() => {
@@ -134,7 +128,6 @@ export default function LayarInformasiPage() {
       count: systemStats?.status?.verified ?? 0,
       icon: UserCheck,
       cardBg: "from-emerald-700 to-emerald-900 border-emerald-500/50",
-      accentText: "text-emerald-300",
       iconBg: "bg-emerald-500/20 text-emerald-300"
     },
     {
@@ -142,7 +135,6 @@ export default function LayarInformasiPage() {
       count: systemStats?.status?.rejected ?? 0,
       icon: UserX,
       cardBg: "from-rose-700 to-red-950 border-rose-500/50",
-      accentText: "text-rose-300",
       iconBg: "bg-rose-500/20 text-rose-300"
     },
     {
@@ -151,7 +143,6 @@ export default function LayarInformasiPage() {
       count: systemStats?.detailedStatus?.survey ?? 0,
       icon: ClipboardCheck,
       cardBg: "from-fuchsia-700 to-purple-950 border-fuchsia-500/50",
-      accentText: "text-fuchsia-300",
       iconBg: "bg-fuchsia-500/20 text-fuchsia-300"
     },
     {
@@ -160,7 +151,6 @@ export default function LayarInformasiPage() {
       count: systemStats?.detailedStatus?.verifikasi ?? 0,
       icon: FileText,
       cardBg: "from-indigo-700 to-blue-950 border-indigo-500/50",
-      accentText: "text-indigo-300",
       iconBg: "bg-indigo-500/20 text-indigo-300"
     },
     {
@@ -169,7 +159,6 @@ export default function LayarInformasiPage() {
       count: systemStats?.detailedStatus?.hasilVerifikasi ?? 0,
       icon: ListChecks,
       cardBg: "from-teal-700 to-cyan-950 border-teal-500/50",
-      accentText: "text-teal-300",
       iconBg: "bg-teal-500/20 text-teal-300"
     },
     {
@@ -178,7 +167,6 @@ export default function LayarInformasiPage() {
       count: systemStats?.detailedStatus?.selesai ?? systemStats?.status?.finish ?? 0,
       icon: CreditCard,
       cardBg: "from-sky-700 to-blue-950 border-sky-500/50",
-      accentText: "text-sky-300",
       iconBg: "bg-sky-500/20 text-sky-300"
     }
   ];
@@ -209,15 +197,15 @@ export default function LayarInformasiPage() {
   }, []);
 
   return (
-    <div className="h-[100dvh] w-full max-h-[100dvh] bg-[#090d16] text-white flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-white overflow-hidden select-none p-2 sm:p-3 md:p-3.5 space-y-2">
+    <div className="h-[100dvh] w-full max-h-[100dvh] bg-[#070b14] text-white flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-white overflow-hidden select-none p-2 sm:p-3 md:p-3.5 gap-2">
       
       {/* ─────────────────────────────────────────────────────────────
-          1. HEADER (Compact & Elegant - Fits screen height)
+          1. HEADER (Compact & Elegant)
       ────────────────────────────────────────────────────────────── */}
       <header className="shrink-0 flex items-center justify-between px-3 py-1.5 md:px-4 md:py-2 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md ring-1 ring-white/20 shrink-0">
-            <Building2 className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center shadow-md ring-1 ring-white/20 shrink-0">
+            <Building2 className="w-4 h-4 md:w-5 md:h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -228,7 +216,7 @@ export default function LayarInformasiPage() {
                 DINAS TENAGA KERJA, KOPERASI DAN USAHA MIKRO KOTA TANJUNGPINANG
               </span>
             </div>
-            <h1 className="text-sm md:text-lg font-black text-white uppercase tracking-tight font-headline leading-tight mt-0.5">
+            <h1 className="text-sm md:text-base lg:text-lg font-black text-white uppercase tracking-tight font-headline leading-tight mt-0.5">
               Layar Informasi Data Pelaku Usaha (SIMPU 2026)
             </h1>
           </div>
@@ -266,7 +254,7 @@ export default function LayarInformasiPage() {
             <div
               key={idx}
               className={cn(
-                "relative overflow-hidden rounded-2xl p-2.5 md:p-3 flex flex-col justify-between border shadow-lg bg-gradient-to-br transition-transform duration-200 hover:scale-[1.01]",
+                "relative overflow-hidden rounded-2xl p-2 md:p-2.5 flex flex-col justify-between border shadow-lg bg-gradient-to-br transition-transform duration-200 hover:scale-[1.01]",
                 item.cardBg
               )}
             >
@@ -275,19 +263,19 @@ export default function LayarInformasiPage() {
                   {item.title}
                 </span>
                 <div className={cn("p-1.5 rounded-lg shrink-0", item.iconBg)}>
-                  <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+                  <Icon className="w-3.5 h-3.5 text-white" />
                 </div>
               </div>
 
               <div className="mt-1 relative z-10 flex items-baseline justify-between">
-                <div className="text-xl md:text-2xl lg:text-3xl font-black text-white tracking-tight font-mono drop-shadow">
+                <div className="text-xl md:text-2xl font-black text-white tracking-tight font-mono drop-shadow">
                   {isStatsLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin text-white/70" />
+                    <Loader2 className="w-4 h-4 animate-spin text-white/70" />
                   ) : (
                     (item.count || 0).toLocaleString('id-ID')
                   )}
                 </div>
-                <span className="text-[9px] font-bold text-white/80 uppercase">
+                <span className="text-[8px] md:text-[9px] font-bold text-white/80 uppercase">
                   {item.subtitle || "Realtime"}
                 </span>
               </div>
@@ -297,16 +285,17 @@ export default function LayarInformasiPage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          3. BAGIAN TENGAH: TABEL 10 PELAKU USAHA TERAKHIR (HIGH CONTRAST)
+          3. BAGIAN TENGAH: 2 TABEL DENGAN ROWS YANG MENGISI 100% SPACE
       ────────────────────────────────────────────────────────────── */}
       <section className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-2.5">
         
-        {/* TABEL 1: VERIFIKASI DINAS */}
-        <div className="bg-[#0f172a] border border-indigo-500/40 rounded-2xl p-2.5 md:p-3 shadow-xl flex flex-col justify-between overflow-hidden">
-          {/* Table Header Info */}
+        {/* TABEL 1: VERIFIKASI DINAS (TAHAP 2) */}
+        <div className="bg-[#0f172a] border border-indigo-500/40 rounded-2xl p-2.5 md:p-3 shadow-xl flex flex-col justify-between min-h-0 overflow-hidden">
+          
+          {/* Table Header Top Bar */}
           <div className="shrink-0 flex items-center justify-between pb-1.5 mb-1.5 border-b border-indigo-500/30">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-indigo-300">
+              <div className="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-indigo-300 shrink-0">
                 <FileText className="w-4 h-4" />
               </div>
               <div>
@@ -328,73 +317,75 @@ export default function LayarInformasiPage() {
             </span>
           </div>
 
-          {/* Table Content (Custom Dark / Ultra Crisp) */}
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden rounded-xl border border-slate-700/80 bg-[#090e1a]">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-[#1e293b] sticky top-0 z-10 text-[10px] md:text-[11px] font-black uppercase text-indigo-300 tracking-wider border-b border-slate-700">
-                <tr>
-                  <th className="py-1 px-2 text-center w-8">No</th>
-                  <th className="py-1 px-2">Pelaku Usaha</th>
-                  <th className="py-1 px-2">Waktu Masuk</th>
-                  <th className="py-1 px-2">Petugas Survey</th>
-                  <th className="py-1 px-2 text-center w-24">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/80 text-[11px]">
-                {isTableLoading ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400 font-bold">
-                      <Loader2 className="w-6 h-6 animate-spin text-indigo-400 mx-auto mb-1" />
-                      Memuat Data...
-                    </td>
-                  </tr>
-                ) : latestVerifikasiDinas.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400 font-bold uppercase text-[10px]">
-                      Belum ada antrean data Verifikasi Dinas
-                    </td>
-                  </tr>
-                ) : (
-                  latestVerifikasiDinas.map((actor, idx) => (
-                    <tr 
-                      key={actor.id || idx}
-                      className={cn(
-                        "transition-colors hover:bg-indigo-950/50",
-                        idx % 2 === 0 ? "bg-[#0b1329]" : "bg-[#0f172a]"
-                      )}
-                    >
-                      <td className="py-1.5 px-2 text-center font-bold font-mono text-slate-400 text-[11px]">
-                        {idx + 1}
-                      </td>
-                      <td className="py-1.5 px-2">
-                        <div className="font-extrabold text-white uppercase text-[11px] md:text-xs tracking-tight">
-                          {actor.fullName || '-'}
-                        </div>
-                        <div className="text-[10px] text-cyan-300/90 font-medium truncate max-w-[200px]">
-                          {actor.businessName || 'Usaha'} • <span className="text-slate-400">{actor.kelurahan || '-'}</span>
-                        </div>
-                      </td>
-                      <td className="py-1.5 px-2 whitespace-nowrap">
-                        <div className="text-[10px] md:text-[11px] font-bold text-amber-300 font-mono flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-amber-400 shrink-0" />
-                          {formatDateTimeIndo(actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt)}
-                        </div>
-                      </td>
-                      <td className="py-1.5 px-2">
-                        <div className="text-[11px] font-bold text-emerald-300 uppercase truncate max-w-[130px]">
-                          {getSurveyorName(actor)}
-                        </div>
-                      </td>
-                      <td className="py-1.5 px-2 text-center whitespace-nowrap">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide bg-amber-500/20 text-amber-300 border border-amber-400/40">
-                          Cek Berkas
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          {/* Table Container with 10 Flex Rows filling 100% height */}
+          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700/80 bg-[#090e1a] overflow-hidden">
+            
+            {/* Column Headers */}
+            <div className="shrink-0 grid grid-cols-[34px_1fr_150px_140px_90px] md:grid-cols-[38px_1fr_175px_150px_95px] items-center bg-[#1e293b] border-b border-slate-700 px-2 py-1.5 text-[10px] md:text-[11px] font-black uppercase text-indigo-300 tracking-wider">
+              <div className="text-center">No</div>
+              <div className="pl-1">Pelaku Usaha</div>
+              <div>Waktu Masuk</div>
+              <div>Petugas Survey</div>
+              <div className="text-center">Status</div>
+            </div>
+
+            {/* 10 Stretch Rows */}
+            <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800/80">
+              {isTableLoading ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 font-bold">
+                  <Loader2 className="w-6 h-6 animate-spin text-indigo-400 mb-1" />
+                  <span>Memuat Data...</span>
+                </div>
+              ) : latestVerifikasiDinas.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center text-slate-500 font-bold uppercase text-xs">
+                  Belum ada antrean data Verifikasi Dinas
+                </div>
+              ) : (
+                latestVerifikasiDinas.map((actor, idx) => (
+                  <div 
+                    key={actor.id || idx}
+                    className={cn(
+                      "flex-1 min-h-0 grid grid-cols-[34px_1fr_150px_140px_90px] md:grid-cols-[38px_1fr_175px_150px_95px] items-center px-2 transition-colors hover:bg-indigo-950/60",
+                      idx % 2 === 0 ? "bg-[#0b1329]" : "bg-[#0f172a]"
+                    )}
+                  >
+                    {/* No */}
+                    <div className="text-center font-bold font-mono text-slate-400 text-xs">
+                      {idx + 1}
+                    </div>
+
+                    {/* Pelaku Usaha */}
+                    <div className="min-w-0 pr-2 pl-1">
+                      <div className="font-extrabold text-white uppercase text-xs md:text-[13px] tracking-tight truncate leading-tight">
+                        {actor.fullName || '-'}
+                      </div>
+                      <div className="text-[10px] md:text-[11px] text-cyan-300 font-semibold truncate leading-tight mt-0.5">
+                        {actor.businessName || 'Usaha'} • <span className="text-slate-400 font-normal">{actor.kelurahan || '-'}</span>
+                      </div>
+                    </div>
+
+                    {/* Waktu Masuk */}
+                    <div className="whitespace-nowrap text-[11px] md:text-xs font-bold text-amber-300 font-mono flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>{formatDateTimeIndo(actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt)}</span>
+                    </div>
+
+                    {/* Petugas Survey */}
+                    <div className="text-[11px] md:text-xs font-bold text-emerald-300 uppercase truncate pr-2">
+                      {getSurveyorName(actor)}
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="text-center whitespace-nowrap">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] md:text-[10px] font-extrabold uppercase tracking-wide bg-amber-500/20 text-amber-300 border border-amber-400/50 shadow-sm">
+                        Cek Berkas
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
           </div>
 
           {/* Table Footer Stats */}
@@ -402,16 +393,18 @@ export default function LayarInformasiPage() {
             <span className="font-extrabold uppercase">
               Total Antrean: <strong className="text-indigo-300 font-mono">{systemStats?.detailedStatus?.verifikasi ?? 0} Pelaku Usaha</strong>
             </span>
-            <span className="text-slate-500 text-[9px]">Pembaruan Otomatis</span>
+            <span className="text-slate-500 text-[9px]">Pembaruan Otomatis Realtime</span>
           </div>
+
         </div>
 
-        {/* TABEL 2: HASIL DINAS */}
-        <div className="bg-[#0f172a] border border-teal-500/40 rounded-2xl p-2.5 md:p-3 shadow-xl flex flex-col justify-between overflow-hidden">
-          {/* Table Header Info */}
+        {/* TABEL 2: HASIL DINAS (TAHAP 3) */}
+        <div className="bg-[#0f172a] border border-teal-500/40 rounded-2xl p-2.5 md:p-3 shadow-xl flex flex-col justify-between min-h-0 overflow-hidden">
+          
+          {/* Table Header Top Bar */}
           <div className="shrink-0 flex items-center justify-between pb-1.5 mb-1.5 border-b border-teal-500/30">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-teal-500/20 border border-teal-400/40 flex items-center justify-center text-teal-300">
+              <div className="w-7 h-7 rounded-lg bg-teal-500/20 border border-teal-400/40 flex items-center justify-center text-teal-300 shrink-0">
                 <ListChecks className="w-4 h-4" />
               </div>
               <div>
@@ -433,73 +426,75 @@ export default function LayarInformasiPage() {
             </span>
           </div>
 
-          {/* Table Content (Custom Dark / Ultra Crisp) */}
-          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden rounded-xl border border-slate-700/80 bg-[#090e1a]">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-[#1e293b] sticky top-0 z-10 text-[10px] md:text-[11px] font-black uppercase text-teal-300 tracking-wider border-b border-slate-700">
-                <tr>
-                  <th className="py-1 px-2 text-center w-8">No</th>
-                  <th className="py-1 px-2">Pelaku Usaha</th>
-                  <th className="py-1 px-2">Waktu Verifikasi</th>
-                  <th className="py-1 px-2">Petugas Verifikator</th>
-                  <th className="py-1 px-2 text-center w-24">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/80 text-[11px]">
-                {isTableLoading ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400 font-bold">
-                      <Loader2 className="w-6 h-6 animate-spin text-teal-400 mx-auto mb-1" />
-                      Memuat Data...
-                    </td>
-                  </tr>
-                ) : latestHasilVerifikasi.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400 font-bold uppercase text-[10px]">
-                      Belum ada data Hasil Dinas terbaru
-                    </td>
-                  </tr>
-                ) : (
-                  latestHasilVerifikasi.map((actor, idx) => (
-                    <tr 
-                      key={actor.id || idx}
-                      className={cn(
-                        "transition-colors hover:bg-teal-950/50",
-                        idx % 2 === 0 ? "bg-[#0b1329]" : "bg-[#0f172a]"
-                      )}
-                    >
-                      <td className="py-1.5 px-2 text-center font-bold font-mono text-slate-400 text-[11px]">
-                        {idx + 1}
-                      </td>
-                      <td className="py-1.5 px-2">
-                        <div className="font-extrabold text-white uppercase text-[11px] md:text-xs tracking-tight">
-                          {actor.fullName || '-'}
-                        </div>
-                        <div className="text-[10px] text-teal-300/90 font-medium truncate max-w-[200px]">
-                          {actor.businessName || 'Usaha'} • <span className="text-slate-400">{actor.kelurahan || '-'}</span>
-                        </div>
-                      </td>
-                      <td className="py-1.5 px-2 whitespace-nowrap">
-                        <div className="text-[10px] md:text-[11px] font-bold text-amber-300 font-mono flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-amber-400 shrink-0" />
-                          {formatDateTimeIndo(actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt)}
-                        </div>
-                      </td>
-                      <td className="py-1.5 px-2">
-                        <div className="text-[11px] font-bold text-emerald-300 uppercase truncate max-w-[130px]">
-                          {getVerifikatorName(actor)}
-                        </div>
-                      </td>
-                      <td className="py-1.5 px-2 text-center whitespace-nowrap">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
-                          ✓ Lolos Berkas
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          {/* Table Container with 10 Flex Rows filling 100% height */}
+          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700/80 bg-[#090e1a] overflow-hidden">
+            
+            {/* Column Headers */}
+            <div className="shrink-0 grid grid-cols-[34px_1fr_150px_140px_90px] md:grid-cols-[38px_1fr_175px_150px_95px] items-center bg-[#1e293b] border-b border-slate-700 px-2 py-1.5 text-[10px] md:text-[11px] font-black uppercase text-teal-300 tracking-wider">
+              <div className="text-center">No</div>
+              <div className="pl-1">Pelaku Usaha</div>
+              <div>Waktu Verifikasi</div>
+              <div>Petugas Verifikator</div>
+              <div className="text-center">Status</div>
+            </div>
+
+            {/* 10 Stretch Rows */}
+            <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800/80">
+              {isTableLoading ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-400 font-bold">
+                  <Loader2 className="w-6 h-6 animate-spin text-teal-400 mb-1" />
+                  <span>Memuat Data...</span>
+                </div>
+              ) : latestHasilVerifikasi.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center text-slate-500 font-bold uppercase text-xs">
+                  Belum ada data Hasil Dinas terbaru
+                </div>
+              ) : (
+                latestHasilVerifikasi.map((actor, idx) => (
+                  <div 
+                    key={actor.id || idx}
+                    className={cn(
+                      "flex-1 min-h-0 grid grid-cols-[34px_1fr_150px_140px_90px] md:grid-cols-[38px_1fr_175px_150px_95px] items-center px-2 transition-colors hover:bg-teal-950/60",
+                      idx % 2 === 0 ? "bg-[#0b1329]" : "bg-[#0f172a]"
+                    )}
+                  >
+                    {/* No */}
+                    <div className="text-center font-bold font-mono text-slate-400 text-xs">
+                      {idx + 1}
+                    </div>
+
+                    {/* Pelaku Usaha */}
+                    <div className="min-w-0 pr-2 pl-1">
+                      <div className="font-extrabold text-white uppercase text-xs md:text-[13px] tracking-tight truncate leading-tight">
+                        {actor.fullName || '-'}
+                      </div>
+                      <div className="text-[10px] md:text-[11px] text-teal-300 font-semibold truncate leading-tight mt-0.5">
+                        {actor.businessName || 'Usaha'} • <span className="text-slate-400 font-normal">{actor.kelurahan || '-'}</span>
+                      </div>
+                    </div>
+
+                    {/* Waktu Verifikasi */}
+                    <div className="whitespace-nowrap text-[11px] md:text-xs font-bold text-amber-300 font-mono flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span>{formatDateTimeIndo(actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt)}</span>
+                    </div>
+
+                    {/* Petugas Verifikator */}
+                    <div className="text-[11px] md:text-xs font-bold text-emerald-300 uppercase truncate pr-2">
+                      {getVerifikatorName(actor)}
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="text-center whitespace-nowrap">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] md:text-[10px] font-extrabold uppercase tracking-wide bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 shadow-sm">
+                        ✓ Lolos Berkas
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
           </div>
 
           {/* Table Footer Stats */}
@@ -507,8 +502,9 @@ export default function LayarInformasiPage() {
             <span className="font-extrabold uppercase">
               Total Selesai: <strong className="text-teal-300 font-mono">{systemStats?.detailedStatus?.hasilVerifikasi ?? 0} Pelaku Usaha</strong>
             </span>
-            <span className="text-slate-500 text-[9px]">Pembaruan Otomatis</span>
+            <span className="text-slate-500 text-[9px]">Pembaruan Otomatis Realtime</span>
           </div>
+
         </div>
 
       </section>
