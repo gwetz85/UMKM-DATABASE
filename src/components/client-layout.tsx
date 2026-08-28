@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { MessageNotification } from './MessageNotification';
 import { RealtimeClock } from './realtime-clock';
 import { WeatherWidget } from './weather-widget';
+import { KelurahanWidget } from './kelurahan-widget';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -326,7 +327,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
             {!isLoginPage && (!isCekDataPage || (user && !isCekDataPage)) && (
               <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50 pointer-events-none">
-                <div className="pointer-events-auto flex flex-col items-end gap-3">
+                <div className="pointer-events-auto flex flex-col items-end gap-3 max-h-[calc(100dvh-5.5rem)] overflow-y-auto no-scrollbar pb-6 pr-1">
                   <div className="hidden lg:flex flex-col gap-3">
                     <WeatherWidget className="w-72" />
                   </div>
@@ -376,6 +377,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                         </a>
                       </div>
                     </div>
+                  </div>
+                  <div className="hidden lg:flex flex-col gap-3">
+                    <KelurahanWidget className="w-72" />
                   </div>
                 </div>
               </div>

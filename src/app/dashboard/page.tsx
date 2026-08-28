@@ -238,15 +238,6 @@ export default function DashboardStatsPage() {
     return combinedKuotaData.reduce((acc, curr) => acc + curr.achieved, 0)
   }, [combinedKuotaData])
 
-  const kelurahanStats = useMemo(() => {
-    if (!systemStats?.kelurahan) return []
-    const stats = Object.entries(systemStats.kelurahan).map(([name, count]) => ({
-      name,
-      count: count as number
-    }))
-    return stats.sort((a, b) => b.count - a.count);
-  }, [systemStats])
-
   const filteredModalData = useMemo(() => {
     if (!selectedFilter || !modalData) return []
     const type = selectedFilter.filterType
@@ -888,150 +879,93 @@ export default function DashboardStatsPage() {
         </div>
       </div>
 
-      {/* Grid: Kuota & Sebaran Kelurahan */}
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3 items-stretch">
-        <div className="lg:col-span-2 flex flex-col h-full min-h-0">
-          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-full min-h-[450px] lg:min-h-0 flex flex-col">
-            <CardHeader className="bg-primary/10 pb-4 shrink-0">
-              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
-                <BarChart3 className="w-5 h-5" /> Jumlah Kuota
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <Table>
-                  <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[40px] text-center font-black text-slate-800 text-[10px] md:text-xs">No</TableHead>
-                      <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">Nama Usulan</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Jumlah Kuota</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Tercapai</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Sisa Kuota</TableHead>
+      {/* Grid: Kuota Usulan */}
+      <div className="w-full flex flex-col h-full min-h-0">
+        <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-full min-h-[450px] lg:min-h-0 flex flex-col">
+          <CardHeader className="bg-primary/10 pb-4 shrink-0">
+            <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
+              <BarChart3 className="w-5 h-5" /> Jumlah Kuota
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <Table>
+                <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-[40px] text-center font-black text-slate-800 text-[10px] md:text-xs">No</TableHead>
+                    <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">Nama Usulan</TableHead>
+                    <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Jumlah Kuota</TableHead>
+                    <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Tercapai</TableHead>
+                    <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Sisa Kuota</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isKuotaLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-12">
+                        <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                          Memuat data kuota...
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isKuotaLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-12">
-                          <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
-                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                            Memuat data kuota...
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : combinedKuotaData.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-12 text-muted-foreground italic font-medium text-xs">
-                          Belum ada data target kuota yang didaftarkan.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      combinedKuotaData.map((item: any, index: number) => (
-                        <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                          <TableCell className="text-center font-bold text-slate-600 text-xs">{index + 1}</TableCell>
-                          <TableCell className="font-black text-primary text-xs tracking-tight">{item.name}</TableCell>
-                          <TableCell className="text-center">
-                            <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
-                              {item.quota}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
-                              {item.achieved}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <span className={cn(
-                              "inline-flex items-center justify-center font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border",
-                              item.remaining <= 0 
-                                ? "bg-rose-100 text-rose-700 border-rose-200" 
-                                : "bg-blue-100 text-blue-700 border-blue-200"
-                            )}>
-                              {item.remaining}
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                  {!isKuotaLoading && combinedKuotaData.length > 0 && (
-                    <TableFooter>
-                      <TableRow className="bg-primary/5 border-t-2 border-primary/20">
-                        <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs py-3">
-                          Total Kuota Data
-                        </TableCell>
-                        <TableCell className="text-center font-black text-slate-600 text-sm">
-                          {totalKuotaDashboard}
-                        </TableCell>
-                        <TableCell className="text-center font-black text-emerald-600 text-sm">
-                          {totalAchievedDashboard}
-                        </TableCell>
-                        <TableCell className="text-center font-black text-primary text-sm">
-                          {totalKuotaDashboard - totalAchievedDashboard}
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  )}
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="flex flex-col h-full min-h-0">
-          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-full min-h-[450px] lg:min-h-0 flex flex-col">
-            <CardHeader className="bg-slate-50/50 pb-4 border-b shrink-0">
-              <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-primary" /> Sebaran per Kelurahan
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <table className="w-full h-full border-collapse">
-                  <thead className="bg-slate-100/50 sticky top-0 z-10">
-                    <tr>
-                      <th className="w-[50px] text-center font-black text-xs uppercase py-3 text-slate-500">No</th>
-                      <th className="font-black text-xs uppercase py-3 text-left px-4 text-slate-500">Nama Kelurahan</th>
-                      <th className="text-center font-black text-xs uppercase py-3 text-slate-500">Jumlah Pelaku</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {kelurahanStats.map((item, idx) => (
-                      <tr
-                        key={item.name}
-                        className="hover:bg-primary/5 cursor-pointer transition-colors group"
-                        style={{ height: `${100 / Math.max(kelurahanStats.length, 1)}%` }}
-                        onClick={() => setSelectedFilter({ name: item.name, filterType: "kelurahan" })}
-                      >
-                        <td className="text-center font-bold text-sm text-slate-400 py-3">{idx + 1}</td>
-                        <td className="font-black text-sm text-slate-700 uppercase group-hover:text-primary transition-colors px-4 py-3">
-                          {item.name}
-                        </td>
-                        <td className="text-center py-3">
-                          <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] text-sm border border-slate-200 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
-                            {item.count}
+                  ) : combinedKuotaData.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground italic font-medium text-xs">
+                        Belum ada data target kuota yang didaftarkan.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    combinedKuotaData.map((item: any, index: number) => (
+                      <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                        <TableCell className="text-center font-bold text-slate-600 text-xs">{index + 1}</TableCell>
+                        <TableCell className="font-black text-primary text-xs tracking-tight">{item.name}</TableCell>
+                        <TableCell className="text-center">
+                          <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
+                            {item.quota}
                           </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="shrink-0 border-t bg-slate-50/80">
-                <table className="w-full">
-                  <tfoot>
-                    <tr>
-                      <td colSpan={2} className="text-right font-black text-xs uppercase text-slate-500 py-3 px-4">Total Data Tersebar</td>
-                      <td className="text-center font-black text-primary text-sm w-[110px] py-3">
-                        {kelurahanStats.reduce((acc, curr) => acc + curr.count, 0)}
-                      </td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
+                            {item.achieved}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <span className={cn(
+                            "inline-flex items-center justify-center font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border",
+                            item.remaining <= 0 
+                              ? "bg-rose-100 text-rose-700 border-rose-200" 
+                              : "bg-blue-100 text-blue-700 border-blue-200"
+                          )}>
+                            {item.remaining}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+                {!isKuotaLoading && combinedKuotaData.length > 0 && (
+                  <TableFooter>
+                    <TableRow className="bg-primary/5 border-t-2 border-primary/20">
+                      <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs py-3">
+                        Total Kuota Data
+                      </TableCell>
+                      <TableCell className="text-center font-black text-slate-600 text-sm">
+                        {totalKuotaDashboard}
+                      </TableCell>
+                      <TableCell className="text-center font-black text-emerald-600 text-sm">
+                        {totalAchievedDashboard}
+                      </TableCell>
+                      <TableCell className="text-center font-black text-primary text-sm">
+                        {totalKuotaDashboard - totalAchievedDashboard}
+                      </TableCell>
+                    </TableRow>
+                  </TableFooter>
+                )}
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Detail Modal Dialog */}
