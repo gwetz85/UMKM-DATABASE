@@ -173,6 +173,8 @@ export default function DashboardStatsPage() {
   }, [systemStats])
 
   const [isSyncing, setIsSyncing] = useState(false)
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
+  const [nextSyncIn, setNextSyncIn] = useState<number>(300) // detik, dimulai 5 menit
 
   // Auto-heal / initialize stats if system_stats is empty or missing detailedStatus
   useEffect(() => {
@@ -191,6 +193,8 @@ export default function DashboardStatsPage() {
     try {
       const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service")
       await recalculateAndSaveSystemStats(database)
+      setLastSyncTime(new Date())
+      setNextSyncIn(300)
       toast({ title: "Sinkronisasi Berhasil", description: "Statistik sistem telah diperbarui dengan data Cancel Dinas & Tahapan Dinas terkini." })
     } catch (err) {
       console.error(err)
@@ -199,6 +203,37 @@ export default function DashboardStatsPage() {
       setIsSyncing(false)
     }
   }
+
+  // AUTO-SYNC SETIAP 5 MENIT
+  useEffect(() => {
+    if (!database) return;
+
+    // Countdown mundur setiap detik
+    const countdownTimer = setInterval(() => {
+      setNextSyncIn(prev => {
+        if (prev <= 1) return 300; // reset
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Sync otomatis setiap 5 menit (300 detik)
+    const autoSyncTimer = setInterval(async () => {
+      if (!database) return;
+      try {
+        const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service");
+        await recalculateAndSaveSystemStats(database);
+        setLastSyncTime(new Date());
+        setNextSyncIn(300);
+      } catch (err) {
+        console.error("Auto-sync gagal:", err);
+      }
+    }, 5 * 60 * 1000); // 5 menit
+
+    return () => {
+      clearInterval(countdownTimer);
+      clearInterval(autoSyncTimer);
+    };
+  }, [database]);
 
   const coordinatorStats = useMemo(() => {
     if (!systemStats?.coordinator) return []
@@ -473,7 +508,25 @@ export default function DashboardStatsPage() {
             Monitor pendaftaran, alur verifikasi dinas, dan status pelaku usaha secara real-time.
           </p>
         </div>
-        <div className="flex items-center gap-2 lg:gap-3">
+        <div className="flex items-center gap-2 lg:gap-3 flex-wrap justify-end">
+          {/* Auto-sync countdown info */}
+          <div className="glass-panel px-3 py-1.5 md:px-4 md:py-2 rounded-xl flex items-center gap-2 border border-blue-200/60 bg-blue-50/80">
+            <div className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-blue-500 animate-ping' : 'bg-blue-400 animate-pulse'}`} />
+            <div className="flex flex-col leading-none">
+              <span className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase tracking-wider">
+                AUTO SYNC
+              </span>
+              <span className="text-[10px] md:text-xs font-black text-blue-700 font-mono">
+                {isSyncing ? 'Sinkronisasi...' : `${Math.floor(nextSyncIn / 60)}:${String(nextSyncIn % 60).padStart(2, '0')}`}
+              </span>
+            </div>
+            {lastSyncTime && (
+              <span className="text-[9px] text-blue-500 font-semibold hidden md:inline">
+                Terakhir: {lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false })} WIB
+              </span>
+            )}
+          </div>
+
           {userProfile?.role === 'admin' && (
             <Button 
               variant="outline" 
