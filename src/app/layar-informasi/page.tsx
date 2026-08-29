@@ -5,7 +5,6 @@ import { useDatabase, useObject, useList, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, equalTo } from 'firebase/database';
 import { BusinessActor } from '../lib/types';
 import { cn } from '@/lib/utils';
-import { useActiveEvent } from '@/hooks/use-active-event';
 import { 
   UserCheck, 
   UserX, 
@@ -16,7 +15,6 @@ import {
   Maximize2, 
   Minimize2, 
   Clock, 
-  Calendar, 
   Radio, 
   Loader2
 } from 'lucide-react';
@@ -64,6 +62,7 @@ export default function LayarInformasiPage() {
   const database = useDatabase();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [activeMobileTab, setActiveMobileTab] = useState<'verifikasi' | 'hasil'>('verifikasi');
 
   // 1. Fetch real-time system stats
   const statsRef = useMemoFirebase(() => {
@@ -87,14 +86,6 @@ export default function LayarInformasiPage() {
   const { data: runningTextConfig } = useObject(runningTextRef);
   const defaultRunningText = "SELAMAT DATANG DI APLIKASI SISTEM INFORMASI MANAJEMEN PELAKU USAHA (SIMPU) TAHUN 2026 • STATUS VERIFIKASI DATA DAN SURVEY DINAS DIPERBARUI SECARA REALTIME";
   const runningText = (typeof runningTextConfig === 'string' ? runningTextConfig : runningTextConfig?.text) || defaultRunningText;
-
-  // 4. Event Countdown from Firebase
-  const eventInfoRef = useMemoFirebase(() => {
-    if (!database) return null;
-    return ref(database, 'settings/event_info');
-  }, [database]);
-  const { data: eventInfo } = useObject(eventInfoRef);
-  const activeEvent = useActiveEvent(eventInfo);
 
   // Realtime Clock Tick
   useEffect(() => {
@@ -246,44 +237,45 @@ export default function LayarInformasiPage() {
   }, []);
 
   return (
-    <div className="h-[100dvh] w-full max-h-[100dvh] bg-[#060a12] text-white flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-white overflow-hidden select-none p-2 sm:p-3 md:p-3.5 gap-2">
+    <div className="min-h-screen lg:h-[100dvh] lg:max-h-[100dvh] w-full bg-[#060a12] text-white flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-white overflow-y-auto lg:overflow-hidden select-none p-2 sm:p-3 md:p-3.5 gap-2.5">
       
       {/* ─────────────────────────────────────────────────────────────
           1. HEADER (DENGAN GRADASI BATAS LUAR)
       ────────────────────────────────────────────────────────────── */}
       <div className="p-[2px] rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 shadow-[0_0_20px_rgba(6,182,212,0.25)] shrink-0">
-        <header className="flex items-center justify-between px-4 py-2 md:px-5 md:py-2.5 rounded-[14px] bg-slate-900/95">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg ring-2 ring-white/20 shrink-0">
-              <SimpuLogo className="w-6 h-6 text-white" />
+        <header className="flex items-center justify-between px-3.5 py-2 md:px-5 md:py-2.5 rounded-[14px] bg-slate-900/95">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 md:w-11 md:h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg ring-2 ring-white/20 shrink-0">
+              <SimpuLogo className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 animate-pulse leading-none">
+                <span className="px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 animate-pulse leading-none">
                   LIVE DISPLAY MONITORING
                 </span>
               </div>
-              <h1 className="text-base md:text-xl lg:text-2xl font-black text-white uppercase tracking-tight font-headline leading-tight mt-0.5 drop-shadow">
+              <h1 className="text-sm sm:text-base md:text-xl lg:text-2xl font-black text-white uppercase tracking-tight font-headline leading-tight mt-0.5 drop-shadow">
                 SISTEM INFORMASI MANAGEMEN PELAKU USAHA 2026
               </h1>
             </div>
           </div>
 
           {/* Controls */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2 bg-emerald-950/80 border border-emerald-500/50 px-3 py-1.5 rounded-xl shadow-inner">
-              <span className="relative flex h-2.5 w-2.5">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 md:gap-2 bg-emerald-950/80 border border-emerald-500/50 px-2.5 py-1 md:px-3 md:py-1.5 rounded-xl shadow-inner shrink-0">
+              <span className="relative flex h-2 w-2 md:h-2.5 md:w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-90"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 md:h-2.5 md:w-2.5 bg-emerald-400"></span>
               </span>
-              <span className="text-xs font-black uppercase tracking-wider text-emerald-300">
-                Realtime Online
+              <span className="text-[11px] md:text-xs font-black uppercase tracking-wider text-emerald-300">
+                Online
               </span>
             </div>
 
             <button
               onClick={toggleFullscreen}
-              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all text-white border border-slate-600 px-3.5 py-1.5 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-md"
+              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all text-white border border-slate-600 p-2 sm:px-3 sm:py-1.5 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-md shrink-0"
+              title="Layar Penuh"
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4 text-cyan-400" /> : <Maximize2 className="w-4 h-4 text-cyan-400" />}
               <span className="hidden sm:inline">{isFullscreen ? "Normal" : "Layar Penuh"}</span>
@@ -295,7 +287,7 @@ export default function LayarInformasiPage() {
       {/* ─────────────────────────────────────────────────────────────
           2. BAGIAN ATAS: 6 CARD WIDGET (DENGAN GRADASI BATAS LUAR)
       ────────────────────────────────────────────────────────────── */}
-      <section className="shrink-0 grid grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
+      <section className="shrink-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
         {cardStats.map((item, idx) => {
           const Icon = item.icon;
           return (
@@ -308,24 +300,24 @@ export default function LayarInformasiPage() {
             >
               <div className={cn("rounded-[14px] p-2.5 md:p-3 flex flex-col justify-between h-full bg-gradient-to-br", item.cardBg)}>
                 <div className="flex items-center justify-between gap-1 relative z-10">
-                  <span className="text-[11px] md:text-xs font-black uppercase tracking-wide text-white drop-shadow line-clamp-1">
+                  <span className="text-[10px] sm:text-[11px] md:text-xs font-black uppercase tracking-wide text-white drop-shadow truncate">
                     {item.title}
                   </span>
-                  <div className={cn("p-1.5 rounded-lg shrink-0", item.iconBg)}>
-                    <Icon className="w-4 h-4 text-white" />
+                  <div className={cn("p-1 sm:p-1.5 rounded-lg shrink-0", item.iconBg)}>
+                    <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                   </div>
                 </div>
 
-                <div className="mt-1.5 relative z-10 flex items-baseline justify-between">
-                  <div className="text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+                <div className="mt-1 relative z-10 flex items-baseline justify-between">
+                  <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
                     {isStatsLoading ? (
-                      <Loader2 className="w-5 h-5 animate-spin text-white" />
+                      <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-white" />
                     ) : (
                       (item.count || 0).toLocaleString('id-ID')
                     )}
                   </div>
-                  <span className="text-[10px] md:text-xs font-extrabold text-white/90 uppercase tracking-wider">
-                    {item.subtitle || "Data Realtime"}
+                  <span className="text-[9px] sm:text-[10px] md:text-xs font-extrabold text-white/90 uppercase tracking-wider">
+                    {item.subtitle || "Realtime"}
                   </span>
                 </div>
               </div>
@@ -335,12 +327,47 @@ export default function LayarInformasiPage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
+          MOBILE TAB SWITCHER (HANYA MUNCUL DI SMARTPHONE / < LG)
+      ────────────────────────────────────────────────────────────── */}
+      <div className="flex lg:hidden items-center p-1 rounded-xl bg-slate-900 border border-slate-700 shadow-md shrink-0 gap-1">
+        <button
+          type="button"
+          onClick={() => setActiveMobileTab('verifikasi')}
+          className={cn(
+            "flex-1 py-2 px-3 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all",
+            activeMobileTab === 'verifikasi'
+              ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md ring-1 ring-white/20"
+              : "text-slate-400 hover:text-slate-200"
+          )}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Verifikasi Dinas ({latestVerifikasiDinas.length})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveMobileTab('hasil')}
+          className={cn(
+            "flex-1 py-2 px-3 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all",
+            activeMobileTab === 'hasil'
+              ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-md ring-1 ring-white/20"
+              : "text-slate-400 hover:text-slate-200"
+          )}
+        >
+          <ListChecks className="w-3.5 h-3.5" />
+          <span>Hasil Dinas ({latestHasilVerifikasi.length})</span>
+        </button>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
           3. BAGIAN TENGAH: 2 TABEL DENGAN GRADASI BATAS LUAR
       ────────────────────────────────────────────────────────────── */}
       <section className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-2.5 md:gap-3">
         
-        {/* TABEL 1: VERIFIKASI DINAS (WRAPPER GRADASI BATAS LUAR) */}
-        <div className="relative p-[2.5px] rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 shadow-[0_0_25px_rgba(99,102,241,0.35)] flex flex-col min-h-0 overflow-hidden">
+        {/* TABEL 1: VERIFIKASI DINAS (TAHAP 2) */}
+        <div className={cn(
+          "relative p-[2.5px] rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 shadow-[0_0_25px_rgba(99,102,241,0.35)] flex flex-col min-h-0 overflow-hidden",
+          activeMobileTab === 'verifikasi' ? "flex" : "hidden lg:flex"
+        )}>
           <div className="bg-[#0b1329] rounded-[13.5px] p-2.5 md:p-3 shadow-2xl flex flex-col justify-between min-h-0 h-full overflow-hidden">
             
             {/* Table Header Top Bar */}
@@ -363,100 +390,102 @@ export default function LayarInformasiPage() {
                   </p>
                 </div>
               </div>
-              <span className="hidden sm:inline-flex text-xs font-black text-indigo-200 bg-indigo-950 border border-indigo-600/60 px-2.5 py-1 rounded-xl shadow-sm">
+              <span className="text-xs font-black text-indigo-200 bg-indigo-950 border border-indigo-600/60 px-2.5 py-1 rounded-xl shadow-sm">
                 10 Terkini
               </span>
             </div>
 
-            {/* Table Container with Proportional Centered Columns */}
-            <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700 bg-[#050a14] overflow-hidden shadow-inner">
-              
-              {/* Column Headers */}
-              <div className="shrink-0 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center bg-[#18243e] border-b-2 border-indigo-500/40 px-2 py-2 text-xs font-black uppercase text-indigo-200 tracking-wider">
-                <div className="text-center">No</div>
-                <div className="text-left pl-2">Pelaku Usaha</div>
-                <div className="text-center">Waktu Masuk</div>
-                <div className="text-center">Petugas Survey</div>
-                <div className="text-center">Status</div>
-              </div>
+            {/* Table Container with Horizontal Scroll Support on Mobile */}
+            <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700 bg-[#050a14] overflow-x-auto overflow-y-hidden shadow-inner">
+              <div className="min-w-[540px] lg:min-w-0 flex-1 flex flex-col justify-between">
+                
+                {/* Column Headers */}
+                <div className="shrink-0 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center bg-[#18243e] border-b-2 border-indigo-500/40 px-2 py-2 text-xs font-black uppercase text-indigo-200 tracking-wider">
+                  <div className="text-center">No</div>
+                  <div className="text-left pl-2">Pelaku Usaha</div>
+                  <div className="text-center">Waktu Masuk</div>
+                  <div className="text-center">Petugas Survey</div>
+                  <div className="text-center">Status</div>
+                </div>
 
-              {/* 10 Stretch Rows with Clean Center Alignment */}
-              <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800">
-                {isTableLoading ? (
-                  <div className="flex-1 flex flex-col items-center justify-center text-slate-300 font-bold text-sm">
-                    <Loader2 className="w-7 h-7 animate-spin text-indigo-400 mb-2" />
-                    <span>Memuat Data Verifikasi Dinas...</span>
-                  </div>
-                ) : latestVerifikasiDinas.length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center text-slate-400 font-bold uppercase text-sm">
-                    Belum ada antrean data Verifikasi Dinas
-                  </div>
-                ) : (
-                  latestVerifikasiDinas.map((actor, idx) => {
-                    const dt = formatDateTimeSplit(actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt);
-                    return (
-                      <div 
-                        key={actor.id || idx}
-                        className={cn(
-                          "flex-1 min-h-0 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center px-2 transition-colors hover:bg-indigo-950/70",
-                          idx % 2 === 0 ? "bg-[#0a1224]" : "bg-[#0d1830]"
-                        )}
-                      >
-                        {/* 1. No (Rata Tengah) */}
-                        <div className="text-center font-black font-mono text-slate-200 text-sm sm:text-base">
-                          {idx + 1}
-                        </div>
-
-                        {/* 2. Pelaku Usaha (Sangat Jelas, Besar & Terbaca) */}
-                        <div className="min-w-0 pr-2 pl-2 flex flex-col justify-center">
-                          <div className="font-black text-white uppercase text-sm sm:text-base md:text-[17px] tracking-normal truncate leading-snug drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                            {actor.fullName || '-'}
+                {/* 10 Rows with Solid Row Height */}
+                <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800">
+                  {isTableLoading ? (
+                    <div className="py-12 flex flex-col items-center justify-center text-slate-300 font-bold text-sm">
+                      <Loader2 className="w-7 h-7 animate-spin text-indigo-400 mb-2" />
+                      <span>Memuat Data Verifikasi Dinas...</span>
+                    </div>
+                  ) : latestVerifikasiDinas.length === 0 ? (
+                    <div className="py-12 flex items-center justify-center text-slate-400 font-bold uppercase text-sm">
+                      Belum ada antrean data Verifikasi Dinas
+                    </div>
+                  ) : (
+                    latestVerifikasiDinas.map((actor, idx) => {
+                      const dt = formatDateTimeSplit(actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt);
+                      return (
+                        <div 
+                          key={actor.id || idx}
+                          className={cn(
+                            "min-h-[46px] sm:min-h-[48px] lg:min-h-0 lg:flex-1 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center px-2 py-1 transition-colors hover:bg-indigo-950/70",
+                            idx % 2 === 0 ? "bg-[#0a1224]" : "bg-[#0d1830]"
+                          )}
+                        >
+                          {/* 1. No */}
+                          <div className="text-center font-black font-mono text-slate-200 text-sm sm:text-base">
+                            {idx + 1}
                           </div>
-                          <div className="flex items-center gap-1.5 mt-0.5 truncate">
-                            <span className="text-xs sm:text-[13px] font-black text-cyan-300 uppercase tracking-tight truncate">
-                              {actor.businessName || 'USAHA'}
+
+                          {/* 2. Pelaku Usaha */}
+                          <div className="min-w-0 pr-2 pl-2 flex flex-col justify-center">
+                            <div className="font-black text-white uppercase text-xs sm:text-sm md:text-base lg:text-[17px] tracking-normal truncate leading-snug drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                              {actor.fullName || '-'}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-0.5 truncate">
+                              <span className="text-[11px] sm:text-xs md:text-[13px] font-black text-cyan-300 uppercase tracking-tight truncate">
+                                {actor.businessName || 'USAHA'}
+                              </span>
+                              {actor.kelurahan && (
+                                <>
+                                  <span className="text-slate-400 font-bold">•</span>
+                                  <span className="text-[10px] sm:text-[11px] md:text-xs font-extrabold text-amber-300/90 uppercase tracking-wide truncate">
+                                    {actor.kelurahan}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* 3. Waktu Masuk */}
+                          <div className="text-center flex flex-col items-center justify-center leading-tight">
+                            <span className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                              {dt.time}
                             </span>
-                            {actor.kelurahan && (
-                              <>
-                                <span className="text-slate-400 font-bold">•</span>
-                                <span className="text-[11px] sm:text-xs font-extrabold text-amber-300/90 uppercase tracking-wide truncate">
-                                  {actor.kelurahan}
-                                </span>
-                              </>
-                            )}
+                            <span className="text-[10px] sm:text-[11px] font-bold text-slate-200 mt-0.5">
+                              {dt.date}
+                            </span>
+                          </div>
+
+                          {/* 4. Petugas Survey */}
+                          <div className="text-center flex items-center justify-center px-1">
+                            <span className="text-xs sm:text-[13px] font-black text-emerald-300 uppercase leading-snug line-clamp-2 drop-shadow-sm">
+                              {getSurveyorName(actor)}
+                            </span>
+                          </div>
+
+                          {/* 5. Status */}
+                          <div className="text-center flex items-center justify-center">
+                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-black uppercase tracking-wide bg-amber-500/30 text-amber-200 border-2 border-amber-400/80 shadow-md">
+                              Cek Berkas
+                            </span>
                           </div>
                         </div>
+                      );
+                    })
+                  )}
+                </div>
 
-                        {/* 3. Waktu Masuk (Rata Tengah 2 Baris) */}
-                        <div className="text-center flex flex-col items-center justify-center leading-tight">
-                          <span className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                            {dt.time}
-                          </span>
-                          <span className="text-[11px] sm:text-xs font-bold text-slate-200 mt-0.5">
-                            {dt.date}
-                          </span>
-                        </div>
-
-                        {/* 4. Petugas Survey (Rata Tengah) */}
-                        <div className="text-center flex items-center justify-center px-1">
-                          <span className="text-xs sm:text-[13px] font-black text-emerald-300 uppercase leading-snug line-clamp-2 drop-shadow-sm">
-                            {getSurveyorName(actor)}
-                          </span>
-                        </div>
-
-                        {/* 5. Status (Rata Tengah) */}
-                        <div className="text-center flex items-center justify-center">
-                          <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-black uppercase tracking-wide bg-amber-500/30 text-amber-200 border-2 border-amber-400/80 shadow-md">
-                            Cek Berkas
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
               </div>
-
             </div>
 
             {/* Table Footer Stats */}
@@ -464,14 +493,17 @@ export default function LayarInformasiPage() {
               <span className="font-black uppercase tracking-wide">
                 Total Antrean: <strong className="text-indigo-300 font-mono text-sm">{systemStats?.detailedStatus?.verifikasi ?? 0} Pelaku Usaha</strong>
               </span>
-              <span className="text-slate-400 text-[11px] font-semibold">Pembaruan Otomatis Realtime</span>
+              <span className="text-slate-400 text-[11px] font-semibold">Pembaruan Realtime</span>
             </div>
 
           </div>
         </div>
 
-        {/* TABEL 2: HASIL DINAS (WRAPPER GRADASI BATAS LUAR) */}
-        <div className="relative p-[2.5px] rounded-2xl bg-gradient-to-br from-teal-400 via-cyan-500 to-emerald-500 shadow-[0_0_25px_rgba(20,184,166,0.35)] flex flex-col min-h-0 overflow-hidden">
+        {/* TABEL 2: HASIL DINAS (TAHAP 3) */}
+        <div className={cn(
+          "relative p-[2.5px] rounded-2xl bg-gradient-to-br from-teal-400 via-cyan-500 to-emerald-500 shadow-[0_0_25px_rgba(20,184,166,0.35)] flex flex-col min-h-0 overflow-hidden",
+          activeMobileTab === 'hasil' ? "flex" : "hidden lg:flex"
+        )}>
           <div className="bg-[#081a24] rounded-[13.5px] p-2.5 md:p-3 shadow-2xl flex flex-col justify-between min-h-0 h-full overflow-hidden">
             
             {/* Table Header Top Bar */}
@@ -494,100 +526,102 @@ export default function LayarInformasiPage() {
                   </p>
                 </div>
               </div>
-              <span className="hidden sm:inline-flex text-xs font-black text-teal-200 bg-teal-950 border border-teal-600/60 px-2.5 py-1 rounded-xl shadow-sm">
+              <span className="text-xs font-black text-teal-200 bg-teal-950 border border-teal-600/60 px-2.5 py-1 rounded-xl shadow-sm">
                 10 Terkini
               </span>
             </div>
 
-            {/* Table Container with Proportional Centered Columns */}
-            <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700 bg-[#040e14] overflow-hidden shadow-inner">
-              
-              {/* Column Headers */}
-              <div className="shrink-0 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center bg-[#112a38] border-b-2 border-teal-500/40 px-2 py-2 text-xs font-black uppercase text-teal-200 tracking-wider">
-                <div className="text-center">No</div>
-                <div className="text-left pl-2">Pelaku Usaha</div>
-                <div className="text-center">Waktu Verifikasi</div>
-                <div className="text-center">Petugas Verifikator</div>
-                <div className="text-center">Status</div>
-              </div>
+            {/* Table Container with Horizontal Scroll Support on Mobile */}
+            <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700 bg-[#040e14] overflow-x-auto overflow-y-hidden shadow-inner">
+              <div className="min-w-[540px] lg:min-w-0 flex-1 flex flex-col justify-between">
+                
+                {/* Column Headers */}
+                <div className="shrink-0 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center bg-[#112a38] border-b-2 border-teal-500/40 px-2 py-2 text-xs font-black uppercase text-teal-200 tracking-wider">
+                  <div className="text-center">No</div>
+                  <div className="text-left pl-2">Pelaku Usaha</div>
+                  <div className="text-center">Waktu Verifikasi</div>
+                  <div className="text-center">Petugas Verifikator</div>
+                  <div className="text-center">Status</div>
+                </div>
 
-              {/* 10 Stretch Rows with Clean Center Alignment */}
-              <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800">
-                {isTableLoading ? (
-                  <div className="flex-1 flex flex-col items-center justify-center text-slate-300 font-bold text-sm">
-                    <Loader2 className="w-7 h-7 animate-spin text-teal-400 mb-2" />
-                    <span>Memuat Data Hasil Dinas...</span>
-                  </div>
-                ) : latestHasilVerifikasi.length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center text-slate-400 font-bold uppercase text-sm">
-                    Belum ada data Hasil Dinas terbaru
-                  </div>
-                ) : (
-                  latestHasilVerifikasi.map((actor, idx) => {
-                    const dt = formatDateTimeSplit(actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt);
-                    return (
-                      <div 
-                        key={actor.id || idx}
-                        className={cn(
-                          "flex-1 min-h-0 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center px-2 transition-colors hover:bg-teal-950/70",
-                          idx % 2 === 0 ? "bg-[#06151f]" : "bg-[#0a1e2c]"
-                        )}
-                      >
-                        {/* 1. No (Rata Tengah) */}
-                        <div className="text-center font-black font-mono text-slate-300 text-sm sm:text-base">
-                          {idx + 1}
-                        </div>
-
-                        {/* 2. Pelaku Usaha (Sangat Jelas, Besar & Terbaca) */}
-                        <div className="min-w-0 pr-2 pl-2 flex flex-col justify-center">
-                          <div className="font-black text-white uppercase text-sm sm:text-base md:text-[17px] tracking-normal truncate leading-snug drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                            {actor.fullName || '-'}
+                {/* 10 Rows with Solid Row Height */}
+                <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800">
+                  {isTableLoading ? (
+                    <div className="py-12 flex flex-col items-center justify-center text-slate-300 font-bold text-sm">
+                      <Loader2 className="w-7 h-7 animate-spin text-teal-400 mb-2" />
+                      <span>Memuat Data Hasil Dinas...</span>
+                    </div>
+                  ) : latestHasilVerifikasi.length === 0 ? (
+                    <div className="py-12 flex items-center justify-center text-slate-400 font-bold uppercase text-sm">
+                      Belum ada data Hasil Dinas terbaru
+                    </div>
+                  ) : (
+                    latestHasilVerifikasi.map((actor, idx) => {
+                      const dt = formatDateTimeSplit(actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt);
+                      return (
+                        <div 
+                          key={actor.id || idx}
+                          className={cn(
+                            "min-h-[46px] sm:min-h-[48px] lg:min-h-0 lg:flex-1 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center px-2 py-1 transition-colors hover:bg-teal-950/70",
+                            idx % 2 === 0 ? "bg-[#06151f]" : "bg-[#0a1e2c]"
+                          )}
+                        >
+                          {/* 1. No */}
+                          <div className="text-center font-black font-mono text-slate-300 text-sm sm:text-base">
+                            {idx + 1}
                           </div>
-                          <div className="flex items-center gap-1.5 mt-0.5 truncate">
-                            <span className="text-xs sm:text-[13px] font-black text-teal-300 uppercase tracking-tight truncate">
-                              {actor.businessName || 'USAHA'}
+
+                          {/* 2. Pelaku Usaha */}
+                          <div className="min-w-0 pr-2 pl-2 flex flex-col justify-center">
+                            <div className="font-black text-white uppercase text-xs sm:text-sm md:text-base lg:text-[17px] tracking-normal truncate leading-snug drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                              {actor.fullName || '-'}
+                            </div>
+                            <div className="flex items-center gap-1.5 mt-0.5 truncate">
+                              <span className="text-[11px] sm:text-xs md:text-[13px] font-black text-teal-300 uppercase tracking-tight truncate">
+                                {actor.businessName || 'USAHA'}
+                              </span>
+                              {actor.kelurahan && (
+                                <>
+                                  <span className="text-slate-400 font-bold">•</span>
+                                  <span className="text-[10px] sm:text-[11px] md:text-xs font-extrabold text-amber-300/90 uppercase tracking-wide truncate">
+                                    {actor.kelurahan}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* 3. Waktu Verifikasi */}
+                          <div className="text-center flex flex-col items-center justify-center leading-tight">
+                            <span className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                              {dt.time}
                             </span>
-                            {actor.kelurahan && (
-                              <>
-                                <span className="text-slate-400 font-bold">•</span>
-                                <span className="text-[11px] sm:text-xs font-extrabold text-amber-300/90 uppercase tracking-wide truncate">
-                                  {actor.kelurahan}
-                                </span>
-                              </>
-                            )}
+                            <span className="text-[10px] sm:text-[11px] font-bold text-slate-200 mt-0.5">
+                              {dt.date}
+                            </span>
+                          </div>
+
+                          {/* 4. Petugas Verifikator */}
+                          <div className="text-center flex items-center justify-center px-1">
+                            <span className="text-xs sm:text-[13px] font-black text-emerald-300 uppercase leading-snug line-clamp-2 drop-shadow-sm">
+                              {getVerifikatorName(actor)}
+                            </span>
+                          </div>
+
+                          {/* 5. Status */}
+                          <div className="text-center flex items-center justify-center">
+                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-black uppercase tracking-wide bg-emerald-500/30 text-emerald-200 border-2 border-emerald-400/80 shadow-md">
+                              ✓ Lolos Berkas
+                            </span>
                           </div>
                         </div>
+                      );
+                    })
+                  )}
+                </div>
 
-                        {/* 3. Waktu Verifikasi (Rata Tengah 2 Baris) */}
-                        <div className="text-center flex flex-col items-center justify-center leading-tight">
-                          <span className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                            {dt.time}
-                          </span>
-                          <span className="text-[11px] sm:text-xs font-bold text-slate-200 mt-0.5">
-                            {dt.date}
-                          </span>
-                        </div>
-
-                        {/* 4. Petugas Verifikator (Rata Tengah) */}
-                        <div className="text-center flex items-center justify-center px-1">
-                          <span className="text-xs sm:text-[13px] font-black text-emerald-300 uppercase leading-snug line-clamp-2 drop-shadow-sm">
-                            {getVerifikatorName(actor)}
-                          </span>
-                        </div>
-
-                        {/* 5. Status (Rata Tengah) */}
-                        <div className="text-center flex items-center justify-center">
-                          <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-black uppercase tracking-wide bg-emerald-500/30 text-emerald-200 border-2 border-emerald-400/80 shadow-md">
-                            ✓ Lolos Berkas
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
               </div>
-
             </div>
 
             {/* Table Footer Stats */}
@@ -595,7 +629,7 @@ export default function LayarInformasiPage() {
               <span className="font-black uppercase tracking-wide">
                 Total Selesai: <strong className="text-teal-300 font-mono text-sm">{systemStats?.detailedStatus?.hasilVerifikasi ?? 0} Pelaku Usaha</strong>
               </span>
-              <span className="text-slate-400 text-[11px] font-semibold">Pembaruan Otomatis Realtime</span>
+              <span className="text-slate-400 text-[11px] font-semibold">Pembaruan Realtime</span>
             </div>
 
           </div>
@@ -611,7 +645,7 @@ export default function LayarInformasiPage() {
           
           {/* Row 1: Running Text (Marquee) */}
           <div className="w-full bg-[#022c2a] border-b border-cyan-500/40 py-1.5 overflow-hidden flex items-center">
-            <div className="bg-cyan-400 text-slate-950 px-3 py-0.5 text-xs font-black uppercase tracking-widest shrink-0 flex items-center gap-1.5 shadow-md ml-2 rounded-md">
+            <div className="bg-cyan-400 text-slate-950 px-2.5 py-0.5 text-[10px] sm:text-xs font-black uppercase tracking-widest shrink-0 flex items-center gap-1.5 shadow-md ml-2 rounded-md">
               <Radio className="w-3.5 h-3.5 animate-pulse text-slate-950" />
               PENGUMUMAN
             </div>
@@ -629,43 +663,22 @@ export default function LayarInformasiPage() {
             </div>
           </div>
 
-          {/* Row 2: Bottom Bar (Sudut Kiri Clock, Sudut Kanan Countdown Event) */}
-          <div className="px-4 py-2 md:px-6 md:py-2.5 flex items-center justify-between gap-3 bg-[#0a101d]">
+          {/* Row 2: Bottom Bar (Realtime Clock Rata Tengah) */}
+          <div className="px-4 py-2 md:px-6 md:py-2.5 flex items-center justify-center bg-[#0a101d]">
             
-            {/* SUDUT KIRI: REALTIME CLOCK */}
-            <div className="flex items-center gap-3 bg-slate-950 border border-slate-700 px-4 py-1.5 rounded-2xl shadow-md shrink-0">
-              <Clock className="w-6 h-6 text-cyan-400 animate-pulse" />
-              <div className="flex items-baseline gap-2.5">
-                <span className="text-lg md:text-2xl font-black text-white font-mono tracking-wider">
+            {/* REALTIME CLOCK RATA TENGAH */}
+            <div className="flex items-center gap-2.5 sm:gap-3 bg-slate-950 border border-slate-700/80 px-4 py-1.5 sm:px-6 sm:py-2 rounded-2xl shadow-md">
+              <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400 animate-pulse" />
+              <div className="flex items-baseline gap-2 sm:gap-3">
+                <span className="text-base sm:text-xl md:text-2xl font-black text-white font-mono tracking-wider">
                   {currentTime ? currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') : '--:--:--'}
                   <span className="text-xs text-cyan-400 font-black ml-1">WIB</span>
                 </span>
-                <span className="text-xs md:text-sm font-black text-slate-300 uppercase tracking-wider hidden sm:inline">
+                <span className="text-xs sm:text-sm font-black text-slate-300 uppercase tracking-wider">
                   {currentTime ? currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}
                 </span>
               </div>
             </div>
-
-            {/* SUDUT KANAN: COUNTDOWN EVENT */}
-            {activeEvent ? (
-              <div className="flex items-center gap-3 bg-slate-950 border-2 border-cyan-500/60 px-4 py-1.5 rounded-2xl shadow-lg shrink-0">
-                <div className="flex items-center gap-2 leading-none">
-                  <span className="px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black uppercase tracking-wider bg-rose-500/30 text-rose-200 border border-rose-400/60 flex items-center gap-1 shadow-sm">
-                    <Calendar className="w-3.5 h-3.5" />
-                    EVENT
-                  </span>
-                  <span className="text-xs md:text-sm lg:text-base font-black text-cyan-200 uppercase truncate max-w-[200px] sm:max-w-[320px] drop-shadow">
-                    {activeEvent.description || 'Jadwal Event'}
-                  </span>
-                </div>
-                <EventTimerDisplay targetDate={activeEvent.endDate || activeEvent.date} startDate={activeEvent.startDate} />
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3.5 py-1.5 rounded-2xl text-slate-400 text-xs font-black uppercase tracking-wider shrink-0">
-                <Calendar className="w-4 h-4 text-slate-500" />
-                <span>Tidak Ada Event Aktif</span>
-              </div>
-            )}
 
           </div>
         </footer>
@@ -687,77 +700,6 @@ export default function LayarInformasiPage() {
           }
         }
       `}</style>
-    </div>
-  );
-}
-
-// Subcomponent for Event Timer Display (Large & Crisp)
-function EventTimerDisplay({ targetDate, startDate }: { targetDate: string; startDate?: string }) {
-  const [timeLeft, setTimeLeft] = useState<{
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-    isEnded: boolean;
-    isStarted: boolean;
-  }>({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: false, isStarted: false });
-
-  useEffect(() => {
-    if (!targetDate) return;
-
-    const calculate = () => {
-      const now = +new Date();
-      const start = startDate ? +new Date(startDate) : 0;
-      const end = +new Date(targetDate);
-
-      let targetTime = end;
-      let isStarted = true;
-
-      if (start && now < start) {
-        isStarted = false;
-        targetTime = start;
-      }
-
-      const difference = targetTime - now;
-      if (isNaN(difference) || (isStarted && difference <= 0)) {
-        return { days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: now >= end, isStarted };
-      }
-
-      return {
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-        minutes: Math.floor((difference / 1000 / 60) % 60),
-        seconds: Math.floor((difference / 1000) % 60),
-        isEnded: false,
-        isStarted
-      };
-    };
-
-    setTimeLeft(calculate());
-    const interval = setInterval(() => {
-      setTimeLeft(calculate());
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [targetDate, startDate]);
-
-  if (timeLeft.isEnded) {
-    return <span className="text-xs font-black text-slate-400 uppercase">Selesai</span>;
-  }
-
-  return (
-    <div className="flex items-center gap-1.5 font-mono text-sm md:text-base lg:text-lg font-black text-white">
-      <span className="text-amber-300 font-black">{timeLeft.days}</span>
-      <span className="text-[10px] text-amber-200 uppercase mr-0.5">h</span>
-      <span className="text-cyan-400 font-black">:</span>
-      <span className="text-white font-black">{timeLeft.hours.toString().padStart(2, '0')}</span>
-      <span className="text-[10px] text-slate-300 uppercase mr-0.5">j</span>
-      <span className="text-cyan-400 font-black">:</span>
-      <span className="text-white font-black">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-      <span className="text-[10px] text-slate-300 uppercase mr-0.5">m</span>
-      <span className="text-cyan-400 font-black">:</span>
-      <span className="text-cyan-300 font-black">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-      <span className="text-[10px] text-cyan-200 uppercase">d</span>
     </div>
   );
 }
