@@ -173,8 +173,13 @@ export default function DashboardStatsPage() {
   }, [systemStats])
 
   const [isSyncing, setIsSyncing] = useState(false)
-  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
-  const [nextSyncIn, setNextSyncIn] = useState<number>(300) // detik, dimulai 5 menit
+  const [nextSyncIn, setNextSyncIn] = useState<number>(300)
+
+  const lastSyncTime = useMemo(() => {
+    if (!systemStats?.lastUpdated) return null;
+    const d = new Date(systemStats.lastUpdated);
+    return isNaN(d.getTime()) ? null : d;
+  }, [systemStats?.lastUpdated]);
 
   // Auto-heal / initialize stats if system_stats is empty or missing detailedStatus
   useEffect(() => {
@@ -193,8 +198,6 @@ export default function DashboardStatsPage() {
     try {
       const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service")
       await recalculateAndSaveSystemStats(database)
-      setLastSyncTime(new Date())
-      setNextSyncIn(300)
       toast({ title: "Sinkronisasi Berhasil", description: "Statistik sistem telah diperbarui dengan data Cancel Dinas & Tahapan Dinas terkini." })
     } catch (err) {
       console.error(err)
@@ -204,65 +207,34 @@ export default function DashboardStatsPage() {
     }
   }
 
-  // AUTO-SYNC SETIAP 5 MENIT — hanya berjalan saat halaman dashboard aktif & tab terlihat
+  // AUTO-SYNC & COUNTDOWN TIMER (Berjalan terus dan tersinkronisasi dengan waktu global)
   useEffect(() => {
-    if (!database) return;
+    const SYNC_INTERVAL = 300; // 5 menit dalam detik
 
-    const SYNC_INTERVAL = 5 * 60; // 300 detik
-    let lastSyncAt = Date.now();
-    let countdownTimer: ReturnType<typeof setInterval> | null = null;
-    let isPageVisible = !document.hidden;
+    const updateTimer = () => {
+      const lastTimeMs = systemStats?.lastUpdated ? new Date(systemStats.lastUpdated).getTime() : 0;
+      if (!lastTimeMs) {
+        setNextSyncIn(SYNC_INTERVAL);
+        return;
+      }
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - lastTimeMs) / 1000);
+      const remainingSeconds = Math.max(0, SYNC_INTERVAL - (elapsedSeconds % SYNC_INTERVAL));
+      setNextSyncIn(remainingSeconds);
 
-    const runSync = async () => {
-      try {
-        const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service");
-        await recalculateAndSaveSystemStats(database);
-        setLastSyncTime(new Date());
-      } catch (err) {
-        console.error("Auto-sync gagal:", err);
+      // Jika waktu sudah habis (>= 5 menit sejak update terakhir), lakukan sync otomatis
+      if (elapsedSeconds >= SYNC_INTERVAL && !isSyncing && database) {
+        import("@/lib/stats-service").then(({ recalculateAndSaveSystemStats }) => {
+          recalculateAndSaveSystemStats(database).catch(console.error);
+        });
       }
     };
 
-    const startCountdown = () => {
-      if (countdownTimer) clearInterval(countdownTimer);
-      countdownTimer = setInterval(() => {
-        if (!isPageVisible) return; // tidak update saat tab tersembunyi
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
 
-        const elapsed = Math.floor((Date.now() - lastSyncAt) / 1000);
-        const remaining = Math.max(0, SYNC_INTERVAL - elapsed);
-        setNextSyncIn(remaining);
-
-        if (remaining <= 0) {
-          lastSyncAt = Date.now();
-          setNextSyncIn(SYNC_INTERVAL);
-          runSync();
-        }
-      }, 1000);
-    };
-
-    const handleVisibilityChange = () => {
-      isPageVisible = !document.hidden;
-      if (isPageVisible) {
-        // Tab aktif kembali: cek apakah sudah waktunya sync
-        const elapsed = Math.floor((Date.now() - lastSyncAt) / 1000);
-        if (elapsed >= SYNC_INTERVAL) {
-          lastSyncAt = Date.now();
-          setNextSyncIn(SYNC_INTERVAL);
-          runSync();
-        } else {
-          setNextSyncIn(SYNC_INTERVAL - elapsed);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    startCountdown();
-
-    return () => {
-      if (countdownTimer) clearInterval(countdownTimer);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [database]);
+    return () => clearInterval(interval);
+  }, [systemStats?.lastUpdated, database, isSyncing]);
 
   const coordinatorStats = useMemo(() => {
     if (!systemStats?.coordinator) return []
