@@ -204,34 +204,63 @@ export default function DashboardStatsPage() {
     }
   }
 
-  // AUTO-SYNC SETIAP 5 MENIT
+  // AUTO-SYNC SETIAP 5 MENIT — hanya berjalan saat halaman dashboard aktif & tab terlihat
   useEffect(() => {
     if (!database) return;
 
-    // Countdown mundur setiap detik
-    const countdownTimer = setInterval(() => {
-      setNextSyncIn(prev => {
-        if (prev <= 1) return 300; // reset
-        return prev - 1;
-      });
-    }, 1000);
+    const SYNC_INTERVAL = 5 * 60; // 300 detik
+    let lastSyncAt = Date.now();
+    let countdownTimer: ReturnType<typeof setInterval> | null = null;
+    let isPageVisible = !document.hidden;
 
-    // Sync otomatis setiap 5 menit (300 detik)
-    const autoSyncTimer = setInterval(async () => {
-      if (!database) return;
+    const runSync = async () => {
       try {
         const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service");
         await recalculateAndSaveSystemStats(database);
         setLastSyncTime(new Date());
-        setNextSyncIn(300);
       } catch (err) {
         console.error("Auto-sync gagal:", err);
       }
-    }, 5 * 60 * 1000); // 5 menit
+    };
+
+    const startCountdown = () => {
+      if (countdownTimer) clearInterval(countdownTimer);
+      countdownTimer = setInterval(() => {
+        if (!isPageVisible) return; // tidak update saat tab tersembunyi
+
+        const elapsed = Math.floor((Date.now() - lastSyncAt) / 1000);
+        const remaining = Math.max(0, SYNC_INTERVAL - elapsed);
+        setNextSyncIn(remaining);
+
+        if (remaining <= 0) {
+          lastSyncAt = Date.now();
+          setNextSyncIn(SYNC_INTERVAL);
+          runSync();
+        }
+      }, 1000);
+    };
+
+    const handleVisibilityChange = () => {
+      isPageVisible = !document.hidden;
+      if (isPageVisible) {
+        // Tab aktif kembali: cek apakah sudah waktunya sync
+        const elapsed = Math.floor((Date.now() - lastSyncAt) / 1000);
+        if (elapsed >= SYNC_INTERVAL) {
+          lastSyncAt = Date.now();
+          setNextSyncIn(SYNC_INTERVAL);
+          runSync();
+        } else {
+          setNextSyncIn(SYNC_INTERVAL - elapsed);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    startCountdown();
 
     return () => {
-      clearInterval(countdownTimer);
-      clearInterval(autoSyncTimer);
+      if (countdownTimer) clearInterval(countdownTimer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [database]);
 
