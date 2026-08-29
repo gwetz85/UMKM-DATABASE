@@ -140,34 +140,35 @@ export default function LayarInformasiPage() {
   const runningText = (typeof runningTextConfig === 'string' ? runningTextConfig : runningTextConfig?.text) || defaultRunningText;
 
   // Last Sync Time from system_stats
-  const lastSyncTime = useMemo(() => {
-    if (!systemStats?.lastUpdated) return null;
-    const d = new Date(systemStats.lastUpdated);
-    return isNaN(d.getTime()) ? null : d;
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(() => {
+    return systemStats?.lastUpdated ? new Date(systemStats.lastUpdated) : new Date();
+  });
+
+  useEffect(() => {
+    if (systemStats?.lastUpdated) {
+      const d = new Date(systemStats.lastUpdated);
+      if (!isNaN(d.getTime())) {
+        setLastSyncTime(d);
+      }
+    }
   }, [systemStats?.lastUpdated]);
 
   const [nextSyncIn, setNextSyncIn] = useState<number>(300);
 
-  // Auto-sync countdown synchronized with systemStats.lastUpdated
+  // Smooth continuous countdown that counts down fully until 0:00
   useEffect(() => {
-    const SYNC_INTERVAL = 300; // 5 menit
+    const timer = setInterval(() => {
+      setNextSyncIn(prev => {
+        if (prev <= 1) {
+          setLastSyncTime(new Date());
+          return 300;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-    const updateTimer = () => {
-      const lastTimeMs = systemStats?.lastUpdated ? new Date(systemStats.lastUpdated).getTime() : 0;
-      if (!lastTimeMs) {
-        setNextSyncIn(SYNC_INTERVAL);
-        return;
-      }
-      const now = Date.now();
-      const elapsedSeconds = Math.floor((now - lastTimeMs) / 1000);
-      const remainingSeconds = Math.max(0, SYNC_INTERVAL - (elapsedSeconds % SYNC_INTERVAL));
-      setNextSyncIn(remainingSeconds);
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
-  }, [systemStats?.lastUpdated]);
+    return () => clearInterval(timer);
+  }, []);
 
   // Realtime Clock Tick
   useEffect(() => {

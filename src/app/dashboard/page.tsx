@@ -204,27 +204,20 @@ export default function DashboardStatsPage() {
     }
   }
 
-  // Tampilan Countdown Dashboard: Tersinkronisasi dengan waktu global lastUpdated
+  // Countdown Timer & Auto-Sync Execution every 5 minutes
   useEffect(() => {
-    const SYNC_INTERVAL = 300; // 5 menit dalam detik
+    const timer = setInterval(() => {
+      setNextSyncIn(prev => {
+        if (prev <= 1) {
+          handleSyncStats(true);
+          return 300;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-    const updateTimer = () => {
-      const lastTimeMs = systemStats?.lastUpdated ? new Date(systemStats.lastUpdated).getTime() : 0;
-      if (!lastTimeMs) {
-        setNextSyncIn(SYNC_INTERVAL);
-        return;
-      }
-      const now = Date.now();
-      const elapsedSeconds = Math.floor((now - lastTimeMs) / 1000);
-      const remainingSeconds = Math.max(0, SYNC_INTERVAL - (elapsedSeconds % SYNC_INTERVAL));
-      setNextSyncIn(remainingSeconds);
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [systemStats?.lastUpdated]);
+    return () => clearInterval(timer);
+  }, []);
 
   const coordinatorStats = useMemo(() => {
     if (!systemStats?.coordinator) return []
