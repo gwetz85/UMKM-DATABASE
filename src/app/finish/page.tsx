@@ -39,8 +39,10 @@ function FinishContent() {
   const searchParams = useSearchParams()
   const filterCoordinator = searchParams.get('coordinator')
 
+  const [searchInput, setSearchInput] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
   const [category, setCategory] = useState<string>("")
+  const [pageLimit, setPageLimit] = useState(60)
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
   const [showRevertDialog, setShowRevertDialog] = useState(false)
@@ -50,6 +52,15 @@ function FinishContent() {
   const [editNik, setEditNik] = useState("")
   const [editPob, setEditPob] = useState("")
   const [editDob, setEditDob] = useState("")
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearchQuery(searchInput), 250)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  useEffect(() => {
+    setPageLimit(60)
+  }, [searchQuery, category, filterCoordinator])
 
   useEffect(() => {
     if (viewingActor) {
@@ -570,8 +581,8 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input
                 placeholder="Cari nama / NIK / usaha…"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
                 className="pl-8 h-8 text-xs"
               />
             </div>
@@ -609,40 +620,54 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-            {actors?.map(actor => (
-              <Card
-                key={actor.id}
-                className="cursor-pointer hover:shadow-lg hover:border-green-400 transition-all group border-green-100"
-                onClick={() => setViewingActor(actor)}
-              >
-                <CardContent className="p-3 flex flex-col gap-1.5 h-full">
-                  <div className="flex-1">
-                    <p className="text-[11px] font-black uppercase line-clamp-2 leading-tight text-green-800 group-hover:text-green-600" title={actor.businessName}>
-                      {actor.businessName || "NAMA USAHA KOSONG"}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground uppercase line-clamp-1 font-bold flex items-center gap-1 mt-1" title={actor.fullName}>
-                      <User className="w-3 h-3 shrink-0" /> {actor.fullName}
-                    </p>
-                    <p className="text-[9px] text-muted-foreground font-mono mt-0.5">
-                      NIK: {actor.nik || "-"}
-                    </p>
-                    {actor.bankName && (
-                      <p className="text-[9px] text-muted-foreground mt-0.5">
-                        {actor.bankName} · {actor.bankNumber}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              {actors?.slice(0, pageLimit).map(actor => (
+                <Card
+                  key={actor.id}
+                  className="cursor-pointer hover:shadow-lg hover:border-green-400 transition-all group border-green-100"
+                  onClick={() => setViewingActor(actor)}
+                >
+                  <CardContent className="p-3 flex flex-col gap-1.5 h-full">
+                    <div className="flex-1">
+                      <p className="text-[11px] font-black uppercase line-clamp-2 leading-tight text-green-800 group-hover:text-green-600" title={actor.businessName}>
+                        {actor.businessName || "NAMA USAHA KOSONG"}
                       </p>
-                    )}
-                  </div>
-                  <div className="text-[9px] font-black uppercase bg-green-500 text-white w-full justify-center shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
-                    SELESAI
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {(!actors || actors.length === 0) && (
-              <div className="col-span-full py-20 text-center text-muted-foreground grid place-items-center">
-                <BadgeCheck className="w-12 h-12 mb-4 opacity-20" />
-                <p>Tidak ada data selesai yang ditemukan.</p>
+                      <p className="text-[10px] text-muted-foreground uppercase line-clamp-1 font-bold flex items-center gap-1 mt-1" title={actor.fullName}>
+                        <User className="w-3 h-3 shrink-0" /> {actor.fullName}
+                      </p>
+                      <p className="text-[9px] text-muted-foreground font-mono mt-0.5">
+                        NIK: {actor.nik || "-"}
+                      </p>
+                      {actor.bankName && (
+                        <p className="text-[9px] text-muted-foreground mt-0.5">
+                          {actor.bankName} · {actor.bankNumber}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-[9px] font-black uppercase bg-green-500 text-white w-full justify-center shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
+                      SELESAI
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {(!actors || actors.length === 0) && (
+                <div className="col-span-full py-20 text-center text-muted-foreground grid place-items-center">
+                  <BadgeCheck className="w-12 h-12 mb-4 opacity-20" />
+                  <p>Tidak ada data selesai yang ditemukan.</p>
+                </div>
+              )}
+            </div>
+
+            {actors && actors.length > pageLimit && (
+              <div className="p-4 flex justify-center">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setPageLimit(prev => prev + 60)} 
+                  className="font-bold border-green-600 text-green-700 hover:bg-green-50"
+                >
+                  Tampilkan Lebih Banyak Data (+60)
+                </Button>
               </div>
             )}
           </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject } from "@/firebase"
-import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -32,11 +32,12 @@ import { cn } from "@/lib/utils"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 
 export default function LPJPage() {
-  const { user } = useUser()
+  const { user, userProfile } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
   const [mounted, setMounted] = useState(false)
   const [filterCoordinator, setFilterCoordinator] = useState<string>("all")
+  const [pageLimit, setPageLimit] = useState(50)
   const [printDate, setPrintDate] = useState<string>("")
   const [showUnblacklistDialog, setShowUnblacklistDialog] = useState(false)
   const [unblacklistPending, setUnblacklistPending] = useState<{ id: string; fullName: string } | null>(null)
@@ -46,12 +47,9 @@ export default function LPJPage() {
     setPrintDate(new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }))
   }, [])
 
-  const userProfileRef = useMemoFirebase(() => {
-    if (!user || !database) return null
-    return ref(database, 'system_users')
-  }, [user, database])
-  const { data: allUsersForProfile } = useList(userProfileRef)
-  const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
+  useEffect(() => {
+    setPageLimit(50)
+  }, [filterCoordinator])
 
   const isAdmin = userProfile?.role === 'admin'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
@@ -62,7 +60,7 @@ export default function LPJPage() {
 
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
-    return ref(database, 'businessActors')
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('finish'))
   }, [database])
   
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
@@ -245,7 +243,7 @@ export default function LPJPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {actors?.map((actor) => {
+                  {actors?.slice(0, pageLimit).map((actor) => {
                     const entryDate = actor.lpjEntryDate ? new Date(actor.lpjEntryDate) : new Date()
                     const deadlineDate = new Date(entryDate.getTime() + (14 * 24 * 60 * 60 * 1000))
                     const daysInLPJ = Math.floor((new Date().getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -348,6 +346,17 @@ export default function LPJPage() {
                   )}
                 </TableBody>
               </Table>
+              {actors && actors.length > pageLimit && (
+                <div className="p-4 flex justify-center border-t bg-slate-50">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setPageLimit(prev => prev + 50)} 
+                    className="font-bold border-primary text-primary hover:bg-primary/10 text-xs"
+                  >
+                    Tampilkan Lebih Banyak Data (+50)
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>

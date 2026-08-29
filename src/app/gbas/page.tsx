@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useDeferredValue } from "react"
+import { useState, useMemo, useEffect, useDeferredValue } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, useObject, updateDocumentNonBlocking } from "@/firebase"
 import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -61,6 +61,11 @@ export default function GBASPage() {
   const [verifikatorFilter, setVerifikatorFilter] = useState<string>("ALL")
   const [petugasFilter, setPetugasFilter] = useState<string>("ALL")
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
+  const [pageLimit, setPageLimit] = useState(50)
+
+  useEffect(() => {
+    setPageLimit(50)
+  }, [deferredSearch, statusFilter, kecamatanFilter, kelurahanFilter, verifikatorFilter, petugasFilter])
 
   // State multi-selection
   const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -1022,7 +1027,7 @@ export default function GBASPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredActors.map((actor, idx) => {
+                    filteredActors.slice(0, pageLimit).map((actor, idx) => {
                       const stage = getActorMenuStage(actor)
                       const survey = actor.surveyData
                       const pejabats = survey?.pejabatData || actor.pejabatData
@@ -1165,126 +1170,148 @@ export default function GBASPage() {
                 </TableBody>
               </Table>
             </div>
+            {filteredActors.length > pageLimit && (
+              <div className="p-4 flex justify-center border-t bg-slate-50">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setPageLimit(prev => prev + 50)} 
+                  className="font-bold border-indigo-600 text-indigo-700 hover:bg-indigo-50 text-xs"
+                >
+                  Tampilkan Lebih Banyak Data (+50)
+                </Button>
+              </div>
+            )}
           </Card>
         ) : (
-          /* ───────────────────────────────────────────────────────────────────────────── */
-          /* TAMPILAN GRID KARTU (CARD VIEW) */
-          /* ───────────────────────────────────────────────────────────────────────────── */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredActors.map((actor, idx) => {
-              const stage = getActorMenuStage(actor)
-              const survey = actor.surveyData
-              const pejabats = survey?.pejabatData || actor.pejabatData
-              const vNama = pejabats?.verifikator?.nama || (actor as any).verifikatorDinas || (actor as any).verifiedDinasBy || "-"
-              const vNip = pejabats?.verifikator?.nipppk || ""
-              const pNama = pejabats?.petugas?.nama || actor.petugasSurvey || actor.createdBy || "-"
-              const pNip = pejabats?.petugas?.nipppk || ""
-              const isSelected = selectedIds.includes(actor.id)
-              const isGeneratingThis = generatingPdfId === actor.id
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredActors.slice(0, pageLimit).map((actor, idx) => {
+                const stage = getActorMenuStage(actor)
+                const survey = actor.surveyData
+                const pejabats = survey?.pejabatData || actor.pejabatData
+                const vNama = pejabats?.verifikator?.nama || (actor as any).verifikatorDinas || (actor as any).verifiedDinasBy || "-"
+                const vNip = pejabats?.verifikator?.nipppk || ""
+                const pNama = pejabats?.petugas?.nama || actor.petugasSurvey || actor.createdBy || "-"
+                const pNip = pejabats?.petugas?.nipppk || ""
+                const isSelected = selectedIds.includes(actor.id)
+                const isGeneratingThis = generatingPdfId === actor.id
 
-              return (
-                <Card 
-                  key={actor.id} 
-                  className={`border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden bg-white ${isSelected ? 'ring-2 ring-indigo-500' : ''}`}
+                return (
+                  <Card 
+                    key={actor.id} 
+                    className={`border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden bg-white ${isSelected ? 'ring-2 ring-indigo-500' : ''}`}
+                  >
+                    <CardContent className="p-4 space-y-3">
+                      {/* Header Kartu */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => handleToggleSelect(actor.id)}
+                            aria-label={`Pilih ${actor.fullName}`}
+                          />
+                          <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0">
+                            {idx + 1}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="font-black text-xs text-slate-900 truncate" title={actor.fullName}>
+                              {actor.fullName}
+                            </h4>
+                            <p className="text-[10px] font-mono text-slate-500">{actor.nik || "-"}</p>
+                          </div>
+                        </div>
+                        <Badge className={`text-[9px] font-bold border shrink-0 ${stage.badgeClass}`}>
+                          {stage.label}
+                        </Badge>
+                      </div>
+
+                      {/* Info Usaha */}
+                      <div className="bg-slate-50 p-2.5 rounded-xl text-xs space-y-1 border border-slate-100">
+                        <div className="flex justify-between">
+                          <span className="text-[10px] text-slate-500 font-medium">Usaha:</span>
+                          <span className="font-bold text-slate-800 truncate max-w-[160px]">{actor.businessName || survey?.namaUsaha || "-"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[10px] text-slate-500 font-medium">Kategori:</span>
+                          <span className="font-semibold text-indigo-600 truncate">{actor.businessCategory || survey?.bidangUsaha || "-"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[10px] text-slate-500 font-medium">Wilayah:</span>
+                          <span className="text-slate-700 truncate">{actor.kelurahan || "-"}, {actor.kecamatan || "-"}</span>
+                        </div>
+                      </div>
+
+                      {/* Info Pejabat & Tanggal */}
+                      <div className="text-[11px] space-y-1 border-t border-slate-100 pt-2 text-slate-600">
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-slate-400">Tgl Survey:</span>
+                          <span className="font-semibold text-slate-800">
+                            {survey?.tanggalSurvey ? formatTanggalIndonesia(survey.tanggalSurvey).fullText : "-"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-slate-400">Petugas:</span>
+                          <span className="font-medium text-slate-700 truncate max-w-[150px]">{pNama}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-slate-400">Verifikator:</span>
+                          <span className="font-medium text-indigo-700 truncate max-w-[150px]">{vNama}</span>
+                        </div>
+                      </div>
+
+                      {/* Tombol Aksi */}
+                      <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-8 rounded-xl shadow-sm"
+                          onClick={() => handleOpenPrintModal(actor)}
+                          disabled={isGeneratingThis}
+                        >
+                          {isGeneratingThis ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                          ) : (
+                            <FileDown className="w-3.5 h-3.5 mr-1" />
+                          )}
+                          Cetak PDF
+                        </Button>
+
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8 rounded-xl border-slate-200 text-slate-600"
+                          title="Lihat Detail"
+                          onClick={() => setViewingActor(actor)}
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </Button>
+
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8 rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50"
+                          title="Edit Pejabat"
+                          onClick={() => handleOpenEditPejabat(actor)}
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+
+            {filteredActors.length > pageLimit && (
+              <div className="p-4 flex justify-center">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setPageLimit(prev => prev + 50)} 
+                  className="font-bold border-indigo-600 text-indigo-700 hover:bg-indigo-50 text-xs"
                 >
-                  <CardContent className="p-4 space-y-3">
-                    {/* Header Kartu */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={isSelected}
-                          onCheckedChange={() => handleToggleSelect(actor.id)}
-                          aria-label={`Pilih ${actor.fullName}`}
-                        />
-                        <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0">
-                          {idx + 1}
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="font-black text-xs text-slate-900 truncate" title={actor.fullName}>
-                            {actor.fullName}
-                          </h4>
-                          <p className="text-[10px] font-mono text-slate-500">{actor.nik || "-"}</p>
-                        </div>
-                      </div>
-                      <Badge className={`text-[9px] font-bold border shrink-0 ${stage.badgeClass}`}>
-                        {stage.label}
-                      </Badge>
-                    </div>
-
-                    {/* Info Usaha */}
-                    <div className="bg-slate-50 p-2.5 rounded-xl text-xs space-y-1 border border-slate-100">
-                      <div className="flex justify-between">
-                        <span className="text-[10px] text-slate-500 font-medium">Usaha:</span>
-                        <span className="font-bold text-slate-800 truncate max-w-[160px]">{actor.businessName || survey?.namaUsaha || "-"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[10px] text-slate-500 font-medium">Kategori:</span>
-                        <span className="font-semibold text-indigo-600 truncate">{actor.businessCategory || survey?.bidangUsaha || "-"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-[10px] text-slate-500 font-medium">Wilayah:</span>
-                        <span className="text-slate-700 truncate">{actor.kelurahan || "-"}, {actor.kecamatan || "-"}</span>
-                      </div>
-                    </div>
-
-                    {/* Info Pejabat & Tanggal */}
-                    <div className="text-[11px] space-y-1 border-t border-slate-100 pt-2 text-slate-600">
-                      <div className="flex items-center justify-between text-[10px]">
-                        <span className="text-slate-400">Tgl Survey:</span>
-                        <span className="font-semibold text-slate-800">
-                          {survey?.tanggalSurvey ? formatTanggalIndonesia(survey.tanggalSurvey).fullText : "-"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-[10px]">
-                        <span className="text-slate-400">Petugas:</span>
-                        <span className="font-medium text-slate-700 truncate max-w-[150px]">{pNama}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-[10px]">
-                        <span className="text-slate-400">Verifikator:</span>
-                        <span className="font-medium text-indigo-700 truncate max-w-[150px]">{vNama}</span>
-                      </div>
-                    </div>
-
-                    {/* Tombol Aksi */}
-                    <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-8 rounded-xl shadow-sm"
-                        onClick={() => handleOpenPrintModal(actor)}
-                        disabled={isGeneratingThis}
-                      >
-                        {isGeneratingThis ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-                        ) : (
-                          <FileDown className="w-3.5 h-3.5 mr-1" />
-                        )}
-                        Cetak PDF
-                      </Button>
-
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8 rounded-xl border-slate-200 text-slate-600"
-                        title="Lihat Detail"
-                        onClick={() => setViewingActor(actor)}
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </Button>
-
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8 rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50"
-                        title="Edit Pejabat"
-                        onClick={() => handleOpenEditPejabat(actor)}
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
+                  Tampilkan Lebih Banyak Data (+50)
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </main>

@@ -146,6 +146,7 @@ function normalizeStr(s: string) {
 function RekapanDataContent() {
   const database = useDatabase()
   const { toast } = useToast()
+  const [pageLimit, setPageLimit] = useState(50)
 
   // 1. Data Pengajuan Terbaru (businessActors)
   const actorsRef = useMemoFirebase(
@@ -154,26 +155,26 @@ function RekapanDataContent() {
   )
   const { data: allActorsRaw, isLoading: isActorsLoading } = useList<BusinessActor>(actorsRef)
 
-  // 2. Sheet 1: Data Pembanding 2024
+  // 2. Sheet 1: Data Pembanding 2024 (Static reference: load once)
   const master2024Ref = useMemoFirebase(
     () => (database ? ref(database, "master_data_2024") : null),
     [database]
   )
-  const { data: data2024, isLoading: is2024Loading } = useList<any>(master2024Ref)
+  const { data: data2024, isLoading: is2024Loading } = useList<any>(master2024Ref, { once: true })
 
-  // 3. Sheet 2: Data Pembanding 2023
+  // 3. Sheet 2: Data Pembanding 2023 (Static reference: load once)
   const master2023Ref = useMemoFirebase(
     () => (database ? ref(database, "master_data_2023") : null),
     [database]
   )
-  const { data: data2023, isLoading: is2023Loading } = useList<any>(master2023Ref)
+  const { data: data2023, isLoading: is2023Loading } = useList<any>(master2023Ref, { once: true })
 
-  // 4. Sheet 3: Data Pembanding 2025
+  // 4. Sheet 3: Data Pembanding 2025 (Static reference: load once)
   const master2025Ref = useMemoFirebase(
     () => (database ? ref(database, "master_data_2025") : null),
     [database]
   )
-  const { data: data2025, isLoading: is2025Loading } = useList<any>(master2025Ref)
+  const { data: data2025, isLoading: is2025Loading } = useList<any>(master2025Ref, { once: true })
 
   const isLoading = isActorsLoading || is2024Loading || is2023Loading || is2025Loading
 
@@ -381,6 +382,7 @@ function RekapanDataContent() {
     setFilterRw("ALL")
     setFilterRt("ALL")
     setFilterSource("ALL")
+    setPageLimit(50)
   }
 
   const handleKecamatanChange = (val: string) => {
@@ -388,17 +390,20 @@ function RekapanDataContent() {
     setFilterKelurahan("ALL")
     setFilterRw("ALL")
     setFilterRt("ALL")
+    setPageLimit(50)
   }
 
   const handleKelurahanChange = (val: string) => {
     setFilterKelurahan(val)
     setFilterRw("ALL")
     setFilterRt("ALL")
+    setPageLimit(50)
   }
 
   const handleRwChange = (val: string) => {
     setFilterRw(val)
     setFilterRt("ALL")
+    setPageLimit(50)
   }
 
   // ── export excel ──────────────────────────────────────────────────────────
@@ -730,7 +735,7 @@ function RekapanDataContent() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((actor, index) => {
+                {filtered.slice(0, pageLimit).map((actor, index) => {
                   const { rt, rw } = parseRtRw(actor.rtRw)
                   return (
                     <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors border-b border-slate-100">
@@ -779,6 +784,17 @@ function RekapanDataContent() {
                 })}
               </TableBody>
             </Table>
+            {filtered.length > pageLimit && (
+              <div className="p-4 flex justify-center border-t bg-slate-50">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setPageLimit(prev => prev + 50)} 
+                  className="font-bold border-primary text-primary hover:bg-primary/10"
+                >
+                  Tampilkan Lebih Banyak Data (+50)
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

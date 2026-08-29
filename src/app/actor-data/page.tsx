@@ -99,11 +99,14 @@ function ActorDataContent() {
     if (isKoordinator && userProfile?.fullName) {
       return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(userProfile.fullName.toUpperCase().trim()))
     }
+
+    if (filterCoordinator) {
+      return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(String(filterCoordinator).toUpperCase().trim()))
+    }
     
     // For Admin / Inspektorat / Monitoring / Staff / General view:
-    // Load businessActors so all coordinator cards, global search, and export function with full data!
     return ref(database, 'businessActors')
-  }, [database, isProfileLoading, isPetugas, isKoordinator, userProfile?.fullName])
+  }, [database, isProfileLoading, isPetugas, isKoordinator, filterCoordinator, userProfile?.fullName])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   

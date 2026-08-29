@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useDatabase, useList, useMemoFirebase, useUser } from "@/firebase"
 import { ref, update } from "firebase/database"
 import { addTunasBangsaHeader } from "@/lib/pdf-generator"
@@ -67,7 +67,18 @@ const calculateAge = (dobString: string) => {
 export default function BpjsPage() {
   const { user } = useUser()
   const database = useDatabase()
+  const [searchInput, setSearchInput] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
+  const [pageLimit, setPageLimit] = useState(50)
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearchQuery(searchInput), 250)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  useEffect(() => {
+    setPageLimit(50)
+  }, [searchQuery])
 
   const actorsRef = useMemoFirebase(() => database ? ref(database, 'businessActors') : null, [database])
   const { data: allActors, isLoading } = useList<BusinessActor>(actorsRef)
@@ -112,6 +123,7 @@ export default function BpjsPage() {
     if (!allActors) return [];
     // Reference date: 1 September 2026
     const refDate = new Date(2026, 8, 1);
+    const q = searchQuery.toLowerCase().trim();
     return allActors
       .filter(a => {
         // Tampilkan semua pelaku usaha dengan usia di bawah 65 tahun
@@ -120,10 +132,10 @@ export default function BpjsPage() {
         return age > 0 && age < 65;
       })
       .filter(a => {
-        if (!searchQuery) return true;
+        if (!q) return true;
         return (
-          (a.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (a.nik || '').includes(searchQuery)
+          (a.fullName || '').toLowerCase().includes(q) ||
+          (a.nik || '').includes(q)
         );
       })
       .sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''));
@@ -263,8 +275,8 @@ export default function BpjsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Cari Nama atau NIK..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="pl-9 h-10 border-primary/20 bg-white text-xs md:text-sm"
             />
           </div>
@@ -275,6 +287,12 @@ export default function BpjsPage() {
             <Printer className="w-4 h-4 mr-2" /> PRINT DATA
           </Button>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between px-1">
+        <p className="text-xs font-bold text-slate-500">
+          Menampilkan <span className="text-primary font-black">{Math.min(filteredActors.length, pageLimit)}</span> dari <span className="font-bold text-slate-700">{filteredActors.length}</span> data pelaku usaha layak BPJS (&lt;65 tahun)
+        </p>
       </div>
 
       <Card className="border-none shadow-xl bg-white/80 backdrop-blur-md overflow-hidden rounded-2xl">
@@ -310,7 +328,7 @@ export default function BpjsPage() {
                   ))
                 ) : (
                   <>
-                    {filteredActors.map((actor, index) => {
+                    {filteredActors.slice(0, pageLimit).map((actor, index) => {
                       const age = calculateAge(actor.pobDob || "")
                       return (
                         <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group">
@@ -375,6 +393,17 @@ export default function BpjsPage() {
                 )}
               </TableBody>
             </Table>
+            {filteredActors.length > pageLimit && (
+              <div className="p-4 flex justify-center border-t bg-slate-50">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setPageLimit(prev => prev + 50)} 
+                  className="font-bold border-primary text-primary hover:bg-primary/10"
+                >
+                  Tampilkan Lebih Banyak Data (+50)
+                </Button>
+              </div>
+            )}
         </CardContent>
       </Card>
       
