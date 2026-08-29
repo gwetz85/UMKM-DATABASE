@@ -91,7 +91,39 @@ export default function LayarInformasiPage() {
   }, [database]);
   const { data: verifiedDinasData, isLoading: isTableLoading } = useList<BusinessActor>(verifiedDinasQuery);
 
-  // 3. Running Text from Firebase
+  // 3. Fetch system_users for looking up staff names from NIPPPK / usernames
+  const systemUsersRef = useMemoFirebase(() => {
+    if (!database) return null;
+    return ref(database, 'system_users');
+  }, [database]);
+  const { data: systemUsers } = useList(systemUsersRef);
+
+  const userLookup = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (!systemUsers) return map;
+    systemUsers.forEach((u: any) => {
+      if (!u) return;
+      const name = u.fullName || u.name;
+      if (!name) return;
+      if (u.id) map[String(u.id).toLowerCase().trim()] = name;
+      if (u.username) map[String(u.username).toLowerCase().trim()] = name;
+      if (u.uid) map[String(u.uid).toLowerCase().trim()] = name;
+      if (u.email) map[String(u.email).toLowerCase().trim()] = name;
+      if (u.nipppk) {
+        const cleanNip = String(u.nipppk).replace(/\D/g, '');
+        if (cleanNip) map[cleanNip] = name;
+        map[String(u.nipppk).toLowerCase().trim()] = name;
+      }
+      if (u.nip) {
+        const cleanNip = String(u.nip).replace(/\D/g, '');
+        if (cleanNip) map[cleanNip] = name;
+        map[String(u.nip).toLowerCase().trim()] = name;
+      }
+    });
+    return map;
+  }, [systemUsers]);
+
+  // 4. Running Text from Firebase
   const runningTextRef = useMemoFirebase(() => {
     if (!database) return null;
     return ref(database, 'settings/running_text');
@@ -117,23 +149,63 @@ export default function LayarInformasiPage() {
 
   // Helper surveyor name
   const getSurveyorName = (d: BusinessActor) => {
-    return (
-      d.petugasSurvey ||
-      (d.surveyData as any)?.petugasSurvey ||
-      d.surveyData?.pejabatData?.petugas?.nama ||
-      d.verifiedDinasBy ||
-      '-'
-    );
+    const pejabatNama = d.surveyData?.pejabatData?.petugas?.nama || d.pejabatData?.petugas?.nama;
+    if (pejabatNama && !/^\d+$/.test(pejabatNama.trim())) {
+      return pejabatNama;
+    }
+    if (d.petugasSurvey && !/^\d+$/.test(d.petugasSurvey.trim())) {
+      return d.petugasSurvey;
+    }
+    const raw = d.petugasSurvey || (d.surveyData as any)?.petugasSurvey || pejabatNama || d.verifiedDinasBy;
+    if (raw) {
+      const cleanStr = String(raw).trim();
+      const cleanDigits = cleanStr.replace(/\D/g, '');
+      if (cleanDigits && userLookup[cleanDigits]) return userLookup[cleanDigits];
+      if (userLookup[cleanStr.toLowerCase()]) return userLookup[cleanStr.toLowerCase()];
+      return raw;
+    }
+    return '-';
   };
 
-  // Helper verifikator name
+  // Helper verifikator name (Always prioritize human name over NIP/UID/email)
   const getVerifikatorName = (d: BusinessActor) => {
-    return (
-      d.berkasDinasVerifiedBy ||
-      d.verifikatorDinas ||
-      d.pejabatData?.verifikator?.nama ||
-      '-'
-    );
+    // 1. Check explicit name in pejabatData / surveyData if not purely digits
+    const pejabatNama = d.pejabatData?.verifikator?.nama || d.surveyData?.pejabatData?.verifikator?.nama;
+    if (pejabatNama && !/^\d+$/.test(pejabatNama.trim())) {
+      return pejabatNama;
+    }
+
+    // 2. Check verifikatorDinas if not purely digits
+    if (d.verifikatorDinas && !/^\d+$/.test(d.verifikatorDinas.trim())) {
+      return d.verifikatorDinas;
+    }
+
+    // 3. Check berkasDinasVerifiedBy if not purely digits and not email
+    if (d.berkasDinasVerifiedBy && !/^\d+$/.test(d.berkasDinasVerifiedBy.trim()) && !d.berkasDinasVerifiedBy.includes('@')) {
+      return d.berkasDinasVerifiedBy;
+    }
+
+    // 4. Try looking up in system_users lookup map for any NIP / UID / username
+    const candidates = [
+      d.verifikatorDinas,
+      d.berkasDinasVerifiedBy,
+      pejabatNama,
+      (d as any).verifiedDinasBy
+    ].filter(Boolean);
+
+    for (const c of candidates) {
+      const cleanStr = String(c).trim();
+      const cleanDigits = cleanStr.replace(/\D/g, '');
+      if (cleanDigits && userLookup[cleanDigits]) {
+        return userLookup[cleanDigits];
+      }
+      if (userLookup[cleanStr.toLowerCase()]) {
+        return userLookup[cleanStr.toLowerCase()];
+      }
+    }
+
+    // 5. Fallback to candidate string if available
+    return d.verifikatorDinas || d.berkasDinasVerifiedBy || pejabatNama || '-';
   };
 
   // 10 Pelaku Usaha Terakhir Masuk Verifikasi Dinas (Tahap 2: Menunggu Cek Berkas)
