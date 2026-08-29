@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemoFirebase, useList, useUser, useDatabase, useObject } from "@/firebase"
-import { ref, query, orderByChild, equalTo, limitToFirst } from "firebase/database"
+import { ref, query, orderByChild, equalTo, limitToFirst, limitToLast } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { 
@@ -80,10 +80,10 @@ export default function DashboardStatsPage() {
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
 
-  // 3. Fetch ONLY verified_dinas actors for the 5 latest tables (targeted query, lightweight)
+  // 3. Fetch ONLY verified_dinas actors for the 5 latest tables (targeted query, fast limitToLast 50)
   const verifiedDinasQuery = useMemoFirebase(() => {
     if (!database) return null
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'))
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'), limitToLast(50))
   }, [database])
 
   const { data: verifiedDinasData, isLoading: isVerifiedDinasLoading } = useList<BusinessActor>(verifiedDinasQuery)

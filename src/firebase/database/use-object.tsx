@@ -12,11 +12,33 @@ function getRefKey(refOrQuery: any): string {
   return `${url}::${params}`;
 }
 
+function getLocalObjectCache(key: string): any | null {
+  if (typeof window === 'undefined' || !key) return null;
+  try {
+    const item = localStorage.getItem(`rtdb_obj_${key}`);
+    return item ? JSON.parse(item) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setLocalObjectCache(key: string, data: any): void {
+  if (typeof window === 'undefined' || !key) return;
+  try {
+    const str = JSON.stringify(data);
+    if (str.length < 500000) {
+      localStorage.setItem(`rtdb_obj_${key}`, str);
+    }
+  } catch {
+    // Ignore quota errors
+  }
+}
+
 export function useObject<T = any>(
   memoizedRef: DatabaseReference | null | undefined
 ) {
   const refKey = getRefKey(memoizedRef);
-  const cachedData = refKey ? objectMemoryCache.get(refKey) : undefined;
+  const cachedData = refKey ? (objectMemoryCache.get(refKey) || getLocalObjectCache(refKey)) : undefined;
 
   const [data, setData] = useState<(T & {id: string}) | null>(cachedData ? (cachedData as (T & {id: string})) : null);
   const [isLoading, setIsLoading] = useState<boolean>(!cachedData && !!memoizedRef);
@@ -29,7 +51,7 @@ export function useObject<T = any>(
       return;
     }
 
-    const cached = refKey ? objectMemoryCache.get(refKey) : null;
+    const cached = refKey ? (objectMemoryCache.get(refKey) || getLocalObjectCache(refKey)) : null;
     if (cached) {
       setData(cached as (T & {id: string}));
       setIsLoading(false);
@@ -42,11 +64,15 @@ export function useObject<T = any>(
         const val = { ...snapshot.val(), id: snapshot.key };
         if (refKey) {
           objectMemoryCache.set(refKey, val);
+          setLocalObjectCache(refKey, val);
         }
         setData(val);
       } else {
         if (refKey) {
           objectMemoryCache.delete(refKey);
+          if (typeof window !== 'undefined') {
+            try { localStorage.removeItem(`rtdb_obj_${refKey}`); } catch {}
+          }
         }
         setData(null);
       }

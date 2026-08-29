@@ -16,12 +16,34 @@ function getRefKey(refOrQuery: any): string {
   return `${url}::${params}`;
 }
 
+function getLocalCache(key: string): any[] | null {
+  if (typeof window === 'undefined' || !key) return null;
+  try {
+    const item = localStorage.getItem(`rtdb_list_${key}`);
+    return item ? JSON.parse(item) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setLocalCache(key: string, data: any[]): void {
+  if (typeof window === 'undefined' || !key) return;
+  try {
+    const str = JSON.stringify(data);
+    if (str.length < 800000) { // < 800KB
+      localStorage.setItem(`rtdb_list_${key}`, str);
+    }
+  } catch {
+    // Ignore quota errors
+  }
+}
+
 export function useList<T = any>(
   memoizedRefOrQuery: DatabaseReference | Query | null | undefined,
   options: UseListOptions = {}
 ) {
   const refKey = getRefKey(memoizedRefOrQuery);
-  const cachedData = refKey ? memoryCache.get(refKey) : undefined;
+  const cachedData = refKey ? (memoryCache.get(refKey) || getLocalCache(refKey)) : undefined;
 
   const [data, setData] = useState<T[] | null>(cachedData ? (cachedData as T[]) : null);
   const [isLoading, setIsLoading] = useState<boolean>(!cachedData && !!memoizedRefOrQuery);
@@ -34,7 +56,7 @@ export function useList<T = any>(
       return;
     }
     
-    const cached = refKey ? memoryCache.get(refKey) : null;
+    const cached = refKey ? (memoryCache.get(refKey) || getLocalCache(refKey)) : null;
     if (cached) {
       setData(cached as T[]);
       setIsLoading(false);
@@ -49,6 +71,7 @@ export function useList<T = any>(
       });
       if (refKey) {
         memoryCache.set(refKey, results);
+        setLocalCache(refKey, results);
       }
       setData(results);
       setIsLoading(false);

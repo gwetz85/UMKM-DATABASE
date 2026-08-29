@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useDatabase, useObject, useList, useMemoFirebase } from '@/firebase';
-import { ref, query, orderByChild, equalTo } from 'firebase/database';
+import { ref, query, orderByChild, equalTo, limitToLast } from 'firebase/database';
 import { BusinessActor } from '../lib/types';
 import { cn } from '@/lib/utils';
 import { 
@@ -84,10 +84,10 @@ export default function LayarInformasiPage() {
   }, [database]);
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef);
 
-  // 2. Fetch verified_dinas actors
+  // 2. Fetch verified_dinas actors (fast limitToLast 50)
   const verifiedDinasQuery = useMemoFirebase(() => {
     if (!database) return null;
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'));
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'), limitToLast(50));
   }, [database]);
   const { data: verifiedDinasData, isLoading: isTableLoading } = useList<BusinessActor>(verifiedDinasQuery);
 
