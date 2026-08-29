@@ -16,7 +16,8 @@ import {
   Minimize2, 
   Clock, 
   Radio, 
-  Loader2
+  Loader2,
+  XCircle
 } from 'lucide-react';
 
 // SIMPU Icon SVG Logo
@@ -58,11 +59,23 @@ const formatDateTimeSplit = (isoString?: string | null) => {
   }
 };
 
+// Helper to format date only
+const formatDateOnly = (isoString?: string | null) => {
+  if (!isoString) return '-';
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch {
+    return '-';
+  }
+};
+
 export default function LayarInformasiPage() {
   const database = useDatabase();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const [activeMobileTab, setActiveMobileTab] = useState<'verifikasi' | 'hasil'>('verifikasi');
+  const [activeMobileTab, setActiveMobileTab] = useState<'verifikasi' | 'hasil' | 'cancel'>('verifikasi');
 
   // 1. Fetch real-time system stats
   const statsRef = useMemoFirebase(() => {
@@ -153,6 +166,19 @@ export default function LayarInformasiPage() {
   const cancelDinasCount = useMemo(() => {
     if (!verifiedDinasData) return 0;
     return verifiedDinasData.filter(d => isCancelDinas(d)).length;
+  }, [verifiedDinasData]);
+
+  // 10 Data Cancel Dinas Terbaru
+  const latestCancelDinas = useMemo(() => {
+    if (!verifiedDinasData) return [];
+    return verifiedDinasData
+      .filter(d => isCancelDinas(d))
+      .sort((a, b) => {
+        const timeA = new Date((a as any).cancelDinasAt || a.verifiedDinasAt || a.createdAt || 0).getTime();
+        const timeB = new Date((b as any).cancelDinasAt || b.verifiedDinasAt || b.createdAt || 0).getTime();
+        return timeB - timeA;
+      })
+      .slice(0, 10);
   }, [verifiedDinasData]);
 
   // 6 Stats Cards with border gradients
@@ -334,34 +360,47 @@ export default function LayarInformasiPage() {
           type="button"
           onClick={() => setActiveMobileTab('verifikasi')}
           className={cn(
-            "flex-1 py-2 px-3 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all",
+            "flex-1 py-2 px-2 rounded-lg text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-1 transition-all",
             activeMobileTab === 'verifikasi'
               ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md ring-1 ring-white/20"
               : "text-slate-400 hover:text-slate-200"
           )}
         >
-          <FileText className="w-3.5 h-3.5" />
-          <span>Verifikasi Dinas ({latestVerifikasiDinas.length})</span>
+          <FileText className="w-3 h-3" />
+          <span>Verifikasi ({latestVerifikasiDinas.length})</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveMobileTab('hasil')}
           className={cn(
-            "flex-1 py-2 px-3 rounded-lg text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all",
+            "flex-1 py-2 px-2 rounded-lg text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-1 transition-all",
             activeMobileTab === 'hasil'
               ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-md ring-1 ring-white/20"
               : "text-slate-400 hover:text-slate-200"
           )}
         >
-          <ListChecks className="w-3.5 h-3.5" />
-          <span>Hasil Dinas ({latestHasilVerifikasi.length})</span>
+          <ListChecks className="w-3 h-3" />
+          <span>Hasil ({latestHasilVerifikasi.length})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveMobileTab('cancel')}
+          className={cn(
+            "flex-1 py-2 px-2 rounded-lg text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-1 transition-all",
+            activeMobileTab === 'cancel'
+              ? "bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-md ring-1 ring-white/20"
+              : "text-slate-400 hover:text-slate-200"
+          )}
+        >
+          <XCircle className="w-3 h-3" />
+          <span>Cancel ({latestCancelDinas.length})</span>
         </button>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          3. BAGIAN TENGAH: 2 TABEL DENGAN GRADASI BATAS LUAR
+          3. BAGIAN TENGAH: 3 TABEL DIBAGI RATA
       ────────────────────────────────────────────────────────────── */}
-      <section className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-2.5 md:gap-3">
+      <section className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-2.5">
         
         {/* TABEL 1: VERIFIKASI DINAS (TAHAP 2) */}
         <div className={cn(
@@ -628,6 +667,145 @@ export default function LayarInformasiPage() {
             <div className="shrink-0 pt-2 mt-1 border-t border-teal-500/30 flex items-center justify-between text-xs text-slate-300">
               <span className="font-black uppercase tracking-wide">
                 Total Selesai: <strong className="text-teal-300 font-mono text-sm">{systemStats?.detailedStatus?.hasilVerifikasi ?? 0} Pelaku Usaha</strong>
+              </span>
+              <span className="text-slate-400 text-[11px] font-semibold">Pembaruan Realtime</span>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════════════
+            TABEL 3: CANCELL DINAS (WRAPPER GRADASI BATAS LUAR MERAH)
+        ═══════════════════════════════════════════════════════════════ */}
+        <div className={cn(
+          "relative p-[2.5px] rounded-2xl bg-gradient-to-br from-rose-500 via-red-600 to-orange-500 shadow-[0_0_25px_rgba(239,68,68,0.35)] flex flex-col min-h-0 overflow-hidden",
+          activeMobileTab === 'cancel' ? "flex" : "hidden lg:flex"
+        )}>
+          <div className="bg-[#1a0808] rounded-[13.5px] p-2.5 md:p-3 shadow-2xl flex flex-col justify-between min-h-0 h-full overflow-hidden">
+            
+            {/* Table Header Top Bar */}
+            <div className="shrink-0 flex items-center justify-between pb-1.5 mb-1.5 border-b border-rose-500/30">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/30 border border-rose-400/50 flex items-center justify-center text-rose-200 shrink-0 shadow">
+                  <XCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm md:text-base font-black text-white uppercase tracking-tight drop-shadow">
+                      Cancell Dinas
+                    </h2>
+                    <span className="bg-rose-600/50 text-rose-100 border border-rose-400/50 text-[10px] font-black uppercase px-2 py-0.5 rounded-md shadow-sm">
+                      Tidak Lolos
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 font-semibold leading-none mt-0.5">
+                    10 Data Pelaku Usaha Cancel Dinas Terbaru
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-black text-rose-200 bg-rose-950 border border-rose-600/60 px-2.5 py-1 rounded-xl shadow-sm">
+                10 Terkini
+              </span>
+            </div>
+
+            {/* Table Container */}
+            <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700 bg-[#120404] overflow-x-auto overflow-y-hidden shadow-inner">
+              <div className="min-w-[580px] lg:min-w-0 flex-1 flex flex-col justify-between">
+                
+                {/* Column Headers */}
+                <div className="shrink-0 grid grid-cols-[36px_1fr_110px_110px_90px_1fr] items-center bg-[#2a0f0f] border-b-2 border-rose-600/40 px-2 py-2 text-[10px] md:text-xs font-black uppercase text-rose-300 tracking-wider">
+                  <div className="text-center">No</div>
+                  <div className="text-left pl-2">Pelaku Usaha</div>
+                  <div className="text-center">Koordinator</div>
+                  <div className="text-center">Petugas Survey</div>
+                  <div className="text-center">Tgl Submit</div>
+                  <div className="text-center">Alasan</div>
+                </div>
+
+                {/* 10 Rows */}
+                <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800/60">
+                  {isTableLoading ? (
+                    <div className="py-12 flex flex-col items-center justify-center text-slate-300 font-bold text-sm">
+                      <Loader2 className="w-7 h-7 animate-spin text-rose-400 mb-2" />
+                      <span>Memuat Data Cancel Dinas...</span>
+                    </div>
+                  ) : latestCancelDinas.length === 0 ? (
+                    <div className="py-12 flex items-center justify-center text-slate-400 font-bold uppercase text-sm">
+                      Belum ada data Cancel Dinas
+                    </div>
+                  ) : (
+                    latestCancelDinas.map((actor, idx) => (
+                      <div
+                        key={actor.id || idx}
+                        className={cn(
+                          "min-h-[46px] sm:min-h-[48px] lg:min-h-0 lg:flex-1 grid grid-cols-[36px_1fr_110px_110px_90px_1fr] items-center px-2 py-1 transition-colors hover:bg-rose-950/60",
+                          idx % 2 === 0 ? "bg-[#160606]" : "bg-[#1c0808]"
+                        )}
+                      >
+                        {/* 1. No */}
+                        <div className="text-center font-black font-mono text-rose-300 text-xs sm:text-sm">
+                          {idx + 1}
+                        </div>
+
+                        {/* 2. Pelaku Usaha */}
+                        <div className="min-w-0 pl-2 pr-1 flex flex-col justify-center">
+                          <div className="font-black text-white uppercase text-xs sm:text-sm md:text-[13px] tracking-normal truncate leading-snug drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                            {actor.fullName || '-'}
+                          </div>
+                          <div className="flex items-center gap-1 mt-0.5 truncate">
+                            <span className="text-[10px] sm:text-[11px] font-black text-rose-300 uppercase tracking-tight truncate">
+                              {actor.businessName || 'USAHA'}
+                            </span>
+                            {actor.kelurahan && (
+                              <>
+                                <span className="text-slate-500 font-bold">•</span>
+                                <span className="text-[9px] sm:text-[10px] font-extrabold text-amber-300/80 uppercase tracking-wide truncate">
+                                  {actor.kelurahan}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* 3. Koordinator */}
+                        <div className="text-center flex items-center justify-center px-1">
+                          <span className="text-[10px] sm:text-xs font-black text-cyan-300 uppercase leading-snug line-clamp-2 drop-shadow-sm">
+                            {actor.coordinator || '-'}
+                          </span>
+                        </div>
+
+                        {/* 4. Petugas Survey */}
+                        <div className="text-center flex items-center justify-center px-1">
+                          <span className="text-[10px] sm:text-xs font-black text-emerald-300 uppercase leading-snug line-clamp-2 drop-shadow-sm">
+                            {getSurveyorName(actor)}
+                          </span>
+                        </div>
+
+                        {/* 5. Tanggal Submit (Cancel) */}
+                        <div className="text-center flex flex-col items-center justify-center leading-tight">
+                          <span className="text-[10px] sm:text-xs font-bold text-amber-300 font-mono">
+                            {formatDateOnly((actor as any).cancelDinasAt || actor.verifiedDinasAt || actor.createdAt)}
+                          </span>
+                        </div>
+
+                        {/* 6. Alasan */}
+                        <div className="text-center flex items-center justify-center px-1">
+                          <span className="text-[10px] sm:text-xs font-bold text-rose-200 leading-snug line-clamp-2">
+                            {(actor as any).alasanCancelDinas || actor.keteranganDinas || '-'}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+              </div>
+            </div>
+
+            {/* Table Footer Stats */}
+            <div className="shrink-0 pt-2 mt-1 border-t border-rose-500/30 flex items-center justify-between text-xs text-slate-300">
+              <span className="font-black uppercase tracking-wide">
+                Total Cancel: <strong className="text-rose-300 font-mono text-sm">{cancelDinasCount} Pelaku Usaha</strong>
               </span>
               <span className="text-slate-400 text-[11px] font-semibold">Pembaruan Realtime</span>
             </div>
