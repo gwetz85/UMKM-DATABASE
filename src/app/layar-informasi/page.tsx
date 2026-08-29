@@ -132,6 +132,36 @@ export default function LayarInformasiPage() {
   const defaultRunningText = "SELAMAT DATANG DI APLIKASI SISTEM INFORMASI MANAJEMEN PELAKU USAHA (SIMPU) TAHUN 2026 • STATUS VERIFIKASI DATA DAN SURVEY DINAS DIPERBARUI SECARA REALTIME";
   const runningText = (typeof runningTextConfig === 'string' ? runningTextConfig : runningTextConfig?.text) || defaultRunningText;
 
+  // Last Sync Time from system_stats
+  const lastSyncTime = useMemo(() => {
+    if (!systemStats?.lastUpdated) return null;
+    const d = new Date(systemStats.lastUpdated);
+    return isNaN(d.getTime()) ? null : d;
+  }, [systemStats?.lastUpdated]);
+
+  const [nextSyncIn, setNextSyncIn] = useState<number>(300);
+
+  // Auto-sync countdown synchronized with systemStats.lastUpdated
+  useEffect(() => {
+    const SYNC_INTERVAL = 300; // 5 menit
+
+    const updateTimer = () => {
+      const lastTimeMs = systemStats?.lastUpdated ? new Date(systemStats.lastUpdated).getTime() : 0;
+      if (!lastTimeMs) {
+        setNextSyncIn(SYNC_INTERVAL);
+        return;
+      }
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - lastTimeMs) / 1000);
+      const remainingSeconds = Math.max(0, SYNC_INTERVAL - (elapsedSeconds % SYNC_INTERVAL));
+      setNextSyncIn(remainingSeconds);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [systemStats?.lastUpdated]);
+
   // Realtime Clock Tick
   useEffect(() => {
     setCurrentTime(new Date());
@@ -360,6 +390,33 @@ export default function LayarInformasiPage() {
 
           {/* Controls */}
           <div className="flex items-center gap-2">
+            {/* Last Sync & Auto Sync Status */}
+            <div className="flex items-center gap-2 bg-blue-950/80 border border-blue-500/40 px-2.5 py-1 md:px-3 md:py-1.5 rounded-xl shadow-inner shrink-0">
+              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0" />
+              <div className="flex items-center gap-2 leading-tight">
+                <div className="flex flex-col">
+                  <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-cyan-300">
+                    LAST SYNC
+                  </span>
+                  <span className="text-[10px] md:text-xs font-black text-white font-mono whitespace-nowrap">
+                    {lastSyncTime 
+                      ? `${lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false })} WIB`
+                      : '-'}
+                  </span>
+                </div>
+                <div className="h-4 w-[1px] bg-blue-500/40 hidden sm:block" />
+                <div className="flex flex-col hidden sm:flex">
+                  <span className="text-[8px] font-extrabold uppercase tracking-wider text-blue-300">
+                    AUTO SYNC
+                  </span>
+                  <span className="text-[10px] md:text-xs font-bold text-cyan-200 font-mono whitespace-nowrap">
+                    {`${Math.floor(nextSyncIn / 60)}:${String(nextSyncIn % 60).padStart(2, '0')}`}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Online Status */}
             <div className="flex items-center gap-1.5 md:gap-2 bg-emerald-950/80 border border-emerald-500/50 px-2.5 py-1 md:px-3 md:py-1.5 rounded-xl shadow-inner shrink-0">
               <span className="relative flex h-2 w-2 md:h-2.5 md:w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-90"></span>
