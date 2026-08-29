@@ -173,6 +173,7 @@ export default function DashboardStatsPage() {
   }, [systemStats])
 
   const [isSyncing, setIsSyncing] = useState(false)
+  const isSyncingGuardRef = React.useRef(false)
   const [nextSyncIn, setNextSyncIn] = useState<number>(300)
 
   const lastSyncTime = useMemo(() => {
@@ -181,33 +182,24 @@ export default function DashboardStatsPage() {
     return isNaN(d.getTime()) ? null : d;
   }, [systemStats?.lastUpdated]);
 
-  // Auto-heal / initialize stats if system_stats is empty or missing detailedStatus
-  useEffect(() => {
-    if (database && !isStatsLoading && systemStats !== undefined) {
-      if (!systemStats || !systemStats.detailedStatus || systemStats.detailedStatus.survey === undefined) {
-        import("@/lib/stats-service").then(({ recalculateAndSaveSystemStats }) => {
-          recalculateAndSaveSystemStats(database).catch(console.error);
-        });
-      }
-    }
-  }, [database, isStatsLoading, systemStats]);
-
   const handleSyncStats = async () => {
-    if (!database || isSyncing) return
+    if (!database || isSyncingGuardRef.current) return
+    isSyncingGuardRef.current = true
     setIsSyncing(true)
     try {
       const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service")
       await recalculateAndSaveSystemStats(database)
-      toast({ title: "Sinkronisasi Berhasil", description: "Statistik sistem telah diperbarui dengan data Cancel Dinas & Tahapan Dinas terkini." })
+      toast({ title: "Sinkronisasi Berhasil", description: "Statistik sistem telah diperbarui dengan data terkini." })
     } catch (err) {
       console.error(err)
       toast({ variant: "destructive", title: "Gagal Sinkronisasi", description: "Terjadi kesalahan saat menghitung ulang statistik." })
     } finally {
       setIsSyncing(false)
+      isSyncingGuardRef.current = false
     }
   }
 
-  // AUTO-SYNC & COUNTDOWN TIMER (Berjalan terus dan tersinkronisasi dengan waktu global)
+  // Ringan & Cepat: Countdown timer tampilan saja
   useEffect(() => {
     const SYNC_INTERVAL = 300; // 5 menit dalam detik
 
@@ -221,20 +213,13 @@ export default function DashboardStatsPage() {
       const elapsedSeconds = Math.floor((now - lastTimeMs) / 1000);
       const remainingSeconds = Math.max(0, SYNC_INTERVAL - (elapsedSeconds % SYNC_INTERVAL));
       setNextSyncIn(remainingSeconds);
-
-      // Jika waktu sudah habis (>= 5 menit sejak update terakhir), lakukan sync otomatis
-      if (elapsedSeconds >= SYNC_INTERVAL && !isSyncing && database) {
-        import("@/lib/stats-service").then(({ recalculateAndSaveSystemStats }) => {
-          recalculateAndSaveSystemStats(database).catch(console.error);
-        });
-      }
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [systemStats?.lastUpdated, database, isSyncing]);
+  }, [systemStats?.lastUpdated]);
 
   const coordinatorStats = useMemo(() => {
     if (!systemStats?.coordinator) return []

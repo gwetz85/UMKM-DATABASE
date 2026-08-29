@@ -8,7 +8,6 @@ import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
 import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
-import { GlobalStatsAutoSync } from '@/components/GlobalStatsAutoSync';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
@@ -208,7 +207,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       <SidebarProvider>
         <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-transparent">
           <GlobalAutoVerifier />
-          <GlobalStatsAutoSync />
           <MessageNotification />
           <Toaster />
 
