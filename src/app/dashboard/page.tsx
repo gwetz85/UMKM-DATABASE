@@ -204,28 +204,27 @@ export default function DashboardStatsPage() {
     }
   }
 
-  // AUTO SYNC KHUSUS DASHBOARD: Hitung mundur 5 menit dan sinkronisasi statistik otomatis
+  // Tampilan Countdown Dashboard: Tersinkronisasi dengan waktu global lastUpdated
   useEffect(() => {
-    if (!database) return;
+    const SYNC_INTERVAL = 300; // 5 menit dalam detik
 
-    const SYNC_INTERVAL = 300; // 5 menit
+    const updateTimer = () => {
+      const lastTimeMs = systemStats?.lastUpdated ? new Date(systemStats.lastUpdated).getTime() : 0;
+      if (!lastTimeMs) {
+        setNextSyncIn(SYNC_INTERVAL);
+        return;
+      }
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - lastTimeMs) / 1000);
+      const remainingSeconds = Math.max(0, SYNC_INTERVAL - (elapsedSeconds % SYNC_INTERVAL));
+      setNextSyncIn(remainingSeconds);
+    };
 
-    // Timer per detik untuk countdown dan pemicu sync
-    const timer = setInterval(() => {
-      setNextSyncIn((prev) => {
-        if (prev <= 1) {
-          // Waktu habis: Picu sinkronisasi statistik otomatis secara aman
-          if (!isSyncingGuardRef.current) {
-            handleSyncStats(true);
-          }
-          return SYNC_INTERVAL;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
 
-    return () => clearInterval(timer);
-  }, [database]);
+    return () => clearInterval(interval);
+  }, [systemStats?.lastUpdated]);
 
   const coordinatorStats = useMemo(() => {
     if (!systemStats?.coordinator) return []
