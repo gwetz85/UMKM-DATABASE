@@ -84,12 +84,19 @@ export default function LayarInformasiPage() {
   }, [database]);
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef);
 
-  // 2. Fetch verified_dinas actors (fast limitToLast 50)
+  // 2. Fetch verified_dinas actors
   const verifiedDinasQuery = useMemoFirebase(() => {
     if (!database) return null;
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'), limitToLast(50));
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'));
   }, [database]);
   const { data: verifiedDinasData, isLoading: isTableLoading } = useList<BusinessActor>(verifiedDinasQuery);
+
+  // 2b. Query specifically for Cancel Dinas (hasilVerifikasiDinas == 'Tidak Lolos')
+  const cancelDinasQuery = useMemoFirebase(() => {
+    if (!database) return null;
+    return query(ref(database, 'businessActors'), orderByChild('hasilVerifikasiDinas'), equalTo('Tidak Lolos'));
+  }, [database]);
+  const { data: cancelDinasData } = useList<BusinessActor>(cancelDinasQuery);
 
   // 3. Fetch system_users for looking up staff names from NIPPPK / usernames
   const systemUsersRef = useMemoFirebase(() => {
@@ -264,24 +271,35 @@ export default function LayarInformasiPage() {
       .slice(0, 10);
   }, [verifiedDinasData]);
 
+  // Combined and deduplicated Cancel Dinas list (captures all Cancel Dinas records)
+  const allCancelDinasActors = useMemo(() => {
+    const map = new Map<string, BusinessActor>();
+    (cancelDinasData || []).forEach(d => {
+      if (d && d.id) map.set(d.id, d);
+    });
+    (verifiedDinasData || []).forEach(d => {
+      if (d && d.id && isCancelDinas(d)) {
+        map.set(d.id, d);
+      }
+    });
+    return Array.from(map.values());
+  }, [cancelDinasData, verifiedDinasData]);
+
   // Total Cancel Dinas
   const cancelDinasCount = useMemo(() => {
-    if (!verifiedDinasData) return 0;
-    return verifiedDinasData.filter(d => isCancelDinas(d)).length;
-  }, [verifiedDinasData]);
+    return allCancelDinasActors.length;
+  }, [allCancelDinasActors]);
 
   // 10 Data Cancel Dinas Terbaru
   const latestCancelDinas = useMemo(() => {
-    if (!verifiedDinasData) return [];
-    return verifiedDinasData
-      .filter(d => isCancelDinas(d))
+    return allCancelDinasActors
       .sort((a, b) => {
         const timeA = new Date((a as any).cancelDinasAt || a.verifiedDinasAt || a.createdAt || 0).getTime();
         const timeB = new Date((b as any).cancelDinasAt || b.verifiedDinasAt || b.createdAt || 0).getTime();
         return timeB - timeA;
       })
       .slice(0, 10);
-  }, [verifiedDinasData]);
+  }, [allCancelDinasActors]);
 
   // 6 Stats Cards with border gradients
   const cardStats = [
