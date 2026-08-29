@@ -420,35 +420,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-black/30 z-20" />
       </div>
 
-      {/* Top Right Widgets — Event Countdown & Office Hours */}
-      <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50 flex flex-col items-end gap-3 max-w-xs animate-in fade-in slide-in-from-right-8 duration-1000">
-        {activeEvent && (
-          <div 
-            className="group cursor-pointer pointer-events-auto"
-            onClick={() => setShowFullEvent(true)}
-          >
-            <div className="rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95">
-              <EventCountdown 
-                targetDate={activeEvent.endDate || activeEvent.date} 
-                startDate={activeEvent.startDate} 
-                title={activeEvent.description}
-                size="sm" 
-              />
-            </div>
-          </div>
-        )}
-        
-        <div className="flex items-center gap-2.5">
-          <RealtimeClock 
-            className="bg-white/95 backdrop-blur-md px-3 py-1.5 md:px-4 md:py-2 rounded-2xl border border-slate-200 shadow-lg" 
-            timeClassName="text-[13px] md:text-sm font-mono font-black text-slate-800 tracking-tight leading-none" 
-            dateClassName="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase tracking-wider mt-0.5" 
-          />
-          <OfficeHoursTimer 
-            onClick={() => setShowInfoModal(true)}
-          />
-        </div>
-      </div>
+
 
       {/* Center — Logo & Title */}
       <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-sm px-6 animate-in zoom-in-95 fade-in duration-1000">
