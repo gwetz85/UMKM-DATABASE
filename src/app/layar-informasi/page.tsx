@@ -582,11 +582,11 @@ export default function LayarInformasiPage() {
             <div className="min-w-[640px] lg:min-w-0 flex-1 flex flex-col justify-between">
               
               {/* Table Column Headers (Deep Navy Blue Bar) */}
-              <div className="shrink-0 grid grid-cols-[40px_1fr_125px_110px_135px_115px] items-center bg-[#062c5e] px-2.5 py-2.5 text-xs font-bold uppercase text-white tracking-wider rounded-t-lg">
+              <div className="shrink-0 grid grid-cols-[40px_1fr_125px_115px_135px_115px] items-center bg-[#062c5e] px-2.5 py-2.5 text-xs font-bold uppercase text-white tracking-wider rounded-t-lg">
                 <div className="text-center">No</div>
                 <div className="text-left pl-2">Nama Pelaku Usaha</div>
                 <div className="text-center">Kelurahan</div>
-                <div className="text-center">Usulan</div>
+                <div className="text-center">Koordinator</div>
                 <div className="text-center">{activeCategoryMeta.petugasHeader}</div>
                 <div className="text-center">Waktu Submit</div>
               </div>
@@ -621,7 +621,7 @@ export default function LayarInformasiPage() {
                       <div
                         key={actor.id || idx}
                         className={cn(
-                          "min-h-[42px] sm:min-h-[44px] lg:min-h-0 lg:flex-1 grid grid-cols-[40px_1fr_125px_110px_135px_115px] items-center px-2.5 py-1 transition-colors hover:bg-sky-50/70",
+                          "min-h-[42px] sm:min-h-[44px] lg:min-h-0 lg:flex-1 grid grid-cols-[40px_1fr_125px_115px_135px_115px] items-center px-2.5 py-1 transition-colors hover:bg-sky-50/70",
                           idx % 2 === 0 ? "bg-white" : "bg-[#f8fafc]"
                         )}
                       >
@@ -649,10 +649,10 @@ export default function LayarInformasiPage() {
                           </span>
                         </div>
 
-                        {/* 4. Usulan */}
+                        {/* 4. Koordinator */}
                         <div className="text-center flex items-center justify-center px-1">
-                          <span className="text-[11px] sm:text-xs font-semibold text-slate-700 uppercase truncate">
-                            {getUsulan(actor)}
+                          <span className="text-xs sm:text-sm font-semibold text-slate-700 uppercase truncate">
+                            {actor.coordinator || '-'}
                           </span>
                         </div>
 
