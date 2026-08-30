@@ -24,65 +24,72 @@ import {
   Building2,
   Users,
   Radio,
-  Megaphone
+  Megaphone,
+  UserX
 } from 'lucide-react';
 import Image from 'next/image';
 
 // Analog Clock Component
 const AnalogClock = ({ date }: { date: Date | null }) => {
-  const seconds = date ? date.getSeconds() : 0;
-  const minutes = date ? date.getMinutes() : 0;
-  const hours = date ? date.getHours() % 12 : 0;
+  if (!date) return null;
+  const seconds = date.getSeconds();
+  const minutes = date.getMinutes();
+  const hours = date.getHours() % 12;
 
-  const secDeg = seconds * 6;
-  const minDeg = minutes * 6 + seconds * 0.1;
-  const hrDeg = hours * 30 + minutes * 0.5;
+  const secDeg = (seconds / 60) * 360;
+  const minDeg = ((minutes + seconds / 60) / 60) * 360;
+  const hourDeg = ((hours + minutes / 60) / 12) * 360;
 
   return (
-    <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-cyan-400/80 bg-slate-950/80 shadow-[0_0_15px_rgba(6,182,212,0.35)] flex items-center justify-center shrink-0">
-      {/* Clock center dot */}
-      <div className="w-2 h-2 rounded-full bg-cyan-300 z-20 shadow" />
+    <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-cyan-400 bg-[#071d3a] shadow-[0_0_15px_rgba(6,182,212,0.4)] flex items-center justify-center shrink-0">
+      {/* Clock Face Markers */}
+      <div className="absolute inset-1 rounded-full border border-cyan-500/30">
+        {[...Array(12)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-full h-full text-center"
+            style={{ transform: `rotate(${i * 30}deg)` }}
+          >
+            <div className={cn("w-0.5 mx-auto bg-cyan-300", i % 3 === 0 ? "h-2 bg-cyan-200" : "h-1 opacity-60")} />
+          </div>
+        ))}
+      </div>
 
-      {/* Hour markers */}
-      {[...Array(12)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute w-0.5 h-1.5 bg-cyan-300/60"
-          style={{
-            transform: `rotate(${i * 30}deg) translateY(-26px)`
-          }}
-        />
-      ))}
+      {/* Clock Center Pin */}
+      <div className="w-2 h-2 rounded-full bg-cyan-300 z-30 shadow-md ring-2 ring-white/50" />
 
       {/* Hour Hand */}
       <div
-        className="absolute w-1 bg-white rounded-full origin-bottom z-10"
+        className="absolute w-1 bg-white rounded-full origin-bottom z-10 shadow-sm"
         style={{
-          height: '18px',
+          height: '24%',
           bottom: '50%',
-          transform: `translateX(-50%) rotate(${hrDeg}deg)`,
+          left: 'calc(50% - 2px)',
+          transform: `rotate(${hourDeg}deg)`,
           transformOrigin: '50% 100%'
         }}
       />
 
       {/* Minute Hand */}
       <div
-        className="absolute w-0.5 bg-cyan-200 rounded-full origin-bottom z-10"
+        className="absolute w-0.5 bg-cyan-300 rounded-full origin-bottom z-20 shadow-sm"
         style={{
-          height: '24px',
+          height: '35%',
           bottom: '50%',
-          transform: `translateX(-50%) rotate(${minDeg}deg)`,
+          left: 'calc(50% - 1px)',
+          transform: `rotate(${minDeg}deg)`,
           transformOrigin: '50% 100%'
         }}
       />
 
       {/* Second Hand */}
       <div
-        className="absolute w-[1.5px] bg-rose-400 rounded-full origin-bottom z-15"
+        className="absolute w-0.5 bg-red-400 rounded-full origin-bottom z-25"
         style={{
-          height: '26px',
+          height: '40%',
           bottom: '50%',
-          transform: `translateX(-50%) rotate(${secDeg}deg)`,
+          left: 'calc(50% - 1px)',
+          transform: `rotate(${secDeg}deg)`,
           transformOrigin: '50% 100%'
         }}
       />
@@ -90,12 +97,12 @@ const AnalogClock = ({ date }: { date: Date | null }) => {
   );
 };
 
-// Helper to format date & time into DD-MM-YYYY HH:mm
-const formatDateTime = (isoString?: string | null) => {
-  if (!isoString) return '-';
+// Helper format date time
+const formatDateTime = (val: any) => {
+  if (!val) return '-';
   try {
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return '-';
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return String(val);
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
@@ -107,13 +114,28 @@ const formatDateTime = (isoString?: string | null) => {
   }
 };
 
+// Helper usulan extraction
+const getUsulan = (d: BusinessActor) => {
+  try {
+    const actor = d as any;
+    if (actor.proposalDetails?.pengajuan) return actor.proposalDetails.pengajuan;
+    if (actor.proposalDetails?.tujuan) return actor.proposalDetails.tujuan;
+    if (actor.surveyData?.hasilSurvey?.catatan) return actor.surveyData.hasilSurvey.catatan;
+    if (actor.businessType) return actor.businessType;
+    if (actor.businessName) return actor.businessName;
+    return 'BANTUAN MODAL';
+  } catch {
+    return '-';
+  }
+};
+
 export default function LayarInformasiPage() {
   const database = useDatabase();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   
-  // Active selected stat category (default: 'verifikasi' since Data Terverifikasi is removed)
-  const [activeCategory, setActiveCategory] = useState<'verifikasi' | 'hasil' | 'cancel' | 'survey' | 'rekening'>('verifikasi');
+  // Active selected stat category (Ordered: survey -> verifikasi -> hasil -> rekening -> cancel -> cancel_pendataan)
+  const [activeCategory, setActiveCategory] = useState<'survey' | 'verifikasi' | 'hasil' | 'rekening' | 'cancel' | 'cancel_pendataan'>('survey');
 
   // 1. Fetch real-time system stats
   const statsRef = useMemoFirebase(() => {
@@ -156,6 +178,13 @@ export default function LayarInformasiPage() {
     return query(ref(database, 'businessActors'), orderByChild('hasilVerifikasiDinas'), equalTo('Tidak Lolos'), limitToLast(50));
   }, [database]);
   const { data: cancelDinasData, isLoading: isCancelLoading } = useList<BusinessActor>(cancelDinasQuery);
+
+  // 7. Query for Cancel Pendataan (status === 'rejected')
+  const cancelPendataanQuery = useMemoFirebase(() => {
+    if (!database) return null;
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('rejected'), limitToLast(50));
+  }, [database]);
+  const { data: cancelPendataanData, isLoading: isCancelPendataanLoading } = useList<BusinessActor>(cancelPendataanQuery);
 
   // 7. System Users lookup for resolving staff names
   const systemUsersRef = useMemoFirebase(() => {
@@ -371,11 +400,22 @@ export default function LayarInformasiPage() {
       .slice(0, 10);
   }, [finishData]);
 
+  // 7. Cancell Pendataan (Rejected Status)
+  const listCancelPendataan = useMemo(() => {
+    if (!cancelPendataanData) return [];
+    return cancelPendataanData
+      .filter(d => !d.alasanCancelDinas && d.hasilVerifikasiDinas !== 'Tidak Lolos')
+      .sort((a, b) => {
+        const timeA = new Date((a as any).updatedAt || a.createdAt || 0).getTime();
+        const timeB = new Date((b as any).updatedAt || b.createdAt || 0).getTime();
+        return timeB - timeA;
+      })
+      .slice(0, 10);
+  }, [cancelPendataanData]);
+
   // Active current table data based on activeCategory
   const currentTableData = useMemo(() => {
     switch (activeCategory) {
-      case 'cancel':
-        return listCancelDinas;
       case 'survey':
         return listSurveyDinas;
       case 'verifikasi':
@@ -384,20 +424,18 @@ export default function LayarInformasiPage() {
         return listHasilDinas;
       case 'rekening':
         return listRekeningTerinput;
+      case 'cancel':
+        return listCancelDinas;
+      case 'cancel_pendataan':
+        return listCancelPendataan;
       default:
-        return listVerifikasiDinas;
+        return listSurveyDinas;
     }
-  }, [activeCategory, listCancelDinas, listSurveyDinas, listVerifikasiDinas, listHasilDinas, listRekeningTerinput]);
+  }, [activeCategory, listSurveyDinas, listVerifikasiDinas, listHasilDinas, listRekeningTerinput, listCancelDinas, listCancelPendataan]);
 
   // Active Category Meta Information
   const activeCategoryMeta = useMemo(() => {
     switch (activeCategory) {
-      case 'cancel':
-        return {
-          title: 'Cancell Dinas',
-          petugasHeader: 'Petugas Survey / Koordinator',
-          isHasil: false
-        };
       case 'survey':
         return {
           title: 'Survey Dinas',
@@ -422,9 +460,21 @@ export default function LayarInformasiPage() {
           petugasHeader: 'Petugas Verifikator',
           isHasil: true
         };
+      case 'cancel':
+        return {
+          title: 'Cancell Dinas',
+          petugasHeader: 'Petugas Survey / Koordinator',
+          isHasil: false
+        };
+      case 'cancel_pendataan':
+        return {
+          title: 'Cancell Pendataan',
+          petugasHeader: 'Koordinator',
+          isHasil: false
+        };
       default:
         return {
-          title: 'Verifikasi Dinas',
+          title: 'Survey Dinas',
           petugasHeader: 'Petugas Survey',
           isHasil: false
         };
@@ -432,13 +482,14 @@ export default function LayarInformasiPage() {
   }, [activeCategory]);
 
   const isLoadingCurrentTable = useMemo(() => {
-    if (activeCategory === 'cancel') return isCancelLoading;
     if (activeCategory === 'survey') return isSurveyLoading;
     if (activeCategory === 'verifikasi') return isVerifiedDinasLoading;
     if (activeCategory === 'hasil') return isVerifiedDinasLoading;
     if (activeCategory === 'rekening') return isFinishLoading;
+    if (activeCategory === 'cancel') return isCancelLoading;
+    if (activeCategory === 'cancel_pendataan') return isCancelPendataanLoading;
     return false;
-  }, [activeCategory, isCancelLoading, isSurveyLoading, isVerifiedDinasLoading, isFinishLoading]);
+  }, [activeCategory, isSurveyLoading, isVerifiedDinasLoading, isFinishLoading, isCancelLoading, isCancelPendataanLoading]);
 
   // Fullscreen Handler
   const toggleFullscreen = () => {
@@ -694,7 +745,7 @@ export default function LayarInformasiPage() {
         </div>
 
         {/* ═══════════════════════════════════════════════════════════
-            RIGHT COLUMN: STATISTIK (WHITE CARD, 5 COLS, 5 CARDS)
+            RIGHT COLUMN: STATISTIK (WHITE CARD, 6 CARDS IN 2 COLS)
         ════════════════════════════════════════════════════════════ */}
         <div className="lg:col-span-5 bg-white rounded-2xl p-3 sm:p-4 flex flex-col justify-between min-h-0 shadow-2xl border border-slate-100">
           
@@ -715,43 +766,10 @@ export default function LayarInformasiPage() {
             </div>
           </div>
 
-          {/* 5 Vibrant Clickable Cards Grid */}
+          {/* 6 Vibrant Clickable Cards Grid (2 cols x 3 rows) */}
           <div className="flex-1 min-h-0 grid grid-cols-2 gap-2.5 sm:gap-3">
             
-            {/* 1. Cancell Dinas (Coral / Red) */}
-            <button
-              type="button"
-              onClick={() => setActiveCategory('cancel')}
-              className={cn(
-                "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
-                "bg-gradient-to-r from-[#fb5656] to-[#e63946] text-white hover:brightness-105 active:scale-[0.98]",
-                activeCategory === 'cancel' 
-                  ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
-                  : "opacity-95 hover:opacity-100"
-              )}
-            >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
-                <XCircle className="w-6 h-6 sm:w-7 sm:h-7 text-[#e63946]" />
-              </div>
-              <div className="min-w-0 flex-1 flex flex-col justify-center">
-                <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide truncate">
-                  Cancell Dinas
-                </span>
-                <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
-                    {(listCancelDinas.length || (cancelDinasData?.length ?? 0)).toLocaleString('id-ID')}
-                  </span>
-                  <span className="text-xs font-bold text-white/90">
-                    Data
-                  </span>
-                </div>
-                <span className="text-[10px] font-semibold text-white/90 flex items-center gap-1 mt-0.5">
-                  ↗ 5% dari minggu lalu
-                </span>
-              </div>
-            </button>
-
-            {/* 2. Survey Dinas (Sky Blue) */}
+            {/* 1. Survey Dinas (Sky Blue) */}
             <button
               type="button"
               onClick={() => setActiveCategory('survey')}
@@ -784,7 +802,7 @@ export default function LayarInformasiPage() {
               </div>
             </button>
 
-            {/* 3. Verifikasi Dinas (Golden Amber) */}
+            {/* 2. Verifikasi Dinas (Golden Amber) */}
             <button
               type="button"
               onClick={() => setActiveCategory('verifikasi')}
@@ -817,7 +835,7 @@ export default function LayarInformasiPage() {
               </div>
             </button>
 
-            {/* 4. Hasil Dinas (Purple / Indigo) */}
+            {/* 3. Hasil Dinas (Purple / Indigo) */}
             <button
               type="button"
               onClick={() => setActiveCategory('hasil')}
@@ -850,13 +868,13 @@ export default function LayarInformasiPage() {
               </div>
             </button>
 
-            {/* 5. Rekening Terinput (Sea Green / Teal, Spanning 2 Columns) */}
+            {/* 4. Rekening Terinput (Sea Green / Teal) */}
             <button
               type="button"
               onClick={() => setActiveCategory('rekening')}
               className={cn(
-                "col-span-2 w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
-                "bg-gradient-to-r from-[#00a896] via-[#028090] to-[#00a896] text-white hover:brightness-105 active:scale-[0.98]",
+                "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
+                "bg-gradient-to-r from-[#00a896] to-[#028090] text-white hover:brightness-105 active:scale-[0.98]",
                 activeCategory === 'rekening' 
                   ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
                   : "opacity-95 hover:opacity-100"
@@ -879,6 +897,72 @@ export default function LayarInformasiPage() {
                 </div>
                 <span className="text-[10px] font-semibold text-white/90 flex items-center gap-1 mt-0.5">
                   ↗ 15% dari minggu lalu
+                </span>
+              </div>
+            </button>
+
+            {/* 5. Cancell Dinas (Coral / Red) */}
+            <button
+              type="button"
+              onClick={() => setActiveCategory('cancel')}
+              className={cn(
+                "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
+                "bg-gradient-to-r from-[#fb5656] to-[#e63946] text-white hover:brightness-105 active:scale-[0.98]",
+                activeCategory === 'cancel' 
+                  ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
+                  : "opacity-95 hover:opacity-100"
+              )}
+            >
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <XCircle className="w-6 h-6 sm:w-7 sm:h-7 text-[#e63946]" />
+              </div>
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide truncate">
+                  Cancell Dinas
+                </span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
+                    {(listCancelDinas.length || (cancelDinasData?.length ?? 0)).toLocaleString('id-ID')}
+                  </span>
+                  <span className="text-xs font-bold text-white/90">
+                    Data
+                  </span>
+                </div>
+                <span className="text-[10px] font-semibold text-white/90 flex items-center gap-1 mt-0.5">
+                  ↗ 5% dari minggu lalu
+                </span>
+              </div>
+            </button>
+
+            {/* 6. Cancell Pendataan (Crimson / Burgundy Red) */}
+            <button
+              type="button"
+              onClick={() => setActiveCategory('cancel_pendataan')}
+              className={cn(
+                "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
+                "bg-gradient-to-r from-[#e63946] to-[#9d0208] text-white hover:brightness-105 active:scale-[0.98]",
+                activeCategory === 'cancel_pendataan' 
+                  ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
+                  : "opacity-95 hover:opacity-100"
+              )}
+            >
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <UserX className="w-6 h-6 sm:w-7 sm:h-7 text-[#9d0208]" />
+              </div>
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide truncate">
+                  Cancell Pendataan
+                </span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
+                    {(systemStats?.status?.rejected ?? (listCancelPendataan.length || (cancelPendataanData?.length ?? 0))).toLocaleString('id-ID')}
+                  </span>
+                  <span className="text-xs font-bold text-white/90">
+                    Data
+                  </span>
+                </div>
+                <span className="text-[10px] font-semibold text-white/90 flex items-center gap-1 mt-0.5">
+                  ↗ 3% dari minggu lalu
                 </span>
               </div>
             </button>
