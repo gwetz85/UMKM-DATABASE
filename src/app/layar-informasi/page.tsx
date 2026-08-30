@@ -1047,7 +1047,7 @@ export default function LayarInformasiPage() {
         <div className="grid grid-cols-1 md:grid-cols-12 items-center p-2.5 sm:p-3 gap-3">
           
           {/* Section 1: JAM REALTIME + AUTO SYNC + LAST SYNC */}
-          <div className="md:col-span-6 flex items-center justify-between gap-3 bg-[#093563]/80 border border-cyan-400/25 p-2.5 rounded-xl h-full">
+          <div className="md:col-span-6 flex items-center justify-around gap-3 bg-[#093563]/80 border border-cyan-400/25 p-2.5 rounded-xl h-full">
             {/* Clock & Realtime Display */}
             <div className="flex items-center gap-2.5 sm:gap-3.5">
               <AnalogClock date={currentTime} />
@@ -1065,25 +1065,22 @@ export default function LayarInformasiPage() {
             </div>
 
             {/* Vertical Divider */}
-            <div className="h-12 w-px bg-cyan-400/30 hidden sm:block shrink-0" />
+            <div className="h-14 w-px bg-cyan-400/30 hidden sm:block shrink-0" />
 
-            {/* Auto Sync & Last Sync Section */}
-            <div className="flex flex-col justify-center items-end sm:items-start gap-1 shrink-0 pr-1">
-              {/* Auto Sync Timer */}
-              <div className="flex items-center gap-1.5 bg-[#032042]/90 border border-cyan-400/30 px-2.5 py-1 rounded-lg shadow-inner">
-                <RotateCw className="w-3 h-3 text-cyan-300 animate-spin" style={{ animationDuration: '4s' }} />
-                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-cyan-300">
-                  AUTO SYNC:
-                </span>
-                <span className="text-xs sm:text-sm font-black font-mono text-white tracking-widest">
-                  {formatCountdown(nextSyncIn)}
+            {/* Auto Sync & Last Sync Section (Equal Typography to Realtime Clock) */}
+            <div className="flex flex-col justify-center pr-1">
+              <div className="flex items-center gap-1.5">
+                <RotateCw className="w-3.5 h-3.5 text-cyan-300 animate-spin" style={{ animationDuration: '4s' }} />
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-300">
+                  AUTO SYNC
                 </span>
               </div>
-
-              {/* Last Sync */}
-              <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-cyan-100 font-semibold px-1 mt-0.5">
-                <span className="text-cyan-300 font-bold">LAST SYNC:</span>
-                <span className="font-mono font-bold text-white">
+              <div className="text-2xl sm:text-3xl font-black text-white font-mono tracking-tight leading-none my-0.5 drop-shadow-md flex items-center gap-1">
+                {formatCountdown(nextSyncIn)}
+              </div>
+              <div className="text-[10px] sm:text-[11px] font-bold text-cyan-100 uppercase tracking-wide leading-tight flex items-center gap-1">
+                <span className="text-cyan-300 font-bold">LAST:</span>
+                <span className="font-mono text-white font-bold">
                   {lastSyncTime ? lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') : '--:--:--'}
                 </span>
               </div>
