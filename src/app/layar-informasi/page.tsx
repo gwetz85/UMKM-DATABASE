@@ -6,66 +6,100 @@ import { ref, query, orderByChild, equalTo, limitToLast } from 'firebase/databas
 import { BusinessActor } from '../lib/types';
 import { cn } from '@/lib/utils';
 import { 
+  ShieldCheck, 
+  XCircle, 
   UserCheck, 
-  UserX, 
   ClipboardCheck, 
   FileText, 
   ListChecks, 
-  CreditCard, 
+  Landmark, 
   Maximize2, 
   Minimize2, 
   Clock, 
-  Radio, 
-  Loader2,
-  XCircle
+  RotateCw, 
+  Info,
+  Store,
+  CheckCircle2,
+  Calendar,
+  Building2,
+  Users
 } from 'lucide-react';
+import Image from 'next/image';
 
-// SIMPU Icon SVG Logo
-const SimpuLogo = ({ className }: { className?: string }) => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M12 2L2 7l10 5 10-5-10-5z" />
-    <path d="M2 17l10 5 10-5" />
-    <path d="M2 12l10 5 10-5" />
-  </svg>
-);
+// Analog Clock Component
+const AnalogClock = ({ date }: { date: Date | null }) => {
+  const seconds = date ? date.getSeconds() : 0;
+  const minutes = date ? date.getMinutes() : 0;
+  const hours = date ? date.getHours() % 12 : 0;
 
-// Helper to format date & time into two clean centered lines
-const formatDateTimeSplit = (isoString?: string | null) => {
-  if (!isoString) return { date: '-', time: '-' };
-  try {
-    const d = new Date(isoString);
-    if (isNaN(d.getTime())) return { date: '-', time: '-' };
-    const date = d.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-    const time = d.toLocaleTimeString('id-ID', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }).replace(/\./g, ':') + ' WIB';
-    return { date, time };
-  } catch {
-    return { date: '-', time: '-' };
-  }
+  const secDeg = seconds * 6;
+  const minDeg = minutes * 6 + seconds * 0.1;
+  const hrDeg = hours * 30 + minutes * 0.5;
+
+  return (
+    <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full border-2 border-cyan-400/80 bg-slate-950/80 shadow-[0_0_15px_rgba(6,182,212,0.35)] flex items-center justify-center shrink-0">
+      {/* Clock center dot */}
+      <div className="w-2 h-2 rounded-full bg-cyan-300 z-20 shadow" />
+
+      {/* Hour markers */}
+      {[...Array(12)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-0.5 h-1.5 bg-cyan-300/60"
+          style={{
+            transform: `rotate(${i * 30}deg) translateY(-26px)`
+          }}
+        />
+      ))}
+
+      {/* Hour Hand */}
+      <div
+        className="absolute w-1 bg-white rounded-full origin-bottom z-10"
+        style={{
+          height: '18px',
+          bottom: '50%',
+          transform: `translateX(-50%) rotate(${hrDeg}deg)`,
+          transformOrigin: '50% 100%'
+        }}
+      />
+
+      {/* Minute Hand */}
+      <div
+        className="absolute w-0.5 bg-cyan-200 rounded-full origin-bottom z-10"
+        style={{
+          height: '24px',
+          bottom: '50%',
+          transform: `translateX(-50%) rotate(${minDeg}deg)`,
+          transformOrigin: '50% 100%'
+        }}
+      />
+
+      {/* Second Hand */}
+      <div
+        className="absolute w-[1.5px] bg-rose-400 rounded-full origin-bottom z-15"
+        style={{
+          height: '26px',
+          bottom: '50%',
+          transform: `translateX(-50%) rotate(${secDeg}deg)`,
+          transformOrigin: '50% 100%'
+        }}
+      />
+    </div>
+  );
 };
 
-// Helper to format date only
-const formatDateOnly = (isoString?: string | null) => {
+// Helper to format date & time into DD-MM-YYYY HH:mm
+const formatDateTime = (isoString?: string | null) => {
   if (!isoString) return '-';
   try {
     const d = new Date(isoString);
     if (isNaN(d.getTime())) return '-';
-    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    return `${day}-${month}-${year} ${hours}:${mins}`;
   } catch {
     return '-';
   }
@@ -75,30 +109,53 @@ export default function LayarInformasiPage() {
   const database = useDatabase();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const [activeMobileTab, setActiveMobileTab] = useState<'verifikasi' | 'hasil' | 'cancel'>('verifikasi');
+  
+  // Active selected stat category (default: 'verified' as requested)
+  const [activeCategory, setActiveCategory] = useState<'verified' | 'cancel' | 'survey' | 'verifikasi' | 'hasil' | 'rekening'>('verified');
 
   // 1. Fetch real-time system stats
   const statsRef = useMemoFirebase(() => {
     if (!database) return null;
     return ref(database, 'system_stats');
   }, [database]);
-  const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef);
+  const { data: systemStats } = useObject(statsRef);
 
-  // 2. Fetch verified_dinas actors
+  // 2. Query for verified_actor / general actors
+  const verifiedActorQuery = useMemoFirebase(() => {
+    if (!database) return null;
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_actor'), limitToLast(50));
+  }, [database]);
+  const { data: verifiedActorData, isLoading: isVerifiedActorLoading } = useList<BusinessActor>(verifiedActorQuery);
+
+  // 3. Query for verified_dinas actors
   const verifiedDinasQuery = useMemoFirebase(() => {
     if (!database) return null;
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'));
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'), limitToLast(50));
   }, [database]);
-  const { data: verifiedDinasData, isLoading: isTableLoading } = useList<BusinessActor>(verifiedDinasQuery);
+  const { data: verifiedDinasData, isLoading: isVerifiedDinasLoading } = useList<BusinessActor>(verifiedDinasQuery);
 
-  // 2b. Query specifically for Cancel Dinas (hasilVerifikasiDinas == 'Tidak Lolos')
+  // 4. Query for survey dinas (lpj_pending) actors
+  const surveyDinasQuery = useMemoFirebase(() => {
+    if (!database) return null;
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('lpj_pending'), limitToLast(50));
+  }, [database]);
+  const { data: surveyDinasData, isLoading: isSurveyLoading } = useList<BusinessActor>(surveyDinasQuery);
+
+  // 5. Query for finish / rekening terinput actors
+  const finishQuery = useMemoFirebase(() => {
+    if (!database) return null;
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('finish'), limitToLast(50));
+  }, [database]);
+  const { data: finishData, isLoading: isFinishLoading } = useList<BusinessActor>(finishQuery);
+
+  // 6. Query for Cancel Dinas
   const cancelDinasQuery = useMemoFirebase(() => {
     if (!database) return null;
-    return query(ref(database, 'businessActors'), orderByChild('hasilVerifikasiDinas'), equalTo('Tidak Lolos'));
+    return query(ref(database, 'businessActors'), orderByChild('hasilVerifikasiDinas'), equalTo('Tidak Lolos'), limitToLast(50));
   }, [database]);
-  const { data: cancelDinasData } = useList<BusinessActor>(cancelDinasQuery);
+  const { data: cancelDinasData, isLoading: isCancelLoading } = useList<BusinessActor>(cancelDinasQuery);
 
-  // 3. Fetch system_users for looking up staff names from NIPPPK / usernames
+  // 7. System Users lookup for resolving staff names
   const systemUsersRef = useMemoFirebase(() => {
     if (!database) return null;
     return ref(database, 'system_users');
@@ -130,45 +187,14 @@ export default function LayarInformasiPage() {
     return map;
   }, [systemUsers]);
 
-  // 4. Running Text from Firebase
+  // Running Text
   const runningTextRef = useMemoFirebase(() => {
     if (!database) return null;
     return ref(database, 'settings/running_text');
   }, [database]);
   const { data: runningTextConfig } = useObject(runningTextRef);
-  const defaultRunningText = "SELAMAT DATANG DI APLIKASI SISTEM INFORMASI MANAJEMEN PELAKU USAHA (SIMPU) TAHUN 2026 • STATUS VERIFIKASI DATA DAN SURVEY DINAS DIPERBARUI SECARA REALTIME";
+  const defaultRunningText = "BERSAMA DATA, KITA BANGUN UMKM YANG KUAT, MANDIRI DAN BERKELANJUTAN";
   const runningText = (typeof runningTextConfig === 'string' ? runningTextConfig : runningTextConfig?.text) || defaultRunningText;
-
-  // Last Sync Time from system_stats
-  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(() => {
-    return systemStats?.lastUpdated ? new Date(systemStats.lastUpdated) : new Date();
-  });
-
-  useEffect(() => {
-    if (systemStats?.lastUpdated) {
-      const d = new Date(systemStats.lastUpdated);
-      if (!isNaN(d.getTime())) {
-        setLastSyncTime(d);
-      }
-    }
-  }, [systemStats?.lastUpdated]);
-
-  const [nextSyncIn, setNextSyncIn] = useState<number>(300);
-
-  // Smooth continuous countdown that counts down fully until 0:00
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNextSyncIn(prev => {
-        if (prev <= 1) {
-          setLastSyncTime(new Date());
-          return 300;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   // Realtime Clock Tick
   useEffect(() => {
@@ -194,7 +220,7 @@ export default function LayarInformasiPage() {
     if (d.petugasSurvey && !/^\d+$/.test(d.petugasSurvey.trim())) {
       return d.petugasSurvey;
     }
-    const raw = d.petugasSurvey || (d.surveyData as any)?.petugasSurvey || pejabatNama || d.verifiedDinasBy;
+    const raw = d.petugasSurvey || (d.surveyData as any)?.petugasSurvey || pejabatNama || d.verifiedDinasBy || d.coordinator;
     if (raw) {
       const cleanStr = String(raw).trim();
       const cleanDigits = cleanStr.replace(/\D/g, '');
@@ -202,28 +228,21 @@ export default function LayarInformasiPage() {
       if (userLookup[cleanStr.toLowerCase()]) return userLookup[cleanStr.toLowerCase()];
       return raw;
     }
-    return '-';
+    return d.coordinator || '-';
   };
 
-  // Helper verifikator name (Always prioritize human name over NIP/UID/email)
+  // Helper verifikator name
   const getVerifikatorName = (d: BusinessActor) => {
-    // 1. Check explicit name in pejabatData / surveyData if not purely digits
     const pejabatNama = d.pejabatData?.verifikator?.nama || d.surveyData?.pejabatData?.verifikator?.nama;
     if (pejabatNama && !/^\d+$/.test(pejabatNama.trim())) {
       return pejabatNama;
     }
-
-    // 2. Check verifikatorDinas if not purely digits
     if (d.verifikatorDinas && !/^\d+$/.test(d.verifikatorDinas.trim())) {
       return d.verifikatorDinas;
     }
-
-    // 3. Check berkasDinasVerifiedBy if not purely digits and not email
     if (d.berkasDinasVerifiedBy && !/^\d+$/.test(d.berkasDinasVerifiedBy.trim()) && !d.berkasDinasVerifiedBy.includes('@')) {
       return d.berkasDinasVerifiedBy;
     }
-
-    // 4. Try looking up in system_users lookup map for any NIP / UID / username
     const candidates = [
       d.verifikatorDinas,
       d.berkasDinasVerifiedBy,
@@ -241,13 +260,79 @@ export default function LayarInformasiPage() {
         return userLookup[cleanStr.toLowerCase()];
       }
     }
-
-    // 5. Fallback to candidate string if available
     return d.verifikatorDinas || d.berkasDinasVerifiedBy || pejabatNama || '-';
   };
 
-  // 10 Pelaku Usaha Terakhir Masuk Verifikasi Dinas (Tahap 2: Menunggu Cek Berkas)
-  const latestVerifikasiDinas = useMemo(() => {
+  // Helper to get Usulan value
+  const getUsulan = (d: any) => {
+    return d.usulan || 
+           d.surveyData?.rencanaPenggunaan || 
+           d.surveyData?.peralatan || 
+           d.rencanaPenggunaan || 
+           d.peralatan || 
+           d.businessCategory || 
+           d.businessName || 
+           '-';
+  };
+
+  // Filtered lists for each category (up to 10 latest)
+  // 1. Data Terverifikasi (Default View)
+  const listVerified = useMemo(() => {
+    const combined = [
+      ...(verifiedActorData || []),
+      ...(verifiedDinasData || []).filter(d => !isCancelDinas(d)),
+      ...(finishData || [])
+    ];
+    // Deduplicate
+    const map = new Map<string, BusinessActor>();
+    combined.forEach(item => {
+      if (item && item.id && !isCancelDinas(item)) {
+        map.set(item.id, item);
+      }
+    });
+    return Array.from(map.values())
+      .sort((a, b) => {
+        const timeA = new Date(a.createdAt || a.verifiedDinasAt || 0).getTime();
+        const timeB = new Date(b.createdAt || b.verifiedDinasAt || 0).getTime();
+        return timeB - timeA;
+      })
+      .slice(0, 10);
+  }, [verifiedActorData, verifiedDinasData, finishData]);
+
+  // 2. Cancell Dinas
+  const listCancelDinas = useMemo(() => {
+    const map = new Map<string, BusinessActor>();
+    (cancelDinasData || []).forEach(d => {
+      if (d && d.id) map.set(d.id, d);
+    });
+    (verifiedDinasData || []).forEach(d => {
+      if (d && d.id && isCancelDinas(d)) {
+        map.set(d.id, d);
+      }
+    });
+    return Array.from(map.values())
+      .sort((a, b) => {
+        const timeA = new Date((a as any).cancelDinasAt || a.verifiedDinasAt || a.createdAt || 0).getTime();
+        const timeB = new Date((b as any).cancelDinasAt || b.verifiedDinasAt || b.createdAt || 0).getTime();
+        return timeB - timeA;
+      })
+      .slice(0, 10);
+  }, [cancelDinasData, verifiedDinasData]);
+
+  // 3. Survey Dinas
+  const listSurveyDinas = useMemo(() => {
+    return (surveyDinasData || [])
+      .filter(d => !isCancelDinas(d))
+      .sort((a, b) => {
+        const timeA = new Date((a.surveyData as any)?.tanggalSurvey || a.createdAt || 0).getTime();
+        const timeB = new Date((b.surveyData as any)?.tanggalSurvey || b.createdAt || 0).getTime();
+        return timeB - timeA;
+      })
+      .slice(0, 10);
+  }, [surveyDinasData]);
+
+  // 4. Verifikasi Dinas (Tahap 2: Menunggu Cek Berkas)
+  const listVerifikasiDinas = useMemo(() => {
     if (!verifiedDinasData) return [];
     return verifiedDinasData
       .filter(d => d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && !d.berkasDinasVerified && !isCancelDinas(d))
@@ -259,8 +344,8 @@ export default function LayarInformasiPage() {
       .slice(0, 10);
   }, [verifiedDinasData]);
 
-  // 10 Pelaku Usaha Terakhir Masuk Hasil Dinas (Tahap 3: Lolos Cek Berkas)
-  const latestHasilVerifikasi = useMemo(() => {
+  // 5. Hasil Dinas (Tahap 3: Selesai Cek Berkas)
+  const listHasilDinas = useMemo(() => {
     if (!verifiedDinasData) return [];
     return verifiedDinasData
       .filter(d => d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && Boolean(d.berkasDinasVerified) && !isCancelDinas(d))
@@ -272,91 +357,89 @@ export default function LayarInformasiPage() {
       .slice(0, 10);
   }, [verifiedDinasData]);
 
-  // Combined and deduplicated Cancel Dinas list (captures all Cancel Dinas records)
-  const allCancelDinasActors = useMemo(() => {
-    const map = new Map<string, BusinessActor>();
-    (cancelDinasData || []).forEach(d => {
-      if (d && d.id) map.set(d.id, d);
-    });
-    (verifiedDinasData || []).forEach(d => {
-      if (d && d.id && isCancelDinas(d)) {
-        map.set(d.id, d);
-      }
-    });
-    return Array.from(map.values());
-  }, [cancelDinasData, verifiedDinasData]);
-
-  // Total Cancel Dinas
-  const cancelDinasCount = useMemo(() => {
-    return allCancelDinasActors.length;
-  }, [allCancelDinasActors]);
-
-  // 10 Data Cancel Dinas Terbaru
-  const latestCancelDinas = useMemo(() => {
-    return allCancelDinasActors
+  // 6. Rekening Terinput (Tahap 4)
+  const listRekeningTerinput = useMemo(() => {
+    return (finishData || [])
+      .filter(d => !isCancelDinas(d))
       .sort((a, b) => {
-        const timeA = new Date((a as any).cancelDinasAt || a.verifiedDinasAt || a.createdAt || 0).getTime();
-        const timeB = new Date((b as any).cancelDinasAt || b.verifiedDinasAt || b.createdAt || 0).getTime();
+        const timeA = new Date(a.lpjEntryDate || a.createdAt || 0).getTime();
+        const timeB = new Date(b.lpjEntryDate || b.createdAt || 0).getTime();
         return timeB - timeA;
       })
       .slice(0, 10);
-  }, [allCancelDinasActors]);
+  }, [finishData]);
 
-  // 6 Stats Cards with border gradients
-  const cardStats = [
-    {
-      title: "Total Data Terverifikasi",
-      count: systemStats?.status?.verified ?? 0,
-      icon: UserCheck,
-      borderGradient: "from-emerald-400 via-teal-400 to-green-600 shadow-emerald-500/20",
-      cardBg: "from-emerald-700 to-emerald-950",
-      iconBg: "bg-emerald-400/25 text-emerald-200"
-    },
-    {
-      title: "Cancell Dinas",
-      count: cancelDinasCount,
-      icon: UserX,
-      borderGradient: "from-rose-500 via-red-500 to-amber-500 shadow-rose-500/20",
-      cardBg: "from-rose-700 to-red-950",
-      iconBg: "bg-rose-400/25 text-rose-200"
-    },
-    {
-      title: "Survey Dinas",
-      subtitle: "Tahap 1",
-      count: systemStats?.detailedStatus?.survey ?? 0,
-      icon: ClipboardCheck,
-      borderGradient: "from-fuchsia-400 via-purple-500 to-pink-600 shadow-purple-500/20",
-      cardBg: "from-fuchsia-700 to-purple-950",
-      iconBg: "bg-fuchsia-400/25 text-fuchsia-200"
-    },
-    {
-      title: "Verifikasi Dinas",
-      subtitle: "Tahap 2",
-      count: systemStats?.detailedStatus?.verifikasi ?? 0,
-      icon: FileText,
-      borderGradient: "from-indigo-400 via-blue-500 to-sky-600 shadow-indigo-500/20",
-      cardBg: "from-indigo-700 to-blue-950",
-      iconBg: "bg-indigo-400/25 text-indigo-200"
-    },
-    {
-      title: "Hasil Dinas",
-      subtitle: "Tahap 3",
-      count: systemStats?.detailedStatus?.hasilVerifikasi ?? 0,
-      icon: ListChecks,
-      borderGradient: "from-teal-400 via-emerald-500 to-cyan-500 shadow-teal-500/20",
-      cardBg: "from-teal-700 to-cyan-950",
-      iconBg: "bg-teal-400/25 text-teal-200"
-    },
-    {
-      title: "Rekening Terinput",
-      subtitle: "Tahap 4 Final",
-      count: systemStats?.detailedStatus?.selesai ?? systemStats?.status?.finish ?? 0,
-      icon: CreditCard,
-      borderGradient: "from-sky-400 via-blue-500 to-indigo-600 shadow-blue-500/20",
-      cardBg: "from-sky-700 to-blue-950",
-      iconBg: "bg-sky-400/25 text-sky-200"
+  // Active current table data based on activeCategory
+  const currentTableData = useMemo(() => {
+    switch (activeCategory) {
+      case 'cancel':
+        return listCancelDinas;
+      case 'survey':
+        return listSurveyDinas;
+      case 'verifikasi':
+        return listVerifikasiDinas;
+      case 'hasil':
+        return listHasilDinas;
+      case 'rekening':
+        return listRekeningTerinput;
+      case 'verified':
+      default:
+        return listVerified;
     }
-  ];
+  }, [activeCategory, listCancelDinas, listSurveyDinas, listVerifikasiDinas, listHasilDinas, listRekeningTerinput, listVerified]);
+
+  // Active Category Meta Information
+  const activeCategoryMeta = useMemo(() => {
+    switch (activeCategory) {
+      case 'cancel':
+        return {
+          title: 'Cancell Dinas',
+          petugasHeader: 'Petugas Survey / Koordinator',
+          isHasil: false
+        };
+      case 'survey':
+        return {
+          title: 'Survey Dinas',
+          petugasHeader: 'Petugas Survey',
+          isHasil: false
+        };
+      case 'verifikasi':
+        return {
+          title: 'Verifikasi Dinas',
+          petugasHeader: 'Petugas Survey',
+          isHasil: false
+        };
+      case 'hasil':
+        return {
+          title: 'Hasil Dinas',
+          petugasHeader: 'Petugas Verifikator',
+          isHasil: true
+        };
+      case 'rekening':
+        return {
+          title: 'Rekening Terinput',
+          petugasHeader: 'Petugas Verifikator',
+          isHasil: true
+        };
+      case 'verified':
+      default:
+        return {
+          title: 'Data Terverifikasi',
+          petugasHeader: 'Petugas Survey',
+          isHasil: false
+        };
+    }
+  }, [activeCategory]);
+
+  const isLoadingCurrentTable = useMemo(() => {
+    if (activeCategory === 'verified') return isVerifiedActorLoading && isVerifiedDinasLoading;
+    if (activeCategory === 'cancel') return isCancelLoading;
+    if (activeCategory === 'survey') return isSurveyLoading;
+    if (activeCategory === 'verifikasi') return isVerifiedDinasLoading;
+    if (activeCategory === 'hasil') return isVerifiedDinasLoading;
+    if (activeCategory === 'rekening') return isFinishLoading;
+    return false;
+  }, [activeCategory, isVerifiedActorLoading, isVerifiedDinasLoading, isCancelLoading, isSurveyLoading, isFinishLoading]);
 
   // Fullscreen Handler
   const toggleFullscreen = () => {
@@ -383,649 +466,548 @@ export default function LayarInformasiPage() {
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
+  // Format update time
+  const formattedUpdateTime = useMemo(() => {
+    if (currentTime) {
+      const day = String(currentTime.getDate()).padStart(2, '0');
+      const month = String(currentTime.getMonth() + 1).padStart(2, '0');
+      const year = currentTime.getFullYear();
+      const hours = String(currentTime.getHours()).padStart(2, '0');
+      const mins = String(currentTime.getMinutes()).padStart(2, '0');
+      const secs = String(currentTime.getSeconds()).padStart(2, '0');
+      return `${day}-${month}-${year} ${hours}:${mins}:${secs}`;
+    }
+    return '-';
+  }, [currentTime]);
+
   return (
-    <div className="min-h-screen lg:h-[100dvh] lg:max-h-[100dvh] w-full bg-[#060a12] text-white flex flex-col justify-between font-body selection:bg-cyan-500 selection:text-white overflow-y-auto lg:overflow-hidden select-none p-2 sm:p-3 md:p-3.5 gap-2.5">
+    <div className="min-h-screen lg:h-[100dvh] lg:max-h-[100dvh] w-full bg-[#071329] text-white flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-white overflow-y-auto lg:overflow-hidden select-none p-2 sm:p-3 md:p-3.5 gap-2.5">
       
       {/* ─────────────────────────────────────────────────────────────
-          1. HEADER (DENGAN GRADASI BATAS LUAR)
+          1. HEADER BANNER
       ────────────────────────────────────────────────────────────── */}
-      <div className="p-[2px] rounded-2xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 shadow-[0_0_20px_rgba(6,182,212,0.25)] shrink-0">
-        <header className="flex items-center justify-between px-3.5 py-2 md:px-5 md:py-2.5 rounded-[14px] bg-slate-900/95">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 md:w-11 md:h-11 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg ring-2 ring-white/20 shrink-0">
-              <SimpuLogo className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-black uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 animate-pulse leading-none">
-                  LIVE DISPLAY MONITORING
-                </span>
-              </div>
-              <h1 className="text-sm sm:text-base md:text-xl lg:text-2xl font-black text-white uppercase tracking-tight font-headline leading-tight mt-0.5 drop-shadow">
-                SISTEM INFORMASI MANAGEMEN PELAKU USAHA 2026
-              </h1>
-            </div>
-          </div>
-
-          {/* Controls */}
-          <div className="flex items-center gap-2">
-            {/* Last Sync & Auto Sync Status */}
-            <div className="flex items-center gap-2 bg-blue-950/80 border border-blue-500/40 px-2.5 py-1 md:px-3 md:py-1.5 rounded-xl shadow-inner shrink-0">
-              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shrink-0" />
-              <div className="flex items-center gap-2 leading-tight">
-                <div className="flex flex-col">
-                  <span className="text-[8px] md:text-[9px] font-black uppercase tracking-wider text-cyan-300">
-                    LAST SYNC
-                  </span>
-                  <span className="text-[10px] md:text-xs font-black text-white font-mono whitespace-nowrap">
-                    {lastSyncTime 
-                      ? `${lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false })} WIB`
-                      : '-'}
-                  </span>
-                </div>
-                <div className="h-4 w-[1px] bg-blue-500/40 hidden sm:block" />
-                <div className="flex flex-col hidden sm:flex">
-                  <span className="text-[8px] font-extrabold uppercase tracking-wider text-blue-300">
-                    AUTO SYNC
-                  </span>
-                  <span className="text-[10px] md:text-xs font-bold text-cyan-200 font-mono whitespace-nowrap">
-                    {`${Math.floor(nextSyncIn / 60)}:${String(nextSyncIn % 60).padStart(2, '0')}`}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Online Status */}
-            <div className="flex items-center gap-1.5 md:gap-2 bg-emerald-950/80 border border-emerald-500/50 px-2.5 py-1 md:px-3 md:py-1.5 rounded-xl shadow-inner shrink-0">
-              <span className="relative flex h-2 w-2 md:h-2.5 md:w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-90"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 md:h-2.5 md:w-2.5 bg-emerald-400"></span>
-              </span>
-              <span className="text-[11px] md:text-xs font-black uppercase tracking-wider text-emerald-300">
-                Online
-              </span>
-            </div>
-
-            <button
-              onClick={toggleFullscreen}
-              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 active:scale-95 transition-all text-white border border-slate-600 p-2 sm:px-3 sm:py-1.5 rounded-xl font-extrabold text-xs uppercase tracking-wider shadow-md shrink-0"
-              title="Layar Penuh"
-            >
-              {isFullscreen ? <Minimize2 className="w-4 h-4 text-cyan-400" /> : <Maximize2 className="w-4 h-4 text-cyan-400" />}
-              <span className="hidden sm:inline">{isFullscreen ? "Normal" : "Layar Penuh"}</span>
-            </button>
-          </div>
-        </header>
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────────
-          2. BAGIAN ATAS: 6 CARD WIDGET (DENGAN GRADASI BATAS LUAR)
-      ────────────────────────────────────────────────────────────── */}
-      <section className="shrink-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
-        {cardStats.map((item, idx) => {
-          const Icon = item.icon;
-          return (
-            <div
-              key={idx}
-              className={cn(
-                "relative p-[2px] rounded-2xl bg-gradient-to-br shadow-lg transition-transform duration-200 hover:scale-[1.02]",
-                item.borderGradient
-              )}
-            >
-              <div className={cn("rounded-[14px] p-2.5 md:p-3 flex flex-col justify-between h-full bg-gradient-to-br", item.cardBg)}>
-                <div className="flex items-center justify-between gap-1 relative z-10">
-                  <span className="text-[10px] sm:text-[11px] md:text-xs font-black uppercase tracking-wide text-white drop-shadow truncate">
-                    {item.title}
-                  </span>
-                  <div className={cn("p-1 sm:p-1.5 rounded-lg shrink-0", item.iconBg)}>
-                    <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
-                  </div>
-                </div>
-
-                <div className="mt-1 relative z-10 flex items-baseline justify-between">
-                  <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white tracking-tight font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
-                    {isStatsLoading ? (
-                      <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin text-white" />
-                    ) : (
-                      (item.count || 0).toLocaleString('id-ID')
-                    )}
-                  </div>
-                  <span className="text-[9px] sm:text-[10px] md:text-xs font-extrabold text-white/90 uppercase tracking-wider">
-                    {item.subtitle || "Realtime"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </section>
-
-      {/* ─────────────────────────────────────────────────────────────
-          MOBILE TAB SWITCHER (HANYA MUNCUL DI SMARTPHONE / < LG)
-      ────────────────────────────────────────────────────────────── */}
-      <div className="flex lg:hidden items-center p-1 rounded-xl bg-slate-900 border border-slate-700 shadow-md shrink-0 gap-1">
-        <button
-          type="button"
-          onClick={() => setActiveMobileTab('verifikasi')}
-          className={cn(
-            "flex-1 py-2 px-2 rounded-lg text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-1 transition-all",
-            activeMobileTab === 'verifikasi'
-              ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md ring-1 ring-white/20"
-              : "text-slate-400 hover:text-slate-200"
-          )}
-        >
-          <FileText className="w-3 h-3" />
-          <span>Verifikasi ({latestVerifikasiDinas.length})</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveMobileTab('hasil')}
-          className={cn(
-            "flex-1 py-2 px-2 rounded-lg text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-1 transition-all",
-            activeMobileTab === 'hasil'
-              ? "bg-gradient-to-r from-teal-600 to-cyan-600 text-white shadow-md ring-1 ring-white/20"
-              : "text-slate-400 hover:text-slate-200"
-          )}
-        >
-          <ListChecks className="w-3 h-3" />
-          <span>Hasil ({latestHasilVerifikasi.length})</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveMobileTab('cancel')}
-          className={cn(
-            "flex-1 py-2 px-2 rounded-lg text-[10px] font-black uppercase tracking-wide flex items-center justify-center gap-1 transition-all",
-            activeMobileTab === 'cancel'
-              ? "bg-gradient-to-r from-rose-600 to-red-700 text-white shadow-md ring-1 ring-white/20"
-              : "text-slate-400 hover:text-slate-200"
-          )}
-        >
-          <XCircle className="w-3 h-3" />
-          <span>Cancel ({latestCancelDinas.length})</span>
-        </button>
-      </div>
-
-      {/* ─────────────────────────────────────────────────────────────
-          3. BAGIAN TENGAH: 3 TABEL DIBAGI RATA
-      ────────────────────────────────────────────────────────────── */}
-      <section className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-2.5">
+      <header className="relative w-full rounded-2xl overflow-hidden bg-gradient-to-r from-[#032042] via-[#093563] to-[#0c4a6e] border border-cyan-500/30 shadow-lg shrink-0 px-4 py-2.5 sm:px-6 sm:py-3.5 flex items-center justify-between">
         
-        {/* TABEL 1: VERIFIKASI DINAS (TAHAP 2) */}
-        <div className={cn(
-          "relative p-[2.5px] rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 shadow-[0_0_25px_rgba(99,102,241,0.35)] flex flex-col min-h-0 overflow-hidden",
-          activeMobileTab === 'verifikasi' ? "flex" : "hidden lg:flex"
-        )}>
-          <div className="bg-[#0b1329] rounded-[13.5px] p-2.5 md:p-3 shadow-2xl flex flex-col justify-between min-h-0 h-full overflow-hidden">
+        {/* Left Side: Brand Logo & Title */}
+        <div className="flex items-center gap-3 sm:gap-4 z-10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white flex items-center justify-center p-1.5 shadow-md shrink-0">
+              {/* UMKM Bar Chart SVG Icon */}
+              <div className="w-full h-full rounded-lg bg-gradient-to-tr from-blue-700 to-cyan-500 flex items-center justify-center p-1">
+                <svg viewBox="0 0 24 24" className="w-full h-full text-white fill-current" preserveAspectRatio="none">
+                  <path d="M4 19h16v2H4v-2zm2-4h2v3H6v-3zm4-4h2v7h-2v-7zm4-5h2v12h-2V6zm4-3h2v15h-2V3z"/>
+                  <path d="M5 8l4-4 4 4 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
             
-            {/* Table Header Top Bar */}
-            <div className="shrink-0 flex items-center justify-between pb-1.5 mb-1.5 border-b border-indigo-500/30">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-indigo-500/30 border border-indigo-400/50 flex items-center justify-center text-indigo-200 shrink-0 shadow">
-                  <FileText className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-sm md:text-base font-black text-white uppercase tracking-tight drop-shadow">
-                      Verifikasi Dinas
-                    </h2>
-                    <span className="bg-indigo-500/40 text-indigo-100 border border-indigo-300/50 text-[10px] font-black uppercase px-2 py-0.5 rounded-md shadow-sm">
-                      Tahap 2
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-300 font-semibold leading-none mt-0.5">
-                    10 Pelaku Usaha Terakhir Masuk Verifikasi Dinas (Menunggu Cek Berkas)
-                  </p>
-                </div>
-              </div>
-              <span className="text-xs font-black text-indigo-200 bg-indigo-950 border border-indigo-600/60 px-2.5 py-1 rounded-xl shadow-sm">
-                10 Terkini
+            <div className="flex flex-col">
+              <span className="text-xl sm:text-2xl font-black text-white tracking-tight leading-none">
+                UMKM
+              </span>
+              <span className="text-[8px] sm:text-[9px] font-bold text-cyan-300 tracking-wider uppercase leading-tight">
+                DATA AKURAT, USAHA HEBAT
               </span>
             </div>
+          </div>
 
-            {/* Table Container with Horizontal Scroll Support on Mobile */}
-            <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700 bg-[#050a14] overflow-x-auto overflow-y-hidden shadow-inner">
-              <div className="min-w-[540px] lg:min-w-0 flex-1 flex flex-col justify-between">
-                
-                {/* Column Headers */}
-                <div className="shrink-0 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center bg-[#18243e] border-b-2 border-indigo-500/40 px-2 py-2 text-xs font-black uppercase text-indigo-200 tracking-wider">
-                  <div className="text-center">No</div>
-                  <div className="text-left pl-2">Pelaku Usaha</div>
-                  <div className="text-center">Waktu Masuk</div>
-                  <div className="text-center">Petugas Survey</div>
-                  <div className="text-center">Status</div>
-                </div>
+          <div className="h-8 w-[2px] bg-cyan-400/30 hidden sm:block mx-1" />
 
-                {/* 10 Rows with Solid Row Height */}
-                <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800">
-                  {isTableLoading ? (
-                    <div className="py-12 flex flex-col items-center justify-center text-slate-300 font-bold text-sm">
-                      <Loader2 className="w-7 h-7 animate-spin text-indigo-400 mb-2" />
-                      <span>Memuat Data Verifikasi Dinas...</span>
-                    </div>
-                  ) : latestVerifikasiDinas.length === 0 ? (
-                    <div className="py-12 flex items-center justify-center text-slate-400 font-bold uppercase text-sm">
-                      Belum ada antrean data Verifikasi Dinas
-                    </div>
-                  ) : (
-                    latestVerifikasiDinas.map((actor, idx) => {
-                      const dt = formatDateTimeSplit(actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt);
-                      return (
-                        <div 
-                          key={actor.id || idx}
-                          className={cn(
-                            "min-h-[46px] sm:min-h-[48px] lg:min-h-0 lg:flex-1 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center px-2 py-1 transition-colors hover:bg-indigo-950/70",
-                            idx % 2 === 0 ? "bg-[#0a1224]" : "bg-[#0d1830]"
-                          )}
-                        >
-                          {/* 1. No */}
-                          <div className="text-center font-black font-mono text-slate-200 text-sm sm:text-base">
-                            {idx + 1}
-                          </div>
-
-                          {/* 2. Pelaku Usaha */}
-                          <div className="min-w-0 pr-2 pl-2 flex flex-col justify-center">
-                            <div className="font-black text-white uppercase text-xs sm:text-sm md:text-base lg:text-[17px] tracking-normal truncate leading-snug drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                              {actor.fullName || '-'}
-                            </div>
-                            <div className="flex items-center gap-1.5 mt-0.5 truncate">
-                              <span className="text-[11px] sm:text-xs md:text-[13px] font-black text-cyan-300 uppercase tracking-tight truncate">
-                                {actor.businessName || 'USAHA'}
-                              </span>
-                              {actor.kelurahan && (
-                                <>
-                                  <span className="text-slate-400 font-bold">•</span>
-                                  <span className="text-[10px] sm:text-[11px] md:text-xs font-extrabold text-amber-300/90 uppercase tracking-wide truncate">
-                                    {actor.kelurahan}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* 3. Waktu Masuk */}
-                          <div className="text-center flex flex-col items-center justify-center leading-tight">
-                            <span className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center gap-1">
-                              <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                              {dt.time}
-                            </span>
-                            <span className="text-[10px] sm:text-[11px] font-bold text-slate-200 mt-0.5">
-                              {dt.date}
-                            </span>
-                          </div>
-
-                          {/* 4. Petugas Survey */}
-                          <div className="text-center flex items-center justify-center px-1">
-                            <span className="text-xs sm:text-[13px] font-black text-emerald-300 uppercase leading-snug line-clamp-2 drop-shadow-sm">
-                              {getSurveyorName(actor)}
-                            </span>
-                          </div>
-
-                          {/* 5. Status */}
-                          <div className="text-center flex items-center justify-center">
-                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-black uppercase tracking-wide bg-amber-500/30 text-amber-200 border-2 border-amber-400/80 shadow-md">
-                              Cek Berkas
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-              </div>
-            </div>
-
-            {/* Table Footer Stats */}
-            <div className="shrink-0 pt-2 mt-1 border-t border-indigo-500/30 flex items-center justify-between text-xs text-slate-300">
-              <span className="font-black uppercase tracking-wide">
-                Total Antrean: <strong className="text-indigo-300 font-mono text-sm">{systemStats?.detailedStatus?.verifikasi ?? 0} Pelaku Usaha</strong>
-              </span>
-              <span className="text-slate-400 text-[11px] font-semibold">Pembaruan Realtime</span>
-            </div>
-
+          <div className="flex flex-col justify-center">
+            <h1 className="text-sm sm:text-base md:text-xl lg:text-2xl font-black text-white uppercase tracking-tight leading-tight drop-shadow">
+              SISTEM INFORMASI MANAGEMEN PELAKU USAHA
+            </h1>
+            <p className="text-[10px] sm:text-xs md:text-sm font-bold text-cyan-200 tracking-wide uppercase leading-tight">
+              YAYASAN TUNAS BANGSA KEPULAUAN RIAU 2026
+            </p>
           </div>
         </div>
 
-        {/* TABEL 2: HASIL DINAS (TAHAP 3) */}
-        <div className={cn(
-          "relative p-[2.5px] rounded-2xl bg-gradient-to-br from-teal-400 via-cyan-500 to-emerald-500 shadow-[0_0_25px_rgba(20,184,166,0.35)] flex flex-col min-h-0 overflow-hidden",
-          activeMobileTab === 'hasil' ? "flex" : "hidden lg:flex"
-        )}>
-          <div className="bg-[#081a24] rounded-[13.5px] p-2.5 md:p-3 shadow-2xl flex flex-col justify-between min-h-0 h-full overflow-hidden">
-            
-            {/* Table Header Top Bar */}
-            <div className="shrink-0 flex items-center justify-between pb-1.5 mb-1.5 border-b border-teal-500/30">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-teal-500/30 border border-teal-400/50 flex items-center justify-center text-teal-200 shrink-0 shadow">
-                  <ListChecks className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-sm md:text-base font-black text-white uppercase tracking-tight drop-shadow">
-                      Hasil Dinas
-                    </h2>
-                    <span className="bg-teal-500/40 text-teal-100 border border-teal-300/50 text-[10px] font-black uppercase px-2 py-0.5 rounded-md shadow-sm">
-                      Tahap 3
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-300 font-semibold leading-none mt-0.5">
-                    10 Pelaku Usaha Terakhir Selesai Verifikasi Berkas Dinas
-                  </p>
-                </div>
-              </div>
-              <span className="text-xs font-black text-teal-200 bg-teal-950 border border-teal-600/60 px-2.5 py-1 rounded-xl shadow-sm">
-                10 Terkini
-              </span>
-            </div>
-
-            {/* Table Container with Horizontal Scroll Support on Mobile */}
-            <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700 bg-[#040e14] overflow-x-auto overflow-y-hidden shadow-inner">
-              <div className="min-w-[540px] lg:min-w-0 flex-1 flex flex-col justify-between">
-                
-                {/* Column Headers */}
-                <div className="shrink-0 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center bg-[#112a38] border-b-2 border-teal-500/40 px-2 py-2 text-xs font-black uppercase text-teal-200 tracking-wider">
-                  <div className="text-center">No</div>
-                  <div className="text-left pl-2">Pelaku Usaha</div>
-                  <div className="text-center">Waktu Verifikasi</div>
-                  <div className="text-center">Petugas Verifikator</div>
-                  <div className="text-center">Status</div>
-                </div>
-
-                {/* 10 Rows with Solid Row Height */}
-                <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800">
-                  {isTableLoading ? (
-                    <div className="py-12 flex flex-col items-center justify-center text-slate-300 font-bold text-sm">
-                      <Loader2 className="w-7 h-7 animate-spin text-teal-400 mb-2" />
-                      <span>Memuat Data Hasil Dinas...</span>
-                    </div>
-                  ) : latestHasilVerifikasi.length === 0 ? (
-                    <div className="py-12 flex items-center justify-center text-slate-400 font-bold uppercase text-sm">
-                      Belum ada data Hasil Dinas terbaru
-                    </div>
-                  ) : (
-                    latestHasilVerifikasi.map((actor, idx) => {
-                      const dt = formatDateTimeSplit(actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt);
-                      return (
-                        <div 
-                          key={actor.id || idx}
-                          className={cn(
-                            "min-h-[46px] sm:min-h-[48px] lg:min-h-0 lg:flex-1 grid grid-cols-[40px_1fr_135px_130px_95px] md:grid-cols-[46px_1fr_155px_145px_105px] items-center px-2 py-1 transition-colors hover:bg-teal-950/70",
-                            idx % 2 === 0 ? "bg-[#06151f]" : "bg-[#0a1e2c]"
-                          )}
-                        >
-                          {/* 1. No */}
-                          <div className="text-center font-black font-mono text-slate-300 text-sm sm:text-base">
-                            {idx + 1}
-                          </div>
-
-                          {/* 2. Pelaku Usaha */}
-                          <div className="min-w-0 pr-2 pl-2 flex flex-col justify-center">
-                            <div className="font-black text-white uppercase text-xs sm:text-sm md:text-base lg:text-[17px] tracking-normal truncate leading-snug drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                              {actor.fullName || '-'}
-                            </div>
-                            <div className="flex items-center gap-1.5 mt-0.5 truncate">
-                              <span className="text-[11px] sm:text-xs md:text-[13px] font-black text-teal-300 uppercase tracking-tight truncate">
-                                {actor.businessName || 'USAHA'}
-                              </span>
-                              {actor.kelurahan && (
-                                <>
-                                  <span className="text-slate-400 font-bold">•</span>
-                                  <span className="text-[10px] sm:text-[11px] md:text-xs font-extrabold text-amber-300/90 uppercase tracking-wide truncate">
-                                    {actor.kelurahan}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* 3. Waktu Verifikasi */}
-                          <div className="text-center flex flex-col items-center justify-center leading-tight">
-                            <span className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center gap-1">
-                              <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                              {dt.time}
-                            </span>
-                            <span className="text-[10px] sm:text-[11px] font-bold text-slate-200 mt-0.5">
-                              {dt.date}
-                            </span>
-                          </div>
-
-                          {/* 4. Petugas Verifikator */}
-                          <div className="text-center flex items-center justify-center px-1">
-                            <span className="text-xs sm:text-[13px] font-black text-emerald-300 uppercase leading-snug line-clamp-2 drop-shadow-sm">
-                              {getVerifikatorName(actor)}
-                            </span>
-                          </div>
-
-                          {/* 5. Status */}
-                          <div className="text-center flex items-center justify-center">
-                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[10px] sm:text-xs font-black uppercase tracking-wide bg-emerald-500/30 text-emerald-200 border-2 border-emerald-400/80 shadow-md">
-                              ✓ Lolos Berkas
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-              </div>
-            </div>
-
-            {/* Table Footer Stats */}
-            <div className="shrink-0 pt-2 mt-1 border-t border-teal-500/30 flex items-center justify-between text-xs text-slate-300">
-              <span className="font-black uppercase tracking-wide">
-                Total Selesai: <strong className="text-teal-300 font-mono text-sm">{systemStats?.detailedStatus?.hasilVerifikasi ?? 0} Pelaku Usaha</strong>
-              </span>
-              <span className="text-slate-400 text-[11px] font-semibold">Pembaruan Realtime</span>
-            </div>
-
-          </div>
+        {/* Right Side: Subtle Header Banner Illustration / Controls */}
+        <div className="flex items-center gap-3 z-10">
+          <button
+            onClick={toggleFullscreen}
+            className="flex items-center gap-1.5 bg-slate-900/80 hover:bg-slate-800 active:scale-95 transition-all text-cyan-300 border border-cyan-500/40 px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider shadow-md shrink-0"
+            title="Layar Penuh"
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            <span className="hidden sm:inline">{isFullscreen ? "Normal" : "Layar Penuh"}</span>
+          </button>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════
-            TABEL 3: CANCELL DINAS (WRAPPER GRADASI BATAS LUAR MERAH)
-        ═══════════════════════════════════════════════════════════════ */}
-        <div className={cn(
-          "relative p-[2.5px] rounded-2xl bg-gradient-to-br from-rose-500 via-red-600 to-orange-500 shadow-[0_0_25px_rgba(239,68,68,0.35)] flex flex-col min-h-0 overflow-hidden",
-          activeMobileTab === 'cancel' ? "flex" : "hidden lg:flex"
-        )}>
-          <div className="bg-[#1a0808] rounded-[13.5px] p-2.5 md:p-3 shadow-2xl flex flex-col justify-between min-h-0 h-full overflow-hidden">
-            
-            {/* Table Header Top Bar */}
-            <div className="shrink-0 flex items-center justify-between pb-1.5 mb-1.5 border-b border-rose-500/30">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-rose-500/30 border border-rose-400/50 flex items-center justify-center text-rose-200 shrink-0 shadow">
-                  <XCircle className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-sm md:text-base font-black text-white uppercase tracking-tight drop-shadow">
-                      Cancell Dinas
-                    </h2>
-                    <span className="bg-rose-600/50 text-rose-100 border border-rose-400/50 text-[10px] font-black uppercase px-2 py-0.5 rounded-md shadow-sm">
-                      Tidak Lolos
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-300 font-semibold leading-none mt-0.5">
-                    10 Data Pelaku Usaha Cancel Dinas Terbaru
-                  </p>
-                </div>
+        {/* Decorative background glow */}
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-cyan-400/10 to-transparent pointer-events-none" />
+      </header>
+
+      {/* ─────────────────────────────────────────────────────────────
+          2. MAIN CONTENT AREA (2 COLUMNS: PENAMPIL DATA & STATISTIK)
+      ────────────────────────────────────────────────────────────── */}
+      <main className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-3">
+        
+        {/* ═══════════════════════════════════════════════════════════
+            LEFT COLUMN: PENAMPIL DATA (7 Cols on LG)
+        ════════════════════════════════════════════════════════════ */}
+        <div className="lg:col-span-7 bg-[#0b172e]/90 border border-cyan-500/30 rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between min-h-0 shadow-xl">
+          
+          {/* Top Bar of Penampil Data */}
+          <div className="shrink-0 flex items-center justify-between pb-2 mb-1.5 border-b border-cyan-500/20">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600/40 border border-blue-400/60 flex items-center justify-center text-cyan-300 shadow">
+                <Calendar className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <span className="text-xs font-black text-rose-200 bg-rose-950 border border-rose-600/60 px-2.5 py-1 rounded-xl shadow-sm">
-                10 Terkini
-              </span>
+              <div>
+                <h2 className="text-sm sm:text-base font-black text-white uppercase tracking-tight flex items-center gap-2">
+                  PENAMPIL DATA
+                  <span className="text-[10px] sm:text-xs font-bold text-cyan-300 bg-cyan-950/80 border border-cyan-500/50 px-2 py-0.5 rounded-md">
+                    {activeCategoryMeta.title}
+                  </span>
+                </h2>
+                <p className="text-[11px] sm:text-xs text-slate-300 font-medium leading-none mt-0.5">
+                  Menampilkan 10 data terakhir
+                </p>
+              </div>
             </div>
 
-            {/* Table Container */}
-            <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700 bg-[#120404] overflow-x-auto overflow-y-hidden shadow-inner">
-              <div className="min-w-[580px] lg:min-w-0 flex-1 flex flex-col justify-between">
-                
-                {/* Column Headers */}
-                <div className="shrink-0 grid grid-cols-[36px_1fr_110px_110px_90px_1fr] items-center bg-[#2a0f0f] border-b-2 border-rose-600/40 px-2 py-2 text-[10px] md:text-xs font-black uppercase text-rose-300 tracking-wider">
-                  <div className="text-center">No</div>
-                  <div className="text-left pl-2">Pelaku Usaha</div>
-                  <div className="text-center">Koordinator</div>
-                  <div className="text-center">Petugas Survey</div>
-                  <div className="text-center">Tgl Submit</div>
-                  <div className="text-center">Alasan</div>
-                </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] sm:text-xs font-bold text-cyan-300 bg-slate-900 border border-cyan-500/30 px-2.5 py-1 rounded-lg">
+                Maks 10 Terkini
+              </span>
+            </div>
+          </div>
 
-                {/* 10 Rows */}
-                <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800/60">
-                  {isTableLoading ? (
-                    <div className="py-12 flex flex-col items-center justify-center text-slate-300 font-bold text-sm">
-                      <Loader2 className="w-7 h-7 animate-spin text-rose-400 mb-2" />
-                      <span>Memuat Data Cancel Dinas...</span>
-                    </div>
-                  ) : latestCancelDinas.length === 0 ? (
-                    <div className="py-12 flex items-center justify-center text-slate-400 font-bold uppercase text-sm">
-                      Belum ada data Cancel Dinas
-                    </div>
-                  ) : (
-                    latestCancelDinas.map((actor, idx) => (
+          {/* Table Container */}
+          <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-700/80 bg-[#050e1f] overflow-x-auto overflow-y-hidden shadow-inner">
+            <div className="min-w-[620px] lg:min-w-0 flex-1 flex flex-col justify-between">
+              
+              {/* Table Column Headers (Navy Bar) */}
+              <div className="shrink-0 grid grid-cols-[38px_1fr_120px_110px_130px_110px] items-center bg-[#0d2242] border-b-2 border-cyan-500/40 px-2 py-2 text-[11px] sm:text-xs font-black uppercase text-cyan-200 tracking-wider">
+                <div className="text-center">No</div>
+                <div className="text-left pl-2">Nama Pelaku Usaha</div>
+                <div className="text-center">Kelurahan</div>
+                <div className="text-center">Usulan</div>
+                <div className="text-center">{activeCategoryMeta.petugasHeader}</div>
+                <div className="text-center">Waktu Submit</div>
+              </div>
+
+              {/* Table Body (10 Rows) */}
+              <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-800/80">
+                {isLoadingCurrentTable ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-cyan-300 font-bold text-sm">
+                    <RotateCw className="w-7 h-7 animate-spin mb-2" />
+                    <span>Memuat data penampil...</span>
+                  </div>
+                ) : currentTableData.length === 0 ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-slate-400 font-bold uppercase text-sm">
+                    <span>Belum ada data untuk kategori ini</span>
+                  </div>
+                ) : (
+                  currentTableData.map((actor, idx) => {
+                    const submitTime = formatDateTime(
+                      actor.berkasDinasVerifiedAt || 
+                      actor.verifiedDinasAt || 
+                      (actor.surveyData as any)?.tanggalSurvey || 
+                      actor.lpjEntryDate || 
+                      (actor as any).cancelDinasAt || 
+                      actor.createdAt
+                    );
+
+                    const petugasName = activeCategoryMeta.isHasil 
+                      ? getVerifikatorName(actor) 
+                      : getSurveyorName(actor);
+
+                    return (
                       <div
                         key={actor.id || idx}
                         className={cn(
-                          "min-h-[46px] sm:min-h-[48px] lg:min-h-0 lg:flex-1 grid grid-cols-[36px_1fr_110px_110px_90px_1fr] items-center px-2 py-1 transition-colors hover:bg-rose-950/60",
-                          idx % 2 === 0 ? "bg-[#160606]" : "bg-[#1c0808]"
+                          "min-h-[42px] sm:min-h-[44px] lg:min-h-0 lg:flex-1 grid grid-cols-[38px_1fr_120px_110px_130px_110px] items-center px-2 py-1 transition-colors hover:bg-cyan-950/50",
+                          idx % 2 === 0 ? "bg-[#07152b]" : "bg-[#0b1c36]"
                         )}
                       >
                         {/* 1. No */}
-                        <div className="text-center font-black font-mono text-rose-300 text-xs sm:text-sm">
+                        <div className="text-center font-bold font-mono text-cyan-300 text-xs sm:text-sm">
                           {idx + 1}
                         </div>
 
-                        {/* 2. Pelaku Usaha */}
+                        {/* 2. Nama Pelaku Usaha */}
                         <div className="min-w-0 pl-2 pr-1 flex flex-col justify-center">
-                          <div className="font-black text-white uppercase text-xs sm:text-sm md:text-[13px] tracking-normal truncate leading-snug drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                          <span className="font-bold text-white uppercase text-xs sm:text-sm truncate drop-shadow-sm">
                             {actor.fullName || '-'}
-                          </div>
-                          <div className="flex items-center gap-1 mt-0.5 truncate">
-                            <span className="text-[10px] sm:text-[11px] font-black text-rose-300 uppercase tracking-tight truncate">
-                              {actor.businessName || 'USAHA'}
-                            </span>
-                            {actor.kelurahan && (
-                              <>
-                                <span className="text-slate-500 font-bold">•</span>
-                                <span className="text-[9px] sm:text-[10px] font-extrabold text-amber-300/80 uppercase tracking-wide truncate">
-                                  {actor.kelurahan}
-                                </span>
-                              </>
-                            )}
-                          </div>
+                          </span>
+                          <span className="text-[10px] sm:text-[11px] font-semibold text-cyan-300/90 uppercase tracking-tight truncate">
+                            {actor.businessName || 'USAHA'}
+                          </span>
                         </div>
 
-                        {/* 3. Koordinator */}
+                        {/* 3. Kelurahan */}
                         <div className="text-center flex items-center justify-center px-1">
-                          <span className="text-[10px] sm:text-xs font-black text-cyan-300 uppercase leading-snug line-clamp-2 drop-shadow-sm">
-                            {actor.coordinator || '-'}
+                          <span className="text-[11px] sm:text-xs font-semibold text-slate-200 uppercase truncate">
+                            {actor.kelurahan || '-'}
                           </span>
                         </div>
 
-                        {/* 4. Petugas Survey */}
+                        {/* 4. Usulan */}
                         <div className="text-center flex items-center justify-center px-1">
-                          <span className="text-[10px] sm:text-xs font-black text-emerald-300 uppercase leading-snug line-clamp-2 drop-shadow-sm">
-                            {getSurveyorName(actor)}
+                          <span className="text-[10px] sm:text-xs font-bold text-amber-300 uppercase truncate px-1.5 py-0.5 bg-amber-950/60 rounded border border-amber-500/40">
+                            {getUsulan(actor)}
                           </span>
                         </div>
 
-                        {/* 5. Tanggal Submit (Cancel) */}
-                        <div className="text-center flex flex-col items-center justify-center leading-tight">
-                          <span className="text-[10px] sm:text-xs font-bold text-amber-300 font-mono">
-                            {formatDateOnly((actor as any).cancelDinasAt || actor.verifiedDinasAt || actor.createdAt)}
-                          </span>
-                        </div>
-
-                        {/* 6. Alasan */}
+                        {/* 5. Petugas Survey / Verifikator */}
                         <div className="text-center flex items-center justify-center px-1">
-                          <span className="text-[10px] sm:text-xs font-bold text-rose-200 leading-snug line-clamp-2">
-                            {(actor as any).alasanCancelDinas || actor.keteranganDinas || '-'}
+                          <span className="text-[10px] sm:text-xs font-bold text-emerald-300 uppercase truncate">
+                            {petugasName}
                           </span>
+                        </div>
+
+                        {/* 6. Waktu Submit */}
+                        <div className="text-center flex items-center justify-center font-mono text-[10px] sm:text-[11px] font-bold text-cyan-200">
+                          {submitTime}
                         </div>
                       </div>
-                    ))
-                  )}
-                </div>
-
+                    );
+                  })
+                )}
               </div>
-            </div>
 
-            {/* Table Footer Stats */}
-            <div className="shrink-0 pt-2 mt-1 border-t border-rose-500/30 flex items-center justify-between text-xs text-slate-300">
-              <span className="font-black uppercase tracking-wide">
-                Total Cancel: <strong className="text-rose-300 font-mono text-sm">{cancelDinasCount} Pelaku Usaha</strong>
-              </span>
-              <span className="text-slate-400 text-[11px] font-semibold">Pembaruan Realtime</span>
             </div>
-
           </div>
+
+          {/* Table Bottom Status Bar */}
+          <div className="shrink-0 pt-2 mt-1 border-t border-cyan-500/20 flex items-center justify-between text-xs text-slate-300">
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="font-bold text-white text-[11px] sm:text-xs">
+                Total Data:
+              </span>
+              <span className="text-[11px] sm:text-xs text-cyan-300 font-medium">
+                10 data ditampilkan dari data terbaru
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-400">
+              <span>Update Terakhir: {formattedUpdateTime}</span>
+              <RotateCw className="w-3.5 h-3.5 text-cyan-400 animate-spin" style={{ animationDuration: '6s' }} />
+            </div>
+          </div>
+
         </div>
 
-      </section>
+        {/* ═══════════════════════════════════════════════════════════
+            RIGHT COLUMN: STATISTIK (5 Cols on LG, 6 Clickable Cards)
+        ════════════════════════════════════════════════════════════ */}
+        <div className="lg:col-span-5 bg-[#0b172e]/90 border border-cyan-500/30 rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between min-h-0 shadow-xl">
+          
+          {/* Top Bar of Statistik */}
+          <div className="shrink-0 flex items-center justify-between pb-2 mb-2 border-b border-cyan-500/20">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-600/40 border border-teal-400/60 flex items-center justify-center text-teal-300 shadow">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-black text-white uppercase tracking-tight">
+                  STATISTIK
+                </h2>
+                <p className="text-[11px] sm:text-xs text-slate-300 font-medium leading-none mt-0.5">
+                  Ringkasan data pendataan UMKM (Klik untuk melihat tabel)
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 6 Clickable Cards Grid (2 cols x 3 rows) */}
+          <div className="flex-1 min-h-0 grid grid-cols-2 gap-2 sm:gap-2.5">
+            
+            {/* 1. Data Terverifikasi (Green Card) */}
+            <button
+              type="button"
+              onClick={() => setActiveCategory('verified')}
+              className={cn(
+                "w-full text-left rounded-xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-lg relative overflow-hidden",
+                "bg-gradient-to-r from-[#0d9488] to-[#059669] hover:brightness-110 active:scale-[0.98]",
+                activeCategory === 'verified' 
+                  ? "ring-4 ring-white shadow-[0_0_20px_rgba(16,185,129,0.7)] scale-[1.02]" 
+                  : "opacity-90 hover:opacity-100"
+              )}
+            >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-[#059669]" />
+              </div>
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <span className="text-[11px] sm:text-xs font-bold text-emerald-100 uppercase tracking-wide truncate">
+                  Data Terverifikasi
+                </span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow">
+                    {(systemStats?.status?.verified ?? 0).toLocaleString('id-ID')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold text-emerald-100">
+                    Data
+                  </span>
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-semibold text-emerald-200 flex items-center gap-1 mt-0.5">
+                  ↗ 12% dari minggu lalu
+                </span>
+              </div>
+            </button>
+
+            {/* 2. Cancell Dinas (Red/Coral Card) */}
+            <button
+              type="button"
+              onClick={() => setActiveCategory('cancel')}
+              className={cn(
+                "w-full text-left rounded-xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-lg relative overflow-hidden",
+                "bg-gradient-to-r from-[#e11d48] to-[#ef4444] hover:brightness-110 active:scale-[0.98]",
+                activeCategory === 'cancel' 
+                  ? "ring-4 ring-white shadow-[0_0_20px_rgba(239,68,68,0.7)] scale-[1.02]" 
+                  : "opacity-90 hover:opacity-100"
+              )}
+            >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <XCircle className="w-6 h-6 sm:w-7 sm:h-7 text-[#ef4444]" />
+              </div>
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <span className="text-[11px] sm:text-xs font-bold text-rose-100 uppercase tracking-wide truncate">
+                  Cancell Dinas
+                </span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow">
+                    {(listCancelDinas.length || (cancelDinasData?.length ?? 0)).toLocaleString('id-ID')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold text-rose-100">
+                    Data
+                  </span>
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-semibold text-rose-200 flex items-center gap-1 mt-0.5">
+                  ↗ 5% dari minggu lalu
+                </span>
+              </div>
+            </button>
+
+            {/* 3. Survey Dinas (Sky/Blue Card) */}
+            <button
+              type="button"
+              onClick={() => setActiveCategory('survey')}
+              className={cn(
+                "w-full text-left rounded-xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-lg relative overflow-hidden",
+                "bg-gradient-to-r from-[#0284c7] to-[#2563eb] hover:brightness-110 active:scale-[0.98]",
+                activeCategory === 'survey' 
+                  ? "ring-4 ring-white shadow-[0_0_20px_rgba(37,99,235,0.7)] scale-[1.02]" 
+                  : "opacity-90 hover:opacity-100"
+              )}
+            >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <UserCheck className="w-6 h-6 sm:w-7 sm:h-7 text-[#2563eb]" />
+              </div>
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <span className="text-[11px] sm:text-xs font-bold text-sky-100 uppercase tracking-wide truncate">
+                  Survey Dinas
+                </span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow">
+                    {(systemStats?.detailedStatus?.survey ?? 0).toLocaleString('id-ID')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold text-sky-100">
+                    Data
+                  </span>
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-semibold text-sky-200 flex items-center gap-1 mt-0.5">
+                  ↗ 8% dari minggu lalu
+                </span>
+              </div>
+            </button>
+
+            {/* 4. Verifikasi Dinas (Yellow/Amber Card) */}
+            <button
+              type="button"
+              onClick={() => setActiveCategory('verifikasi')}
+              className={cn(
+                "w-full text-left rounded-xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-lg relative overflow-hidden",
+                "bg-gradient-to-r from-[#d97706] to-[#f59e0b] hover:brightness-110 active:scale-[0.98]",
+                activeCategory === 'verifikasi' 
+                  ? "ring-4 ring-white shadow-[0_0_20px_rgba(245,158,11,0.7)] scale-[1.02]" 
+                  : "opacity-90 hover:opacity-100"
+              )}
+            >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <ClipboardCheck className="w-6 h-6 sm:w-7 sm:h-7 text-[#d97706]" />
+              </div>
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <span className="text-[11px] sm:text-xs font-bold text-amber-100 uppercase tracking-wide truncate">
+                  Verifikasi Dinas
+                </span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow">
+                    {(systemStats?.detailedStatus?.verifikasi ?? 0).toLocaleString('id-ID')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold text-amber-100">
+                    Data
+                  </span>
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-semibold text-amber-200 flex items-center gap-1 mt-0.5">
+                  ↗ 10% dari minggu lalu
+                </span>
+              </div>
+            </button>
+
+            {/* 5. Hasil Dinas (Purple/Indigo Card) */}
+            <button
+              type="button"
+              onClick={() => setActiveCategory('hasil')}
+              className={cn(
+                "w-full text-left rounded-xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-lg relative overflow-hidden",
+                "bg-gradient-to-r from-[#4f46e5] to-[#7c3aed] hover:brightness-110 active:scale-[0.98]",
+                activeCategory === 'hasil' 
+                  ? "ring-4 ring-white shadow-[0_0_20px_rgba(124,58,237,0.7)] scale-[1.02]" 
+                  : "opacity-90 hover:opacity-100"
+              )}
+            >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <FileText className="w-6 h-6 sm:w-7 sm:h-7 text-[#4f46e5]" />
+              </div>
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <span className="text-[11px] sm:text-xs font-bold text-indigo-100 uppercase tracking-wide truncate">
+                  Hasil Dinas
+                </span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow">
+                    {(systemStats?.detailedStatus?.hasilVerifikasi ?? 0).toLocaleString('id-ID')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold text-indigo-100">
+                    Data
+                  </span>
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-semibold text-indigo-200 flex items-center gap-1 mt-0.5">
+                  ↗ 6% dari minggu lalu
+                </span>
+              </div>
+            </button>
+
+            {/* 6. Rekening Terinput (Teal/Cyan Card) */}
+            <button
+              type="button"
+              onClick={() => setActiveCategory('rekening')}
+              className={cn(
+                "w-full text-left rounded-xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-lg relative overflow-hidden",
+                "bg-gradient-to-r from-[#0d9488] to-[#06b6d4] hover:brightness-110 active:scale-[0.98]",
+                activeCategory === 'rekening' 
+                  ? "ring-4 ring-white shadow-[0_0_20px_rgba(6,182,212,0.7)] scale-[1.02]" 
+                  : "opacity-90 hover:opacity-100"
+              )}
+            >
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <Landmark className="w-6 h-6 sm:w-7 sm:h-7 text-[#0d9488]" />
+              </div>
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <span className="text-[11px] sm:text-xs font-bold text-teal-100 uppercase tracking-wide truncate">
+                  Rekening Terinput
+                </span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow">
+                    {(systemStats?.detailedStatus?.selesai ?? systemStats?.status?.finish ?? 0).toLocaleString('id-ID')}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-bold text-teal-100">
+                    Data
+                  </span>
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-semibold text-teal-200 flex items-center gap-1 mt-0.5">
+                  ↗ 15% dari minggu lalu
+                </span>
+              </div>
+            </button>
+
+          </div>
+
+        </div>
+
+      </main>
 
       {/* ─────────────────────────────────────────────────────────────
-          4. BAGIAN BAWAH: FOOTER (DENGAN GRADASI BATAS LUAR)
+          3. BOTTOM SECTION (CLOCK, INFORMASI LAYANAN, UMKM ARTWORK, RIBBON)
       ────────────────────────────────────────────────────────────── */}
-      <div className="p-[2px] rounded-2xl bg-gradient-to-r from-teal-500 via-cyan-500 to-indigo-600 shadow-[0_0_25px_rgba(6,182,212,0.25)] shrink-0">
-        <footer className="rounded-[14px] overflow-hidden bg-slate-900/95">
+      <footer className="w-full bg-[#051329] border border-cyan-500/30 rounded-2xl overflow-hidden shadow-2xl shrink-0 flex flex-col">
+        
+        {/* Top 3-Section Row */}
+        <div className="grid grid-cols-1 md:grid-cols-12 items-center p-2.5 sm:p-3 gap-3">
           
-          {/* Row 1: Running Text (Marquee) */}
-          <div className="w-full bg-[#022c2a] border-b border-cyan-500/40 py-1.5 overflow-hidden flex items-center">
-            <div className="bg-cyan-400 text-slate-950 px-2.5 py-0.5 text-[10px] sm:text-xs font-black uppercase tracking-widest shrink-0 flex items-center gap-1.5 shadow-md ml-2 rounded-md">
-              <Radio className="w-3.5 h-3.5 animate-pulse text-slate-950" />
-              PENGUMUMAN
+          {/* Section 1: JAM REALTIME (Analog + Digital) */}
+          <div className="md:col-span-4 flex items-center gap-3 sm:gap-4 bg-[#091e3d]/80 border border-cyan-500/30 p-2.5 rounded-xl">
+            <AnalogClock date={currentTime} />
+            <div className="flex flex-col justify-center">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-300">
+                JAM REALTIME
+              </span>
+              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-white font-mono tracking-tight leading-none my-0.5 drop-shadow">
+                {currentTime ? currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') : '--:--:--'}
+              </div>
+              <span className="text-[11px] sm:text-xs font-bold text-slate-300 uppercase tracking-wide leading-tight">
+                {currentTime ? currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+              </span>
             </div>
-            <div className="relative flex overflow-x-hidden whitespace-nowrap flex-1">
-              <div className="animate-marquee inline-block whitespace-nowrap">
-                <span className="text-xs md:text-sm font-black text-cyan-100 uppercase tracking-widest px-8 drop-shadow">
-                  {runningText}
-                </span>
-                <span className="text-cyan-400 mx-4 font-black">•</span>
-                <span className="text-xs md:text-sm font-black text-cyan-100 uppercase tracking-widest px-8 drop-shadow">
-                  {runningText}
-                </span>
-                <span className="text-cyan-400 mx-4 font-black">•</span>
+          </div>
+
+          {/* Section 2: INFORMASI LAYANAN */}
+          <div className="md:col-span-5 flex items-start gap-3 bg-[#091e3d]/80 border border-cyan-500/30 p-2.5 rounded-xl h-full">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 border-cyan-400 flex items-center justify-center text-cyan-300 shrink-0 mt-0.5">
+              <Info className="w-6 h-6 sm:w-7 sm:h-7" />
+            </div>
+            <div className="flex flex-col justify-center">
+              <h3 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider">
+                INFORMASI LAYANAN
+              </h3>
+              <p className="text-[10px] sm:text-[11px] text-slate-200 font-normal leading-relaxed mt-0.5">
+                Sistem Informasi Managemen Pelaku Usaha (SIMPU) berkomitmen untuk menyediakan data yang akurat, transparan dan terpercaya demi mendukung pertumbuhan UMKM yang berdaya saing. Bersama kita wujudkan UMKM maju, masyarakat sejahtera.
+              </p>
+            </div>
+          </div>
+
+          {/* Section 3: UMKM Illustration & Skyline Graphic */}
+          <div className="md:col-span-3 flex items-center justify-center md:justify-end gap-3 bg-gradient-to-r from-transparent to-[#091e3d]/80 p-2 rounded-xl h-full relative overflow-hidden">
+            {/* Storefront Graphic */}
+            <div className="flex items-center gap-2 z-10">
+              <div className="relative flex flex-col items-center">
+                {/* Roof Awning */}
+                <div className="w-24 h-6 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 rounded-t-md flex items-center justify-center shadow-md">
+                  <span className="text-[10px] font-black text-white tracking-widest uppercase">
+                    UMKM
+                  </span>
+                </div>
+                <div className="w-24 h-3 bg-red-600/90 rounded-b-md flex justify-around px-1">
+                  <div className="w-2 h-full bg-white" />
+                  <div className="w-2 h-full bg-white" />
+                  <div className="w-2 h-full bg-white" />
+                  <div className="w-2 h-full bg-white" />
+                </div>
+                {/* Store Body */}
+                <div className="w-20 h-9 bg-slate-900 border-x border-b border-amber-400/40 flex items-center justify-around px-2">
+                  <div className="w-5 h-6 bg-cyan-400/30 rounded border border-cyan-400/50" />
+                  <div className="w-4 h-7 bg-amber-400/40 rounded-t border border-amber-400/60" />
+                </div>
+              </div>
+
+              {/* City skyline illustration silhouette */}
+              <div className="flex items-end gap-1 opacity-70">
+                <div className="w-3 h-12 bg-cyan-800/60 rounded-t" />
+                <div className="w-4 h-16 bg-blue-700/60 rounded-t" />
+                <div className="w-3 h-10 bg-cyan-900/60 rounded-t" />
+                <div className="w-5 h-20 bg-indigo-700/60 rounded-t flex flex-col items-center">
+                  <div className="w-1 h-3 bg-cyan-400" />
+                </div>
+                <div className="w-3 h-14 bg-sky-800/60 rounded-t" />
               </div>
             </div>
           </div>
 
-          {/* Row 2: Bottom Bar (Realtime Clock Rata Tengah) */}
-          <div className="px-4 py-2 md:px-6 md:py-2.5 flex items-center justify-center bg-[#0a101d]">
-            
-            {/* REALTIME CLOCK RATA TENGAH */}
-            <div className="flex items-center gap-2.5 sm:gap-3 bg-slate-950 border border-slate-700/80 px-4 py-1.5 sm:px-6 sm:py-2 rounded-2xl shadow-md">
-              <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-cyan-400 animate-pulse" />
-              <div className="flex items-baseline gap-2 sm:gap-3">
-                <span className="text-base sm:text-xl md:text-2xl font-black text-white font-mono tracking-wider">
-                  {currentTime ? currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') : '--:--:--'}
-                  <span className="text-xs text-cyan-400 font-black ml-1">WIB</span>
-                </span>
-                <span className="text-xs sm:text-sm font-black text-slate-300 uppercase tracking-wider">
-                  {currentTime ? currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}
-                </span>
-              </div>
-            </div>
+        </div>
 
-          </div>
-        </footer>
-      </div>
+        {/* Bottom Banner Ribbon */}
+        <div className="w-full bg-gradient-to-r from-blue-700 via-cyan-600 to-blue-700 py-1.5 px-4 text-center border-t border-cyan-400/40">
+          <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wider drop-shadow">
+            {runningText}
+          </span>
+        </div>
 
-      {/* Marquee Keyframes */}
-      <style jsx>{`
-        .animate-marquee {
-          display: inline-block;
-          animation: marquee 70s linear infinite;
-        }
+      </footer>
 
-        @keyframes marquee {
-          0% {
-            transform: translateX(0%);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-      `}</style>
     </div>
   );
 }
