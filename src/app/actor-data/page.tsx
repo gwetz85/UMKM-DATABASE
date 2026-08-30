@@ -1300,12 +1300,13 @@ function ActorDataContent() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Tanggal Lahir (Otomatis)</Label>
+                        <Label className="text-xs font-bold uppercase">Tanggal Lahir</Label>
                         <Input 
                           name="dob" 
                           value={editDob} 
-                          readOnly 
-                          className="bg-muted font-semibold"
+                          onChange={(e) => setEditDob(e.target.value)}
+                          placeholder="DD-MM-YYYY"
+                          className="font-semibold"
                         />
                       </div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor HP</Label><Input name="phone" defaultValue={viewingActor.phone} /></div>
