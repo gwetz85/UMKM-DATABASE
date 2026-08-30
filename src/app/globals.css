@@ -72,7 +72,6 @@
   body {
     @apply text-foreground font-body antialiased;
     min-height: 100vh;
-    letter-spacing: 0.03em;
   }
   body.app-bg {
     background-image: url('/bg-dkukm-bpjs.jpg?v=20260723');
