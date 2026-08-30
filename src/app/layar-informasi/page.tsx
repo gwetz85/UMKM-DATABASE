@@ -112,8 +112,8 @@ export default function LayarInformasiPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   
-  // Active selected stat category (default: 'verified' as requested)
-  const [activeCategory, setActiveCategory] = useState<'verified' | 'cancel' | 'survey' | 'verifikasi' | 'hasil' | 'rekening'>('verified');
+  // Active selected stat category (default: 'verifikasi' since Data Terverifikasi is removed)
+  const [activeCategory, setActiveCategory] = useState<'verifikasi' | 'hasil' | 'cancel' | 'survey' | 'rekening'>('verifikasi');
 
   // 1. Fetch real-time system stats
   const statsRef = useMemoFirebase(() => {
@@ -384,11 +384,10 @@ export default function LayarInformasiPage() {
         return listHasilDinas;
       case 'rekening':
         return listRekeningTerinput;
-      case 'verified':
       default:
-        return listVerified;
+        return listVerifikasiDinas;
     }
-  }, [activeCategory, listCancelDinas, listSurveyDinas, listVerifikasiDinas, listHasilDinas, listRekeningTerinput, listVerified]);
+  }, [activeCategory, listCancelDinas, listSurveyDinas, listVerifikasiDinas, listHasilDinas, listRekeningTerinput]);
 
   // Active Category Meta Information
   const activeCategoryMeta = useMemo(() => {
@@ -423,10 +422,9 @@ export default function LayarInformasiPage() {
           petugasHeader: 'Petugas Verifikator',
           isHasil: true
         };
-      case 'verified':
       default:
         return {
-          title: 'Data Terverifikasi',
+          title: 'Verifikasi Dinas',
           petugasHeader: 'Petugas Survey',
           isHasil: false
         };
@@ -434,14 +432,13 @@ export default function LayarInformasiPage() {
   }, [activeCategory]);
 
   const isLoadingCurrentTable = useMemo(() => {
-    if (activeCategory === 'verified') return isVerifiedActorLoading && isVerifiedDinasLoading;
     if (activeCategory === 'cancel') return isCancelLoading;
     if (activeCategory === 'survey') return isSurveyLoading;
     if (activeCategory === 'verifikasi') return isVerifiedDinasLoading;
     if (activeCategory === 'hasil') return isVerifiedDinasLoading;
     if (activeCategory === 'rekening') return isFinishLoading;
     return false;
-  }, [activeCategory, isVerifiedActorLoading, isVerifiedDinasLoading, isCancelLoading, isSurveyLoading, isFinishLoading]);
+  }, [activeCategory, isCancelLoading, isSurveyLoading, isVerifiedDinasLoading, isFinishLoading]);
 
   // Fullscreen Handler
   const toggleFullscreen = () => {
@@ -579,19 +576,19 @@ export default function LayarInformasiPage() {
 
           {/* Table Container */}
           <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-200 bg-slate-50/50 overflow-x-auto overflow-y-hidden shadow-inner">
-            <div className="min-w-[640px] lg:min-w-0 flex-1 flex flex-col justify-between">
+            <div className="min-w-[650px] lg:min-w-0 flex-1 flex flex-col justify-between">
               
-              {/* Table Column Headers (Deep Navy Blue Bar) */}
-              <div className="shrink-0 grid grid-cols-[40px_1fr_125px_115px_135px_115px] items-center bg-[#062c5e] px-2.5 py-2.5 text-xs font-bold uppercase text-white tracking-wider rounded-t-lg">
+              {/* Table Column Headers (Deep Navy Blue Bar, All Center-Aligned) */}
+              <div className="shrink-0 grid grid-cols-[45px_1.4fr_1.1fr_1.1fr_1.2fr_115px] items-center bg-[#062c5e] px-2 py-2.5 text-xs font-bold uppercase text-white tracking-wider rounded-t-lg text-center">
                 <div className="text-center">No</div>
-                <div className="text-left pl-2">Nama Pelaku Usaha</div>
+                <div className="text-center">Nama Pelaku Usaha</div>
                 <div className="text-center">Kelurahan</div>
                 <div className="text-center">Koordinator</div>
                 <div className="text-center">{activeCategoryMeta.petugasHeader}</div>
                 <div className="text-center">Waktu Submit</div>
               </div>
 
-              {/* Table Body (10 Clean Rows) */}
+              {/* Table Body (10 Clean Center-Aligned Rows) */}
               <div className="flex-1 flex flex-col justify-between min-h-0 divide-y divide-slate-200/80 bg-white">
                 {isLoadingCurrentTable ? (
                   <div className="py-12 flex flex-col items-center justify-center text-[#0284c7] font-bold text-sm">
@@ -621,7 +618,7 @@ export default function LayarInformasiPage() {
                       <div
                         key={actor.id || idx}
                         className={cn(
-                          "min-h-[42px] sm:min-h-[44px] lg:min-h-0 lg:flex-1 grid grid-cols-[40px_1fr_125px_115px_135px_115px] items-center px-2.5 py-1 transition-colors hover:bg-sky-50/70",
+                          "min-h-[44px] lg:min-h-0 lg:flex-1 grid grid-cols-[45px_1.4fr_1.1fr_1.1fr_1.2fr_115px] items-center px-2 py-1 transition-colors hover:bg-sky-50/70 text-center",
                           idx % 2 === 0 ? "bg-white" : "bg-[#f8fafc]"
                         )}
                       >
@@ -631,40 +628,40 @@ export default function LayarInformasiPage() {
                         </div>
 
                         {/* 2. Nama Pelaku Usaha */}
-                        <div className="min-w-0 pl-2 pr-1 flex flex-col justify-center">
-                          <span className="font-bold text-slate-900 uppercase text-xs sm:text-sm truncate">
+                        <div className="min-w-0 px-1 flex flex-col items-center justify-center text-center">
+                          <span className="font-bold text-slate-900 uppercase text-xs sm:text-[13px] leading-tight text-center line-clamp-2">
                             {actor.fullName || '-'}
                           </span>
                           {actor.businessName && (
-                            <span className="text-[10px] sm:text-[11px] font-semibold text-[#0284c7] uppercase tracking-tight truncate">
+                            <span className="text-[10px] sm:text-[11px] font-semibold text-[#0284c7] uppercase tracking-tight text-center mt-0.5 line-clamp-1">
                               {actor.businessName}
                             </span>
                           )}
                         </div>
 
                         {/* 3. Kelurahan */}
-                        <div className="text-center flex items-center justify-center px-1">
-                          <span className="text-xs sm:text-sm font-semibold text-slate-700 uppercase truncate">
+                        <div className="min-w-0 px-1 flex items-center justify-center text-center">
+                          <span className="text-xs sm:text-sm font-semibold text-slate-700 uppercase text-center line-clamp-2 leading-tight">
                             {actor.kelurahan || '-'}
                           </span>
                         </div>
 
                         {/* 4. Koordinator */}
-                        <div className="text-center flex items-center justify-center px-1">
-                          <span className="text-xs sm:text-sm font-semibold text-slate-700 uppercase truncate">
+                        <div className="min-w-0 px-1 flex items-center justify-center text-center">
+                          <span className="text-xs sm:text-sm font-semibold text-slate-700 uppercase text-center line-clamp-2 leading-tight">
                             {actor.coordinator || '-'}
                           </span>
                         </div>
 
                         {/* 5. Petugas Survey / Verifikator */}
-                        <div className="text-center flex items-center justify-center px-1">
-                          <span className="text-xs sm:text-sm font-semibold text-slate-800 uppercase truncate">
+                        <div className="min-w-0 px-1 flex items-center justify-center text-center">
+                          <span className="text-xs sm:text-sm font-semibold text-slate-800 uppercase text-center line-clamp-2 leading-tight">
                             {petugasName}
                           </span>
                         </div>
 
                         {/* 6. Waktu Submit */}
-                        <div className="text-center flex items-center justify-center font-mono text-xs sm:text-sm text-slate-600">
+                        <div className="min-w-0 px-1 flex items-center justify-center text-center font-mono text-xs sm:text-sm text-slate-600 whitespace-nowrap">
                           {submitTime}
                         </div>
                       </div>
@@ -697,7 +694,7 @@ export default function LayarInformasiPage() {
         </div>
 
         {/* ═══════════════════════════════════════════════════════════
-            RIGHT COLUMN: STATISTIK (WHITE CARD, 5 COLS, 6 CARDS)
+            RIGHT COLUMN: STATISTIK (WHITE CARD, 5 COLS, 5 CARDS)
         ════════════════════════════════════════════════════════════ */}
         <div className="lg:col-span-5 bg-white rounded-2xl p-3 sm:p-4 flex flex-col justify-between min-h-0 shadow-2xl border border-slate-100">
           
@@ -718,43 +715,10 @@ export default function LayarInformasiPage() {
             </div>
           </div>
 
-          {/* 6 Vibrant Clickable Cards Grid (2 cols x 3 rows) */}
+          {/* 5 Vibrant Clickable Cards Grid */}
           <div className="flex-1 min-h-0 grid grid-cols-2 gap-2.5 sm:gap-3">
             
-            {/* 1. Data Terverifikasi (Emerald Green) */}
-            <button
-              type="button"
-              onClick={() => setActiveCategory('verified')}
-              className={cn(
-                "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
-                "bg-gradient-to-r from-[#00b288] to-[#009e75] text-white hover:brightness-105 active:scale-[0.98]",
-                activeCategory === 'verified' 
-                  ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
-                  : "opacity-95 hover:opacity-100"
-              )}
-            >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
-                <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-[#009e75]" />
-              </div>
-              <div className="min-w-0 flex-1 flex flex-col justify-center">
-                <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide truncate">
-                  Data Terverifikasi
-                </span>
-                <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
-                    {(systemStats?.status?.verified ?? 0).toLocaleString('id-ID')}
-                  </span>
-                  <span className="text-xs font-bold text-white/90">
-                    Data
-                  </span>
-                </div>
-                <span className="text-[10px] font-semibold text-white/90 flex items-center gap-1 mt-0.5">
-                  ↗ 12% dari minggu lalu
-                </span>
-              </div>
-            </button>
-
-            {/* 2. Cancell Dinas (Coral / Red) */}
+            {/* 1. Cancell Dinas (Coral / Red) */}
             <button
               type="button"
               onClick={() => setActiveCategory('cancel')}
@@ -787,7 +751,7 @@ export default function LayarInformasiPage() {
               </div>
             </button>
 
-            {/* 3. Survey Dinas (Sky Blue) */}
+            {/* 2. Survey Dinas (Sky Blue) */}
             <button
               type="button"
               onClick={() => setActiveCategory('survey')}
@@ -820,7 +784,7 @@ export default function LayarInformasiPage() {
               </div>
             </button>
 
-            {/* 4. Verifikasi Dinas (Golden Amber) */}
+            {/* 3. Verifikasi Dinas (Golden Amber) */}
             <button
               type="button"
               onClick={() => setActiveCategory('verifikasi')}
@@ -853,7 +817,7 @@ export default function LayarInformasiPage() {
               </div>
             </button>
 
-            {/* 5. Hasil Dinas (Purple / Indigo) */}
+            {/* 4. Hasil Dinas (Purple / Indigo) */}
             <button
               type="button"
               onClick={() => setActiveCategory('hasil')}
@@ -886,13 +850,13 @@ export default function LayarInformasiPage() {
               </div>
             </button>
 
-            {/* 6. Rekening Terinput (Sea Green / Teal) */}
+            {/* 5. Rekening Terinput (Sea Green / Teal, Spanning 2 Columns) */}
             <button
               type="button"
               onClick={() => setActiveCategory('rekening')}
               className={cn(
-                "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
-                "bg-gradient-to-r from-[#00a896] to-[#028090] text-white hover:brightness-105 active:scale-[0.98]",
+                "col-span-2 w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
+                "bg-gradient-to-r from-[#00a896] via-[#028090] to-[#00a896] text-white hover:brightness-105 active:scale-[0.98]",
                 activeCategory === 'rekening' 
                   ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
                   : "opacity-95 hover:opacity-100"
