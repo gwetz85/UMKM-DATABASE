@@ -384,7 +384,7 @@ export default function LayarInformasiPage() {
   }, []);
 
   return (
-    <div className="min-h-screen lg:h-[100dvh] lg:max-h-[100dvh] w-full bg-[#060a12] text-white flex flex-col justify-between font-sans selection:bg-cyan-500 selection:text-white overflow-y-auto lg:overflow-hidden select-none p-2 sm:p-3 md:p-3.5 gap-2.5">
+    <div className="min-h-screen lg:h-[100dvh] lg:max-h-[100dvh] w-full bg-[#060a12] text-white flex flex-col justify-between font-body selection:bg-cyan-500 selection:text-white overflow-y-auto lg:overflow-hidden select-none p-2 sm:p-3 md:p-3.5 gap-2.5">
       
       {/* ─────────────────────────────────────────────────────────────
           1. HEADER (DENGAN GRADASI BATAS LUAR)
