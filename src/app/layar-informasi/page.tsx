@@ -22,7 +22,9 @@ import {
   CheckCircle2,
   Calendar,
   Building2,
-  Users
+  Users,
+  Radio,
+  Megaphone
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -193,7 +195,7 @@ export default function LayarInformasiPage() {
     return ref(database, 'settings/running_text');
   }, [database]);
   const { data: runningTextConfig } = useObject(runningTextRef);
-  const defaultRunningText = "BERSAMA DATA, KITA BANGUN UMKM YANG KUAT, MANDIRI DAN BERKELANJUTAN";
+  const defaultRunningText = "SELAMAT DATANG DI SISTEM INFORMASI MANAGEMEN PELAKU USAHA ( SIMPU ) YAYASAN TUNAS BANGSA KEPULAUAN RIAU TAHUN 2026 | LAYANAN INI SENGAJA DIBUAT DAN DIKEMBANGKAN DALAM RANGKA MEMPERMUDAH PENDATAAN DAN MONITORING PROSES PENYALURAN BANTUAN | SEMUA DATA TERSIMPAN DI DATABASE PIHAK YAYASAN DAN SEPENUHNYA MENJADI KEWENANGAN YAYASAN DALAM PENGELOLAAN DAN PENYIMPANAN DATA | STATUS LAYANAN INI BERSIFAT REALTIME ( ONLINE ) DAN BISA DIAKSES OLEH SEMUA PEMILIK HAK AKSES APLIKASI";
   const runningText = (typeof runningTextConfig === 'string' ? runningTextConfig : runningTextConfig?.text) || defaultRunningText;
 
   // Realtime Clock Tick
@@ -719,38 +721,45 @@ export default function LayarInformasiPage() {
           {/* 6 Vibrant Clickable Cards Grid (2 cols x 3 rows) */}
           <div className="flex-1 min-h-0 grid grid-cols-2 gap-2.5 sm:gap-3">
             
-            {/* 1. Data Terverifikasi (Emerald Green) */}
-            <button
-              type="button"
-              onClick={() => setActiveCategory('verified')}
+            {/* 1. RUNNING TEKS (Pengganti Data Terverifikasi) */}
+            <div
               className={cn(
                 "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
-                "bg-gradient-to-r from-[#00b288] to-[#009e75] text-white hover:brightness-105 active:scale-[0.98]",
-                activeCategory === 'verified' 
-                  ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
-                  : "opacity-95 hover:opacity-100"
+                "bg-gradient-to-r from-[#00b288] to-[#009e75] text-white"
               )}
             >
               <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
-                <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-[#009e75]" />
+                <Radio className="w-6 h-6 sm:w-7 sm:h-7 text-[#009e75] animate-pulse" />
               </div>
-              <div className="min-w-0 flex-1 flex flex-col justify-center">
-                <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide truncate">
-                  Data Terverifikasi
-                </span>
-                <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
-                    {(systemStats?.status?.verified ?? 0).toLocaleString('id-ID')}
+              <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] sm:text-xs font-black text-white uppercase tracking-wider truncate">
+                    RUNNING TEKS
                   </span>
-                  <span className="text-xs font-bold text-white/90">
-                    Data
+                  <span className="px-1.5 py-0.2 bg-white/20 text-[9px] font-bold rounded-full uppercase text-white/90">
+                    Live
                   </span>
                 </div>
-                <span className="text-[10px] font-semibold text-white/90 flex items-center gap-1 mt-0.5">
-                  ↗ 12% dari minggu lalu
+                
+                {/* Marquee Ticker inside card */}
+                <div className="w-full overflow-hidden whitespace-nowrap mt-1 relative">
+                  <div className="animate-marquee-card inline-block whitespace-nowrap">
+                    <span className="text-[11px] sm:text-xs font-bold text-white tracking-wide">
+                      {runningText}
+                    </span>
+                    <span className="mx-4 text-cyan-200 font-black">•</span>
+                    <span className="text-[11px] sm:text-xs font-bold text-white tracking-wide">
+                      {runningText}
+                    </span>
+                    <span className="mx-4 text-cyan-200 font-black">•</span>
+                  </div>
+                </div>
+
+                <span className="text-[9px] sm:text-[10px] font-medium text-emerald-100/80 mt-0.5 truncate">
+                  Pembaruan informasi sistem & dinas
                 </span>
               </div>
-            </button>
+            </div>
 
             {/* 2. Cancell Dinas (Coral / Red) */}
             <button
@@ -1002,14 +1011,46 @@ export default function LayarInformasiPage() {
         </div>
 
         {/* Bottom Banner Ribbon */}
-        <div className="w-full bg-gradient-to-r from-[#0077b6] via-[#0096c7] to-[#0077b6] py-1.5 px-4 text-center border-t border-cyan-400/30">
-          <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wider drop-shadow">
-            {runningText}
-          </span>
+        <div className="w-full bg-gradient-to-r from-[#0077b6] via-[#0096c7] to-[#0077b6] py-1.5 px-4 overflow-hidden border-t border-cyan-400/30 flex items-center">
+          <div className="relative flex overflow-x-hidden whitespace-nowrap w-full">
+            <div className="animate-marquee inline-block whitespace-nowrap">
+              <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wider px-8 drop-shadow">
+                {runningText}
+              </span>
+              <span className="text-cyan-300 mx-4 font-black">•</span>
+              <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wider px-8 drop-shadow">
+                {runningText}
+              </span>
+              <span className="text-cyan-300 mx-4 font-black">•</span>
+            </div>
+          </div>
         </div>
 
       </footer>
 
+      {/* Marquee Keyframes */}
+      <style jsx>{`
+        .animate-marquee {
+          display: inline-block;
+          white-space: nowrap;
+          animation: marquee 45s linear infinite;
+        }
+
+        .animate-marquee-card {
+          display: inline-block;
+          white-space: nowrap;
+          animation: marquee 35s linear infinite;
+        }
+
+        @keyframes marquee {
+          0% {
+            transform: translateX(0%);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+      `}</style>
     </div>
   );
 }
