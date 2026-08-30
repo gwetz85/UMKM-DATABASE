@@ -721,45 +721,38 @@ export default function LayarInformasiPage() {
           {/* 6 Vibrant Clickable Cards Grid (2 cols x 3 rows) */}
           <div className="flex-1 min-h-0 grid grid-cols-2 gap-2.5 sm:gap-3">
             
-            {/* 1. RUNNING TEKS (Pengganti Data Terverifikasi) */}
-            <div
+            {/* 1. Data Terverifikasi (Emerald Green) */}
+            <button
+              type="button"
+              onClick={() => setActiveCategory('verified')}
               className={cn(
                 "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
-                "bg-gradient-to-r from-[#00b288] to-[#009e75] text-white"
+                "bg-gradient-to-r from-[#00b288] to-[#009e75] text-white hover:brightness-105 active:scale-[0.98]",
+                activeCategory === 'verified' 
+                  ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
+                  : "opacity-95 hover:opacity-100"
               )}
             >
               <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
-                <Radio className="w-6 h-6 sm:w-7 sm:h-7 text-[#009e75] animate-pulse" />
+                <ShieldCheck className="w-6 h-6 sm:w-7 sm:h-7 text-[#009e75]" />
               </div>
-              <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] sm:text-xs font-black text-white uppercase tracking-wider truncate">
-                    RUNNING TEKS
+              <div className="min-w-0 flex-1 flex flex-col justify-center">
+                <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide truncate">
+                  Data Terverifikasi
+                </span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
+                    {(systemStats?.status?.verified ?? 0).toLocaleString('id-ID')}
                   </span>
-                  <span className="px-1.5 py-0.2 bg-white/20 text-[9px] font-bold rounded-full uppercase text-white/90">
-                    Live
+                  <span className="text-xs font-bold text-white/90">
+                    Data
                   </span>
                 </div>
-                
-                {/* Marquee Ticker inside card */}
-                <div className="w-full overflow-hidden whitespace-nowrap mt-1 relative">
-                  <div className="animate-marquee-card inline-block whitespace-nowrap">
-                    <span className="text-[11px] sm:text-xs font-bold text-white tracking-wide">
-                      {runningText}
-                    </span>
-                    <span className="mx-4 text-cyan-200 font-black">•</span>
-                    <span className="text-[11px] sm:text-xs font-bold text-white tracking-wide">
-                      {runningText}
-                    </span>
-                    <span className="mx-4 text-cyan-200 font-black">•</span>
-                  </div>
-                </div>
-
-                <span className="text-[9px] sm:text-[10px] font-medium text-emerald-100/80 mt-0.5 truncate">
-                  Pembaruan informasi sistem & dinas
+                <span className="text-[10px] font-semibold text-white/90 flex items-center gap-1 mt-0.5">
+                  ↗ 12% dari minggu lalu
                 </span>
               </div>
-            </div>
+            </button>
 
             {/* 2. Cancell Dinas (Coral / Red) */}
             <button
@@ -933,15 +926,35 @@ export default function LayarInformasiPage() {
       </main>
 
       {/* ─────────────────────────────────────────────────────────────
-          3. BOTTOM SECTION (CLOCK, INFORMASI LAYANAN, UMKM ARTWORK, RIBBON)
+          3. BOTTOM SECTION (CLOCK, INFORMASI LAYANAN, RUNNING TEXT)
       ────────────────────────────────────────────────────────────── */}
       <footer className="w-full bg-[#052952]/95 border border-cyan-500/30 rounded-2xl overflow-hidden shadow-2xl shrink-0 flex flex-col text-white">
         
-        {/* Top 3-Section Row */}
+        {/* Row 1: Running Text Bar (Full Width Marquee Banner) */}
+        <div className="w-full bg-[#023e8a] border-b border-cyan-400/40 py-2 px-3 overflow-hidden flex items-center shadow-inner">
+          <div className="bg-cyan-400 text-[#032042] px-3 py-1 text-xs font-black uppercase tracking-wider shrink-0 flex items-center gap-1.5 shadow-md rounded-md mr-3">
+            <Radio className="w-3.5 h-3.5 animate-pulse text-[#032042]" />
+            <span>PENGUMUMAN</span>
+          </div>
+          <div className="relative flex overflow-x-hidden whitespace-nowrap flex-1">
+            <div className="animate-marquee inline-block whitespace-nowrap">
+              <span className="text-xs sm:text-sm font-bold text-white tracking-wide px-4 drop-shadow">
+                {runningText}
+              </span>
+              <span className="text-cyan-300 mx-4 font-black">•</span>
+              <span className="text-xs sm:text-sm font-bold text-white tracking-wide px-4 drop-shadow">
+                {runningText}
+              </span>
+              <span className="text-cyan-300 mx-4 font-black">•</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 2: 2 Columns: JAM REALTIME & INFORMASI LAYANAN */}
         <div className="grid grid-cols-1 md:grid-cols-12 items-center p-2.5 sm:p-3 gap-3">
           
           {/* Section 1: JAM REALTIME (Analog + Digital) */}
-          <div className="md:col-span-4 flex items-center gap-3 sm:gap-4 bg-[#093563]/80 border border-cyan-400/25 p-2.5 rounded-xl">
+          <div className="md:col-span-5 flex items-center gap-3 sm:gap-4 bg-[#093563]/80 border border-cyan-400/25 p-2.5 rounded-xl">
             <AnalogClock date={currentTime} />
             <div className="flex flex-col justify-center">
               <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-300">
@@ -957,7 +970,7 @@ export default function LayarInformasiPage() {
           </div>
 
           {/* Section 2: INFORMASI LAYANAN */}
-          <div className="md:col-span-5 flex items-start gap-3 bg-[#093563]/80 border border-cyan-400/25 p-2.5 rounded-xl h-full">
+          <div className="md:col-span-7 flex items-start gap-3 bg-[#093563]/80 border border-cyan-400/25 p-2.5 rounded-xl h-full">
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 border-white flex items-center justify-center text-white shrink-0 mt-0.5">
               <Info className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
@@ -971,59 +984,6 @@ export default function LayarInformasiPage() {
             </div>
           </div>
 
-          {/* Section 3: UMKM Illustration & Skyline Graphic */}
-          <div className="md:col-span-3 flex items-center justify-center md:justify-end gap-3 bg-gradient-to-r from-transparent to-[#093563]/80 p-2 rounded-xl h-full relative overflow-hidden">
-            {/* Storefront Graphic */}
-            <div className="flex items-center gap-2 z-10">
-              <div className="relative flex flex-col items-center">
-                {/* Roof Awning */}
-                <div className="w-24 h-6 bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 rounded-t-md flex items-center justify-center shadow-md">
-                  <span className="text-[10px] font-black text-white tracking-widest uppercase">
-                    UMKM
-                  </span>
-                </div>
-                <div className="w-24 h-3 bg-[#e63946] rounded-b-md flex justify-around px-1 shadow">
-                  <div className="w-2 h-full bg-white" />
-                  <div className="w-2 h-full bg-white" />
-                  <div className="w-2 h-full bg-white" />
-                  <div className="w-2 h-full bg-white" />
-                </div>
-                {/* Store Body */}
-                <div className="w-20 h-9 bg-slate-900 border-x border-b border-amber-400/50 flex items-center justify-around px-2">
-                  <div className="w-5 h-6 bg-cyan-400/40 rounded border border-cyan-400/60" />
-                  <div className="w-4 h-7 bg-amber-400/50 rounded-t border border-amber-400/70" />
-                </div>
-              </div>
-
-              {/* City skyline illustration silhouette */}
-              <div className="flex items-end gap-1 opacity-75">
-                <div className="w-3 h-12 bg-cyan-800/80 rounded-t" />
-                <div className="w-4 h-16 bg-blue-600/80 rounded-t" />
-                <div className="w-3 h-10 bg-cyan-900/80 rounded-t" />
-                <div className="w-5 h-20 bg-indigo-600/80 rounded-t flex flex-col items-center">
-                  <div className="w-1 h-3 bg-cyan-300" />
-                </div>
-                <div className="w-3 h-14 bg-sky-700/80 rounded-t" />
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Bottom Banner Ribbon */}
-        <div className="w-full bg-gradient-to-r from-[#0077b6] via-[#0096c7] to-[#0077b6] py-1.5 px-4 overflow-hidden border-t border-cyan-400/30 flex items-center">
-          <div className="relative flex overflow-x-hidden whitespace-nowrap w-full">
-            <div className="animate-marquee inline-block whitespace-nowrap">
-              <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wider px-8 drop-shadow">
-                {runningText}
-              </span>
-              <span className="text-cyan-300 mx-4 font-black">•</span>
-              <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wider px-8 drop-shadow">
-                {runningText}
-              </span>
-              <span className="text-cyan-300 mx-4 font-black">•</span>
-            </div>
-          </div>
         </div>
 
       </footer>
