@@ -175,14 +175,14 @@ export default function LayarInformasiPage() {
   // 6. Query for Cancel Dinas
   const cancelDinasQuery = useMemoFirebase(() => {
     if (!database) return null;
-    return query(ref(database, 'businessActors'), orderByChild('hasilVerifikasiDinas'), equalTo('Tidak Lolos'), limitToLast(50));
+    return query(ref(database, 'businessActors'), orderByChild('hasilVerifikasiDinas'), equalTo('Tidak Lolos'));
   }, [database]);
   const { data: cancelDinasData, isLoading: isCancelLoading } = useList<BusinessActor>(cancelDinasQuery);
 
-  // 7. Query for Cancel Pendataan (status === 'rejected')
+  // 7. Query for Cancel Pendataan (status === 'rejected', strictly pendataan cancellations)
   const cancelPendataanQuery = useMemoFirebase(() => {
     if (!database) return null;
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('rejected'), limitToLast(50));
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('rejected'));
   }, [database]);
   const { data: cancelPendataanData, isLoading: isCancelPendataanLoading } = useList<BusinessActor>(cancelPendataanQuery);
 
@@ -400,17 +400,25 @@ export default function LayarInformasiPage() {
       .slice(0, 10);
   }, [finishData]);
 
-  // 7. Cancell Pendataan (Rejected Status)
+  // 7. Cancell Pendataan (Strictly rejected from pendataan, NOT cancel dinas)
   const listCancelPendataan = useMemo(() => {
     if (!cancelPendataanData) return [];
     return cancelPendataanData
-      .filter(d => !d.alasanCancelDinas && d.hasilVerifikasiDinas !== 'Tidak Lolos')
+      .filter(d => d.status === 'rejected' && !isCancelDinas(d) && !d.alasanCancelDinas && d.hasilVerifikasiDinas !== 'Tidak Lolos')
       .sort((a, b) => {
-        const timeA = new Date((a as any).updatedAt || a.createdAt || 0).getTime();
-        const timeB = new Date((b as any).updatedAt || b.createdAt || 0).getTime();
+        const timeA = new Date((a as any).rejectedAt || (a as any).updatedAt || a.createdAt || 0).getTime();
+        const timeB = new Date((b as any).rejectedAt || (b as any).updatedAt || b.createdAt || 0).getTime();
         return timeB - timeA;
       })
       .slice(0, 10);
+  }, [cancelPendataanData]);
+
+  // Total count strictly for Cancel Pendataan (excluding Cancel Dinas)
+  const totalCancelPendataanCount = useMemo(() => {
+    if (cancelPendataanData) {
+      return cancelPendataanData.filter(d => d.status === 'rejected' && !isCancelDinas(d) && !d.alasanCancelDinas && d.hasilVerifikasiDinas !== 'Tidak Lolos').length;
+    }
+    return 0;
   }, [cancelPendataanData]);
 
   // Active current table data based on activeCategory
@@ -955,7 +963,7 @@ export default function LayarInformasiPage() {
                 </span>
                 <div className="flex items-baseline gap-1 mt-0.5">
                   <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
-                    {(systemStats?.status?.rejected ?? (listCancelPendataan.length || (cancelPendataanData?.length ?? 0))).toLocaleString('id-ID')}
+                    {totalCancelPendataanCount.toLocaleString('id-ID')}
                   </span>
                   <span className="text-xs font-bold text-white/90">
                     Data
