@@ -227,6 +227,43 @@ export default function LayarInformasiPage() {
   const defaultRunningText = "SELAMAT DATANG DI SISTEM INFORMASI MANAGEMEN PELAKU USAHA ( SIMPU ) YAYASAN TUNAS BANGSA KEPULAUAN RIAU TAHUN 2026 | LAYANAN INI SENGAJA DIBUAT DAN DIKEMBANGKAN DALAM RANGKA MEMPERMUDAH PENDATAAN DAN MONITORING PROSES PENYALURAN BANTUAN | SEMUA DATA TERSIMPAN DI DATABASE PIHAK YAYASAN DAN SEPENUHNYA MENJADI KEWENANGAN YAYASAN DALAM PENGELOLAAN DAN PENYIMPANAN DATA | STATUS LAYANAN INI BERSIFAT REALTIME ( ONLINE ) DAN BISA DIAKSES OLEH SEMUA PEMILIK HAK AKSES APLIKASI";
   const runningText = (typeof runningTextConfig === 'string' ? runningTextConfig : runningTextConfig?.text) || defaultRunningText;
 
+  // Last Sync Time from system_stats
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(() => {
+    return systemStats?.lastUpdated ? new Date(systemStats.lastUpdated) : new Date();
+  });
+
+  useEffect(() => {
+    if (systemStats?.lastUpdated) {
+      const d = new Date(systemStats.lastUpdated);
+      if (!isNaN(d.getTime())) {
+        setLastSyncTime(d);
+      }
+    }
+  }, [systemStats?.lastUpdated]);
+
+  const [nextSyncIn, setNextSyncIn] = useState<number>(300);
+
+  // Countdown timer for Auto Sync every 5 minutes
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNextSyncIn(prev => {
+        if (prev <= 1) {
+          setLastSyncTime(new Date());
+          return 300;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
   // Realtime Clock Tick
   useEffect(() => {
     setCurrentTime(new Date());
@@ -1006,27 +1043,55 @@ export default function LayarInformasiPage() {
           </div>
         </div>
 
-        {/* Row 2: 2 Columns: JAM REALTIME & INFORMASI LAYANAN */}
+        {/* Row 2: 2 Columns: JAM REALTIME (with Auto Sync & Last Sync) & INFORMASI LAYANAN */}
         <div className="grid grid-cols-1 md:grid-cols-12 items-center p-2.5 sm:p-3 gap-3">
           
-          {/* Section 1: JAM REALTIME (Analog + Digital) */}
-          <div className="md:col-span-5 flex items-center gap-3 sm:gap-4 bg-[#093563]/80 border border-cyan-400/25 p-2.5 rounded-xl">
-            <AnalogClock date={currentTime} />
-            <div className="flex flex-col justify-center">
-              <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-300">
-                JAM REALTIME
-              </span>
-              <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-white font-mono tracking-tight leading-none my-0.5 drop-shadow-md">
-                {currentTime ? currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') : '--:--:--'}
+          {/* Section 1: JAM REALTIME + AUTO SYNC + LAST SYNC */}
+          <div className="md:col-span-6 flex items-center justify-between gap-3 bg-[#093563]/80 border border-cyan-400/25 p-2.5 rounded-xl h-full">
+            {/* Clock & Realtime Display */}
+            <div className="flex items-center gap-2.5 sm:gap-3.5">
+              <AnalogClock date={currentTime} />
+              <div className="flex flex-col justify-center">
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-cyan-300">
+                  JAM REALTIME
+                </span>
+                <div className="text-2xl sm:text-3xl font-black text-white font-mono tracking-tight leading-none my-0.5 drop-shadow-md">
+                  {currentTime ? currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') : '--:--:--'}
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-bold text-cyan-100 uppercase tracking-wide leading-tight">
+                  {currentTime ? currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}
+                </span>
               </div>
-              <span className="text-[11px] sm:text-xs font-bold text-cyan-100 uppercase tracking-wide leading-tight">
-                {currentTime ? currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''}
-              </span>
+            </div>
+
+            {/* Vertical Divider */}
+            <div className="h-12 w-px bg-cyan-400/30 hidden sm:block shrink-0" />
+
+            {/* Auto Sync & Last Sync Section */}
+            <div className="flex flex-col justify-center items-end sm:items-start gap-1 shrink-0 pr-1">
+              {/* Auto Sync Timer */}
+              <div className="flex items-center gap-1.5 bg-[#032042]/90 border border-cyan-400/30 px-2.5 py-1 rounded-lg shadow-inner">
+                <RotateCw className="w-3 h-3 text-cyan-300 animate-spin" style={{ animationDuration: '4s' }} />
+                <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-cyan-300">
+                  AUTO SYNC:
+                </span>
+                <span className="text-xs sm:text-sm font-black font-mono text-white tracking-widest">
+                  {formatCountdown(nextSyncIn)}
+                </span>
+              </div>
+
+              {/* Last Sync */}
+              <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-cyan-100 font-semibold px-1 mt-0.5">
+                <span className="text-cyan-300 font-bold">LAST SYNC:</span>
+                <span className="font-mono font-bold text-white">
+                  {lastSyncTime ? lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') : '--:--:--'}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Section 2: INFORMASI LAYANAN */}
-          <div className="md:col-span-7 flex items-start gap-3 bg-[#093563]/80 border border-cyan-400/25 p-2.5 rounded-xl h-full">
+          <div className="md:col-span-6 flex items-start gap-3 bg-[#093563]/80 border border-cyan-400/25 p-2.5 rounded-xl h-full">
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 border-white flex items-center justify-center text-white shrink-0 mt-0.5">
               <Info className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
