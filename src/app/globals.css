@@ -69,9 +69,13 @@
   * {
     @apply border-border;
   }
+  html {
+    font-size: 18px;
+  }
   body {
     @apply text-foreground font-body antialiased;
     min-height: 100vh;
+    line-height: 1.65;
   }
   body.app-bg {
     background-image: url('/bg-dkukm-bpjs.jpg?v=20260723');
