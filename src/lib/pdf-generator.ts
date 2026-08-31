@@ -565,7 +565,6 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   doc.text(alamatLine1, valueX, y);
   y += lineH - 1;
   doc.text('Pelaku Usaha', labelX, y);
-  doc.text(':', colonX, y);
   doc.text(alamatLine2, valueX, y);
   y += lineH - 1;
   doc.text(alamatLine3, valueX, y);
