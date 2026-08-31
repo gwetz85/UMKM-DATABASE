@@ -641,22 +641,21 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   doc.setFontSize(9.5);
 
   const dateWidth = doc.getTextWidth(dateStr);
-  const signSectionWidth = Math.max(dateWidth, 68);
-  const signStartX = pageWidth - margin - signSectionWidth;
-  const signCenterX = signStartX + signSectionWidth / 2;
+  const dateStartX = pageWidth - margin - dateWidth;
+  const dateCenterX = dateStartX + (dateWidth / 2);
 
-  // 1. Tanggal (dimulai dari signStartX)
-  doc.text(dateStr, signStartX, y);
-  y += 4.5;
+  // 1. Tanggal (dimulai dari dateStartX)
+  doc.text(dateStr, dateStartX, y);
+  y += 5.0;
 
-  // 2. Teks "Penerima Dana Bantuan" (center relatif terhadap tanggal)
-  doc.text('Penerima Dana Bantuan', signCenterX, y, { align: 'center' });
+  // 2. Teks "Penerima Dana Bantuan" (center persis dengan tulisan Tanjungpinang diatasnya)
+  doc.text('Penerima Dana Bantuan', dateCenterX, y, { align: 'center' });
 
-  // 3. Kotak Materai (lurus dengan posisi awal tulisan Tanjungpinang)
+  // 3. Kotak Materai (lurus vertikal dengan huruf T Tanjungpinang, dan diberi jarak dari teks diatasnya)
   const materaiWidth = 24;
   const materaiHeight = 22;
-  const materaiX = signStartX;
-  y += 2.5;
+  const materaiX = dateStartX;
+  y += 5.0; // Jarak antara Penerima Dana Bantuan dengan kotak materai
 
   doc.setDrawColor(180);
   doc.setLineWidth(0.3);
@@ -666,12 +665,12 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   doc.text('MATERAI', materaiX + materaiWidth / 2, y + materaiHeight / 2 - 1, { align: 'center' });
   doc.text('TEMPEL', materaiX + materaiWidth / 2, y + materaiHeight / 2 + 3, { align: 'center' });
 
-  // 4. Nama Pelaku Usaha (center relatif terhadap tanggal)
-  y += materaiHeight + 4.5;
+  // 4. Nama Pelaku Usaha (center persis dengan tulisan Tanjungpinang diatasnya)
+  y += materaiHeight + 5.0;
   doc.setTextColor(0);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
-  doc.text((actor.fullName || '-').toUpperCase(), signCenterX, y, { align: 'center' });
+  doc.text((actor.fullName || '-').toUpperCase(), dateCenterX, y, { align: 'center' });
 
   // ── SIMPAN ────────────────────────────────────────────────────────────────
   const safeName = (actor.fullName || 'PELAKU_USAHA').replace(/[^a-z0-9]/gi, '_').toUpperCase();
