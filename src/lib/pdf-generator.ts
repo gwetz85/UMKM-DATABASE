@@ -509,64 +509,59 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 25;
+  const margin = 20;
   const contentWidth = pageWidth - margin * 2;
 
   // ── JUDUL ──────────────────────────────────────────────────────────────────
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(13);
   doc.setTextColor(0, 0, 0);
-  doc.text('SURAT PERNYATAAN', pageWidth / 2, 28, { align: 'center' });
+  doc.text('SURAT PERNYATAAN', pageWidth / 2, 24, { align: 'center' });
 
   // Garis bawah judul
+  const titleWidth = doc.getTextWidth('SURAT PERNYATAAN');
   doc.setDrawColor(0);
-  doc.setLineWidth(0.6);
-  doc.line(margin + 25, 31, pageWidth - margin - 25, 31);
+  doc.setLineWidth(0.5);
+  doc.line(pageWidth / 2 - titleWidth / 2 - 2, 26, pageWidth / 2 + titleWidth / 2 + 2, 26);
 
   // ── DATA PELAKU USAHA ──────────────────────────────────────────────────────
-  let y = 43;
+  let y = 35;
   const labelX = margin;
-  const colonX = margin + 52;
-  const valueX = colonX + 5;
-  const lineH = 7;
+  const colonX = margin + 55;
+  const valueX = colonX + 3;
+  const lineH = 6;
 
-  const drawField = (label: string, value: string, extraLines?: string[]) => {
+  // Pembuka
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.text('Yang bertandatangan dibawah ini :', labelX, y - 2);
+  y += 4;
+
+  const drawField = (label: string, value: string) => {
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
+    doc.setFontSize(9.5);
     doc.setTextColor(0);
 
     doc.text(label, labelX, y);
     doc.text(':', colonX, y);
     doc.text(value || '-', valueX, y);
     y += lineH;
-
-    if (extraLines && extraLines.length > 0) {
-      extraLines.forEach((line) => {
-        doc.text(line, valueX, y);
-        y += lineH - 1;
-      });
-    }
   };
-
-  // Pembuka
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text('Yang bertandatangan dibawah ini :', labelX, y - 3);
-  y += 4;
 
   drawField('Nama', (actor.fullName || '-').toUpperCase());
   drawField('N.I.K', actor.nik || '-');
-  drawField('Jenis Usaha', (actor.businessName || '-').toUpperCase());
+  drawField('Jenis Usaha', (actor.businessName || actor.businessCategory || '-').toUpperCase());
   drawField('Alamat Usaha', (actor.businessLocation || actor.address || '-').toUpperCase());
 
-  // Alamat lengkap + HP (multi-line)
+  // Alamat lengkap + HP (multi-line layout)
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.text('Alamat dan Nomor Telepon / HP', labelX, y);
   doc.text(':', colonX, y);
-  const alamatLine1 = `${(actor.address || '-').toUpperCase()} RT/RW ${actor.rtRw || '-'}`;
-  const alamatLine2 = `Kel. ${(actor.kelurahan || '-').toUpperCase()}  Kec. ${(actor.kecamatan || '-').toUpperCase()}`;
-  const alamatLine3 = `Kota Tanjungpinang  Telp / HP : ${actor.phone || '-'}`;
+  const alamatLine1 = `${(actor.address || '-').toUpperCase()}  RT.${actor.rtRw || '-'}`;
+  const alamatLine2 = `Kel. ${(actor.kelurahan || '-').toUpperCase()}   Kec. ${(actor.kecamatan || '-').toUpperCase()}`;
+  const alamatLine3 = `Kota Tanjungpinang  Telp / Hp : ${actor.phone || '-'}`;
+
   doc.text(alamatLine1, valueX, y);
   y += lineH - 1;
   doc.text('Pelaku Usaha', labelX, y);
@@ -574,26 +569,30 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   doc.text(alamatLine2, valueX, y);
   y += lineH - 1;
   doc.text(alamatLine3, valueX, y);
-  y += lineH + 3;
+  y += lineH + 2;
 
   // ── POIN-POIN PERNYATAAN ───────────────────────────────────────────────────
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
 
-  const pointIndent = margin + 8;
-  const pointTextX = margin + 14;
-  const pointWidth = contentWidth - 14;
+  const pointNumX = margin;
+  const pointTextX = margin + 6;
+  const pointWidth = pageWidth - margin - pointTextX;
 
   const addPoint = (num: number, text: string) => {
     const lines = doc.splitTextToSize(text, pointWidth);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${num}.`, pointIndent, y, { align: 'right' });
-    doc.text(lines, pointTextX, y);
-    y += lines.length * 5.5 + 2;
+    doc.text(`${num}.`, pointNumX, y);
+    doc.text(text, pointTextX, y, {
+      align: 'justify',
+      maxWidth: pointWidth,
+    });
+    // Baris per point dengan jarak yang rapat dan rapi
+    y += lines.length * 4.6 + 2.2;
   };
 
   addPoint(
     1,
-    'Telah menerima Dana Bantuan Modal Usaha berupa kegiatan Bantuan Penguatan Pemodalan Usaha Mikro Kecil Dan Menengah ( UMKM ) sebesar Rp. 1.000.000,- (Satu Juta Rupiah) Dari Yayasan Tunas Bangsa Kepri berdasarkan proposal yang Telah Diajukan Kepada Dinas Provinsi Kepulauan Riau tahun 2026'
+    'Telah menerima Dana Bantuan Modal Usaha berupa kegiatan Bantuan Penguatan Pemodalan Usaha Mikro Kecil Dan Menengah ( UMKM ) sebesar Rp. 1.000.000,- (Satu Juta Rupiah) Dari Yayasan Tunas Bangsa Kepri berdasarkan proposal yang Telah Diajukan Kepada Pemerintah Provinsi Kepulauan Riau tahun 2026'
   );
 
   addPoint(
@@ -627,7 +626,7 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   );
 
   // ── TANDA TANGAN ──────────────────────────────────────────────────────────
-  y += 4;
+  y += 2;
   const now = new Date();
   const day = now.getDate();
   const monthNames = [
@@ -639,28 +638,40 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   const dateStr = `Tanjungpinang, ${day} ${month} ${year}`;
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text(dateStr, pageWidth - margin, y, { align: 'right' });
-  y += 5;
-  doc.text('Penerima Dana Bantuan', pageWidth - margin, y, { align: 'right' });
+  doc.setFontSize(9.5);
 
-  // Kotak materai
-  const materaiSize = 22;
-  const materaiX = pageWidth - margin - materaiSize;
-  y += 3;
+  const dateWidth = doc.getTextWidth(dateStr);
+  const signSectionWidth = Math.max(dateWidth, 68);
+  const signStartX = pageWidth - margin - signSectionWidth;
+  const signCenterX = signStartX + signSectionWidth / 2;
+
+  // 1. Tanggal (dimulai dari signStartX)
+  doc.text(dateStr, signStartX, y);
+  y += 4.5;
+
+  // 2. Teks "Penerima Dana Bantuan" (center relatif terhadap tanggal)
+  doc.text('Penerima Dana Bantuan', signCenterX, y, { align: 'center' });
+
+  // 3. Kotak Materai (lurus dengan posisi awal tulisan Tanjungpinang)
+  const materaiWidth = 24;
+  const materaiHeight = 22;
+  const materaiX = signStartX;
+  y += 2.5;
+
   doc.setDrawColor(180);
   doc.setLineWidth(0.3);
-  doc.rect(materaiX, y, materaiSize, materaiSize);
+  doc.rect(materaiX, y, materaiWidth, materaiHeight);
   doc.setFontSize(6);
   doc.setTextColor(150);
-  doc.text('MATERAI', materaiX + materaiSize / 2, y + materaiSize / 2 - 1, { align: 'center' });
-  doc.text('TEMPEL', materaiX + materaiSize / 2, y + materaiSize / 2 + 3, { align: 'center' });
+  doc.text('MATERAI', materaiX + materaiWidth / 2, y + materaiHeight / 2 - 1, { align: 'center' });
+  doc.text('TEMPEL', materaiX + materaiWidth / 2, y + materaiHeight / 2 + 3, { align: 'center' });
 
-  y += materaiSize + 5;
+  // 4. Nama Pelaku Usaha (center relatif terhadap tanggal)
+  y += materaiHeight + 4.5;
   doc.setTextColor(0);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text((actor.fullName || '-').toUpperCase(), pageWidth - margin, y, { align: 'right' });
+  doc.setFontSize(9.5);
+  doc.text((actor.fullName || '-').toUpperCase(), signCenterX, y, { align: 'center' });
 
   // ── SIMPAN ────────────────────────────────────────────────────────────────
   const safeName = (actor.fullName || 'PELAKU_USAHA').replace(/[^a-z0-9]/gi, '_').toUpperCase();
