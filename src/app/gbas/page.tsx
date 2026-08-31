@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useDeferredValue } from "react"
-import { useMemoFirebase, useList, useUser, useDatabase, useObject, updateDocumentNonBlocking } from "@/firebase"
+import { useMemoFirebase, useList, useUser, useDatabase, useObject, updateDocumentNonBlocking, sanitizeForFirebase } from "@/firebase"
 import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -38,13 +38,17 @@ import {
   Layers,
   Sparkles,
   LayoutGrid,
-  List
+  List,
+  RotateCcw,
+  Undo2,
+  AlertCircle
 } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { BusinessActor, PejabatData, SurveyDinasData } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { logActivity, getDeviceType } from "@/lib/logger"
+import { Textarea } from "@/components/ui/textarea"
 import * as XLSX from "xlsx"
 
 export default function GBASPage() {
@@ -78,6 +82,11 @@ export default function GBASPage() {
 
   // Modal Detail View
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
+
+  // Modal Kembali ke Verifikator Dinas
+  const [returnVerifikatorActor, setReturnVerifikatorActor] = useState<BusinessActor | null>(null)
+  const [returnVerifikatorReason, setReturnVerifikatorReason] = useState<string>("")
+  const [isSubmittingReturnVerifikator, setIsSubmittingReturnVerifikator] = useState<boolean>(false)
 
   // Modal Edit Pejabat / Tanggal
   const [editPejabatActor, setEditPejabatActor] = useState<BusinessActor | null>(null)
@@ -649,6 +658,81 @@ export default function GBASPage() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
+  // KEMBALIKAN KE VERIFIKATOR DINAS (RESET NOMOR REKENING / STATUS SELESAI)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const handleExecuteReturnVerifikator = async () => {
+    if (!returnVerifikatorActor || !database || !isAdmin) return
+    setIsSubmittingReturnVerifikator(true)
+
+    try {
+      const pd = await resolvePejabatData(returnVerifikatorActor)
+      const vNama = pd?.verifikator?.nama || (returnVerifikatorActor as any).verifikatorDinas || (returnVerifikatorActor as any).verifiedDinasBy || "Verifikator Dinas"
+      const vNip = pd?.verifikator?.nipppk || ""
+
+      const actorRef = ref(database, `businessActors/${returnVerifikatorActor.id}`)
+      
+      const updates: any = {
+        status: 'verified_dinas',
+        hasilVerifikasiDinas: 'Lolos',
+        berkasDinasVerified: false,
+        berkasDinasVerifiedAt: null,
+        berkasDinasVerifiedBy: null,
+        bankName: null,
+        bankNumber: null,
+        bankOwner: null,
+        readyForLPJ: false,
+        lpjNominal: null,
+        dikembalikanKeVerifikatorAt: new Date().toISOString(),
+        dikembalikanKeVerifikatorBy: userProfile?.fullName || user?.email || user?.uid || 'Administrator',
+        dikembalikanKeVerifikatorReason: returnVerifikatorReason.trim() || 'Dikembalikan dari GBAS oleh Admin'
+      }
+
+      if (vNama && vNama !== "-" && !returnVerifikatorActor.verifikatorDinas) {
+        updates.verifikatorDinas = vNama
+      }
+
+      const cleanData = sanitizeForFirebase(updates)
+      const { update } = await import('firebase/database')
+      await update(actorRef, cleanData)
+
+      // Update global stats (Tahap Selesai -> Tahap Verifikasi Dinas)
+      import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
+        const updatedActor = { ...returnVerifikatorActor, ...updates }
+        updateStatsOnStatusChange(database, returnVerifikatorActor, updatedActor, updatedActor).catch(e => console.error(e))
+      })
+
+      logActivity({
+        query: `KEMBALIKAN KE VERIFIKATOR (GBAS): ${returnVerifikatorActor.fullName}`,
+        results: `Verifikator: ${vNama} (${vNip || '-'}) | Alasan: ${returnVerifikatorReason.trim() || '-'}`,
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'KEMBALIKAN KE VERIFIKATOR',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+
+      toast({
+        title: "✅ Berhasil Dikembalikan",
+        description: `Data ${returnVerifikatorActor.fullName} berhasil dikembalikan ke antrean Verifikator Dinas (${vNama}).`
+      })
+
+      setReturnVerifikatorActor(null)
+      setReturnVerifikatorReason("")
+      if (viewingActor?.id === returnVerifikatorActor.id) {
+        setViewingActor(null)
+      }
+    } catch (err: any) {
+      console.error("Error returning to verifikator:", err)
+      toast({
+        variant: "destructive",
+        title: "Gagal Mengembalikan Data",
+        description: err?.message || "Terjadi kesalahan saat mengembalikan data."
+      })
+    } finally {
+      setIsSubmittingReturnVerifikator(false)
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
   // CEK HAK AKSES KHUSUS ADMINISTRATOR
   // ─────────────────────────────────────────────────────────────────────────────
   if (!isAdminLoading && !isAdmin) {
@@ -1161,6 +1245,22 @@ export default function GBASPage() {
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
+
+                              {/* Kembali ke Verifikator Dinas untuk data yang sudah selesai / diinput rekening */}
+                              {(stage.key === 'selesai' || actor.status === 'finish' || (actor.bankNumber && String(actor.bankNumber).trim() !== '')) && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 text-rose-600 hover:text-rose-800 hover:bg-rose-100 rounded-lg shadow-sm"
+                                  title="Kembalikan ke Verifikator Dinas (Reset Rekening)"
+                                  onClick={() => {
+                                    setReturnVerifikatorActor(actor)
+                                    setReturnVerifikatorReason("")
+                                  }}
+                                >
+                                  <RotateCcw className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -1294,6 +1394,21 @@ export default function GBASPage() {
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </Button>
+
+                        {(stage.key === 'selesai' || actor.status === 'finish' || (actor.bankNumber && String(actor.bankNumber).trim() !== '')) && (
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-8 w-8 rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50"
+                            title="Kembalikan ke Verifikator Dinas (Reset Rekening)"
+                            onClick={() => {
+                              setReturnVerifikatorActor(actor)
+                              setReturnVerifikatorReason("")
+                            }}
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -1559,9 +1674,24 @@ export default function GBASPage() {
             </div>
           )}
 
-          <DialogFooter className="pt-3">
+          <DialogFooter className="pt-3 gap-2 flex-col sm:flex-row">
+            {viewingActor && (viewingActor.status === 'finish' || (viewingActor.bankNumber && String(viewingActor.bankNumber).trim() !== '')) && (
+              <Button
+                variant="outline"
+                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 font-bold text-xs rounded-xl"
+                onClick={() => {
+                  const target = viewingActor
+                  setViewingActor(null)
+                  setReturnVerifikatorActor(target)
+                  setReturnVerifikatorReason("")
+                }}
+              >
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                Kembalikan ke Verifikator Dinas
+              </Button>
+            )}
             <Button
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl"
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl"
               onClick={() => {
                 const target = viewingActor
                 setViewingActor(null)
@@ -1570,6 +1700,107 @@ export default function GBASPage() {
             >
               <FileDown className="w-3.5 h-3.5 mr-1.5" />
               Download Berita Acara (PDF)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL KONFIRMASI KEMBALIKAN KE VERIFIKATOR DINAS */}
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
+      <Dialog open={!!returnVerifikatorActor} onOpenChange={(open) => !open && setReturnVerifikatorActor(null)}>
+        <DialogContent className="max-w-md rounded-2xl p-6">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <RotateCcw className="w-5 h-5 text-rose-600" />
+              Kembalikan ke Verifikator Dinas
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Data akan dikembalikan ke antrean Verifikator Dinas sesuai Berita Acara.
+            </DialogDescription>
+          </DialogHeader>
+
+          {returnVerifikatorActor && (() => {
+            const pejabats = returnVerifikatorActor.surveyData?.pejabatData || returnVerifikatorActor.pejabatData
+            const vNama = pejabats?.verifikator?.nama || (returnVerifikatorActor as any).verifikatorDinas || (returnVerifikatorActor as any).verifiedDinasBy || "Verifikator Dinas"
+            const vNip = pejabats?.verifikator?.nipppk || "-"
+            const pNama = pejabats?.petugas?.nama || returnVerifikatorActor.petugasSurvey || returnVerifikatorActor.createdBy || "-"
+
+            return (
+              <div className="space-y-4 pt-2 text-xs">
+                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Pelaku Usaha:</span>
+                    <span className="font-bold text-slate-800">{returnVerifikatorActor.fullName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">NIK:</span>
+                    <span className="font-mono text-slate-700">{returnVerifikatorActor.nik}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Nama Usaha:</span>
+                    <span className="font-semibold text-slate-800">{returnVerifikatorActor.businessName || returnVerifikatorActor.surveyData?.namaUsaha || "-"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Petugas Survey:</span>
+                    <span className="font-medium text-slate-700">{pNama}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-200 pt-1.5">
+                    <span className="text-indigo-700 font-bold">Verifikator Tujuan:</span>
+                    <span className="font-bold text-indigo-700">{vNama} {vNip !== '-' ? `(NIP: ${vNip})` : ''}</span>
+                  </div>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-900 space-y-1">
+                  <div className="font-bold text-[11px] flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    Informasi Pengembalian:
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-amber-800">
+                    Data lengkap (kuesioner, foto survey, lokasi GPS, biodata) akan kembali utuh ke antrean <strong>Verifikasi Dinas (Cek Berkas)</strong> milik <strong>{vNama}</strong>. Data nomor rekening yang telah diinput sebelumnya akan di-reset.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="font-bold text-slate-700">Catatan / Alasan Pengembalian (Opsional)</Label>
+                  <Textarea
+                    value={returnVerifikatorReason}
+                    onChange={(e) => setReturnVerifikatorReason(e.target.value)}
+                    placeholder="Contoh: Perbaikan verifikasi berkas oleh verifikator dinas terkait..."
+                    className="h-20 text-xs rounded-xl bg-white border-slate-300"
+                  />
+                </div>
+              </div>
+            )
+          })()}
+
+          <DialogFooter className="gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs font-semibold rounded-xl"
+              onClick={() => setReturnVerifikatorActor(null)}
+              disabled={isSubmittingReturnVerifikator}
+            >
+              Batal
+            </Button>
+            <Button
+              size="sm"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md shadow-rose-200"
+              onClick={handleExecuteReturnVerifikator}
+              disabled={isSubmittingReturnVerifikator}
+            >
+              {isSubmittingReturnVerifikator ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                  Mengembalikan...
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                  Kembalikan ke Verifikator
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -529,13 +529,42 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
     if (!revertPending || !database) return
     const { actorId, fullName } = revertPending
     const actorObj = allActorsRaw?.find(a => a.id === actorId)
-    updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), { status: 'pending' })
+    
+    // Jika data berasal dari verifikasi dinas, kembalikan ke antrean Verifikator Dinas
+    const hasDinasData = actorObj?.surveyData || actorObj?.pejabatData || (actorObj as any)?.verifikatorDinas
+    const newStatus = hasDinasData ? 'verified_dinas' : 'pending'
+    
+    const updates: any = {
+      status: newStatus,
+      bankName: null,
+      bankNumber: null,
+      bankOwner: null,
+      readyForLPJ: false,
+      lpjNominal: null,
+    }
+
+    if (hasDinasData) {
+      updates.berkasDinasVerified = false
+      updates.berkasDinasVerifiedAt = null
+      updates.berkasDinasVerifiedBy = null
+      updates.hasilVerifikasiDinas = 'Lolos'
+      updates.dikembalikanKeVerifikatorAt = new Date().toISOString()
+      updates.dikembalikanKeVerifikatorBy = userProfile?.fullName || user?.email || user?.uid || 'Administrator'
+    }
+
+    updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), updates)
     if (actorObj) {
       import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-        updateStatsOnStatusChange(database, 'finish', 'pending', actorObj).catch(e => console.error(e))
+        const updatedActor = { ...actorObj, ...updates }
+        updateStatsOnStatusChange(database, actorObj, updatedActor, updatedActor).catch(e => console.error(e))
       })
     }
-    toast({ title: "Berhasil", description: `Data ${fullName} dikembalikan ke Pending.` })
+    toast({ 
+      title: "Berhasil Dikembalikan", 
+      description: hasDinasData 
+        ? `Data ${fullName} berhasil dikembalikan ke antrean Verifikator Dinas.`
+        : `Data ${fullName} dikembalikan ke antrean Pending.` 
+    })
     setViewingActor(null)
     setShowRevertDialog(false)
     setRevertPending(null)
