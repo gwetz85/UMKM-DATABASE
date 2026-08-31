@@ -74,8 +74,8 @@ export default function SettingsSlideshowPage() {
         let width = img.width
         let height = img.height
         
-        // Resize to max 1600px width/height for background
-        const MAX_DIM = 1600
+        // Resize to max 1280px width/height for lightweight background
+        const MAX_DIM = 1280
         if (width > height && width > MAX_DIM) {
           height *= MAX_DIM / width
           width = MAX_DIM
@@ -89,8 +89,8 @@ export default function SettingsSlideshowPage() {
         const ctx = canvas.getContext('2d')
         ctx?.drawImage(img, 0, 0, width, height)
         
-        // Compress to 70% quality JPEG
-        const base64Str = canvas.toDataURL('image/jpeg', 0.7)
+        // Compress to 65% quality JPEG
+        const base64Str = canvas.toDataURL('image/jpeg', 0.65)
         
         const newSlide = {
           id: Date.now().toString(),

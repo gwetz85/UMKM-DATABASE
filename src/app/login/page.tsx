@@ -386,38 +386,37 @@ export default function LoginPage() {
       {/* Background Image / Slideshow */}
       <div className="fixed inset-0 z-0 bg-slate-950 overflow-hidden pointer-events-none">
         {slides.length > 0 ? (
-          slides.map((slide, idx) => (
-            <div 
-              key={slide.id}
-              className={`absolute inset-0 transition-opacity duration-2000 ${
-                idx === currentSlideIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-              }`}
-            >
-              {/* Latar belakang blur agar tidak ada bar hitam jika aspek rasio berbeda */}
-              <img 
-                src={slide.base64} 
-                alt="blur-bg"
-                className="absolute inset-0 w-full h-full object-cover opacity-40 blur-3xl scale-110"
-              />
-              {/* Gambar utama yang pas (contain) pada desktop dan cover pada mobile */}
-              <img 
-                src={slide.base64} 
-                alt={`Slide ${idx + 1}`} 
-                className={`relative z-10 w-full h-full object-cover md:object-contain object-center transition-transform ease-linear drop-shadow-2xl ${
-                  idx === currentSlideIndex ? 'scale-105' : 'scale-100'
+          slides.map((slide, idx) => {
+            const isActive = idx === currentSlideIndex;
+            // Only render active slide to prevent massive memory and GPU load
+            if (!isActive && Math.abs(idx - currentSlideIndex) > 1 && idx !== 0) return null;
+            return (
+              <div 
+                key={slide.id}
+                className={`absolute inset-0 transition-opacity duration-1000 ${
+                  isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
                 }`}
-                style={{ transitionDuration: '12000ms' }}
-              />
-            </div>
-          ))
+              >
+                {/* Gambar latar dengan overlay ringan */}
+                <img 
+                  src={slide.base64} 
+                  alt={`Slide ${idx + 1}`} 
+                  className="relative z-10 w-full h-full object-cover md:object-contain object-center"
+                  loading={idx === 0 ? "eager" : "lazy"}
+                />
+              </div>
+            );
+          })
         ) : (
           <img 
             src="/bg-umkm-animasi.png" 
             alt="Background" 
             className="w-full h-full object-cover"
+            loading="eager"
+            fetchPriority="high"
           />
         )}
-        <div className="absolute inset-0 bg-black/30 z-20" />
+        <div className="absolute inset-0 bg-black/40 z-20 backdrop-blur-[2px]" />
       </div>
 
 

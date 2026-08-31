@@ -38,32 +38,32 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const isKoordinator = profile?.role === 'koordinator'
   const { playSound } = useSoundEffect();
 
-  const eventSettingsRef = useMemoFirebase(() => {
-    if (!database) return null
-    return ref(database, 'settings/event_info')
-  }, [database])
-  const { data: eventInfo } = useObject(eventSettingsRef)
-  const activeEvent = useActiveEvent(eventInfo)
-
-  const maintenanceRef = useMemoFirebase(() => {
-    if (!database) return null;
-    return ref(database, 'settings/maintenance');
-  }, [database]);
-  const { data: maintenanceData } = useObject(maintenanceRef);
-
-  const systemConfigRef = useMemoFirebase(() => {
-    if (!database) return null;
-    return ref(database, 'settings/system_config');
-  }, [database]);
-  const { data: systemConfig } = useObject(systemConfigRef);
-
-  const isAdmin = profile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
-  const isStaff = profile?.role === 'staff';
   const isLoginPage = pathname === '/login';
   const isCekDataPage = pathname === '/cek-data' || pathname?.startsWith('/cek-data');
   const isLayarInformasiPage = pathname === '/layar-informasi' || pathname?.startsWith('/layar-informasi');
   const isPublicPage = isLoginPage || isCekDataPage || isLayarInformasiPage;
   const isRootPage = pathname === '/';
+  const isAdmin = profile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
+  const isStaff = profile?.role === 'staff';
+
+  const eventSettingsRef = useMemoFirebase(() => {
+    if (!database || isLoginPage) return null
+    return ref(database, 'settings/event_info')
+  }, [database, isLoginPage])
+  const { data: eventInfo } = useObject(eventSettingsRef)
+  const activeEvent = useActiveEvent(eventInfo)
+
+  const maintenanceRef = useMemoFirebase(() => {
+    if (!database || isLoginPage) return null;
+    return ref(database, 'settings/maintenance');
+  }, [database, isLoginPage]);
+  const { data: maintenanceData } = useObject(maintenanceRef);
+
+  const systemConfigRef = useMemoFirebase(() => {
+    if (!database || isLoginPage) return null;
+    return ref(database, 'settings/system_config');
+  }, [database, isLoginPage]);
+  const { data: systemConfig } = useObject(systemConfigRef);
 
   React.useEffect(() => {
     if (maintenanceData && typeof maintenanceData === 'object' && user && profile) {
@@ -207,9 +207,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       <ThemePersistence />
       <SidebarProvider>
         <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-transparent">
-          <GlobalAutoVerifier />
-          <GlobalStatsAutoSync />
-          <MessageNotification />
+          {user && !isLoginPage && <GlobalStatsAutoSync />}
+          {user && !isLoginPage && <MessageNotification />}
           <Toaster />
 
           {!isLoginPage && !isLayarInformasiPage && (
