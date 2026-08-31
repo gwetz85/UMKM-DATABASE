@@ -177,17 +177,83 @@ export default function VerifikasiDinasBerkasPage() {
 
   // Helper untuk mendapatkan PejabatData (Verifikator & Petugas) dari actor atau fallback system_users
   const getActorPejabat = (actor: BusinessActor): PejabatData | undefined => {
-    if (actor.pejabatData?.verifikator?.nama) return actor.pejabatData
-    if (actor.surveyData?.pejabatData?.verifikator?.nama) return actor.surveyData.pejabatData
+    // 1. Resolve Verifikator
+    const rawVerif = actor.pejabatData?.verifikator || actor.surveyData?.pejabatData?.verifikator
+    const vName = rawVerif?.nama || actor.verifikatorDinas || (actor as any).verifiedDinasBy || "Belum Ditentukan"
+    
+    let resolvedVerifNip = rawVerif?.nipppk ? String(rawVerif.nipppk).trim() : ""
+    let resolvedVerifPangkat = rawVerif?.pangkat ? String(rawVerif.pangkat).trim() : ""
+    let resolvedVerifJabatan = rawVerif?.jabatan ? String(rawVerif.jabatan).trim() : "Verifikator Dinas"
 
-    const petugasUpper = String(actor.petugasSurvey || actor.createdBy || "").toUpperCase().trim()
-    if (petugasUpper) {
-      const found = systemUsersMap.byFullName.get(petugasUpper)
-      if (found?.pejabatData?.verifikator?.nama) {
-        return found.pejabatData
+    if (vName && vName !== "Belum Ditentukan" && vName !== "-") {
+      const vUpper = vName.trim().toUpperCase()
+      const foundV = systemUsersMap.byFullName.get(vUpper)
+      if (foundV) {
+        if (!resolvedVerifNip && foundV.nipppk) resolvedVerifNip = String(foundV.nipppk).trim()
+        if (!resolvedVerifPangkat && foundV.pangkat) resolvedVerifPangkat = String(foundV.pangkat).trim()
+        if (!resolvedVerifJabatan && foundV.jabatan) resolvedVerifJabatan = String(foundV.jabatan).trim()
       }
     }
-    return undefined
+
+    const resolvedVerifikator: PejabatItem = {
+      nama: vName,
+      nipppk: resolvedVerifNip,
+      pangkat: resolvedVerifPangkat,
+      jabatan: resolvedVerifJabatan
+    }
+
+    // 2. Resolve Petugas Survey SESUAI DENGAN PETUGAS SURVEY MASING-MASING AKTOR
+    const pNameRaw = (actor.petugasSurvey && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim() !== '')
+      ? actor.petugasSurvey.trim()
+      : (actor.createdBy && actor.createdBy.trim() !== '-' && actor.createdBy.trim() !== ''
+          ? actor.createdBy.trim()
+          : (actor.pejabatData?.petugas?.nama || actor.surveyData?.pejabatData?.petugas?.nama || "-"))
+
+    let resolvedPetugasNama = pNameRaw
+    let resolvedPetugasNip = ""
+    let resolvedPetugasPangkat = ""
+    let resolvedPetugasJabatan = "Petugas Survey"
+
+    // Cek jika pejabatData.petugas yang tersimpan sudah cocok dengan nama petugas survey ini
+    const rawPetugas = actor.pejabatData?.petugas || actor.surveyData?.pejabatData?.petugas
+    if (rawPetugas?.nama && pNameRaw && rawPetugas.nama.trim().toUpperCase() === pNameRaw.toUpperCase()) {
+      resolvedPetugasNama = rawPetugas.nama.trim()
+      resolvedPetugasNip = rawPetugas.nipppk ? String(rawPetugas.nipppk).trim() : ""
+      resolvedPetugasPangkat = rawPetugas.pangkat ? String(rawPetugas.pangkat).trim() : ""
+      resolvedPetugasJabatan = rawPetugas.jabatan ? String(rawPetugas.jabatan).trim() : "Petugas Survey"
+    }
+
+    // Lookup ke system_users berdasarkan nama atau username petugas survey terkait
+    if (pNameRaw && pNameRaw !== "-") {
+      const pUpper = pNameRaw.toUpperCase().trim()
+      const pClean = pNameRaw.toLowerCase().trim()
+      const foundP = systemUsersMap.byFullName.get(pUpper) || 
+                     systemUsersMap.byUsername.get(pClean) ||
+                     (systemUsers ? systemUsers.find((u: any) => 
+                       (u.fullName && String(u.fullName).trim().toUpperCase() === pUpper) ||
+                       (u.username && String(u.username).trim().toLowerCase() === pClean) ||
+                       (u.id && String(u.id).trim().toUpperCase() === pUpper)
+                     ) : null)
+
+      if (foundP) {
+        if (foundP.fullName) resolvedPetugasNama = String(foundP.fullName).trim()
+        if (foundP.nipppk) resolvedPetugasNip = String(foundP.nipppk).trim()
+        if (foundP.pangkat) resolvedPetugasPangkat = String(foundP.pangkat).trim()
+        if (foundP.jabatan) resolvedPetugasJabatan = String(foundP.jabatan).trim()
+      }
+    }
+
+    const resolvedPetugas: PejabatItem = {
+      nama: resolvedPetugasNama,
+      nipppk: resolvedPetugasNip,
+      pangkat: resolvedPetugasPangkat,
+      jabatan: resolvedPetugasJabatan
+    }
+
+    return {
+      verifikator: resolvedVerifikator,
+      petugas: resolvedPetugas
+    }
   }
 
   // Helper untuk mendapatkan NIPPPK Verifikator yang diisi oleh Petugas Survey
