@@ -676,81 +676,75 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   doc.text((actor.fullName || '-').toUpperCase(), dateCenterX, y, { align: 'center' });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // HALAMAN 2 : KUITANSI
+  // HALAMAN 2 : KUITANSI (BENTUK ASLI PERSIS GAMBAR TEMPLATE)
   // ═══════════════════════════════════════════════════════════════════════════
   doc.addPage();
 
   const kBoxLeft = margin;
-  const kBoxTop = 15;
+  const kBoxTop = 12;
   const kBoxWidth = contentWidth;
-  const kBoxHeight = 265;
+  const kBoxHeight = 270;
   const kBoxRight = kBoxLeft + kBoxWidth;
   const kBoxBottom = kBoxTop + kBoxHeight;
 
-  // 1. Border Luar Utama
+  // 1. Kotak Bingkai Luar
   doc.setDrawColor(0);
-  doc.setLineWidth(0.6);
+  doc.setLineWidth(0.7);
   doc.rect(kBoxLeft, kBoxTop, kBoxWidth, kBoxHeight);
 
-  // 2. Header Judul "KUITANSI"
-  const kTitleLineY = kBoxTop + 24;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  // 2. Header Judul "KUITANSI" (Font Times Bold dengan Garis Bawah)
+  const kTitleLineY = kBoxTop + 26;
+  doc.setFont('times', 'bold');
+  doc.setFontSize(15);
   doc.setTextColor(0);
-  doc.text('KUITANSI', pageWidth / 2, kBoxTop + 14, { align: 'center' });
+  doc.text('KUITANSI', pageWidth / 2, kBoxTop + 16, { align: 'center' });
 
   const kuitansiWidth = doc.getTextWidth('KUITANSI');
   doc.setLineWidth(0.8);
-  doc.line(pageWidth / 2 - kuitansiWidth / 2 - 2, kBoxTop + 16.5, pageWidth / 2 + kuitansiWidth / 2 + 2, kBoxTop + 16.5);
+  doc.line(pageWidth / 2 - kuitansiWidth / 2 - 1, kBoxTop + 18, pageWidth / 2 + kuitansiWidth / 2 + 1, kBoxTop + 18);
 
-  // Garis horizontal bawah judul
-  doc.setLineWidth(0.5);
+  // Garis horizontal pembatas bawah judul
+  doc.setLineWidth(0.6);
   doc.line(kBoxLeft, kTitleLineY, kBoxRight, kTitleLineY);
 
-  // 3. Badan Tengah (Tabel 2 Kolom)
-  const kMiddleSplitY = kBoxTop + 145; // Garis batas antara badan tengah & tanda tangan
+  // 3. Grid Tengah
+  const kMiddleSplitY = kBoxTop + 144; // Garis horizontal batas bawah grid tengah
   doc.line(kBoxLeft, kMiddleSplitY, kBoxRight, kMiddleSplitY);
 
-  // Garis Vertikal Ganda Pemisah Kolom Kiri & Kanan
-  const kCol1Width = 62;
+  // Garis vertikal ganda pemisah kolom kiri dan kolom kanan
+  const kCol1Width = 63;
   const kDividerX1 = kBoxLeft + kCol1Width;
-  const kDividerX2 = kDividerX1 + 2.5;
+  const kDividerX2 = kDividerX1 + 3;
   doc.line(kDividerX1, kTitleLineY, kDividerX1, kMiddleSplitY);
   doc.line(kDividerX2, kTitleLineY, kDividerX2, kMiddleSplitY);
 
-  // --- Isi Kolom Kiri ---
+  // ── KOLOM KIRI (Tahun Anggaran, Rekening Lembaga, Nomor Rekening) ──
   const kCol1Center = kBoxLeft + (kCol1Width / 2);
 
   // Blok 1: Tahun Anggaran
-  doc.setFont('helvetica', 'bold');
+  doc.setFont('times', 'bold');
   doc.setFontSize(10);
   doc.text('Tahun Anggaran', kCol1Center, kTitleLineY + 24, { align: 'center' });
   doc.text('2026', kCol1Center, kTitleLineY + 30, { align: 'center' });
 
   // Blok 2: Rekening Lembaga
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
   doc.text('Rekening Lembaga', kCol1Center, kTitleLineY + 54, { align: 'center' });
-  doc.setFontSize(8.5);
   doc.text('PT. BANK RAKYAT INDONESIA', kCol1Center, kTitleLineY + 60, { align: 'center' });
   doc.text('Yayasan Tunas Bangsa Kepri', kCol1Center, kTitleLineY + 65, { align: 'center' });
 
   // Blok 3: Nomor Rekening
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9.5);
   doc.text('Nomor Rekening', kCol1Center, kTitleLineY + 88, { align: 'center' });
-  doc.setFontSize(10);
   doc.text('0174-01-017706-53-3', kCol1Center, kTitleLineY + 94, { align: 'center' });
 
-  // --- Isi Kolom Kanan ---
+  // ── KOLOM KANAN (Sudah terima dari, Uang sejumlah, Yaitu) ──
   const kRightLabelX = kDividerX2 + 4;
   const kRightColonX = kRightLabelX + 24;
-  const kRightValX = kRightColonX + 3;
+  const kRightValX = kRightColonX + 4;
   const kRightValWidth = kBoxRight - kRightValX - 4;
 
   // Row 1: Sudah terima dari
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9.5);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(10);
   doc.text('Sudah', kRightLabelX, kTitleLineY + 16);
   doc.text('terima dari', kRightLabelX, kTitleLineY + 21);
   doc.text(':', kRightColonX, kTitleLineY + 16);
@@ -772,32 +766,33 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
     lineHeightFactor: 1.25,
   });
 
-  // 4. Bagian Bawah (Tanda Tangan Kuitansi)
-  // --- Tanda Tangan Kiri: Ketua Yayasan ---
-  const kSigLeftCenter = kBoxLeft + (kCol1Width / 2) + 8;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9.5);
+  // ── BAGIAN BAWAH (TANDA TANGAN KUITANSI) ──
+  // Tanda Tangan Kiri (Ketua Yayasan)
+  const kSigLeftCenter = kBoxLeft + (kCol1Width / 2) + 6;
+  doc.setFont('times', 'bold');
+  doc.setFontSize(10);
   doc.text('Mengetahui/menyetujui', kSigLeftCenter, kMiddleSplitY + 18, { align: 'center' });
   doc.text('Ketua Yayasan Tunas Bangsa', kSigLeftCenter, kMiddleSplitY + 23, { align: 'center' });
   doc.text('Kepulauan Riau', kSigLeftCenter, kMiddleSplitY + 28, { align: 'center' });
 
-  // Nama Ketua Yayasan
+  // Nama Ketua Yayasan dengan Garis Bawah
   const ketuaName = 'Toh Muandy Saputra';
   doc.text(ketuaName, kSigLeftCenter, kMiddleSplitY + 68, { align: 'center' });
   const ketuaNameWidth = doc.getTextWidth(ketuaName);
-  doc.setLineWidth(0.4);
+  doc.setLineWidth(0.5);
   doc.line(kSigLeftCenter - ketuaNameWidth / 2, kMiddleSplitY + 69.5, kSigLeftCenter + ketuaNameWidth / 2, kMiddleSplitY + 69.5);
 
-  // --- Tanda Tangan Kanan: Penerima Dana Bantuan ---
-  const kSigRightDateX = kBoxRight - dateWidth - 14;
-  const kSigRightCenterX = kSigRightDateX + (dateWidth / 2);
+  // Tanda Tangan Kanan (Penerima Dana Bantuan)
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10);
+  const kDateWidth = doc.getTextWidth(dateStr);
+  const kSigRightDateX = kBoxRight - kDateWidth - 14;
+  const kSigRightCenterX = kSigRightDateX + (kDateWidth / 2);
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9.5);
   doc.text(dateStr, kSigRightDateX, kMiddleSplitY + 34);
   doc.text('Penerima Dana Bantuan', kSigRightCenterX, kMiddleSplitY + 39, { align: 'center' });
 
-  // Kotak Materai Kuitansi
+  // Kotak Materai
   const kMateraiX = kSigRightDateX;
   const kMateraiY = kMiddleSplitY + 44;
   doc.setDrawColor(180);
@@ -808,13 +803,13 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   doc.text('MATERAI', kMateraiX + materaiWidth / 2, kMateraiY + materaiHeight / 2 - 1, { align: 'center' });
   doc.text('TEMPEL', kMateraiX + materaiWidth / 2, kMateraiY + materaiHeight / 2 + 3, { align: 'center' });
 
-  // Nama Pelaku Usaha Kuitansi
+  // Nama Pelaku Usaha
   doc.setTextColor(0);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9.5);
+  doc.setFont('times', 'bold');
+  doc.setFontSize(10);
   doc.text((actor.fullName || '-').toUpperCase(), kSigRightCenterX, kMiddleSplitY + 74, { align: 'center' });
 
-  // ── SIMPAN DOKUMEN (SURAT PERNYATAAN & KUITANSI) ───────────────────────────
+  // ── SIMPAN DOKUMEN ────────────────────────────────────────────────────────
   const safeName = (actor.fullName || 'PELAKU_USAHA').replace(/[^a-z0-9]/gi, '_').toUpperCase();
   const safeNik = actor.nik || 'NIK';
   doc.save(`BERKAS_PENCAIRAN_${safeName}_${safeNik}.pdf`);
