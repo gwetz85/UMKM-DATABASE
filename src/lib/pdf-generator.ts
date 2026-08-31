@@ -526,7 +526,7 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   const materaiHeight = 22;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // HALAMAN 1 : KUITANSI (PERSIS 100% SESUAI STRUKTUR & GRID ASLI)
+  // HALAMAN 1 : KUITANSI (DENGAN KOLOM KHUSUS TITIK DUA DI DALAM GARIS DOUBLE)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const kBoxLeft = margin;
@@ -560,18 +560,22 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   const kMiddleSplitY = kBoxTop + 144; // Garis horizontal batas tengah
   doc.line(kBoxLeft, kMiddleSplitY, kBoxRight, kMiddleSplitY);
 
-  // ── STRUKTUR KOLOM KUITANSI ASLI ──
-  // Kolom 1 (Tahun Anggaran, Rekening Lembaga, Nomor Rekening): lebar 60mm
-  const kCol1Width = 60;
-  const kLineA = kBoxLeft + kCol1Width; // Garis A (pemisah Kolom 1 & Kolom 2) - MENEMBUS DARI ATAS HINGGA BAWAH BOX!
+  // ── STRUKTUR KOLOM KUITANSI ──
+  // Kolom 1 (Tahun Anggaran, Rekening Lembaga, Nomor Rekening): lebar 62mm
+  const kCol1Width = 62;
+  const kLineA = kBoxLeft + kCol1Width; // Garis A - MENEMBUS HINGGA DASAR KOTAK KUITANSI!
   doc.line(kLineA, kTitleLineY, kLineA, kBoxBottom);
 
-  // Kolom 2 (Sudah terima dari, Uang sejumlah, Yaitu): lebar 22mm
+  // Kolom 2 (Labels: Sudah terima dari, Uang sejumlah, Yaitu): lebar 22mm
   const kCol2Width = 22;
-  const kLineB1 = kLineA + kCol2Width; // Garis B1 (garis kiri double channel)
-  const kLineB2 = kLineB1 + 2.5;       // Garis B2 (garis kanan double channel)
+  const kLineB1 = kLineA + kCol2Width; // Garis B1 (garis kiri kolom titik dua)
   
-  // Double channel HANYA ada di bagian tengah
+  // Kolom Khusus Titik Dua (lebar 4.5mm): garis double membatasi titik dua ( : )
+  const kColonColWidth = 4.5;
+  const kLineB2 = kLineB1 + kColonColWidth; // Garis B2 (garis kanan kolom titik dua)
+  const kColonCenterX = kLineB1 + (kColonColWidth / 2); // Posisi titik dua pas di tengah garis double
+
+  // Garis Double (Line B1 dan Line B2) HANYA di grid tengah
   doc.line(kLineB1, kTitleLineY, kLineB1, kMiddleSplitY);
   doc.line(kLineB2, kTitleLineY, kLineB2, kMiddleSplitY);
 
@@ -593,7 +597,7 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   doc.text('Nomor Rekening', kCol1Center, kTitleLineY + 86, { align: 'center' });
   doc.text('0174-01-017706-53-3', kCol1Center, kTitleLineY + 92, { align: 'center' });
 
-  // ── ISI KOLOM 2 (Labels: Sudah terima dari, Uang sejumlah, Yaitu) ──
+  // ── ISI KOLOM 2 (Labels di sebelah kiri garis double) ──
   const kCol2X = kLineA + 2.5;
 
   // Row 1: Sudah terima dari
@@ -607,22 +611,23 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   // Row 3: Yaitu
   doc.text('Yaitu', kCol2X, kTitleLineY + 86);
 
-  // ── ISI KOLOM 3 (Values di sebelah kanan double channel) ──
-  const kCol3ColonX = kLineB2 + 2.5;
-  const kCol3ValX = kCol3ColonX + 3.5;
-  const kCol3ValWidth = kBoxRight - kCol3ValX - 3;
+  // ── ISI KOLOM TITIK DUA ( : ) PAS DI DALAM GARIS DOUBLE ──
+  doc.text(':', kColonCenterX, kTitleLineY + 22, { align: 'center' });
+  doc.text(':', kColonCenterX, kTitleLineY + 57.5, { align: 'center' });
+  doc.text(':', kColonCenterX, kTitleLineY + 86, { align: 'center' });
+
+  // ── ISI KOLOM 3 (Values di sebelah kanan garis double) ──
+  const kCol3ValX = kLineB2 + 3.5;
+  const kCol3ValWidth = kBoxRight - kCol3ValX - 3.5;
 
   // Row 1 Value: Sudah terima dari
-  doc.text(':', kCol3ColonX, kTitleLineY + 22);
   doc.text('Yayasan Tunas Bangsa Kepri', kCol3ValX, kTitleLineY + 22);
 
-  // Row 2 Value: Uang sejumlah (Rp 1.000.000 di atas, : Satu Juta Rupiah di bawah)
-  doc.text('Rp. 1.000.000', kCol3ValX, kTitleLineY + 46.5);
-  doc.text(':', kCol3ColonX, kTitleLineY + 52);
-  doc.text('Satu Juta Rupiah', kCol3ValX, kTitleLineY + 52);
+  // Row 2 Value: Uang sejumlah
+  doc.text('Rp. 1.000.000', kCol3ValX, kTitleLineY + 52);
+  doc.text('Satu Juta Rupiah', kCol3ValX, kTitleLineY + 57.5);
 
   // Row 3 Value: Yaitu
-  doc.text(':', kCol3ColonX, kTitleLineY + 86);
   const yaituDesc = 'Bantuan Modal Usaha Bagi Pelaku Usaha Kota Tanjungpinang untuk Kegiatan Bantuan Penguatan Pemodalan Usaha Mikro Kecil Dan Menengah ( UMKM ) Tahun 2026';
   doc.text(yaituDesc, kCol3ValX, kTitleLineY + 86, {
     maxWidth: kCol3ValWidth,
