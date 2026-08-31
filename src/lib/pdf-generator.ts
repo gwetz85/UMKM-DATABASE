@@ -509,8 +509,12 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 15; // Batas kiri-kanan lebih kecil (tidak terlalu ke tengah)
+  const margin = 15;
   const contentWidth = pageWidth - margin * 2;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HALAMAN 1 : SURAT PERNYATAAN
+  // ═══════════════════════════════════════════════════════════════════════════
 
   // ── JUDUL ──────────────────────────────────────────────────────────────────
   doc.setFont('helvetica', 'bold');
@@ -586,7 +590,6 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
       maxWidth: pointWidth,
       lineHeightFactor: 1.3,
     });
-    // Jarak baris isi agak direnggangkan (5.2mm per baris) dan jeda antar point dilebarkan (3.8mm)
     y += lines.length * 5.2 + 3.8;
   };
 
@@ -625,7 +628,7 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
     'Pernyataan ini kami buat dalam kesadaran yang penuh dan tanpa tekanan dari siapapun. Saya selaku pemilik usaha dan Penanggung Jawab Pengguna Dana yang diterima dari Yayasan Tunas Bangsa Kepri bersedia untuk dituntut secara hukum apabila kami tidak membuat laporan pertanggungjawaban sebagaimana tercantum pada butir 4 diatas dan melakukan hal-hal yang dilarang sebagaimana tercantum pada butir 3 diatas.'
   );
 
-  // ── TANDA TANGAN ──────────────────────────────────────────────────────────
+  // ── TANDA TANGAN HALAMAN 1 ─────────────────────────────────────────────────
   y += 2;
   const now = new Date();
   const day = now.getDate();
@@ -644,18 +647,18 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   const dateStartX = pageWidth - margin - dateWidth;
   const dateCenterX = dateStartX + (dateWidth / 2);
 
-  // 1. Tanggal (dimulai dari dateStartX)
+  // 1. Tanggal
   doc.text(dateStr, dateStartX, y);
   y += 5.0;
 
-  // 2. Teks "Penerima Dana Bantuan" (center persis dengan tulisan Tanjungpinang diatasnya)
+  // 2. Teks "Penerima Dana Bantuan"
   doc.text('Penerima Dana Bantuan', dateCenterX, y, { align: 'center' });
 
-  // 3. Kotak Materai (lurus vertikal dengan huruf T Tanjungpinang, dan diberi jarak dari teks diatasnya)
+  // 3. Kotak Materai
   const materaiWidth = 24;
   const materaiHeight = 22;
   const materaiX = dateStartX;
-  y += 5.0; // Jarak antara Penerima Dana Bantuan dengan kotak materai
+  y += 5.0;
 
   doc.setDrawColor(180);
   doc.setLineWidth(0.3);
@@ -665,15 +668,154 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   doc.text('MATERAI', materaiX + materaiWidth / 2, y + materaiHeight / 2 - 1, { align: 'center' });
   doc.text('TEMPEL', materaiX + materaiWidth / 2, y + materaiHeight / 2 + 3, { align: 'center' });
 
-  // 4. Nama Pelaku Usaha (center persis dengan tulisan Tanjungpinang diatasnya)
+  // 4. Nama Pelaku Usaha
   y += materaiHeight + 5.0;
   doc.setTextColor(0);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.text((actor.fullName || '-').toUpperCase(), dateCenterX, y, { align: 'center' });
 
-  // ── SIMPAN ────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HALAMAN 2 : KUITANSI
+  // ═══════════════════════════════════════════════════════════════════════════
+  doc.addPage();
+
+  const kBoxLeft = margin;
+  const kBoxTop = 15;
+  const kBoxWidth = contentWidth;
+  const kBoxHeight = 265;
+  const kBoxRight = kBoxLeft + kBoxWidth;
+  const kBoxBottom = kBoxTop + kBoxHeight;
+
+  // 1. Border Luar Utama
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.6);
+  doc.rect(kBoxLeft, kBoxTop, kBoxWidth, kBoxHeight);
+
+  // 2. Header Judul "KUITANSI"
+  const kTitleLineY = kBoxTop + 24;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(0);
+  doc.text('KUITANSI', pageWidth / 2, kBoxTop + 14, { align: 'center' });
+
+  const kuitansiWidth = doc.getTextWidth('KUITANSI');
+  doc.setLineWidth(0.8);
+  doc.line(pageWidth / 2 - kuitansiWidth / 2 - 2, kBoxTop + 16.5, pageWidth / 2 + kuitansiWidth / 2 + 2, kBoxTop + 16.5);
+
+  // Garis horizontal bawah judul
+  doc.setLineWidth(0.5);
+  doc.line(kBoxLeft, kTitleLineY, kBoxRight, kTitleLineY);
+
+  // 3. Badan Tengah (Tabel 2 Kolom)
+  const kMiddleSplitY = kBoxTop + 145; // Garis batas antara badan tengah & tanda tangan
+  doc.line(kBoxLeft, kMiddleSplitY, kBoxRight, kMiddleSplitY);
+
+  // Garis Vertikal Ganda Pemisah Kolom Kiri & Kanan
+  const kCol1Width = 62;
+  const kDividerX1 = kBoxLeft + kCol1Width;
+  const kDividerX2 = kDividerX1 + 2.5;
+  doc.line(kDividerX1, kTitleLineY, kDividerX1, kMiddleSplitY);
+  doc.line(kDividerX2, kTitleLineY, kDividerX2, kMiddleSplitY);
+
+  // --- Isi Kolom Kiri ---
+  const kCol1Center = kBoxLeft + (kCol1Width / 2);
+
+  // Blok 1: Tahun Anggaran
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('Tahun Anggaran', kCol1Center, kTitleLineY + 24, { align: 'center' });
+  doc.text('2026', kCol1Center, kTitleLineY + 30, { align: 'center' });
+
+  // Blok 2: Rekening Lembaga
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('Rekening Lembaga', kCol1Center, kTitleLineY + 54, { align: 'center' });
+  doc.setFontSize(8.5);
+  doc.text('PT. BANK RAKYAT INDONESIA', kCol1Center, kTitleLineY + 60, { align: 'center' });
+  doc.text('Yayasan Tunas Bangsa Kepri', kCol1Center, kTitleLineY + 65, { align: 'center' });
+
+  // Blok 3: Nomor Rekening
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.text('Nomor Rekening', kCol1Center, kTitleLineY + 88, { align: 'center' });
+  doc.setFontSize(10);
+  doc.text('0174-01-017706-53-3', kCol1Center, kTitleLineY + 94, { align: 'center' });
+
+  // --- Isi Kolom Kanan ---
+  const kRightLabelX = kDividerX2 + 4;
+  const kRightColonX = kRightLabelX + 24;
+  const kRightValX = kRightColonX + 3;
+  const kRightValWidth = kBoxRight - kRightValX - 4;
+
+  // Row 1: Sudah terima dari
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.text('Sudah', kRightLabelX, kTitleLineY + 16);
+  doc.text('terima dari', kRightLabelX, kTitleLineY + 21);
+  doc.text(':', kRightColonX, kTitleLineY + 16);
+  doc.text('Yayasan Tunas Bangsa Kepri', kRightValX, kTitleLineY + 16);
+
+  // Row 2: Uang sejumlah
+  doc.text('Uang', kRightLabelX, kTitleLineY + 48);
+  doc.text('sejumlah', kRightLabelX, kTitleLineY + 53);
+  doc.text(':', kRightColonX, kTitleLineY + 48);
+  doc.text('Rp. 1.000.000', kRightValX, kTitleLineY + 48);
+  doc.text('Satu Juta Rupiah', kRightValX, kTitleLineY + 53);
+
+  // Row 3: Yaitu
+  doc.text('Yaitu', kRightLabelX, kTitleLineY + 76);
+  doc.text(':', kRightColonX, kTitleLineY + 76);
+  const yaituDesc = 'Bantuan Modal Usaha Bagi Pelaku Usaha Kota Tanjungpinang untuk Kegiatan Bantuan Penguatan Pemodalan Usaha Mikro Kecil Dan Menengah ( UMKM ) Tahun 2026';
+  doc.text(yaituDesc, kRightValX, kTitleLineY + 76, {
+    maxWidth: kRightValWidth,
+    lineHeightFactor: 1.25,
+  });
+
+  // 4. Bagian Bawah (Tanda Tangan Kuitansi)
+  // --- Tanda Tangan Kiri: Ketua Yayasan ---
+  const kSigLeftCenter = kBoxLeft + (kCol1Width / 2) + 8;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.text('Mengetahui/menyetujui', kSigLeftCenter, kMiddleSplitY + 18, { align: 'center' });
+  doc.text('Ketua Yayasan Tunas Bangsa', kSigLeftCenter, kMiddleSplitY + 23, { align: 'center' });
+  doc.text('Kepulauan Riau', kSigLeftCenter, kMiddleSplitY + 28, { align: 'center' });
+
+  // Nama Ketua Yayasan
+  const ketuaName = 'Toh Muandy Saputra';
+  doc.text(ketuaName, kSigLeftCenter, kMiddleSplitY + 68, { align: 'center' });
+  const ketuaNameWidth = doc.getTextWidth(ketuaName);
+  doc.setLineWidth(0.4);
+  doc.line(kSigLeftCenter - ketuaNameWidth / 2, kMiddleSplitY + 69.5, kSigLeftCenter + ketuaNameWidth / 2, kMiddleSplitY + 69.5);
+
+  // --- Tanda Tangan Kanan: Penerima Dana Bantuan ---
+  const kSigRightDateX = kBoxRight - dateWidth - 14;
+  const kSigRightCenterX = kSigRightDateX + (dateWidth / 2);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5);
+  doc.text(dateStr, kSigRightDateX, kMiddleSplitY + 34);
+  doc.text('Penerima Dana Bantuan', kSigRightCenterX, kMiddleSplitY + 39, { align: 'center' });
+
+  // Kotak Materai Kuitansi
+  const kMateraiX = kSigRightDateX;
+  const kMateraiY = kMiddleSplitY + 44;
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.3);
+  doc.rect(kMateraiX, kMateraiY, materaiWidth, materaiHeight);
+  doc.setFontSize(6);
+  doc.setTextColor(150);
+  doc.text('MATERAI', kMateraiX + materaiWidth / 2, kMateraiY + materaiHeight / 2 - 1, { align: 'center' });
+  doc.text('TEMPEL', kMateraiX + materaiWidth / 2, kMateraiY + materaiHeight / 2 + 3, { align: 'center' });
+
+  // Nama Pelaku Usaha Kuitansi
+  doc.setTextColor(0);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5);
+  doc.text((actor.fullName || '-').toUpperCase(), kSigRightCenterX, kMiddleSplitY + 74, { align: 'center' });
+
+  // ── SIMPAN DOKUMEN (SURAT PERNYATAAN & KUITANSI) ───────────────────────────
   const safeName = (actor.fullName || 'PELAKU_USAHA').replace(/[^a-z0-9]/gi, '_').toUpperCase();
   const safeNik = actor.nik || 'NIK';
-  doc.save(`SURAT_PERNYATAAN_${safeName}_${safeNik}.pdf`);
+  doc.save(`BERKAS_PENCAIRAN_${safeName}_${safeNik}.pdf`);
 };

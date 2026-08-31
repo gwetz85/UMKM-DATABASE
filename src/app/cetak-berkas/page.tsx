@@ -81,7 +81,7 @@ function CetakBerkasContent() {
       setPrintingId(actor.id)
       generateSuratPernyataan(actor)
       logActivity({
-        query: `CETAK SURAT PERNYATAAN: ${actor.fullName} (${actor.nik})`,
+        query: `CETAK BERKAS PENCAIRAN: ${actor.fullName} (${actor.nik})`,
         results: "Berhasil",
         device: getDeviceType(navigator.userAgent),
         source: "Web",
@@ -90,7 +90,7 @@ function CetakBerkasContent() {
       })
       toast({
         title: "Berhasil Dicetak",
-        description: `Surat Pernyataan untuk ${actor.fullName} sedang diunduh.`,
+        description: `Berkas Pencairan (Surat Pernyataan & Kuitansi) untuk ${actor.fullName} sedang diunduh.`,
       })
     } catch (err) {
       console.error("Print error:", err)
@@ -118,10 +118,10 @@ function CetakBerkasContent() {
             setIsPrintingAll(false)
             toast({
               title: "Selesai",
-              description: `${filteredActors.length} Surat Pernyataan berhasil dicetak.`,
+              description: `${filteredActors.length} Berkas Pencairan (Surat Pernyataan & Kuitansi) berhasil dicetak.`,
             })
             logActivity({
-              query: `CETAK SEMUA SURAT PERNYATAAN (${filteredActors.length} data)`,
+              query: `CETAK SEMUA BERKAS PENCAIRAN (${filteredActors.length} data)`,
               results: "Berhasil",
               device: getDeviceType(navigator.userAgent),
               source: "Web",
@@ -153,7 +153,7 @@ function CetakBerkasContent() {
             </h1>
           </div>
           <p className="text-xs md:text-sm text-slate-500 font-semibold ml-10">
-            Cetak Surat Pernyataan untuk pelaku usaha yang telah selesai dan memiliki rekening bank.
+            Cetak Berkas Pencairan (Surat Pernyataan & Kuitansi) untuk pelaku usaha yang telah selesai dan memiliki rekening bank.
           </p>
         </div>
 
