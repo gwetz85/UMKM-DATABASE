@@ -17,8 +17,10 @@ export async function GET(req: NextRequest) {
     // 1. Security Check
     const { searchParams } = new URL(req.url);
     const key = searchParams.get('key');
+    const authHeader = req.headers.get('authorization');
+    const isVercelCron = req.headers.get('x-vercel-cron') === '1';
 
-    if (key !== CRON_SECRET) {
+    if (key !== CRON_SECRET && authHeader !== `Bearer ${CRON_SECRET}` && !isVercelCron) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

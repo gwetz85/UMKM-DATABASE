@@ -25,7 +25,7 @@ import {
   Clock
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState, useRef } from "react"
 import { BusinessActor } from "../lib/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { cn, formatDateTimeIndo } from "@/lib/utils"
@@ -189,7 +189,6 @@ export default function DashboardStatsPage() {
     try {
       const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service")
       await recalculateAndSaveSystemStats(database)
-      setNextSyncIn(300)
       if (!isAuto) {
         toast({ title: "Sinkronisasi Berhasil", description: "Statistik sistem telah diperbarui dengan data terkini." })
       }
@@ -204,20 +203,43 @@ export default function DashboardStatsPage() {
     }
   }
 
-  // Countdown Timer & Auto-Sync Execution every 5 minutes
+  const handleSyncStatsRef = useRef(handleSyncStats);
+  handleSyncStatsRef.current = handleSyncStats;
+
+  // Countdown Timer & Auto-Sync Execution synchronized with systemStats.lastUpdated (every 5 minutes)
   useEffect(() => {
+    const SYNC_INTERVAL_SEC = 300; // 5 menit
+
+    const calculateRemaining = () => {
+      if (!systemStats?.lastUpdated) return 0;
+      const lastTime = new Date(systemStats.lastUpdated).getTime();
+      if (isNaN(lastTime)) return 0;
+
+      const elapsedSec = Math.floor((Date.now() - lastTime) / 1000);
+      if (elapsedSec >= SYNC_INTERVAL_SEC) {
+        return 0;
+      }
+      return Math.max(0, SYNC_INTERVAL_SEC - elapsedSec);
+    };
+
+    const initialRemaining = calculateRemaining();
+    setNextSyncIn(initialRemaining);
+
+    if (initialRemaining === 0) {
+      handleSyncStatsRef.current(true);
+    }
+
     const timer = setInterval(() => {
-      setNextSyncIn(prev => {
-        if (prev <= 1) {
-          handleSyncStats(true);
-          return 300;
-        }
-        return prev - 1;
-      });
+      const remaining = calculateRemaining();
+      setNextSyncIn(remaining);
+
+      if (remaining <= 0) {
+        handleSyncStatsRef.current(true);
+      }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [systemStats?.lastUpdated, database]);
 
   const coordinatorStats = useMemo(() => {
     if (!systemStats?.coordinator) return []

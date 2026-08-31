@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useDatabase, useObject, useList, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, equalTo, limitToLast } from 'firebase/database';
 import { BusinessActor } from '../lib/types';
@@ -242,21 +242,58 @@ export default function LayarInformasiPage() {
   }, [systemStats?.lastUpdated]);
 
   const [nextSyncIn, setNextSyncIn] = useState<number>(300);
+  const isSyncingGuardRef = useRef(false);
 
-  // Countdown timer for Auto Sync every 5 minutes
+  const triggerAutoSync = async () => {
+    if (!database || isSyncingGuardRef.current) return;
+    isSyncingGuardRef.current = true;
+    try {
+      const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service");
+      await recalculateAndSaveSystemStats(database);
+    } catch (err) {
+      console.error("[Layar Informasi Auto-Sync] Error:", err);
+    } finally {
+      isSyncingGuardRef.current = false;
+    }
+  };
+
+  const triggerAutoSyncRef = useRef(triggerAutoSync);
+  triggerAutoSyncRef.current = triggerAutoSync;
+
+  // Real-time Countdown timer for Auto Sync synchronized with systemStats.lastUpdated (every 5 minutes)
   useEffect(() => {
+    const SYNC_INTERVAL_SEC = 300;
+
+    const calculateRemaining = () => {
+      if (!systemStats?.lastUpdated) return 0;
+      const lastTime = new Date(systemStats.lastUpdated).getTime();
+      if (isNaN(lastTime)) return 0;
+
+      const elapsedSec = Math.floor((Date.now() - lastTime) / 1000);
+      if (elapsedSec >= SYNC_INTERVAL_SEC) {
+        return 0;
+      }
+      return Math.max(0, SYNC_INTERVAL_SEC - elapsedSec);
+    };
+
+    const initialRemaining = calculateRemaining();
+    setNextSyncIn(initialRemaining);
+
+    if (initialRemaining === 0) {
+      triggerAutoSyncRef.current();
+    }
+
     const timer = setInterval(() => {
-      setNextSyncIn(prev => {
-        if (prev <= 1) {
-          setLastSyncTime(new Date());
-          return 300;
-        }
-        return prev - 1;
-      });
+      const remaining = calculateRemaining();
+      setNextSyncIn(remaining);
+
+      if (remaining <= 0) {
+        triggerAutoSyncRef.current();
+      }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [systemStats?.lastUpdated, database]);
 
   const formatCountdown = (seconds: number) => {
     const m = Math.floor(seconds / 60);
