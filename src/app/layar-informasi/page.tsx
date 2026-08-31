@@ -147,42 +147,42 @@ export default function LayarInformasiPage() {
   // 2. Query for verified_actor / general actors
   const verifiedActorQuery = useMemoFirebase(() => {
     if (!database) return null;
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_actor'), limitToLast(50));
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_actor'), limitToLast(100));
   }, [database]);
   const { data: verifiedActorData, isLoading: isVerifiedActorLoading } = useList<BusinessActor>(verifiedActorQuery);
 
   // 3. Query for verified_dinas actors
   const verifiedDinasQuery = useMemoFirebase(() => {
     if (!database) return null;
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'), limitToLast(50));
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'), limitToLast(100));
   }, [database]);
   const { data: verifiedDinasData, isLoading: isVerifiedDinasLoading } = useList<BusinessActor>(verifiedDinasQuery);
 
   // 4. Query for survey dinas (lpj_pending) actors
   const surveyDinasQuery = useMemoFirebase(() => {
     if (!database) return null;
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('lpj_pending'), limitToLast(50));
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('lpj_pending'), limitToLast(100));
   }, [database]);
   const { data: surveyDinasData, isLoading: isSurveyLoading } = useList<BusinessActor>(surveyDinasQuery);
 
   // 5. Query for finish / rekening terinput actors
   const finishQuery = useMemoFirebase(() => {
     if (!database) return null;
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('finish'), limitToLast(50));
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('finish'), limitToLast(100));
   }, [database]);
   const { data: finishData, isLoading: isFinishLoading } = useList<BusinessActor>(finishQuery);
 
   // 6. Query for Cancel Dinas
   const cancelDinasQuery = useMemoFirebase(() => {
     if (!database) return null;
-    return query(ref(database, 'businessActors'), orderByChild('hasilVerifikasiDinas'), equalTo('Tidak Lolos'));
+    return query(ref(database, 'businessActors'), orderByChild('hasilVerifikasiDinas'), equalTo('Tidak Lolos'), limitToLast(100));
   }, [database]);
   const { data: cancelDinasData, isLoading: isCancelLoading } = useList<BusinessActor>(cancelDinasQuery);
 
   // 7. Query for Cancel Pendataan (status === 'rejected', strictly pendataan cancellations)
   const cancelPendataanQuery = useMemoFirebase(() => {
     if (!database) return null;
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('rejected'));
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('rejected'), limitToLast(100));
   }, [database]);
   const { data: cancelPendataanData, isLoading: isCancelPendataanLoading } = useList<BusinessActor>(cancelPendataanQuery);
 
@@ -368,6 +368,39 @@ export default function LayarInformasiPage() {
     return d.verifikatorDinas || d.berkasDinasVerifiedBy || pejabatNama || '-';
   };
 
+  // Helper to get raw submit date for a specific category
+  const getActorSubmitDate = (actor: any, category?: string): any => {
+    if (!actor) return null;
+    if (category === 'hasil') {
+      return actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.surveyData?.tanggalSurvey || actor.createdAt;
+    }
+    if (category === 'verifikasi') {
+      return actor.verifiedDinasAt || actor.surveyData?.tanggalSurvey || actor.createdAt;
+    }
+    if (category === 'survey') {
+      return actor.surveyData?.tanggalSurvey || actor.verifiedDinasAt || actor.createdAt;
+    }
+    if (category === 'rekening') {
+      return actor.lpjEntryDate || actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt;
+    }
+    if (category === 'cancel') {
+      return actor.cancelDinasAt || actor.verifiedDinasAt || actor.createdAt;
+    }
+    if (category === 'cancel_pendataan') {
+      return actor.rejectedAt || actor.updatedAt || actor.createdAt;
+    }
+    return actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.surveyData?.tanggalSurvey || actor.lpjEntryDate || actor.cancelDinasAt || actor.rejectedAt || actor.createdAt;
+  };
+
+  // Helper to extract timestamp for sorting (Terakhir ke Terlama)
+  const getActorSubmitTimestamp = (actor: any, category?: string): number => {
+    const raw = getActorSubmitDate(actor, category);
+    if (!raw) return 0;
+    if (typeof raw === 'number') return raw;
+    const t = new Date(raw).getTime();
+    return isNaN(t) ? 0 : t;
+  };
+
   // Helper to get Usulan value
   const getUsulan = (d: any) => {
     return d.usulan || 
@@ -380,7 +413,7 @@ export default function LayarInformasiPage() {
            '-';
   };
 
-  // Filtered lists for each category (up to 10 latest)
+  // Filtered lists for each category (up to 10 latest, ordered from newest to oldest submit time)
   // 1. Data Terverifikasi (Default View)
   const listVerified = useMemo(() => {
     const combined = [
@@ -396,11 +429,7 @@ export default function LayarInformasiPage() {
       }
     });
     return Array.from(map.values())
-      .sort((a, b) => {
-        const timeA = new Date(a.createdAt || a.verifiedDinasAt || 0).getTime();
-        const timeB = new Date(b.createdAt || b.verifiedDinasAt || 0).getTime();
-        return timeB - timeA;
-      })
+      .sort((a, b) => getActorSubmitTimestamp(b) - getActorSubmitTimestamp(a))
       .slice(0, 10);
   }, [verifiedActorData, verifiedDinasData, finishData]);
 
@@ -416,11 +445,7 @@ export default function LayarInformasiPage() {
       }
     });
     return Array.from(map.values())
-      .sort((a, b) => {
-        const timeA = new Date((a as any).cancelDinasAt || a.verifiedDinasAt || a.createdAt || 0).getTime();
-        const timeB = new Date((b as any).cancelDinasAt || b.verifiedDinasAt || b.createdAt || 0).getTime();
-        return timeB - timeA;
-      })
+      .sort((a, b) => getActorSubmitTimestamp(b, 'cancel') - getActorSubmitTimestamp(a, 'cancel'))
       .slice(0, 10);
   }, [cancelDinasData, verifiedDinasData]);
 
@@ -428,11 +453,7 @@ export default function LayarInformasiPage() {
   const listSurveyDinas = useMemo(() => {
     return (surveyDinasData || [])
       .filter(d => !isCancelDinas(d))
-      .sort((a, b) => {
-        const timeA = new Date((a.surveyData as any)?.tanggalSurvey || a.createdAt || 0).getTime();
-        const timeB = new Date((b.surveyData as any)?.tanggalSurvey || b.createdAt || 0).getTime();
-        return timeB - timeA;
-      })
+      .sort((a, b) => getActorSubmitTimestamp(b, 'survey') - getActorSubmitTimestamp(a, 'survey'))
       .slice(0, 10);
   }, [surveyDinasData]);
 
@@ -441,11 +462,7 @@ export default function LayarInformasiPage() {
     if (!verifiedDinasData) return [];
     return verifiedDinasData
       .filter(d => d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && !d.berkasDinasVerified && !isCancelDinas(d))
-      .sort((a, b) => {
-        const timeA = new Date(a.verifiedDinasAt || (a.surveyData as any)?.tanggalSurvey || a.createdAt || 0).getTime();
-        const timeB = new Date(b.verifiedDinasAt || (b.surveyData as any)?.tanggalSurvey || b.createdAt || 0).getTime();
-        return timeB - timeA;
-      })
+      .sort((a, b) => getActorSubmitTimestamp(b, 'verifikasi') - getActorSubmitTimestamp(a, 'verifikasi'))
       .slice(0, 10);
   }, [verifiedDinasData]);
 
@@ -454,11 +471,7 @@ export default function LayarInformasiPage() {
     if (!verifiedDinasData) return [];
     return verifiedDinasData
       .filter(d => d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && Boolean(d.berkasDinasVerified) && !isCancelDinas(d))
-      .sort((a, b) => {
-        const timeA = new Date(a.berkasDinasVerifiedAt || a.verifiedDinasAt || a.createdAt || 0).getTime();
-        const timeB = new Date(b.berkasDinasVerifiedAt || b.verifiedDinasAt || b.createdAt || 0).getTime();
-        return timeB - timeA;
-      })
+      .sort((a, b) => getActorSubmitTimestamp(b, 'hasil') - getActorSubmitTimestamp(a, 'hasil'))
       .slice(0, 10);
   }, [verifiedDinasData]);
 
@@ -466,11 +479,7 @@ export default function LayarInformasiPage() {
   const listRekeningTerinput = useMemo(() => {
     return (finishData || [])
       .filter(d => !isCancelDinas(d))
-      .sort((a, b) => {
-        const timeA = new Date(a.lpjEntryDate || a.createdAt || 0).getTime();
-        const timeB = new Date(b.lpjEntryDate || b.createdAt || 0).getTime();
-        return timeB - timeA;
-      })
+      .sort((a, b) => getActorSubmitTimestamp(b, 'rekening') - getActorSubmitTimestamp(a, 'rekening'))
       .slice(0, 10);
   }, [finishData]);
 
@@ -479,11 +488,7 @@ export default function LayarInformasiPage() {
     if (!cancelPendataanData) return [];
     return cancelPendataanData
       .filter(d => d.status === 'rejected' && !isCancelDinas(d) && !d.alasanCancelDinas && d.hasilVerifikasiDinas !== 'Tidak Lolos')
-      .sort((a, b) => {
-        const timeA = new Date((a as any).rejectedAt || (a as any).updatedAt || a.createdAt || 0).getTime();
-        const timeB = new Date((b as any).rejectedAt || (b as any).updatedAt || b.createdAt || 0).getTime();
-        return timeB - timeA;
-      })
+      .sort((a, b) => getActorSubmitTimestamp(b, 'cancel_pendataan') - getActorSubmitTimestamp(a, 'cancel_pendataan'))
       .slice(0, 10);
   }, [cancelPendataanData]);
 
@@ -734,14 +739,7 @@ export default function LayarInformasiPage() {
                   </div>
                 ) : (
                   currentTableData.map((actor, idx) => {
-                    const submitTime = formatDateTime(
-                      actor.berkasDinasVerifiedAt || 
-                      actor.verifiedDinasAt || 
-                      (actor.surveyData as any)?.tanggalSurvey || 
-                      actor.lpjEntryDate || 
-                      (actor as any).cancelDinasAt || 
-                      actor.createdAt
-                    );
+                    const submitTime = formatDateTime(getActorSubmitDate(actor, activeCategory));
 
                     const petugasName = activeCategoryMeta.isHasil 
                       ? getVerifikatorName(actor) 
