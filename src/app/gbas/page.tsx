@@ -1246,8 +1246,8 @@ export default function GBASPage() {
                                 <Edit className="w-4 h-4" />
                               </Button>
 
-                              {/* Kembali ke Verifikator Dinas untuk data yang sudah selesai / diinput rekening */}
-                              {(stage.key === 'selesai' || actor.status === 'finish' || (actor.bankNumber && String(actor.bankNumber).trim() !== '')) && (
+                              {/* Kembali ke Verifikator Dinas — tersedia untuk semua data di GBAS */}
+                              {isAdmin && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -1395,7 +1395,7 @@ export default function GBASPage() {
                           <Edit className="w-3.5 h-3.5" />
                         </Button>
 
-                        {(stage.key === 'selesai' || actor.status === 'finish' || (actor.bankNumber && String(actor.bankNumber).trim() !== '')) && (
+                        {isAdmin && (
                           <Button
                             size="icon"
                             variant="outline"
@@ -1675,7 +1675,7 @@ export default function GBASPage() {
           )}
 
           <DialogFooter className="pt-3 gap-2 flex-col sm:flex-row">
-            {viewingActor && (viewingActor.status === 'finish' || (viewingActor.bankNumber && String(viewingActor.bankNumber).trim() !== '')) && (
+            {viewingActor && isAdmin && (
               <Button
                 variant="outline"
                 className="bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 font-bold text-xs rounded-xl"
