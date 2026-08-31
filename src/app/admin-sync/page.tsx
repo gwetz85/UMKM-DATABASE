@@ -51,6 +51,7 @@ export default function AdminSyncPage() {
         detailedStatus: { survey: 0, verifikasi: 0, hasilVerifikasi: 0, lpj: 0, selesai: 0 },
         kelurahan: {} as Record<string, number>,
         coordinator: {} as Record<string, number>,
+        coordinatorRekening: {} as Record<string, number>,
         lastUpdated: new Date().toISOString()
       }
 
@@ -83,6 +84,10 @@ export default function AdminSyncPage() {
           if (actor.coordinator) {
             const coord = actor.coordinator.toUpperCase().trim()
             stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
+            // Count actors with bank account input
+            if (actor.bankNumber && String(actor.bankNumber).trim() !== '') {
+              stats.coordinatorRekening[coord] = (stats.coordinatorRekening[coord] || 0) + 1
+            }
             
             if (actor.coordinator !== coord) {
               updates[`${child.key}/coordinator`] = coord

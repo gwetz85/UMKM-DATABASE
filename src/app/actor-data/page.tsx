@@ -469,7 +469,7 @@ function ActorDataContent() {
     
     // Update global stats categories if necessary (both are 'verified' so no change, but consistent)
     import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-      updateStatsOnStatusChange(database, viewingActor.status || 'verified_actor', 'bank_pending', viewingActor);
+      updateStatsOnStatusChange(database, viewingActor, { ...viewingActor, ...updates }, viewingActor);
     });
 
     logActivity({

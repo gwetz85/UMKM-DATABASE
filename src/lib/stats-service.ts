@@ -26,6 +26,7 @@ export interface SystemStats {
   };
   kelurahan: Record<string, number>;
   coordinator: Record<string, number>;
+  coordinatorRekening: Record<string, number>;
   lastUpdated: string;
 }
 
@@ -102,6 +103,7 @@ const ensureStatsStructure = (currentStats: SystemStats | null): SystemStats => 
     detailedStatus: { survey: 0, verifikasi: 0, hasilVerifikasi: 0, lpj: 0, selesai: 0 },
     kelurahan: {},
     coordinator: {},
+    coordinatorRekening: {},
     lastUpdated: new Date().toISOString()
   };
 
@@ -111,6 +113,7 @@ const ensureStatsStructure = (currentStats: SystemStats | null): SystemStats => 
   if (!base.detailedStatus) base.detailedStatus = { survey: 0, verifikasi: 0, hasilVerifikasi: 0, lpj: 0, selesai: 0 };
   if (!base.kelurahan) base.kelurahan = {};
   if (!base.coordinator) base.coordinator = {};
+  if (!base.coordinatorRekening) base.coordinatorRekening = {};
 
   return base;
 };
@@ -146,6 +149,10 @@ export async function updateStatsOnNewActor(database: Database, actorData: any) 
       if (actorData.coordinator) {
         const coord = actorData.coordinator.toUpperCase().trim();
         currentStats.coordinator[coord] = (currentStats.coordinator[coord] || 0) + 1;
+        // Count actors with bank account already input
+        if (actorData.bankNumber && String(actorData.bankNumber).trim() !== '') {
+          currentStats.coordinatorRekening[coord] = (currentStats.coordinatorRekening[coord] || 0) + 1;
+        }
       }
 
       const stage = getDetailedStage(actorData);
@@ -212,6 +219,9 @@ export async function updateStatsOnStatusChange(
     const isVerifiedNow_KC = isVerifiedStatus(newObj);
     const gKey = normGenderKey(mergedActor.gender);
     
+    const oldHasRekening = wasVerified_KC && !!(oldObj.bankNumber && String(oldObj.bankNumber).trim() !== '');
+    const newHasRekening = isVerifiedNow_KC && !!(newObj.bankNumber && String(newObj.bankNumber).trim() !== '');
+
     if (!wasVerified_KC && isVerifiedNow_KC) {
       currentStats.verifiedGender![gKey] = (currentStats.verifiedGender![gKey] || 0) + 1;
       if (mergedActor.kelurahan) {
@@ -231,6 +241,16 @@ export async function updateStatsOnStatusChange(
       if (mergedActor.coordinator) {
         const coor = mergedActor.coordinator.toUpperCase().trim();
         currentStats.coordinator[coor] = Math.max(0, (currentStats.coordinator[coor] || 0) - 1);
+      }
+    }
+
+    // Handle coordinatorRekening transitions
+    if (mergedActor.coordinator) {
+      const coor = mergedActor.coordinator.toUpperCase().trim();
+      if (!oldHasRekening && newHasRekening) {
+        currentStats.coordinatorRekening[coor] = (currentStats.coordinatorRekening[coor] || 0) + 1;
+      } else if (oldHasRekening && !newHasRekening) {
+        currentStats.coordinatorRekening[coor] = Math.max(0, (currentStats.coordinatorRekening[coor] || 0) - 1);
       }
     }
 
@@ -335,6 +355,19 @@ export async function updateStatsOnEdit(database: Database, oldData: any, newDat
       }
     }
 
+    // Update coordinatorRekening: track changes in bankNumber or coordinator for verified actors
+    const oldHasRekening = wasVerified && !!(oldData.bankNumber && String(oldData.bankNumber).trim() !== '');
+    const newHasRekening = isVerified && !!(newData.bankNumber && String(newData.bankNumber).trim() !== '');
+    const oldCoordRek = wasVerified ? (oldData.coordinator || '').toUpperCase().trim() : '';
+    const newCoordRek = isVerified ? (newData.coordinator || '').toUpperCase().trim() : '';
+
+    if (oldHasRekening && oldCoordRek) {
+      currentStats.coordinatorRekening[oldCoordRek] = Math.max(0, (currentStats.coordinatorRekening[oldCoordRek] || 0) - 1);
+    }
+    if (newHasRekening && newCoordRek) {
+      currentStats.coordinatorRekening[newCoordRek] = (currentStats.coordinatorRekening[newCoordRek] || 0) + 1;
+    }
+
     // Update detailed stage if changed
     const oldStage = getDetailedStage(oldData);
     const newStage = getDetailedStage(newData);
@@ -387,6 +420,10 @@ export async function updateStatsOnDelete(database: Database, actorData: any) {
         if (currentStats.coordinator[coord]) {
           currentStats.coordinator[coord] = Math.max(0, currentStats.coordinator[coord] - 1);
         }
+        // Decrement coordinatorRekening if actor had bank account
+        if (actorData.bankNumber && String(actorData.bankNumber).trim() !== '') {
+          currentStats.coordinatorRekening[coord] = Math.max(0, (currentStats.coordinatorRekening[coord] || 0) - 1);
+        }
       }
 
       const stage = getDetailedStage(actorData);
@@ -413,6 +450,7 @@ export async function recalculateAndSaveSystemStats(database: Database) {
     detailedStatus: { survey: 0, verifikasi: 0, hasilVerifikasi: 0, lpj: 0, selesai: 0 },
     kelurahan: {} as Record<string, number>,
     coordinator: {} as Record<string, number>,
+    coordinatorRekening: {} as Record<string, number>,
     lastUpdated: new Date().toISOString()
   };
 
@@ -442,6 +480,10 @@ export async function recalculateAndSaveSystemStats(database: Database) {
       if (actor.coordinator) {
         const coord = actor.coordinator.toUpperCase().trim();
         stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1;
+        // Count actors with bank account already input
+        if (actor.bankNumber && String(actor.bankNumber).trim() !== '') {
+          stats.coordinatorRekening[coord] = (stats.coordinatorRekening[coord] || 0) + 1;
+        }
       }
       if (actor.kelurahan) {
         const k = actor.kelurahan.toUpperCase().trim();

@@ -66,16 +66,19 @@ export default function KuotaKorlapDewanAktifPage() {
     if (!kuotaData) return []
     
     const achievedMap = systemStats?.coordinator || {}
+    const rekeningMap = systemStats?.coordinatorRekening || {}
 
     return kuotaData.map((item: any) => {
       const quota = item.quota || 0
       const nameUpper = item.name ? item.name.toUpperCase().trim() : ''
       const achieved = achievedMap[nameUpper] || 0
+      const rekeningInput = rekeningMap[nameUpper] || 0
       const remaining = quota - achieved
       return {
         ...item,
         quota,
         achieved,
+        rekeningInput,
         remaining
       }
     }).sort((a: any, b: any) => {
@@ -371,6 +374,10 @@ export default function KuotaKorlapDewanAktifPage() {
     return combinedKuotaData.reduce((acc: number, curr: any) => acc + curr.achieved, 0)
   }, [combinedKuotaData])
 
+  const totalRekeningInput = useMemo(() => {
+    return combinedKuotaData.reduce((acc: number, curr: any) => acc + curr.rekeningInput, 0)
+  }, [combinedKuotaData])
+
   if (!mounted) return null
 
   if (isAdminLoading) {
@@ -456,6 +463,7 @@ export default function KuotaKorlapDewanAktifPage() {
                   <TableHead className="font-bold uppercase text-[10px]">No. HP</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] text-center">Kuota USULAN</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] text-center">Tercapai</TableHead>
+                  <TableHead className="font-bold uppercase text-[10px] text-center">Rekening Input</TableHead>
                   <TableHead className="font-bold uppercase text-[10px] text-center">Sisa</TableHead>
                   <TableHead className="text-right font-bold uppercase text-[10px]">Aksi</TableHead>
                 </TableRow>
@@ -498,6 +506,11 @@ export default function KuotaKorlapDewanAktifPage() {
                     <TableCell className="text-center">
                        <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
                           {item.achieved}
+                       </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                       <span className="inline-flex items-center justify-center bg-amber-100 text-amber-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-amber-200">
+                          {item.rekeningInput}
                        </span>
                     </TableCell>
                     <TableCell className="text-center">
@@ -558,7 +571,7 @@ export default function KuotaKorlapDewanAktifPage() {
                 ))}
                 {combinedKuotaData.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic font-medium">
+                    <TableCell colSpan={7} className="text-center py-20 text-muted-foreground italic font-medium">
                       Belum ada data target kuota yang didaftarkan.
                     </TableCell>
                   </TableRow>
@@ -574,6 +587,9 @@ export default function KuotaKorlapDewanAktifPage() {
                   </TableCell>
                   <TableCell className="text-center font-black text-emerald-600 text-base">
                     {totalAchieved}
+                  </TableCell>
+                  <TableCell className="text-center font-black text-amber-600 text-base">
+                    {totalRekeningInput}
                   </TableCell>
                   <TableCell className="text-center">
                     <span className={cn(
