@@ -526,7 +526,7 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   const materaiHeight = 22;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // HALAMAN 1 : KUITANSI (PERSIS DENGAN DOKUMEN ASLI)
+  // HALAMAN 1 : KUITANSI (PERSIS 100% DENGAN DOKUMEN TEMPLATE ASLI)
   // ═══════════════════════════════════════════════════════════════════════════
 
   const kBoxLeft = margin;
@@ -560,89 +560,90 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   const kMiddleSplitY = kBoxTop + 144; // Garis horizontal batas tengah
   doc.line(kBoxLeft, kMiddleSplitY, kBoxRight, kMiddleSplitY);
 
-  // Garis vertikal pemisah: kolom kiri (62mm) dan kanan
-  const kCol1Width = 62;
-  const kDividerX1 = kBoxLeft + kCol1Width;
-  const kDividerX2 = kDividerX1 + 3;
+  // Lebar kolom kiri 70mm (proporsi pas sesuai template asli)
+  const kCol1Width = 70;
+  const kDividerX1 = kBoxLeft + kCol1Width; // Garis kiri dari double channel
+  const kDividerX2 = kDividerX1 + 3.5;       // Garis kanan dari double channel (channel lebar 3.5mm)
 
-  // Garis vertikal divider 1 MENEMBUS HINGGA DASAR BOX (membagi bagian tanda tangan juga!)
-  doc.line(kDividerX1, kTitleLineY, kDividerX1, kBoxBottom);
-  // Garis vertikal divider 2 (double channel hanya di grid tengah)
-  doc.line(kDividerX2, kTitleLineY, kDividerX2, kMiddleSplitY);
+  // Garis vertikal 1 (kiri channel) HANYA di grid tengah
+  doc.line(kDividerX1, kTitleLineY, kDividerX1, kMiddleSplitY);
+  // Garis vertikal 2 (kanan channel) MENEMBUS KE DASAR BOX (persis seperti dokumen asli)
+  doc.line(kDividerX2, kTitleLineY, kDividerX2, kBoxBottom);
 
   // ── KOLOM KIRI (Tahun Anggaran, Rekening Lembaga, Nomor Rekening) ──
   const kCol1Center = kBoxLeft + (kCol1Width / 2);
 
-  // Blok 1: Tahun Anggaran
+  // Blok 1: Tahun Anggaran (Sejajar dengan Sudah terima dari)
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
-  doc.text('Tahun Anggaran', kCol1Center, kTitleLineY + 24, { align: 'center' });
-  doc.text('2026', kCol1Center, kTitleLineY + 30, { align: 'center' });
+  doc.text('Tahun Anggaran', kCol1Center, kTitleLineY + 22, { align: 'center' });
+  doc.text('2026', kCol1Center, kTitleLineY + 28, { align: 'center' });
 
-  // Blok 2: Rekening Lembaga
-  doc.text('Rekening Lembaga', kCol1Center, kTitleLineY + 54, { align: 'center' });
-  doc.text('PT. BANK RAKYAT INDONESIA', kCol1Center, kTitleLineY + 60, { align: 'center' });
-  doc.text('Yayasan Tunas Bangsa Kepri', kCol1Center, kTitleLineY + 65, { align: 'center' });
+  // Blok 2: Rekening Lembaga (Sejajar dengan Uang sejumlah)
+  doc.text('Rekening Lembaga', kCol1Center, kTitleLineY + 52, { align: 'center' });
+  doc.text('PT. BANK RAKYAT INDONESIA', kCol1Center, kTitleLineY + 58, { align: 'center' });
+  doc.text('Yayasan Tunas Bangsa Kepri', kCol1Center, kTitleLineY + 63.5, { align: 'center' });
 
-  // Blok 3: Nomor Rekening
-  doc.text('Nomor Rekening', kCol1Center, kTitleLineY + 88, { align: 'center' });
-  doc.text('0174-01-017706-53-3', kCol1Center, kTitleLineY + 94, { align: 'center' });
+  // Blok 3: Nomor Rekening (Sejajar dengan Yaitu)
+  doc.text('Nomor Rekening', kCol1Center, kTitleLineY + 86, { align: 'center' });
+  doc.text('0174-01-017706-53-3', kCol1Center, kTitleLineY + 92, { align: 'center' });
 
   // ── KOLOM KANAN (Sudah terima dari, Uang sejumlah, Yaitu) ──
-  const kRightLabelX = kDividerX2 + 4;
-  const kRightColonX = kRightLabelX + 24;
-  const kRightValX = kRightColonX + 4;
-  const kRightValWidth = kBoxRight - kRightValX - 4;
+  const kRightLabelX = kDividerX2 + 3.5;
+  const kRightColonX = kRightLabelX + 22;
+  const kRightValX = kRightColonX + 3.5;
+  const kRightValWidth = kBoxRight - kRightValX - 3.5;
 
   // Row 1: Sudah terima dari
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
-  doc.text('Sudah', kRightLabelX, kTitleLineY + 16);
-  doc.text('terima dari', kRightLabelX, kTitleLineY + 21);
-  doc.text(':', kRightColonX, kTitleLineY + 16);
-  doc.text('Yayasan Tunas Bangsa Kepri', kRightValX, kTitleLineY + 16);
+  doc.text('Sudah', kRightLabelX, kTitleLineY + 22);
+  doc.text('terima dari', kRightLabelX, kTitleLineY + 27.5);
+  doc.text(':', kRightColonX, kTitleLineY + 22);
+  doc.text('Yayasan Tunas Bangsa Kepri', kRightValX, kTitleLineY + 22);
 
   // Row 2: Uang sejumlah
-  doc.text('Uang', kRightLabelX, kTitleLineY + 48);
-  doc.text('sejumlah', kRightLabelX, kTitleLineY + 53);
-  doc.text(':', kRightColonX, kTitleLineY + 48);
-  doc.text('Rp. 1.000.000', kRightValX, kTitleLineY + 48);
-  doc.text('Satu Juta Rupiah', kRightValX, kTitleLineY + 53);
+  doc.text('Uang', kRightLabelX, kTitleLineY + 52);
+  doc.text('sejumlah', kRightLabelX, kTitleLineY + 57.5);
+  doc.text(':', kRightColonX, kTitleLineY + 52);
+  doc.text('Rp. 1.000.000', kRightValX, kTitleLineY + 52);
+  doc.text('Satu Juta Rupiah', kRightValX, kTitleLineY + 57.5);
 
   // Row 3: Yaitu
-  doc.text('Yaitu', kRightLabelX, kTitleLineY + 76);
-  doc.text(':', kRightColonX, kTitleLineY + 76);
+  doc.text('Yaitu', kRightLabelX, kTitleLineY + 86);
+  doc.text(':', kRightColonX, kTitleLineY + 86);
   const yaituDesc = 'Bantuan Modal Usaha Bagi Pelaku Usaha Kota Tanjungpinang untuk Kegiatan Bantuan Penguatan Pemodalan Usaha Mikro Kecil Dan Menengah ( UMKM ) Tahun 2026';
-  doc.text(yaituDesc, kRightValX, kTitleLineY + 76, {
+  doc.text(yaituDesc, kRightValX, kTitleLineY + 86, {
     maxWidth: kRightValWidth,
     lineHeightFactor: 1.25,
   });
 
   // ── BAGIAN BAWAH (TANDA TANGAN KUITANSI PERSIS ASLI) ──
   // 1. Tanda Tangan Kiri (Ketua Yayasan) - Terpusat di dalam kolom kiri
+  const kLeftSigCenter = kBoxLeft + ((kDividerX2 - kBoxLeft) / 2);
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
-  doc.text('Mengetahui/menyetujui', kCol1Center, kMiddleSplitY + 18, { align: 'center' });
-  doc.text('Ketua Yayasan Tunas Bangsa', kCol1Center, kMiddleSplitY + 24, { align: 'center' });
-  doc.text('Kepulauan Riau', kCol1Center, kMiddleSplitY + 30, { align: 'center' });
+  doc.text('Mengetahui/menyetujui', kLeftSigCenter, kMiddleSplitY + 18, { align: 'center' });
+  doc.text('Ketua Yayasan Tunas Bangsa', kLeftSigCenter, kMiddleSplitY + 24, { align: 'center' });
+  doc.text('Kepulauan Riau', kLeftSigCenter, kMiddleSplitY + 30, { align: 'center' });
 
   // Nama Ketua Yayasan dengan Garis Bawah
   const ketuaName = 'Toh Muandy Saputra';
-  doc.text(ketuaName, kCol1Center, kMiddleSplitY + 80, { align: 'center' });
+  doc.text(ketuaName, kLeftSigCenter, kMiddleSplitY + 80, { align: 'center' });
   const ketuaNameWidth = doc.getTextWidth(ketuaName);
   doc.setLineWidth(0.5);
-  doc.line(kCol1Center - ketuaNameWidth / 2, kMiddleSplitY + 81.5, kCol1Center + ketuaNameWidth / 2, kMiddleSplitY + 81.5);
+  doc.line(kLeftSigCenter - ketuaNameWidth / 2, kMiddleSplitY + 81.5, kLeftSigCenter + ketuaNameWidth / 2, kMiddleSplitY + 81.5);
 
   // 2. Tanda Tangan Kanan (Penerima Dana Bantuan) - Terpusat di dalam kolom kanan
-  const kRightColCenter = kDividerX1 + ((kBoxRight - kDividerX1) / 2);
+  const kRightSigCenter = kDividerX2 + ((kBoxRight - kDividerX2) / 2);
 
   doc.setFont('times', 'normal');
   doc.setFontSize(10);
-  doc.text(dateStr, kRightColCenter, kMiddleSplitY + 32, { align: 'center' });
-  doc.text('Penerima Dana Bantuan', kRightColCenter, kMiddleSplitY + 38, { align: 'center' });
+  doc.text(dateStr, kRightSigCenter, kMiddleSplitY + 32, { align: 'center' });
+  doc.text('Penerima Dana Bantuan', kRightSigCenter, kMiddleSplitY + 38, { align: 'center' });
 
-  // Kotak Materai di sisi kiri area tanda tangan kanan
-  const kMateraiX = kRightColCenter - 32;
+  // Kotak Materai di area tanda tangan kanan
+  const kMateraiX = kRightSigCenter - 28;
   const kMateraiY = kMiddleSplitY + 45;
   doc.setDrawColor(180);
   doc.setLineWidth(0.3);
@@ -656,7 +657,7 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   doc.setTextColor(0);
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
-  doc.text((actor.fullName || '-').toUpperCase(), kRightColCenter, kMiddleSplitY + 80, { align: 'center' });
+  doc.text((actor.fullName || '-').toUpperCase(), kRightSigCenter, kMiddleSplitY + 80, { align: 'center' });
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HALAMAN 2 : SURAT PERNYATAAN (DENGAN FONT TIMES NEW ROMAN)
