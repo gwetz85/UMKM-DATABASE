@@ -509,33 +509,33 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   });
 
   const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 20;
+  const margin = 15; // Batas kiri-kanan lebih kecil (tidak terlalu ke tengah)
   const contentWidth = pageWidth - margin * 2;
 
   // ── JUDUL ──────────────────────────────────────────────────────────────────
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
   doc.setTextColor(0, 0, 0);
-  doc.text('SURAT PERNYATAAN', pageWidth / 2, 24, { align: 'center' });
+  doc.text('SURAT PERNYATAAN', pageWidth / 2, 22, { align: 'center' });
 
   // Garis bawah judul
   const titleWidth = doc.getTextWidth('SURAT PERNYATAAN');
   doc.setDrawColor(0);
   doc.setLineWidth(0.5);
-  doc.line(pageWidth / 2 - titleWidth / 2 - 2, 26, pageWidth / 2 + titleWidth / 2 + 2, 26);
+  doc.line(pageWidth / 2 - titleWidth / 2 - 2, 24, pageWidth / 2 + titleWidth / 2 + 2, 24);
 
   // ── DATA PELAKU USAHA ──────────────────────────────────────────────────────
-  let y = 35;
+  let y = 33;
   const labelX = margin;
   const colonX = margin + 55;
   const valueX = colonX + 3;
-  const lineH = 6;
+  const lineH = 5.8;
 
   // Pembuka
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
   doc.text('Yang bertandatangan dibawah ini :', labelX, y - 2);
-  y += 4;
+  y += 3.8;
 
   const drawField = (label: string, value: string) => {
     doc.setFont('helvetica', 'normal');
@@ -563,12 +563,12 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   const alamatLine3 = `Kota Tanjungpinang  Telp / Hp : ${actor.phone || '-'}`;
 
   doc.text(alamatLine1, valueX, y);
-  y += lineH - 1;
+  y += lineH - 0.8;
   doc.text('Pelaku Usaha', labelX, y);
   doc.text(alamatLine2, valueX, y);
-  y += lineH - 1;
+  y += lineH - 0.8;
   doc.text(alamatLine3, valueX, y);
-  y += lineH + 2;
+  y += lineH + 1.5;
 
   // ── POIN-POIN PERNYATAAN ───────────────────────────────────────────────────
   doc.setFontSize(9.5);
@@ -584,9 +584,10 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
     doc.text(text, pointTextX, y, {
       align: 'justify',
       maxWidth: pointWidth,
+      lineHeightFactor: 1.3,
     });
-    // Baris per point dengan jarak yang rapat dan rapi
-    y += lines.length * 4.6 + 2.2;
+    // Jarak baris isi agak direnggangkan (5.2mm per baris) dan jeda antar point dilebarkan (3.8mm)
+    y += lines.length * 5.2 + 3.8;
   };
 
   addPoint(
