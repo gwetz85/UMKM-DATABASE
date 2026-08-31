@@ -222,6 +222,14 @@ export function useNavigation() {
       description: "Cetak Tanda Terima LPJ Koordinator"
     },
     {
+      name: "Cetak Berkas Pencairan",
+      href: "/cetak-berkas",
+      icon: FileDown,
+      show: (isAdmin || isStaff) && !isDinas && !isVerifikatorDinas && !isPetugas,
+      color: "#0284c7",
+      description: "Cetak Surat Pernyataan Pencairan Dana"
+    },
+    {
       name: "Data Selesai",
       href: "/finish",
       icon: CheckCircle2,

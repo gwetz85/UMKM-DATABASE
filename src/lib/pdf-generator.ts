@@ -500,3 +500,170 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
   const cleanName = coordinator.replace(/[^a-z0-9]/gi, '_').toUpperCase();
   doc.save(`TANDA_TERIMA_LPJ_${cleanName}.pdf`);
 };
+
+export const generateSuratPernyataan = (actor: BusinessActor) => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 25;
+  const contentWidth = pageWidth - margin * 2;
+
+  // ── JUDUL ──────────────────────────────────────────────────────────────────
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(0, 0, 0);
+  doc.text('SURAT PERNYATAAN', pageWidth / 2, 28, { align: 'center' });
+
+  // Garis bawah judul
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.6);
+  doc.line(margin + 25, 31, pageWidth - margin - 25, 31);
+
+  // ── DATA PELAKU USAHA ──────────────────────────────────────────────────────
+  let y = 43;
+  const labelX = margin;
+  const colonX = margin + 52;
+  const valueX = colonX + 5;
+  const lineH = 7;
+
+  const drawField = (label: string, value: string, extraLines?: string[]) => {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+
+    doc.text(label, labelX, y);
+    doc.text(':', colonX, y);
+    doc.text(value || '-', valueX, y);
+    y += lineH;
+
+    if (extraLines && extraLines.length > 0) {
+      extraLines.forEach((line) => {
+        doc.text(line, valueX, y);
+        y += lineH - 1;
+      });
+    }
+  };
+
+  // Pembuka
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text('Yang bertandatangan dibawah ini :', labelX, y - 3);
+  y += 4;
+
+  drawField('Nama', (actor.fullName || '-').toUpperCase());
+  drawField('N.I.K', actor.nik || '-');
+  drawField('Jenis Usaha', (actor.businessName || '-').toUpperCase());
+  drawField('Alamat Usaha', (actor.businessLocation || actor.address || '-').toUpperCase());
+
+  // Alamat lengkap + HP (multi-line)
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text('Alamat dan Nomor Telepon / HP', labelX, y);
+  doc.text(':', colonX, y);
+  const alamatLine1 = `${(actor.address || '-').toUpperCase()} RT/RW ${actor.rtRw || '-'}`;
+  const alamatLine2 = `Kel. ${(actor.kelurahan || '-').toUpperCase()}  Kec. ${(actor.kecamatan || '-').toUpperCase()}`;
+  const alamatLine3 = `Kota Tanjungpinang  Telp / HP : ${actor.phone || '-'}`;
+  doc.text(alamatLine1, valueX, y);
+  y += lineH - 1;
+  doc.text('Pelaku Usaha', labelX, y);
+  doc.text(':', colonX, y);
+  doc.text(alamatLine2, valueX, y);
+  y += lineH - 1;
+  doc.text(alamatLine3, valueX, y);
+  y += lineH + 3;
+
+  // ── POIN-POIN PERNYATAAN ───────────────────────────────────────────────────
+  doc.setFontSize(10);
+
+  const pointIndent = margin + 8;
+  const pointTextX = margin + 14;
+  const pointWidth = contentWidth - 14;
+
+  const addPoint = (num: number, text: string) => {
+    const lines = doc.splitTextToSize(text, pointWidth);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${num}.`, pointIndent, y, { align: 'right' });
+    doc.text(lines, pointTextX, y);
+    y += lines.length * 5.5 + 2;
+  };
+
+  addPoint(
+    1,
+    'Telah menerima Dana Bantuan Modal Usaha berupa kegiatan Bantuan Penguatan Pemodalan Usaha Mikro Kecil Dan Menengah ( UMKM ) sebesar Rp. 1.000.000,- (Satu Juta Rupiah) Dari Yayasan Tunas Bangsa Kepri berdasarkan proposal yang Telah Diajukan Kepada Dinas Provinsi Kepulauan Riau tahun 2026'
+  );
+
+  addPoint(
+    2,
+    'Dana bantuan tersebut akan dipergunakan untuk Pelaksanaan Kegiatan sesuai dengan Peruntukannya.'
+  );
+
+  addPoint(
+    3,
+    'Yang bertandatangan dibawah ini menyatakan tidak akan menggunakan dana bantuan tersebut untuk kepentingan pribadi, dan atau memberikan kepada Pengurus Dari Yayasan Tunas Bangsa Kepri yang berkaitan dengan urusan keuangan serta pihak-pihak lain yang tidak ada kaitannya dengan kegiatan/acara yang tercantum dalam Kegiatan dimaksud.'
+  );
+
+  addPoint(
+    4,
+    'Yang bertandatangan dibawah ini menyatakan bersedia membuat laporan pertanggungjawaban keuangan penggunaan dana bantuan yang diterima dan mengembalikannya kepada Yayasan Tunas Bangsa Kepri, paling lama 2 (dua) minggu setelah dana diterima dari Yayasan Tunas Bangsa Kepri'
+  );
+
+  addPoint(
+    5,
+    'Yang bertandatangan dibawah ini menyatakan akan menyimpan bukti-bukti yang diperlukan dan bersedia menyiapkan data apabila sewaktu-waktu akan diperiksa / diaudit oleh Badan atau Lembaga Pengawas/Pemeriksa/Auditor yang ditunjuk oleh Pemerintah Provinsi Kepulauan Riau.'
+  );
+
+  addPoint(
+    6,
+    'Biaya transfer dana bantuan dibebankan kepada penerima dana bantuan, sesuai dengan tarif yang ditetapkan oleh bank tersebut.'
+  );
+
+  addPoint(
+    7,
+    'Pernyataan ini kami buat dalam kesadaran yang penuh dan tanpa tekanan dari siapapun. Saya selaku pemilik usaha dan Penanggung Jawab Pengguna Dana yang diterima dari Yayasan Tunas Bangsa Kepri bersedia untuk dituntut secara hukum apabila kami tidak membuat laporan pertanggungjawaban sebagaimana tercantum pada butir 4 diatas dan melakukan hal-hal yang dilarang sebagaimana tercantum pada butir 3 diatas.'
+  );
+
+  // ── TANDA TANGAN ──────────────────────────────────────────────────────────
+  y += 4;
+  const now = new Date();
+  const day = now.getDate();
+  const monthNames = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  const month = monthNames[now.getMonth()];
+  const year = now.getFullYear();
+  const dateStr = `Tanjungpinang, ${day} ${month} ${year}`;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text(dateStr, pageWidth - margin, y, { align: 'right' });
+  y += 5;
+  doc.text('Penerima Dana Bantuan', pageWidth - margin, y, { align: 'right' });
+
+  // Kotak materai
+  const materaiSize = 22;
+  const materaiX = pageWidth - margin - materaiSize;
+  y += 3;
+  doc.setDrawColor(180);
+  doc.setLineWidth(0.3);
+  doc.rect(materaiX, y, materaiSize, materaiSize);
+  doc.setFontSize(6);
+  doc.setTextColor(150);
+  doc.text('MATERAI', materaiX + materaiSize / 2, y + materaiSize / 2 - 1, { align: 'center' });
+  doc.text('TEMPEL', materaiX + materaiSize / 2, y + materaiSize / 2 + 3, { align: 'center' });
+
+  y += materaiSize + 5;
+  doc.setTextColor(0);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text((actor.fullName || '-').toUpperCase(), pageWidth - margin, y, { align: 'right' });
+
+  // ── SIMPAN ────────────────────────────────────────────────────────────────
+  const safeName = (actor.fullName || 'PELAKU_USAHA').replace(/[^a-z0-9]/gi, '_').toUpperCase();
+  const safeNik = actor.nik || 'NIK';
+  doc.save(`SURAT_PERNYATAAN_${safeName}_${safeNik}.pdf`);
+};
