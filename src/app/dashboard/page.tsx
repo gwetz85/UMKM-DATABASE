@@ -503,11 +503,11 @@ export default function DashboardStatsPage() {
   ]
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-in fade-in-up duration-700">
+    <div className="space-y-5 md:space-y-6 animate-in fade-in-up duration-700 w-full" style={{ zoom: "95%" }}>
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-        <div className="space-y-1 relative">
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight font-headline text-slate-800 uppercase drop-shadow-sm">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 md:gap-4">
+        <div className="space-y-0.5 relative">
+          <h1 className="text-2xl md:text-4xl font-black tracking-tight font-headline text-slate-800 uppercase drop-shadow-sm">
             Dashboard Statistik
           </h1>
           <p className="text-xs md:text-sm text-slate-600 font-semibold">
@@ -516,7 +516,7 @@ export default function DashboardStatsPage() {
         </div>
         <div className="flex items-center gap-2 lg:gap-3 flex-wrap justify-end">
           {/* Auto-sync countdown info */}
-          <div className="glass-panel px-3 py-1.5 md:px-4 md:py-2 rounded-xl flex items-center gap-2 border border-blue-200/60 bg-blue-50/80">
+          <div className="glass-panel px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl flex items-center gap-2 border border-blue-200/60 bg-blue-50/80 shadow-sm">
             <div className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-blue-500 animate-ping' : 'bg-blue-400 animate-pulse'}`} />
             <div className="flex flex-col leading-none">
               <span className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase tracking-wider">
@@ -539,13 +539,13 @@ export default function DashboardStatsPage() {
               size="sm" 
               onClick={() => handleSyncStats(false)} 
               disabled={isSyncing}
-              className="glass-panel border-primary/20 text-primary hover:bg-primary/5 font-bold text-[10px] md:text-xs h-8 md:h-10"
+              className="glass-panel border-primary/20 text-primary hover:bg-primary/5 font-bold text-[10px] md:text-xs h-8 md:h-9 rounded-xl shadow-sm"
             >
-              {isSyncing ? <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin mr-2" /> : <RefreshCw className="w-3 h-3 md:w-4 md:h-4 mr-2" />}
+              {isSyncing ? <Loader2 className="w-3 h-3 md:w-3.5 md:h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1.5" />}
               SYNC STATS
             </Button>
           )}
-          <div className="glass-panel px-3 py-1.5 md:px-4 md:py-2 rounded-xl flex items-center gap-2 md:gap-3 hover:shadow-lg transition-all">
+          <div className="glass-panel px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl flex items-center gap-2 md:gap-2.5 hover:shadow-md transition-all shadow-sm">
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
             <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest">
               Sistem: <span className="text-emerald-600">AKTIF</span>
@@ -555,35 +555,37 @@ export default function DashboardStatsPage() {
       </div>
 
       {/* Top 5 KPI Stats Cards */}
-      <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-5">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-5 items-stretch">
         {topStats.map((stat) => (
           <Card 
             key={stat.name} 
             onClick={() => setSelectedFilter({ name: stat.name, filterType: stat.filterType })}
             className={cn(
-              "border shadow-md transition-all duration-500 group overflow-hidden cursor-pointer active:scale-95",
-              "hover:shadow-2xl hover:-translate-y-1",
+              "border shadow-md transition-all duration-300 group overflow-hidden cursor-pointer active:scale-95 flex flex-col justify-between h-full rounded-2xl",
+              "hover:shadow-xl hover:-translate-y-0.5",
               stat.cardBg,
               stat.hoverBg,
               stat.border
             )}
           >
-            <CardHeader className="flex flex-row items-start justify-between p-4 pb-2">
-              <CardTitle className="text-[10px] md:text-xs font-bold text-white/80 uppercase tracking-wider truncate mr-2 pt-1.5">{stat.name}</CardTitle>
-              <div className="flex flex-col items-center gap-1.5">
-                <div className={cn(stat.bg, "p-1.5 md:p-2.5 rounded-lg md:rounded-xl group-hover:scale-110 transition-transform duration-300 shrink-0")}>
-                  <stat.icon className={cn("w-4 h-4 md:w-5 md:h-5", stat.color)} />
+            <CardHeader className="flex flex-row items-start justify-between p-3.5 pb-1.5">
+              <CardTitle className="text-[10px] md:text-xs font-bold text-white/90 uppercase tracking-wider truncate mr-1 pt-0.5">{stat.name}</CardTitle>
+              <div className="flex flex-col items-center gap-1">
+                <div className={cn(stat.bg, "p-1.5 md:p-2 rounded-lg md:rounded-xl group-hover:scale-105 transition-transform duration-300 shrink-0")}>
+                  <stat.icon className={cn("w-3.5 h-3.5 md:w-4 md:h-4", stat.color)} />
                 </div>
-                {stat.percentage && (
-                  <div className="text-[10px] md:text-xs font-black text-white bg-white/20 px-2 py-0.5 rounded-full">
+                {stat.percentage ? (
+                  <div className="text-[9px] md:text-[10px] font-black text-white bg-white/20 px-2 py-0.5 rounded-full whitespace-nowrap">
                     {stat.percentage}%
                   </div>
+                ) : (
+                  <div className="h-[18px]" />
                 )}
               </div>
             </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="text-xl md:text-3xl font-black text-white">{isStatsLoading ? "..." : stat.value}</div>
-              <div className="flex items-center gap-1 mt-1 text-[8px] md:text-[10px] font-bold text-white/70 uppercase">
+            <CardContent className="p-3.5 pt-0">
+              <div className="text-2xl md:text-3xl font-black text-white leading-tight">{isStatsLoading ? "..." : stat.value}</div>
+              <div className="flex items-center gap-1 mt-1 text-[8px] md:text-[9px] font-bold text-white/75 uppercase">
                 <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
                 {stat.detail}
               </div>
@@ -593,32 +595,32 @@ export default function DashboardStatsPage() {
       </div>
 
       {/* ─── TAHAPAN VERIFIKASI DINAS (4 CARDS DALAM 1 BARIS) ─── */}
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <div>
-            <h2 className="text-base md:text-lg font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-sm md:text-base font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />
               Statistik Alur & Tahapan Dinas
             </h2>
-            <p className="text-xs text-slate-500 font-semibold">
+            <p className="text-[11px] md:text-xs text-slate-500 font-semibold">
               Progres verifikasi pelaku usaha pada menu Survey Dinas, Verifikasi Dinas, Hasil Verifikasi, dan Selesai.
             </p>
           </div>
           <div className="self-start sm:self-auto flex items-center gap-2">
-            <span className="text-[10px] md:text-xs font-bold text-slate-500 bg-white shadow-sm px-3 py-1 rounded-full border">
+            <span className="text-[10px] md:text-xs font-bold text-slate-500 bg-white shadow-sm px-2.5 py-1 rounded-full border">
               Total Terverifikasi: <strong className="text-emerald-600 font-black">{statsValues.verified}</strong>
             </span>
           </div>
         </div>
 
-        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
           {dinasStageCards.map((stage) => (
             <Card 
               key={stage.name}
               onClick={() => setSelectedFilter({ name: stage.name, filterType: stage.filterType, targetUrl: stage.targetUrl })}
               className={cn(
-                "relative overflow-hidden border shadow-lg transition-all duration-300 cursor-pointer active:scale-95 group",
-                "hover:shadow-2xl hover:-translate-y-1.5",
+                "relative overflow-hidden border shadow-md transition-all duration-300 cursor-pointer active:scale-95 group flex flex-col justify-between h-full rounded-2xl",
+                "hover:shadow-xl hover:-translate-y-1",
                 stage.cardBg,
                 stage.hoverBorder
               )}
@@ -626,36 +628,36 @@ export default function DashboardStatsPage() {
               {/* Background ambient shape */}
               <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
               
-              <CardHeader className="p-5 pb-3">
+              <CardHeader className="p-4 pb-2.5">
                 <div className="flex items-center justify-between">
-                  <span className={cn("text-[9px] md:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border backdrop-blur-sm", stage.badgeBg)}>
+                  <span className={cn("text-[9px] md:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border backdrop-blur-sm", stage.badgeBg)}>
                     {stage.stageTag}
                   </span>
-                  <div className="p-2 bg-white/20 backdrop-blur-md rounded-xl text-white shadow-sm group-hover:scale-110 transition-transform">
-                    <stage.icon className="w-5 h-5" />
+                  <div className="p-1.5 md:p-2 bg-white/20 backdrop-blur-md rounded-xl text-white shadow-sm group-hover:scale-105 transition-transform">
+                    <stage.icon className="w-4 h-4 md:w-4.5 md:h-4.5" />
                   </div>
                 </div>
-                <CardTitle className="text-lg md:text-xl font-black text-white uppercase tracking-tight mt-2 flex items-center gap-2">
+                <CardTitle className="text-base md:text-lg font-black text-white uppercase tracking-tight mt-1.5 flex items-center gap-2">
                   {stage.name}
                 </CardTitle>
-                <p className="text-[11px] font-semibold text-white/80 line-clamp-1">
+                <p className="text-[10px] md:text-[11px] font-semibold text-white/80 line-clamp-1">
                   {stage.description}
                 </p>
               </CardHeader>
 
-              <CardContent className="p-5 pt-0 space-y-4">
+              <CardContent className="p-4 pt-0 space-y-3">
                 <div className="flex items-baseline justify-between">
-                  <div className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                  <div className="text-2xl md:text-3xl font-black text-white tracking-tight leading-none">
                     {isStatsLoading ? "..." : stage.value}
-                    <span className="text-xs font-bold text-white/70 ml-1.5">Pelaku Usaha</span>
+                    <span className="text-[10px] md:text-xs font-bold text-white/70 ml-1.5">Pelaku Usaha</span>
                   </div>
-                  <div className="text-xs font-black text-white bg-white/20 px-2 py-0.5 rounded-full">
+                  <div className="text-[10px] md:text-xs font-black text-white bg-white/20 px-2 py-0.5 rounded-full">
                     {stage.percentage}%
                   </div>
                 </div>
 
                 {/* Progress bar relative to total verified */}
-                <div className="w-full bg-black/20 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-black/20 rounded-full h-1.5 overflow-hidden">
                   <div 
                     className="bg-white h-full rounded-full transition-all duration-700 ease-out" 
                     style={{ width: `${Math.min(100, Math.max(2, Number(stage.percentage)))}%` }}
@@ -663,7 +665,7 @@ export default function DashboardStatsPage() {
                 </div>
 
                 {/* Card Action Link */}
-                <div className="pt-2 border-t border-white/20 flex items-center justify-between text-[11px] font-bold text-white/90 group-hover:text-white">
+                <div className="pt-2 border-t border-white/20 flex items-center justify-between text-[10px] md:text-[11px] font-bold text-white/90 group-hover:text-white">
                   <span className="flex items-center gap-1">
                     Lihat Rincian Data
                   </span>
@@ -674,9 +676,9 @@ export default function DashboardStatsPage() {
                       e.stopPropagation()
                       router.push(stage.targetUrl)
                     }}
-                    className="h-7 px-2.5 text-[10px] font-black bg-white/20 hover:bg-white text-white hover:text-slate-900 rounded-lg transition-all shadow-sm flex items-center gap-1"
+                    className="h-6 px-2 text-[9px] md:text-[10px] font-black bg-white/20 hover:bg-white text-white hover:text-slate-900 rounded-lg transition-all shadow-sm flex items-center gap-1"
                   >
-                    Buka Menu <ArrowRight className="w-3 h-3" />
+                    Buka Menu <ArrowRight className="w-2.5 h-2.5" />
                   </Button>
                 </div>
               </CardContent>
@@ -686,35 +688,35 @@ export default function DashboardStatsPage() {
       </div>
 
       {/* ─── 5 DATA TERBARU VERIFIKASI DINAS & HASIL VERIFIKASI ─── */}
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
           <div>
-            <h2 className="text-base md:text-lg font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
-              <Clock className="w-5 h-5 text-indigo-600" />
+            <h2 className="text-sm md:text-base font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
+              <Clock className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />
               Data Terkini Masuk Tahapan Dinas
             </h2>
-            <p className="text-xs text-slate-500 font-semibold">
+            <p className="text-[11px] md:text-xs text-slate-500 font-semibold">
               Daftar 5 pelaku usaha terbaru yang masuk menu Verifikasi Dinas dan Hasil Verifikasi beserta waktu data masuk.
             </p>
           </div>
         </div>
 
-        <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+        <div className="grid gap-4 md:gap-5 grid-cols-1 lg:grid-cols-2 items-stretch">
           {/* Card 1: 5 Data Terbaru Verifikasi Dinas (Tahap 2) */}
-          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-indigo-100/80 flex flex-col shadow-md">
-            <CardHeader className="bg-gradient-to-r from-indigo-50/90 to-violet-50/90 border-b border-indigo-100/70 p-4 pb-3 flex flex-row items-center justify-between">
+          <Card className="glass overflow-hidden transition-all hover:shadow-lg border-indigo-100/80 flex flex-col shadow-sm rounded-2xl">
+            <CardHeader className="bg-gradient-to-r from-indigo-50/90 to-violet-50/90 border-b border-indigo-100/70 p-3.5 pb-2.5 flex flex-row items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-sm">
-                  <FileText className="w-4 h-4" />
+                <div className="p-1.5 bg-indigo-600 text-white rounded-xl shadow-sm">
+                  <FileText className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm md:text-base font-black text-indigo-950 uppercase tracking-tight flex items-center gap-2">
+                  <CardTitle className="text-xs md:text-sm font-black text-indigo-950 uppercase tracking-tight flex items-center gap-2">
                     Verifikasi Dinas
-                    <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-indigo-200 text-[10px] font-black px-2 py-0.5">
+                    <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-indigo-200 text-[9px] md:text-[10px] font-black px-1.5 py-0.5">
                       Tahap 2
                     </Badge>
                   </CardTitle>
-                  <p className="text-[11px] font-medium text-indigo-600/80">
+                  <p className="text-[10px] md:text-[11px] font-medium text-indigo-600/80">
                     5 data terbaru lolos survey & menunggu cek berkas dinas
                   </p>
                 </div>
@@ -723,9 +725,9 @@ export default function DashboardStatsPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push('/verifikasi-dinas-berkas')}
-                className="text-[11px] font-bold text-indigo-700 hover:bg-indigo-100/60 h-7 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
+                className="text-[10px] md:text-[11px] font-bold text-indigo-700 hover:bg-indigo-100/60 h-6 px-2 rounded-lg flex items-center gap-1 shrink-0"
               >
-                Lihat Semua <ArrowRight className="w-3 h-3" />
+                Lihat Semua <ArrowRight className="w-2.5 h-2.5" />
               </Button>
             </CardHeader>
 
@@ -734,16 +736,16 @@ export default function DashboardStatsPage() {
                 <Table>
                   <TableHeader className="bg-slate-50/80 border-b">
                     <TableRow>
-                      <TableHead className="w-[40px] text-center font-black text-[10px] text-slate-700 uppercase">No</TableHead>
-                      <TableHead className="font-black text-[10px] text-slate-700 uppercase">Pelaku Usaha</TableHead>
-                      <TableHead className="font-black text-[10px] text-slate-700 uppercase">Usaha / Wilayah</TableHead>
-                      <TableHead className="font-black text-[10px] text-slate-700 uppercase">Waktu Masuk</TableHead>
+                      <TableHead className="w-[36px] text-center font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">No</TableHead>
+                      <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">Pelaku Usaha</TableHead>
+                      <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">Usaha / Wilayah</TableHead>
+                      <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">Waktu Masuk</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isVerifiedDinasLoading ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8">
+                        <TableCell colSpan={4} className="text-center py-6">
                           <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
                             <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
                             Memuat data Verifikasi Dinas...
@@ -752,7 +754,7 @@ export default function DashboardStatsPage() {
                       </TableRow>
                     ) : latestVerifikasiDinas.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
+                        <TableCell colSpan={4} className="text-center py-6 text-muted-foreground italic font-medium text-xs">
                           Belum ada data pada menu Verifikasi Dinas.
                         </TableCell>
                       </TableRow>
@@ -765,33 +767,33 @@ export default function DashboardStatsPage() {
                             onClick={() => setDetailActor(actor)}
                             className="hover:bg-indigo-50/40 transition-colors cursor-pointer group"
                           >
-                            <TableCell className="text-center font-bold text-slate-500 text-xs py-2.5">
+                            <TableCell className="text-center font-bold text-slate-500 text-xs py-2">
                               {idx + 1}
                             </TableCell>
-                            <TableCell className="py-2.5">
+                            <TableCell className="py-2">
                               <div className="flex flex-col">
                                 <span className="font-black text-slate-800 text-xs uppercase group-hover:text-indigo-600 transition-colors">
                                   {actor.fullName || "-"}
                                 </span>
-                                <span className="text-[10px] font-mono text-slate-500">
+                                <span className="text-[9px] md:text-[10px] font-mono text-slate-500">
                                   {actor.nik || "-"}
                                 </span>
                               </div>
                             </TableCell>
-                            <TableCell className="py-2.5">
+                            <TableCell className="py-2">
                               <div className="flex flex-col">
                                 <span className="font-bold text-slate-700 text-xs uppercase truncate max-w-[130px]" title={actor.businessName}>
                                   {actor.businessName || "-"}
                                 </span>
-                                <span className="text-[10px] text-slate-500 uppercase truncate max-w-[130px]">
+                                <span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate max-w-[130px]">
                                   {actor.kelurahan || actor.coordinator || "-"}
                                 </span>
                               </div>
                             </TableCell>
-                            <TableCell className="py-2.5">
+                            <TableCell className="py-2">
                               <div className="flex items-center gap-1.5 text-indigo-900">
-                                <Clock className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
-                                <span className="text-[11px] font-bold whitespace-nowrap">
+                                <Clock className="w-3 h-3 text-indigo-600 shrink-0" />
+                                <span className="text-[10px] md:text-[11px] font-bold whitespace-nowrap">
                                   {formatDateTimeIndo(masukTime)}
                                 </span>
                               </div>
@@ -804,13 +806,13 @@ export default function DashboardStatsPage() {
                 </Table>
               </div>
 
-              <div className="p-2.5 bg-slate-50/60 border-t flex items-center justify-between text-[11px] font-medium text-slate-600 px-4">
+              <div className="p-2 bg-slate-50/60 border-t flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 px-3.5">
                 <span>Total antrean: <strong className="text-indigo-600 font-bold">{statsValues.verifikasiDinas}</strong> pelaku usaha</span>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => router.push('/verifikasi-dinas-berkas')}
-                  className="h-6 text-[10px] font-bold border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                  className="h-5 text-[9px] md:text-[10px] font-bold border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-2"
                 >
                   Buka Verifikasi Dinas <ExternalLink className="w-2.5 h-2.5 ml-1" />
                 </Button>
@@ -819,20 +821,20 @@ export default function DashboardStatsPage() {
           </Card>
 
           {/* Card 2: 5 Data Terbaru Hasil Verifikasi (Tahap 3) */}
-          <Card className="glass overflow-hidden transition-all hover:shadow-xl border-teal-100/80 flex flex-col shadow-md">
-            <CardHeader className="bg-gradient-to-r from-teal-50/90 to-emerald-50/90 border-b border-teal-100/70 p-4 pb-3 flex flex-row items-center justify-between">
+          <Card className="glass overflow-hidden transition-all hover:shadow-lg border-teal-100/80 flex flex-col shadow-sm rounded-2xl">
+            <CardHeader className="bg-gradient-to-r from-teal-50/90 to-emerald-50/90 border-b border-teal-100/70 p-3.5 pb-2.5 flex flex-row items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-teal-600 text-white rounded-xl shadow-sm">
-                  <ListChecks className="w-4 h-4" />
+                <div className="p-1.5 bg-teal-600 text-white rounded-xl shadow-sm">
+                  <ListChecks className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <CardTitle className="text-sm md:text-base font-black text-teal-950 uppercase tracking-tight flex items-center gap-2">
+                  <CardTitle className="text-xs md:text-sm font-black text-teal-950 uppercase tracking-tight flex items-center gap-2">
                     Hasil Verifikasi
-                    <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-100 border-teal-200 text-[10px] font-black px-2 py-0.5">
+                    <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-100 border-teal-200 text-[9px] md:text-[10px] font-black px-1.5 py-0.5">
                       Tahap 3 (Final)
                     </Badge>
                   </CardTitle>
-                  <p className="text-[11px] font-medium text-teal-600/80">
+                  <p className="text-[10px] md:text-[11px] font-medium text-teal-600/80">
                     5 data terbaru selesai verifikasi berkas & dinyatakan lolos
                   </p>
                 </div>
@@ -841,9 +843,9 @@ export default function DashboardStatsPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push('/hasil-verifikasi')}
-                className="text-[11px] font-bold text-teal-700 hover:bg-teal-100/60 h-7 px-2.5 rounded-lg flex items-center gap-1 shrink-0"
+                className="text-[10px] md:text-[11px] font-bold text-teal-700 hover:bg-teal-100/60 h-6 px-2 rounded-lg flex items-center gap-1 shrink-0"
               >
-                Lihat Semua <ArrowRight className="w-3 h-3" />
+                Lihat Semua <ArrowRight className="w-2.5 h-2.5" />
               </Button>
             </CardHeader>
 
@@ -852,16 +854,16 @@ export default function DashboardStatsPage() {
                 <Table>
                   <TableHeader className="bg-slate-50/80 border-b">
                     <TableRow>
-                      <TableHead className="w-[40px] text-center font-black text-[10px] text-slate-700 uppercase">No</TableHead>
-                      <TableHead className="font-black text-[10px] text-slate-700 uppercase">Pelaku Usaha</TableHead>
-                      <TableHead className="font-black text-[10px] text-slate-700 uppercase">Usaha / Wilayah</TableHead>
-                      <TableHead className="font-black text-[10px] text-slate-700 uppercase">Waktu Masuk</TableHead>
+                      <TableHead className="w-[36px] text-center font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">No</TableHead>
+                      <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">Pelaku Usaha</TableHead>
+                      <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">Usaha / Wilayah</TableHead>
+                      <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">Waktu Masuk</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isVerifiedDinasLoading ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8">
+                        <TableCell colSpan={4} className="text-center py-6">
                           <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
                             <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
                             Memuat data Hasil Verifikasi...
@@ -870,7 +872,7 @@ export default function DashboardStatsPage() {
                       </TableRow>
                     ) : latestHasilVerifikasi.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
+                        <TableCell colSpan={4} className="text-center py-6 text-muted-foreground italic font-medium text-xs">
                           Belum ada data pada menu Hasil Verifikasi.
                         </TableCell>
                       </TableRow>
@@ -883,33 +885,33 @@ export default function DashboardStatsPage() {
                             onClick={() => setDetailActor(actor)}
                             className="hover:bg-teal-50/40 transition-colors cursor-pointer group"
                           >
-                            <TableCell className="text-center font-bold text-slate-500 text-xs py-2.5">
+                            <TableCell className="text-center font-bold text-slate-500 text-xs py-2">
                               {idx + 1}
                             </TableCell>
-                            <TableCell className="py-2.5">
+                            <TableCell className="py-2">
                               <div className="flex flex-col">
                                 <span className="font-black text-slate-800 text-xs uppercase group-hover:text-teal-600 transition-colors">
                                   {actor.fullName || "-"}
                                 </span>
-                                <span className="text-[10px] font-mono text-slate-500">
+                                <span className="text-[9px] md:text-[10px] font-mono text-slate-500">
                                   {actor.nik || "-"}
                                 </span>
                               </div>
                             </TableCell>
-                            <TableCell className="py-2.5">
+                            <TableCell className="py-2">
                               <div className="flex flex-col">
                                 <span className="font-bold text-slate-700 text-xs uppercase truncate max-w-[130px]" title={actor.businessName}>
                                   {actor.businessName || "-"}
                                 </span>
-                                <span className="text-[10px] text-slate-500 uppercase truncate max-w-[130px]">
+                                <span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate max-w-[130px]">
                                   {actor.kelurahan || actor.coordinator || "-"}
                                 </span>
                               </div>
                             </TableCell>
-                            <TableCell className="py-2.5">
+                            <TableCell className="py-2">
                               <div className="flex items-center gap-1.5 text-teal-900">
-                                <Clock className="w-3.5 h-3.5 text-teal-600 shrink-0" />
-                                <span className="text-[11px] font-bold whitespace-nowrap">
+                                <Clock className="w-3 h-3 text-teal-600 shrink-0" />
+                                <span className="text-[10px] md:text-[11px] font-bold whitespace-nowrap">
                                   {formatDateTimeIndo(masukTime)}
                                 </span>
                               </div>
@@ -922,13 +924,13 @@ export default function DashboardStatsPage() {
                 </Table>
               </div>
 
-              <div className="p-2.5 bg-slate-50/60 border-t flex items-center justify-between text-[11px] font-medium text-slate-600 px-4">
+              <div className="p-2 bg-slate-50/60 border-t flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 px-3.5">
                 <span>Total lolos: <strong className="text-teal-600 font-bold">{statsValues.hasilVerifikasi}</strong> pelaku usaha</span>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => router.push('/hasil-verifikasi')}
-                  className="h-6 text-[10px] font-bold border-teal-200 text-teal-700 hover:bg-teal-50"
+                  className="h-5 text-[9px] md:text-[10px] font-bold border-teal-200 text-teal-700 hover:bg-teal-50 px-2"
                 >
                   Buka Hasil Verifikasi <ExternalLink className="w-2.5 h-2.5 ml-1" />
                 </Button>
@@ -940,10 +942,10 @@ export default function DashboardStatsPage() {
 
       {/* Grid: Kuota Usulan */}
       <div className="w-full flex flex-col h-full min-h-0">
-        <Card className="glass overflow-hidden transition-all hover:shadow-xl border-none h-full min-h-[450px] lg:min-h-0 flex flex-col">
-          <CardHeader className="bg-primary/10 pb-4 shrink-0">
-            <CardTitle className="text-base md:text-lg font-bold flex items-center gap-2 text-primary">
-              <BarChart3 className="w-5 h-5" /> Jumlah Kuota
+        <Card className="glass overflow-hidden transition-all hover:shadow-lg border-none h-full min-h-[400px] lg:min-h-0 flex flex-col rounded-2xl shadow-sm">
+          <CardHeader className="bg-primary/10 p-3.5 pb-3 shrink-0">
+            <CardTitle className="text-sm md:text-base font-bold flex items-center gap-2 text-primary">
+              <BarChart3 className="w-4 h-4 md:w-5 md:h-5" /> Jumlah Kuota
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -951,17 +953,17 @@ export default function DashboardStatsPage() {
               <Table>
                 <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[40px] text-center font-black text-slate-800 text-[10px] md:text-xs">No</TableHead>
-                    <TableHead className="font-black text-slate-800 text-[10px] md:text-xs min-w-[120px]">Nama Usulan</TableHead>
-                    <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Jumlah Kuota</TableHead>
-                    <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Kuota Tercapai</TableHead>
-                    <TableHead className="text-center font-black text-slate-800 text-[10px] md:text-xs">Sisa Kuota</TableHead>
+                    <TableHead className="w-[36px] text-center font-black text-slate-800 text-[9px] md:text-[10px] py-2">No</TableHead>
+                    <TableHead className="font-black text-slate-800 text-[9px] md:text-[10px] min-w-[120px] py-2">Nama Usulan</TableHead>
+                    <TableHead className="text-center font-black text-slate-800 text-[9px] md:text-[10px] py-2">Jumlah Kuota</TableHead>
+                    <TableHead className="text-center font-black text-slate-800 text-[9px] md:text-[10px] py-2">Kuota Tercapai</TableHead>
+                    <TableHead className="text-center font-black text-slate-800 text-[9px] md:text-[10px] py-2">Sisa Kuota</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isKuotaLoading ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12">
+                      <TableCell colSpan={5} className="text-center py-8">
                         <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
                           <Loader2 className="w-4 h-4 animate-spin text-primary" />
                           Memuat data kuota...
@@ -970,28 +972,28 @@ export default function DashboardStatsPage() {
                     </TableRow>
                   ) : combinedKuotaData.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground italic font-medium text-xs">
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
                         Belum ada data target kuota yang didaftarkan.
                       </TableCell>
                     </TableRow>
                   ) : (
                     combinedKuotaData.map((item: any, index: number) => (
                       <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                        <TableCell className="text-center font-bold text-slate-600 text-xs">{index + 1}</TableCell>
-                        <TableCell className="font-black text-primary text-xs tracking-tight">{item.name}</TableCell>
-                        <TableCell className="text-center">
-                          <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
+                        <TableCell className="text-center font-bold text-slate-600 text-xs py-2">{index + 1}</TableCell>
+                        <TableCell className="font-black text-primary text-xs tracking-tight py-2">{item.name}</TableCell>
+                        <TableCell className="text-center py-2">
+                          <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border border-slate-200">
                             {item.quota}
                           </span>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
+                        <TableCell className="text-center py-2">
+                          <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border border-emerald-200">
                             {item.achieved}
                           </span>
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-center py-2">
                           <span className={cn(
-                            "inline-flex items-center justify-center font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border",
+                            "inline-flex items-center justify-center font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border",
                             item.remaining <= 0 
                               ? "bg-rose-100 text-rose-700 border-rose-200" 
                               : "bg-blue-100 text-blue-700 border-blue-200"
@@ -1006,16 +1008,16 @@ export default function DashboardStatsPage() {
                 {!isKuotaLoading && combinedKuotaData.length > 0 && (
                   <TableFooter>
                     <TableRow className="bg-primary/5 border-t-2 border-primary/20">
-                      <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs py-3">
+                      <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs py-2.5">
                         Total Kuota Data
                       </TableCell>
-                      <TableCell className="text-center font-black text-slate-600 text-sm">
+                      <TableCell className="text-center font-black text-slate-600 text-sm py-2.5">
                         {totalKuotaDashboard}
                       </TableCell>
-                      <TableCell className="text-center font-black text-emerald-600 text-sm">
+                      <TableCell className="text-center font-black text-emerald-600 text-sm py-2.5">
                         {totalAchievedDashboard}
                       </TableCell>
-                      <TableCell className="text-center font-black text-primary text-sm">
+                      <TableCell className="text-center font-black text-primary text-sm py-2.5">
                         {totalKuotaDashboard - totalAchievedDashboard}
                       </TableCell>
                     </TableRow>
