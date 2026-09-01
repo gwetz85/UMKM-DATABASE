@@ -159,7 +159,7 @@ export default function PembagianPetugasSurveyPage() {
     if (!businessActorsRaw) return map
 
     businessActorsRaw.forEach((actor) => {
-      if (actor && actor.petugasSurvey && actor.petugasSurvey.trim() !== '') {
+      if (actor && actor.petugasSurvey && actor.petugasSurvey.trim() !== '' && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim().toUpperCase() !== 'BELUM ADA') {
         const key = actor.petugasSurvey.trim().toUpperCase()
         if (!map[key]) map[key] = []
         map[key].push(actor)
@@ -168,10 +168,10 @@ export default function PembagianPetugasSurveyPage() {
     return map
   }, [businessActorsRaw])
 
-  // Count unassigned actors
+  // Count unassigned actors (including BELUM ADA)
   const unassignedActorsCount = useMemo(() => {
     if (!businessActorsRaw) return 0
-    return businessActorsRaw.filter(a => !a.petugasSurvey || a.petugasSurvey.trim() === '').length
+    return businessActorsRaw.filter(a => !a.petugasSurvey || a.petugasSurvey.trim() === '' || a.petugasSurvey.trim() === '-' || a.petugasSurvey.trim().toUpperCase() === 'BELUM ADA').length
   }, [businessActorsRaw])
 
   // Helper to get connected actors for a surveyor
@@ -576,6 +576,39 @@ export default function PembagianPetugasSurveyPage() {
       })
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleReassignSingleActor = (actorId: string, actorName: string, newPetugas: string) => {
+    if (!database || !isAdmin) return
+    const val = (newPetugas === 'BELUM ADA' || !newPetugas) ? 'BELUM ADA' : newPetugas.toUpperCase().trim()
+
+    updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
+      petugasSurvey: val
+    })
+
+    logActivity({
+      query: `REASSIGN PETUGAS: ${actorName} -> ${val}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'PEMBAGIAN PETUGAS SURVEY',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+
+    toast({
+      title: "Petugas Berhasil Dialihkan",
+      description: val === 'BELUM ADA' ? `${actorName} diubah menjadi BELUM ADA (Hanya Admin yang dapat mengakses).` : `${actorName} dialihkan ke ${val}.`
+    })
+
+    if (viewingConnectedSurveyor) {
+      setViewingConnectedSurveyor(prev => {
+        if (!prev) return null
+        return {
+          ...prev,
+          actors: prev.actors.map(a => a.id === actorId ? { ...a, petugasSurvey: val } : a)
+        }
+      })
     }
   }
 
@@ -1051,6 +1084,7 @@ export default function PembagianPetugasSurveyPage() {
                     <TableHead className="text-[10px] font-bold uppercase">Nama Usaha</TableHead>
                     <TableHead className="text-[10px] font-bold uppercase">Kelurahan / Kecamatan</TableHead>
                     <TableHead className="text-[10px] font-bold uppercase text-center">Status</TableHead>
+                    <TableHead className="text-[10px] font-bold uppercase text-center">Petugas Survey (Ganti)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1070,6 +1104,20 @@ export default function PembagianPetugasSurveyPage() {
                         <Badge variant="outline" className="text-[9px] font-bold uppercase">
                           {actor.status || 'pending'}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <select
+                          value={actor.petugasSurvey && actor.petugasSurvey.trim() !== '' && actor.petugasSurvey.trim() !== '-' ? actor.petugasSurvey.toUpperCase().trim() : "BELUM ADA"}
+                          onChange={(e) => handleReassignSingleActor(actor.id, actor.fullName, e.target.value)}
+                          className="text-[11px] font-bold h-7 rounded border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-sm text-primary cursor-pointer hover:border-primary transition-all w-[180px]"
+                        >
+                          <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
+                          {surveyors.map((s: any) => (
+                            <option key={s.id} value={s.fullName.toUpperCase().trim()}>
+                              🟢 {s.fullName.toUpperCase().trim()}
+                            </option>
+                          ))}
+                        </select>
                       </TableCell>
                     </TableRow>
                   ))}

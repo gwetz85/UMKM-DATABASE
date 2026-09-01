@@ -540,6 +540,57 @@ export default function VerifikasiDinasPage() {
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
   const { data: kuotaData } = useList<any>(kuotaRef)
 
+  const systemUsersRef = useMemoFirebase(() => database ? ref(database, 'system_users') : null, [database])
+  const { data: systemUsersRaw } = useList<any>(systemUsersRef)
+
+  const surveyorOptions = useMemo(() => {
+    const set = new Set<string>()
+    if (systemUsersRaw) {
+      systemUsersRaw.forEach((u: any) => {
+        if (u.role === 'petugas' || u.role === 'petugas_survey') {
+          const name = (u.fullName || u.name || u.id || '').toUpperCase().trim()
+          if (name) set.add(name)
+        }
+      })
+    }
+    if (allActorsRaw) {
+      allActorsRaw.forEach((a: any) => {
+        const ps = (a.petugasSurvey || '').toUpperCase().trim()
+        if (ps && ps !== 'BELUM ADA' && ps !== '-') {
+          set.add(ps)
+        }
+      })
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [systemUsersRaw, allActorsRaw])
+
+  const handleQuickReassignPetugas = (actorId: string, newPetugas: string, actorName?: string) => {
+    if (!isAdmin || !database) return
+    const val = (newPetugas === "BELUM ADA" || !newPetugas) ? "BELUM ADA" : newPetugas.toUpperCase().trim()
+    
+    updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
+      petugasSurvey: val
+    })
+
+    logActivity({
+      query: `GANTI PETUGAS SURVEY: ${actorName || actorId} -> ${val}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'VERIFIKASI DINAS',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+
+    toast({
+      title: "Petugas Survey Diperbarui",
+      description: val === "BELUM ADA" ? "Status petugas diubah menjadi BELUM ADA (Hanya Admin yang dapat mengakses)." : `Petugas Survey dialihkan ke ${val}.`
+    })
+
+    if (viewingActor && viewingActor.id === actorId) {
+      setViewingActor(prev => prev ? { ...prev, petugasSurvey: val } : null)
+    }
+  }
+
   // O(1) Lookup Map for Coordinator Phone Numbers
   const kuotaMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -560,7 +611,8 @@ export default function VerifikasiDinasPage() {
       if (isPetugas) {
         if (!userProfile?.fullName) return false;
         const userPetugasUpper = String(userProfile.fullName).toUpperCase().trim();
-        const actorPetugasUpper = String(a.petugasSurvey || a.createdBy || "").toUpperCase().trim();
+        const actorPetugasUpper = String(a.petugasSurvey || "").toUpperCase().trim();
+        if (!actorPetugasUpper || actorPetugasUpper === "BELUM ADA" || actorPetugasUpper === "-") return false;
         return actorPetugasUpper === userPetugasUpper;
       }
       return a.status === 'lpj_pending';
@@ -1295,10 +1347,9 @@ export default function VerifikasiDinasPage() {
                                   )}
                                 </div>
                               </div>
-
                               <div className="flex flex-col min-w-0">
                                 <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">PETUGAS SURVEY</span>
-                                {actor.petugasSurvey && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim() !== '' ? (
+                                {actor.petugasSurvey && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim() !== '' && actor.petugasSurvey.trim().toUpperCase() !== 'BELUM ADA' ? (
                                   <span className="text-[10px] font-black text-emerald-700 truncate uppercase flex items-center gap-1" title={actor.petugasSurvey}>
                                     <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
                                     <span className="truncate">{actor.petugasSurvey}</span>
@@ -1306,7 +1357,7 @@ export default function VerifikasiDinasPage() {
                                 ) : (
                                   <span className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-1">
                                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 animate-pulse" />
-                                    Belum Ada
+                                    BELUM ADA
                                   </span>
                                 )}
                               </div>
@@ -1405,104 +1456,142 @@ export default function VerifikasiDinasPage() {
 
       {/* ─── SINGLE ROOT LEVEL DETAIL VIEWER MODAL ─────────────────────── */}
       <Dialog open={!!viewingActor} onOpenChange={(open) => !open && setViewingActor(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-primary flex items-center gap-2">
+              <Building2 className="w-5 h-5" /> Detail Pelaku Usaha
+            </DialogTitle>
+            <DialogDescription>
+              Informasi lengkap data pelaku usaha terdaftar.
+            </DialogDescription>
+          </DialogHeader>
+
           {viewingActor && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-2xl font-black text-primary uppercase flex items-center gap-2">
-                  <FileText className="w-6 h-6" /> Detail Pelaku Usaha
-                </DialogTitle>
-                <DialogDescription className="sr-only">Detail Pelaku Usaha</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-6 py-4">
-                <section className="space-y-4">
-                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
-                    {(() => {
-                      const parsed = parsePobDob(viewingActor.pobDob || "")
-                      return [
-                        { label: "Nama Lengkap", value: viewingActor.fullName },
-                        { label: "NIK", value: viewingActor.nik },
-                        { label: "Nomor KK", value: viewingActor.noKK },
-                        { label: "Jenis Kelamin", value: viewingActor.gender },
-                        { label: "Tempat Lahir", value: viewingActor.pob || parsed.pob || "-" },
-                        { label: "Tanggal Lahir", value: viewingActor.dob || parsed.dob || "-" },
-                        { label: "Nomor HP", value: viewingActor.phone, isPhone: true }
-                      ]
-                    })().map((item, i) => (
+            <div className="space-y-6 py-4">
+              <section className="space-y-4">
+                <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
+                  {[
+                    { label: "Nama Lengkap", value: viewingActor.fullName },
+                    { label: "NIK", value: viewingActor.nik },
+                    { label: "Nomor KK", value: viewingActor.noKK },
+                    { label: "Jenis Kelamin", value: viewingActor.gender },
+                    { label: "Tempat, Tgl Lahir", value: viewingActor.pobDob || `${viewingActor.pob || '-'}, ${viewingActor.dob || '-'}` },
+                    { label: "Nomor HP", value: viewingActor.phone, isPhone: true },
+                  ].map((item: any, i: number) => (
+                    <div key={i} className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                      {item.isPhone && item.value ? (
+                        <a
+                          href={getWaLink(item.value)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 shadow-sm transition-all active:scale-95 w-fit"
+                          title="Klik untuk membuka obrolan WhatsApp"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
+                          <span>{item.value}</span>
+                        </a>
+                      ) : (
+                        <p className="text-xs font-bold">{item.value || "-"}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="space-y-4">
+                <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
+                  {[
+                    { label: "Kecamatan", value: viewingActor.kecamatan },
+                    { label: "Kelurahan", value: viewingActor.kelurahan },
+                    { label: "RT/RW", value: viewingActor.rtRw },
+                    { label: "Alamat Lengkap", value: viewingActor.address, fullWidth: true },
+                  ].map((item: any, i: number) => (
+                    <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                      <p className="text-xs font-bold">{item.value || "-"}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="space-y-4">
+                <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
+                  {(() => {
+                    const coordPhone = kuotaMap.get((viewingActor.coordinator || "").toUpperCase().trim()) || "";
+                    const isBelumAdaPetugas = !viewingActor.petugasSurvey || viewingActor.petugasSurvey.trim() === "" || viewingActor.petugasSurvey.trim() === "-" || viewingActor.petugasSurvey.toUpperCase().trim() === "BELUM ADA";
+
+                    return [
+                      { label: "Usaha", value: viewingActor.businessName },
+                      { label: "Kategori Usaha", value: viewingActor.businessCategory },
+                      { label: "Lokasi Usaha", value: viewingActor.businessLocation },
+                      { label: "USULAN", value: viewingActor.coordinator },
+                      { label: "NO. HP USULAN", value: coordPhone, isPhone: true },
+                      { 
+                        label: "PETUGAS SURVEY", 
+                        value: viewingActor.petugasSurvey,
+                        isPetugasField: true,
+                        isBelumAda: isBelumAdaPetugas
+                      }
+                    ].map((item: any, i: number) => (
                       <div key={i} className="space-y-1">
                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                        {(item as any).isPhone && item.value ? (
+                        {item.isPetugasField ? (
+                          <div className="space-y-1.5">
+                            {item.isBelumAda ? (
+                              <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900">
+                                <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                <span>BELUM ADA</span>
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                <span>{item.value}</span>
+                              </div>
+                            )}
+                            {isAdmin && (
+                              <div className="pt-0.5">
+                                <select
+                                  value={!item.isBelumAda ? item.value.toUpperCase().trim() : "BELUM ADA"}
+                                  onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value, viewingActor.fullName)}
+                                  className="text-[11px] font-bold h-7 rounded border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-sm text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[220px]"
+                                  title="Admin: Ganti Petugas Survey secara langsung"
+                                >
+                                  <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
+                                  {surveyorOptions.map((name: string) => (
+                                    <option key={name} value={name}>
+                                      🟢 {name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+                        ) : item.isPhone && item.value ? (
                           <a
-                            href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
+                            href={getWaLink(item.value)}
                             target="_blank"
-                            rel="noreferrer"
-                            className="text-xs font-bold text-green-600 hover:text-green-700 hover:underline flex items-center gap-1"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 shadow-sm transition-all active:scale-95 w-fit"
+                            title="Klik untuk membuka obrolan WhatsApp"
                           >
-                            {item.value}
+                            <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
+                            <span>{item.value}</span>
                           </a>
                         ) : (
                           <p className="text-xs font-bold">{item.value || "-"}</p>
                         )}
                       </div>
-                    ))}
-                  </div>
-                </section>
+                    ));
+                  })()}
+                </div>
+              </section>
 
-                <section className="space-y-4">
-                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
-                    {[
-                      { label: "Kecamatan", value: viewingActor.kecamatan },
-                      { label: "Kelurahan", value: viewingActor.kelurahan },
-                      { label: "RT/RW", value: viewingActor.rtRw },
-                      { label: "Alamat", value: viewingActor.address, fullWidth: true }
-                    ].map((item, i) => (
-                      <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                        <p className="text-xs font-bold">{item.value || "-"}</p>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-
-                <section className="space-y-4">
-                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
-                    {(() => {
-                      const coordPhone = kuotaMap.get((viewingActor.coordinator || "").toUpperCase().trim()) || "";
-                      return [
-                        { label: "Usaha", value: viewingActor.businessName },
-                        { label: "Kategori Usaha", value: viewingActor.businessCategory },
-                        { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                        { label: "USULAN", value: viewingActor.coordinator },
-                        { label: "NO. HP USULAN", value: coordPhone, isPhone: true },
-                        { label: "PETUGAS SURVEY", value: viewingActor.petugasSurvey || "Belum ada" }
-                      ].map((item: any, i: number) => (
-                        <div key={i} className="space-y-1">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                          {item.isPhone && item.value ? (
-                            <a
-                              href={getWaLink(item.value)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 shadow-sm transition-all active:scale-95 w-fit"
-                              title="Klik untuk membuka obrolan WhatsApp"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
-                              <span>{item.value}</span>
-                            </a>
-                          ) : (
-                            <p className="text-xs font-bold">{item.value || "-"}</p>
-                          )}
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </section>
-
-                <section className="space-y-4">
-                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Informasi Perbankan</div>
+              <section className="space-y-4">
+                <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Informasi Perbankan</div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-primary/5 p-4 rounded-xl border border-primary/10">
                     {[
                       { label: "Nama Bank", value: viewingActor.bankName },
@@ -1629,7 +1718,6 @@ export default function VerifikasiDinasPage() {
                   </div>
                 </section>
               </div>
-            </>
           )}
         </DialogContent>
       </Dialog>

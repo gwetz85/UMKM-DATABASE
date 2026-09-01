@@ -880,17 +880,38 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
                           return `https://wa.me/${clean}`;
                         };
 
+                        const isBelumAdaPetugas = !viewingActor.petugasSurvey || viewingActor.petugasSurvey.trim() === "" || viewingActor.petugasSurvey.trim() === "-" || viewingActor.petugasSurvey.toUpperCase().trim() === "BELUM ADA";
+
                         return [
                           { label: "Nama Usaha", value: viewingActor.businessName },
                           { label: "Kategori Usaha", value: viewingActor.businessCategory },
                           { label: "Lokasi Usaha", value: viewingActor.businessLocation },
                           { label: "Pengusul / Koordinator", value: viewingActor.coordinator },
                           { label: "NO. HP USULAN", value: coordPhone, isPhone: true },
-                          { label: "Petugas Survey", value: viewingActor.petugasSurvey || "Belum ada" },
+                          { 
+                            label: "PETUGAS SURVEY", 
+                            value: viewingActor.petugasSurvey,
+                            isPetugasField: true,
+                            isBelumAda: isBelumAdaPetugas
+                          },
                         ].map((item: any, i: number) => (
                           <div key={i} className="space-y-1">
                             <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                            {item.isPhone && item.value ? (
+                            {item.isPetugasField ? (
+                              <div>
+                                {item.isBelumAda ? (
+                                  <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900">
+                                    <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                    <span>BELUM ADA</span>
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                    <span>{item.value}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ) : item.isPhone && item.value ? (
                               <a
                                 href={getWaLink(item.value)}
                                 target="_blank"

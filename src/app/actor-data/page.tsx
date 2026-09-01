@@ -135,6 +135,30 @@ function ActorDataContent() {
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
   const { data: kuotaData, isLoading: isKuotaLoading } = useList<any>(kuotaRef)
 
+  const systemUsersRef = useMemoFirebase(() => database ? ref(database, 'system_users') : null, [database])
+  const { data: systemUsersRaw } = useList<any>(systemUsersRef)
+
+  const surveyorOptions = useMemo(() => {
+    const set = new Set<string>()
+    if (systemUsersRaw) {
+      systemUsersRaw.forEach((u: any) => {
+        if (u.role === 'petugas' || u.role === 'petugas_survey') {
+          const name = (u.fullName || u.name || u.id || '').toUpperCase().trim()
+          if (name) set.add(name)
+        }
+      })
+    }
+    if (allActorsRaw) {
+      allActorsRaw.forEach((a: any) => {
+        const ps = (a.petugasSurvey || '').toUpperCase().trim()
+        if (ps && ps !== 'BELUM ADA' && ps !== '-') {
+          set.add(ps)
+        }
+      })
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [systemUsersRaw, allActorsRaw])
+
   const actors = useMemo(() => {
     if (!allActorsRaw) return undefined;
     return allActorsRaw.filter(a => {
@@ -152,7 +176,8 @@ function ActorDataContent() {
       if (isPetugas) {
         if (!userProfile?.fullName) return false;
         const userPetugasUpper = String(userProfile.fullName).toUpperCase().trim();
-        const actorPetugasUpper = String(a.petugasSurvey || a.createdBy || "").toUpperCase().trim();
+        const actorPetugasUpper = String(a.petugasSurvey || "").toUpperCase().trim();
+        if (!actorPetugasUpper || actorPetugasUpper === "BELUM ADA" || actorPetugasUpper === "-") return false;
         return actorPetugasUpper === userPetugasUpper;
       }
       if (isKoordinator) {
@@ -411,6 +436,9 @@ function ActorDataContent() {
     if (!isAdmin || !database || !viewingActor) return
     const formData = new FormData(e.currentTarget)
     
+    const pSurveyRaw = (formData.get('petugasSurvey') as string || "").trim()
+    const pSurvey = (pSurveyRaw === "BELUM ADA" || !pSurveyRaw) ? "BELUM ADA" : pSurveyRaw.toUpperCase()
+
     const updates: Partial<BusinessActor> = {
       fullName: formData.get('fullName') as string,
       nik: editNik,
@@ -428,6 +456,7 @@ function ActorDataContent() {
       businessCategory: formData.get('businessCategory') as "Kuliner" | "Bukan Kuliner",
       businessLocation: formData.get('businessLocation') as string,
       coordinator: formData.get('coordinator') as string,
+      petugasSurvey: pSurvey,
       bankName: formData.get('bankName') as string,
       bankNumber: formData.get('bankNumber') as string,
       bankOwner: formData.get('bankOwner') as string,
@@ -442,7 +471,7 @@ function ActorDataContent() {
     });
     
     logActivity({
-      query: `EDIT DATA: ${viewingActor.fullName}`,
+      query: `EDIT DATA: ${viewingActor.fullName} (Petugas: ${pSurvey})`,
       results: "Berhasil",
       device: getDeviceType(navigator.userAgent),
       source: 'Web',
@@ -453,6 +482,33 @@ function ActorDataContent() {
     toast({ title: "Tersimpan", description: "Data pelaku usaha berhasil diperbarui." })
     setIsEditMode(false)
     setViewingActor({ ...viewingActor, ...updates } as BusinessActor)
+  }
+
+  const handleQuickReassignPetugas = (actorId: string, newPetugas: string) => {
+    if (!isAdmin || !database) return
+    const val = (newPetugas === "BELUM ADA" || !newPetugas) ? "BELUM ADA" : newPetugas.toUpperCase().trim()
+    
+    updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
+      petugasSurvey: val
+    })
+
+    logActivity({
+      query: `GANTI PETUGAS SURVEY: ${viewingActor?.fullName || actorId} -> ${val}`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'DATA PELAKU USAHA',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+
+    toast({
+      title: "Petugas Survey Diperbarui",
+      description: val === "BELUM ADA" ? "Status petugas diubah menjadi BELUM ADA (Hanya Admin yang dapat mengakses)." : `Petugas Survey dialihkan ke ${val}.`
+    })
+
+    if (viewingActor && viewingActor.id === actorId) {
+      setViewingActor(prev => prev ? { ...prev, petugasSurvey: val } : null)
+    }
   }
 
   const handleSaveBank = (e: React.FormEvent<HTMLFormElement>) => {
@@ -1330,7 +1386,25 @@ function ActorDataContent() {
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kategori</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Koordinator</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
-                      <div className="space-y-1 md:col-span-2"><Label className="text-xs font-bold uppercase">Link Google Drive</Label><Input name="googleDriveLink" defaultValue={viewingActor.googleDriveLink || ""} placeholder="Link folder Google Drive (opsional)" /></div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-bold uppercase flex items-center justify-between">
+                          <span>Petugas Survey</span>
+                          <span className="text-[10px] text-muted-foreground font-normal">Pilih nama atau BELUM ADA</span>
+                        </Label>
+                        <select 
+                          name="petugasSurvey" 
+                          defaultValue={viewingActor.petugasSurvey && viewingActor.petugasSurvey.trim() !== "" && viewingActor.petugasSurvey.trim() !== "-" ? viewingActor.petugasSurvey.toUpperCase().trim() : "BELUM ADA"}
+                          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
+                        >
+                          <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
+                          {surveyorOptions.map((name: string) => (
+                            <option key={name} value={name}>
+                              🟢 {name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Link Google Drive</Label><Input name="googleDriveLink" defaultValue={viewingActor.googleDriveLink || ""} placeholder="Link folder Google Drive (opsional)" /></div>
                     </div>
                   </section>
 
@@ -1424,6 +1498,8 @@ function ActorDataContent() {
                           return `https://wa.me/${clean}`;
                         };
 
+                        const isBelumAdaPetugas = !viewingActor.petugasSurvey || viewingActor.petugasSurvey.trim() === "" || viewingActor.petugasSurvey.trim() === "-" || viewingActor.petugasSurvey.toUpperCase().trim() === "BELUM ADA";
+
                         return [
                           { label: "Usaha", value: viewingActor.businessName },
                           { label: "Kategori Usaha", value: viewingActor.businessCategory },
@@ -1431,12 +1507,48 @@ function ActorDataContent() {
                           ...(!isInspektorat ? [
                             { label: "USULAN", value: viewingActor.coordinator },
                             { label: "NO. HP USULAN", value: coordPhone, isPhone: true },
-                            { label: "PETUGAS SURVEY", value: viewingActor.petugasSurvey || "Belum ada" }
+                            { 
+                              label: "PETUGAS SURVEY", 
+                              value: viewingActor.petugasSurvey,
+                              isPetugasField: true,
+                              isBelumAda: isBelumAdaPetugas
+                            }
                           ] : [])
                         ].map((item: any, i: number) => (
                           <div key={i} className="space-y-1">
                             <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                            {item.isPhone && item.value ? (
+                            {item.isPetugasField ? (
+                              <div className="space-y-1.5">
+                                {item.isBelumAda ? (
+                                  <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900">
+                                    <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                    <span>BELUM ADA</span>
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                    <span>{item.value}</span>
+                                  </div>
+                                )}
+                                {isAdmin && (
+                                  <div className="pt-0.5">
+                                    <select
+                                      value={!item.isBelumAda ? item.value.toUpperCase().trim() : "BELUM ADA"}
+                                      onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value)}
+                                      className="text-[11px] font-bold h-7 rounded border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-sm text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[220px]"
+                                      title="Admin: Ganti Petugas Survey secara langsung"
+                                    >
+                                      <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
+                                      {surveyorOptions.map((name: string) => (
+                                        <option key={name} value={name}>
+                                          🟢 {name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                )}
+                              </div>
+                            ) : item.isPhone && item.value ? (
                               <a
                                 href={getWaLink(item.value)}
                                 target="_blank"

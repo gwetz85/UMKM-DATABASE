@@ -172,12 +172,15 @@ export function AddActorDialog() {
 
       const registrationCode = Math.floor(10000000 + Math.random() * 90000000).toString()
 
-      const petugasSurveyName = (currentUserProfile?.fullName || "").toUpperCase().trim()
+      const isPetugasCreator = currentUserProfile?.role === 'petugas_survey' || currentUserProfile?.role === 'petugas'
+      const petugasSurveyName = isPetugasCreator 
+        ? (currentUserProfile?.fullName || "").toUpperCase().trim() 
+        : "BELUM ADA"
 
       const data = {
         ownerId: user.uid,
         createdBy: currentUserProfile?.fullName || user.email?.split('@')[0] || "Unknown",
-        petugasSurvey: petugasSurveyName,
+        petugasSurvey: petugasSurveyName || "BELUM ADA",
         fullName: formData.get("fullName"),
         nik: nik,
         noKK: noKK,
