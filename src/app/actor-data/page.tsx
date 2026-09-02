@@ -1389,20 +1389,38 @@ function ActorDataContent() {
                       <div className="space-y-1">
                         <Label className="text-xs font-bold uppercase flex items-center justify-between">
                           <span>Petugas Survey</span>
-                          <span className="text-[10px] text-muted-foreground font-normal">Pilih nama atau BELUM ADA</span>
+                          {isAdmin && <span className="text-[10px] text-muted-foreground font-normal">Pilih nama atau BELUM ADA</span>}
                         </Label>
-                        <select 
-                          name="petugasSurvey" 
-                          defaultValue={viewingActor.petugasSurvey && viewingActor.petugasSurvey.trim() !== "" && viewingActor.petugasSurvey.trim() !== "-" ? viewingActor.petugasSurvey.toUpperCase().trim() : "BELUM ADA"}
-                          className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
-                        >
-                          <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
-                          {surveyorOptions.map((name: string) => (
-                            <option key={name} value={name}>
-                              🟢 {name}
-                            </option>
-                          ))}
-                        </select>
+                        {isAdmin ? (
+                          <select 
+                            name="petugasSurvey" 
+                            defaultValue={viewingActor.petugasSurvey && viewingActor.petugasSurvey.trim() !== "" && viewingActor.petugasSurvey.trim() !== "-" ? viewingActor.petugasSurvey.toUpperCase().trim() : "BELUM ADA"}
+                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
+                          >
+                            <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
+                            {surveyorOptions.map((name: string) => (
+                              <option key={name} value={name}>
+                                🟢 {name}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <>
+                            {/* Hidden input agar nilai tidak berubah saat form disimpan oleh non-Admin */}
+                            <input type="hidden" name="petugasSurvey" value={viewingActor.petugasSurvey && viewingActor.petugasSurvey.trim() !== "" && viewingActor.petugasSurvey.trim() !== "-" ? viewingActor.petugasSurvey.toUpperCase().trim() : "BELUM ADA"} />
+                            {viewingActor.petugasSurvey && viewingActor.petugasSurvey.toUpperCase().trim() !== "BELUM ADA" && viewingActor.petugasSurvey.trim() !== "" && viewingActor.petugasSurvey.trim() !== "-" ? (
+                              <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 h-9 w-full">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                <span>{viewingActor.petugasSurvey.toUpperCase().trim()}</span>
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900 h-9 w-full">
+                                <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                <span>BELUM ADA</span>
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Link Google Drive</Label><Input name="googleDriveLink" defaultValue={viewingActor.googleDriveLink || ""} placeholder="Link folder Google Drive (opsional)" /></div>
                     </div>
