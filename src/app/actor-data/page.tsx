@@ -159,6 +159,34 @@ function ActorDataContent() {
     return Array.from(set).sort((a, b) => a.localeCompare(b))
   }, [systemUsersRaw, allActorsRaw])
 
+  const availableCoordinators = useMemo(() => {
+    if (!kuotaData) return []
+    const achievedMap = (systemStats as any)?.coordinator || {}
+
+    return kuotaData
+      .map((q: any) => {
+        const nameUpper = (q.name || "").toUpperCase().trim()
+        const used = achievedMap[nameUpper] || 0
+        const quota = parseInt(String(q.quota)) || 0
+        const remaining = quota - used
+        return {
+          id: q.id,
+          name: q.name?.trim() || nameUpper,
+          nameUpper,
+          quota,
+          used,
+          remaining
+        }
+      })
+      .filter((q: any) => {
+        if (!q.nameUpper) return false
+        return !q.nameUpper.includes('( PERBAIKKAN )') && 
+               !q.nameUpper.includes('( PERBAIKAN )') && 
+               !q.nameUpper.includes('( DIHAPUS )')
+      })
+      .sort((a: any, b: any) => a.name.localeCompare(b.name))
+  }, [kuotaData, systemStats])
+
   const actors = useMemo(() => {
     if (!allActorsRaw) return undefined;
     return allActorsRaw.filter(a => {
@@ -1385,7 +1413,45 @@ function ActorDataContent() {
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} required /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kategori</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Koordinator</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-bold uppercase flex items-center justify-between">
+                          <span>Koordinator</span>
+                          {isAdmin && <span className="text-[10px] text-muted-foreground font-normal">Pilih nama atau pindah data</span>}
+                        </Label>
+                        {isAdmin ? (
+                          <select 
+                            name="coordinator" 
+                            defaultValue={viewingActor.coordinator ? viewingActor.coordinator.toUpperCase().trim() : ""}
+                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
+                            required
+                          >
+                            <option value="" disabled>-- PILIH KOORDINATOR --</option>
+                            {/* Jika koordinator saat ini tidak ada di daftar kuota atau kuotanya penuh, tetap tampilkan opsi saat ini */}
+                            {viewingActor.coordinator && !availableCoordinators.some(c => c.nameUpper === viewingActor.coordinator.toUpperCase().trim() && c.remaining > 0) && (
+                              <option value={viewingActor.coordinator.toUpperCase().trim()} className="font-bold text-amber-600">
+                                🟡 {viewingActor.coordinator.toUpperCase().trim()} (Saat Ini)
+                              </option>
+                            )}
+                            {availableCoordinators
+                              .filter(c => c.remaining > 0 || (viewingActor.coordinator && c.nameUpper === viewingActor.coordinator.toUpperCase().trim()))
+                              .map((c) => {
+                                const isCurrent = viewingActor.coordinator && c.nameUpper === viewingActor.coordinator.toUpperCase().trim();
+                                return (
+                                  <option key={c.id || c.nameUpper} value={c.nameUpper}>
+                                    🟢 {c.nameUpper} {isCurrent ? `(Saat Ini - Sisa: ${c.remaining})` : `(Sisa Kuota: ${c.remaining})`}
+                                  </option>
+                                );
+                              })}
+                          </select>
+                        ) : (
+                          <>
+                            <input type="hidden" name="coordinator" value={viewingActor.coordinator || ""} />
+                            <div className="inline-flex items-center gap-1.5 text-xs font-black text-primary uppercase bg-primary/5 px-2.5 py-1.5 rounded-lg border border-primary/20 h-9 w-full">
+                              <span>{viewingActor.coordinator || "-"}</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
                       <div className="space-y-1">
                         <Label className="text-xs font-bold uppercase flex items-center justify-between">
                           <span>Petugas Survey</span>
