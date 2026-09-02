@@ -540,57 +540,6 @@ export default function VerifikasiDinasPage() {
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
   const { data: kuotaData } = useList<any>(kuotaRef)
 
-  const systemUsersRef = useMemoFirebase(() => database ? ref(database, 'system_users') : null, [database])
-  const { data: systemUsersRaw } = useList<any>(systemUsersRef)
-
-  const surveyorOptions = useMemo(() => {
-    const set = new Set<string>()
-    if (systemUsersRaw) {
-      systemUsersRaw.forEach((u: any) => {
-        if (u.role === 'petugas' || u.role === 'petugas_survey') {
-          const name = (u.fullName || u.name || u.id || '').toUpperCase().trim()
-          if (name) set.add(name)
-        }
-      })
-    }
-    if (allActorsRaw) {
-      allActorsRaw.forEach((a: any) => {
-        const ps = (a.petugasSurvey || '').toUpperCase().trim()
-        if (ps && ps !== 'BELUM ADA' && ps !== '-') {
-          set.add(ps)
-        }
-      })
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b))
-  }, [systemUsersRaw, allActorsRaw])
-
-  const handleQuickReassignPetugas = (actorId: string, newPetugas: string, actorName?: string) => {
-    if (!isAdmin || !database) return
-    const val = (newPetugas === "BELUM ADA" || !newPetugas) ? "BELUM ADA" : newPetugas.toUpperCase().trim()
-    
-    updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
-      petugasSurvey: val
-    })
-
-    logActivity({
-      query: `GANTI PETUGAS SURVEY: ${actorName || actorId} -> ${val}`,
-      results: "Berhasil",
-      device: getDeviceType(navigator.userAgent),
-      source: 'Web',
-      method: 'VERIFIKASI DINAS',
-      userId: user?.email || user?.uid || 'Admin'
-    })
-
-    toast({
-      title: "Petugas Survey Diperbarui",
-      description: val === "BELUM ADA" ? "Status petugas diubah menjadi BELUM ADA (Hanya Admin yang dapat mengakses)." : `Petugas Survey dialihkan ke ${val}.`
-    })
-
-    if (viewingActor && viewingActor.id === actorId) {
-      setViewingActor(prev => prev ? { ...prev, petugasSurvey: val } : null)
-    }
-  }
-
   // O(1) Lookup Map for Coordinator Phone Numbers
   const kuotaMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -1550,23 +1499,6 @@ export default function VerifikasiDinasPage() {
                               <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
                                 <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                                 <span>{item.value}</span>
-                              </div>
-                            )}
-                            {isAdmin && (
-                              <div className="pt-0.5">
-                                <select
-                                  value={!item.isBelumAda ? item.value.toUpperCase().trim() : "BELUM ADA"}
-                                  onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value, viewingActor.fullName)}
-                                  className="text-[11px] font-bold h-7 rounded border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-sm text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[220px]"
-                                  title="Admin: Ganti Petugas Survey secara langsung"
-                                >
-                                  <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
-                                  {surveyorOptions.map((name: string) => (
-                                    <option key={name} value={name}>
-                                      🟢 {name}
-                                    </option>
-                                  ))}
-                                </select>
                               </div>
                             )}
                           </div>
