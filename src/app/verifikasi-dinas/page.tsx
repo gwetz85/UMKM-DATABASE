@@ -620,7 +620,7 @@ export default function VerifikasiDinasPage() {
         ? actor.surveyData.pejabatData.petugas.nama.trim()
         : (userProfile?.fullName || "Petugas Survey");
 
-    const message = `Selamat pagi , perkenalkan saya ${namaPetugas} dari Dinas Koperasi Usaha Kecil Menengah Provinsi Kepulauan Riau , Pada kesempatan ini ingin melaksanakan Survey Usaha yang Bapak/Ibu miliki sebagai Calon Penerima Bantuan Modal Mikro dari Pemerintah Provinsi Kepulauan Riau melalui Yayasan Tunas Bangsa Kepulauan Riau . \n\nMohon memberikan informasi kepada kami, apakah Bapak/Ibu sedang berada di tempat usaha atau sedang berada dirumah , agar kami bisa mengunjungi Bapak / ibu sekalian . Terima Kasih`;
+    const message = `Selamat pagi , perkenalkan saya ${namaPetugas} dari Dinas Koperasi Usaha Kecil Menengah Provinsi Kepulauan Riau , Pada kesempatan ini saya di tugaskan untuk melaksanakan Survey / Kunjungan ketempat usaha yang Bapak/Ibu miliki sebagai Calon Penerima Bantuan Penguatan Modal Usaha Provinsi Kepulauan Riau Tahun 2026 . \n\nMohon memberikan informasi kepada kami, apakah Bapak/Ibu sedang berada di tempat usaha atau sedang berada dirumah , agar kami bisa mengunjungi Bapak / ibu sekalian . Terima Kasih`;
 
     const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 
