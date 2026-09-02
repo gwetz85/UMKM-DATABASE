@@ -598,6 +598,51 @@ export default function VerifikasiDinasPage() {
     return `https://wa.me/${clean}`;
   };
 
+  const handleSendWaInformasi = (actor: BusinessActor) => {
+    if (!actor) return;
+    if (!actor.phone || actor.phone.trim() === "" || actor.phone.trim() === "-") {
+      toast({
+        variant: "destructive",
+        title: "Nomor HP Tidak Ditemukan",
+        description: `Pelaku usaha ${actor.fullName} belum memiliki nomor HP / WhatsApp yang terdaftar.`,
+      });
+      return;
+    }
+
+    let cleanPhone = actor.phone.replace(/\D/g, "");
+    if (cleanPhone.startsWith("0")) cleanPhone = "62" + cleanPhone.slice(1);
+    else if (!cleanPhone.startsWith("62")) cleanPhone = "62" + cleanPhone;
+
+    // Mengambil nama petugas survey dari card pelaku usaha masing-masing
+    const namaPetugas = (actor.petugasSurvey && actor.petugasSurvey.trim() !== "" && actor.petugasSurvey.trim() !== "-" && actor.petugasSurvey.trim().toUpperCase() !== "BELUM ADA")
+      ? actor.petugasSurvey.trim()
+      : (actor.surveyData?.pejabatData?.petugas?.nama && actor.surveyData.pejabatData.petugas.nama.trim() !== "" && actor.surveyData.pejabatData.petugas.nama.trim() !== "-")
+        ? actor.surveyData.pejabatData.petugas.nama.trim()
+        : (userProfile?.fullName || "Petugas Survey");
+
+    const message = `Selamat pagi , perkenalkan saya ${namaPetugas} dari Dinas Koperasi Usaha Kecil Menengah Provinsi Kepulauan Riau , Pada kesempatan ini ingin melaksanakan Survey Usaha yang Bapak/Ibu miliki sebagai Calon Penerima Bantuan Modal Mikro dari Pemerintah Provinsi Kepulauan Riau melalui Yayasan Tunas Bangsa Kepulauan Riau . \n\nMohon memberikan informasi kepada kami, apakah Bapak/Ibu sedang berada di tempat usaha atau sedang berada dirumah , agar kami bisa mengunjungi Bapak / ibu sekalian . Terima Kasih`;
+
+    const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+
+    if (typeof window !== "undefined") {
+      window.open(waUrl, "_blank", "noopener,noreferrer");
+    }
+
+    toast({
+      title: "Membuka WhatsApp Informasi",
+      description: `Mengirim pesan konfirmasi survey ke ${actor.fullName} (${actor.phone}) - Petugas: ${namaPetugas}`,
+    });
+
+    logActivity({
+      query: `KIRIM WA INFORMASI SURVEY: ${actor.fullName} (${cleanPhone}) - Petugas: ${namaPetugas}`,
+      results: "Berhasil",
+      device: typeof navigator !== 'undefined' ? getDeviceType(navigator.userAgent) : 'Web',
+      source: 'Web',
+      method: 'KIRIM WA INFORMASI SURVEY',
+      userId: user?.email || user?.uid || 'Petugas'
+    });
+  };
+
   const handleVerifyDinas = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!verifyingActor || !database || (!isAdmin && !isDinas && !isPetugas)) return;
@@ -1208,13 +1253,29 @@ export default function VerifikasiDinasPage() {
                             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors duration-500">
                               <User className="w-6 h-6" />
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <h3 className="font-black text-slate-800 uppercase text-sm truncate" title={actor.fullName}>
                                 {actor.fullName}
                               </h3>
-                              <p className="text-[10px] font-mono text-slate-500 mt-0.5 tracking-tighter">
-                                NIK: {actor.nik}
-                              </p>
+                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                <span className="text-[10px] font-mono text-slate-500 tracking-tighter">
+                                  NIK: {actor.nik}
+                                </span>
+                                {actor.phone && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSendWaInformasi(actor);
+                                    }}
+                                    className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-600 hover:text-emerald-700 hover:underline bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60 transition-all hover:scale-105"
+                                    title="Klik untuk kirim WhatsApp Informasi Survey"
+                                  >
+                                    <MessageCircle className="w-2.5 h-2.5 fill-emerald-600/20 shrink-0" />
+                                    <span>{actor.phone}</span>
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
 
@@ -1312,7 +1373,7 @@ export default function VerifikasiDinasPage() {
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-end gap-2 pt-1">
+                            <div className="flex items-center justify-end gap-2 pt-1 flex-wrap">
                               {/* Tombol Reset Survey Data - Admin Only */}
                               {isAdmin && actor.surveyProgress != null && actor.surveyProgress > 0 && (
                                 <Button
@@ -1323,6 +1384,23 @@ export default function VerifikasiDinasPage() {
                                   title="Reset Data Survey (Admin)"
                                 >
                                   <RotateCcw className="w-4 h-4" />
+                                </Button>
+                              )}
+
+                              {/* Tombol Whatsapp Informasi Survey */}
+                              {(isAdmin || isDinas || isPetugas) && (
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSendWaInformasi(actor);
+                                  }}
+                                  className="h-9 w-9 border-emerald-300 text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl shadow-sm transition-all duration-300 shrink-0"
+                                  title="Whatsapp Informasi (Kirim Pesan Survey ke Pelaku Usaha)"
+                                >
+                                  <MessageCircle className="w-4 h-4 fill-emerald-600/20" />
                                 </Button>
                               )}
 
@@ -1431,16 +1509,31 @@ export default function VerifikasiDinasPage() {
                     <div key={i} className="space-y-1">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
                       {item.isPhone && item.value ? (
-                        <a
-                          href={getWaLink(item.value)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 shadow-sm transition-all active:scale-95 w-fit"
-                          title="Klik untuk membuka obrolan WhatsApp"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
-                          <span>{item.value}</span>
-                        </a>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <a
+                            href={getWaLink(item.value)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 shadow-sm transition-all active:scale-95 w-fit"
+                            title="Klik untuk membuka obrolan WhatsApp"
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
+                            <span>{item.value}</span>
+                          </a>
+                          {(isAdmin || isDinas || isPetugas) && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleSendWaInformasi(viewingActor)}
+                              className="h-7 text-[11px] font-bold border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white gap-1.5 rounded-lg shadow-sm"
+                              title="Kirim Pesan WhatsApp Informasi Survey"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5 fill-emerald-600/20" />
+                              <span>Whatsapp Informasi</span>
+                            </Button>
+                          )}
+                        </div>
                       ) : (
                         <p className="text-xs font-bold">{item.value || "-"}</p>
                       )}
