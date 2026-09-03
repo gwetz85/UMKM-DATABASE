@@ -55,6 +55,19 @@ interface ParsedPetugasRow {
   matchMethod?: string // 'regId' | 'nik' | 'nik_normalized' | 'name_exact' | 'name_fuzzy'
 }
 
+// === NORMALIZATION HELPERS ===
+const normalizeNik = (nik: string): string => nik.replace(/\D/g, '').replace(/^0+/, '')
+const normalizeName = (name: string): string =>
+  name.toUpperCase().replace(/[^A-Z0-9\s]/g, '').replace(/\s+/g, ' ').trim()
+const fuzzyNameMatch = (a: string, b: string): boolean => {
+  const wa = normalizeName(a).split(' ').filter(Boolean)
+  const wb = normalizeName(b).split(' ').filter(Boolean)
+  if (wa.length === 0 || wb.length === 0) return false
+  const shorter = wa.length <= wb.length ? wa : wb
+  const longer  = wa.length <= wb.length ? wb : wa
+  return shorter.every(word => longer.includes(word))
+}
+
 export default function UploadPetugasSurveyPage() {
   const { user, userProfile } = useUser()
   const database = useDatabase()
@@ -126,26 +139,35 @@ export default function UploadPetugasSurveyPage() {
   const actorsRef = useMemoFirebase(() => database ? ref(database, 'businessActors') : null, [database])
   const { data: rawActorsList } = useList(actorsRef)
 
-  // Filter petugas survey accounts (role === 'petugas')
+  // Filter petugas survey accounts (role === 'petugas_survey')
   const petugasAccounts = useMemo(() => {
     if (!rawUsersList) return []
     
-    // Count linked actors per petugas
-    const actorCountsMap = new Map<string, number>()
-    if (rawActorsList) {
-      rawActorsList.forEach((a: any) => {
-        const pName = (a.petugasSurvey || a.createdBy || "").toUpperCase().trim()
-        if (pName) {
-          actorCountsMap.set(pName, (actorCountsMap.get(pName) || 0) + 1)
-        }
-      })
-    }
+    // Filter only valid business actors with actual data and assigned petugas survey
+    const validActors = (rawActorsList || []).filter((a: any) => 
+      a && a.fullName && a.fullName.trim() &&
+      a.petugasSurvey &&
+      a.petugasSurvey.trim() !== '' &&
+      a.petugasSurvey.trim() !== '-' &&
+      a.petugasSurvey.trim().toUpperCase() !== 'BELUM ADA'
+    )
 
     return rawUsersList
       .filter((u: any) => u.role === 'petugas_survey')
       .map((u: any) => {
-        const upperName = (u.fullName || "").toUpperCase().trim()
-        const linkedCount = actorCountsMap.get(upperName) || 0
+        const fullNameUpper = (u.fullName || "").toUpperCase().trim()
+        const idUpper = (u.id || "").toUpperCase().trim()
+        const usernameUpper = (u.username || "").toUpperCase().trim()
+        const normName = normalizeName(u.fullName || "")
+
+        const linkedCount = validActors.filter((a: any) => {
+          const p = (a.petugasSurvey || "").toUpperCase().trim()
+          if (!p) return false
+          if (p === fullNameUpper || (idUpper && p === idUpper) || (usernameUpper && p === usernameUpper)) return true
+          if (normName && normalizeName(p) === normName) return true
+          return false
+        }).length
+
         return { ...u, linkedCount }
       })
       .sort((a: any, b: any) => (a.fullName || "").localeCompare(b.fullName || ""))
@@ -276,25 +298,6 @@ export default function UploadPetugasSurveyPage() {
         }
       })
     })
-  }
-
-  // === NORMALIZATION HELPERS ===
-  // Normalize NIK: keep digits only, remove leading zeros
-  const normalizeNik = (nik: string): string => nik.replace(/\D/g, '').replace(/^0+/, '')
-
-  // Normalize Name: uppercase, collapse multiple spaces, remove non-alphanumeric (except spaces)
-  const normalizeName = (name: string): string =>
-    name.toUpperCase().replace(/[^A-Z0-9\s]/g, '').replace(/\s+/g, ' ').trim()
-
-  // Fuzzy name match: all words in A must appear in B or vice versa
-  const fuzzyNameMatch = (a: string, b: string): boolean => {
-    const wa = normalizeName(a).split(' ').filter(Boolean)
-    const wb = normalizeName(b).split(' ').filter(Boolean)
-    if (wa.length === 0 || wb.length === 0) return false
-    // Check if all words of the shorter name exist in the longer
-    const shorter = wa.length <= wb.length ? wa : wb
-    const longer  = wa.length <= wb.length ? wb : wa
-    return shorter.every(word => longer.includes(word))
   }
 
   // Extract flexible column value from raw excel row

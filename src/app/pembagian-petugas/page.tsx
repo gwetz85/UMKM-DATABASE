@@ -159,7 +159,15 @@ export default function PembagianPetugasSurveyPage() {
     if (!businessActorsRaw) return map
 
     businessActorsRaw.forEach((actor) => {
-      if (actor && actor.petugasSurvey && actor.petugasSurvey.trim() !== '' && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim().toUpperCase() !== 'BELUM ADA') {
+      if (
+        actor &&
+        actor.fullName &&
+        actor.fullName.trim() &&
+        actor.petugasSurvey &&
+        actor.petugasSurvey.trim() !== '' &&
+        actor.petugasSurvey.trim() !== '-' &&
+        actor.petugasSurvey.trim().toUpperCase() !== 'BELUM ADA'
+      ) {
         const key = actor.petugasSurvey.trim().toUpperCase()
         if (!map[key]) map[key] = []
         map[key].push(actor)
@@ -171,7 +179,10 @@ export default function PembagianPetugasSurveyPage() {
   // Count unassigned actors (including BELUM ADA)
   const unassignedActorsCount = useMemo(() => {
     if (!businessActorsRaw) return 0
-    return businessActorsRaw.filter(a => !a.petugasSurvey || a.petugasSurvey.trim() === '' || a.petugasSurvey.trim() === '-' || a.petugasSurvey.trim().toUpperCase() === 'BELUM ADA').length
+    return businessActorsRaw.filter(a => 
+      a && a.fullName && a.fullName.trim() &&
+      (!a.petugasSurvey || a.petugasSurvey.trim() === '' || a.petugasSurvey.trim() === '-' || a.petugasSurvey.trim().toUpperCase() === 'BELUM ADA')
+    ).length
   }, [businessActorsRaw])
 
   // Helper to get connected actors for a surveyor
