@@ -206,6 +206,22 @@ export function useNavigation() {
       ]
     },
     {
+      name: "Cetak Berkas Pencairan",
+      href: "/cetak-berkas",
+      icon: FileDown,
+      show: (isAdmin || isStaff) && !isDinas && !isVerifikatorDinas && !isPetugas,
+      color: "#0284c7",
+      description: "Cetak Surat Pernyataan Pencairan Dana"
+    },
+    {
+      name: "Data Rekening",
+      href: "/data-rekening",
+      icon: CreditCard,
+      show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isPetugas,
+      color: "#059669",
+      description: "Rekap Seluruh Rekening Terinput"
+    },
+    {
       name: "LPJ",
       href: "/lpj",
       icon: FileText,
@@ -222,12 +238,12 @@ export function useNavigation() {
       description: "Cetak Tanda Terima LPJ Koordinator"
     },
     {
-      name: "Cetak Berkas Pencairan",
-      href: "/cetak-berkas",
-      icon: FileDown,
-      show: (isAdmin || isStaff) && !isDinas && !isVerifikatorDinas && !isPetugas,
-      color: "#0284c7",
-      description: "Cetak Surat Pernyataan Pencairan Dana"
+      name: "Menu Blacklist",
+      href: "/blacklist",
+      icon: Ban,
+      show: (isAdmin || isMonitoring || isKoordinator || isStaff) && !isDinas && !isVerifikatorDinas && !isPetugas,
+      color: "#ef4444",
+      description: "Pelaku Usaha Melewati Batas LPJ 14 Hari"
     },
     {
       name: "Data Selesai",

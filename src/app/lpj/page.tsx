@@ -30,6 +30,7 @@ import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import Link from "next/link"
 
 export default function LPJPage() {
   const { user, userProfile } = useUser()
@@ -217,12 +218,22 @@ export default function LPJPage() {
           </div>
         ) : <div />}
 
-        <Button 
-          onClick={() => window.print()} 
-          className="bg-primary hover:bg-primary/90 font-black text-xs rounded-xl px-6 h-10 shadow-lg shadow-primary/20 gap-2 w-full md:w-auto"
-        >
-          <Printer className="w-4 h-4" /> CETAK REKAPAN LPJ
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <Link href="/blacklist">
+            <Button 
+              variant="outline" 
+              className="border-red-300 text-red-600 hover:bg-red-50 font-black text-xs rounded-xl h-10 gap-2 shadow-sm"
+            >
+              <Ban className="w-4 h-4" /> MENU BLACKLIST
+            </Button>
+          </Link>
+          <Button 
+            onClick={() => window.print()} 
+            className="bg-primary hover:bg-primary/90 font-black text-xs rounded-xl px-6 h-10 shadow-lg shadow-primary/20 gap-2"
+          >
+            <Printer className="w-4 h-4" /> CETAK REKAPAN LPJ
+          </Button>
+        </div>
       </div>
 
       <Card className="border-none shadow-xl bg-white/80 backdrop-blur-md rounded-3xl overflow-hidden">

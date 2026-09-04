@@ -98,10 +98,15 @@ function FinishContent() {
   const actors = allActorsRaw
     ? allActorsRaw
         .filter(a => {
+          // Aturan Baru: Menu Selesai hanya menampilkan data lengkap yang sudah menyelesaikan dan nominal LPJ terinput
+          const hasCompletedLpj = !!a.lpjNominal && Number(a.lpjNominal) > 0
+          if (!hasCompletedLpj) return false
+
           const matchesSearch =
             a.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             a.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            a.nik?.includes(searchQuery)
+            a.nik?.includes(searchQuery) ||
+            a.bankNumber?.includes(searchQuery)
           const matchesCategory = !category || a.businessCategory === category
           if (isKoordinator) {
             if (!a.coordinator || !userProfile?.fullName) return false
