@@ -45,7 +45,8 @@ import {
   UserCheck,
   MessageCircle,
   Calendar,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ExternalLink
 } from "lucide-react"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { ensureVerifikatorUser } from "@/lib/verifikator-service"
@@ -64,6 +65,10 @@ export default function VerifikasiDinasPage() {
   const [isSubmittingVerify, setIsSubmittingVerify] = useState(false)
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
   const [isFetchingLocation, setIsFetchingLocation] = useState(false)
+  const [locationMode, setLocationMode] = useState<'gps' | 'manual'>('gps')
+  const [manualLat, setManualLat] = useState("")
+  const [manualLon, setManualLon] = useState("")
+  const [manualPasteInput, setManualPasteInput] = useState("")
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
   const [isDeletingAll, setIsDeletingAll] = useState(false)
@@ -435,6 +440,16 @@ export default function VerifikasiDinasPage() {
     setVerifyingActor(actor);
     const existingLoc = actor.verificationLocationDinas || (actor.surveyData as any)?.location || null;
     setLocation(existingLoc);
+    if (existingLoc) {
+      setManualLat(String(existingLoc.lat));
+      setManualLon(String(existingLoc.lon));
+      setManualPasteInput(`${existingLoc.lat}, ${existingLoc.lon}`);
+    } else {
+      setManualLat("");
+      setManualLon("");
+      setManualPasteInput("");
+    }
+    setLocationMode('gps');
     const cleanPhoto = getCleanSurveyPhoto(actor);
     setPhotoPreview(cleanPhoto);
     
@@ -486,6 +501,9 @@ export default function VerifikasiDinasPage() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        setManualLat(pos.coords.latitude.toFixed(6));
+        setManualLon(pos.coords.longitude.toFixed(6));
+        setManualPasteInput(`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`);
         setIsFetchingLocation(false);
         toast({ title: "Lokasi berhasil diambil", description: `Akurasi: ${pos.coords.accuracy ? Math.round(pos.coords.accuracy) + ' meter' : 'Tinggi'}` });
       },
@@ -511,6 +529,123 @@ export default function VerifikasiDinasPage() {
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin' || userProfile?.role === 'superadmin'
   const isDinas = userProfile?.role === 'dinas' || userProfile?.role === 'verifikator_dinas'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
+
+  // ─── HELPER TITIK LOKASI MANUAL KHUSUS ADMIN ─────────────────────────────
+  const parseCoordinatesInput = (text: string): { lat: number; lon: number } | null => {
+    if (!text || !text.trim()) return null;
+    const raw = text.trim();
+
+    // 1. URL Google Maps matching: ?q=lat,lon or @lat,lon or /place/lat,lon or ll=lat,lon
+    const urlMatch = raw.match(/(?:[?&](?:q|ll)=|@|\/place\/)(-?\d+(?:\.\d+)?)[,\s]+(-?\d+(?:\.\d+)?)/i);
+    if (urlMatch) {
+      const lat = parseFloat(urlMatch[1]);
+      const lon = parseFloat(urlMatch[2]);
+      if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+        return { lat, lon };
+      }
+    }
+
+    // 2. Format koordinat langsung: "0.916555, 104.458922" atau "-6.2088 106.8456"
+    const directMatch = raw.match(/^(-?\d+(?:\.\d+)?)[,\s]+(-?\d+(?:\.\d+)?)$/);
+    if (directMatch) {
+      const lat = parseFloat(directMatch[1]);
+      const lon = parseFloat(directMatch[2]);
+      if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+        return { lat, lon };
+      }
+    }
+
+    // 3. Format desimal koma: "0,916555, 104,458922" atau "0,916555; 104,458922"
+    const commaDecimalMatch = raw.match(/^(-?\d+),(\d+)[;\s,]+(-?\d+),(\d+)$/);
+    if (commaDecimalMatch) {
+      const lat = parseFloat(`${commaDecimalMatch[1]}.${commaDecimalMatch[2]}`);
+      const lon = parseFloat(`${commaDecimalMatch[3]}.${commaDecimalMatch[4]}`);
+      if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+        return { lat, lon };
+      }
+    }
+
+    return null;
+  };
+
+  const handleApplyManualLocation = (customLat?: string, customLon?: string) => {
+    const rawLat = (customLat !== undefined ? customLat : manualLat).trim().replace(',', '.');
+    const rawLon = (customLon !== undefined ? customLon : manualLon).trim().replace(',', '.');
+
+    if (!rawLat || !rawLon) {
+      toast({
+        variant: "destructive",
+        title: "Kolom Belum Lengkap",
+        description: "Harap isi kedua kolom Latitude dan Longitude."
+      });
+      return false;
+    }
+
+    const latNum = parseFloat(rawLat);
+    const lonNum = parseFloat(rawLon);
+
+    if (isNaN(latNum) || isNaN(lonNum)) {
+      toast({
+        variant: "destructive",
+        title: "Format Angka Tidak Valid",
+        description: "Latitude dan Longitude harus berupa angka koordinat (contoh: 0.916555 dan 104.458922)."
+      });
+      return false;
+    }
+
+    if (latNum < -90 || latNum > 90) {
+      toast({
+        variant: "destructive",
+        title: "Latitude Di Luar Rentang",
+        description: "Nilai Latitude harus berada di antara -90 dan 90 derajat."
+      });
+      return false;
+    }
+
+    if (lonNum < -180 || lonNum > 180) {
+      toast({
+        variant: "destructive",
+        title: "Longitude Di Luar Rentang",
+        description: "Nilai Longitude harus berada di antara -180 dan 180 derajat."
+      });
+      return false;
+    }
+
+    setLocation({ lat: latNum, lon: lonNum });
+    setManualLat(String(latNum));
+    setManualLon(String(lonNum));
+    setManualPasteInput(`${latNum}, ${lonNum}`);
+    toast({
+      title: "✅ Titik Lokasi Manual Disimpan",
+      description: `Koordinat berhasil diterapkan: ${latNum}, ${lonNum}`
+    });
+    return true;
+  };
+
+  const handleSmartPasteChange = (val: string) => {
+    setManualPasteInput(val);
+    const parsed = parseCoordinatesInput(val);
+    if (parsed) {
+      setManualLat(String(parsed.lat));
+      setManualLon(String(parsed.lon));
+      setLocation({ lat: parsed.lat, lon: parsed.lon });
+      toast({
+        title: "🎯 Koordinat Terdeteksi Otomatis",
+        description: `Berhasil mengekstrak lokasi: Lat ${parsed.lat}, Lon ${parsed.lon}`
+      });
+    }
+  };
+
+  const handleClearLocation = () => {
+    setLocation(null);
+    setManualLat("");
+    setManualLon("");
+    setManualPasteInput("");
+    toast({
+      title: "Titik Lokasi Dihapus",
+      description: "Data titik koordinat telah dikosongkan."
+    });
+  };
 
   // Auto-show pejabat modal on first petugas login if not yet filled, or load existing pejabatData
   useEffect(() => {
@@ -2214,35 +2349,269 @@ export default function VerifikasiDinasPage() {
                 </div>
 
                 <div className="space-y-3 pt-4 border-t">
-                  <div className="text-sm font-semibold flex items-center gap-2 text-primary">
-                    <MapPin className="w-4 h-4" /> Validasi Titik Lokasi (Wajib)
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="text-sm font-semibold flex items-center gap-2 text-primary">
+                      <MapPin className="w-4 h-4" /> Validasi Titik Lokasi (Wajib)
+                    </div>
+                    {isAdmin && (
+                      <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs self-start sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={() => setLocationMode('gps')}
+                          className={`px-2.5 py-1 rounded-md font-bold transition-all ${
+                            locationMode === 'gps'
+                              ? 'bg-white text-indigo-700 shadow-sm'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          🛰️ GPS Otomatis
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setLocationMode('manual')}
+                          className={`px-2.5 py-1 rounded-md font-bold transition-all ${
+                            locationMode === 'manual'
+                              ? 'bg-indigo-600 text-white shadow-sm'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          ✍️ Input Manual (Admin)
+                        </button>
+                      </div>
+                    )}
                   </div>
+
                   {location ? (
-                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-emerald-100 p-2 rounded-lg">
-                          <Check className="w-5 h-5 text-emerald-600" />
+                    <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-xl space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600 shrink-0 mt-0.5">
+                            <Check className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Lokasi Tersimpan</p>
+                              {isAdmin && (
+                                <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-200">
+                                  Admin Mode
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-emerald-700 font-mono bg-emerald-100/60 px-2.5 py-1 rounded-md w-fit font-bold">
+                              Lat: {typeof location.lat === 'number' ? location.lat.toFixed(6) : location.lat}, Lon: {typeof location.lon === 'number' ? location.lon.toFixed(6) : location.lon}
+                            </p>
+                            <a
+                              href={`https://www.google.com/maps?q=${location.lat},${location.lon}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] text-blue-600 hover:text-blue-800 font-bold underline inline-flex items-center gap-1 mt-0.5"
+                            >
+                              <ExternalLink className="w-3 h-3" /> Lihat Posisi di Google Maps
+                            </a>
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Lokasi Tersimpan</p>
-                          <p className="text-[10px] text-emerald-600 font-mono bg-emerald-100/50 px-2 py-0.5 rounded w-fit">
-                            Lat: {location.lat.toFixed(6)}, Lon: {location.lon.toFixed(6)}
-                          </p>
+
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={fetchLocation}
+                            disabled={isFetchingLocation}
+                            className="text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-100 h-8"
+                          >
+                            {isFetchingLocation ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} GPS Ulang
+                          </Button>
+                          {isAdmin && (
+                            <>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setLocationMode(prev => prev === 'manual' ? 'gps' : 'manual')}
+                                className="text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-100 h-8 font-semibold"
+                              >
+                                <Edit className="w-3 h-3 mr-1" /> Ubah Manual
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleClearLocation}
+                                className="text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700 h-8 px-2"
+                                title="Hapus Lokasi"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </div>
-                      <Button type="button" variant="outline" size="sm" onClick={fetchLocation} disabled={isFetchingLocation} className="text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-100">
-                        {isFetchingLocation ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Ubah Titik
-                      </Button>
+
+                      {/* Expandable manual edit panel if admin clicks Ubah Manual while location exists */}
+                      {isAdmin && locationMode === 'manual' && (
+                        <div className="pt-3 border-t border-emerald-200/60 mt-2 space-y-3 bg-white/80 p-3 rounded-lg border border-indigo-100">
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                              <Edit className="w-3.5 h-3.5 text-indigo-600" /> Perbarui Koordinat Manual:
+                            </p>
+                            <span className="text-[10px] text-slate-500 font-medium">Bisa tempel link Google Maps atau isi lat & lon</span>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <Label className="text-[11px] font-bold text-indigo-900">Tempel Link Maps atau Format Koordinat</Label>
+                            <Input
+                              type="text"
+                              placeholder="Contoh: 0.916555, 104.458922 atau https://maps.google.com/?q=0.916555,104.458922"
+                              value={manualPasteInput}
+                              onChange={(e) => handleSmartPasteChange(e.target.value)}
+                              className="h-8 text-xs bg-slate-50"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-[11px] font-bold text-slate-600">Latitude</Label>
+                              <Input
+                                type="text"
+                                placeholder="Contoh: 0.916555"
+                                value={manualLat}
+                                onChange={(e) => setManualLat(e.target.value)}
+                                className="h-8 text-xs font-mono"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[11px] font-bold text-slate-600">Longitude</Label>
+                              <Input
+                                type="text"
+                                placeholder="Contoh: 104.458922"
+                                value={manualLon}
+                                onChange={(e) => setManualLon(e.target.value)}
+                                className="h-8 text-xs font-mono"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex justify-end pt-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleApplyManualLocation()}
+                              className="h-8 text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4"
+                            >
+                              <Check className="w-3 h-3 mr-1" /> Simpan Perubahan Titik
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
-                      <MapPin className="w-8 h-8 text-slate-400 mb-2" />
-                      <p className="text-xs font-medium text-slate-500 mb-4 text-center">Data titik lokasi wajib diambil untuk proses verifikasi dinas. Tidak dapat dibypass.</p>
-                      <Button type="button" onClick={fetchLocation} disabled={isFetchingLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
-                        {isFetchingLocation ? (
-                          <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sedang Mengambil...</>
-                        ) : "Ambil Lokasi Sekarang"}
-                      </Button>
+                    /* Ketika belum ada lokasi */
+                    <div className="space-y-3">
+                      {isAdmin && locationMode === 'manual' ? (
+                        /* Panel Input Manual Khusus Admin */
+                        <div className="p-5 bg-indigo-50/50 border-2 border-dashed border-indigo-200 rounded-xl space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-indigo-900 font-bold text-xs">
+                              <Edit className="w-4 h-4 text-indigo-600" />
+                              <span>Input Koordinat Manual (Admin)</span>
+                            </div>
+                            <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full">
+                              Admin Khusus
+                            </span>
+                          </div>
+
+                          {/* Smart Paste URL / Text */}
+                          <div className="space-y-1.5 bg-white p-3 rounded-lg border border-indigo-100 shadow-sm">
+                            <Label className="text-[11px] font-bold text-indigo-900 flex items-center justify-between">
+                              <span>🎯 Tempel Link Google Maps / Koordinat Otomatis</span>
+                              <span className="text-[10px] font-normal text-slate-400">Otomatis terdeteksi</span>
+                            </Label>
+                            <Input
+                              type="text"
+                              placeholder="Contoh: 0.916555, 104.458922 atau https://maps.google.com/?q=0.916555,104.458922"
+                              value={manualPasteInput}
+                              onChange={(e) => handleSmartPasteChange(e.target.value)}
+                              className="text-xs"
+                            />
+                            <p className="text-[10px] text-slate-500 italic">
+                              Cukup tempel teks koordinat atau URL Google Maps yang disalin dari browser/aplikasi.
+                            </p>
+                          </div>
+
+                          {/* Direct Lat & Lon fields */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-xs font-bold text-slate-700">Latitude (Garis Lintang)</Label>
+                              <Input
+                                type="text"
+                                placeholder="Contoh: 0.916555 atau -6.2088"
+                                value={manualLat}
+                                onChange={(e) => setManualLat(e.target.value)}
+                                className="font-mono text-xs bg-white"
+                              />
+                              <p className="text-[10px] text-slate-400">Rentang: -90 s/d 90</p>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs font-bold text-slate-700">Longitude (Garis Bujur)</Label>
+                              <Input
+                                type="text"
+                                placeholder="Contoh: 104.458922 atau 106.8456"
+                                value={manualLon}
+                                onChange={(e) => setManualLon(e.target.value)}
+                                className="font-mono text-xs bg-white"
+                              />
+                              <p className="text-[10px] text-slate-400">Rentang: -180 s/d 180</p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setLocationMode('gps')}
+                              className="text-xs text-slate-500 hover:text-slate-800 w-full sm:w-auto"
+                            >
+                              Gunakan GPS Browser Saja
+                            </Button>
+                            <Button
+                              type="button"
+                              onClick={() => handleApplyManualLocation()}
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md w-full sm:w-auto px-5"
+                            >
+                              <Check className="w-3.5 h-3.5 mr-1.5" /> Terapkan Titik Lokasi
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* Panel GPS Otomatis (Default / Surveyor) */
+                        <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
+                          <MapPin className="w-8 h-8 text-slate-400 mb-2" />
+                          <p className="text-xs font-medium text-slate-500 mb-4 text-center max-w-md">
+                            {isAdmin 
+                              ? "Ambil titik lokasi otomatis melalui GPS browser perangkat, atau beralih ke tab Input Manual jika menggunakan PC kantor." 
+                              : "Data titik lokasi wajib diambil untuk proses verifikasi dinas. Tidak dapat dibypass."}
+                          </p>
+                          <div className="flex items-center gap-2 flex-wrap justify-center">
+                            <Button type="button" onClick={fetchLocation} disabled={isFetchingLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
+                              {isFetchingLocation ? (
+                                <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sedang Mengambil...</>
+                              ) : "Ambil Lokasi Sekarang"}
+                            </Button>
+                            {isAdmin && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setLocationMode('manual')}
+                                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold text-xs"
+                              >
+                                <Edit className="w-3.5 h-3.5 mr-1" /> Input Koordinat Manual
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
