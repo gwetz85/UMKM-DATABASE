@@ -422,11 +422,21 @@ export default function VerifikasiDinasPage() {
     setIsSubmittingCancel(false)
   }
 
+  // Pastikan Foto Survey Dinas tidak mengambil/menampilkan Foto Perbandingan
+  const getCleanSurveyPhoto = (actor?: BusinessActor | null) => {
+    if (!actor) return null
+    const surveyPhoto = actor.surveyData?.fotoSurveyUrl
+    if (!surveyPhoto) return null
+    if (actor.comparisonPhotoUrl && surveyPhoto === actor.comparisonPhotoUrl) return null
+    return surveyPhoto
+  }
+
   const openSurveyDialog = (actor: BusinessActor) => {
     setVerifyingActor(actor);
     const existingLoc = actor.verificationLocationDinas || (actor.surveyData as any)?.location || null;
     setLocation(existingLoc);
-    setPhotoPreview(actor.surveyData?.fotoSurveyUrl || actor.photoUsahaUri || actor.comparisonPhotoUrl || null);
+    const cleanPhoto = getCleanSurveyPhoto(actor);
+    setPhotoPreview(cleanPhoto);
     
     // Auto fill data from surveyData or actor's existing profile
     const todayStr = new Date().toISOString().split('T')[0];
@@ -459,7 +469,7 @@ export default function VerifikasiDinasPage() {
       dtks: existing.dtks || { masuk: false },
       hibah: existing.hibah || { pernah: false },
       izin: existing.izin || [],
-      fotoSurveyUrl: existing.fotoSurveyUrl || actor.photoUsahaUri || actor.comparisonPhotoUrl || undefined,
+      fotoSurveyUrl: cleanPhoto || undefined,
       pejabatData: existing.pejabatData || actor.pejabatData || undefined
     });
   };
@@ -1435,26 +1445,26 @@ export default function VerifikasiDinasPage() {
                                 <Eye className="w-4 h-4" />
                               </Button>
 
-                              {/* Tombol FOTO: UPLOAD / GANTI FOTO SURVEY */}
-                              {(isAdmin || isDinas || isPetugas) && (
-                                <Button
-                                  size="icon"
-                                  variant="outline"
-                                  type="button"
-                                  onClick={() => {
-                                    setPhotoEditActor(actor);
-                                    setPhotoEditPreview(actor.surveyData?.fotoSurveyUrl || actor.photoUsahaUri || actor.comparisonPhotoUrl || null);
-                                  }}
-                                  className={`h-9 w-9 rounded-xl shadow-sm transition-all duration-300 shrink-0 ${
-                                    actor.surveyData?.fotoSurveyUrl
-                                      ? "border-amber-200 text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white"
-                                      : "border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white animate-pulse"
-                                  }`}
-                                  title={actor.surveyData?.fotoSurveyUrl ? "Ganti Foto Survey Dinas" : "Upload Foto Survey Dinas (Belum Ada Foto)"}
-                                >
-                                  <Camera className="w-4 h-4" />
-                                </Button>
-                              )}
+                               {/* Tombol FOTO: UPLOAD / GANTI FOTO SURVEY */}
+                               {(isAdmin || isDinas || isPetugas) && (
+                                 <Button
+                                   size="icon"
+                                   variant="outline"
+                                   type="button"
+                                   onClick={() => {
+                                     setPhotoEditActor(actor);
+                                     setPhotoEditPreview(getCleanSurveyPhoto(actor));
+                                   }}
+                                   className={`h-9 w-9 rounded-xl shadow-sm transition-all duration-300 shrink-0 ${
+                                     getCleanSurveyPhoto(actor)
+                                       ? "border-amber-200 text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white"
+                                       : "border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white animate-pulse"
+                                   }`}
+                                   title={getCleanSurveyPhoto(actor) ? "Ganti Foto Survey Dinas" : "Upload Foto Survey Dinas (Belum Ada Foto)"}
+                                 >
+                                   <Camera className="w-4 h-4" />
+                                 </Button>
+                               )}
 
                               {/* Verifikasi / Tindakan Dinas Trigger */}
                               {(isAdmin || isDinas || isPetugas) && (
@@ -1675,7 +1685,7 @@ export default function VerifikasiDinasPage() {
                       { label: "Foto NIB", url: viewingActor.nibUri },
                       { label: "Foto Usaha", url: viewingActor.photoUsahaUri },
                       { label: "Foto Perbandingan", url: viewingActor.comparisonPhotoUrl },
-                      { label: "Foto Survey Dinas", url: viewingActor.surveyData?.fotoSurveyUrl || viewingActor.photoUsahaUri || viewingActor.comparisonPhotoUrl },
+                      { label: "Foto Survey Dinas", url: getCleanSurveyPhoto(viewingActor) },
                     ].map((doc, i) => (
                       <div key={i} className="space-y-1">
                         <p className="text-[10px] font-bold text-rose-700/80 uppercase">{doc.label}</p>
@@ -1698,7 +1708,7 @@ export default function VerifikasiDinasPage() {
                             variant="outline"
                             onClick={() => {
                               setPhotoEditActor(viewingActor);
-                              setPhotoEditPreview(viewingActor.surveyData?.fotoSurveyUrl || viewingActor.photoUsahaUri || viewingActor.comparisonPhotoUrl || null);
+                              setPhotoEditPreview(getCleanSurveyPhoto(viewingActor));
                             }}
                             className="w-full text-[10px] h-7 bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 font-bold gap-1 mt-1"
                           >

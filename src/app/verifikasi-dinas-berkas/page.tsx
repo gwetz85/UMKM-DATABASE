@@ -128,6 +128,15 @@ export default function VerifikasiDinasBerkasPage() {
   const isVerifikatorDinas = userProfile?.role === 'verifikator_dinas' || userProfile?.role === 'dinas'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
 
+  // Pastikan Foto Survey Dinas tidak mengambil/menampilkan Foto Perbandingan
+  const getCleanSurveyPhoto = (actor?: BusinessActor | null) => {
+    if (!actor) return null
+    const surveyPhoto = actor.surveyData?.fotoSurveyUrl
+    if (!surveyPhoto) return null
+    if (actor.comparisonPhotoUrl && surveyPhoto === actor.comparisonPhotoUrl) return null
+    return surveyPhoto
+  }
+
   const memoQuery = useMemoFirebase(() => {
     if (!database) return null
     return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'))
@@ -1506,14 +1515,14 @@ export default function VerifikasiDinasBerkasPage() {
                                     type="button"
                                     onClick={() => {
                                       setPhotoEditActor(actor);
-                                      setPhotoEditPreview(actor.surveyData?.fotoSurveyUrl || actor.photoUsahaUri || actor.comparisonPhotoUrl || null);
+                                      setPhotoEditPreview(getCleanSurveyPhoto(actor));
                                     }}
                                     className={`h-9 w-9 rounded-xl shadow-sm transition-all duration-200 shrink-0 ${
-                                      actor.surveyData?.fotoSurveyUrl
+                                      getCleanSurveyPhoto(actor)
                                         ? "bg-amber-50 hover:bg-amber-600 hover:text-white text-amber-700 border-amber-200 hover:border-amber-300"
                                         : "bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border-rose-200 hover:border-rose-300 animate-pulse"
                                     }`}
-                                    title={actor.surveyData?.fotoSurveyUrl ? "Ganti Foto Survey Dinas" : "Upload Foto Survey Dinas (Belum Ada Foto)"}
+                                    title={getCleanSurveyPhoto(actor) ? "Ganti Foto Survey Dinas" : "Upload Foto Survey Dinas (Belum Ada Foto)"}
                                   >
                                     <Camera className="w-4 h-4 shrink-0" />
                                   </Button>
@@ -1742,10 +1751,10 @@ export default function VerifikasiDinasBerkasPage() {
                         </div>
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3 items-center justify-center">
                           <p className="text-[10px] font-bold text-slate-500 uppercase self-start">Foto Survey Dinas</p>
-                          {(verifyingActor.surveyData?.fotoSurveyUrl || verifyingActor.photoUsahaUri || verifyingActor.comparisonPhotoUrl) ? (
-                            <img src={verifyingActor.surveyData?.fotoSurveyUrl || verifyingActor.photoUsahaUri || verifyingActor.comparisonPhotoUrl} alt="Foto Survey" className="max-h-[200px] w-full object-contain rounded-lg border border-slate-200" />
+                          {getCleanSurveyPhoto(verifyingActor) ? (
+                            <img src={getCleanSurveyPhoto(verifyingActor)!} alt="Foto Survey" className="max-h-[200px] w-full object-contain rounded-lg border border-slate-200" />
                           ) : (
-                            <p className="text-xs font-medium text-slate-500">Tidak ada foto.</p>
+                            <p className="text-xs font-medium text-slate-500">Belum ada foto survey dinas.</p>
                           )}
                           {isAdmin && (
                             <div className="w-full mt-1">
@@ -1754,7 +1763,7 @@ export default function VerifikasiDinasBerkasPage() {
                                   {adminPhotoUploading ? (
                                     <><span className="animate-spin">⏳</span> Mengupload foto...</>
                                   ) : (
-                                    <><span>📷</span> {verifyingActor.surveyData?.fotoSurveyUrl ? 'Ganti Foto Survey' : 'Upload Foto Survey'}</>
+                                    <><span>📷</span> {getCleanSurveyPhoto(verifyingActor) ? 'Ganti Foto Survey' : 'Upload Foto Survey'}</>
                                   )}
                                 </div>
                                 <input
@@ -2058,7 +2067,7 @@ export default function VerifikasiDinasBerkasPage() {
                         { label: "Foto NIB", url: av.nibUri },
                         { label: "Foto Usaha", url: av.photoUsahaUri },
                         { label: "Foto Perbandingan", url: av.comparisonPhotoUrl },
-                        { label: "Foto Survey Dinas", url: av.surveyData?.fotoSurveyUrl || av.photoUsahaUri || av.comparisonPhotoUrl },
+                        { label: "Foto Survey Dinas", url: getCleanSurveyPhoto(av) },
                       ].map((doc, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-rose-700/80 uppercase">{doc.label}</p>
@@ -2081,7 +2090,7 @@ export default function VerifikasiDinasBerkasPage() {
                               variant="outline"
                               onClick={() => {
                                 setPhotoEditActor(av);
-                                setPhotoEditPreview(av.surveyData?.fotoSurveyUrl || av.photoUsahaUri || av.comparisonPhotoUrl || null);
+                                setPhotoEditPreview(getCleanSurveyPhoto(av));
                               }}
                               className="w-full text-[10px] h-7 bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 font-bold gap-1 mt-1"
                             >

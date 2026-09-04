@@ -991,7 +991,10 @@ function HasilVerifikasiContent() {
                     )}
 
                     {/* Foto Survey */}
-                    {(viewingActor as any).surveyData?.fotoSurveyUrl && (
+                    {Boolean(
+                      (viewingActor as any).surveyData?.fotoSurveyUrl &&
+                      (viewingActor as any).surveyData.fotoSurveyUrl !== (viewingActor as any).comparisonPhotoUrl
+                    ) && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Camera className="w-3.5 h-3.5 text-primary" />

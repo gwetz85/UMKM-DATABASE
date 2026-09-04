@@ -396,7 +396,15 @@ export default function GBASPage() {
   }
 
   const handleGeneratePDF = async (actor: BusinessActor, customDate?: string, saveToSurvey?: boolean) => {
-    const surveyToUse: SurveyDinasData = actor.surveyData || {
+    const rawSurvey = actor.surveyData;
+    const cleanSurveyPhoto = (rawSurvey?.fotoSurveyUrl && rawSurvey.fotoSurveyUrl !== actor.comparisonPhotoUrl)
+      ? rawSurvey.fotoSurveyUrl
+      : (actor.photoUsahaUri || undefined);
+
+    const surveyToUse: SurveyDinasData = rawSurvey ? {
+      ...rawSurvey,
+      fotoSurveyUrl: cleanSurveyPhoto
+    } : {
       tanggalSurvey: customDate || new Date().toISOString().split('T')[0],
       namaUsaha: actor.businessName || '',
       namaPemilik: actor.fullName || '',
@@ -416,7 +424,7 @@ export default function GBASPage() {
       dtks: { masuk: false },
       hibah: { pernah: false },
       izin: ['NIB'],
-      fotoSurveyUrl: actor.photoUsahaUri || actor.comparisonPhotoUrl
+      fotoSurveyUrl: cleanSurveyPhoto
     }
 
     setGeneratingPdfId(actor.id)
@@ -478,7 +486,15 @@ export default function GBASPage() {
       })
 
       try {
-        const surveyToUse: SurveyDinasData = actor.surveyData || {
+        const rawSurvey = actor.surveyData;
+        const cleanSurveyPhoto = (rawSurvey?.fotoSurveyUrl && rawSurvey.fotoSurveyUrl !== actor.comparisonPhotoUrl)
+          ? rawSurvey.fotoSurveyUrl
+          : (actor.photoUsahaUri || undefined);
+
+        const surveyToUse: SurveyDinasData = rawSurvey ? {
+          ...rawSurvey,
+          fotoSurveyUrl: cleanSurveyPhoto
+        } : {
           tanggalSurvey: new Date().toISOString().split('T')[0],
           namaUsaha: actor.businessName || '',
           namaPemilik: actor.fullName || '',
@@ -498,7 +514,7 @@ export default function GBASPage() {
           dtks: { masuk: false },
           hibah: { pernah: false },
           izin: ['NIB'],
-          fotoSurveyUrl: actor.photoUsahaUri || actor.comparisonPhotoUrl
+          fotoSurveyUrl: cleanSurveyPhoto
         }
 
         const pejabatData = await resolvePejabatData(actor)
@@ -1588,18 +1604,23 @@ export default function GBASPage() {
 
           {viewingActor && (
             <div className="space-y-5 pt-2 text-xs">
-              {(viewingActor.surveyData?.fotoSurveyUrl || viewingActor.photoUsahaUri || viewingActor.comparisonPhotoUrl) && (
-                <div className="space-y-1.5">
-                  <Label className="font-bold text-slate-700">Foto Survey Lapangan</Label>
-                  <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100 max-h-64 flex items-center justify-center">
-                    <img 
-                      src={viewingActor.surveyData?.fotoSurveyUrl || viewingActor.photoUsahaUri || viewingActor.comparisonPhotoUrl} 
-                      alt="Foto Survey"
-                      className="w-full h-auto object-cover max-h-64"
-                    />
+              {(() => {
+                const validPhoto = (viewingActor.surveyData?.fotoSurveyUrl && viewingActor.surveyData.fotoSurveyUrl !== viewingActor.comparisonPhotoUrl) 
+                  ? viewingActor.surveyData.fotoSurveyUrl 
+                  : (viewingActor.photoUsahaUri || null);
+                return validPhoto ? (
+                  <div className="space-y-1.5">
+                    <Label className="font-bold text-slate-700">Foto Survey Lapangan</Label>
+                    <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-100 max-h-64 flex items-center justify-center">
+                      <img 
+                        src={validPhoto} 
+                        alt="Foto Survey"
+                        className="w-full h-auto object-cover max-h-64"
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : null;
+              })()}
 
               <div className="grid grid-cols-2 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div>

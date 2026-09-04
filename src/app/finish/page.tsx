@@ -253,7 +253,13 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
   <div class="sec-hdr">VI. BERKAS TAMBAHAN &amp; FOTO SURVEY</div>
   <div class="sec-body" style="padding:10px 12px;">
     ${actor.googleDriveLink ? `<div style="margin-bottom:8px;"><strong>Link Google Drive Berkas:</strong> <a href="${actor.googleDriveLink}" target="_blank" style="color:#1565C0;">${actor.googleDriveLink}</a></div>` : ''}
-    ${(sd.fotoSurveyUrl || a.photoUsahaUri || a.comparisonPhotoUrl) ? `<div style="margin-bottom:4px;"><strong>Foto Survey Lapangan:</strong></div><div><img src="${sd.fotoSurveyUrl || a.photoUsahaUri || a.comparisonPhotoUrl}" alt="Foto Survey" style="max-width:100%;max-height:220px;border-radius:6px;border:1px solid #ccc;object-fit:cover;"/></div>` : '<div style="color:#777;">Tidak ada foto survey yang diupload.</div>'}
+    ${(() => {
+      const validPhoto = (sd.fotoSurveyUrl && sd.fotoSurveyUrl !== a.comparisonPhotoUrl) ? sd.fotoSurveyUrl : (a.photoUsahaUri || null);
+      if (validPhoto) {
+        return `<div style="margin-bottom:4px;"><strong>Foto Survey Lapangan:</strong></div><div><img src="${validPhoto}" alt="Foto Survey" style="max-width:100%;max-height:220px;border-radius:6px;border:1px solid #ccc;object-fit:cover;"/></div>`;
+      }
+      return '<div style="color:#777;">Tidak ada foto survey yang diupload.</div>';
+    })()}
   </div>
 </div>
 
