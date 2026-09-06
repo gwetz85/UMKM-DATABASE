@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { Calendar, Radio, Sparkles } from "lucide-react"
+import { Calendar, Clock, Zap } from "lucide-react"
 
 interface EventCountdownProps {
   targetDate: string
@@ -66,314 +66,204 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
 
   if (!mounted || timeLeft.isEnded) return null
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // SVG Graphic Illustration (Pen tool, pencil, floating spheres & bezier curve)
-  // ─────────────────────────────────────────────────────────────────────────────
-  const CreativeGraphic = ({ className = "w-14 h-14" }: { className?: string }) => (
-    <div className={cn("relative shrink-0 flex items-center justify-center select-none pointer-events-none", className)}>
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-[0_4px_12px_rgba(0,0,0,0.25)]">
-        {/* Glowing aura */}
-        <circle cx="60" cy="60" r="45" fill="url(#aura_glow)" opacity="0.35" />
-        
-        {/* Bezier Vector curve */}
-        <path d="M 20 85 C 35 45, 85 45, 100 85" stroke="#38bdf8" strokeWidth="2.5" strokeDasharray="3 3" />
-        <path d="M 25 78 Q 60 30 95 78" stroke="#facc15" strokeWidth="2" opacity="0.85" />
-        
-        {/* Vector Anchor Points */}
-        <rect x="26" y="58" width="6" height="6" rx="1.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1" />
-        <rect x="88" y="58" width="6" height="6" rx="1.5" fill="#38bdf8" stroke="#ffffff" strokeWidth="1" />
-
-        {/* Floating 3D Geometric shapes */}
-        {/* Yellow 3D Cube (top left) */}
-        <g transform="translate(18, 22) rotate(-15)">
-          <path d="M 8 0 L 16 4.5 L 8 9 L 0 4.5 Z" fill="#fbbf24" />
-          <path d="M 0 4.5 L 8 9 L 8 18 L 0 13.5 Z" fill="#f59e0b" />
-          <path d="M 8 9 L 16 4.5 L 16 13.5 L 8 18 Z" fill="#d97706" />
-        </g>
-        
-        {/* Blue/Cyan Sphere (top right) */}
-        <circle cx="85" cy="24" r="5.5" fill="url(#cyan_ball)" />
-        
-        {/* Pink Sphere (bottom right) */}
-        <circle cx="102" cy="74" r="6" fill="url(#pink_ball)" />
-
-        {/* Small Yellow Star/Dot */}
-        <circle cx="28" cy="76" r="3" fill="#fef08a" />
-
-        {/* Diagonal Pencil (Yellow & Pink Eraser) */}
-        <g transform="translate(68, 12) rotate(42)">
-          {/* Eraser */}
-          <rect x="0" y="0" width="8" height="6" rx="2" fill="#f472b6" />
-          {/* Metal Band */}
-          <rect x="0" y="6" width="8" height="3" fill="#cbd5e1" />
-          {/* Body */}
-          <rect x="0" y="9" width="8" height="24" fill="#fbbf24" />
-          <rect x="3" y="9" width="2" height="24" fill="#f59e0b" />
-          {/* Wooden Tip */}
-          <polygon points="0,33 8,33 4,41" fill="#fed7aa" />
-          {/* Graphite Lead */}
-          <polygon points="3,38 5,38 4,41" fill="#334155" />
-        </g>
-
-        {/* Pen Tool / Nib (Foreground Left) */}
-        <g transform="translate(42, 42)">
-          {/* Nib Body */}
-          <path d="M 18 10 L 26 28 C 26 34 22 38 18 42 C 14 38 10 34 10 28 Z" fill="url(#nib_gradient)" stroke="#ffffff" strokeWidth="1.5" />
-          {/* Nib Center Line */}
-          <line x1="18" y1="12" x2="18" y2="28" stroke="#0f766e" strokeWidth="1.5" />
-          <circle cx="18" cy="28" r="2" fill="#0f766e" />
-          {/* Base Mount Ring */}
-          <rect x="12" y="40" width="12" height="4" rx="2" fill="#6366f1" stroke="#ffffff" strokeWidth="1" />
-          {/* Pen Handle Base */}
-          <rect x="14" y="44" width="8" height="10" rx="3" fill="#4338ca" />
-        </g>
-
-        {/* Gradients */}
-        <defs>
-          <radialGradient id="aura_glow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#38bdf8" stopOpacity="0" />
-          </radialGradient>
-          <radialGradient id="cyan_ball" cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#67e8f9" />
-            <stop offset="100%" stopColor="#0891b2" />
-          </radialGradient>
-          <radialGradient id="pink_ball" cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#f472b6" />
-            <stop offset="100%" stopColor="#db2777" />
-          </radialGradient>
-          <linearGradient id="nib_gradient" x1="10" y1="10" x2="26" y2="42" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#2dd4bf" />
-            <stop offset="100%" stopColor="#0f766e" />
-          </linearGradient>
-        </defs>
-      </svg>
+  // ─── UNIT BLOCK: Reusable digit + label ───────────────────────────────────
+  const UnitBlock = ({
+    value,
+    label,
+    textSize = "text-base",
+    labelSize = "text-[8px]",
+    minW = "min-w-[28px]",
+    glass = false,
+  }: {
+    value: string | number
+    label: string
+    textSize?: string
+    labelSize?: string
+    minW?: string
+    glass?: boolean
+  }) => (
+    <div className={cn(
+      "flex flex-col items-center justify-center",
+      minW,
+      glass && "bg-white/10 backdrop-blur-sm rounded-xl px-2 py-1.5 border border-white/20 shadow-inner"
+    )}>
+      <span className={cn("font-black font-mono leading-none text-white tabular-nums drop-shadow-md", textSize)}>
+        {typeof value === 'number' ? String(value).padStart(2, '0') : value}
+      </span>
+      <span className={cn("font-bold text-white/60 uppercase tracking-widest mt-0.5", labelSize)}>
+        {label}
+      </span>
     </div>
   )
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Size SM: Compact Header & Floating Widget (Pill Capsule Layout)
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ─── SEPARATOR ────────────────────────────────────────────────────────────
+  const Sep = ({ className = "text-sm" }: { className?: string }) => (
+    <span className={cn("font-black text-white/40 -translate-y-1 select-none", className)}>:</span>
+  )
+
+  // ─── LIVE BADGE ───────────────────────────────────────────────────────────
+  const LiveBadge = ({ compact = false }: { compact?: boolean }) =>
+    timeLeft.isStarted ? (
+      <span className={cn(
+        "inline-flex items-center gap-1 bg-emerald-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-emerald-500/40 shrink-0",
+        compact ? "text-[8px] px-1.5 py-0.5" : "text-[9px] px-2 py-0.5"
+      )}>
+        <span className="relative flex w-1.5 h-1.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
+          <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-white" />
+        </span>
+        NOW
+      </span>
+    ) : (
+      <span className={cn(
+        "inline-flex items-center gap-1 bg-amber-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-amber-500/40 shrink-0",
+        compact ? "text-[8px] px-1.5 py-0.5" : "text-[9px] px-2 py-0.5"
+      )}>
+        <Calendar className={compact ? "w-2 h-2" : "w-2.5 h-2.5"} />
+        NEXT
+      </span>
+    )
+
+  // ─── SIZE SM ──────────────────────────────────────────────────────────────
   if (size === 'sm') {
     return (
       <div className={cn(
-        "relative flex items-center justify-between gap-2 overflow-hidden rounded-full shadow-[0_4px_25px_rgba(6,182,212,0.45)] border-[2.5px] border-cyan-300 dark:border-cyan-400 text-white transition-all duration-300 hover:shadow-[0_6px_30px_rgba(6,182,212,0.6)] hover:scale-[1.01]",
-        "bg-gradient-to-r from-[#0284c7] via-[#0d9488] to-[#10b981] pl-4 pr-2 py-1.5 md:pl-5 md:pr-2.5 md:py-2 max-w-[440px]"
+        "relative flex items-center gap-3 overflow-hidden rounded-2xl px-4 py-2",
+        "bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-500",
+        "shadow-[0_4px_20px_rgba(99,102,241,0.45)] border border-white/20",
+        "transition-all duration-300 hover:shadow-[0_6px_28px_rgba(99,102,241,0.6)] hover:scale-[1.01]",
+        "max-w-[440px]"
       )}>
-        {/* Center: Badge NEXT/NOW + Title + Countdown Numbers with Labels */}
-        <div className="flex flex-col items-center justify-center text-center min-w-0 flex-1">
-          {/* Row 1: Icon + NEXT / NOW Badge + Title */}
-          <div className="flex items-center justify-center gap-1.5 leading-none w-full">
-            {timeLeft.isStarted ? (
-              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm shrink-0">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
-                </span>
-                NOW
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm shrink-0">
-                <Calendar className="w-2.5 h-2.5 text-white" />
-                NEXT
-              </span>
-            )}
+        {/* Shimmer overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none rounded-2xl" />
 
+        {/* Content */}
+        <div className="flex flex-col gap-0.5 min-w-0 flex-1 z-10">
+          <div className="flex items-center gap-1.5">
+            <LiveBadge compact />
             {title && (
-              <span className="text-[10px] md:text-[11px] font-black text-white uppercase tracking-wider drop-shadow-sm truncate max-w-[160px] md:max-w-[210px]">
+              <span className="text-[10px] font-black text-white/90 uppercase tracking-wide truncate">
                 {title}
               </span>
             )}
           </div>
 
-          {/* Row 2: Big Countdown Numbers with Subtitles underneath - CENTERED */}
-          <div className="flex items-center justify-center gap-1.5 md:gap-2.5 mt-1">
-            {/* Hari */}
-            <div className="flex flex-col items-center min-w-[28px]">
-              <span className="text-sm md:text-base font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.days}</span>
-              <span className="text-[8px] md:text-[9px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Hari</span>
-            </div>
-
-            <span className="text-xs md:text-sm font-black text-cyan-200 animate-pulse -mt-2.5">:</span>
-
-            {/* Jam */}
-            <div className="flex flex-col items-center min-w-[28px]">
-              <span className="text-sm md:text-base font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.hours.toString().padStart(2, '0')}</span>
-              <span className="text-[8px] md:text-[9px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Jam</span>
-            </div>
-
-            <span className="text-xs md:text-sm font-black text-cyan-200 animate-pulse -mt-2.5">:</span>
-
-            {/* Menit */}
-            <div className="flex flex-col items-center min-w-[28px]">
-              <span className="text-sm md:text-base font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-              <span className="text-[8px] md:text-[9px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Menit</span>
-            </div>
-
-            <span className="text-xs md:text-sm font-black text-cyan-200 animate-pulse -mt-2.5">:</span>
-
-            {/* Detik */}
-            <div className="flex flex-col items-center min-w-[28px]">
-              <span className="text-sm md:text-base font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-              <span className="text-[8px] md:text-[9px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Detik</span>
-            </div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <UnitBlock value={timeLeft.days} label="Hari" textSize="text-sm" labelSize="text-[7px]" minW="min-w-[22px]" />
+            <Sep className="text-xs -translate-y-0.5" />
+            <UnitBlock value={timeLeft.hours} label="Jam" textSize="text-sm" labelSize="text-[7px]" minW="min-w-[22px]" />
+            <Sep className="text-xs -translate-y-0.5" />
+            <UnitBlock value={timeLeft.minutes} label="Menit" textSize="text-sm" labelSize="text-[7px]" minW="min-w-[22px]" />
+            <Sep className="text-xs -translate-y-0.5" />
+            <UnitBlock value={timeLeft.seconds} label="Detik" textSize="text-sm" labelSize="text-[7px]" minW="min-w-[22px]" />
           </div>
         </div>
 
-        {/* Right Side: Creative Graphic */}
-        <CreativeGraphic className="w-12 h-12 md:w-14 md:h-14 shrink-0" />
+        {/* Icon */}
+        <div className="shrink-0 z-10 bg-white/15 rounded-xl p-1.5 border border-white/20 backdrop-blur-sm">
+          <Clock className="w-5 h-5 text-white drop-shadow" />
+        </div>
       </div>
     )
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Size MD: Medium Capsule Card
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ─── SIZE MD ──────────────────────────────────────────────────────────────
   if (size === 'md') {
     return (
       <div className={cn(
-        "relative flex items-center justify-between gap-4 overflow-hidden rounded-full shadow-[0_6px_30px_rgba(6,182,212,0.45)] border-[3px] border-cyan-300 dark:border-cyan-400 text-white transition-all duration-300 hover:shadow-[0_8px_35px_rgba(6,182,212,0.6)] hover:scale-[1.01]",
-        "bg-gradient-to-r from-[#0284c7] via-[#0d9488] to-[#10b981] pl-6 pr-3 py-2.5 md:pl-8 md:pr-4 md:py-3 max-w-[540px]"
+        "relative flex items-center gap-5 overflow-hidden rounded-2xl px-6 py-3",
+        "bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-500",
+        "shadow-[0_6px_30px_rgba(99,102,241,0.45)] border border-white/20",
+        "transition-all duration-300 hover:shadow-[0_8px_38px_rgba(99,102,241,0.6)] hover:scale-[1.01]",
+        "max-w-[540px]"
       )}>
-        {/* Center: NEXT/NOW + Title + Numbers */}
-        <div className="flex flex-col items-center justify-center text-center min-w-0 flex-1">
-          {/* Row 1: NEXT/NOW + Title */}
-          <div className="flex items-center justify-center gap-2 leading-none w-full">
-            {timeLeft.isStarted ? (
-              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-[10px] md:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md shrink-0">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                </span>
-                NOW
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-[10px] md:text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full shadow-md shrink-0">
-                <Calendar className="w-3 h-3 text-white" />
-                NEXT
-              </span>
-            )}
+        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent pointer-events-none rounded-2xl" />
+        <div className="absolute -top-6 -left-6 w-20 h-20 rounded-full bg-violet-400/20 blur-2xl pointer-events-none" />
 
+        <div className="flex flex-col items-start gap-1.5 min-w-0 flex-1 z-10">
+          <div className="flex items-center gap-2">
+            <LiveBadge />
             {title && (
-              <span className="text-xs md:text-sm font-black text-white uppercase tracking-wider drop-shadow-md truncate max-w-[200px] md:max-w-[260px]">
+              <span className="text-xs font-black text-white uppercase tracking-wide truncate max-w-[240px]">
                 {title}
               </span>
             )}
           </div>
 
-          {/* Row 2: Countdown Digits with Labels - CENTERED */}
-          <div className="flex items-center justify-center gap-2 md:gap-3.5 mt-1.5">
-            {/* Hari */}
-            <div className="flex flex-col items-center min-w-[36px]">
-              <span className="text-lg md:text-2xl font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.days}</span>
-              <span className="text-[9px] md:text-[10px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Hari</span>
-            </div>
-
-            <span className="text-base md:text-xl font-black text-cyan-200 animate-pulse -mt-3">:</span>
-
-            {/* Jam */}
-            <div className="flex flex-col items-center min-w-[36px]">
-              <span className="text-lg md:text-2xl font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.hours.toString().padStart(2, '0')}</span>
-              <span className="text-[9px] md:text-[10px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Jam</span>
-            </div>
-
-            <span className="text-base md:text-xl font-black text-cyan-200 animate-pulse -mt-3">:</span>
-
-            {/* Menit */}
-            <div className="flex flex-col items-center min-w-[36px]">
-              <span className="text-lg md:text-2xl font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-              <span className="text-[9px] md:text-[10px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Menit</span>
-            </div>
-
-            <span className="text-base md:text-xl font-black text-cyan-200 animate-pulse -mt-3">:</span>
-
-            {/* Detik */}
-            <div className="flex flex-col items-center min-w-[36px]">
-              <span className="text-lg md:text-2xl font-black text-white font-mono leading-none drop-shadow-md">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-              <span className="text-[9px] md:text-[10px] font-bold text-cyan-100 uppercase tracking-tighter mt-0.5">Detik</span>
-            </div>
+          <div className="flex items-end gap-2">
+            <UnitBlock value={timeLeft.days} label="Hari" textSize="text-2xl" labelSize="text-[9px]" minW="min-w-[36px]" glass />
+            <Sep className="text-xl -translate-y-3" />
+            <UnitBlock value={timeLeft.hours} label="Jam" textSize="text-2xl" labelSize="text-[9px]" minW="min-w-[36px]" glass />
+            <Sep className="text-xl -translate-y-3" />
+            <UnitBlock value={timeLeft.minutes} label="Menit" textSize="text-2xl" labelSize="text-[9px]" minW="min-w-[36px]" glass />
+            <Sep className="text-xl -translate-y-3" />
+            <UnitBlock value={timeLeft.seconds} label="Detik" textSize="text-2xl" labelSize="text-[9px]" minW="min-w-[36px]" glass />
           </div>
         </div>
 
-        {/* Right Side: Creative Graphic */}
-        <CreativeGraphic className="w-16 h-16 md:w-20 md:h-20 shrink-0" />
+        <div className="shrink-0 z-10 bg-white/15 rounded-xl p-2.5 border border-white/25 backdrop-blur-sm shadow-inner">
+          <Zap className="w-7 h-7 text-yellow-300 drop-shadow" />
+        </div>
       </div>
     )
   }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Size LG: Large Hero / Modal Capsule (Exact matching reference image)
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ─── SIZE LG ──────────────────────────────────────────────────────────────
   return (
     <div className={cn(
-      "relative flex items-center justify-between gap-6 overflow-hidden rounded-full shadow-[0_8px_40px_rgba(6,182,212,0.5)] border-[3.5px] border-cyan-300 dark:border-cyan-400 text-white transition-all duration-300 hover:shadow-[0_12px_50px_rgba(6,182,212,0.65)] hover:scale-[1.01] w-full max-w-2xl",
-      "bg-gradient-to-r from-[#0284c7] via-[#0d9488] to-[#10b981] pl-8 pr-4 py-3.5 md:pl-10 md:pr-6 md:py-5"
+      "relative flex items-center justify-between gap-6 overflow-hidden rounded-3xl w-full max-w-2xl",
+      "bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-500",
+      "shadow-[0_8px_40px_rgba(99,102,241,0.5)] border border-white/20",
+      "transition-all duration-300 hover:shadow-[0_12px_55px_rgba(99,102,241,0.65)] hover:scale-[1.01]",
+      "px-8 py-5 md:px-10 md:py-6"
     )}>
-      {/* Center Content */}
-      <div className="flex flex-col items-center justify-center text-center min-w-0 flex-1">
-        {/* Row 1: 🗓️ NEXT / NOW */}
-        <div className="flex items-center justify-center gap-2">
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 pointer-events-none rounded-3xl" />
+      <div className="absolute -top-12 -left-12 w-36 h-36 rounded-full bg-violet-400/30 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-cyan-400/30 blur-2xl pointer-events-none" />
+
+      {/* Content */}
+      <div className="flex flex-col items-start gap-2 min-w-0 flex-1 z-10">
+        {/* Badge + Title */}
+        <div className="flex items-center gap-2.5 flex-wrap">
           {timeLeft.isStarted ? (
-            <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-xs md:text-sm font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-90"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+            <span className="inline-flex items-center gap-1.5 bg-emerald-500 text-white text-[10px] md:text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg shadow-emerald-500/40">
+              <span className="relative flex w-2 h-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
+                <span className="relative inline-flex rounded-full w-2 h-2 bg-white" />
               </span>
               NOW
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-red-600 via-rose-600 to-red-500 text-white text-xs md:text-sm font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
-              <Calendar className="w-3.5 h-3.5 text-white" />
+            <span className="inline-flex items-center gap-1.5 bg-amber-500 text-white text-[10px] md:text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg shadow-amber-500/40">
+              <Calendar className="w-3 h-3" />
               NEXT
             </span>
           )}
+
+          {title && (
+            <h2 className="text-sm md:text-base lg:text-lg font-black text-white uppercase tracking-wide drop-shadow truncate max-w-[260px] md:max-w-[360px]">
+              {title}
+            </h2>
+          )}
         </div>
 
-        {/* Row 2: Event Title */}
-        {title && (
-          <h2 className="text-sm md:text-lg lg:text-xl font-black text-white uppercase tracking-wider drop-shadow-md mt-1.5 truncate max-w-[280px] md:max-w-[380px]">
-            {title}
-          </h2>
-        )}
-
-        {/* Row 3: Big Digits with Subtitle Labels - CENTERED */}
-        <div className="flex items-center justify-center gap-3 md:gap-5 mt-2">
-          {/* Hari */}
-          <div className="flex flex-col items-center min-w-[44px]">
-            <span className="text-2xl md:text-3xl lg:text-4xl font-black text-white font-mono leading-none drop-shadow-lg">{timeLeft.days}</span>
-            <span className="text-[10px] md:text-xs font-bold text-cyan-100 uppercase tracking-wider mt-1">Hari</span>
-          </div>
-
-          <span className="text-xl md:text-2xl lg:text-3xl font-black text-cyan-200 animate-pulse -mt-4">:</span>
-
-          {/* Jam */}
-          <div className="flex flex-col items-center min-w-[44px]">
-            <span className="text-2xl md:text-3xl lg:text-4xl font-black text-white font-mono leading-none drop-shadow-lg">{timeLeft.hours.toString().padStart(2, '0')}</span>
-            <span className="text-[10px] md:text-xs font-bold text-cyan-100 uppercase tracking-wider mt-1">Jam</span>
-          </div>
-
-          <span className="text-xl md:text-2xl lg:text-3xl font-black text-cyan-200 animate-pulse -mt-4">:</span>
-
-          {/* Menit */}
-          <div className="flex flex-col items-center min-w-[44px]">
-            <span className="text-2xl md:text-3xl lg:text-4xl font-black text-white font-mono leading-none drop-shadow-lg">{timeLeft.minutes.toString().padStart(2, '0')}</span>
-            <span className="text-[10px] md:text-xs font-bold text-cyan-100 uppercase tracking-wider mt-1">Menit</span>
-          </div>
-
-          <span className="text-xl md:text-2xl lg:text-3xl font-black text-cyan-200 animate-pulse -mt-4">:</span>
-
-          {/* Detik */}
-          <div className="flex flex-col items-center min-w-[44px]">
-            <span className="text-2xl md:text-3xl lg:text-4xl font-black text-white font-mono leading-none drop-shadow-lg">{timeLeft.seconds.toString().padStart(2, '0')}</span>
-            <span className="text-[10px] md:text-xs font-bold text-cyan-100 uppercase tracking-wider mt-1">Detik</span>
-          </div>
+        {/* Digits */}
+        <div className="flex items-end gap-2.5 md:gap-4 mt-1">
+          <UnitBlock value={timeLeft.days} label="Hari" textSize="text-3xl md:text-4xl" labelSize="text-[9px] md:text-[10px]" minW="min-w-[48px]" glass />
+          <Sep className="text-2xl md:text-3xl -translate-y-4" />
+          <UnitBlock value={timeLeft.hours} label="Jam" textSize="text-3xl md:text-4xl" labelSize="text-[9px] md:text-[10px]" minW="min-w-[48px]" glass />
+          <Sep className="text-2xl md:text-3xl -translate-y-4" />
+          <UnitBlock value={timeLeft.minutes} label="Menit" textSize="text-3xl md:text-4xl" labelSize="text-[9px] md:text-[10px]" minW="min-w-[48px]" glass />
+          <Sep className="text-2xl md:text-3xl -translate-y-4" />
+          <UnitBlock value={timeLeft.seconds} label="Detik" textSize="text-3xl md:text-4xl" labelSize="text-[9px] md:text-[10px]" minW="min-w-[48px]" glass />
         </div>
       </div>
 
-      {/* Right Side: Creative 3D Graphic */}
-      <CreativeGraphic className="w-20 h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 shrink-0" />
+      {/* Right icon */}
+      <div className="shrink-0 z-10 bg-white/15 rounded-2xl p-4 border border-white/25 backdrop-blur-sm shadow-inner">
+        <Zap className="w-10 h-10 text-yellow-300 drop-shadow-lg" />
+      </div>
     </div>
   )
 }
-
-

@@ -2375,7 +2375,7 @@ export default function VerifikasiDinasPage() {
                               : 'text-slate-500 hover:text-slate-800'
                           }`}
                         >
-                          ✍️ Input Manual (Admin)
+                          ✍️ Input Manual
                         </button>
                       </div>
                     )}
@@ -2391,11 +2391,6 @@ export default function VerifikasiDinasPage() {
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Lokasi Tersimpan</p>
-                              {isAdmin && (
-                                <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-200">
-                                  Admin Mode
-                                </span>
-                              )}
                             </div>
                             <p className="text-xs text-emerald-700 font-mono bg-emerald-100/60 px-2.5 py-1 rounded-md w-fit font-bold">
                               Lat: {typeof location.lat === 'number' ? location.lat.toFixed(6) : location.lat}, Lon: {typeof location.lon === 'number' ? location.lon.toFixed(6) : location.lon}
@@ -2453,7 +2448,7 @@ export default function VerifikasiDinasPage() {
                         <div className="pt-3 border-t border-emerald-200/60 mt-2 space-y-3 bg-white/80 p-3 rounded-lg border border-indigo-100">
                           <div className="flex items-center justify-between">
                             <p className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                              <Edit className="w-3.5 h-3.5 text-indigo-600" /> Perbarui Koordinat Manual:
+                              <Edit className="w-3.5 h-3.5 text-indigo-600" /> Perbarui Koordinat:
                             </p>
                             <span className="text-[10px] text-slate-500 font-medium">Bisa tempel link Google Maps atau isi lat & lon</span>
                           </div>
@@ -2514,11 +2509,8 @@ export default function VerifikasiDinasPage() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-indigo-900 font-bold text-xs">
                               <Edit className="w-4 h-4 text-indigo-600" />
-                              <span>Input Koordinat Manual (Admin)</span>
+                              <span>Input Koordinat</span>
                             </div>
-                            <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full">
-                              Admin Khusus
-                            </span>
                           </div>
 
                           {/* Smart Paste URL / Text */}
@@ -2589,9 +2581,7 @@ export default function VerifikasiDinasPage() {
                         <div className="flex flex-col items-center justify-center p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
                           <MapPin className="w-8 h-8 text-slate-400 mb-2" />
                           <p className="text-xs font-medium text-slate-500 mb-4 text-center max-w-md">
-                            {isAdmin 
-                              ? "Ambil titik lokasi otomatis melalui GPS browser perangkat, atau beralih ke tab Input Manual jika menggunakan PC kantor." 
-                              : "Data titik lokasi wajib diambil untuk proses verifikasi dinas. Tidak dapat dibypass."}
+                            Data titik lokasi wajib diambil untuk proses verifikasi dinas. Tidak dapat dibypass.
                           </p>
                           <div className="flex items-center gap-2 flex-wrap justify-center">
                             <Button type="button" onClick={fetchLocation} disabled={isFetchingLocation} className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md">
@@ -2606,7 +2596,7 @@ export default function VerifikasiDinasPage() {
                                 onClick={() => setLocationMode('manual')}
                                 className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold text-xs"
                               >
-                                <Edit className="w-3.5 h-3.5 mr-1" /> Input Koordinat Manual
+                                <Edit className="w-3.5 h-3.5 mr-1" /> Input Koordinat
                               </Button>
                             )}
                           </div>
