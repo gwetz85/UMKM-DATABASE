@@ -70,18 +70,20 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
   const UnitBlock = ({
     value,
     textSize = "text-xl md:text-2xl",
-    minW = "min-w-[36px]",
+    minW = "min-w-[34px]",
+    padding = "px-2.5 py-1",
     glass = true,
   }: {
     value: string | number
     textSize?: string
     minW?: string
+    padding?: string
     glass?: boolean
   }) => (
     <div className={cn(
-      "flex items-center justify-center",
+      "flex items-center justify-center leading-none",
       minW,
-      glass && "bg-white/15 backdrop-blur-md rounded-xl px-2.5 py-1.5 border border-white/25 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] shadow-black/10"
+      glass && cn("bg-white/15 backdrop-blur-md rounded-lg md:rounded-xl border border-white/25 shadow-[inset_0_1px_1px_rgba(255,255,255,0.3)] shadow-black/10", padding)
     )}>
       <span className={cn("font-black font-mono leading-none text-white tabular-nums drop-shadow-md", textSize)}>
         {typeof value === 'number' ? String(value).padStart(2, '0') : value}
@@ -90,16 +92,16 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
   )
 
   // ─── SEPARATOR ────────────────────────────────────────────────────────────
-  const Sep = ({ className = "text-lg md:text-xl" }: { className?: string }) => (
-    <span className={cn("font-black text-white/70 select-none animate-pulse px-0.5", className)}>:</span>
+  const Sep = ({ className = "text-base md:text-lg" }: { className?: string }) => (
+    <span className={cn("font-black text-white/70 select-none animate-pulse px-0.5 leading-none", className)}>:</span>
   )
 
   // ─── LIVE BADGE ───────────────────────────────────────────────────────────
   const LiveBadge = ({ compact = false }: { compact?: boolean }) =>
     timeLeft.isStarted ? (
       <span className={cn(
-        "inline-flex items-center gap-1 bg-emerald-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-emerald-500/40 shrink-0",
-        compact ? "text-[8px] px-2 py-0.5" : "text-[9px] px-2.5 py-0.5"
+        "inline-flex items-center gap-1 bg-emerald-500 text-white font-black uppercase tracking-widest rounded-full shadow-md shadow-emerald-500/40 shrink-0 leading-none",
+        compact ? "text-[8px] px-1.5 py-0.5" : "text-[9px] px-2.5 py-0.5"
       )}>
         <span className="relative flex w-1.5 h-1.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
@@ -109,8 +111,8 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
       </span>
     ) : (
       <span className={cn(
-        "inline-flex items-center gap-1 bg-amber-500 text-white font-black uppercase tracking-widest rounded-full shadow-lg shadow-amber-500/40 shrink-0",
-        compact ? "text-[8px] px-2 py-0.5" : "text-[9px] px-2.5 py-0.5"
+        "inline-flex items-center gap-1 bg-amber-500 text-white font-black uppercase tracking-widest rounded-full shadow-md shadow-amber-500/40 shrink-0 leading-none",
+        compact ? "text-[8px] px-1.5 py-0.5" : "text-[9px] px-2.5 py-0.5"
       )}>
         <Calendar className={compact ? "w-2 h-2" : "w-2.5 h-2.5"} />
         NEXT
@@ -121,34 +123,34 @@ export function EventCountdown({ targetDate, startDate, size = 'lg', title }: Ev
   if (size === 'sm') {
     return (
       <div className={cn(
-        "relative flex flex-col items-center justify-center text-center overflow-hidden rounded-2xl px-5 py-2",
+        "relative flex flex-col items-center justify-center text-center overflow-hidden rounded-2xl px-5 py-2 my-auto",
         "bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-500",
-        "shadow-[0_4px_20px_rgba(99,102,241,0.45)] border border-white/25",
-        "transition-all duration-300 hover:shadow-[0_6px_28px_rgba(99,102,241,0.6)] hover:scale-[1.01]",
-        "max-w-[440px] mx-auto"
+        "shadow-[0_4px_18px_rgba(99,102,241,0.4)] border border-white/25",
+        "transition-all duration-300 hover:shadow-[0_6px_24px_rgba(99,102,241,0.55)] hover:scale-[1.01]",
+        "max-w-[420px] mx-auto"
       )}>
         {/* Shimmer overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-transparent pointer-events-none rounded-2xl" />
 
-        {/* Top: Live Badge + Title (Centered) */}
-        <div className="flex items-center justify-center gap-2 mb-1.5 z-10">
+        {/* Top: Live Badge + Title (Centered with proper breathing room) */}
+        <div className="flex items-center justify-center gap-2 mb-1.5 z-10 leading-none">
           <LiveBadge compact />
           {title && (
-            <span className="text-[11px] font-black text-white uppercase tracking-wider drop-shadow truncate max-w-[220px]">
+            <span className="text-[10px] md:text-[11px] font-black text-white uppercase tracking-wider drop-shadow truncate max-w-[210px] leading-tight">
               {title}
             </span>
           )}
         </div>
 
-        {/* Center: Enlarged Digits without labels */}
-        <div className="flex items-center justify-center gap-1.5 z-10">
-          <UnitBlock value={timeLeft.days} textSize="text-lg md:text-xl font-black" minW="min-w-[36px]" />
-          <Sep className="text-base md:text-lg" />
-          <UnitBlock value={timeLeft.hours} textSize="text-lg md:text-xl font-black" minW="min-w-[36px]" />
-          <Sep className="text-base md:text-lg" />
-          <UnitBlock value={timeLeft.minutes} textSize="text-lg md:text-xl font-black" minW="min-w-[36px]" />
-          <Sep className="text-base md:text-lg" />
-          <UnitBlock value={timeLeft.seconds} textSize="text-lg md:text-xl font-black" minW="min-w-[36px]" />
+        {/* Center: Enlarged Digits with comfortable breathing room */}
+        <div className="flex items-center justify-center gap-1.5 z-10 leading-none">
+          <UnitBlock value={timeLeft.days} textSize="text-base md:text-lg font-black" minW="min-w-[32px]" padding="px-2 py-0.5" />
+          <Sep className="text-sm md:text-base" />
+          <UnitBlock value={timeLeft.hours} textSize="text-base md:text-lg font-black" minW="min-w-[32px]" padding="px-2 py-0.5" />
+          <Sep className="text-sm md:text-base" />
+          <UnitBlock value={timeLeft.minutes} textSize="text-base md:text-lg font-black" minW="min-w-[32px]" padding="px-2 py-0.5" />
+          <Sep className="text-sm md:text-base" />
+          <UnitBlock value={timeLeft.seconds} textSize="text-base md:text-lg font-black" minW="min-w-[32px]" padding="px-2 py-0.5" />
         </div>
       </div>
     )

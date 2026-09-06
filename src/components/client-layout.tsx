@@ -234,7 +234,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 {activeEvent && !isCekDataPage && (
-                  <div className="hidden 2xl:flex items-center justify-center flex-1 min-w-0 px-2 animate-in fade-in zoom-in duration-1000">
+                  <div className="hidden 2xl:flex items-center justify-center flex-1 min-w-0 px-2 py-1 animate-in fade-in zoom-in duration-1000">
                     <EventCountdown 
                       targetDate={activeEvent.endDate || activeEvent.date} 
                       startDate={activeEvent.startDate} 
