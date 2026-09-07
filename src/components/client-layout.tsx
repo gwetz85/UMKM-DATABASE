@@ -77,7 +77,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [maintenanceData, isAdmin, isStaff, pathname, router, user, profile, isPublicPage]);
 
   React.useEffect(() => {
-    if (!database || !user || !profile?.id) return;
+    // Jangan pernah mengikat status online ke akun dummy 'agus'
+    if (!database || !user || !profile?.id || (profile.id === 'agus' && user.email?.toLowerCase() === 'agus@umkm.id')) return;
 
     const userStatusRef = ref(database, `system_users/${profile.id}/isOnline`);
     const lastSeenRef = ref(database, `system_users/${profile.id}/lastSeen`);

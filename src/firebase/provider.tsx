@@ -128,43 +128,62 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       if (snapshot.exists()) {
         const val = snapshot.val();
         const keys = Object.keys(val);
-        // Prioritaskan akun yang valid & aktif:
-        // 1. Key yang sama persis dengan UID auth (misal: n0mH72dH...)
-        // 2. Akun dengan role admin / superadmin
-        // 3. Akun aktif dengan fullName terisi
-        // 4. Fallback ke keys[0]
+        // Prioritaskan akun yang valid & aktif, abaikan akun dummy 'agus' yang tidak memiliki role
+        const validKeys = keys.filter(k => k !== 'agus' || val[k]?.role === 'admin' || val[k]?.role === 'superadmin');
+        const candidateKeys = validKeys.length > 0 ? validKeys : keys;
+
         const currentUid = userAuthState.user?.uid;
-        const matchedKey = (currentUid ? keys.find(k => k === currentUid) : null)
-          || keys.find(k => val[k]?.role === 'admin' || val[k]?.role === 'superadmin')
-          || keys.find(k => val[k]?.status === 'active' && val[k]?.fullName)
-          || keys.find(k => val[k]?.fullName)
-          || keys[0];
+        const matchedKey = (currentUid ? candidateKeys.find(k => k === currentUid) : null)
+          || candidateKeys.find(k => val[k]?.role === 'admin' || val[k]?.role === 'superadmin')
+          || candidateKeys.find(k => val[k]?.status === 'active' && val[k]?.fullName)
+          || candidateKeys.find(k => val[k]?.fullName)
+          || candidateKeys[0];
         const selectedProfile = { ...val[matchedKey], id: matchedKey };
         if (typeof window !== 'undefined') {
           try { localStorage.setItem('simpu_cached_profile', JSON.stringify(selectedProfile)); } catch (e) {}
         }
         setUserProfileState({ profile: selectedProfile, isProfileLoading: false });
       } else {
-        // Fallback: Check if username matches email username (e.g. agus@umkm.id -> system_users/agus)
+        // Fallback:
+        // 1. Cek langsung apakah user.uid ada di system_users (akun Admin-AGUS yang di-key dengan UID)
+        // 2. Jika bukan, cek username dari email, TETAPI jangan gunakan 'agus' karena akun admin menggunakan UID
+        const currentUid = userAuthState.user?.uid;
         const emailUsername = userAuthState.user?.email?.split('@')[0]?.toLowerCase();
-        if (emailUsername) {
-          const directRef = ref(database, `system_users/${emailUsername}`);
-          get(directRef).then((dirSnap) => {
-            if (dirSnap.exists()) {
-              const fallbackProfile = { ...dirSnap.val(), id: emailUsername };
-              if (typeof window !== 'undefined') {
-                try { localStorage.setItem('simpu_cached_profile', JSON.stringify(fallbackProfile)); } catch (e) {}
+
+        const resolveDirect = async () => {
+          if (currentUid) {
+            try {
+              const uidSnap = await get(ref(database, `system_users/${currentUid}`));
+              if (uidSnap.exists()) {
+                const profileData = { ...uidSnap.val(), id: currentUid };
+                if (typeof window !== 'undefined') {
+                  try { localStorage.setItem('simpu_cached_profile', JSON.stringify(profileData)); } catch (e) {}
+                }
+                setUserProfileState({ profile: profileData, isProfileLoading: false });
+                return;
               }
-              setUserProfileState({ profile: fallbackProfile, isProfileLoading: false });
-            } else {
-              setUserProfileState({ profile: null, isProfileLoading: false });
-            }
-          }).catch(() => {
-            setUserProfileState({ profile: null, isProfileLoading: false });
-          });
-        } else {
+            } catch (e) {}
+          }
+
+          if (emailUsername && emailUsername !== 'agus') {
+            try {
+              const directRef = ref(database, `system_users/${emailUsername}`);
+              const dirSnap = await get(directRef);
+              if (dirSnap.exists()) {
+                const fallbackProfile = { ...dirSnap.val(), id: emailUsername };
+                if (typeof window !== 'undefined') {
+                  try { localStorage.setItem('simpu_cached_profile', JSON.stringify(fallbackProfile)); } catch (e) {}
+                }
+                setUserProfileState({ profile: fallbackProfile, isProfileLoading: false });
+                return;
+              }
+            } catch (e) {}
+          }
+
           setUserProfileState({ profile: null, isProfileLoading: false });
-        }
+        };
+
+        resolveDirect();
       }
     }, (err) => {
       console.error("Error fetching user profile:", err);

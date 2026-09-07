@@ -137,6 +137,7 @@ export default function LoginPage() {
     try {
       let user;
       let finalUserRole = ''; // Track role for single-device enforcement
+      let userNodeExists = false;
 
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password)
@@ -144,6 +145,7 @@ export default function LoginPage() {
 
         const userRef = ref(database, `system_users/${username}`)
         const userSnap = await get(userRef)
+        userNodeExists = userSnap.exists()
 
         if (userSnap.exists()) {
           const userData = userSnap.val()
@@ -237,6 +239,7 @@ export default function LoginPage() {
           const tempUserSnap = await get(tempUserRef)
 
           if (tempUserSnap.exists()) {
+            userNodeExists = true
             const preRegisteredData = tempUserSnap.val()
             
             if (preRegisteredData.role === 'pending') {
@@ -352,7 +355,22 @@ export default function LoginPage() {
       if (finalUserRole !== 'admin' && email !== 'agus@umkm.id') {
         loginUpdates.activeSessionId = sessionId
       }
-      await update(ref(database, `system_users/${username}`), loginUpdates).catch(console.error)
+
+      // Pastikan HANYA mengupdate akun yang benar-benar ada di system_users.
+      // JANGAN pernah membuat akun dummy baru jika username tidak terdaftar!
+      let targetUserKey: string | null = null;
+      if (userNodeExists) {
+        targetUserKey = username;
+      } else if (user?.uid) {
+        const uidSnap = await get(ref(database, `system_users/${user.uid}`));
+        if (uidSnap.exists()) {
+          targetUserKey = user.uid;
+        }
+      }
+
+      if (targetUserKey) {
+        await update(ref(database, `system_users/${targetUserKey}`), loginUpdates).catch(console.error);
+      }
 
       router.push("/")
     } catch (error: any) {

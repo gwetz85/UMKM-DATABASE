@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, setDocumentNonBlocking, deleteDocumentNonBlocking, useObject, updateDocumentNonBlocking } from "@/firebase"
 import { ConfirmDialog } from "@/components/confirm-dialog"
-import { ref, query } from "firebase/database"
+import { ref, query, remove } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -414,9 +414,11 @@ export default function UserManagementPage() {
     setDeleteTarget(null)
 
     deleteDocumentNonBlocking(ref(database, `system_users/${id}`))
+    remove(ref(database, `system_users/${id}`)).catch(console.error)
     // PENTING: Jangan pernah menghapus roles_admin milik admin yang sedang login saat ini!
     if (userUid && userUid !== user?.uid) {
       deleteDocumentNonBlocking(ref(database, `roles_admin/${userUid}`))
+      remove(ref(database, `roles_admin/${userUid}`)).catch(console.error)
     }
     
     logActivity({
