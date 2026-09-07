@@ -128,11 +128,22 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       if (snapshot.exists()) {
         const val = snapshot.val();
         const keys = Object.keys(val);
-        const first = { ...val[keys[0]], id: keys[0] };
+        // Prioritaskan akun yang valid & aktif:
+        // 1. Key yang sama persis dengan UID auth (misal: n0mH72dH...)
+        // 2. Akun dengan role admin / superadmin
+        // 3. Akun aktif dengan fullName terisi
+        // 4. Fallback ke keys[0]
+        const currentUid = userAuthState.user?.uid;
+        const matchedKey = (currentUid ? keys.find(k => k === currentUid) : null)
+          || keys.find(k => val[k]?.role === 'admin' || val[k]?.role === 'superadmin')
+          || keys.find(k => val[k]?.status === 'active' && val[k]?.fullName)
+          || keys.find(k => val[k]?.fullName)
+          || keys[0];
+        const selectedProfile = { ...val[matchedKey], id: matchedKey };
         if (typeof window !== 'undefined') {
-          try { localStorage.setItem('simpu_cached_profile', JSON.stringify(first)); } catch (e) {}
+          try { localStorage.setItem('simpu_cached_profile', JSON.stringify(selectedProfile)); } catch (e) {}
         }
-        setUserProfileState({ profile: first, isProfileLoading: false });
+        setUserProfileState({ profile: selectedProfile, isProfileLoading: false });
       } else {
         // Fallback: Check if username matches email username (e.g. agus@umkm.id -> system_users/agus)
         const emailUsername = userAuthState.user?.email?.split('@')[0]?.toLowerCase();

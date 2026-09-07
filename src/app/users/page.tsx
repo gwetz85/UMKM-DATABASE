@@ -393,14 +393,12 @@ export default function UserManagementPage() {
 
   const isCurrentSelfAccount = (u: any) => {
     if (!u) return false
-    // Lindungi HANYA akun admin utama yang sedang aktif digunakan saat ini
-    if (u.id === user?.uid) return true
-    if (userProfile?.id && u.id === userProfile.id && (u.role === 'admin' || u.role === 'superadmin')) return true
-    return false
+    // Akun admin utama yang sedang aktif: ID di system_users sama dengan auth UID
+    return u.id === user?.uid
   }
 
   const handleDelete = (id: string, fullName: string, userUid: string | null) => {
-    if (id === user?.uid || (userProfile?.id && id === userProfile.id)) {
+    if (id === user?.uid) {
       toast({ variant: "destructive", title: "Gagal", description: "Anda tidak dapat menghapus akun sendiri." })
       return
     }
