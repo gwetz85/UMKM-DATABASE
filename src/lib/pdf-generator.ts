@@ -510,15 +510,7 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   const margin = 16;
   const contentWidth = pageWidth - margin * 2;
 
-  const now = new Date();
-  const day = now.getDate();
-  const monthNames = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
-  const month = monthNames[now.getMonth()];
-  const year = now.getFullYear();
-  const dateStr = `Tanjungpinang, ${day} ${month} ${year}`;
+  const dateStr = `Tanjungpinang , .....................................................`;
 
   const materaiWidth = 24;
   const materaiHeight = 22;
@@ -807,7 +799,7 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   doc.text('Penerima Dana Bantuan', spDateCenterX, y, { align: 'center' });
 
   // 3. Kotak Materai
-  const spMateraiX = spDateStartX;
+  const spMateraiX = spDateCenterX - materaiWidth;
   y += 5.0;
 
   doc.setDrawColor(180);
