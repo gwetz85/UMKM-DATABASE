@@ -191,6 +191,18 @@ export async function POST(req: NextRequest) {
                    (a.coordinator && a.coordinator.toLowerCase().includes(keyword));
           }).slice(0, 50); // Increased limit to 50 instead of 5 for safety while respecting "semua" as much as possible within Telegram limits
           
+          // Load master data sheets for KK cross-reference
+          const [m2023Snap, m2024Snap, m2025Snap] = await Promise.all([
+            get(ref(database, 'master_data_2023')),
+            get(ref(database, 'master_data_2024')),
+            get(ref(database, 'master_data_2025'))
+          ]);
+          const masterSheets: { label: string; data: any[] }[] = [
+            { label: '2023', data: m2023Snap.exists() ? Object.values(m2023Snap.val()) as any[] : [] },
+            { label: '2024', data: m2024Snap.exists() ? Object.values(m2024Snap.val()) as any[] : [] },
+            { label: '2025', data: m2025Snap.exists() ? Object.values(m2025Snap.val()) as any[] : [] },
+          ];
+
           if (results.length > 0) {
             let reply = `🔍 *Hasil Pencarian [${type.toUpperCase()}]:*\n\n`;
             results.forEach((r, i) => {
@@ -200,6 +212,7 @@ export async function POST(req: NextRequest) {
               reply += `■ NIK: \`${r.nik || "-"}\`\n`;
               reply += `■ KK: \`${r.noKK || "-"}\`\n`;
               reply += `■ HP: \`${r.phone || "-"}\`\n`;
+              reply += `■ Usaha: ${r.businessName || "-"}\n`;
               reply += `■ Alamat: ${r.address || "-"}\n`;
               reply += `■ RT/RW: ${r.rtRw || "-"}\n`;
               
@@ -209,28 +222,78 @@ export async function POST(req: NextRequest) {
               reply += `■ Kategori: ${r.businessCategory || "-"}\n`;
               reply += `■ Lokasi Usaha: ${r.businessLocation || "-"}\n`;
               reply += `■ Koordinator: ${r.coordinator || "-"}\n`;
-              
-              let statusLabel = r.status?.toUpperCase().replace('_', ' ') || "UNKNOWN";
+
+              // Status: tampilkan posisi terakhir data dengan label lengkap
+              let statusRaw = r.status || "unknown";
               let statusEmoji = "⚪";
-              if (statusLabel.includes('VERIFIED')) statusEmoji = "✅";
-              else if (statusLabel.includes('PENDING')) statusEmoji = "⏳";
-              else if (statusLabel.includes('REJECTED')) statusEmoji = "❌";
-              else if (statusLabel.includes('BLACKLIST')) statusEmoji = "🚫";
-              
+              let statusLabel = "";
+              if (statusRaw === 'pending') { statusEmoji = "⏳"; statusLabel = "PENDING - Menunggu Verifikasi Admin"; }
+              else if (statusRaw === 'verified_actor') { statusEmoji = "✅"; statusLabel = "VERIFIED ACTOR - Sudah Verifikasi Admin"; }
+              else if (statusRaw === 'verified_dinas') {
+                if (r.hasilVerifikasiDinas === 'Tidak Lolos' || r.alasanCancelDinas) {
+                  statusEmoji = "🚫"; statusLabel = "CANCEL DINAS - Tidak Lolos Verifikasi Dinas";
+                } else {
+                  statusEmoji = "✅"; statusLabel = "VERIFIED DINAS - Sudah Verifikasi Dinas";
+                }
+              }
+              else if (statusRaw === 'bank_pending') { statusEmoji = "🏦"; statusLabel = "BANK PENDING - Menunggu Verifikasi Bank"; }
+              else if (statusRaw === 'lpj_pending') { statusEmoji = "📄"; statusLabel = "LPJ PENDING - Menunggu LPJ"; }
+              else if (statusRaw === 'finish') { statusEmoji = "🏁"; statusLabel = "FINISH - Proses Selesai"; }
+              else if (statusRaw === 'rejected') { statusEmoji = "❌"; statusLabel = "REJECTED - Ditolak / Cancell"; }
+              else { statusEmoji = "⚪"; statusLabel = statusRaw.toUpperCase().replace(/_/g, ' '); }
+
               reply += `■ Status: ${statusEmoji} *${statusLabel}*\n`;
+
               let timestamp = r.createdAt ? new Date(r.createdAt).toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}) : "-";
               reply += `■ Input: ${timestamp}\n`;
               
+              // Menu: nama menu di aplikasi sesuai posisi terakhir data
               let menuSource = "";
-              if (r.status === 'pending') menuSource = "📥 Verifikasi Admin";
-              else if (r.status === 'verified_actor') menuSource = "👥 Data Pelaku";
-              else if (r.status === 'verified_dinas') menuSource = "📋 Verifikasi Dinas";
-              else if (r.status === 'bank_pending') menuSource = "🏦 Verifikasi Bank";
-              else if (r.status === 'rejected') menuSource = "❌ Ditolak/Cancell";
+              if (statusRaw === 'pending') menuSource = "📥 Verifikasi Admin";
+              else if (statusRaw === 'verified_actor') menuSource = "👥 Data Pelaku";
+              else if (statusRaw === 'verified_dinas') {
+                if (r.hasilVerifikasiDinas === 'Tidak Lolos' || r.alasanCancelDinas) menuSource = "🚫 Cancel Dinas";
+                else menuSource = "📋 Verifikasi Dinas";
+              }
+              else if (statusRaw === 'bank_pending') menuSource = "🏦 Verifikasi Bank";
+              else if (statusRaw === 'lpj_pending') menuSource = "📄 LPJ";
+              else if (statusRaw === 'finish') menuSource = "🏁 Finish / Selesai";
+              else if (statusRaw === 'rejected') menuSource = "❌ Ditolak / Cancell";
               else menuSource = "📂 Menu Lainnya";
               
               reply += `■ Menu: ${menuSource}\n`;
-              reply += `■ Oleh: ${r.createdBy || "System"}\n\n`;
+
+              // Cek data di sheet 2023, 2024, 2025 berdasarkan Nomor KK
+              const kkTarget = (r.noKK || "").trim();
+              if (kkTarget) {
+                let kkMatches: string[] = [];
+                masterSheets.forEach(({ label, data }) => {
+                  const found = data.filter(m =>
+                    m.noKK && String(m.noKK).trim() === kkTarget
+                  );
+                  if (found.length > 0) {
+                    found.forEach(m => {
+                      const formatCurrency = (val: any) => {
+                        if (!val) return "Rp 0";
+                        const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.-]+/g, "")) : val;
+                        return isNaN(num) ? val : new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(num);
+                      };
+                      kkMatches.push(
+                        `   📅 *Sheet ${label}*: ${m.nama || m.fullName || "-"} | Usaha: ${m.usaha || "-"} | Nominal: ${formatCurrency(m.nominal)} | Status: ${m.status || "-"} | LPJ: ${m.statusLpj || "-"}`
+                      );
+                    });
+                  }
+                });
+                if (kkMatches.length > 0) {
+                  reply += `■ *Cek KK di Sheet Penerima:*\n${kkMatches.join('\n')}\n`;
+                } else {
+                  reply += `■ *Cek KK di Sheet Penerima:* _Tidak ditemukan di 2023/2024/2025_\n`;
+                }
+              } else {
+                reply += `■ *Cek KK di Sheet Penerima:* _No KK kosong_\n`;
+              }
+
+              reply += `\n`;
             });
             if (results.length === 50) {
               reply += `_Hanya menampilkan 50 data pertama (Batas Keamanan Telegram)._`;
