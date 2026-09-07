@@ -589,14 +589,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-4 pt-4 px-2">
-                <button 
-                  type="button"
-                  onClick={() => setIsRegisteringView(true)}
-                  className="text-[10px] font-black text-white/40 hover:text-white/80 uppercase tracking-[0.2em] transition-colors"
-                >
-                  Belum Punya Akun? Daftar
-                </button>
+              <div className="flex items-center justify-end gap-4 pt-4 px-2">
                 <button 
                   type="button"
                   onClick={() => router.push('/cek-data')}
