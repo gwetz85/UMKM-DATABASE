@@ -501,12 +501,10 @@ export const generateLPJReceipt = (coordinator: string, actors: BusinessActor[])
   doc.save(`TANDA_TERIMA_LPJ_${cleanName}.pdf`);
 };
 
-export const generateSuratPernyataan = (actor: BusinessActor) => {
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4',
-  });
+export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isFirstActor: boolean = true) => {
+  if (!isFirstActor) {
+    doc.addPage();
+  }
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 16;
@@ -827,8 +825,30 @@ export const generateSuratPernyataan = (actor: BusinessActor) => {
   doc.setFontSize(10);
   doc.text((actor.fullName || '-').toUpperCase(), spDateCenterX, y, { align: 'center' });
 
-  // ── SIMPAN DOKUMEN ────────────────────────────────────────────────────────
+};
+
+export const generateSuratPernyataan = (actor: BusinessActor) => {
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+  renderSuratPernyataanPages(doc, actor, true);
   const safeName = (actor.fullName || 'PELAKU_USAHA').replace(/[^a-z0-9]/gi, '_').toUpperCase();
   const safeNik = actor.nik || 'NIK';
   doc.save(`BERKAS_PENCAIRAN_${safeName}_${safeNik}.pdf`);
+};
+
+export const generateSuratPernyataanBulk = (actors: BusinessActor[], customFilename?: string) => {
+  if (!actors || actors.length === 0) return;
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  });
+  actors.forEach((actor, index) => {
+    renderSuratPernyataanPages(doc, actor, index === 0);
+  });
+  const filename = customFilename || `BERKAS_PENCAIRAN_GABUNGAN_${actors.length}_DATA.pdf`;
+  doc.save(filename.endsWith('.pdf') ? filename : `${filename}.pdf`);
 };
