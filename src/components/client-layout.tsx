@@ -10,7 +10,7 @@ import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
 import { GlobalStatsAutoSync } from '@/components/GlobalStatsAutoSync';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
-import { ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database'
+import { ref, onValue, set, update, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
 import { User as UserIcon, LayoutGrid, Home, LogOut, Check, X as XIcon, AlertCircle, MonitorOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
@@ -89,13 +89,26 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         onDisconnect(lastSeenRef).set(serverTimestamp());
         set(userStatusRef, true);
         set(lastSeenRef, serverTimestamp());
+
+        // Jika belum ada lastLogin, lengkapi dengan waktu sekarang
+        if (!profile.lastLogin) {
+          update(ref(database, `system_users/${profile.id}`), {
+            lastLogin: new Date().toISOString()
+          }).catch(console.error);
+        }
       }
     });
 
+    // Heartbeat berkala setiap 60 detik untuk memastikan lastSeen selalu segar
+    const interval = setInterval(() => {
+      set(lastSeenRef, serverTimestamp()).catch(() => {});
+    }, 60000);
+
     return () => {
       unsubscribe();
+      clearInterval(interval);
     };
-  }, [database, user, profile?.id]);
+  }, [database, user, profile?.id, profile?.lastLogin]);
 
   React.useEffect(() => {
     if (!isUserLoading && user && !isProfileLoading && !isPublicPage) {
@@ -288,6 +301,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                         variant="destructive"
                         onConfirm={() => {
                           setIsLogoutDialogOpen(false);
+                          if (profile?.id && database) {
+                            update(ref(database, `system_users/${profile.id}`), {
+                              isOnline: false,
+                              lastSeen: Date.now()
+                            }).catch(() => {});
+                          }
                           signOut(auth).then(() => router.push('/login'));
                         }}
                       />
@@ -433,7 +452,15 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
               </p>
             </div>
             <button
-              onClick={() => signOut(auth).then(() => router.push('/login'))}
+              onClick={() => {
+                if (profile?.id && database) {
+                  update(ref(database, `system_users/${profile.id}`), {
+                    isOnline: false,
+                    lastSeen: Date.now()
+                  }).catch(() => {});
+                }
+                signOut(auth).then(() => router.push('/login'))
+              }}
               className="w-full h-12 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               <LogOut className="w-4 h-4" />

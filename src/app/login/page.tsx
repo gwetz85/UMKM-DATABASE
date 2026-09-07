@@ -320,16 +320,23 @@ export default function LoginPage() {
         userId: username.toUpperCase()
       }, database || undefined)
 
-      // Single-device login enforcement:
+      // Single-device login enforcement & presence update:
       // Generate a unique session ID and store in localStorage + Firebase
       // Admin users are exempt from single-device restriction
       const sessionId = typeof crypto !== 'undefined' && crypto.randomUUID
         ? crypto.randomUUID()
         : Math.random().toString(36).substring(2) + Date.now().toString(36)
       localStorage.setItem('simpu_session_id', sessionId)
-      if (finalUserRole !== 'admin' && email !== 'agus@umkm.id') {
-        update(ref(database, `system_users/${username}`), { activeSessionId: sessionId }).catch(console.error)
+      
+      const loginUpdates: Record<string, any> = {
+        lastLogin: new Date().toISOString(),
+        isOnline: true,
+        lastSeen: Date.now()
       }
+      if (finalUserRole !== 'admin' && email !== 'agus@umkm.id') {
+        loginUpdates.activeSessionId = sessionId
+      }
+      await update(ref(database, `system_users/${username}`), loginUpdates).catch(console.error)
 
       router.push("/")
     } catch (error: any) {

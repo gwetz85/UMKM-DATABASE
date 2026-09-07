@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useDeferredValue } from "react"
-import { parsePobDob } from "@/lib/utils"
+import { parsePobDob, formatDateTimeIndo } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, sanitizeForFirebase } from "@/firebase"
 import { ref, query, orderByChild, equalTo, set } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
@@ -52,7 +52,8 @@ import {
   Edit,
   RefreshCw,
   UserX,
-  RotateCcw
+  RotateCcw,
+  Clock
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -1237,6 +1238,23 @@ export default function VerifikasiDinasBerkasPage() {
                         <h2 className="text-base md:text-lg font-black uppercase tracking-tight text-slate-900">
                           {displayName}
                         </h2>
+                        {/* Status Kehadiran Petugas Verifikator - Khusus Admin */}
+                        {isAdmin && foundUser && (
+                          foundUser.isOnline ? (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs">
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                              </span>
+                              Online
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                              <span className="inline-flex rounded-full h-1.5 w-1.5 bg-slate-400"></span>
+                              Offline
+                            </span>
+                          )
+                        )}
                       </div>
                       
                       {/* Informasi NIPPPK, Pangkat, Jabatan Verifikator */}
@@ -1278,6 +1296,24 @@ export default function VerifikasiDinasBerkasPage() {
 
                       return foundUser ? (
                         <div className="flex items-center gap-2 bg-white/95 border border-purple-200/90 px-3 py-1.5 rounded-xl text-xs shadow-sm flex-wrap">
+                          {/* Indikator Status Online / Offline */}
+                          <div className="flex items-center mr-0.5">
+                            {foundUser.isOnline ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 border border-emerald-300">
+                                <span className="relative flex h-1.5 w-1.5">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                </span>
+                                Online
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                <span className="inline-flex rounded-full h-1.5 w-1.5 bg-slate-400"></span>
+                                Offline
+                              </span>
+                            )}
+                          </div>
+
                           <div className="flex items-center gap-1 text-purple-800 font-bold">
                             <Key className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                             <span className="font-mono">User: <strong>{foundUser.username || foundUser.id}</strong></span>
@@ -1286,6 +1322,14 @@ export default function VerifikasiDinasBerkasPage() {
                           <div className="flex items-center gap-1 font-mono">
                             <span className="text-slate-500 font-bold">Sandi:</span>
                             <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">{foundUser.password || "••••••"}</span>
+                          </div>
+                          <span className="text-slate-300">|</span>
+                          <div className="flex items-center gap-1 text-[11px] text-slate-600 font-medium">
+                            <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="text-slate-400 font-semibold">Terakhir Login:</span>
+                            <span className="font-semibold text-slate-700">
+                              {foundUser.lastLogin ? formatDateTimeIndo(foundUser.lastLogin) : "Belum pernah login"}
+                            </span>
                           </div>
                           <Button
                             size="sm"

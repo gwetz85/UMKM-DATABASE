@@ -35,7 +35,7 @@ import {
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useUser, useObject, useMemoFirebase, useAuth, useList, useDatabase } from "@/firebase"
-import { ref, query } from "firebase/database"
+import { ref, query, update } from "firebase/database"
 import { signOut } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -107,6 +107,16 @@ export function AppSidebar() {
   const handleAuthAction = async () => {
     if (isMobile) setOpenMobile(false);
     if (user) {
+      if (userProfile?.id && database) {
+        try {
+          await update(ref(database, `system_users/${userProfile.id}`), {
+            isOnline: false,
+            lastSeen: Date.now()
+          });
+        } catch (e) {
+          // ignore
+        }
+      }
       await signOut(auth)
       router.push("/login")
     } else {

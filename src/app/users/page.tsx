@@ -42,6 +42,7 @@ import { useToast } from "@/hooks/use-toast"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
+import { formatDateTimeIndo } from "@/lib/utils"
 
 function UserDeletionTimer({ 
   userId, 
@@ -595,26 +596,53 @@ export default function UserManagementPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {u.uid ? (
-                        <div className="flex flex-col gap-1.5">
-                          <span className="text-[9px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-black uppercase w-fit">Terkunci di Perangkat</span>
-                          {u.activeSessionId && (
-                            <span className="text-[9px] px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full font-black uppercase border border-orange-200 w-fit flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse inline-block" />
-                              AKTIF DI PERANGKAT LAIN
+                      <div className="flex flex-col gap-1.5">
+                        {/* Status Online / Offline & Terakhir Login */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {u.isOnline ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-black text-[9px] uppercase border border-emerald-300 shadow-xs">
+                              <span className="relative flex h-1.5 w-1.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                              </span>
+                              Online
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full font-bold text-[9px] uppercase border border-slate-200">
+                              <span className="inline-flex rounded-full h-1.5 w-1.5 bg-slate-400"></span>
+                              Offline
                             </span>
                           )}
-                          <span className="text-[8px] font-mono text-muted-foreground truncate max-w-[100px]">{u.uid}</span>
+
+                          <span className="text-[9px] text-slate-500 font-medium flex items-center gap-1" title={u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum pernah login"}>
+                            <Clock className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                            <span className="truncate max-w-[120px]">
+                              {u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum login"}
+                            </span>
+                          </span>
                         </div>
-                      ) : (
-                        <UserDeletionTimer 
-                          userId={u.id} 
-                          userUid={u.uid} 
-                          addedAt={u.addedAt} 
-                          database={database} 
-                          isAdmin={isAdmin} 
-                        />
-                      )}
+
+                        {u.uid ? (
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[9px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-black uppercase w-fit">Terkunci di Perangkat</span>
+                            {u.activeSessionId && (
+                              <span className="text-[9px] px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full font-black uppercase border border-orange-200 w-fit flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse inline-block" />
+                                AKTIF DI PERANGKAT LAIN
+                              </span>
+                            )}
+                            <span className="text-[8px] font-mono text-muted-foreground truncate max-w-[100px]">{u.uid}</span>
+                          </div>
+                        ) : (
+                          <UserDeletionTimer 
+                            userId={u.id} 
+                            userUid={u.uid} 
+                            addedAt={u.addedAt} 
+                            database={database} 
+                            isAdmin={isAdmin} 
+                          />
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -879,6 +907,31 @@ export default function UserManagementPage() {
                   <span className="text-muted-foreground text-xs font-semibold">Status Perangkat (UID)</span>
                   <span className="font-mono text-[10px] text-slate-600 bg-slate-200/70 px-2 py-0.5 rounded truncate max-w-[180px]">
                     {detailUser.uid || 'Belum Terkunci'}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span className="text-muted-foreground text-xs font-semibold">Status Kehadiran</span>
+                  {detailUser.isOnline ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      Online (Sedang Aktif)
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                      <span className="inline-flex rounded-full h-2 w-2 bg-slate-400"></span>
+                      Offline
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span className="text-muted-foreground text-xs font-semibold">Terakhir Login</span>
+                  <span className="text-xs text-slate-700 font-mono font-bold">
+                    {detailUser.lastLogin ? formatDateTimeIndo(detailUser.lastLogin) : "Belum pernah login"}
                   </span>
                 </div>
 

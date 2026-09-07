@@ -37,11 +37,13 @@ import {
   Trash2,
   AlertTriangle,
   Power,
-  PowerOff
+  PowerOff,
+  Clock
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import Link from "next/link"
 import { addTunasBangsaHeader } from "@/lib/pdf-generator"
+import { formatDateTimeIndo } from "@/lib/utils"
 
 interface ParsedPetugasRow {
   rowNum: number
@@ -1548,7 +1550,7 @@ export default function UploadPetugasSurveyPage() {
                     <TableHead className="font-bold min-w-[140px]">Username</TableHead>
                     <TableHead className="font-bold min-w-[130px]">Password</TableHead>
                     <TableHead className="font-bold text-center min-w-[110px]">Data Terhubung</TableHead>
-                    <TableHead className="font-bold text-center min-w-[100px]">Status Login</TableHead>
+                    <TableHead className="font-bold text-center min-w-[140px]">Status & Kehadiran</TableHead>
                     <TableHead className="font-bold text-center min-w-[90px]">Status Akun</TableHead>
                     <TableHead className="text-center font-bold min-w-[200px]">Aksi</TableHead>
                   </TableRow>
@@ -1602,17 +1604,44 @@ export default function UploadPetugasSurveyPage() {
                           </div>
                         </TableCell>
 
-                        {/* Status Login */}
+                        {/* Status & Kehadiran */}
                         <TableCell className="text-center">
-                          {u.uid ? (
-                            <div className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full px-2.5 py-1 text-[10px] font-black uppercase">
-                              <Lock className="w-2.5 h-2.5" /> Terkunci
-                            </div>
-                          ) : (
-                            <div className="inline-flex items-center gap-1 bg-amber-50 text-amber-600 border border-amber-200 rounded-full px-2.5 py-1 text-[10px] font-black uppercase">
-                              <UserCheck className="w-2.5 h-2.5" /> Siap Login
-                            </div>
-                          )}
+                          <div className="flex flex-col items-center gap-1">
+                            {/* Online / Offline badge */}
+                            {u.isOnline ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 border border-emerald-300 shadow-xs">
+                                <span className="relative flex h-1.5 w-1.5">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                </span>
+                                Online
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                <span className="inline-flex rounded-full h-1.5 w-1.5 bg-slate-400"></span>
+                                Offline
+                              </span>
+                            )}
+
+                            {/* Terakhir Login */}
+                            <span className="text-[9px] text-slate-500 font-medium flex items-center gap-1" title={u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum pernah login"}>
+                              <Clock className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                              <span className="truncate max-w-[120px]">
+                                {u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum login"}
+                              </span>
+                            </span>
+
+                            {/* Status Perangkat */}
+                            {u.uid ? (
+                              <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase">
+                                <Lock className="w-2 h-2" /> Terkunci
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase">
+                                <UserCheck className="w-2 h-2" /> Siap Login
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
 
                         {/* Status Akun */}
