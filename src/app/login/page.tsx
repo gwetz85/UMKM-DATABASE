@@ -148,57 +148,72 @@ export default function LoginPage() {
         if (userSnap.exists()) {
           const userData = userSnap.val()
           finalUserRole = userData.role || ''
-          
-          if (userData.password && userData.password !== password) {
-             throw new Error("auth/password-changed-by-admin")
-          }
-          
-          if (userData.status === 'inactive') {
-            await signOut(auth)
-            toast({
-              variant: "destructive",
-              title: "Akun Dinonaktifkan",
-              description: "User ini telah dinonaktifkan oleh Administrator."
-            })
-            setLoading(false)
-            return
-          }
 
-          if (userData.role === 'pending') {
-            await signOut(auth)
-            toast({ 
-              variant: "destructive", 
-              title: "Akses Belum Aktif", 
-              description: "Akun Anda sudah terdaftar. Silakan hubungi Admin untuk pemberian akses (Role)." 
-            })
-            setLoading(false)
-            return
+          // Admin bypass: jika email adalah agus@umkm.id atau ada di roles_admin,
+          // lewati semua pengecekan status/role — langsung lolos
+          const isHardcodedAdmin = email === 'agus@umkm.id'
+          let isRolesAdmin = false
+          if (!isHardcodedAdmin && user.uid) {
+            const roleRef = ref(database, `roles_admin/${user.uid}`)
+            const roleSnap = await get(roleRef)
+            if (roleSnap.exists() && roleSnap.val().admin === true) {
+              isRolesAdmin = true
+            }
           }
+          const hasAdminBypass = isHardcodedAdmin || isRolesAdmin
 
-          if (userData.role !== 'dinas' && userData.role !== 'verifikator_dinas') {
-            if (!userData.uid) {
-              await update(userRef, { uid: user.uid })
-              toast({ title: "Perangkat Terkunci", description: "Akun Anda sekarang terikat pada perangkat ini." })
-            } else if (userData.uid !== user.uid) {
+          if (!hasAdminBypass) {
+            if (userData.password && userData.password !== password) {
+               throw new Error("auth/password-changed-by-admin")
+            }
+            
+            if (userData.status === 'inactive') {
               await signOut(auth)
-              toast({ 
-                variant: "destructive", 
-                title: "Akses Ditolak", 
-                description: "Akun terikat pada perangkat lain. Hubungi Admin untuk reset." 
+              toast({
+                variant: "destructive",
+                title: "Akun Dinonaktifkan",
+                description: "User ini telah dinonaktifkan oleh Administrator."
               })
               setLoading(false)
               return
             }
+
+            if (userData.role === 'pending') {
+              await signOut(auth)
+              toast({ 
+                variant: "destructive", 
+                title: "Akses Belum Aktif", 
+                description: "Akun Anda sudah terdaftar. Silakan hubungi Admin untuk pemberian akses (Role)." 
+              })
+              setLoading(false)
+              return
+            }
+
+            if (userData.role !== 'dinas' && userData.role !== 'verifikator_dinas') {
+              if (!userData.uid) {
+                await update(userRef, { uid: user.uid })
+                toast({ title: "Perangkat Terkunci", description: "Akun Anda sekarang terikat pada perangkat ini." })
+              } else if (userData.uid !== user.uid) {
+                await signOut(auth)
+                toast({ 
+                  variant: "destructive", 
+                  title: "Akses Ditolak", 
+                  description: "Akun terikat pada perangkat lain. Hubungi Admin untuk reset." 
+                })
+                setLoading(false)
+                return
+              }
+            }
           }
         } else {
-          // KEY SECURITY FIX: Reject login if user is not found in system_users
-          // Bypass for developer explicitly defined in the app
-          let hasAdminBypass = email === 'agus@umkm.id';
+          // Record tidak ada di system_users — cek admin bypass
+          const isHardcodedAdmin = email === 'agus@umkm.id'
+          let hasAdminBypass = isHardcodedAdmin
           if (!hasAdminBypass && user.uid) {
-            const roleRef = ref(database, `roles_admin/${user.uid}`);
-            const roleSnap = await get(roleRef);
+            const roleRef = ref(database, `roles_admin/${user.uid}`)
+            const roleSnap = await get(roleRef)
             if (roleSnap.exists() && roleSnap.val().admin === true) {
-              hasAdminBypass = true;
+              hasAdminBypass = true
             }
           }
 
@@ -213,6 +228,7 @@ export default function LoginPage() {
             return
           }
         }
+
         
         toast({ title: "Login Berhasil", description: "Selamat datang kembali." })
       } catch (loginError: any) {
