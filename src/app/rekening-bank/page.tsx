@@ -181,13 +181,14 @@ function RekeningBankContent() {
       const workbook = new ExcelJS.Workbook()
       const worksheet = workbook.addWorksheet("Data Rekening Bank")
 
-      // Page Setup: Landscape, A4 (paperSize: 9), Fit to 1 page wide
+      // Page Setup: Landscape, A4 (paperSize: 9), Fit to 1 page wide, pas kiri kanan & tengah horizontal
       worksheet.pageSetup = {
         orientation: "landscape",
         paperSize: 9, // A4
         fitToPage: true,
         fitToWidth: 1,
         fitToHeight: 0,
+        horizontalCentered: true, // Margin pas rata tengah kiri-kanan saat print
         margins: {
           left: 0.5,
           right: 0.5,
@@ -200,12 +201,12 @@ function RekeningBankContent() {
 
       // Title rows
       const titleRow = worksheet.addRow([`DAFTAR REKENING BANK PELAKU USAHA - ${titleBank.toUpperCase()}`])
-      titleRow.font = { name: "Arial", size: 14, bold: true, color: { argb: "FF1E293B" } }
+      titleRow.font = { name: "Tahoma", size: 13, bold: true, color: { argb: "FF1E293B" } }
       titleRow.alignment = { vertical: "middle", horizontal: "left" }
       titleRow.height = 30
 
       const subTitleRow = worksheet.addRow([`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })} | Total: ${data.length} Data`])
-      subTitleRow.font = { name: "Arial", size: 10, italic: true, color: { argb: "FF64748B" } }
+      subTitleRow.font = { name: "Tahoma", size: 9, italic: true, color: { argb: "FF64748B" } }
       subTitleRow.alignment = { vertical: "middle", horizontal: "left" }
       subTitleRow.height = 20
 
@@ -229,7 +230,7 @@ function RekeningBankContent() {
       // 40 pixel is equivalent to 30 pt in Excel
       headerRow.height = 30
       headerRow.eachCell((cell) => {
-        cell.font = { name: "Arial", size: 11, bold: true, color: { argb: "FFFFFFFF" } }
+        cell.font = { name: "Tahoma", size: 10, bold: true, color: { argb: "FFFFFFFF" } }
         cell.fill = {
           type: "pattern",
           pattern: "solid",
@@ -244,12 +245,12 @@ function RekeningBankContent() {
         }
       })
 
-      // Column widths
+      // Column widths (proporsional & pas mengisi lebar kertas landscape A4)
       worksheet.getColumn(1).width = 8   // NO
-      worksheet.getColumn(2).width = 24  // NOMOR REKENING
-      worksheet.getColumn(3).width = 38  // NAMA PELAKU USAHA
-      worksheet.getColumn(4).width = 24  // KONTAK PELAKU USAHA
-      worksheet.getColumn(5).width = 22  // NOMINAL
+      worksheet.getColumn(2).width = 28  // NOMOR REKENING
+      worksheet.getColumn(3).width = 46  // NAMA PELAKU USAHA
+      worksheet.getColumn(4).width = 28  // KONTAK PELAKU USAHA
+      worksheet.getColumn(5).width = 26  // NOMINAL
 
       // Add Data Rows with row height 30 pt (40px)
       data.forEach((actor, index) => {
@@ -265,7 +266,7 @@ function RekeningBankContent() {
         row.height = 30
 
         row.eachCell((cell, colNumber) => {
-          cell.font = { name: "Arial", size: 10 }
+          cell.font = { name: "Tahoma", size: 10 }
           cell.border = {
             top: { style: "thin", color: { argb: "FFE2E8F0" } },
             left: { style: "thin", color: { argb: "FFE2E8F0" } },
@@ -289,7 +290,7 @@ function RekeningBankContent() {
             // Nomor rekening: formatted as text to avoid scientific notation
             cell.numFmt = "@"
             cell.alignment = { vertical: "middle", horizontal: "center" }
-            cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FF0284C7" } }
+            cell.font = { name: "Tahoma", size: 10, bold: true, color: { argb: "FF0284C7" } }
           } else if (colNumber === 3) {
             cell.alignment = { vertical: "middle", horizontal: "left" }
           } else if (colNumber === 4) {
@@ -298,7 +299,7 @@ function RekeningBankContent() {
           } else if (colNumber === 5) {
             cell.numFmt = '"Rp. "#,##0'
             cell.alignment = { vertical: "middle", horizontal: "right" }
-            cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FF16A34A" } }
+            cell.font = { name: "Tahoma", size: 10, bold: true, color: { argb: "FF16A34A" } }
           }
         })
       })
@@ -315,7 +316,7 @@ function RekeningBankContent() {
       worksheet.mergeCells(`A${totalRow.number}:C${totalRow.number}`)
 
       totalRow.eachCell((cell, colNumber) => {
-        cell.font = { name: "Arial", size: 11, bold: true, color: { argb: "FF1E293B" } }
+        cell.font = { name: "Tahoma", size: 10, bold: true, color: { argb: "FF1E293B" } }
         cell.fill = {
           type: "pattern",
           pattern: "solid",
