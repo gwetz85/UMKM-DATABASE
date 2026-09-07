@@ -7,7 +7,7 @@ import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Loader2, Search, CreditCard, Building2, User, MapPin, ChevronRight, Printer, Send, CheckCircle2 } from "lucide-react"
+import { Loader2, Search, CreditCard, Building2, User, MapPin, ChevronRight, Printer, Send, CheckCircle2, FileSpreadsheet } from "lucide-react"
 import { BusinessActor } from "../lib/types"
 import { cn } from "@/lib/utils"
 import { useSearchParams } from "next/navigation"
@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import ExcelJS from "exceljs"
 
 const BANK_LIST = [
   "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA"
@@ -156,6 +157,216 @@ function RekeningBankContent() {
     window.print();
   }
 
+  const handleExportExcel = async (actorsToExport?: BusinessActor[], bankTitle?: string) => {
+    try {
+      let data: BusinessActor[] = []
+      let titleBank = bankTitle || (selectedBank ? `Bank ${selectedBank}` : 'Semua Bank')
+
+      if (actorsToExport && actorsToExport.length > 0) {
+        data = actorsToExport
+      } else {
+        // Collect all actors currently displayed across all grouped banks
+        Object.values(filteredAndGroupedData).forEach(group => {
+          data.push(...group)
+        })
+      }
+
+      if (data.length === 0) {
+        toast({ title: "Tidak Ada Data", description: "Tidak ada data rekening untuk di-export." })
+        return
+      }
+
+      toast({ title: "⏳ Memproses Excel", description: `Sedang menyiapkan file Excel ${titleBank}...` })
+
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet("Data Rekening Bank")
+
+      // Page Setup: Landscape, A4 (paperSize: 9), Fit to 1 page wide
+      worksheet.pageSetup = {
+        orientation: "landscape",
+        paperSize: 9, // A4
+        fitToPage: true,
+        fitToWidth: 1,
+        fitToHeight: 0,
+        margins: {
+          left: 0.5,
+          right: 0.5,
+          top: 0.5,
+          bottom: 0.5,
+          header: 0.3,
+          footer: 0.3
+        }
+      }
+
+      // Title rows
+      const titleRow = worksheet.addRow([`DAFTAR REKENING BANK PELAKU USAHA - ${titleBank.toUpperCase()}`])
+      titleRow.font = { name: "Arial", size: 14, bold: true, color: { argb: "FF1E293B" } }
+      titleRow.alignment = { vertical: "middle", horizontal: "left" }
+      titleRow.height = 30
+
+      const subTitleRow = worksheet.addRow([`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { dateStyle: 'full' })} | Total: ${data.length} Data`])
+      subTitleRow.font = { name: "Arial", size: 10, italic: true, color: { argb: "FF64748B" } }
+      subTitleRow.alignment = { vertical: "middle", horizontal: "left" }
+      subTitleRow.height = 20
+
+      worksheet.addRow([]) // Spacer row
+
+      // Header columns specification
+      // Requested columns:
+      // - No
+      // - Nomor Rekening
+      // - Nama Pelaku Usaha
+      // - Kontak Pelaku Usaha
+      // - Nominal
+      const headerRow = worksheet.addRow([
+        "NO",
+        "NOMOR REKENING",
+        "NAMA PELAKU USAHA",
+        "KONTAK PELAKU USAHA",
+        "NOMINAL"
+      ])
+
+      // 40 pixel is equivalent to 30 pt in Excel
+      headerRow.height = 30
+      headerRow.eachCell((cell) => {
+        cell.font = { name: "Arial", size: 11, bold: true, color: { argb: "FFFFFFFF" } }
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF0284C7" } // Professional Sky-600 / Primary
+        }
+        cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true }
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFCBD5E1" } },
+          left: { style: "thin", color: { argb: "FFCBD5E1" } },
+          bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
+          right: { style: "thin", color: { argb: "FFCBD5E1" } }
+        }
+      })
+
+      // Column widths
+      worksheet.getColumn(1).width = 8   // NO
+      worksheet.getColumn(2).width = 24  // NOMOR REKENING
+      worksheet.getColumn(3).width = 38  // NAMA PELAKU USAHA
+      worksheet.getColumn(4).width = 24  // KONTAK PELAKU USAHA
+      worksheet.getColumn(5).width = 22  // NOMINAL
+
+      // Add Data Rows with row height 30 pt (40px)
+      data.forEach((actor, index) => {
+        const row = worksheet.addRow([
+          index + 1,
+          String(actor.bankNumber || "-"),
+          actor.fullName || "-",
+          actor.phone || "-",
+          1000000
+        ])
+
+        // 40 pixel in Excel is 30 points
+        row.height = 30
+
+        row.eachCell((cell, colNumber) => {
+          cell.font = { name: "Arial", size: 10 }
+          cell.border = {
+            top: { style: "thin", color: { argb: "FFE2E8F0" } },
+            left: { style: "thin", color: { argb: "FFE2E8F0" } },
+            bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+            right: { style: "thin", color: { argb: "FFE2E8F0" } }
+          }
+
+          // Alternating row background for clean look
+          if (index % 2 === 1) {
+            cell.fill = {
+              type: "pattern",
+              pattern: "solid",
+              fgColor: { argb: "FFF8FAFC" }
+            }
+          }
+
+          // Alignment and number formatting
+          if (colNumber === 1) {
+            cell.alignment = { vertical: "middle", horizontal: "center" }
+          } else if (colNumber === 2) {
+            // Nomor rekening: formatted as text to avoid scientific notation
+            cell.numFmt = "@"
+            cell.alignment = { vertical: "middle", horizontal: "center" }
+            cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FF0284C7" } }
+          } else if (colNumber === 3) {
+            cell.alignment = { vertical: "middle", horizontal: "left" }
+          } else if (colNumber === 4) {
+            cell.numFmt = "@"
+            cell.alignment = { vertical: "middle", horizontal: "center" }
+          } else if (colNumber === 5) {
+            cell.numFmt = '"Rp. "#,##0'
+            cell.alignment = { vertical: "middle", horizontal: "right" }
+            cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FF16A34A" } }
+          }
+        })
+      })
+
+      // Total Row
+      const totalRow = worksheet.addRow([
+        "TOTAL",
+        "",
+        "",
+        `${data.length} Orang`,
+        data.length * 1000000
+      ])
+      totalRow.height = 30
+      worksheet.mergeCells(`A${totalRow.number}:C${totalRow.number}`)
+
+      totalRow.eachCell((cell, colNumber) => {
+        cell.font = { name: "Arial", size: 11, bold: true, color: { argb: "FF1E293B" } }
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFF1F5F9" }
+        }
+        cell.border = {
+          top: { style: "medium", color: { argb: "FF94A3B8" } },
+          left: { style: "thin", color: { argb: "FFE2E8F0" } },
+          bottom: { style: "medium", color: { argb: "FF94A3B8" } },
+          right: { style: "thin", color: { argb: "FFE2E8F0" } }
+        }
+        if (colNumber === 1) {
+          cell.alignment = { vertical: "middle", horizontal: "center" }
+        } else if (colNumber === 4) {
+          cell.alignment = { vertical: "middle", horizontal: "center" }
+        } else if (colNumber === 5) {
+          cell.numFmt = '"Rp. "#,##0'
+          cell.alignment = { vertical: "middle", horizontal: "right" }
+        }
+      })
+
+      // Write to buffer and trigger download
+      const buffer = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      const sanitizeName = titleBank.replace(/[^a-zA-Z0-9]/g, "_")
+      const nowStr = new Date().toISOString().split("T")[0]
+      a.href = url
+      a.download = `Rekening_Bank_${sanitizeName}_${nowStr}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+
+      logActivity({
+        query: `EXPORT EXCEL: Rekening Bank ${titleBank} (${data.length} DATA)`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: "Web",
+        method: "REKENING BANK",
+        userId: user?.email || user?.uid || "Admin"
+      })
+
+      toast({ title: "✅ Export Berhasil", description: `${data.length} data rekening berhasil di-export ke file Excel.` })
+    } catch (error: any) {
+      console.error("Export Excel Error:", error)
+      toast({ variant: "destructive", title: "Gagal Export", description: error?.message || "Terjadi kesalahan saat memproses file Excel." })
+    }
+  }
+
   if (isUserLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -191,6 +402,12 @@ function RekeningBankContent() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          <button 
+            onClick={() => handleExportExcel()}
+            className="h-10 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+          >
+            <FileSpreadsheet className="w-4 h-4" /> EXPORT EXCEL
+          </button>
           <button 
             onClick={handlePrint}
             className="h-10 px-6 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
@@ -233,6 +450,15 @@ function RekeningBankContent() {
                     <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">{bankName}</h2>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest print:hidden">{actors.length} Pelaku Usaha</p>
                   </div>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => handleExportExcel(actors, bankName)}
+                    className="h-8 rounded-lg border-emerald-600/30 text-emerald-700 hover:bg-emerald-600 hover:text-white font-bold text-[10px] px-3 gap-1.5 print:hidden"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5" />
+                    EXPORT EXCEL
+                  </Button>
                   <Button 
                     size="sm" 
                     variant="outline" 
