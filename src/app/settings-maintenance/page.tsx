@@ -6,10 +6,51 @@ import { ref, set } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ShieldAlert, Save, Bold, Italic, Type, Underline, AlignLeft, AlignCenter, AlignRight, Eye } from 'lucide-react';
+import { Loader2, ShieldAlert, Save, Bold, Italic, Type, Underline, AlignLeft, AlignCenter, AlignRight, Eye, Image as ImageIcon, Upload, Trash2, Link as LinkIcon, Sparkles, X, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+
+// Helper kompresi gambar agar cepat disimpan dan dimuat
+const compressImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height = Math.round(height * (MAX_WIDTH / width));
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width = Math.round(width * (MAX_HEIGHT / height));
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error('Gagal membaca gambar'));
+    };
+    reader.onerror = () => reject(new Error('Gagal membaca file'));
+  });
+};
 
 export default function SettingsMaintenance() {
   const database = useDatabase();
@@ -19,6 +60,12 @@ export default function SettingsMaintenance() {
   
   const [enabled, setEnabled] = useState(false);
   const [message, setMessage] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [urlInput, setUrlInput] = useState('');
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [isSaving, setIsSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [lastSaved, setLastSaved] = useState<{enabled: boolean, updatedAt?: number} | null>(null);
@@ -53,12 +100,14 @@ export default function SettingsMaintenance() {
       setLastSaved({ enabled: currentData.enabled ?? false, updatedAt: currentData.updatedAt });
       const msg = currentData.message || defaultMsg;
       setMessage(msg);
+      setImageUrl(currentData.imageUrl || currentData.image || '');
       if (editorRef.current) {
         editorRef.current.innerHTML = msg;
       }
     } else {
       setEnabled(false);
       setMessage(defaultMsg);
+      setImageUrl('');
       if (editorRef.current) {
         editorRef.current.innerHTML = defaultMsg;
       }
@@ -124,6 +173,28 @@ export default function SettingsMaintenance() {
     );
   }
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ variant: 'destructive', title: 'Format Tidak Didukung', description: 'Harap pilih file gambar (JPG, PNG, WebP).' });
+      return;
+    }
+
+    setIsCompressing(true);
+    try {
+      const base64 = await compressImage(file);
+      setImageUrl(base64);
+      toast({ title: 'Gambar Terpilih', description: 'Gambar berhasil dimuat. Klik Simpan Pengaturan untuk menerapkan.' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Gagal Memproses Gambar', description: err.message || 'Terjadi kesalahan saat memproses gambar.' });
+    } finally {
+      setIsCompressing(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handleSave = async () => {
     const currentMessage = editorRef.current?.innerHTML || message;
     const textOnly = editorRef.current?.textContent || '';
@@ -139,6 +210,7 @@ export default function SettingsMaintenance() {
       await set(ref(database!, 'settings/maintenance'), {
         enabled,
         message: currentMessage,
+        imageUrl: imageUrl.trim() || null,
         updatedAt,
         updatedBy: user?.uid
       });
@@ -197,6 +269,135 @@ export default function SettingsMaintenance() {
               onCheckedChange={setEnabled} 
               className={enabled ? "bg-red-500" : ""}
             />
+          </div>
+
+          {/* Section: Gambar / Poster Maintenance */}
+          <div className="p-6 border rounded-2xl bg-slate-50/50 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-red-500" />
+                  Gambar / Poster Tampilan
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Tambahkan gambar, banner, atau poster menarik agar halaman maintenance tampil lebih profesional.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isCompressing}
+                  className="rounded-xl gap-2 font-bold text-slate-700 bg-white shadow-sm hover:bg-slate-50"
+                >
+                  {isCompressing ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+                  ) : (
+                    <Upload className="w-4 h-4 text-red-500" />
+                  )}
+                  Unggah Gambar
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowUrlInput(!showUrlInput)}
+                  className="rounded-xl gap-2 font-bold text-slate-700 bg-white shadow-sm hover:bg-slate-50"
+                >
+                  <LinkIcon className="w-4 h-4 text-blue-500" />
+                  Link URL
+                </Button>
+
+                {imageUrl && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setImageUrl('');
+                      setUrlInput('');
+                    }}
+                    className="rounded-xl gap-1 text-red-600 hover:bg-red-50 hover:text-red-700 font-bold"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Hapus
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Input URL jika mode link aktif */}
+            {showUrlInput && (
+              <div className="flex gap-2 pt-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                <Input
+                  type="url"
+                  placeholder="https://contoh.com/gambar-maintenance.jpg"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  className="h-10 text-sm bg-white rounded-xl"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    if (urlInput.trim()) {
+                      setImageUrl(urlInput.trim());
+                      setShowUrlInput(false);
+                      toast({ title: 'Link Gambar Disetel', description: 'Klik Simpan Pengaturan untuk menerapkan.' });
+                    }
+                  }}
+                  className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 shrink-0"
+                >
+                  Terapkan
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowUrlInput(false)}
+                  className="rounded-xl shrink-0"
+                >
+                  Batal
+                </Button>
+              </div>
+            )}
+
+            {/* Kotak Preview / Tampilan Gambar */}
+            {imageUrl ? (
+              <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900/5 shadow-inner group max-h-72 flex items-center justify-center">
+                <img
+                  src={imageUrl}
+                  alt="Preview Maintenance"
+                  className="w-full max-h-72 object-cover object-center rounded-xl"
+                />
+                <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg border border-white/20">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  Gambar Terpasang
+                </div>
+              </div>
+            ) : (
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-slate-200 hover:border-red-400/70 rounded-2xl p-6 text-center cursor-pointer transition-all bg-white hover:bg-red-50/20 group"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-red-100/70 text-red-500 mx-auto flex items-center justify-center mb-2.5 group-hover:scale-110 transition-transform shadow-sm">
+                  <ImageIcon className="w-6 h-6" />
+                </div>
+                <p className="text-sm font-bold text-slate-700">Klik di sini untuk mengunggah gambar / poster</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Mendukung format JPG, PNG, WebP (otomatis dioptimalkan)</p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4">
@@ -318,12 +519,22 @@ export default function SettingsMaintenance() {
                   <div 
                     style={{
                       background: 'rgba(30, 41, 59, 0.95)',
-                      borderRadius: '18px',
+                      borderRadius: '20px',
                       padding: '24px',
                       border: '1px solid rgba(148, 163, 184, 0.15)',
                     }}
-                    dangerouslySetInnerHTML={{ __html: message }}
-                  />
+                  >
+                    {imageUrl && (
+                      <div className="mb-4 rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                        <img 
+                          src={imageUrl} 
+                          alt="Banner Maintenance" 
+                          className="w-full max-h-60 object-cover object-center"
+                        />
+                      </div>
+                    )}
+                    <div dangerouslySetInnerHTML={{ __html: message }} />
+                  </div>
                 </div>
               </div>
             )}

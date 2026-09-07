@@ -53,6 +53,7 @@ export default function MaintenancePage() {
   }
 
   const message = maintenanceData?.message || 'Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.';
+  const imageUrl = maintenanceData?.imageUrl || maintenanceData?.image;
   const formattedTime = currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const formattedDate = currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -83,7 +84,7 @@ export default function MaintenancePage() {
         backgroundSize: '60px 60px',
       }} />
 
-      <div className="relative z-10 max-w-lg w-full" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
+      <div className="relative z-10 max-w-lg md:max-w-xl w-full" style={{ animation: 'fadeInUp 0.8s ease-out' }}>
         {/* Main Card */}
         <div style={{
           background: 'rgba(15, 23, 42, 0.6)',
@@ -102,33 +103,60 @@ export default function MaintenancePage() {
           }} />
 
           <div className="p-6 md:p-10">
-            {/* Animated Icon */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+            {/* Header Banner Image atau Animated Icon */}
+            {imageUrl ? (
               <div style={{
-                position: 'relative',
-                width: '80px', height: '80px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '24px',
+                borderRadius: '20px',
+                overflow: 'hidden',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                boxShadow: '0 16px 36px rgba(0,0,0,0.5), 0 0 35px rgba(59,130,246,0.2)',
+                background: 'rgba(15, 23, 42, 0.4)',
               }}>
-                {/* Rotating ring */}
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  borderRadius: '50%',
-                  border: '2px solid transparent',
-                  borderTopColor: '#3b82f6',
-                  borderRightColor: '#8b5cf6',
-                  animation: 'spin 3s linear infinite',
-                }} />
-                {/* Inner glow circle */}
-                <div style={{
-                  position: 'absolute', inset: '8px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.1))',
-                  animation: 'pulse 2s ease-in-out infinite',
-                }} />
-                {/* Gear icon */}
-                <Wrench style={{ width: '32px', height: '32px', color: '#60a5fa', animation: 'pulse 2s ease-in-out infinite' }} />
+                <img
+                  src={imageUrl}
+                  alt="Informasi Maintenance"
+                  style={{
+                    width: '100%',
+                    maxHeight: '280px',
+                    objectFit: 'cover',
+                    objectPosition: 'center',
+                    display: 'block',
+                  }}
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
               </div>
-            </div>
+            ) : (
+              /* Animated Icon Default */
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                <div style={{
+                  position: 'relative',
+                  width: '80px', height: '80px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {/* Rotating ring */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    borderRadius: '50%',
+                    border: '2px solid transparent',
+                    borderTopColor: '#3b82f6',
+                    borderRightColor: '#8b5cf6',
+                    animation: 'spin 3s linear infinite',
+                  }} />
+                  {/* Inner glow circle */}
+                  <div style={{
+                    position: 'absolute', inset: '8px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.1))',
+                    animation: 'pulse 2s ease-in-out infinite',
+                  }} />
+                  {/* Gear icon */}
+                  <Wrench style={{ width: '32px', height: '32px', color: '#60a5fa', animation: 'pulse 2s ease-in-out infinite' }} />
+                </div>
+              </div>
+            )}
 
             {/* Title */}
             <h1 style={{
