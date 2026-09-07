@@ -352,17 +352,22 @@ export default function MaintenancePage() {
                 overflow: 'hidden',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
                 boxShadow: '0 16px 36px rgba(0,0,0,0.5), 0 0 35px rgba(59,130,246,0.2)',
-                background: 'rgba(15, 23, 42, 0.4)',
+                background: 'rgba(15, 23, 42, 0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '4px',
               }}>
                 <img
                   src={imageUrl}
                   alt="Informasi Maintenance"
                   style={{
                     width: '100%',
-                    maxHeight: '280px',
-                    objectFit: 'cover',
-                    objectPosition: 'center',
+                    height: 'auto',
+                    maxHeight: '400px',
+                    objectFit: 'contain',
                     display: 'block',
+                    borderRadius: '16px',
                   }}
                   onError={(e) => {
                     (e.target as HTMLElement).style.display = 'none';

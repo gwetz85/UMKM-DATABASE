@@ -413,11 +413,11 @@ export default function SettingsMaintenance() {
 
             {/* Kotak Preview / Tampilan Gambar */}
             {imageUrl ? (
-              <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900/5 shadow-inner group max-h-72 flex items-center justify-center">
+              <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-900/5 shadow-inner group flex items-center justify-center p-2">
                 <img
                   src={imageUrl}
                   alt="Preview Maintenance"
-                  className="w-full max-h-72 object-cover object-center rounded-xl"
+                  className="w-full h-auto max-h-[380px] object-contain rounded-xl"
                 />
                 <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-full text-white text-[11px] font-bold flex items-center gap-1.5 shadow-lg border border-white/20">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
@@ -668,11 +668,11 @@ export default function SettingsMaintenance() {
                     }}
                   >
                     {imageUrl && (
-                      <div className="mb-4 rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                      <div className="mb-4 rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black/30 flex items-center justify-center p-1">
                         <img 
                           src={imageUrl} 
                           alt="Banner Maintenance" 
-                          className="w-full max-h-60 object-cover object-center"
+                          className="w-full h-auto max-h-[380px] object-contain rounded-lg"
                         />
                       </div>
                     )}
