@@ -79,16 +79,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   });
 
   const [userProfileState, setUserProfileState] = useState<{ profile: any; isProfileLoading: boolean }>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('simpu_cached_profile');
-        if (cached) {
-          return { profile: JSON.parse(cached), isProfileLoading: false };
-        }
-      } catch (e) {
-        // ignore storage parse error
-      }
-    }
+    // Do NOT use cached profile on initial load — wait for auth state to confirm uid match
+    // This prevents stale profile (wrong name/photo) from showing for another user
     return { profile: null, isProfileLoading: false };
   });
 
