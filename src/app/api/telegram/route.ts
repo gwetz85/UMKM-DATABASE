@@ -262,6 +262,7 @@ export async function POST(req: NextRequest) {
               else menuSource = "📂 Menu Lainnya";
               
               reply += `■ Menu: ${menuSource}\n`;
+              reply += `\n`;
 
               // Cek data di sheet 2023, 2024, 2025 berdasarkan Nomor KK
               const kkTarget = (r.noKK || "").trim();
