@@ -108,8 +108,6 @@ export default function SettingsMaintenance() {
 
   const { data: currentData, isLoading: dataLoading } = useObject(maintenanceRef);
 
-  const defaultMsg = 'Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.';
-
   // Load data from Firebase whenever it arrives/changes
   useEffect(() => {
     if (dataLoading) return;
@@ -118,7 +116,7 @@ export default function SettingsMaintenance() {
     if (currentData) {
       setEnabled(currentData.enabled ?? false);
       setLastSaved({ enabled: currentData.enabled ?? false, updatedAt: currentData.updatedAt });
-      const msg = currentData.message || defaultMsg;
+      const msg = currentData.message || '';
       setMessage(msg);
       setImageUrl(currentData.imageUrl || currentData.image || '');
 
@@ -142,24 +140,15 @@ export default function SettingsMaintenance() {
       }
     } else {
       setEnabled(false);
-      setMessage(defaultMsg);
+      setMessage('');
       setImageUrl('');
       setEstimatedEndTime('');
       if (editorRef.current) {
-        editorRef.current.innerHTML = defaultMsg;
+        editorRef.current.innerHTML = '';
       }
     }
     initDoneRef.current = true;
   }, [currentData, dataLoading]);
-
-  // Handle toggling "enabled" to set default message if message is empty
-  useEffect(() => {
-    if (!initDoneRef.current) return;
-    if (enabled && (!message || message.trim() === '')) {
-      setMessage(defaultMsg);
-      if (editorRef.current) editorRef.current.innerHTML = defaultMsg;
-    }
-  }, [enabled]);
 
   // Callback ref to ensure innerHTML is set as soon as editor DOM element mounts
   const setEditorRef = useCallback((node: HTMLDivElement | null) => {
@@ -233,20 +222,16 @@ export default function SettingsMaintenance() {
   };
 
   const handleSave = async () => {
+    const textOnly = (editorRef.current?.textContent || message.replace(/<[^>]*>/g, '')).trim();
     const currentMessage = editorRef.current?.innerHTML || message;
-    const textOnly = editorRef.current?.textContent || '';
-
-    if (enabled && !textOnly.trim()) {
-      toast({ variant: 'destructive', title: 'Kesalahan', description: 'Pesan maintenance tidak boleh kosong.' });
-      return;
-    }
+    const finalMessage = textOnly ? currentMessage : null;
 
     setIsSaving(true);
     try {
       const updatedAt = Date.now();
       await set(ref(database!, 'settings/maintenance'), {
         enabled,
-        message: currentMessage,
+        message: finalMessage,
         imageUrl: imageUrl.trim() || null,
         estimatedEndTime: estimatedEndTime ? new Date(estimatedEndTime).toISOString() : null,
         updatedAt,
@@ -695,7 +680,25 @@ export default function SettingsMaintenance() {
                         </div>
                       </div>
                     )}
-                    <div dangerouslySetInnerHTML={{ __html: message }} />
+                    {message && message.replace(/<[^>]*>/g, '').trim().length > 0 && (
+                      <div 
+                        style={{
+                          background: 'rgba(15, 23, 42, 0.6)',
+                          border: '1px solid rgba(148, 163, 184, 0.08)',
+                          borderRadius: '16px',
+                          padding: '16px 20px',
+                          marginTop: '12px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                          <ShieldAlert style={{ width: '14px', height: '14px', color: '#f59e0b' }} />
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            Informasi
+                          </span>
+                        </div>
+                        <div dangerouslySetInnerHTML={{ __html: message }} />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useDatabase, useObject, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { useRouter } from 'next/navigation';
-import { Loader2, RefreshCw, LogOut, Wrench, Clock, ShieldAlert, Timer } from 'lucide-react';
+import { Loader2, RefreshCw, LogOut, Wrench, ShieldAlert, Timer } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 
@@ -253,7 +253,6 @@ export default function MaintenancePage() {
   const database = useDatabase();
   const router = useRouter();
   const auth = useAuth();
-  const [currentTime, setCurrentTime] = useState(new Date());
 
   const maintenanceRef = useMemoFirebase(() => {
     if (!database) return null;
@@ -269,12 +268,6 @@ export default function MaintenancePage() {
       }
     }
   }, [maintenanceData, router]);
-
-  // Live clock
-  useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleLogout = async () => {
     try {
@@ -293,10 +286,9 @@ export default function MaintenancePage() {
     );
   }
 
-  const message = maintenanceData?.message || 'Sistem sedang dalam masa perbaikan (Maintenance). Silakan coba beberapa saat lagi.';
+  const rawMessage = maintenanceData?.message || '';
+  const hasMessage = rawMessage.replace(/<[^>]*>/g, '').trim().length > 0;
   const imageUrl = maintenanceData?.imageUrl || maintenanceData?.image;
-  const formattedTime = currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  const formattedDate = currentTime.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4 overflow-hidden" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 30%, #0c4a6e 60%, #0f172a 100%)' }}>
@@ -409,94 +401,33 @@ export default function MaintenancePage() {
               <MaintenanceCountdown targetDate={maintenanceData.estimatedEndTime} />
             )}
 
-            {/* Title */}
-            <h1 style={{
-              textAlign: 'center',
-              fontSize: '24px',
-              fontWeight: 900,
-              letterSpacing: '-0.02em',
-              background: 'linear-gradient(135deg, #e2e8f0, #ffffff, #93c5fd)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              marginBottom: '4px',
-            }}>
-              Sedang Maintenance
-            </h1>
-            <p style={{
-              textAlign: 'center',
-              fontSize: '12px',
-              color: '#64748b',
-              textTransform: 'uppercase',
-              letterSpacing: '2px',
-              fontWeight: 600,
-              marginBottom: '20px',
-            }}>
-              Sistem dalam perbaikan
-            </p>
-
-            {/* Message Box */}
-            <div style={{
-              background: 'rgba(30, 41, 59, 0.6)',
-              border: '1px solid rgba(148, 163, 184, 0.08)',
-              borderRadius: '16px',
-              padding: '16px 20px',
-              marginBottom: '20px',
-              maxHeight: '30vh',
-              overflowY: 'auto'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                <ShieldAlert style={{ width: '14px', height: '14px', color: '#f59e0b' }} />
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                  Informasi
-                </span>
-              </div>
+            {/* Message Box - Hanya muncul apabila terisi di Menu Maintenance */}
+            {hasMessage && (
               <div style={{
-                fontSize: '14px',
-                lineHeight: 1.6,
-                color: '#cbd5e1',
-                margin: 0,
-              }}
-                dangerouslySetInnerHTML={{ __html: message }}
-              />
-            </div>
-
-            {/* Live Status Indicator */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px',
-              marginBottom: '20px',
-              flexWrap: 'wrap',
-            }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
-                borderRadius: '100px', padding: '6px 12px',
+                background: 'rgba(30, 41, 59, 0.6)',
+                border: '1px solid rgba(148, 163, 184, 0.08)',
+                borderRadius: '16px',
+                padding: '16px 20px',
+                marginBottom: '20px',
+                maxHeight: '30vh',
+                overflowY: 'auto'
               }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                  <ShieldAlert style={{ width: '14px', height: '14px', color: '#f59e0b' }} />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Informasi
+                  </span>
+                </div>
                 <div style={{
-                  width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444',
-                  boxShadow: '0 0 8px rgba(239,68,68,0.6)',
-                  animation: 'pulse 1.5s ease-in-out infinite',
-                }} />
-                <span style={{ fontSize: '11px', fontWeight: 600, color: '#fca5a5' }}>Offline</span>
+                  fontSize: '14px',
+                  lineHeight: 1.6,
+                  color: '#cbd5e1',
+                  margin: 0,
+                }}
+                  dangerouslySetInnerHTML={{ __html: rawMessage }}
+                />
               </div>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                background: 'rgba(148, 163, 184, 0.08)',
-                border: '1px solid rgba(148, 163, 184, 0.12)',
-                borderRadius: '100px', padding: '6px 12px',
-              }}>
-                <Clock style={{ width: '12px', height: '12px', color: '#94a3b8' }} />
-                <span style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', fontVariantNumeric: 'tabular-nums' }}>{formattedTime}</span>
-              </div>
-            </div>
-
-            {/* Date */}
-            <p style={{ textAlign: 'center', fontSize: '12px', color: '#475569', marginBottom: '20px' }}>
-              {formattedDate}
-            </p>
+            )}
 
             {/* Buttons */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
