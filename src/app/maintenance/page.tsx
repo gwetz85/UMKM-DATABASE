@@ -4,9 +4,250 @@ import React, { useEffect, useState } from 'react';
 import { useDatabase, useObject, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { useRouter } from 'next/navigation';
-import { Loader2, RefreshCw, LogOut, Wrench, Clock, ShieldAlert } from 'lucide-react';
+import { Loader2, RefreshCw, LogOut, Wrench, Clock, ShieldAlert, Timer } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { useAuth } from '@/firebase';
+
+function MaintenanceCountdown({ targetDate }: { targetDate: string }) {
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    isEnded: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    const calculate = () => {
+      const targetTime = new Date(targetDate).getTime();
+      if (isNaN(targetTime)) {
+        setTimeLeft(null);
+        return;
+      }
+      const now = Date.now();
+      const diff = targetTime - now;
+
+      if (diff <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isEnded: true });
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / (1000 * 60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      setTimeLeft({ days, hours, minutes, seconds, isEnded: false });
+    };
+
+    calculate();
+    const timer = setInterval(calculate, 1000);
+    return () => clearInterval(timer);
+  }, [targetDate]);
+
+  if (!timeLeft) return null;
+
+  if (timeLeft.isEnded) {
+    return (
+      <div style={{
+        marginBottom: '24px',
+        padding: '14px 18px',
+        borderRadius: '16px',
+        background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(217, 119, 6, 0.1))',
+        border: '1px solid rgba(245, 158, 11, 0.3)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+      }}>
+        <div style={{
+          padding: '8px',
+          borderRadius: '10px',
+          background: 'rgba(245, 158, 11, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <Timer style={{ width: '20px', height: '20px', color: '#fbbf24' }} />
+        </div>
+        <div style={{ textAlign: 'left' }}>
+          <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#fef3c7', letterSpacing: '0.3px' }}>
+            Tahap Akhir Maintenance
+          </h4>
+          <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#fde68a', lineHeight: 1.4 }}>
+            Waktu estimasi telah tercapai. Sistem sedang dalam proses sinkronisasi akhir dan segera dibuka kembali.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+
+  return (
+    <div style={{
+      marginBottom: '24px',
+      padding: '16px 20px',
+      borderRadius: '20px',
+      background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.85) 100%)',
+      border: '1px solid rgba(59, 130, 246, 0.25)',
+      boxShadow: '0 12px 30px rgba(0, 0, 0, 0.35), inset 0 0 20px rgba(59, 130, 246, 0.05)',
+      textAlign: 'center',
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        marginBottom: '12px',
+      }}>
+        <Timer style={{ width: '15px', height: '15px', color: '#60a5fa' }} />
+        <span style={{
+          fontSize: '11px',
+          fontWeight: 800,
+          color: '#93c5fd',
+          textTransform: 'uppercase',
+          letterSpacing: '1.5px',
+        }}>
+          Estimasi Selesai Dalam
+        </span>
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: timeLeft.days > 0 ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)',
+        gap: '8px',
+      }}>
+        {timeLeft.days > 0 && (
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.65)',
+            border: '1px solid rgba(148, 163, 184, 0.15)',
+            borderRadius: '12px',
+            padding: '10px 4px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}>
+            <span style={{
+              fontSize: '22px',
+              fontWeight: 900,
+              color: '#ffffff',
+              fontVariantNumeric: 'tabular-nums',
+              fontFamily: 'monospace',
+              lineHeight: 1,
+            }}>
+              {pad(timeLeft.days)}
+            </span>
+            <span style={{
+              fontSize: '9px',
+              fontWeight: 700,
+              color: '#94a3b8',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              marginTop: '5px',
+            }}>
+              Hari
+            </span>
+          </div>
+        )}
+
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.65)',
+          border: '1px solid rgba(148, 163, 184, 0.15)',
+          borderRadius: '12px',
+          padding: '10px 4px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}>
+          <span style={{
+            fontSize: '22px',
+            fontWeight: 900,
+            color: '#60a5fa',
+            fontVariantNumeric: 'tabular-nums',
+            fontFamily: 'monospace',
+            lineHeight: 1,
+          }}>
+            {pad(timeLeft.hours)}
+          </span>
+          <span style={{
+            fontSize: '9px',
+            fontWeight: 700,
+            color: '#94a3b8',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            marginTop: '5px',
+          }}>
+            Jam
+          </span>
+        </div>
+
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.65)',
+          border: '1px solid rgba(148, 163, 184, 0.15)',
+          borderRadius: '12px',
+          padding: '10px 4px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}>
+          <span style={{
+            fontSize: '22px',
+            fontWeight: 900,
+            color: '#38bdf8',
+            fontVariantNumeric: 'tabular-nums',
+            fontFamily: 'monospace',
+            lineHeight: 1,
+          }}>
+            {pad(timeLeft.minutes)}
+          </span>
+          <span style={{
+            fontSize: '9px',
+            fontWeight: 700,
+            color: '#94a3b8',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            marginTop: '5px',
+          }}>
+            Menit
+          </span>
+        </div>
+
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.65)',
+          border: '1px solid rgba(244, 63, 94, 0.3)',
+          borderRadius: '12px',
+          padding: '10px 4px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}>
+          <span style={{
+            fontSize: '22px',
+            fontWeight: 900,
+            color: '#f43f5e',
+            fontVariantNumeric: 'tabular-nums',
+            fontFamily: 'monospace',
+            lineHeight: 1,
+          }}>
+            {pad(timeLeft.seconds)}
+          </span>
+          <span style={{
+            fontSize: '9px',
+            fontWeight: 700,
+            color: '#fca5a5',
+            textTransform: 'uppercase',
+            letterSpacing: '1px',
+            marginTop: '5px',
+          }}>
+            Detik
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function MaintenancePage() {
   const database = useDatabase();
@@ -106,7 +347,7 @@ export default function MaintenancePage() {
             {/* Header Banner Image atau Animated Icon */}
             {imageUrl ? (
               <div style={{
-                marginBottom: '24px',
+                marginBottom: '20px',
                 borderRadius: '20px',
                 overflow: 'hidden',
                 border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -156,6 +397,11 @@ export default function MaintenancePage() {
                   <Wrench style={{ width: '32px', height: '32px', color: '#60a5fa', animation: 'pulse 2s ease-in-out infinite' }} />
                 </div>
               </div>
+            )}
+
+            {/* Countdown Timer tepat di bawah gambar */}
+            {maintenanceData?.estimatedEndTime && (
+              <MaintenanceCountdown targetDate={maintenanceData.estimatedEndTime} />
             )}
 
             {/* Title */}

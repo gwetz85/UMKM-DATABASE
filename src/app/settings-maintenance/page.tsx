@@ -6,7 +6,7 @@ import { ref, set } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ShieldAlert, Save, Bold, Italic, Type, Underline, AlignLeft, AlignCenter, AlignRight, Eye, Image as ImageIcon, Upload, Trash2, Link as LinkIcon, Sparkles, X, Check } from 'lucide-react';
+import { Loader2, ShieldAlert, Save, Bold, Italic, Type, Underline, AlignLeft, AlignCenter, AlignRight, Eye, Image as ImageIcon, Upload, Trash2, Link as LinkIcon, Sparkles, X, Check, Timer, Clock, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
@@ -52,6 +52,17 @@ const compressImage = (file: File): Promise<string> => {
   });
 };
 
+// Helper konversi Date ke format datetime-local input (YYYY-MM-DDTHH:mm)
+const toDatetimeLocal = (d: Date): string => {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
 export default function SettingsMaintenance() {
   const database = useDatabase();
   const { user } = useUser();
@@ -66,11 +77,20 @@ export default function SettingsMaintenance() {
   const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Estimasi waktu selesai (countdown)
+  const [estimatedEndTime, setEstimatedEndTime] = useState('');
+
   const [isSaving, setIsSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [lastSaved, setLastSaved] = useState<{enabled: boolean, updatedAt?: number} | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const initDoneRef = useRef(false);
+
+  // Helper preset cepat durasi
+  const applyQuickPreset = (minutesToAdd: number) => {
+    const target = new Date(Date.now() + minutesToAdd * 60 * 1000);
+    setEstimatedEndTime(toDatetimeLocal(target));
+  };
 
   // Cek Role Admin
   const usersRef = useMemoFirebase(() => {
@@ -101,6 +121,22 @@ export default function SettingsMaintenance() {
       const msg = currentData.message || defaultMsg;
       setMessage(msg);
       setImageUrl(currentData.imageUrl || currentData.image || '');
+
+      if (currentData.estimatedEndTime) {
+        try {
+          const d = new Date(currentData.estimatedEndTime);
+          if (!isNaN(d.getTime())) {
+            setEstimatedEndTime(toDatetimeLocal(d));
+          } else {
+            setEstimatedEndTime('');
+          }
+        } catch {
+          setEstimatedEndTime('');
+        }
+      } else {
+        setEstimatedEndTime('');
+      }
+
       if (editorRef.current) {
         editorRef.current.innerHTML = msg;
       }
@@ -108,6 +144,7 @@ export default function SettingsMaintenance() {
       setEnabled(false);
       setMessage(defaultMsg);
       setImageUrl('');
+      setEstimatedEndTime('');
       if (editorRef.current) {
         editorRef.current.innerHTML = defaultMsg;
       }
@@ -211,6 +248,7 @@ export default function SettingsMaintenance() {
         enabled,
         message: currentMessage,
         imageUrl: imageUrl.trim() || null,
+        estimatedEndTime: estimatedEndTime ? new Date(estimatedEndTime).toISOString() : null,
         updatedAt,
         updatedBy: user?.uid
       });
@@ -400,6 +438,111 @@ export default function SettingsMaintenance() {
             )}
           </div>
 
+          {/* Section: Estimasi Waktu Selesai (Countdown Timer) */}
+          <div className="p-6 border rounded-2xl bg-slate-50/50 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Timer className="w-5 h-5 text-red-500" />
+                  Estimasi Waktu Selesai (Countdown Timer)
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Tentukan target waktu selesai maintenance. Timer hitung mundur otomatis muncul di bawah gambar di layar maintenance.
+                </p>
+              </div>
+
+              {estimatedEndTime && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEstimatedEndTime('')}
+                  className="rounded-xl gap-1 text-slate-500 hover:text-red-600 hover:bg-red-50 font-bold self-start sm:self-auto"
+                >
+                  <X className="w-4 h-4" />
+                  Hapus Timer
+                </Button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <div>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
+                  Target Tanggal & Jam Selesai
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={estimatedEndTime}
+                  onChange={(e) => setEstimatedEndTime(e.target.value)}
+                  className="h-11 text-sm bg-white rounded-xl font-medium"
+                />
+                {estimatedEndTime ? (
+                  <p className="text-xs text-blue-600 font-semibold mt-1.5 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    Target: {new Date(estimatedEndTime).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'short' })}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    *Kosongkan jika tidak ingin menyertakan timer hitung mundur.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider block mb-1.5">
+                  Preset Cepat Durasi
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyQuickPreset(30)}
+                    className="rounded-lg text-xs font-bold bg-white hover:bg-red-50 hover:text-red-600 border-slate-200"
+                  >
+                    +30 Menit
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyQuickPreset(60)}
+                    className="rounded-lg text-xs font-bold bg-white hover:bg-red-50 hover:text-red-600 border-slate-200"
+                  >
+                    +1 Jam
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyQuickPreset(120)}
+                    className="rounded-lg text-xs font-bold bg-white hover:bg-red-50 hover:text-red-600 border-slate-200"
+                  >
+                    +2 Jam
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyQuickPreset(240)}
+                    className="rounded-lg text-xs font-bold bg-white hover:bg-red-50 hover:text-red-600 border-slate-200"
+                  >
+                    +4 Jam
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyQuickPreset(1440)}
+                    className="rounded-lg text-xs font-bold bg-white hover:bg-red-50 hover:text-red-600 border-slate-200"
+                  >
+                    +1 Hari
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
@@ -531,6 +674,25 @@ export default function SettingsMaintenance() {
                           alt="Banner Maintenance" 
                           className="w-full max-h-60 object-cover object-center"
                         />
+                      </div>
+                    )}
+                    {estimatedEndTime && (
+                      <div className="mb-4 p-4 rounded-2xl bg-slate-900/80 border border-blue-500/30 text-center shadow-inner">
+                        <div className="flex items-center justify-center gap-1.5 text-blue-400 text-xs font-bold uppercase tracking-widest mb-2">
+                          <Timer className="w-3.5 h-3.5" />
+                          <span>Preview Countdown Hitung Mundur</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 max-w-xs mx-auto">
+                          {['Hari', 'Jam', 'Menit', 'Detik'].map((unit) => (
+                            <div key={unit} className="bg-slate-800/90 border border-slate-700/50 rounded-xl p-2 text-center">
+                              <div className="font-mono text-base font-black text-white">00</div>
+                              <div className="text-[9px] uppercase font-bold text-slate-400 mt-0.5">{unit}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-2">
+                          Target: {new Date(estimatedEndTime).toLocaleString('id-ID')}
+                        </div>
                       </div>
                     )}
                     <div dangerouslySetInnerHTML={{ __html: message }} />
