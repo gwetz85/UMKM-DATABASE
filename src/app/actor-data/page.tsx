@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle, ClipboardList, Camera } from "lucide-react"
 import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -82,9 +82,11 @@ function ActorDataContent() {
   const isKoordinator = userProfile?.role === 'koordinator'
   const isInspektorat = userProfile?.role === 'inspektorat'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
+  const isStaff = userProfile?.role === 'staff'
 
+  const [surveyViewActor, setSurveyViewActor] = useState<BusinessActor | null>(null)
   const [pageLimit, setPageLimit] = useState(50)
-  
+
   // Use pre-calculated stats for the overview
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
@@ -1144,6 +1146,17 @@ function ActorDataContent() {
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
+                  {isAdmin && (actor as any).surveyData && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 text-teal-600 hover:bg-teal-50"
+                      onClick={() => setSurveyViewActor(actor)}
+                      title="Lihat Form Survey Lengkap"
+                    >
+                      <ClipboardList className="w-4 h-4" />
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="ghost"
@@ -1185,6 +1198,7 @@ function ActorDataContent() {
                 </div>
               </TableCell>
             )}
+
           </TableRow>
         ))}
       </TableBody>
@@ -1288,6 +1302,15 @@ function ActorDataContent() {
                       className="font-bold bg-primary hover:bg-primary/90 text-white"
                     >
                       <Printer className="w-4 h-4 mr-2" /> Cetak Formulir
+                    </Button>
+                  )}
+                  {!isEditMode && isAdmin && viewingActor && (viewingActor as any).surveyData && (
+                    <Button
+                      size="sm"
+                      onClick={() => setSurveyViewActor(viewingActor)}
+                      className="font-bold bg-teal-600 hover:bg-teal-700 text-white"
+                    >
+                      <ClipboardList className="w-4 h-4 mr-2" /> Lihat Form Survey
                     </Button>
                   )}
                   {!isAdmin && !isMonitoring && !isKoordinator && !isEditMode && viewingActor.status === 'verified_actor' && (
@@ -1811,7 +1834,182 @@ function ActorDataContent() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog: Lihat Form Survey Lengkap */}
+      <Dialog open={!!surveyViewActor} onOpenChange={(open) => { if (!open) setSurveyViewActor(null) }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {surveyViewActor && (surveyViewActor as any).surveyData && (() => {
+            const sd = (surveyViewActor as any).surveyData as any
+            const Field = ({ label, value }: { label: string; value?: string | null }) => (
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">{label}</p>
+                <p className="text-sm font-bold">{value || '-'}</p>
+              </div>
+            )
+            return (
+              <div className="flex flex-col gap-4">
+                <div className="border-b pb-3">
+                  <DialogTitle className="text-xl font-black text-teal-700 flex items-center gap-2">
+                    <ClipboardList className="w-5 h-5" /> FORM SURVEY LENGKAP
+                  </DialogTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {surveyViewActor.fullName} &mdash; NIK: {surveyViewActor.nik}
+                  </p>
+                </div>
+
+                {/* Tanggal Survey */}
+                {sd.tanggalSurvey && (
+                  <div className="flex items-center gap-2 bg-teal-50 border border-teal-100 rounded-xl px-4 py-2">
+                    <span className="text-[10px] font-bold text-teal-600 uppercase">Tanggal Survey:</span>
+                    <span className="text-sm font-black text-teal-800">{sd.tanggalSurvey}</span>
+                  </div>
+                )}
+
+                {/* Informasi Pemilik */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2 text-teal-700 font-black text-sm uppercase border-b pb-1">
+                    <User className="w-4 h-4" /> Informasi Pemilik Usaha
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
+                    <Field label="Nama Pemilik" value={sd.namaPemilik} />
+                    <Field label="Jenis Kelamin" value={sd.jenisKelamin} />
+                    <Field label="Status Perkawinan" value={sd.status} />
+                    <Field label="Alamat Rumah" value={sd.alamatRumah} />
+                    <Field label="Nomor HP" value={sd.noHp} />
+                    <Field label="Email" value={sd.email} />
+                    <Field label="Sosial Media" value={sd.sosmed} />
+                  </div>
+                </section>
+
+                {/* DTKS */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2 text-teal-700 font-black text-sm uppercase border-b pb-1">
+                    <CheckCircle2 className="w-4 h-4" /> Data Terpadu Kesejahteraan Sosial (DTKS)
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Masuk DTKS</p>
+                      <p className={`text-sm font-black ${sd.dtks?.masuk ? 'text-emerald-600' : 'text-slate-600'}`}>
+                        {sd.dtks?.masuk === undefined ? '-' : sd.dtks.masuk ? 'Ya' : 'Tidak'}
+                      </p>
+                    </div>
+                    {sd.dtks?.masuk && (
+                      <Field label="Jenis Bantuan" value={sd.dtks?.jenis} />
+                    )}
+                  </div>
+                </section>
+
+                {/* Informasi Usaha */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2 text-teal-700 font-black text-sm uppercase border-b pb-1">
+                    <Building2 className="w-4 h-4" /> Informasi Usaha
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
+                    <Field label="Nama Usaha" value={sd.namaUsaha} />
+                    <Field label="Bidang Usaha" value={sd.bidangUsaha} />
+                    <Field label="Tahun Berdiri" value={sd.tahunBerdiri} />
+                    <Field label="Peralatan" value={sd.peralatan} />
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Izin Usaha</p>
+                      <p className="text-sm font-bold">
+                        {(sd.izin && sd.izin.length > 0) ? sd.izin.join(', ') : '-'}
+                      </p>
+                    </div>
+                    <Field label="Modal Usaha" value={sd.modalUsaha} />
+                    <Field label="Omset / Bulan" value={sd.omset} />
+                  </div>
+                </section>
+
+                {/* Hibah */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2 text-teal-700 font-black text-sm uppercase border-b pb-1">
+                    <CreditCard className="w-4 h-4" /> Riwayat Hibah
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Pernah Menerima Hibah</p>
+                      <p className={`text-sm font-black ${sd.hibah?.pernah ? 'text-amber-600' : 'text-slate-600'}`}>
+                        {sd.hibah?.pernah === undefined ? '-' : sd.hibah.pernah ? 'Pernah' : 'Belum Pernah'}
+                      </p>
+                    </div>
+                    {sd.hibah?.pernah && (
+                      <>
+                        <Field label="Dari Mana" value={sd.hibah?.dariMana} />
+                        <Field label="Tahun" value={sd.hibah?.tahun} />
+                      </>
+                    )}
+                  </div>
+                </section>
+
+                {/* Rencana & Hasil */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2 text-teal-700 font-black text-sm uppercase border-b pb-1">
+                    <ClipboardCheck className="w-4 h-4" /> Rencana Penggunaan & Hasil Survey
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
+                    <Field label="Rencana Penggunaan Bantuan" value={sd.rencanaPenggunaan} />
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Hasil Rekomendasi Survey</p>
+                      <p className={`text-sm font-black ${sd.hasilSurvey === 'Layak' ? 'text-emerald-600' : sd.hasilSurvey === 'Tidak Layak' ? 'text-red-600' : 'text-slate-700'}`}>
+                        {sd.hasilSurvey || '-'}
+                      </p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Foto Survey */}
+                {sd.fotoSurveyUrl && (
+                  <section className="space-y-3">
+                    <div className="flex items-center gap-2 text-teal-700 font-black text-sm uppercase border-b pb-1">
+                      <Camera className="w-4 h-4" /> Foto Survey
+                    </div>
+                    <div className="flex justify-center bg-muted/30 p-4 rounded-xl">
+                      <img
+                        src={sd.fotoSurveyUrl}
+                        alt="Foto Survey"
+                        className="max-h-64 rounded-lg object-contain shadow border"
+                      />
+                    </div>
+                  </section>
+                )}
+
+                {/* Pejabat */}
+                {sd.pejabatData && (
+                  <section className="space-y-3">
+                    <div className="flex items-center gap-2 text-teal-700 font-black text-sm uppercase border-b pb-1">
+                      <User className="w-4 h-4" /> Data Pejabat
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-black text-teal-600 uppercase">Verifikator</p>
+                        <Field label="Nama" value={sd.pejabatData?.verifikator?.nama} />
+                        <Field label="NIP/NIPPPK" value={sd.pejabatData?.verifikator?.nipppk} />
+                        <Field label="Pangkat" value={sd.pejabatData?.verifikator?.pangkat} />
+                        <Field label="Jabatan" value={sd.pejabatData?.verifikator?.jabatan} />
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-black text-teal-600 uppercase">Petugas Survey</p>
+                        <Field label="Nama" value={sd.pejabatData?.petugas?.nama} />
+                        <Field label="NIP/NIPPPK" value={sd.pejabatData?.petugas?.nipppk} />
+                        <Field label="Pangkat" value={sd.pejabatData?.petugas?.pangkat} />
+                        <Field label="Jabatan" value={sd.pejabatData?.petugas?.jabatan} />
+                      </div>
+                    </div>
+                  </section>
+                )}
+
+                <div className="flex justify-end pt-2 border-t">
+                  <Button variant="outline" onClick={() => setSurveyViewActor(null)} className="font-bold">
+                    Tutup
+                  </Button>
+                </div>
+              </div>
+            )
+          })()}
+        </DialogContent>
+      </Dialog>
+
       {/* Confirm Dialogs */}
+
       <ConfirmDialog
         open={showRevertDialog}
         onOpenChange={(open) => {
