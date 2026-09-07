@@ -145,7 +145,7 @@ function UserDeletionTimer({
 
 export default function UserManagementPage() {
   const [mounted, setMounted] = useState(false)
-  const { user } = useUser()
+  const { user, userProfile } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -391,13 +391,21 @@ export default function UserManagementPage() {
     toast({ title: "Perangkat Direset", description: `Penguncian perangkat ${fullName} telah dihapus dan memiliki 24 jam untuk login kembali.` })
   }
 
+  const isCurrentSelfAccount = (u: any) => {
+    if (!u) return false
+    // Lindungi HANYA akun admin utama yang sedang aktif digunakan saat ini
+    if (u.id === user?.uid) return true
+    if (userProfile?.id && u.id === userProfile.id && (u.role === 'admin' || u.role === 'superadmin')) return true
+    return false
+  }
+
   const handleDelete = (id: string, fullName: string, userUid: string | null) => {
-    if (userUid === user?.uid) {
+    if (id === user?.uid || (userProfile?.id && id === userProfile.id)) {
       toast({ variant: "destructive", title: "Gagal", description: "Anda tidak dapat menghapus akun sendiri." })
       return
     }
 
-    setDeleteTarget({id, fullName, userUid})
+    setDeleteTarget({ id, fullName: fullName || `@${id}`, userUid })
     setShowDeleteDialog(true)
   }
 
@@ -408,12 +416,13 @@ export default function UserManagementPage() {
     setDeleteTarget(null)
 
     deleteDocumentNonBlocking(ref(database, `system_users/${id}`))
-    if (userUid) {
+    // PENTING: Jangan pernah menghapus roles_admin milik admin yang sedang login saat ini!
+    if (userUid && userUid !== user?.uid) {
       deleteDocumentNonBlocking(ref(database, `roles_admin/${userUid}`))
     }
     
     logActivity({
-      query: `HAPUS USER: ${fullName}`,
+      query: `HAPUS USER: ${fullName || id}`,
       results: "Berhasil",
       device: getDeviceType(navigator.userAgent),
       source: 'Web',
@@ -758,7 +767,8 @@ export default function UserManagementPage() {
                           size="icon" 
                           className="h-8 w-8 text-destructive hover:bg-destructive/10"
                           onClick={() => handleDelete(u.id, u.fullName, u.uid)}
-                          disabled={u.uid === user?.uid}
+                          disabled={isCurrentSelfAccount(u)}
+                          title={isCurrentSelfAccount(u) ? "Akun Anda Sendiri (Aktif)" : "Hapus Pengguna"}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
