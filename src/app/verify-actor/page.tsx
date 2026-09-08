@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { VerificationBadge } from "@/components/verification-badge"
 import { cn, extractDobFromNik, parsePobDob } from "@/lib/utils"
+import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Switch } from "@/components/ui/switch"
 import { ConfirmDialog } from "@/components/confirm-dialog"
@@ -428,7 +429,7 @@ export default function VerifyActorPage() {
       businessCategory: formData.get("businessCategory"),
       businessName: formData.get("businessName"),
       businessLocation: formData.get("businessLocation"),
-      coordinator: formData.get("coordinator"),
+      coordinator: normalizeCoordinator(formData.get("coordinator") as string).toUpperCase().trim(),
       status: 'verified_actor'
     }
 
@@ -489,7 +490,7 @@ export default function VerifyActorPage() {
       businessCategory: formData.get("businessCategory"),
       businessName: formData.get("businessName"),
       businessLocation: formData.get("businessLocation"),
-      coordinator: formData.get("coordinator")
+      coordinator: normalizeCoordinator(formData.get("coordinator") as string).toUpperCase().trim()
     })
     
     logActivity({

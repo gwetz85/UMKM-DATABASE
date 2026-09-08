@@ -24,6 +24,7 @@ import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { generateCancelDinasPDF } from "@/lib/generate-cancel-dinas-pdf"
+import { normalizeCoordinator } from "@/lib/coordinator-utils"
 
 export default function RejectedPage() {
   return (
@@ -251,7 +252,7 @@ function RejectedContent() {
       businessName: formData.get('businessName') as string,
       businessCategory: formData.get('businessCategory') as "Bukan Kuliner" | "Kuliner",
       businessLocation: formData.get('businessLocation') as string,
-      coordinator: formData.get('coordinator') as string,
+      coordinator: normalizeCoordinator(formData.get('coordinator') as string).toUpperCase().trim(),
       bankName: formData.get('bankName') as string,
       bankNumber: formData.get('bankNumber') as string,
       bankOwner: formData.get('bankOwner') as string,

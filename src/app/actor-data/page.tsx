@@ -35,6 +35,7 @@ const normalizeGender = (g: string) => {
 
 
 import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
+import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import { generateRegistrationForm, generateCoordinatorReport, generateAllCoordinatorsReport } from "@/lib/pdf-generator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -423,7 +424,8 @@ function ActorDataContent() {
               if (s === 'finish' && (!actor.readyForLPJ || actor.lpjNominal)) stats.detailedStatus.selesai++
 
               if (actor.coordinator) {
-                const coord = actor.coordinator.toUpperCase().trim()
+                const rawCoord = actor.coordinator.toUpperCase().trim()
+                const coord = normalizeCoordinator(rawCoord).toUpperCase().trim()
                 stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
                 
                 if (actor.coordinator !== coord) {
@@ -461,6 +463,23 @@ function ActorDataContent() {
     }
   }
 
+  // Otomatis ubah koordinator DKUKM menjadi AGUS jika ditemukan
+  useEffect(() => {
+    if (!database || !isAdmin || !allActorsRaw) return
+    const dkukmActors = allActorsRaw.filter(a => a.coordinator && a.coordinator.toUpperCase().includes('DKUKM'))
+    if (dkukmActors.length > 0) {
+      const updates: Record<string, any> = {}
+      dkukmActors.forEach(a => {
+        updates[`businessActors/${a.id}/coordinator`] = 'AGUS'
+      })
+      import("firebase/database").then(({ update }) => {
+        update(ref(database), updates).then(() => {
+          handleSyncStats(true)
+        }).catch(err => console.error("Error auto-updating DKUKM to AGUS:", err))
+      })
+    }
+  }, [database, isAdmin, allActorsRaw])
+
   const handleSaveFullEdit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!isAdmin || !database || !viewingActor) return
@@ -485,7 +504,7 @@ function ActorDataContent() {
       businessName: formData.get('businessName') as string,
       businessCategory: formData.get('businessCategory') as "Kuliner" | "Bukan Kuliner",
       businessLocation: formData.get('businessLocation') as string,
-      coordinator: formData.get('coordinator') as string,
+      coordinator: normalizeCoordinator(formData.get('coordinator') as string).toUpperCase().trim(),
       petugasSurvey: pSurvey,
       bankName: formData.get('bankName') as string,
       bankNumber: formData.get('bankNumber') as string,
@@ -836,7 +855,7 @@ function ActorDataContent() {
           "JENIS USAHA": (actor.businessCategory || "").toUpperCase(),
           "USAHA": (actor.businessName || "").toUpperCase(),
           "LOKASI USAHA": (actor.businessLocation || "").toUpperCase(),
-          "KOORDINATOR": (actor.coordinator || "").toUpperCase(),
+          "KOORDINATOR": normalizeCoordinator(actor.coordinator || "").toUpperCase(),
           "NAMA PETUGAS SURVEY": petugas || "-",
           "REG ID": actor.registrationCode || "-",
         }
@@ -1053,7 +1072,7 @@ function ActorDataContent() {
             <TableCell className="py-4">{actor.businessCategory}</TableCell>
             <TableCell className="py-4">{actor.phone}</TableCell>
             <TableCell className="py-4">{actor.address}</TableCell>
-            <TableCell className="py-4 font-black text-primary">{actor.coordinator}</TableCell>
+            <TableCell className="py-4 font-black text-primary">{normalizeCoordinator(actor.coordinator)}</TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -1441,36 +1460,39 @@ function ActorDataContent() {
                           <span>Koordinator</span>
                           {isAdmin && <span className="text-[10px] text-muted-foreground font-normal">Pilih nama atau pindah data</span>}
                         </Label>
-                        {isAdmin ? (
-                          <select 
-                            name="coordinator" 
-                            defaultValue={viewingActor.coordinator ? viewingActor.coordinator.toUpperCase().trim() : ""}
-                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
-                            required
-                          >
-                            <option value="" disabled>-- PILIH KOORDINATOR --</option>
-                            {/* Jika koordinator saat ini tidak ada di daftar kuota atau kuotanya penuh, tetap tampilkan opsi saat ini */}
-                            {viewingActor.coordinator && !availableCoordinators.some(c => c.nameUpper === viewingActor.coordinator.toUpperCase().trim() && c.remaining > 0) && (
-                              <option value={viewingActor.coordinator.toUpperCase().trim()} className="font-bold text-amber-600">
-                                🟡 {viewingActor.coordinator.toUpperCase().trim()} (Saat Ini)
-                              </option>
-                            )}
-                            {availableCoordinators
-                              .filter(c => c.remaining > 0 || (viewingActor.coordinator && c.nameUpper === viewingActor.coordinator.toUpperCase().trim()))
-                              .map((c) => {
-                                const isCurrent = viewingActor.coordinator && c.nameUpper === viewingActor.coordinator.toUpperCase().trim();
-                                return (
-                                  <option key={c.id || c.nameUpper} value={c.nameUpper}>
-                                    🟢 {c.nameUpper} {isCurrent ? `(Saat Ini - Sisa: ${c.remaining})` : `(Sisa Kuota: ${c.remaining})`}
-                                  </option>
-                                );
-                              })}
-                          </select>
-                        ) : (
+                        {isAdmin ? (() => {
+                          const currentCoord = normalizeCoordinator(viewingActor.coordinator ? viewingActor.coordinator.toUpperCase().trim() : "");
+                          return (
+                            <select 
+                              name="coordinator" 
+                              defaultValue={currentCoord}
+                              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
+                              required
+                            >
+                              <option value="" disabled>-- PILIH KOORDINATOR --</option>
+                              {/* Jika koordinator saat ini tidak ada di daftar kuota atau kuotanya penuh, tetap tampilkan opsi saat ini */}
+                              {currentCoord && !availableCoordinators.some(c => c.nameUpper === currentCoord && c.remaining > 0) && (
+                                <option value={currentCoord} className="font-bold text-amber-600">
+                                  🟡 {currentCoord} (Saat Ini)
+                                </option>
+                              )}
+                              {availableCoordinators
+                                .filter(c => c.remaining > 0 || (currentCoord && c.nameUpper === currentCoord))
+                                .map((c) => {
+                                  const isCurrent = currentCoord && c.nameUpper === currentCoord;
+                                  return (
+                                    <option key={c.id || c.nameUpper} value={c.nameUpper}>
+                                      🟢 {c.nameUpper} {isCurrent ? `(Saat Ini - Sisa: ${c.remaining})` : `(Sisa Kuota: ${c.remaining})`}
+                                    </option>
+                                  );
+                                })}
+                            </select>
+                          );
+                        })() : (
                           <>
-                            <input type="hidden" name="coordinator" value={viewingActor.coordinator || ""} />
+                            <input type="hidden" name="coordinator" value={normalizeCoordinator(viewingActor.coordinator) || ""} />
                             <div className="inline-flex items-center gap-1.5 text-xs font-black text-primary uppercase bg-primary/5 px-2.5 py-1.5 rounded-lg border border-primary/20 h-9 w-full">
-                              <span>{viewingActor.coordinator || "-"}</span>
+                              <span>{normalizeCoordinator(viewingActor.coordinator) || "-"}</span>
                             </div>
                           </>
                         )}

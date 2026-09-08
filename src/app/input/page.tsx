@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, Save, CheckCircle2, ShieldAlert } from "lucide-react"
 import { cn, extractDobFromNik } from "@/lib/utils"
+import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
   AlertDialog,
@@ -219,10 +220,11 @@ export default function InputDataPage() {
       }
 
       // Coordinator Quota Check (Safeguard — pakai system_stats yang sudah ter-load di memori)
-      if (selectedCoordinator) {
-        const quotaItem = rawQuotaData?.find((q: any) => q.name === selectedCoordinator)
+      const finalCoordinator = normalizeCoordinator(selectedCoordinator)
+      if (finalCoordinator) {
+        const quotaItem = rawQuotaData?.find((q: any) => normalizeCoordinator(q.name) === finalCoordinator)
         const achievedMap = (systemStats as any)?.coordinator || {}
-        const currentCoordCount = achievedMap[(selectedCoordinator || "").toUpperCase().trim()] || 0
+        const currentCoordCount = achievedMap[(finalCoordinator || "").toUpperCase().trim()] || 0
         if (quotaItem && currentCoordCount >= quotaItem.quota) {
           toast({
             variant: "destructive",
@@ -255,7 +257,7 @@ export default function InputDataPage() {
         businessCategory: formData.get("businessCategory"),
         businessName: formData.get("businessName"),
         businessLocation: formData.get("businessLocation"),
-        coordinator: selectedCoordinator,
+        coordinator: finalCoordinator,
         status: "pending",
         createdAt: new Date().toISOString(),
       }

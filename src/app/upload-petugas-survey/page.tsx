@@ -44,6 +44,7 @@ import * as XLSX from "xlsx"
 import Link from "next/link"
 import { addTunasBangsaHeader } from "@/lib/pdf-generator"
 import { formatDateTimeIndo } from "@/lib/utils"
+import { normalizeCoordinator } from "@/lib/coordinator-utils"
 
 interface ParsedPetugasRow {
   rowNum: number
@@ -360,7 +361,7 @@ export default function UploadPetugasSurveyPage() {
           const regId = getColValue(r, ["REG ID", "REGISTRATION CODE", "REG_ID", "REGISTRATIONCODE"])
           const nik = getColValue(r, ["NIK", "NO NIK", "NOMOR NIK"])
           const fullName = getColValue(r, ["NAMA LENGKAP", "NAMA", "PEMILIK", "NAMA PEMILIK"])
-          const coordinator = getColValue(r, ["KOORDINATOR", "NAMA KOORDINATOR"])
+          const coordinator = normalizeCoordinator(getColValue(r, ["KOORDINATOR", "NAMA KOORDINATOR"]))
           const petugasSurvey = getColValue(r, ["PETUGAS SURVEY", "PETUGAS", "PETUGAS_SURVEY", "SURVEYOR"])
 
           if (petugasSurvey) {
@@ -495,7 +496,7 @@ export default function UploadPetugasSurveyPage() {
             petugasSurvey: item.petugasSurvey.toUpperCase().trim()
           }
           if (item.coordinator && item.coordinator !== "-") {
-            updates.coordinator = item.coordinator.toUpperCase().trim()
+            updates.coordinator = normalizeCoordinator(item.coordinator).toUpperCase().trim()
           }
 
           updateDocumentNonBlocking(actorRef, updates)
@@ -584,7 +585,7 @@ export default function UploadPetugasSurveyPage() {
           const regId      = getColValue(r, ["REG ID", "REGISTRATION CODE", "REG_ID", "REGISTRATIONCODE"])
           const nik        = getColValue(r, ["NIK", "NO NIK", "NOMOR NIK"])
           const fullName   = getColValue(r, ["NAMA LENGKAP", "NAMA", "PEMILIK", "NAMA PEMILIK"])
-          const coordinator = getColValue(r, ["KOORDINATOR", "NAMA KOORDINATOR"])
+          const coordinator = normalizeCoordinator(getColValue(r, ["KOORDINATOR", "NAMA KOORDINATOR"]))
           const petugasSurvey = getColValue(r, ["PETUGAS SURVEY", "PETUGAS", "PETUGAS_SURVEY", "SURVEYOR"])
 
           if (!petugasSurvey) return
@@ -1905,7 +1906,7 @@ export default function UploadPetugasSurveyPage() {
                                   : forceAssignRow.petugasSurvey).toUpperCase().trim()
                               }
                               if (forceAssignRow.coordinator && forceAssignRow.coordinator !== '-') {
-                                updates.coordinator = forceAssignRow.coordinator.toUpperCase().trim()
+                                updates.coordinator = normalizeCoordinator(forceAssignRow.coordinator).toUpperCase().trim()
                               }
                               updateDocumentNonBlocking(actorRef, updates)
 

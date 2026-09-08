@@ -1,4 +1,5 @@
 import { Database, ref, runTransaction } from "firebase/database";
+import { normalizeCoordinator } from "./coordinator-utils";
 
 export interface SystemStats {
   totalActors: number;
@@ -147,7 +148,7 @@ export async function updateStatsOnNewActor(database: Database, actorData: any) 
         currentStats.kelurahan[kel] = (currentStats.kelurahan[kel] || 0) + 1;
       }
       if (actorData.coordinator) {
-        const coord = actorData.coordinator.toUpperCase().trim();
+        const coord = normalizeCoordinator(actorData.coordinator).toUpperCase().trim();
         currentStats.coordinator[coord] = (currentStats.coordinator[coord] || 0) + 1;
         // Count actors with bank account already input
         if (actorData.bankNumber && String(actorData.bankNumber).trim() !== '') {
@@ -229,7 +230,7 @@ export async function updateStatsOnStatusChange(
         currentStats.kelurahan[kel] = (currentStats.kelurahan[kel] || 0) + 1;
       }
       if (mergedActor.coordinator) {
-        const coor = mergedActor.coordinator.toUpperCase().trim();
+        const coor = normalizeCoordinator(mergedActor.coordinator).toUpperCase().trim();
         currentStats.coordinator[coor] = (currentStats.coordinator[coor] || 0) + 1;
       }
     } else if (wasVerified_KC && !isVerifiedNow_KC) {
@@ -239,14 +240,14 @@ export async function updateStatsOnStatusChange(
         currentStats.kelurahan[kel] = Math.max(0, (currentStats.kelurahan[kel] || 0) - 1);
       }
       if (mergedActor.coordinator) {
-        const coor = mergedActor.coordinator.toUpperCase().trim();
+        const coor = normalizeCoordinator(mergedActor.coordinator).toUpperCase().trim();
         currentStats.coordinator[coor] = Math.max(0, (currentStats.coordinator[coor] || 0) - 1);
       }
     }
 
     // Handle coordinatorRekening transitions
     if (mergedActor.coordinator) {
-      const coor = mergedActor.coordinator.toUpperCase().trim();
+      const coor = normalizeCoordinator(mergedActor.coordinator).toUpperCase().trim();
       if (!oldHasRekening && newHasRekening) {
         currentStats.coordinatorRekening[coor] = (currentStats.coordinatorRekening[coor] || 0) + 1;
       } else if (oldHasRekening && !newHasRekening) {
@@ -319,7 +320,7 @@ export async function updateStatsOnEdit(database: Database, oldData: any, newDat
         currentStats.kelurahan[kel] = (currentStats.kelurahan[kel] || 0) + 1;
       }
       if (newData.coordinator) {
-        const coord = newData.coordinator.toUpperCase().trim();
+        const coord = normalizeCoordinator(newData.coordinator).toUpperCase().trim();
         currentStats.coordinator[coord] = (currentStats.coordinator[coord] || 0) + 1;
       }
     } else if (wasVerified && !isVerified) {
@@ -329,7 +330,7 @@ export async function updateStatsOnEdit(database: Database, oldData: any, newDat
         currentStats.kelurahan[kel] = Math.max(0, (currentStats.kelurahan[kel] || 0) - 1);
       }
       if (oldData.coordinator) {
-        const coord = oldData.coordinator.toUpperCase().trim();
+        const coord = normalizeCoordinator(oldData.coordinator).toUpperCase().trim();
         currentStats.coordinator[coord] = Math.max(0, (currentStats.coordinator[coord] || 0) - 1);
       }
     } else if (wasVerified && isVerified) {
@@ -347,8 +348,8 @@ export async function updateStatsOnEdit(database: Database, oldData: any, newDat
       }
 
       // Update coordinator if changed
-      const oldCoor = (oldData.coordinator || "").toUpperCase().trim();
-      const newCoor = (newData.coordinator || "").toUpperCase().trim();
+      const oldCoor = normalizeCoordinator(oldData.coordinator || "").toUpperCase().trim();
+      const newCoor = normalizeCoordinator(newData.coordinator || "").toUpperCase().trim();
       if (oldCoor !== newCoor) {
         if (oldCoor) currentStats.coordinator[oldCoor] = Math.max(0, (currentStats.coordinator[oldCoor] || 0) - 1);
         if (newCoor) currentStats.coordinator[newCoor] = (currentStats.coordinator[newCoor] || 0) + 1;
@@ -358,8 +359,8 @@ export async function updateStatsOnEdit(database: Database, oldData: any, newDat
     // Update coordinatorRekening: track changes in bankNumber or coordinator for verified actors
     const oldHasRekening = wasVerified && !!(oldData.bankNumber && String(oldData.bankNumber).trim() !== '');
     const newHasRekening = isVerified && !!(newData.bankNumber && String(newData.bankNumber).trim() !== '');
-    const oldCoordRek = wasVerified ? (oldData.coordinator || '').toUpperCase().trim() : '';
-    const newCoordRek = isVerified ? (newData.coordinator || '').toUpperCase().trim() : '';
+    const oldCoordRek = wasVerified ? normalizeCoordinator(oldData.coordinator || '').toUpperCase().trim() : '';
+    const newCoordRek = isVerified ? normalizeCoordinator(newData.coordinator || '').toUpperCase().trim() : '';
 
     if (oldHasRekening && oldCoordRek) {
       currentStats.coordinatorRekening[oldCoordRek] = Math.max(0, (currentStats.coordinatorRekening[oldCoordRek] || 0) - 1);
@@ -416,7 +417,7 @@ export async function updateStatsOnDelete(database: Database, actorData: any) {
         }
       }
       if (actorData.coordinator) {
-        const coord = actorData.coordinator.toUpperCase().trim();
+        const coord = normalizeCoordinator(actorData.coordinator).toUpperCase().trim();
         if (currentStats.coordinator[coord]) {
           currentStats.coordinator[coord] = Math.max(0, currentStats.coordinator[coord] - 1);
         }
@@ -478,7 +479,7 @@ export async function recalculateAndSaveSystemStats(database: Database) {
       }
 
       if (actor.coordinator) {
-        const coord = actor.coordinator.toUpperCase().trim();
+        const coord = normalizeCoordinator(actor.coordinator).toUpperCase().trim();
         stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1;
         // Count actors with bank account already input
         if (actor.bankNumber && String(actor.bankNumber).trim() !== '') {

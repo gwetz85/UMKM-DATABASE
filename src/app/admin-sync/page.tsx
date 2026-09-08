@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, RefreshCcw, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { normalizeCoordinator } from "@/lib/coordinator-utils"
 
 export default function AdminSyncPage() {
   const { user } = useUser()
@@ -82,7 +83,8 @@ export default function AdminSyncPage() {
           if (s === 'finish' && (!actor.readyForLPJ || actor.lpjNominal)) stats.detailedStatus.selesai++
           
           if (actor.coordinator) {
-            const coord = actor.coordinator.toUpperCase().trim()
+            const rawCoord = actor.coordinator.toUpperCase().trim()
+            const coord = normalizeCoordinator(rawCoord).toUpperCase().trim()
             stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
             // Count actors with bank account input
             if (actor.bankNumber && String(actor.bankNumber).trim() !== '') {

@@ -38,6 +38,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useSearchParams } from "next/navigation"
 import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import ExcelJS from "exceljs"
 
 const BANK_LIST = [
@@ -422,7 +423,7 @@ function DataRekeningContent() {
       businessName: formData.get("businessName") as string,
       businessCategory: formData.get("businessCategory") as "Kuliner" | "Bukan Kuliner",
       businessLocation: formData.get("businessLocation") as string,
-      coordinator: formData.get("coordinator") as string,
+      coordinator: normalizeCoordinator(formData.get("coordinator") as string).toUpperCase().trim(),
       bankName: formData.get("bankName") as string,
       bankNumber: formData.get("bankNumber") as string,
       bankOwner: formData.get("bankOwner") as string,

@@ -150,6 +150,34 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, [database, profile?.id, profile?.role, isLoginPage, isDisplaced, user?.email, auth, router])
 
+  // Otomatis ubah koordinator DKUKM / DKUKM PROVINSI menjadi AGUS
+  React.useEffect(() => {
+    if (!database || !user || !isAdmin) return;
+    const migrateDkukmCoordinators = async () => {
+      try {
+        const { query, orderByChild, equalTo, get, update } = await import("firebase/database");
+        for (const coordName of ["DKUKM PROVINSI", "DKUKM"]) {
+          const q = query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(coordName));
+          const snap = await get(q);
+          if (snap.exists()) {
+            const updates: Record<string, any> = {};
+            snap.forEach(child => {
+              updates[`businessActors/${child.key}/coordinator`] = "AGUS";
+            });
+            if (Object.keys(updates).length > 0) {
+              await update(ref(database), updates);
+              const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service");
+              await recalculateAndSaveSystemStats(database);
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Auto migration DKUKM -> AGUS error:", e);
+      }
+    };
+    migrateDkukmCoordinators();
+  }, [database, user, isAdmin]);
+
   React.useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;

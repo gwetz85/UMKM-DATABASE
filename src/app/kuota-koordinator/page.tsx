@@ -6,6 +6,7 @@ import { ref, push, set, query, update, orderByChild, equalTo, get } from "fireb
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { addTunasBangsaHeader } from "@/lib/pdf-generator"
 import { cn } from "@/lib/utils"
+import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -93,7 +94,8 @@ export default function KuotaKorlapDewanAktifPage() {
     if (!database) return
 
     const formData = new FormData(e.currentTarget)
-    const name = formData.get("name") as string
+    const rawName = formData.get("name") as string
+    const name = normalizeCoordinator(rawName).toUpperCase().trim()
     const quotaStr = formData.get("quota") as string
     const phone = formData.get("phone") as string
     const quota = parseInt(quotaStr, 10)
@@ -165,7 +167,8 @@ export default function KuotaKorlapDewanAktifPage() {
     if (!editingData || !database) return
 
     const formData = new FormData(e.currentTarget)
-    const name = formData.get("name") as string
+    const rawName = formData.get("name") as string
+    const name = normalizeCoordinator(rawName).toUpperCase().trim()
     const quotaStr = formData.get("quota") as string
     const phone = formData.get("phone") as string
     const quota = parseInt(quotaStr, 10)

@@ -4,6 +4,7 @@ import { getDatabase, ref, get, push, set } from 'firebase/database';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 import { logActivity } from '@/lib/logger';
+import { normalizeCoordinator } from '@/lib/coordinator-utils';
 
 
 // Initialize Firebase
@@ -484,7 +485,7 @@ export async function POST(req: NextRequest) {
             }
             else if (key.includes('nama usaha') || key.includes('produk') || key === 'usaha' || key === 'produk' || key.includes('product') || key === 'nama produk') parsedData.businessName = value;
             else if (key.includes('lokasi usaha') || key.includes('lokasi') || key.includes('tempat usaha')) parsedData.businessLocation = value;
-            else if (key.includes('koordinator') || key === 'koor') parsedData.coordinator = value;
+            else if (key.includes('koordinator') || key === 'koor') parsedData.coordinator = normalizeCoordinator(value);
           }
         });
 
@@ -521,7 +522,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ ok: true });
         }
 
-        const selectedCoordinator = (parsedData.coordinator || "")?.toUpperCase().trim();
+        const selectedCoordinator = normalizeCoordinator(parsedData.coordinator || "")?.toUpperCase().trim();
         if (selectedCoordinator) {
           const quotaRef = ref(database, 'koordinator_kuotas');
           const quotaSnapshot = await get(quotaRef);
@@ -565,7 +566,7 @@ export async function POST(req: NextRequest) {
             businessCategory: parsedData.businessCategory || "",
             businessName: parsedData.businessName || "",
             businessLocation: parsedData.businessLocation || "",
-            coordinator: parsedData.coordinator || "",
+            coordinator: normalizeCoordinator(parsedData.coordinator || ""),
             status: "pending",
             createdAt: new Date().toISOString(),
           };

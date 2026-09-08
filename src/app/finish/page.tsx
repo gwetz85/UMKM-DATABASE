@@ -19,6 +19,7 @@ import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import * as XLSX from 'xlsx'
 import ExcelJS from 'exceljs'
+import { normalizeCoordinator } from "@/lib/coordinator-utils"
 
 export default function FinishPage() {
   return (
@@ -510,7 +511,7 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
       businessName: formData.get('businessName') as string,
       businessCategory: formData.get('businessCategory') as "Kuliner" | "Bukan Kuliner",
       businessLocation: formData.get('businessLocation') as string,
-      coordinator: formData.get('coordinator') as string,
+      coordinator: normalizeCoordinator(formData.get('coordinator') as string).toUpperCase().trim(),
       bankName: formData.get('bankName') as string,
       bankNumber: formData.get('bankNumber') as string,
       bankOwner: formData.get('bankOwner') as string,
