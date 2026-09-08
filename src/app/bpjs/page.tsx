@@ -121,7 +121,9 @@ export interface BpjsMatchInfo {
   excelName: string
   excelStatus: string
   excelKpj?: string
-  matchMethod: "nik_exact" | "nik_normalized" | "name_exact" | "name_fuzzy"
+  matchMethod: "nik_and_name" | "nik_exact" | "nik_normalized" | "name_exact" | "name_fuzzy"
+  isNikMatched: boolean
+  isNameMatched: boolean
 }
 
 export interface UnmatchedExcelRow {
@@ -270,21 +272,23 @@ export default function BpjsPage() {
 
   // Process and filter actors depending on activeTab and search query
   const filteredActors = useMemo(() => {
-    if (!baseEligibleActors) return []
     const q = searchQuery.toLowerCase().trim()
 
-    let list = baseEligibleActors
+    let list: BusinessActor[] = []
 
     if (activeTab === "matched") {
-      list = list.filter(a => matchedActorsMap.has(a.id))
+      // In matched tab, show all actors matched with Excel BPJS
+      list = (allActors || []).filter(a => matchedActorsMap.has(a.id))
     } else if (activeTab === "db_verified") {
-      list = list.filter(a => {
+      list = (allActors || []).filter(a => {
         const actorAny = a as any
         return (
           actorAny.bpjsSubmissionStatus === 'accepted' || 
           actorAny.bpjsCheckStatus === 'sesuai'
         )
       })
+    } else {
+      list = baseEligibleActors || []
     }
 
     if (q) {
@@ -297,7 +301,7 @@ export default function BpjsPage() {
     }
 
     return [...list].sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""))
-  }, [baseEligibleActors, activeTab, matchedActorsMap, searchQuery])
+  }, [allActors, baseEligibleActors, activeTab, matchedActorsMap, searchQuery])
 
   // Count verified in database
   const dbVerifiedCount = useMemo(() => {
@@ -390,23 +394,25 @@ export default function BpjsPage() {
         h.includes("KPJ") || h.includes("KARTU")
       )
 
-      // Build database actor lookup maps
+      // Build database actor lookup maps (Nomor Identitas = NIK)
       const actors = allActors || []
       const actorByNikExact = new Map<string, BusinessActor>()
-      const actorByNikNorm = new Map<string, BusinessActor>()
+      const actorByNikClean = new Map<string, BusinessActor>()
       const actorByNameExact = new Map<string, BusinessActor>()
 
       actors.forEach(a => {
-        if (a.nik) {
-          const rawNikStr = String(a.nik).trim()
-          actorByNikExact.set(rawNikStr, a)
-          const norm = cleanNik(rawNikStr)
+        const aNik = String(a.nik || (a as any).nomorIdentitas || (a as any).noKtp || "").trim()
+        const aName = String(a.fullName || (a as any).nama || "").trim()
+
+        if (aNik) {
+          actorByNikExact.set(aNik, a)
+          const norm = cleanNik(aNik)
           if (norm.length >= 8) {
-            actorByNikNorm.set(norm, a)
+            actorByNikClean.set(norm, a)
           }
         }
-        if (a.fullName) {
-          actorByNameExact.set(normalizeName(a.fullName), a)
+        if (aName) {
+          actorByNameExact.set(normalizeName(aName), a)
         }
       })
 
@@ -418,7 +424,7 @@ export default function BpjsPage() {
         const rowArr = rows2d[r]
         if (!rowArr || rowArr.length === 0) continue
 
-        // Extract values from detected columns (specifically Column D for NIK)
+        // Extract values from detected columns (specifically Column D for NIK, Column E for Nama)
         const rawNikColD = colNikIdx >= 0 && rowArr[colNikIdx] !== undefined ? String(rowArr[colNikIdx]).trim() : ""
         const rawNama = colNamaIdx >= 0 && rowArr[colNamaIdx] !== undefined ? String(rowArr[colNamaIdx]).trim() : ""
         const rawKet = colStatusKetIdx >= 0 && rowArr[colStatusKetIdx] !== undefined ? String(rowArr[colStatusKetIdx]).trim() : ""
@@ -428,30 +434,49 @@ export default function BpjsPage() {
         if (!rawNikColD && !rawNama) continue
 
         const cleanedNik = cleanNik(rawNikColD)
-        let matchedActor: BusinessActor | undefined = undefined
-        let matchMethod: "nik_exact" | "nik_normalized" | "name_exact" | "name_fuzzy" = "nik_exact"
+        const normNama = normalizeName(rawNama)
 
-        // Priority 1: Exact NIK from Column D
+        let matchedActor: BusinessActor | undefined = undefined
+        let matchMethod: "nik_and_name" | "nik_exact" | "nik_normalized" | "name_exact" | "name_fuzzy" = "nik_exact"
+        let isNikMatched = false
+        let isNameMatched = false
+
+        // 1. Cek NIK di database (Nomor Identitas = NIK)
+        let foundByNik: BusinessActor | undefined = undefined
         if (rawNikColD && actorByNikExact.has(rawNikColD)) {
-          matchedActor = actorByNikExact.get(rawNikColD)
-          matchMethod = "nik_exact"
+          foundByNik = actorByNikExact.get(rawNikColD)
+        } else if (cleanedNik && cleanedNik.length >= 8 && actorByNikClean.has(cleanedNik)) {
+          foundByNik = actorByNikClean.get(cleanedNik)
         }
-        // Priority 2: Normalized NIK digits from Column D
-        else if (cleanedNik && cleanedNik.length >= 8 && actorByNikNorm.has(cleanedNik)) {
-          matchedActor = actorByNikNorm.get(cleanedNik)
-          matchMethod = "nik_normalized"
+
+        // 2. Cek Nama Pelaku Usaha di database
+        let foundByName: BusinessActor | undefined = undefined
+        if (normNama && actorByNameExact.has(normNama)) {
+          foundByName = actorByNameExact.get(normNama)
+        } else if (rawNama) {
+          foundByName = actors.find(a => {
+            const aName = String(a.fullName || (a as any).nama || "")
+            return fuzzyNameMatch(aName, rawNama)
+          })
         }
-        // Priority 3: Fallback exact full name from Column E
-        else if (rawNama && actorByNameExact.has(normalizeName(rawNama))) {
-          matchedActor = actorByNameExact.get(normalizeName(rawNama))
-          matchMethod = "name_exact"
-        }
-        // Priority 4: Fallback fuzzy name matching
-        else if (rawNama) {
-          matchedActor = actors.find(a => a.fullName && fuzzyNameMatch(a.fullName, rawNama))
-          if (matchedActor) {
-            matchMethod = "name_fuzzy"
+
+        // 3. Gabungkan hasil pengecekan NIK dan Nama
+        if (foundByNik) {
+          matchedActor = foundByNik
+          isNikMatched = true
+
+          const aName = String(foundByNik.fullName || (foundByNik as any).nama || "")
+          if (rawNama && (normalizeName(aName) === normNama || fuzzyNameMatch(aName, rawNama))) {
+            isNameMatched = true
+            matchMethod = "nik_and_name" // Cocok NIK & Nama!
+          } else {
+            matchMethod = rawNikColD && actorByNikExact.has(rawNikColD) ? "nik_exact" : "nik_normalized"
           }
+        } else if (foundByName) {
+          matchedActor = foundByName
+          isNameMatched = true
+          isNikMatched = false
+          matchMethod = normNama && actorByNameExact.has(normNama) ? "name_exact" : "name_fuzzy"
         }
 
         const displayStatus = rawKet || (rawStatusB === "Y" ? "Bisa Daftar" : rawStatusB) || "Sesuai Pengecekan BPJS"
@@ -463,7 +488,9 @@ export default function BpjsPage() {
             excelName: rawNama || matchedActor.fullName,
             excelStatus: displayStatus,
             excelKpj: rawKpj || undefined,
-            matchMethod
+            matchMethod,
+            isNikMatched,
+            isNameMatched
           })
         } else {
           unmatchedList.push({
@@ -472,7 +499,9 @@ export default function BpjsPage() {
             name: rawNama || "Tanpa Nama",
             status: displayStatus,
             kpj: rawKpj || undefined,
-            reason: rawNikColD ? "NIK (Kolom D) tidak ditemukan di database pelaku usaha" : "NIK di Kolom D kosong"
+            reason: rawNikColD && rawNama 
+              ? "NIK (Nomor Identitas) dan Nama tidak ditemukan di database pelaku usaha" 
+              : (rawNikColD ? "NIK (Nomor Identitas) tidak ditemukan di database" : "Nama tidak ditemukan di database")
           })
         }
       }
@@ -1102,11 +1131,23 @@ export default function BpjsPage() {
                             <div className="flex flex-col items-center gap-1">
                               {matchInfo ? (
                                 <>
-                                  <Badge className="font-black uppercase tracking-wider text-[9px] px-3 py-1 bg-emerald-100 text-emerald-800 border-emerald-300 shadow-sm flex items-center gap-1">
-                                    <Check className="w-3 h-3 text-emerald-600" /> Sesuai BPJS
+                                  <Badge className={cn(
+                                    "font-black uppercase tracking-wider text-[9px] px-2.5 py-1 shadow-sm flex items-center gap-1 border",
+                                    matchInfo.matchMethod === "nik_and_name" 
+                                      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                      : matchInfo.isNikMatched
+                                      ? "bg-teal-100 text-teal-800 border-teal-300"
+                                      : "bg-blue-100 text-blue-800 border-blue-300"
+                                  )}>
+                                    <Check className="w-3 h-3" />
+                                    {matchInfo.matchMethod === "nik_and_name" 
+                                      ? "Cocok NIK & Nama" 
+                                      : matchInfo.isNikMatched 
+                                      ? "Cocok NIK (Identitas)" 
+                                      : "Cocok Nama"}
                                   </Badge>
                                   {matchInfo.excelStatus && (
-                                    <span className="text-[10px] font-semibold text-slate-600 max-w-[150px] truncate" title={matchInfo.excelStatus}>
+                                    <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200" title={matchInfo.excelStatus}>
                                       {matchInfo.excelStatus}
                                     </span>
                                   )}
