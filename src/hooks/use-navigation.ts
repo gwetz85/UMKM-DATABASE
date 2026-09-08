@@ -174,14 +174,6 @@ export function useNavigation() {
       description: "Rekap Semua Data Input (Per Wilayah)"
     },
     {
-      name: "BPJS Ketenagakerjaan",
-      href: "/bpjs",
-      icon: ShieldCheck,
-      show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
-      color: "#15803d",
-      description: "Monitoring BPJS Peserta"
-    },
-    {
       name: "Rekening Bank",
       href: "/rekening-bank",
       icon: CreditCard,
