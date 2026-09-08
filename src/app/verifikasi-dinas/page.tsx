@@ -46,7 +46,10 @@ import {
   MessageCircle,
   Calendar,
   Image as ImageIcon,
-  ExternalLink
+  ExternalLink,
+  Filter,
+  X,
+  Users
 } from "lucide-react"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { ensureVerifikatorUser } from "@/lib/verifikator-service"
@@ -75,6 +78,14 @@ export default function VerifikasiDinasPage() {
   const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null)
   const [resetSurveyActor, setResetSurveyActor] = useState<BusinessActor | null>(null)
   const [isResettingSurvey, setIsResettingSurvey] = useState(false)
+
+  // Filter Petugas Survey
+  const [selectedPetugasFilter, setSelectedPetugasFilter] = useState<string>("ALL")
+
+  // Admin Quick Reassign Petugas Survey
+  const [reassignActor, setReassignActor] = useState<BusinessActor | null>(null)
+  const [selectedNewPetugas, setSelectedNewPetugas] = useState<string>("")
+  const [isReassigning, setIsReassigning] = useState(false)
 
   // Print Berita Acara Modal states
   const [printModalActor, setPrintModalActor] = useState<BusinessActor | null>(null)
@@ -685,6 +696,9 @@ export default function VerifikasiDinasPage() {
   const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
   const { data: kuotaData } = useList<any>(kuotaRef)
 
+  const systemUsersRef = useMemoFirebase(() => database ? ref(database, 'system_users') : null, [database])
+  const { data: systemUsersRaw } = useList<any>(systemUsersRef)
+
   // O(1) Lookup Map for Coordinator Phone Numbers
   const kuotaMap = useMemo(() => {
     const map = new Map<string, string>();
@@ -713,17 +727,78 @@ export default function VerifikasiDinasPage() {
     })
   }, [allActorsRaw, isPetugas, userProfile?.fullName])
 
+  // Surveyor Options (petugas survey terdaftar di system_users atau yang ada di data)
+  const surveyorOptions = useMemo(() => {
+    const set = new Set<string>()
+    if (systemUsersRaw) {
+      systemUsersRaw.forEach((u: any) => {
+        if (u.role === 'petugas' || u.role === 'petugas_survey') {
+          const name = (u.fullName || u.name || u.id || '').toUpperCase().trim()
+          if (name) set.add(name)
+        }
+      })
+    }
+    if (actors) {
+      actors.forEach((a: any) => {
+        const ps = (a.petugasSurvey || '').toUpperCase().trim()
+        if (ps && ps !== 'BELUM ADA' && ps !== '-') {
+          set.add(ps)
+        }
+      })
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
+  }, [systemUsersRaw, actors])
+
+  // Hitung jumlah data per petugas survey
+  const surveyorCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    if (actors) {
+      actors.forEach(a => {
+        const ps = (a.petugasSurvey || '').toUpperCase().trim()
+        if (ps && ps !== '-' && ps !== 'BELUM ADA') {
+          counts[ps] = (counts[ps] || 0) + 1
+        }
+      })
+    }
+    return counts
+  }, [actors])
+
+  // Hitung data yang belum ada petugas survey
+  const unassignedCount = useMemo(() => {
+    if (!actors) return 0
+    return actors.filter(a => {
+      const ps = (a.petugasSurvey || '').toUpperCase().trim()
+      return !ps || ps === '-' || ps === 'BELUM ADA'
+    }).length
+  }, [actors])
+
   const filteredActors = useMemo(() => {
     if (!actors) return []
+    let list = actors
+
+    // Filter per petugas survey (jika bukan "ALL")
+    if (selectedPetugasFilter !== "ALL") {
+      if (selectedPetugasFilter === "BELUM_ADA") {
+        list = list.filter(a => {
+          const ps = (a.petugasSurvey || "").toUpperCase().trim()
+          return !ps || ps === "-" || ps === "BELUM ADA"
+        })
+      } else {
+        list = list.filter(a => (a.petugasSurvey || "").toUpperCase().trim() === selectedPetugasFilter)
+      }
+    }
+
     const q = deferredSearch.toLowerCase().trim()
-    if (!q) return actors
-    return actors.filter(actor =>
+    if (!q) return list
+    return list.filter(actor =>
       (actor.fullName && actor.fullName.toLowerCase().includes(q)) ||
       (actor.nik && actor.nik.includes(q)) ||
       (actor.businessName && actor.businessName.toLowerCase().includes(q)) ||
-      (actor.kelurahan && actor.kelurahan.toLowerCase().includes(q))
+      (actor.kelurahan && actor.kelurahan.toLowerCase().includes(q)) ||
+      (actor.petugasSurvey && actor.petugasSurvey.toLowerCase().includes(q)) ||
+      (actor.coordinator && actor.coordinator.toLowerCase().includes(q))
     )
-  }, [actors, deferredSearch])
+  }, [actors, selectedPetugasFilter, deferredSearch])
 
   const groupedActors = useMemo(() => {
     if (!filteredActors) return {}
@@ -1219,13 +1294,16 @@ export default function VerifikasiDinasPage() {
             {filteredActors && (
               <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/20 shadow-sm flex items-center gap-2">
                 <span>Total Data:</span>
-                <span className="bg-primary text-white px-2 py-0.5 rounded-full">{filteredActors.length}</span>
+                <span className="bg-primary text-white px-2 py-0.5 rounded-full">
+                  {filteredActors.length}
+                  {selectedPetugasFilter !== "ALL" && actors && ` / ${actors.length}`}
+                </span>
               </div>
             )}
           </div>
           <p className="text-muted-foreground mt-1">Lakukan verifikasi tingkat dinas untuk data pelaku usaha yang telah diloloskan Admin.</p>
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto flex-wrap">
           {/* Edit Pejabat Data Button for Petugas Survey / Admin / Dinas */}
           {(isAdmin || isDinas || isPetugas) && (
             <Button
@@ -1257,10 +1335,43 @@ export default function VerifikasiDinasPage() {
               <span className="sm:hidden">Pejabat</span>
             </Button>
           )}
+
+          {/* Dropdown Filter Petugas Survey - Admin / Dinas */}
+          {(isAdmin || isDinas || !isPetugas) && (surveyorOptions.length > 0 || unassignedCount > 0) && (
+            <div className="flex items-center gap-2 min-w-[210px]">
+              <Select value={selectedPetugasFilter} onValueChange={setSelectedPetugasFilter}>
+                <SelectTrigger className="h-11 rounded-xl border-emerald-300 bg-emerald-50/90 text-emerald-950 font-bold focus:ring-emerald-500 shadow-sm hover:bg-emerald-100/70 transition-colors">
+                  <div className="flex items-center gap-2 truncate">
+                    <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <SelectValue placeholder="Pilih Petugas Survey" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="max-h-[320px]">
+                  <SelectItem value="ALL" className="font-bold">
+                    Semua Petugas Survey ({actors?.length || 0})
+                  </SelectItem>
+                  {surveyorOptions.map((sName) => {
+                    const count = surveyorCounts[sName] || 0;
+                    return (
+                      <SelectItem key={sName} value={sName} className="font-medium">
+                        🟢 {sName} ({count})
+                      </SelectItem>
+                    );
+                  })}
+                  {unassignedCount > 0 && (
+                    <SelectItem value="BELUM_ADA" className="font-bold text-rose-600">
+                      🔴 BELUM ADA PETUGAS ({unassignedCount})
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div className="relative flex-1 md:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
-              placeholder="Cari Nama, NIK, atau Usaha..."
+              placeholder="Cari Nama, NIK, Usaha, Petugas..."
               className="flex h-11 w-full rounded-md border border-primary/20 bg-card px-3 py-2 pl-9 text-sm text-card-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -1333,6 +1444,22 @@ export default function VerifikasiDinasPage() {
         </div>
       </div>
 
+      {/* Active Filter Petugas Survey Badge */}
+      {selectedPetugasFilter !== "ALL" && (
+        <div className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-900 w-fit animate-in fade-in duration-300">
+          <Filter className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Petugas Survey: <strong>{selectedPetugasFilter === "BELUM_ADA" ? "Belum Ada Petugas" : selectedPetugasFilter}</strong> ({filteredActors.length} data)</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSelectedPetugasFilter("ALL")}
+            className="h-6 px-2 text-xs text-emerald-700 hover:text-emerald-950 hover:bg-emerald-200/60 rounded-lg gap-1 ml-1 font-bold"
+          >
+            <X className="w-3 h-3" /> Reset
+          </Button>
+        </div>
+      )}
+
       {(isLoading || isProfileLoading) ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
           {[...Array(6)].map((_, i) => (
@@ -1366,9 +1493,26 @@ export default function VerifikasiDinasPage() {
           ))}
         </div>
       ) : filteredActors?.length === 0 ? (
-        <Card className="border-dashed border-2 flex flex-col items-center justify-center py-20 text-muted-foreground bg-slate-50/50 rounded-3xl">
-          <ClipboardCheck className="w-12 h-12 mb-4 opacity-20" />
-          <p className="font-bold uppercase tracking-widest text-xs">Tidak ada data untuk diverifikasi Dinas</p>
+        <Card className="border-dashed border-2 flex flex-col items-center justify-center py-20 text-muted-foreground bg-slate-50/50 rounded-3xl space-y-3">
+          <ClipboardCheck className="w-12 h-12 mb-1 opacity-20" />
+          <p className="font-bold uppercase tracking-widest text-xs">
+            {selectedPetugasFilter !== "ALL" 
+              ? `Tidak ada data untuk petugas "${selectedPetugasFilter === "BELUM_ADA" ? "Belum Ada Petugas" : selectedPetugasFilter}"`
+              : "Tidak ada data untuk diverifikasi Dinas"}
+          </p>
+          {(selectedPetugasFilter !== "ALL" || searchQuery) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSelectedPetugasFilter("ALL")
+                setSearchQuery("")
+              }}
+              className="rounded-xl border-emerald-300 text-emerald-700 hover:bg-emerald-50 text-xs font-bold gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Reset Filter & Pencarian
+            </Button>
+          )}
         </Card>
       ) : (
         <div className="space-y-12">
@@ -1503,14 +1647,46 @@ export default function VerifikasiDinasPage() {
                                 </div>
                               </div>
                               <div className="flex flex-col min-w-0">
-                                <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">PETUGAS SURVEY</span>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">PETUGAS SURVEY</span>
+                                  {isAdmin && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setReassignActor(actor)
+                                        setSelectedNewPetugas(actor.petugasSurvey && actor.petugasSurvey !== '-' ? actor.petugasSurvey.toUpperCase().trim() : 'BELUM ADA')
+                                      }}
+                                      className="text-[9px] text-emerald-700 hover:text-emerald-900 hover:underline font-semibold flex items-center gap-0.5 ml-0.5"
+                                      title="Pilih / Ganti Petugas Survey (Admin)"
+                                    >
+                                      <Edit className="w-2.5 h-2.5" />
+                                    </button>
+                                  )}
+                                </div>
                                 {actor.petugasSurvey && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim() !== '' && actor.petugasSurvey.trim().toUpperCase() !== 'BELUM ADA' ? (
-                                  <span className="text-[10px] font-black text-emerald-700 truncate uppercase flex items-center gap-1" title={actor.petugasSurvey}>
+                                  <span 
+                                    className={`text-[10px] font-black text-emerald-700 truncate uppercase flex items-center gap-1 ${isAdmin ? 'cursor-pointer hover:underline' : ''}`}
+                                    title={isAdmin ? `Klik untuk ganti petugas survey (${actor.petugasSurvey})` : actor.petugasSurvey}
+                                    onClick={isAdmin ? (e) => {
+                                      e.stopPropagation()
+                                      setReassignActor(actor)
+                                      setSelectedNewPetugas(actor.petugasSurvey ? actor.petugasSurvey.toUpperCase().trim() : 'BELUM ADA')
+                                    } : undefined}
+                                  >
                                     <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
                                     <span className="truncate">{actor.petugasSurvey}</span>
                                   </span>
                                 ) : (
-                                  <span className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-1">
+                                  <span 
+                                    className={`text-[9px] font-bold text-rose-500 uppercase flex items-center gap-1 ${isAdmin ? 'cursor-pointer hover:underline' : ''}`}
+                                    title={isAdmin ? "Klik untuk pilih petugas survey" : undefined}
+                                    onClick={isAdmin ? (e) => {
+                                      e.stopPropagation()
+                                      setReassignActor(actor)
+                                      setSelectedNewPetugas('BELUM ADA')
+                                    } : undefined}
+                                  >
                                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 animate-pulse" />
                                     BELUM ADA
                                   </span>
@@ -1728,17 +1904,33 @@ export default function VerifikasiDinasPage() {
                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
                         {item.isPetugasField ? (
                           <div className="space-y-1.5">
-                            {item.isBelumAda ? (
-                              <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900">
-                                <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
-                                <span>BELUM ADA</span>
-                              </div>
-                            ) : (
-                              <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                                <span>{item.value}</span>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {item.isBelumAda ? (
+                                <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900">
+                                  <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                  <span>BELUM ADA</span>
+                                </div>
+                              ) : (
+                                <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                  <span>{item.value}</span>
+                                </div>
+                              )}
+                              {isAdmin && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setReassignActor(viewingActor)
+                                    setSelectedNewPetugas(viewingActor.petugasSurvey && viewingActor.petugasSurvey !== '-' ? viewingActor.petugasSurvey.toUpperCase().trim() : 'BELUM ADA')
+                                  }}
+                                  className="h-7 px-2 text-[10px] font-bold text-emerald-700 border-emerald-200 hover:bg-emerald-50 rounded-lg gap-1"
+                                >
+                                  <Edit className="w-3 h-3" /> Pilih Petugas
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         ) : item.isPhone && item.value ? (
                           <a
@@ -2972,6 +3164,117 @@ export default function VerifikasiDinasPage() {
                 Simpan Data
               </Button>
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── MODAL PILIH / GANTI PETUGAS SURVEY (ADMIN) ─── */}
+      <Dialog open={!!reassignActor} onOpenChange={(open) => { if (!open && !isReassigning) setReassignActor(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-800 font-bold text-lg">
+              <UserCheck className="w-5 h-5 text-emerald-600" />
+              Pilih Petugas Survey
+            </DialogTitle>
+            <DialogDescription>
+              Tentukan petugas survey yang ditugaskan untuk pelaku usaha <strong>{reassignActor?.fullName}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          {reassignActor && (
+            <div className="py-3 space-y-4">
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+                <div className="flex justify-between items-center text-xs text-muted-foreground font-semibold">
+                  <span>Nama Usaha:</span>
+                  <span className="text-slate-900 font-bold uppercase">{reassignActor.businessName || "-"}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-muted-foreground font-semibold">
+                  <span>Kelurahan:</span>
+                  <span className="text-slate-900 font-bold">{reassignActor.kelurahan || "-"}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs text-muted-foreground font-semibold">
+                  <span>Petugas Saat Ini:</span>
+                  <span className="text-emerald-700 font-black uppercase">
+                    {reassignActor.petugasSurvey && reassignActor.petugasSurvey !== '-' ? reassignActor.petugasSurvey : "BELUM ADA"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Pilih Petugas Survey Baru:
+                </Label>
+                <select
+                  value={selectedNewPetugas}
+                  onChange={(e) => setSelectedNewPetugas(e.target.value)}
+                  className="flex h-11 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
+                  {surveyorOptions.map((name) => (
+                    <option key={name} value={name}>
+                      🟢 {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 pt-2 border-t">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setReassignActor(null)}
+              disabled={isReassigning}
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              disabled={isReassigning}
+              onClick={async () => {
+                if (!reassignActor || !database) return;
+                setIsReassigning(true);
+                try {
+                  const val = (!selectedNewPetugas || selectedNewPetugas === 'BELUM ADA') ? 'BELUM ADA' : selectedNewPetugas.toUpperCase().trim();
+                  await updateDocumentNonBlocking(ref(database, `businessActors/${reassignActor.id}`), {
+                    petugasSurvey: val
+                  });
+
+                  logActivity({
+                    query: `GANTI PETUGAS SURVEY: ${reassignActor.fullName} -> ${val}`,
+                    results: "Berhasil",
+                    device: getDeviceType(navigator.userAgent),
+                    source: 'Web',
+                    method: 'SURVEY DINAS',
+                    userId: user?.email || user?.uid || 'Admin'
+                  });
+
+                  toast({
+                    title: "✅ Petugas Survey Diperbarui",
+                    description: val === "BELUM ADA" ? "Petugas survey diubah menjadi BELUM ADA." : `Petugas survey dialihkan ke ${val}.`
+                  });
+
+                  if (viewingActor && viewingActor.id === reassignActor.id) {
+                    setViewingActor(prev => prev ? { ...prev, petugasSurvey: val } : null);
+                  }
+
+                  setReassignActor(null);
+                } catch (err: any) {
+                  toast({
+                    variant: "destructive",
+                    title: "Gagal Mengubah Petugas",
+                    description: err?.message || "Terjadi kesalahan."
+                  });
+                } finally {
+                  setIsReassigning(false);
+                }
+              }}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold min-w-[140px]"
+            >
+              {isReassigning ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+              Simpan Petugas
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
