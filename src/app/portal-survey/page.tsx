@@ -13,7 +13,7 @@ import {
 } from "@/firebase"
 import { ref, update, get } from "firebase/database"
 import { signOut } from "firebase/auth"
-import { BusinessActor, PejabatData } from "../lib/types"
+import { BusinessActor, PejabatData, SurveyDinasData } from "../lib/types"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { ensureVerifikatorUser } from "@/lib/verifikator-service"
 import { logActivity, getDeviceType } from "@/lib/logger"
@@ -32,6 +32,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Progress } from "@/components/ui/progress"
 
 import { 
   LogOut, 
@@ -49,9 +53,21 @@ import {
   FileDown, 
   Camera, 
   Loader2, 
-  Shield,
-  MapPin
+  Shield, 
+  MapPin, 
+  Navigation, 
+  Save, 
+  X, 
+  AlertTriangle,
+  FileText,
+  User,
+  Check,
+  RotateCcw
 } from "lucide-react"
+
+const IZIN_OPTIONS = ["NIB", "P-IRT", "HALAL", "BPOM", "HAKI", "Belum Ada"]
+const STATUS_OPTIONS = ["Kepala Keluarga", "Ibu Rumah Tangga", "Lajang", "Janda", "Duda"]
+const BANSOS_OPTIONS = ["PKH", "BPNT", "KIP", "LANSIA", "Lainnya"]
 
 export default function PortalSurveyPage() {
   const { user, userProfile, isUserLoading } = useUser()
@@ -59,7 +75,9 @@ export default function PortalSurveyPage() {
   const auth = useAuth()
   const router = useRouter()
   const { toast } = useToast()
+  
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const surveyPhotoInputRef = useRef<HTMLInputElement>(null)
 
   // Realtime clock states
   const [currentDateTime, setCurrentDateTime] = useState<{ date: string; time: string }>({
@@ -76,7 +94,31 @@ export default function PortalSurveyPage() {
   // Search queries
   const [searchPelakuQuery, setSearchPelakuQuery] = useState("")
   const [searchRekapanQuery, setSearchRekapanQuery] = useState("")
-  const [pelakuFilterTab, setPelakuFilterTab] = useState<'all' | 'pending' | 'done'>('all')
+
+  // ==========================================
+  // IN-PORTAL SURVEY STATE (PROSES LANGSUNG)
+  // ==========================================
+  const [surveyingActor, setSurveyingActor] = useState<BusinessActor | null>(null)
+  const [surveyData, setSurveyData] = useState<Partial<SurveyDinasData>>({})
+  const [surveyLocation, setSurveyLocation] = useState<{ lat: number; lon: number } | null>(null)
+  const [surveyPhotoPreview, setSurveyPhotoPreview] = useState<string | null>(null)
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false)
+  const [isSubmittingSurvey, setIsSubmittingSurvey] = useState(false)
+  const [isSubmittingDraft, setIsSubmittingDraft] = useState(false)
+
+  // Format Rupiah Helper
+  const formatRupiah = (value: string) => {
+    const numberString = value.replace(/[^,\d]/g, '').toString();
+    const split = numberString.split(',');
+    const sisa = split[0].length % 3;
+    let rupiah = split[0].substr(0, sisa);
+    const ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+    if (ribuan) {
+      const separator = sisa ? '.' : '';
+      rupiah += separator + ribuan.join('.');
+    }
+    return split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
+  };
 
   // Pejabat form state
   const [pejabatForm, setPejabatForm] = useState({
@@ -182,31 +224,39 @@ export default function PortalSurveyPage() {
     })
   }, [rawActorsList, userProfile])
 
-  // Filtered lists for Menu 2 (Data Pelaku Usaha)
-  const filteredMyActors = useMemo(() => {
-    let list = myActors
-    if (pelakuFilterTab === 'pending') {
-      list = list.filter(a => a.status === 'lpj_pending' || !a.surveyData?.hasilSurvey)
-    } else if (pelakuFilterTab === 'done') {
-      list = list.filter(a => a.status === 'verified_dinas' || a.status === 'finish' || !!a.surveyData?.hasilSurvey)
-    }
+  // =========================================================================
+  // RULE USER: Menu 2 HANYA menampilkan data yang BELUM disurvey!
+  // =========================================================================
+  const uncompletedMyActors = useMemo(() => {
+    return myActors.filter(a => {
+      const isDone = a.status === 'verified_dinas' || 
+                     a.status === 'finish' || 
+                     Boolean(a.surveyData?.hasilSurvey) ||
+                     Boolean(a.verifiedDinasAt);
+      return !isDone;
+    })
+  }, [myActors])
 
-    if (!searchPelakuQuery.trim()) return list
+  // Filtered list for Menu 2 search
+  const filteredUncompletedActors = useMemo(() => {
+    if (!searchPelakuQuery.trim()) return uncompletedMyActors
     const q = searchPelakuQuery.toLowerCase().trim()
-    return list.filter(a => 
+    return uncompletedMyActors.filter(a => 
       (a.fullName && a.fullName.toLowerCase().includes(q)) ||
       (a.nik && a.nik.includes(q)) ||
       (a.businessName && a.businessName.toLowerCase().includes(q)) ||
       (a.kelurahan && a.kelurahan.toLowerCase().includes(q))
     )
-  }, [myActors, pelakuFilterTab, searchPelakuQuery])
+  }, [uncompletedMyActors, searchPelakuQuery])
 
-  // Completed surveys for Menu 3 (Rekapan Berita Acara awal s/d akhir)
+  // =========================================================================
+  // Menu 3: Rekapan Berita Acara (Yang SUDAH disurvey dari awal s/d akhir)
+  // =========================================================================
   const completedBeritaAcaraList = useMemo(() => {
     const list = myActors.filter(a => 
       a.status === 'verified_dinas' || 
       a.status === 'finish' || 
-      (a.surveyData && a.surveyData.hasilSurvey) ||
+      Boolean(a.surveyData?.hasilSurvey) ||
       Boolean(a.verifiedDinasAt)
     )
 
@@ -222,13 +272,8 @@ export default function PortalSurveyPage() {
 
   // Count statistics
   const totalAssigned = myActors.length
-  const totalCompleted = useMemo(() => {
-    return myActors.filter(a => 
-      a.status === 'verified_dinas' || 
-      a.status === 'finish' || 
-      (a.surveyData && a.surveyData.hasilSurvey)
-    ).length
-  }, [myActors])
+  const totalUncompleted = uncompletedMyActors.length
+  const totalCompleted = completedBeritaAcaraList.length
 
   const isPejabatComplete = Boolean(
     pejabatForm.verifikatorNama && 
@@ -236,6 +281,297 @@ export default function PortalSurveyPage() {
     pejabatForm.petugasNama && 
     pejabatForm.petugasNipppk
   )
+
+  // =========================================================================
+  // IN-PORTAL SURVEY FUNCTIONS
+  // =========================================================================
+  const openInPortalSurvey = (actor: BusinessActor) => {
+    setSurveyingActor(actor)
+    
+    // Existing location or null
+    const existingLoc = actor.verificationLocationDinas || (actor.surveyData as any)?.location || null
+    setSurveyLocation(existingLoc)
+
+    // Existing photo
+    const existingPhoto = actor.surveyData?.fotoSurveyUrl || null
+    setSurveyPhotoPreview(existingPhoto)
+
+    const todayStr = new Date().toISOString().split('T')[0]
+    const existing = actor.surveyData || {} as Partial<SurveyDinasData>
+
+    let defaultGender = ''
+    if (existing.jenisKelamin) {
+      defaultGender = existing.jenisKelamin
+    } else if (actor.gender) {
+      defaultGender = actor.gender.toLowerCase().includes('perempuan') ? 'Perempuan' : 'Laki-Laki'
+    }
+
+    setSurveyData({
+      tanggalSurvey: existing.tanggalSurvey || todayStr,
+      namaUsaha: existing.namaUsaha || actor.businessName || '',
+      namaPemilik: existing.namaPemilik || actor.fullName || '',
+      jenisKelamin: defaultGender,
+      status: existing.status || '',
+      alamatRumah: existing.alamatRumah || actor.address || '',
+      noHp: existing.noHp || actor.phone || '',
+      email: existing.email || '',
+      sosmed: existing.sosmed || '',
+      bidangUsaha: existing.bidangUsaha || actor.businessCategory || '',
+      peralatan: existing.peralatan || '',
+      tahunBerdiri: existing.tahunBerdiri || '',
+      modalUsaha: existing.modalUsaha || '',
+      omset: existing.omset || '',
+      rencanaPenggunaan: existing.rencanaPenggunaan || '',
+      hasilSurvey: existing.hasilSurvey || 'Lolos',
+      dtks: existing.dtks || { masuk: false },
+      hibah: existing.hibah || { pernah: false },
+      izin: existing.izin || [],
+      fotoSurveyUrl: existingPhoto || undefined
+    })
+  }
+
+  // Survey Progress Calculation
+  const surveyProgress = useMemo(() => {
+    if (!surveyingActor) return 0
+    let requiredFields = 16
+    let filled = 0
+    if (surveyData.tanggalSurvey) filled++
+    if (surveyData.namaUsaha) filled++
+    if (surveyData.namaPemilik) filled++
+    if (surveyData.jenisKelamin) filled++
+    if (surveyData.status) filled++
+    if (surveyData.alamatRumah) filled++
+    if (surveyData.noHp) filled++
+    if (surveyData.dtks?.masuk !== undefined) {
+      filled++
+      if (surveyData.dtks.masuk && surveyData.dtks.jenis) filled++
+    }
+    if (surveyData.bidangUsaha) filled++
+    if (surveyData.peralatan) filled++
+    if (surveyData.tahunBerdiri) filled++
+    if (surveyData.modalUsaha) filled++
+    if (surveyData.omset) filled++
+    if (surveyData.rencanaPenggunaan) filled++
+    if (surveyLocation) filled++
+    if (surveyPhotoPreview) filled++
+    return Math.min(100, Math.round((filled / requiredFields) * 100))
+  }, [surveyData, surveyLocation, surveyPhotoPreview, surveyingActor])
+
+  // Location GPS Capture
+  const handleCaptureLocation = () => {
+    setIsFetchingLocation(true)
+    if (!navigator.geolocation) {
+      toast({
+        variant: "destructive",
+        title: "GPS Tidak Didukung",
+        description: "Browser atau perangkat Anda tidak mendukung akses GPS."
+      })
+      setIsFetchingLocation(false)
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setSurveyLocation({
+          lat: pos.coords.latitude,
+          lon: pos.coords.longitude
+        })
+        setIsFetchingLocation(false)
+        toast({
+          title: "🎯 Lokasi GPS Berhasil Diambil",
+          description: `Koordinat: ${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`
+        })
+      },
+      (err) => {
+        setIsFetchingLocation(false)
+        toast({
+          variant: "destructive",
+          title: "Gagal Mengambil Lokasi",
+          description: "Pastikan GPS/Lokasi HP Anda aktif dan beri izin akses pada browser."
+        })
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    )
+  }
+
+  // Survey Photo Capture / Upload
+  const handleSurveyPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const rawResult = event.target?.result as string
+      const img = new Image()
+      img.src = rawResult
+      img.onload = () => {
+        try {
+          const MAX_B64_BYTES = 1_398_101 // max 1MB
+          const canvas = document.createElement('canvas')
+          const MAX_DIM = 1200
+          let width = img.width
+          let height = img.height
+          if (width > height) {
+            if (width > MAX_DIM) {
+              height = Math.round((height * MAX_DIM) / width)
+              width = MAX_DIM
+            }
+          } else {
+            if (height > MAX_DIM) {
+              width = Math.round((width * MAX_DIM) / height)
+              height = MAX_DIM
+            }
+          }
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+
+          let result = ''
+          for (const q of [0.85, 0.75, 0.65, 0.55, 0.45, 0.35]) {
+            result = canvas.toDataURL('image/jpeg', q)
+            if (result.length <= MAX_B64_BYTES) break
+          }
+          setSurveyPhotoPreview(result)
+          toast({
+            title: "Foto Berhasil Dimuat",
+            description: "Foto survey lapangan siap disimpan."
+          })
+        } catch {
+          setSurveyPhotoPreview(rawResult)
+        }
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Save Final Survey in Portal
+  const handleCompleteSurveyInPortal = async () => {
+    if (!surveyingActor || !database || !userProfile) return
+
+    if (!surveyLocation) {
+      toast({
+        variant: "destructive",
+        title: "Titik GPS Belum Diambil",
+        description: "Harap klik tombol 'Ambil Lokasi GPS' terlebih dahulu."
+      })
+      return
+    }
+
+    if (!surveyPhotoPreview) {
+      toast({
+        variant: "destructive",
+        title: "Foto Survey Belum Diupload",
+        description: "Harap ambil atau upload foto survei tempat usaha."
+      })
+      return
+    }
+
+    setIsSubmittingSurvey(true)
+    try {
+      const activePejabat: PejabatData = {
+        verifikator: {
+          nama: pejabatForm.verifikatorNama || "Dinas Koperasi & UKM",
+          nipppk: pejabatForm.verifikatorNipppk || "-",
+          pangkat: pejabatForm.verifikatorPangkat || "-",
+          jabatan: pejabatForm.verifikatorJabatan || "Verifikator Dinas"
+        },
+        petugas: {
+          nama: pejabatForm.petugasNama || userProfile.fullName || "-",
+          nipppk: pejabatForm.petugasNipppk || (userProfile as any)?.nipppk || "-",
+          pangkat: pejabatForm.petugasPangkat || (userProfile as any)?.pangkat || "-",
+          jabatan: pejabatForm.petugasJabatan || (userProfile as any)?.jabatan || "Petugas Survey Lapangan"
+        },
+        updatedAt: new Date().toISOString()
+      }
+
+      const finalSurveyData: any = {
+        ...surveyData,
+        fotoSurveyUrl: surveyPhotoPreview,
+        location: surveyLocation,
+        pejabatData: activePejabat,
+        hasilSurvey: "Lolos"
+      }
+
+      const actorRef = ref(database, `businessActors/${surveyingActor.id}`)
+      const updateData: any = {
+        status: 'verified_dinas',
+        hasilVerifikasiDinas: 'Lolos',
+        surveyData: finalSurveyData,
+        surveyProgress: 100,
+        verificationLocationDinas: surveyLocation,
+        verifiedDinasAt: new Date().toISOString(),
+        verifiedDinasBy: userProfile.fullName || user?.email || "Petugas Survey",
+        verifikatorDinas: activePejabat.verifikator.nama,
+        pejabatData: activePejabat
+      }
+
+      await update(actorRef, updateData)
+
+      logActivity({
+        query: `SURVEY DINAS PORTAL: ${surveyingActor.fullName} - LOLOS`,
+        results: "Berhasil Selesai",
+        device: getDeviceType(navigator.userAgent),
+        source: "Web",
+        method: "SURVEY PORTAL",
+        userId: user?.email || userProfile.fullName
+      }, database)
+
+      toast({
+        title: "🎉 Survey Selesai & Lolos",
+        description: `${surveyingActor.fullName} telah selesai disurvey dan otomatis dipindahkan ke Rekapan Berita Acara.`
+      })
+
+      setSurveyingActor(null)
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Gagal Menyimpan Survey",
+        description: err.message
+      })
+    } finally {
+      setIsSubmittingSurvey(false)
+    }
+  }
+
+  // Save Draft in Portal
+  const handleSaveDraftInPortal = async () => {
+    if (!surveyingActor || !database || !userProfile) return
+    setIsSubmittingDraft(true)
+    try {
+      const draftSurveyData: any = {
+        ...surveyData,
+        fotoSurveyUrl: surveyPhotoPreview || null,
+        location: surveyLocation || null
+      }
+
+      const actorRef = ref(database, `businessActors/${surveyingActor.id}`)
+      const updateData: any = {
+        surveyData: draftSurveyData,
+        lastDraftAt: new Date().toISOString(),
+        lastDraftBy: userProfile.fullName || "Petugas Survey"
+      }
+      if (surveyLocation) {
+        updateData.verificationLocationDinas = surveyLocation
+      }
+
+      await update(actorRef, updateData)
+
+      toast({
+        title: "💾 Draft Berhasil Disimpan",
+        description: `Perubahan survey sementara untuk ${surveyingActor.fullName} tersimpan.`
+      })
+      setSurveyingActor(null)
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Gagal Menyimpan Draft",
+        description: err.message
+      })
+    } finally {
+      setIsSubmittingDraft(false)
+    }
+  }
 
   // Logout handler
   const handleLogout = async () => {
@@ -291,7 +627,6 @@ export default function PortalSurveyPage() {
         updatedAt: new Date().toISOString()
       }
 
-      // Save to system_users
       if (userProfile?.id) {
         await update(ref(database, `system_users/${userProfile.id}`), {
           pejabatData: activePejabatData,
@@ -307,23 +642,12 @@ export default function PortalSurveyPage() {
         }).catch(() => null)
       }
 
-      // Save to localStorage for instant local access
       if (typeof window !== 'undefined') {
         localStorage.setItem(`pejabatData_${user.uid}`, JSON.stringify(activePejabatData))
         localStorage.setItem('pejabatData', JSON.stringify(activePejabatData))
       }
 
-      // Ensure verifikator account exists in system
       ensureVerifikatorUser(database, activePejabatData.verifikator).catch(console.error)
-
-      logActivity({
-        query: `UPDATE PEJABAT BA: ${petugasNama} (Verifikator: ${verifikatorNama})`,
-        results: "Berhasil Disimpan",
-        device: getDeviceType(navigator.userAgent),
-        source: "Web",
-        method: "SAVE PEJABAT",
-        userId: user.email || user.uid
-      }, database)
 
       toast({
         title: "✅ Data Pejabat Disimpan",
@@ -486,6 +810,16 @@ export default function PortalSurveyPage() {
         ref={fileInputRef} 
         onChange={handleAvatarUpload} 
         accept="image/*" 
+        className="hidden" 
+      />
+
+      {/* Hidden File Input for Survey Photo (supports mobile camera) */}
+      <input 
+        type="file" 
+        ref={surveyPhotoInputRef} 
+        onChange={handleSurveyPhotoUpload} 
+        accept="image/*" 
+        capture="environment"
         className="hidden" 
       />
 
@@ -661,7 +995,7 @@ export default function PortalSurveyPage() {
           </div>
         </div>
 
-        {/* ================= 3 MENU UTAMA BAGIAN BAWAH (GRID 3 KOLOM PERSIS GAMBAR 2) ================= */}
+        {/* ================= 3 MENU UTAMA (GRID 3 KOLOM PERSIS GAMBAR 2) ================= */}
         <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
 
           {/* MENU 1: PEJABAT BA */}
@@ -670,7 +1004,6 @@ export default function PortalSurveyPage() {
             className="bg-white rounded-2xl p-3 sm:p-3.5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all cursor-pointer group"
           >
             <div>
-              {/* Rounded Square Icon Badge */}
               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 mb-2.5 group-hover:scale-105 transition-transform">
                 <FileSignature className="w-5 h-5" />
               </div>
@@ -685,20 +1018,18 @@ export default function PortalSurveyPage() {
               </p>
             </div>
 
-            {/* Bottom Pill Action */}
             <div className="mt-3 py-1 px-2 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-[10px] font-bold flex items-center justify-between">
               <span>{isPejabatComplete ? "Lengkap" : "Isi Data"}</span>
               <ChevronRight className="w-3 h-3 text-blue-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </div>
 
-          {/* MENU 2: DATA PELAKU USAHA */}
+          {/* MENU 2: DATA PELAKU USAHA (HANYA YANG BELUM DI SURVEY) */}
           <div 
             onClick={() => setActiveModal('pelaku-usaha')}
             className="bg-white rounded-2xl p-3 sm:p-3.5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all cursor-pointer group"
           >
             <div>
-              {/* Rounded Square Icon Badge */}
               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white flex items-center justify-center shadow-md shadow-orange-500/20 mb-2.5 group-hover:scale-105 transition-transform">
                 <Store className="w-5 h-5" />
               </div>
@@ -709,24 +1040,22 @@ export default function PortalSurveyPage() {
                 DATA UMKM
               </h3>
               <p className="text-[10px] text-slate-400 mt-1 leading-snug">
-                Tugas Petugas
+                Belum Survey
               </p>
             </div>
 
-            {/* Bottom Pill Action */}
             <div className="mt-3 py-1 px-2 bg-amber-50 text-amber-700 border border-amber-100 rounded-lg text-[10px] font-bold flex items-center justify-between">
-              <span>{totalAssigned} Data</span>
+              <span>{totalUncompleted} Data</span>
               <ChevronRight className="w-3 h-3 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </div>
 
-          {/* MENU 3: REKAPAN BERITA ACARA */}
+          {/* MENU 3: REKAPAN BERITA ACARA (SUDAH DIKERJAKAN AWAL S/D AKHIR) */}
           <div 
             onClick={() => setActiveModal('rekapan')}
             className="bg-white rounded-2xl p-3 sm:p-3.5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all cursor-pointer group"
           >
             <div>
-              {/* Rounded Square Icon Badge */}
               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20 mb-2.5 group-hover:scale-105 transition-transform">
                 <ClipboardCheck className="w-5 h-5" />
               </div>
@@ -741,7 +1070,6 @@ export default function PortalSurveyPage() {
               </p>
             </div>
 
-            {/* Bottom Pill Action */}
             <div className="mt-3 py-1 px-2 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[10px] font-bold flex items-center justify-between">
               <span>{totalCompleted} Selesai</span>
               <ChevronRight className="w-3 h-3 text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
@@ -912,7 +1240,7 @@ export default function PortalSurveyPage() {
       </Dialog>
 
       {/* ========================================================================= */}
-      {/* DIALOG 2: DATA PELAKU USAHA (HANYA ATAS NAMA PETUGAS)                     */}
+      {/* DIALOG 2: DATA PELAKU USAHA (HANYA YANG BELUM DISURVEY)                  */}
       {/* ========================================================================= */}
       <Dialog open={activeModal === 'pelaku-usaha'} onOpenChange={(open) => !open && setActiveModal(null)}>
         <DialogContent className="max-w-xl w-[95vw] rounded-3xl p-5 max-h-[90vh] flex flex-col">
@@ -920,19 +1248,19 @@ export default function PortalSurveyPage() {
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg font-black text-slate-800 flex items-center gap-2">
                 <Store className="w-5 h-5 text-orange-500" />
-                Data Pelaku Usaha Tugas Anda
+                Antrean Survey UMKM
               </DialogTitle>
               <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 font-bold">
-                {myActors.length} Pelaku Usaha
+                {uncompletedMyActors.length} Belum Survey
               </Badge>
             </div>
             <DialogDescription className="text-xs text-slate-500">
-              Daftar pelaku usaha yang ditugaskan khusus atas nama <strong>{userProfile?.fullName}</strong>.
+              Daftar tugas pelaku usaha yang <strong>belum disurvey</strong> atas nama <strong>{userProfile?.fullName}</strong>.
             </DialogDescription>
           </DialogHeader>
 
-          {/* Search & Tabs */}
-          <div className="space-y-2.5 my-2 shrink-0">
+          {/* Search */}
+          <div className="my-2 shrink-0">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
               <Input 
@@ -942,75 +1270,43 @@ export default function PortalSurveyPage() {
                 className="pl-9 bg-slate-50 rounded-xl text-xs"
               />
             </div>
-            <div className="flex gap-1.5 p-1 bg-slate-100 rounded-xl">
-              <button 
-                onClick={() => setPelakuFilterTab('all')}
-                className={cn(
-                  "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all",
-                  pelakuFilterTab === 'all' ? "bg-white text-slate-800 shadow-xs" : "text-slate-500 hover:text-slate-800"
-                )}
-              >
-                Semua ({myActors.length})
-              </button>
-              <button 
-                onClick={() => setPelakuFilterTab('pending')}
-                className={cn(
-                  "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all",
-                  pelakuFilterTab === 'pending' ? "bg-white text-amber-700 shadow-xs" : "text-slate-500 hover:text-amber-700"
-                )}
-              >
-                Belum Survey ({myActors.length - totalCompleted})
-              </button>
-              <button 
-                onClick={() => setPelakuFilterTab('done')}
-                className={cn(
-                  "flex-1 py-1.5 text-xs font-bold rounded-lg transition-all",
-                  pelakuFilterTab === 'done' ? "bg-white text-emerald-700 shadow-xs" : "text-slate-500 hover:text-emerald-700"
-                )}
-              >
-                Selesai ({totalCompleted})
-              </button>
-            </div>
           </div>
 
           {/* Actor Items Scrollable List */}
           <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-            {filteredMyActors.length === 0 ? (
+            {filteredUncompletedActors.length === 0 ? (
               <div className="py-12 text-center text-slate-400 text-xs">
-                <Store className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                <p>Tidak ada data pelaku usaha yang cocok.</p>
+                <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500/70" />
+                <p className="font-bold text-slate-700">Semua Tugas Survey Telah Selesai!</p>
+                <p className="text-[11px] text-slate-400 mt-1">Tidak ada data UMKM yang tertunda. Silakan cek Menu Rekapan BA.</p>
               </div>
             ) : (
-              filteredMyActors.map((actor) => {
-                const isDone = actor.status === 'verified_dinas' || actor.status === 'finish' || !!actor.surveyData?.hasilSurvey
+              filteredUncompletedActors.map((actor, idx) => {
                 return (
                   <div 
                     key={actor.id}
                     className="p-3 bg-white border border-slate-200/80 rounded-2xl shadow-2xs hover:border-orange-300 transition-all space-y-2"
                   >
                     <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="font-black text-slate-800 text-xs">{actor.fullName}</h4>
-                          <span className="text-[10px] px-2 py-0.2 bg-slate-100 text-slate-600 rounded-md font-semibold">
-                            {actor.businessCategory || "UMKM"}
-                          </span>
+                      <div className="flex items-start gap-2">
+                        <span className="w-5 h-5 rounded-full bg-orange-50 text-orange-700 border border-orange-200 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="font-black text-slate-800 text-xs">{actor.fullName}</h4>
+                            <span className="text-[10px] px-2 py-0.2 bg-slate-100 text-slate-600 rounded-md font-semibold">
+                              {actor.businessCategory || "UMKM"}
+                            </span>
+                          </div>
+                          <p className="text-[11px] font-bold text-orange-600">{actor.businessName || "Usaha Mandiri"}</p>
+                          <p className="text-[10px] text-slate-400 font-mono">NIK: {actor.nik || "-"}</p>
                         </div>
-                        <p className="text-[11px] font-bold text-orange-600">{actor.businessName || "Usaha Mandiri"}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">NIK: {actor.nik || "-"}</p>
                       </div>
 
-                      <div>
-                        {isDone ? (
-                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-bold flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" /> Selesai Survey
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold flex items-center gap-1">
-                            <Clock3 className="w-3 h-3" /> Belum Survey
-                          </span>
-                        )}
-                      </div>
+                      <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold flex items-center gap-1">
+                        <Clock3 className="w-3 h-3" /> Belum Survey
+                      </span>
                     </div>
 
                     <div className="text-[10px] text-slate-500 bg-slate-50 p-2 rounded-xl flex justify-between items-center">
@@ -1018,7 +1314,7 @@ export default function PortalSurveyPage() {
                       <span className="font-mono">{actor.phone || "-"}</span>
                     </div>
 
-                    {/* Action buttons */}
+                    {/* Action buttons (Survey langsung di portal!) */}
                     <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
                       {actor.phone && actor.phone !== "-" && (
                         <Button 
@@ -1034,18 +1330,10 @@ export default function PortalSurveyPage() {
 
                       <Button 
                         size="sm" 
-                        onClick={() => {
-                          setActiveModal(null)
-                          router.push(`/verifikasi-dinas?actorId=${actor.id}`)
-                        }}
-                        className={cn(
-                          "h-8 px-3 rounded-xl text-[11px] font-bold shadow-xs",
-                          isDone 
-                            ? "bg-slate-700 hover:bg-slate-800 text-white" 
-                            : "bg-orange-600 hover:bg-orange-700 text-white"
-                        )}
+                        onClick={() => openInPortalSurvey(actor)}
+                        className="h-8 px-3.5 rounded-xl text-[11px] font-bold shadow-xs bg-orange-600 hover:bg-orange-700 text-white"
                       >
-                        {isDone ? "Tinjau Hasil Survey" : "Mulai Survey Lapangan"}
+                        Mulai Survey Lapangan
                         <ChevronRight className="w-3.5 h-3.5 ml-1" />
                       </Button>
                     </div>
@@ -1068,6 +1356,440 @@ export default function PortalSurveyPage() {
       </Dialog>
 
       {/* ========================================================================= */}
+      {/* MODAL / FORM SURVEY LANGSUNG DI PORTAL (TANPA BUKA TAMPILAN LAMA)         */}
+      {/* ========================================================================= */}
+      <Dialog open={Boolean(surveyingActor)} onOpenChange={(open) => !open && setSurveyingActor(null)}>
+        <DialogContent className="max-w-2xl w-[96vw] rounded-3xl p-5 max-h-[92vh] flex flex-col">
+          <DialogHeader className="shrink-0 border-b border-slate-100 pb-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[10px] font-black text-orange-600 uppercase tracking-wider">
+                  SURVEY LAPANGAN
+                </span>
+                <DialogTitle className="text-base font-black text-slate-800">
+                  {surveyingActor?.fullName}
+                </DialogTitle>
+                <p className="text-xs font-bold text-slate-500">
+                  {surveyingActor?.businessName} • NIK: <span className="font-mono">{surveyingActor?.nik}</span>
+                </p>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="text-right">
+                <span className="text-xs font-black text-blue-700">{surveyProgress}%</span>
+                <Progress value={surveyProgress} className="w-20 h-2 mt-1" />
+              </div>
+            </div>
+          </DialogHeader>
+
+          {/* Form Content Scrollable */}
+          <div className="flex-1 overflow-y-auto space-y-4 py-3 text-xs pr-1 custom-scrollbar">
+
+            {/* SEKSI 1: TANGGAL & DATA PELAKU */}
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-3">
+              <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5">
+                <User className="w-4 h-4 text-blue-600" />
+                1. Data Pelaku Usaha & Identitas
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Tanggal Survey</Label>
+                  <Input 
+                    type="date"
+                    value={surveyData.tanggalSurvey || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, tanggalSurvey: e.target.value }))}
+                    className="bg-white rounded-xl text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Nama Pemilik Usaha</Label>
+                  <Input 
+                    value={surveyData.namaPemilik || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, namaPemilik: e.target.value }))}
+                    className="bg-white rounded-xl text-xs font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Jenis Kelamin</Label>
+                  <RadioGroup 
+                    value={surveyData.jenisKelamin || ""}
+                    onValueChange={(val) => setSurveyData(prev => ({ ...prev, jenisKelamin: val }))}
+                    className="flex gap-4 pt-1"
+                  >
+                    <div className="flex items-center space-x-1.5">
+                      <RadioGroupItem value="Laki-Laki" id="r-laki" />
+                      <Label htmlFor="r-laki" className="text-xs cursor-pointer">Laki-Laki</Label>
+                    </div>
+                    <div className="flex items-center space-x-1.5">
+                      <RadioGroupItem value="Perempuan" id="r-perempuan" />
+                      <Label htmlFor="r-perempuan" className="text-xs cursor-pointer">Perempuan</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Status Perkawinan / Keluarga</Label>
+                  <select 
+                    value={surveyData.status || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, status: e.target.value }))}
+                    className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-medium"
+                  >
+                    <option value="">-- Pilih Status --</option>
+                    {STATUS_OPTIONS.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[11px] font-semibold text-slate-600">Alamat Rumah Lengkap</Label>
+                <Input 
+                  value={surveyData.alamatRumah || ""}
+                  onChange={(e) => setSurveyData(prev => ({ ...prev, alamatRumah: e.target.value }))}
+                  className="bg-white rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Nomor HP / WhatsApp</Label>
+                  <Input 
+                    value={surveyData.noHp || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, noHp: e.target.value }))}
+                    className="bg-white rounded-xl text-xs font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Media Sosial / Akun Usaha (Opsional)</Label>
+                  <Input 
+                    placeholder="Instagram / Facebook / TikTok / Tidak Ada"
+                    value={surveyData.sosmed || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, sosmed: e.target.value }))}
+                    className="bg-white rounded-xl text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* SEKSI 2: DATA DTKS / BANSOS */}
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-3">
+              <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5">
+                <Shield className="w-4 h-4 text-purple-600" />
+                2. Status DTKS & Penerima Bantuan Sosial
+              </h4>
+
+              <div className="flex items-center gap-4">
+                <Label className="text-[11px] font-semibold text-slate-600">Terdaftar di DTKS?</Label>
+                <RadioGroup 
+                  value={surveyData.dtks?.masuk ? "YA" : "TIDAK"}
+                  onValueChange={(val) => setSurveyData(prev => ({
+                    ...prev,
+                    dtks: { ...prev.dtks, masuk: val === "YA" }
+                  }))}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-1.5">
+                    <RadioGroupItem value="YA" id="dtks-ya" />
+                    <Label htmlFor="dtks-ya" className="text-xs cursor-pointer">Ya</Label>
+                  </div>
+                  <div className="flex items-center space-x-1.5">
+                    <RadioGroupItem value="TIDAK" id="dtks-tidak" />
+                    <Label htmlFor="dtks-tidak" className="text-xs cursor-pointer">Tidak</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {surveyData.dtks?.masuk && (
+                <div className="space-y-1 pt-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Jenis Bansos yang Diterima</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {BANSOS_OPTIONS.map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setSurveyData(prev => ({
+                          ...prev,
+                          dtks: { ...prev.dtks, masuk: true, jenis: opt }
+                        }))}
+                        className={cn(
+                          "px-2.5 py-1 rounded-lg text-xs font-bold transition-all border",
+                          surveyData.dtks?.jenis === opt
+                            ? "bg-purple-600 text-white border-purple-600 shadow-xs"
+                            : "bg-white text-slate-600 border-slate-200"
+                        )}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* SEKSI 3: USAHA & KEUANGAN */}
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-3">
+              <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5">
+                <Store className="w-4 h-4 text-orange-600" />
+                3. Profil Usaha, Modal & Omset
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Nama Usaha</Label>
+                  <Input 
+                    value={surveyData.namaUsaha || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, namaUsaha: e.target.value }))}
+                    className="bg-white rounded-xl text-xs font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Bidang Usaha</Label>
+                  <Input 
+                    placeholder="Contoh: Kuliner, Jahit, Perikanan, dsb."
+                    value={surveyData.bidangUsaha || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, bidangUsaha: e.target.value }))}
+                    className="bg-white rounded-xl text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[11px] font-semibold text-slate-600">Peralatan yang Digunakan Saat Ini</Label>
+                <Input 
+                  placeholder="Contoh: Kompor gas, Blender, Wajan, Mesin Jahit, dsb."
+                  value={surveyData.peralatan || ""}
+                  onChange={(e) => setSurveyData(prev => ({ ...prev, peralatan: e.target.value }))}
+                  className="bg-white rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Tahun Berdiri</Label>
+                  <Input 
+                    placeholder="Contoh: 2021"
+                    value={surveyData.tahunBerdiri || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, tahunBerdiri: e.target.value }))}
+                    className="bg-white rounded-xl text-xs font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Modal Usaha (Rp)</Label>
+                  <Input 
+                    placeholder="Contoh: 5.000.000"
+                    value={surveyData.modalUsaha || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, modalUsaha: formatRupiah(e.target.value) }))}
+                    className="bg-white rounded-xl text-xs font-mono font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Omset per Bulan (Rp)</Label>
+                  <Input 
+                    placeholder="Contoh: 3.000.000"
+                    value={surveyData.omset || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, omset: formatRupiah(e.target.value) }))}
+                    className="bg-white rounded-xl text-xs font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-semibold text-slate-600">Legalitas / Izin Usaha yang Dimiliki</Label>
+                <div className="flex flex-wrap gap-2">
+                  {IZIN_OPTIONS.map(izinName => {
+                    const isChecked = (surveyData.izin || []).includes(izinName)
+                    return (
+                      <button
+                        key={izinName}
+                        type="button"
+                        onClick={() => {
+                          const current = surveyData.izin || []
+                          let updated = []
+                          if (izinName === "Belum Ada") {
+                            updated = isChecked ? [] : ["Belum Ada"]
+                          } else {
+                            const withoutBelumAda = current.filter(x => x !== "Belum Ada")
+                            updated = isChecked ? withoutBelumAda.filter(x => x !== izinName) : [...withoutBelumAda, izinName]
+                          }
+                          setSurveyData(prev => ({ ...prev, izin: updated }))
+                        }}
+                        className={cn(
+                          "px-2.5 py-1 rounded-lg text-xs font-bold transition-all border",
+                          isChecked
+                            ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                            : "bg-white text-slate-600 border-slate-200"
+                        )}
+                      >
+                        {izinName}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-[11px] font-semibold text-slate-600">Rencana Penggunaan Modal Bantuan Hibah</Label>
+                <Textarea 
+                  placeholder="Jelaskan rencana pembelian barang/peralatan/bahan baku jika bantuan disetujui..."
+                  value={surveyData.rencanaPenggunaan || ""}
+                  onChange={(e) => setSurveyData(prev => ({ ...prev, rencanaPenggunaan: e.target.value }))}
+                  className="bg-white rounded-xl text-xs min-h-[60px]"
+                />
+              </div>
+            </div>
+
+            {/* SEKSI 4: LOKASI GPS & FOTO SURVEY */}
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-3">
+              <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5">
+                <Navigation className="w-4 h-4 text-emerald-600" />
+                4. Titik GPS Lokasi & Foto Survey Lapangan
+              </h4>
+
+              {/* GPS Lokasi Button & Display */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-700">Titik Koordinat Lokasi Usaha:</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleCaptureLocation}
+                    disabled={isFetchingLocation}
+                    className="h-8 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                  >
+                    {isFetchingLocation ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                        Mencari GPS...
+                      </>
+                    ) : (
+                      <>
+                        <Navigation className="w-3.5 h-3.5 mr-1" />
+                        Ambil Titik GPS Sekarang
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {surveyLocation ? (
+                  <div className="bg-emerald-50 text-emerald-800 p-2.5 rounded-lg text-xs font-mono font-bold flex justify-between items-center border border-emerald-200">
+                    <span>📍 Lat: {surveyLocation.lat.toFixed(6)}, Lon: {surveyLocation.lon.toFixed(6)}</span>
+                    <a 
+                      href={`https://www.google.com/maps?q=${surveyLocation.lat},${surveyLocation.lon}`} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="text-[10px] text-blue-600 underline font-sans"
+                    >
+                      Buka di Maps
+                    </a>
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-400 italic">Belum ada titik koordinat GPS. Klik tombol di atas saat berada di lokasi usaha.</p>
+                )}
+              </div>
+
+              {/* Upload Foto Survey */}
+              <div className="bg-white p-3 rounded-xl border border-slate-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-700">Foto Survey Tempat Usaha:</span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => surveyPhotoInputRef.current?.click()}
+                    className="h-8 rounded-xl text-xs font-bold border-blue-300 text-blue-700 hover:bg-blue-50"
+                  >
+                    <Camera className="w-3.5 h-3.5 mr-1" />
+                    Ambil / Upload Foto
+                  </Button>
+                </div>
+
+                {surveyPhotoPreview ? (
+                  <div className="relative rounded-xl overflow-hidden border border-slate-200 aspect-video max-h-48 bg-slate-100 flex items-center justify-center">
+                    <img 
+                      src={surveyPhotoPreview} 
+                      alt="Preview Foto Survey" 
+                      className="w-full h-full object-cover" 
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setSurveyPhotoPreview(null)}
+                      className="absolute top-2 right-2 bg-rose-600 text-white p-1 rounded-full shadow-md hover:bg-rose-700"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => surveyPhotoInputRef.current?.click()}
+                    className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-blue-400 transition-colors"
+                  >
+                    <Camera className="w-8 h-8 mx-auto text-slate-300 mb-1" />
+                    <p className="text-xs text-slate-500 font-semibold">Klik untuk mengambil foto survei lapangan</p>
+                    <p className="text-[10px] text-slate-400">Bisa menggunakan kamera HP langsung (auto kompres max 1MB)</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Action Footer */}
+          <DialogFooter className="pt-3 border-t border-slate-100 gap-2 sm:gap-0 flex-row justify-end">
+            <Button 
+              type="button"
+              variant="outline" 
+              onClick={() => setSurveyingActor(null)} 
+              className="rounded-xl text-xs"
+            >
+              Tutup
+            </Button>
+            <Button 
+              type="button"
+              variant="outline"
+              disabled={isSubmittingDraft || isSubmittingSurvey}
+              onClick={handleSaveDraftInPortal}
+              className="rounded-xl text-xs font-bold border-slate-300 text-slate-700 hover:bg-slate-100"
+            >
+              {isSubmittingDraft ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  Menyimpan Draft...
+                </>
+              ) : (
+                <>
+                  <Save className="w-3.5 h-3.5 mr-1.5" />
+                  Simpan Draft
+                </>
+              )}
+            </Button>
+            <Button 
+              type="button"
+              disabled={isSubmittingSurvey || isSubmittingDraft}
+              onClick={handleCompleteSurveyInPortal}
+              className="rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+            >
+              {isSubmittingSurvey ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  Memproses...
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                  Selesai & Loloskan Survey
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ========================================================================= */}
       {/* DIALOG 3: REKAPAN BERITA ACARA (PER PETUGAS SURVEY DARI AWAL S/D AKHIR)   */}
       {/* ========================================================================= */}
       <Dialog open={activeModal === 'rekapan'} onOpenChange={(open) => !open && setActiveModal(null)}>
@@ -1083,7 +1805,7 @@ export default function PortalSurveyPage() {
               </Badge>
             </div>
             <DialogDescription className="text-xs text-slate-500">
-              Riwayat Berita Acara Survey (GBAS) yang telah Anda kerjakan dari awal hingga akhir.
+              Riwayat Berita Acara Survey (GBAS) yang telah Anda selesaikan dari awal hingga akhir.
             </DialogDescription>
           </DialogHeader>
 
@@ -1142,8 +1864,17 @@ export default function PortalSurveyPage() {
                       <span>Verifikator: <strong>{actor.surveyData?.pejabatData?.verifikator?.nama || pejabatForm.verifikatorNama || "-"}</strong></span>
                     </div>
 
-                    {/* Download Button */}
-                    <div className="flex justify-end pt-1">
+                    {/* Action buttons: Edit Survey / Download PDF */}
+                    <div className="flex justify-end items-center gap-2 pt-1">
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openInPortalSurvey(actor)}
+                        className="h-8 px-3 rounded-xl text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
+                      >
+                        Tinjau / Edit
+                      </Button>
+
                       <Button 
                         size="sm"
                         disabled={isGenerating}
