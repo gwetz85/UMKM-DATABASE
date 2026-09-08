@@ -11,7 +11,7 @@ import {
   updateDocumentNonBlocking,
   useAuth
 } from "@/firebase"
-import { ref, update, get } from "firebase/database"
+import { ref, update, get, query, orderByChild, equalTo, limitToLast } from "firebase/database"
 import { signOut } from "firebase/auth"
 import { BusinessActor, PejabatData, SurveyDinasData } from "../lib/types"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
@@ -46,6 +46,7 @@ import {
   Calendar, 
   Clock, 
   ChevronRight, 
+  ChevronDown,
   Search, 
   Phone, 
   CheckCircle2, 
@@ -91,9 +92,20 @@ export default function PortalSurveyPage() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
   const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null)
 
-  // Search queries
+  // Search queries & pagination limits (for ultra-fast mobile rendering)
   const [searchPelakuQuery, setSearchPelakuQuery] = useState("")
   const [searchRekapanQuery, setSearchRekapanQuery] = useState("")
+  const [displayLimitPelaku, setDisplayLimitPelaku] = useState(25)
+  const [displayLimitRekapan, setDisplayLimitRekapan] = useState(25)
+
+  // Reset pagination limit when opening dialogs
+  useEffect(() => {
+    if (activeModal === 'pelaku-usaha') {
+      setDisplayLimitPelaku(25)
+    } else if (activeModal === 'rekapan') {
+      setDisplayLimitRekapan(25)
+    }
+  }, [activeModal])
 
   // ==========================================
   // IN-PORTAL SURVEY STATE (PROSES LANGSUNG)
@@ -195,34 +207,90 @@ export default function PortalSurveyPage() {
     }
   }, [userProfile, user?.uid])
 
-  // Fetch Business Actors
-  const actorsRef = useMemoFirebase(() => database ? ref(database, 'businessActors') : null, [database])
-  const { data: rawActorsList, isLoading: isActorsLoading } = useList<BusinessActor>(actorsRef)
+  // =========================================================================
+  // FAST & LIGHTWEIGHT DATA LOADING (Server-side Indexed Query on petugasSurvey)
+  // =========================================================================
+  
+  // 1. Instant Profile resolution (from React context or localStorage cache for 0ms initial render)
+  const cachedProfile = useMemo(() => {
+    if (typeof window === 'undefined') return null
+    try {
+      const p = localStorage.getItem('simpu_cached_profile')
+      return p ? JSON.parse(p) : null
+    } catch {
+      return null
+    }
+  }, [])
 
-  // Strict Filter: ONLY data assigned to this officer!
+  const activeProfile = userProfile || cachedProfile
+
+  const officerNameUpper = useMemo(() => {
+    return (activeProfile?.fullName || "").toUpperCase().trim().replace(/\s+/g, ' ')
+  }, [activeProfile?.fullName])
+
+  const officerUsernameUpper = useMemo(() => {
+    return (activeProfile?.username || "").toUpperCase().trim()
+  }, [activeProfile?.username])
+
+  const isAdmin = Boolean(activeProfile?.role === 'admin' || activeProfile?.role === 'superadmin')
+
+  // 2. Primary Query: Fast & Lightweight server-indexed query (petugasSurvey is indexed in database.rules.json)
+  const primaryQuery = useMemoFirebase(() => {
+    if (!database) return null
+    if (officerNameUpper) {
+      return query(
+        ref(database, 'businessActors'),
+        orderByChild('petugasSurvey'),
+        equalTo(officerNameUpper)
+      )
+    }
+    if (isAdmin) {
+      // For Admin preview: light query of latest 50 records to keep it ultra fast and avoid downloading 30MB
+      return query(ref(database, 'businessActors'), limitToLast(50))
+    }
+    return null
+  }, [database, officerNameUpper, isAdmin])
+
+  const { data: primaryActorsList, isLoading: isPrimaryLoading } = useList<BusinessActor>(primaryQuery)
+
+  // 3. Secondary Query: if username differs from full name and exists (covers legacy username-assigned data)
+  const secondaryQuery = useMemoFirebase(() => {
+    if (!database || !officerUsernameUpper || officerUsernameUpper === officerNameUpper || isAdmin) {
+      return null
+    }
+    return query(
+      ref(database, 'businessActors'),
+      orderByChild('petugasSurvey'),
+      equalTo(officerUsernameUpper)
+    )
+  }, [database, officerUsernameUpper, officerNameUpper, isAdmin])
+
+  const { data: secondaryActorsList } = useList<BusinessActor>(secondaryQuery)
+
+  // 4. Ultra-fast deduplication of server-indexed actor list
+  const rawActorsList = useMemo(() => {
+    if (!primaryActorsList && !secondaryActorsList) return null
+    const map = new Map<string, BusinessActor>()
+    if (primaryActorsList) {
+      for (const a of primaryActorsList) {
+        if (a && a.id) map.set(a.id, a)
+      }
+    }
+    if (secondaryActorsList) {
+      for (const a of secondaryActorsList) {
+        if (a && a.id && !map.has(a.id)) map.set(a.id, a)
+      }
+    }
+    return Array.from(map.values())
+  }, [primaryActorsList, secondaryActorsList])
+
+  const isActorsLoading = isPrimaryLoading && !rawActorsList
+
+  // Fast Filter: data is already filtered server-side by Firebase!
   const myActors = useMemo(() => {
-    if (!rawActorsList || !userProfile) return []
-    
-    const officerName = (userProfile.fullName || "").toUpperCase().trim()
-    const officerId = (userProfile.id || "").toUpperCase().trim()
-    const officerUsername = (userProfile.username || "").toUpperCase().trim()
-    const normOfficer = officerName.replace(/[^A-Z0-9]/g, "")
-
-    return rawActorsList.filter(a => {
-      if (!a) return false
-      const p = (a.petugasSurvey || "").toUpperCase().trim()
-      if (!p || p === "-" || p === "BELUM ADA") return false
-
-      if (officerName && p === officerName) return true
-      if (officerId && p === officerId) return true
-      if (officerUsername && p === officerUsername) return true
-
-      const normActor = p.replace(/[^A-Z0-9]/g, "")
-      if (normOfficer && normActor && normActor === normOfficer) return true
-
-      return false
-    })
-  }, [rawActorsList, userProfile])
+    if (!rawActorsList) return []
+    return rawActorsList
+  }, [rawActorsList])
 
   // =========================================================================
   // RULE USER: Menu 2 HANYA menampilkan data yang BELUM disurvey!
@@ -249,6 +317,14 @@ export default function PortalSurveyPage() {
     )
   }, [uncompletedMyActors, searchPelakuQuery])
 
+  // Paginated display slice for 60fps instant dialog rendering
+  const displayedUncompletedActors = useMemo(() => {
+    if (searchPelakuQuery.trim()) {
+      return filteredUncompletedActors.slice(0, 100)
+    }
+    return filteredUncompletedActors.slice(0, displayLimitPelaku)
+  }, [filteredUncompletedActors, searchPelakuQuery, displayLimitPelaku])
+
   // =========================================================================
   // Menu 3: Rekapan Berita Acara (Yang SUDAH disurvey dari awal s/d akhir)
   // =========================================================================
@@ -269,6 +345,14 @@ export default function PortalSurveyPage() {
       (a.kelurahan && a.kelurahan.toLowerCase().includes(q))
     )
   }, [myActors, searchRekapanQuery])
+
+  // Paginated display slice for Rekapan dialog
+  const displayedCompletedActors = useMemo(() => {
+    if (searchRekapanQuery.trim()) {
+      return completedBeritaAcaraList.slice(0, 100)
+    }
+    return completedBeritaAcaraList.slice(0, displayLimitRekapan)
+  }, [completedBeritaAcaraList, searchRekapanQuery, displayLimitRekapan])
 
   // Count statistics
   const totalAssigned = myActors.length
@@ -837,7 +921,21 @@ export default function PortalSurveyPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {/* Sync / Refresh Button */}
+            <button 
+              onClick={() => {
+                toast({
+                  title: "Sinkronisasi Realtime",
+                  description: "Data tugas survey terhubung secara live ke server database."
+                })
+              }}
+              title="Sinkronisasi Data" 
+              className="w-8 h-8 rounded-full bg-white text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors shadow-2xs border border-slate-200/80 active:scale-95"
+            >
+              <RotateCcw className={cn("w-3.5 h-3.5", isActorsLoading && "animate-spin text-blue-600")} />
+            </button>
+
             {/* Shield ID Badge */}
             <div className="flex items-center gap-1.5 px-3 py-1 bg-sky-50 border border-sky-200/90 rounded-full text-sky-700 text-xs font-bold shadow-2xs">
               <Shield className="w-3.5 h-3.5 text-sky-600" />
@@ -1045,7 +1143,7 @@ export default function PortalSurveyPage() {
             </div>
 
             <div className="mt-3 py-1 px-2 bg-amber-50 text-amber-700 border border-amber-100 rounded-lg text-[10px] font-bold flex items-center justify-between">
-              <span>{totalUncompleted} Data</span>
+              <span>{isActorsLoading ? "Memuat..." : `${totalUncompleted} Data`}</span>
               <ChevronRight className="w-3 h-3 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </div>
@@ -1071,7 +1169,7 @@ export default function PortalSurveyPage() {
             </div>
 
             <div className="mt-3 py-1 px-2 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[10px] font-bold flex items-center justify-between">
-              <span>{totalCompleted} Selesai</span>
+              <span>{isActorsLoading ? "Memuat..." : `${totalCompleted} Selesai`}</span>
               <ChevronRight className="w-3 h-3 text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </div>
@@ -1281,65 +1379,80 @@ export default function PortalSurveyPage() {
                 <p className="text-[11px] text-slate-400 mt-1">Tidak ada data UMKM yang tertunda. Silakan cek Menu Rekapan BA.</p>
               </div>
             ) : (
-              filteredUncompletedActors.map((actor, idx) => {
-                return (
-                  <div 
-                    key={actor.id}
-                    className="p-3 bg-white border border-slate-200/80 rounded-2xl shadow-2xs hover:border-orange-300 transition-all space-y-2"
-                  >
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-orange-50 text-orange-700 border border-orange-200 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
-                          {idx + 1}
-                        </span>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <h4 className="font-black text-slate-800 text-xs">{actor.fullName}</h4>
-                            <span className="text-[10px] px-2 py-0.2 bg-slate-100 text-slate-600 rounded-md font-semibold">
-                              {actor.businessCategory || "UMKM"}
-                            </span>
+              <>
+                {displayedUncompletedActors.map((actor, idx) => {
+                  return (
+                    <div 
+                      key={actor.id}
+                      className="p-3 bg-white border border-slate-200/80 rounded-2xl shadow-2xs hover:border-orange-300 transition-all space-y-2"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex items-start gap-2">
+                          <span className="w-5 h-5 rounded-full bg-orange-50 text-orange-700 border border-orange-200 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="font-black text-slate-800 text-xs">{actor.fullName}</h4>
+                              <span className="text-[10px] px-2 py-0.2 bg-slate-100 text-slate-600 rounded-md font-semibold">
+                                {actor.businessCategory || "UMKM"}
+                              </span>
+                            </div>
+                            <p className="text-[11px] font-bold text-orange-600">{actor.businessName || "Usaha Mandiri"}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">NIK: {actor.nik || "-"}</p>
                           </div>
-                          <p className="text-[11px] font-bold text-orange-600">{actor.businessName || "Usaha Mandiri"}</p>
-                          <p className="text-[10px] text-slate-400 font-mono">NIK: {actor.nik || "-"}</p>
                         </div>
+
+                        <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold flex items-center gap-1">
+                          <Clock3 className="w-3 h-3" /> Belum Survey
+                        </span>
                       </div>
 
-                      <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold flex items-center gap-1">
-                        <Clock3 className="w-3 h-3" /> Belum Survey
-                      </span>
-                    </div>
+                      <div className="text-[10px] text-slate-500 bg-slate-50 p-2 rounded-xl flex justify-between items-center">
+                        <span className="truncate max-w-[200px]">📍 Kel. {actor.kelurahan || "-"}, {actor.kecamatan || "-"}</span>
+                        <span className="font-mono">{actor.phone || "-"}</span>
+                      </div>
 
-                    <div className="text-[10px] text-slate-500 bg-slate-50 p-2 rounded-xl flex justify-between items-center">
-                      <span className="truncate max-w-[200px]">📍 Kel. {actor.kelurahan || "-"}, {actor.kecamatan || "-"}</span>
-                      <span className="font-mono">{actor.phone || "-"}</span>
-                    </div>
+                      {/* Action buttons (Survey langsung di portal!) */}
+                      <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
+                        {actor.phone && actor.phone !== "-" && (
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleOpenWhatsApp(actor)}
+                            className="h-8 px-2.5 rounded-xl text-[11px] border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                          >
+                            <Phone className="w-3.5 h-3.5 mr-1" />
+                            Hubungi WA
+                          </Button>
+                        )}
 
-                    {/* Action buttons (Survey langsung di portal!) */}
-                    <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
-                      {actor.phone && actor.phone !== "-" && (
                         <Button 
                           size="sm" 
-                          variant="outline" 
-                          onClick={() => handleOpenWhatsApp(actor)}
-                          className="h-8 px-2.5 rounded-xl text-[11px] border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                          onClick={() => openInPortalSurvey(actor)}
+                          className="h-8 px-3.5 rounded-xl text-[11px] font-bold shadow-xs bg-orange-600 hover:bg-orange-700 text-white"
                         >
-                          <Phone className="w-3.5 h-3.5 mr-1" />
-                          Hubungi WA
+                          Mulai Survey Lapangan
+                          <ChevronRight className="w-3.5 h-3.5 ml-1" />
                         </Button>
-                      )}
-
-                      <Button 
-                        size="sm" 
-                        onClick={() => openInPortalSurvey(actor)}
-                        className="h-8 px-3.5 rounded-xl text-[11px] font-bold shadow-xs bg-orange-600 hover:bg-orange-700 text-white"
-                      >
-                        Mulai Survey Lapangan
-                        <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                      </Button>
+                      </div>
                     </div>
-                  </div>
-                )
-              })
+                  )
+                })}
+
+                {/* Load More Button if items exceed display limit */}
+                {!searchPelakuQuery.trim() && filteredUncompletedActors.length > displayLimitPelaku && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setDisplayLimitPelaku(prev => prev + 25)}
+                    className="w-full py-2.5 my-1 bg-orange-50/70 hover:bg-orange-100 text-orange-700 font-bold border border-orange-200/80 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <span>Tampilkan Lebih Banyak ({filteredUncompletedActors.length - displayLimitPelaku} data lagi)</span>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+              </>
             )}
           </div>
 
@@ -1830,73 +1943,88 @@ export default function PortalSurveyPage() {
                 <p>Belum ada rekapan Berita Acara yang diselesaikan.</p>
               </div>
             ) : (
-              completedBeritaAcaraList.map((actor, idx) => {
-                const isGenerating = generatingPdfId === actor.id
-                return (
-                  <div 
-                    key={actor.id}
-                    className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-2xs hover:border-emerald-400 transition-all flex flex-col gap-2"
-                  >
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex items-start gap-2.5">
-                        <span className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-black flex items-center justify-center shrink-0">
-                          {idx + 1}
-                        </span>
-                        <div>
-                          <h4 className="font-black text-slate-800 text-xs">{actor.fullName}</h4>
-                          <p className="text-[11px] font-bold text-slate-600">{actor.businessName || "Usaha Mandiri"}</p>
-                          <p className="text-[10px] text-slate-400 font-mono">NIK: {actor.nik || "-"}</p>
+              <>
+                {displayedCompletedActors.map((actor, idx) => {
+                  const isGenerating = generatingPdfId === actor.id
+                  return (
+                    <div 
+                      key={actor.id}
+                      className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-2xs hover:border-emerald-400 transition-all flex flex-col gap-2"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex items-start gap-2.5">
+                          <span className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-black flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <h4 className="font-black text-slate-800 text-xs">{actor.fullName}</h4>
+                            <p className="text-[11px] font-bold text-slate-600">{actor.businessName || "Usaha Mandiri"}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">NIK: {actor.nik || "-"}</p>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-bold inline-block">
+                            {actor.status === 'verified_dinas' ? 'Lolos Dinas' : 'Selesai Survey'}
+                          </span>
+                          <p className="text-[10px] text-slate-400 mt-1">
+                            📅 {actor.surveyData?.tanggalSurvey || "Sudah Disurvey"}
+                          </p>
                         </div>
                       </div>
 
-                      <div className="text-right">
-                        <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-[10px] font-bold inline-block">
-                          {actor.status === 'verified_dinas' ? 'Lolos Dinas' : 'Selesai Survey'}
-                        </span>
-                        <p className="text-[10px] text-slate-400 mt-1">
-                          📅 {actor.surveyData?.tanggalSurvey || "Sudah Disurvey"}
-                        </p>
+                      <div className="bg-slate-50 p-2 rounded-xl text-[10px] text-slate-500 flex justify-between items-center">
+                        <span>Kelurahan: <strong>{actor.kelurahan || "-"}</strong></span>
+                        <span>Verifikator: <strong>{actor.surveyData?.pejabatData?.verifikator?.nama || pejabatForm.verifikatorNama || "-"}</strong></span>
+                      </div>
+
+                      {/* Action buttons: Edit Survey / Download PDF */}
+                      <div className="flex justify-end items-center gap-2 pt-1">
+                        <Button 
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openInPortalSurvey(actor)}
+                          className="h-8 px-3 rounded-xl text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
+                        >
+                          Tinjau / Edit
+                        </Button>
+
+                        <Button 
+                          size="sm"
+                          disabled={isGenerating}
+                          onClick={() => handlePrintBeritaAcara(actor)}
+                          className="h-8 px-3 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                        >
+                          {isGenerating ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                              Memproses PDF...
+                            </>
+                          ) : (
+                            <>
+                              <FileDown className="w-3.5 h-3.5 mr-1.5" />
+                              Unduh Berita Acara PDF
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
+                  )
+                })}
 
-                    <div className="bg-slate-50 p-2 rounded-xl text-[10px] text-slate-500 flex justify-between items-center">
-                      <span>Kelurahan: <strong>{actor.kelurahan || "-"}</strong></span>
-                      <span>Verifikator: <strong>{actor.surveyData?.pejabatData?.verifikator?.nama || pejabatForm.verifikatorNama || "-"}</strong></span>
-                    </div>
-
-                    {/* Action buttons: Edit Survey / Download PDF */}
-                    <div className="flex justify-end items-center gap-2 pt-1">
-                      <Button 
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openInPortalSurvey(actor)}
-                        className="h-8 px-3 rounded-xl text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50"
-                      >
-                        Tinjau / Edit
-                      </Button>
-
-                      <Button 
-                        size="sm"
-                        disabled={isGenerating}
-                        onClick={() => handlePrintBeritaAcara(actor)}
-                        className="h-8 px-3 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                      >
-                        {isGenerating ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                            Memproses PDF...
-                          </>
-                        ) : (
-                          <>
-                            <FileDown className="w-3.5 h-3.5 mr-1.5" />
-                            Unduh Berita Acara PDF
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                )
-              })
+                {/* Load More Button if items exceed display limit */}
+                {!searchRekapanQuery.trim() && completedBeritaAcaraList.length > displayLimitRekapan && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setDisplayLimitRekapan(prev => prev + 25)}
+                    className="w-full py-2.5 my-1 bg-emerald-50/70 hover:bg-emerald-100 text-emerald-700 font-bold border border-emerald-200/80 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all"
+                  >
+                    <span>Tampilkan Lebih Banyak ({completedBeritaAcaraList.length - displayLimitRekapan} data lagi)</span>
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+              </>
             )}
           </div>
 
