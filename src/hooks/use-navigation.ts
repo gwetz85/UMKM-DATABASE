@@ -61,6 +61,14 @@ export function useNavigation() {
 
   const navigation = React.useMemo(() => [
     {
+      name: "Portal SIMPU",
+      href: "/portal-survey",
+      icon: UserCheck,
+      show: isAdmin || isPetugas || isMonitoring || isStaff,
+      color: "#4f46e5",
+      description: "Portal Petugas Survey Lapangan"
+    },
+    {
       name: "Dashboard Statistik",
       href: "/dashboard",
       icon: LayoutDashboard,

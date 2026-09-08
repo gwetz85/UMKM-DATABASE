@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useDeferredValue } from "react"
+import { useState, useMemo, useEffect, useDeferredValue, useRef } from "react"
 import { parsePobDob } from "@/lib/utils"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, sanitizeForFirebase } from "@/firebase"
 import { ref, query, orderByChild, equalTo, set } from "firebase/database"
@@ -726,6 +726,23 @@ export default function VerifikasiDinasPage() {
       return a.status === 'lpj_pending';
     })
   }, [allActorsRaw, isPetugas, userProfile?.fullName])
+
+  // Auto-open modal survey jika parameter URL actorId diberikan (misal dari Portal SIMPU)
+  const autoOpenedParamRef = useRef(false)
+  useEffect(() => {
+    if (autoOpenedParamRef.current || !actors || actors.length === 0) return
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const targetActorId = params.get('actorId') || params.get('id')
+      if (targetActorId) {
+        const found = actors.find(a => a.id === targetActorId)
+        if (found) {
+          autoOpenedParamRef.current = true
+          openChoiceDialog(found)
+        }
+      }
+    }
+  }, [actors])
 
   // Surveyor Options (petugas survey terdaftar di system_users atau yang ada di data)
   const surveyorOptions = useMemo(() => {

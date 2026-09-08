@@ -9,12 +9,17 @@ import { useNavigation } from "@/hooks/use-navigation"
 
 export default function RootPage() {
   const { user, isUserLoading } = useUser()
-  const { isDinas, isKoordinator, isVerifikatorDinas } = useNavigation()
+  const { isDinas, isKoordinator, isVerifikatorDinas, isPetugas } = useNavigation()
   const router = useRouter()
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push("/login")
+      return
+    }
+
+    if (isPetugas) {
+      router.push("/portal-survey")
       return
     }
 
@@ -29,7 +34,7 @@ export default function RootPage() {
     if (isKoordinator) {
       router.push("/actor-data")
     }
-  }, [user, isUserLoading, router, isDinas, isKoordinator, isVerifikatorDinas])
+  }, [user, isUserLoading, router, isDinas, isKoordinator, isVerifikatorDinas, isPetugas])
 
   if (isUserLoading) {
     return (
