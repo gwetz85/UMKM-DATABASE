@@ -45,6 +45,19 @@ const BANK_LIST = [
   "BCA", "BNI", "BRI", "BRK", "MANDIRI", "BSI", "BTN", "OCBC", "PANIN", "MUAMALAT", "MAYBANK", "BUKOPIN", "DANAMON", "PERMATA"
 ]
 
+function normalizeBankName(bankName?: string): string {
+  if (!bankName || !bankName.trim()) return "LAINNYA"
+  const upper = bankName.trim().toUpperCase()
+  if (upper.includes("RIAU KEPRI") || upper.includes("BRK")) return "BRK"
+  if (upper.includes("SYARIAH INDONESIA") || upper.includes("BSI")) return "BSI"
+  if (upper.includes("RAKYAT INDONESIA") || upper.includes("BRI")) return "BRI"
+  if (upper.includes("NEGARA INDONESIA") || upper.includes("BNI")) return "BNI"
+  if (upper.includes("CENTRAL ASIA") || upper.includes("BCA")) return "BCA"
+  if (upper.includes("TABUNGAN NEGARA") || upper.includes("BTN")) return "BTN"
+  const matched = BANK_LIST.find(b => upper.includes(b))
+  return matched || upper
+}
+
 export default function DataRekeningPage() {
   return (
     <Suspense fallback={
@@ -144,7 +157,10 @@ function DataRekeningContent() {
 
         const matchesCategory = !category || a.businessCategory === category
 
-        const matchesBank = !selectedBank || (a.bankName && a.bankName.toUpperCase().includes(selectedBank.toUpperCase()))
+        const matchesBank =
+          !selectedBank ||
+          normalizeBankName(a.bankName) === selectedBank.toUpperCase() ||
+          (a.bankName && a.bankName.toUpperCase().includes(selectedBank.toUpperCase()))
 
         if (isKoordinator) {
           if (!a.coordinator || !userProfile?.fullName) return false
@@ -173,7 +189,18 @@ function DataRekeningContent() {
   // Hitung ringkasan statistik
   const statsSummary = useMemo(() => {
     if (!allActorsRaw) return { total: 0, lpjSelesai: 0, lpjProses: 0, belumLpj: 0 }
-    const withBank = allActorsRaw.filter(a => a.bankNumber && a.bankNumber.trim() !== "")
+    const withBank = allActorsRaw.filter(a => {
+      const hasBank = !!(a.bankNumber && a.bankNumber.trim() !== "")
+      if (!hasBank) return false
+      if (isKoordinator) {
+        if (!a.coordinator || !userProfile?.fullName) return false
+        return a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase()
+      }
+      if (filterCoordinator) {
+        return a.coordinator === filterCoordinator
+      }
+      return true
+    })
     const lpjSelesai = withBank.filter(a => !!a.lpjNominal && Number(a.lpjNominal) > 0).length
     const lpjProses = withBank.filter(a => a.readyForLPJ && (!a.lpjNominal || Number(a.lpjNominal) <= 0)).length
     const belumLpj = withBank.filter(a => !a.readyForLPJ && (!a.lpjNominal || Number(a.lpjNominal) <= 0)).length
@@ -184,7 +211,35 @@ function DataRekeningContent() {
       lpjProses,
       belumLpj
     }
-  }, [allActorsRaw])
+  }, [allActorsRaw, isKoordinator, userProfile, filterCoordinator])
+
+  // Hitung total rekening per bank (hanya menampilkan bank yang sudah ada datanya)
+  const bankStats = useMemo(() => {
+    if (!allActorsRaw) return []
+    const withBank = allActorsRaw.filter(a => {
+      const hasBank = !!(a.bankNumber && a.bankNumber.trim() !== "")
+      if (!hasBank) return false
+      if (isKoordinator) {
+        if (!a.coordinator || !userProfile?.fullName) return false
+        return a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase()
+      }
+      if (filterCoordinator) {
+        return a.coordinator === filterCoordinator
+      }
+      return true
+    })
+
+    const counts: Record<string, number> = {}
+    withBank.forEach(a => {
+      const bName = normalizeBankName(a.bankName)
+      counts[bName] = (counts[bName] || 0) + 1
+    })
+
+    return Object.entries(counts)
+      .map(([bank, count]) => ({ bank, count }))
+      .filter(item => item.count > 0)
+      .sort((a, b) => b.count - a.count || a.bank.localeCompare(b.bank))
+  }, [allActorsRaw, isKoordinator, userProfile, filterCoordinator])
 
   // ── Print Formulir ────────────────────────────────────────────────────────
   const handlePrintActor = (actor: BusinessActor) => {
@@ -542,8 +597,8 @@ function DataRekeningContent() {
               className="h-8 text-xs px-2 rounded-md border border-input bg-background font-semibold"
             >
               <option value="">Semua Bank</option>
-              {BANK_LIST.map(b => (
-                <option key={b} value={b}>{b}</option>
+              {bankStats.map(({ bank, count }) => (
+                <option key={bank} value={bank}>{bank} ({count})</option>
               ))}
             </select>
             <select
@@ -602,6 +657,92 @@ function DataRekeningContent() {
           <p className="text-xl md:text-2xl font-black text-slate-900 mt-1">{statsSummary.belumLpj}</p>
         </div>
       </div>
+
+      {/* Rincian Total Rekening Per Bank (Hanya menampilkan bank yang sudah ada datanya) */}
+      {bankStats.length > 0 && (
+        <div className="px-4 pt-3 pb-0">
+          <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-emerald-600" />
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+                  Data Rekening Per Bank
+                </span>
+                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                  {bankStats.length} Bank Terdata
+                </span>
+                {selectedBank && (
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                    Filter: Bank {selectedBank}
+                  </span>
+                )}
+              </div>
+              {selectedBank && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedBank("")}
+                  className="text-xs text-emerald-700 hover:text-emerald-800 font-bold hover:underline"
+                >
+                  Reset Filter (Tampilkan Semua Bank)
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5">
+              {bankStats.map(({ bank, count }) => {
+                const isSelected = selectedBank.toUpperCase() === bank.toUpperCase()
+                const percentage = statsSummary.total > 0 ? Math.round((count / statsSummary.total) * 100) : 0
+
+                return (
+                  <button
+                    key={bank}
+                    type="button"
+                    onClick={() => setSelectedBank(isSelected ? "" : bank)}
+                    title={`Klik untuk filter Bank ${bank}`}
+                    className={cn(
+                      "p-2.5 rounded-xl border text-left transition-all duration-150 flex flex-col justify-between cursor-pointer",
+                      isSelected
+                        ? "bg-emerald-700 text-white border-emerald-700 shadow-sm ring-2 ring-emerald-500/20"
+                        : "bg-white border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/30 text-slate-800"
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-1 w-full">
+                      <span className={cn(
+                        "text-xs font-black uppercase tracking-tight truncate",
+                        isSelected ? "text-white" : "text-slate-700"
+                      )}>
+                        {bank}
+                      </span>
+                      <span className={cn(
+                        "text-[9px] font-bold px-1.5 py-0.5 rounded",
+                        isSelected
+                          ? "bg-emerald-800 text-white"
+                          : "bg-slate-100 text-slate-500"
+                      )}>
+                        {percentage}%
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-baseline justify-between w-full">
+                      <span className={cn(
+                        "text-xl font-black leading-none",
+                        isSelected ? "text-white" : "text-slate-900"
+                      )}>
+                        {count.toLocaleString("id-ID")}
+                      </span>
+                      <span className={cn(
+                        "text-[10px] font-semibold",
+                        isSelected ? "text-emerald-100" : "text-muted-foreground"
+                      )}>
+                        Rekening
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Card Grid */}
       <div className="flex-1 overflow-y-auto p-4">
