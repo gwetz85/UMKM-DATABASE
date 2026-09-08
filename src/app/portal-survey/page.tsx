@@ -63,12 +63,22 @@ import {
   FileText,
   User,
   Check,
-  RotateCcw
+  RotateCcw,
+  Ban,
+  XCircle
 } from "lucide-react"
 
 const IZIN_OPTIONS = ["NIB", "P-IRT", "HALAL", "BPOM", "HAKI", "Belum Ada"]
 const STATUS_OPTIONS = ["Kepala Keluarga", "Ibu Rumah Tangga", "Lajang", "Janda", "Duda"]
 const BANSOS_OPTIONS = ["PKH", "BPNT", "KIP", "LANSIA", "Lainnya"]
+const CANCEL_REASONS = [
+  "Usaha Tutup / Tidak Beroperasi",
+  "Pindah Domisili / Di Luar Wilayah",
+  "Alamat Palsu / Tidak Ditemukan",
+  "Menolak Disurvey / Mengundurkan Diri",
+  "Penerima Bantuan Serupa / Tidak Layak",
+  "Lainnya"
+]
 
 export default function PortalSurveyPage() {
   const { user, userProfile, isUserLoading } = useUser()
@@ -117,6 +127,16 @@ export default function PortalSurveyPage() {
   const [isFetchingLocation, setIsFetchingLocation] = useState(false)
   const [isSubmittingSurvey, setIsSubmittingSurvey] = useState(false)
   const [isSubmittingDraft, setIsSubmittingDraft] = useState(false)
+
+  // ==========================================
+  // CANCEL DINAS STATE (FUNGSI BATAL SURVEY)
+  // ==========================================
+  const [cancelTargetActor, setCancelTargetActor] = useState<BusinessActor | null>(null)
+  const [cancelReasonPreset, setCancelReasonPreset] = useState<string>("Usaha Tutup / Tidak Beroperasi")
+  const [customCancelReason, setCustomCancelReason] = useState<string>("")
+  const [cancelPhotoProof, setCancelPhotoProof] = useState<string | null>(null)
+  const [isSubmittingCancel, setIsSubmittingCancel] = useState<boolean>(false)
+  const cancelFileInputRef = useRef<HTMLInputElement>(null)
 
   // Format Rupiah Helper
   const formatRupiah = (value: string) => {
@@ -294,14 +314,18 @@ export default function PortalSurveyPage() {
 
   // =========================================================================
   // RULE USER: Menu 2 HANYA menampilkan data yang BELUM disurvey!
+  // Cancel Dinas / Tidak Lolos / Selesai langsung menghilang dari daftar ini!
   // =========================================================================
   const uncompletedMyActors = useMemo(() => {
     return myActors.filter(a => {
+      const isCancelled = Boolean(a.alasanCancelDinas) || 
+                          a.hasilVerifikasiDinas === 'Tidak Lolos' || 
+                          a.status === 'rejected';
       const isDone = a.status === 'verified_dinas' || 
                      a.status === 'finish' || 
                      Boolean(a.surveyData?.hasilSurvey) ||
                      Boolean(a.verifiedDinasAt);
-      return !isDone;
+      return !isDone && !isCancelled;
     })
   }, [myActors])
 
@@ -327,14 +351,16 @@ export default function PortalSurveyPage() {
 
   // =========================================================================
   // Menu 3: Rekapan Berita Acara (Yang SUDAH disurvey dari awal s/d akhir)
+  // Hanya survey lolos yang memiliki Berita Acara (Cancel Dinas tidak masuk)
   // =========================================================================
   const completedBeritaAcaraList = useMemo(() => {
-    const list = myActors.filter(a => 
-      a.status === 'verified_dinas' || 
-      a.status === 'finish' || 
-      Boolean(a.surveyData?.hasilSurvey) ||
-      Boolean(a.verifiedDinasAt)
-    )
+    const list = myActors.filter(a => {
+      if (a.hasilVerifikasiDinas === 'Tidak Lolos' || Boolean(a.alasanCancelDinas) || a.status === 'rejected') {
+        return false
+      }
+      return (a.status === 'verified_dinas' || a.status === 'finish') &&
+             (Boolean(a.surveyData?.hasilSurvey) || Boolean(a.verifiedDinasAt))
+    })
 
     if (!searchRekapanQuery.trim()) return list
     const q = searchRekapanQuery.toLowerCase().trim()
@@ -657,6 +683,125 @@ export default function PortalSurveyPage() {
     }
   }
 
+  // ==========================================
+  // CANCEL DINAS HANDLERS
+  // ==========================================
+  const handleCancelPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const rawResult = event.target?.result as string
+      const img = new Image()
+      img.src = rawResult
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas')
+          const MAX_DIM = 800
+          let width = img.width
+          let height = img.height
+          if (width > height) {
+            if (width > MAX_DIM) {
+              height = Math.round((height * MAX_DIM) / width)
+              width = MAX_DIM
+            }
+          } else {
+            if (height > MAX_DIM) {
+              width = Math.round((width * MAX_DIM) / height)
+              width = MAX_DIM
+            }
+          }
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+          const base64 = canvas.toDataURL('image/jpeg', 0.7)
+          setCancelPhotoProof(base64)
+        } catch (err) {
+          console.error("Gagal kompres foto bukti cancel:", err)
+        }
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleConfirmCancelDinas = async () => {
+    if (!cancelTargetActor || !database) return
+    
+    const finalReason = cancelReasonPreset === "Lainnya" 
+      ? customCancelReason.trim() 
+      : customCancelReason.trim() 
+        ? `${cancelReasonPreset} - ${customCancelReason.trim()}`
+        : cancelReasonPreset
+
+    if (!finalReason) {
+      toast({
+        variant: "destructive",
+        title: "Alasan Wajib Diisi",
+        description: "Silakan pilih atau tulis alasan pembatalan survey."
+      })
+      return
+    }
+
+    setIsSubmittingCancel(true)
+    try {
+      const actorId = cancelTargetActor.id
+      const actorRef = ref(database, `businessActors/${actorId}`)
+      const officerName = userProfile?.fullName || activeProfile?.fullName || 'Petugas Survey'
+
+      const cancelUpdates: any = {
+        status: 'verified_dinas',
+        hasilVerifikasiDinas: 'Tidak Lolos',
+        alasanCancelDinas: finalReason,
+        cancelDinasPhotoUrl: cancelPhotoProof || null,
+        cancelDinasAt: new Date().toISOString(),
+        cancelDinasBy: officerName
+      }
+
+      await update(actorRef, cancelUpdates)
+
+      // Sync global stats
+      try {
+        const { updateStatsOnStatusChange } = await import("@/lib/stats-service")
+        await updateStatsOnStatusChange(database, cancelTargetActor.status || 'lpj_pending', 'rejected', {
+          ...cancelTargetActor,
+          ...cancelUpdates
+        })
+      } catch (e) {
+        console.error("Error updating stats on cancel:", e)
+      }
+
+      // Log activity
+      logActivity({
+        query: `CANCEL SURVEY DINAS: ${cancelTargetActor.fullName} (${cancelTargetActor.businessName || 'UMKM'}) - ${finalReason}`,
+        results: "Berhasil di-cancel dan dikeluarkan dari antrean survey",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'CANCEL DINAS',
+        userId: officerName
+      })
+
+      toast({
+        title: "🚫 Survey Dibatalkan (Cancel Dinas)",
+        description: `Data ${cancelTargetActor.fullName} berhasil di-cancel dan dikeluarkan dari antrean tugas.`
+      })
+
+      // Reset state & close modal
+      setCancelTargetActor(null)
+      setCustomCancelReason("")
+      setCancelPhotoProof(null)
+      setCancelReasonPreset("Usaha Tutup / Tidak Beroperasi")
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Gagal Membatalkan",
+        description: err.message || "Terjadi kesalahan saat membatalkan survey."
+      })
+    } finally {
+      setIsSubmittingCancel(false)
+    }
+  }
+
   // Logout handler
   const handleLogout = async () => {
     if (confirm("Apakah Anda yakin ingin keluar dari SIMPU?")) {
@@ -886,7 +1031,7 @@ export default function PortalSurveyPage() {
   const officerCode = (userProfile?.id || userProfile?.username || "KTK2026001").toUpperCase()
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] text-slate-800 antialiased flex justify-center py-0 sm:py-6">
+    <div className="min-h-screen bg-[#f1f5f9] text-slate-800 antialiased flex justify-center py-0 sm:py-6 overflow-x-hidden">
       
       {/* Hidden File Input for Avatar Upload */}
       <input 
@@ -908,7 +1053,7 @@ export default function PortalSurveyPage() {
       />
 
       {/* Main Container Mockup (Persis Gambar 2: edge-to-edge mobile, max-w-md on desktop) */}
-      <div className="w-full max-w-md bg-[#f1f5f9] min-h-screen flex flex-col px-4 py-4 sm:py-2 space-y-3.5 pb-8">
+      <div className="w-full max-w-md bg-[#f1f5f9] min-h-screen flex flex-col px-3.5 sm:px-4 pt-7 sm:pt-4 pb-28 sm:pb-20 space-y-3.5 box-border overflow-x-hidden">
         
         {/* ================= TOP HEADER BAR (Sesuai Gambar 2) ================= */}
         <header className="flex items-center justify-between pt-1 pb-1">
@@ -1029,8 +1174,8 @@ export default function PortalSurveyPage() {
               <div>
                 <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
                   <span>NIP / NIPPPK</span>
-                  <span className="text-emerald-600 font-bold flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Tetap (Aktif)
+                  <span className="text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 text-[10px]">
+                    <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></span> Petugas Survey
                   </span>
                 </div>
                 <div className="flex justify-between items-baseline">
@@ -1413,27 +1558,42 @@ export default function PortalSurveyPage() {
                         <span className="font-mono">{actor.phone || "-"}</span>
                       </div>
 
-                      {/* Action buttons (Survey langsung di portal!) */}
-                      <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-100">
+                      {/* Action buttons (Survey langsung di portal & Cancel Dinas) */}
+                      <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1.5 border-t border-slate-100">
                         {actor.phone && actor.phone !== "-" && (
                           <Button 
                             size="sm" 
                             variant="outline" 
                             onClick={() => handleOpenWhatsApp(actor)}
-                            className="h-8 px-2.5 rounded-xl text-[11px] border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                            className="h-7.5 px-2 rounded-xl text-[10.5px] border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                           >
-                            <Phone className="w-3.5 h-3.5 mr-1" />
+                            <Phone className="w-3 h-3 mr-1" />
                             Hubungi WA
                           </Button>
                         )}
 
                         <Button 
                           size="sm" 
+                          variant="outline"
+                          onClick={() => {
+                            setCancelTargetActor(actor)
+                            setCancelReasonPreset("Usaha Tutup / Tidak Beroperasi")
+                            setCustomCancelReason("")
+                            setCancelPhotoProof(null)
+                          }}
+                          className="h-7.5 px-2.5 rounded-xl text-[10.5px] font-bold border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300"
+                        >
+                          <Ban className="w-3 h-3 mr-1 text-rose-500" />
+                          Cancel Dinas
+                        </Button>
+
+                        <Button 
+                          size="sm" 
                           onClick={() => openInPortalSurvey(actor)}
-                          className="h-8 px-3.5 rounded-xl text-[11px] font-bold shadow-xs bg-orange-600 hover:bg-orange-700 text-white"
+                          className="h-7.5 px-3 rounded-xl text-[10.5px] font-bold shadow-xs bg-orange-600 hover:bg-orange-700 text-white"
                         >
                           Mulai Survey Lapangan
-                          <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                          <ChevronRight className="w-3 h-3 ml-1" />
                         </Button>
                       </div>
                     </div>
@@ -2035,6 +2195,139 @@ export default function PortalSurveyPage() {
               className="w-full rounded-xl text-xs"
             >
               Tutup
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ========================================================================= */}
+      {/* DIALOG CANCEL DINAS (DATA LANGSUNG MENGHILANG DARI ANTREAN SURVEY)        */}
+      {/* ========================================================================= */}
+      <Dialog open={Boolean(cancelTargetActor)} onOpenChange={(open) => !open && setCancelTargetActor(null)}>
+        <DialogContent className="max-w-md w-[95vw] rounded-3xl p-5 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base font-black text-rose-600 flex items-center gap-2">
+              <Ban className="w-5 h-5 text-rose-600" />
+              Batalkan Survey (Cancel Dinas)
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Pelaku usaha yang di-cancel akan <strong>langsung menghilang</strong> dari antrean tugas survey Anda.
+            </DialogDescription>
+          </DialogHeader>
+
+          {cancelTargetActor && (
+            <div className="space-y-3.5 py-2 text-xs">
+              {/* Target Actor Card */}
+              <div className="p-3 bg-rose-50/60 border border-rose-200 rounded-2xl space-y-1">
+                <h4 className="font-black text-slate-800 text-sm">{cancelTargetActor.fullName}</h4>
+                <p className="font-bold text-rose-700">{cancelTargetActor.businessName || "Usaha Mandiri"}</p>
+                <div className="flex justify-between text-[10.5px] text-slate-500 pt-1 border-t border-rose-100">
+                  <span>NIK: {cancelTargetActor.nik || "-"}</span>
+                  <span>Kel. {cancelTargetActor.kelurahan || "-"}</span>
+                </div>
+              </div>
+
+              {/* Reason Presets */}
+              <div className="space-y-1.5">
+                <Label className="text-[11px] font-bold text-slate-700">Pilih Alasan Pembatalan:</Label>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {CANCEL_REASONS.map((reason) => (
+                    <button
+                      key={reason}
+                      type="button"
+                      onClick={() => setCancelReasonPreset(reason)}
+                      className={cn(
+                        "text-left px-3 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center justify-between",
+                        cancelReasonPreset === reason
+                          ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                          : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                      )}
+                    >
+                      <span>{reason}</span>
+                      {cancelReasonPreset === reason && <Check className="w-3.5 h-3.5 shrink-0" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Reason Textarea */}
+              <div className="space-y-1">
+                <Label className="text-[11px] font-bold text-slate-700">
+                  {cancelReasonPreset === "Lainnya" ? "Tulis Alasan Pembatalan (Wajib):" : "Catatan Tambahan (Opsional):"}
+                </Label>
+                <Textarea
+                  placeholder={cancelReasonPreset === "Lainnya" ? "Tulis alasan spesifik pembatalan..." : "Tambahkan catatan keterangan kondisi di lapangan..."}
+                  value={customCancelReason}
+                  onChange={(e) => setCustomCancelReason(e.target.value)}
+                  className="rounded-xl text-xs bg-slate-50 min-h-[70px]"
+                />
+              </div>
+
+              {/* Optional Photo Proof */}
+              <div className="space-y-1.5 pt-1">
+                <Label className="text-[11px] font-bold text-slate-700">Foto Bukti Lapangan (Opsional):</Label>
+                <input 
+                  type="file"
+                  ref={cancelFileInputRef}
+                  onChange={handleCancelPhotoUpload}
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                />
+
+                {cancelPhotoProof ? (
+                  <div className="relative w-full h-36 rounded-2xl overflow-hidden border-2 border-rose-200 bg-slate-100">
+                    <img src={cancelPhotoProof} alt="Bukti Cancel" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setCancelPhotoProof(null)}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => cancelFileInputRef.current?.click()}
+                    className="w-full py-3 h-auto rounded-xl border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-2 text-xs"
+                  >
+                    <Camera className="w-4 h-4 text-slate-400" />
+                    <span>Ambil Foto Rumah / Toko Tutup</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmittingCancel}
+              onClick={() => setCancelTargetActor(null)}
+              className="rounded-xl text-xs"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              disabled={isSubmittingCancel}
+              onClick={handleConfirmCancelDinas}
+              className="bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-xs shadow-md"
+            >
+              {isSubmittingCancel ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                  Membatalkan...
+                </>
+              ) : (
+                <>
+                  <Ban className="w-3.5 h-3.5 mr-1.5" />
+                  Konfirmasi Cancel Dinas
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

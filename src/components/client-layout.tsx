@@ -209,9 +209,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [playSound]);
 
 
-  // Toggle body background class — login and public cek-data pages have clean background
+  // Toggle body background class — login, portal survey, and public cek-data pages have clean background
   useEffect(() => {
-    if (isLoginPage || isCekDataPage) {
+    if (isLoginPage || isCekDataPage || isPortalSurveyPage) {
       document.body.classList.remove('app-bg');
     } else {
       document.body.classList.add('app-bg');
@@ -219,7 +219,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     return () => {
       document.body.classList.remove('app-bg');
     };
-  }, [isLoginPage, isCekDataPage]);
+  }, [isLoginPage, isCekDataPage, isPortalSurveyPage]);
 
   const getPageTitle = (path: string) => {
     switch (path) {
@@ -438,7 +438,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
             <main className={cn(
               "flex-1 bg-transparent print:bg-white relative z-0 isolate flex flex-col",
-              isLoginPage ? "overflow-hidden" : (isLayarInformasiPage || isPortalSurveyPage) ? "overflow-y-auto lg:overflow-hidden" : "overflow-y-auto"
+              isLoginPage ? "overflow-hidden" : isPortalSurveyPage ? "overflow-y-auto overflow-x-hidden" : isLayarInformasiPage ? "overflow-y-auto lg:overflow-hidden" : "overflow-y-auto"
             )}>
               <div key={pathname} className={cn(
                 "w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out",
