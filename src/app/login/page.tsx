@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth, useDatabase } from "@/firebase"
+import { useAuth, useDatabase, useUser } from "@/firebase"
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth"
 import { ref, get, set, update } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -16,7 +16,7 @@ import {
   ArrowRight, 
   MonitorOff, 
   SearchCheck, 
-  UserPlus,
+  UserPlus, 
   ArrowLeft,
   CheckCircle2,
   CalendarDays,
@@ -65,6 +65,25 @@ export default function LoginPage() {
   const database = useDatabase()
   const router = useRouter()
   const { toast } = useToast()
+  const { user: existingUser, userProfile: existingProfile, isUserLoading, isProfileLoading } = useUser()
+
+  // Auto redirect if already authenticated with active role
+  useEffect(() => {
+    if (!isUserLoading && !isProfileLoading && existingUser && existingProfile) {
+      const role = existingProfile.role || ''
+      if (role === 'petugas_survey' || role === 'petugas') {
+        router.push("/portal-survey")
+      } else if (role === 'dinas') {
+        router.push("/verifikasi-dinas")
+      } else if (role === 'verifikator_dinas') {
+        router.push("/verifikasi-dinas-berkas")
+      } else if (role === 'koordinator') {
+        router.push("/actor-data")
+      } else {
+        router.push("/")
+      }
+    }
+  }, [existingUser, existingProfile, isUserLoading, isProfileLoading, router])
 
   const [slides, setSlides] = useState<{ id: string, base64: string }[]>([])
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
@@ -372,7 +391,17 @@ export default function LoginPage() {
         await update(ref(database, `system_users/${targetUserKey}`), loginUpdates).catch(console.error);
       }
 
-      router.push("/")
+      if (finalUserRole === 'petugas_survey' || finalUserRole === 'petugas') {
+        router.push("/portal-survey")
+      } else if (finalUserRole === 'dinas') {
+        router.push("/verifikasi-dinas")
+      } else if (finalUserRole === 'verifikator_dinas') {
+        router.push("/verifikasi-dinas-berkas")
+      } else if (finalUserRole === 'koordinator') {
+        router.push("/actor-data")
+      } else {
+        router.push("/")
+      }
     } catch (error: any) {
       let message = `Kesalahan: ${error.message || String(error)}`
       if (error.code === 'auth/invalid-credential' || error.message === 'auth/wrong-password' || error.code === 'auth/email-already-in-use') message = "Username atau kata sandi salah."

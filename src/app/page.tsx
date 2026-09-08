@@ -8,13 +8,17 @@ import { Loader2 } from "lucide-react"
 import { useNavigation } from "@/hooks/use-navigation"
 
 export default function RootPage() {
-  const { user, isUserLoading } = useUser()
+  const { user, isUserLoading, isProfileLoading } = useUser()
   const { isDinas, isKoordinator, isVerifikatorDinas, isPetugas } = useNavigation()
   const router = useRouter()
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push("/login")
+      return
+    }
+
+    if (isProfileLoading) {
       return
     }
 
@@ -25,18 +29,21 @@ export default function RootPage() {
 
     if (isDinas) {
       router.push("/verifikasi-dinas")
+      return
     }
 
     if (isVerifikatorDinas) {
       router.push("/verifikasi-dinas-berkas")
+      return
     }
 
     if (isKoordinator) {
       router.push("/actor-data")
+      return
     }
-  }, [user, isUserLoading, router, isDinas, isKoordinator, isVerifikatorDinas, isPetugas])
+  }, [user, isUserLoading, isProfileLoading, router, isDinas, isKoordinator, isVerifikatorDinas, isPetugas])
 
-  if (isUserLoading) {
+  if (isUserLoading || isProfileLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
