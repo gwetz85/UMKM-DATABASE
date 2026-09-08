@@ -911,7 +911,10 @@ function ActorDataContent() {
     });
   }, [filteredActors, database]);
 
-  const currentDataToDisplay = isInspektorat || isKoordinator ? (filteredActors || []) : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []);
+  const isSearching = !!searchQuery.trim();
+  const currentDataToDisplay = (isInspektorat || isKoordinator || isSearching) 
+    ? (filteredActors || []) 
+    : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []);
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -1017,21 +1020,31 @@ function ActorDataContent() {
               </div>
             ))}
           </div>
-        ) : (isKoordinator || filterCoordinator || isInspektorat) ? (
+        ) : (isKoordinator || filterCoordinator || isInspektorat || isSearching) ? (
           <div className="space-y-6">
             <div className="flex items-center gap-4 mb-2">
-              {!isInspektorat && !isKoordinator && (
+              {!isInspektorat && !isKoordinator && (filterCoordinator || isSearching) && (
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => router.push('/actor-data')}
+                  onClick={() => {
+                    setSearchInput("")
+                    setSearchQuery("")
+                    if (filterCoordinator) router.push('/actor-data')
+                  }}
                   className="font-bold border-primary text-primary hover:bg-primary/5"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" /> KEMBALI KE MODUL
                 </Button>
               )}
               <h2 className="text-xl font-black text-primary uppercase tracking-tighter">
-                {isInspektorat ? "DATABASE PELAKU USAHA" : isKoordinator ? `DATA: ${userProfile?.fullName}` : `DATA: ${filterCoordinator}`}
+                {isSearching
+                  ? `HASIL PENCARIAN: "${searchQuery}" (${currentDataToDisplay.length} DATA)`
+                  : isInspektorat
+                  ? "DATABASE PELAKU USAHA"
+                  : isKoordinator
+                  ? `DATA: ${userProfile?.fullName}`
+                  : `DATA: ${filterCoordinator}`}
               </h2>
               {isAdmin && filterCoordinator && !isKoordinator && !isInspektorat && (
                 <Button 
