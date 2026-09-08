@@ -49,12 +49,8 @@ import {
   FileDown, 
   Camera, 
   Loader2, 
-  ArrowLeft,
-  ExternalLink,
-  ShieldCheck,
-  AlertTriangle,
-  RefreshCw,
-  X
+  Shield,
+  MapPin
 } from "lucide-react"
 
 export default function PortalSurveyPage() {
@@ -117,7 +113,7 @@ export default function PortalSurveyPage() {
     return () => clearInterval(timer)
   }, [])
 
-  // Check login & roles
+  // Check login
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push("/login")
@@ -463,24 +459,26 @@ export default function PortalSurveyPage() {
     else if (!clean.startsWith("62")) clean = "62" + clean
 
     const namaPetugas = userProfile?.fullName || pejabatForm.petugasNama || "Petugas Survey"
-    const message = `Selamat pagi, perkenalkan saya ${namaPetugas} dari Dinas Koperasi Usaha Kecil Menengah Provinsi Kepulauan Riau.\n\nPada kesempatan ini saya ditugaskan untuk melaksanakan Survey Lapangan ketempat usaha Bapak/Ibu ${actor.fullName} (${actor.businessName}) sebagai Calon Penerima Bantuan Penguatan Modal Usaha Provinsi Kepulauan Riau Tahun 2026.\n\nMohon konfirmasi kesediaan dan waktu kehadiran Bapak/Ibu. Terima kasih.`
+    const message = `Selamat pagi, perkenalkan saya ${namaPetugas} dari Dinas Koperasi Usaha Kecil Menengah Provinsi Kepulauan Riau.\n\nPada kesempatan ini saya ditugaskan untuk melaksanakan Survey Lapangan ketempat usaha Bapak/Ibu ${actor.fullName} (${actor.businessName}) sebagai Calon Penerima Bantuan Penguatan Modal Usaha Provinsi Kepulauan Riau.\n\nMohon konfirmasi kesediaan dan waktu kehadiran Bapak/Ibu. Terima kasih.`
 
     window.open(`https://wa.me/${clean}?text=${encodeURIComponent(message)}`, "_blank")
   }
 
   if (isUserLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100">
+      <div className="flex min-h-screen items-center justify-center bg-[#f1f5f9]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
+          <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Memuat Portal SIMPU...</p>
         </div>
       </div>
     )
   }
 
+  const officerCode = (userProfile?.id || userProfile?.username || "KTK2026001").toUpperCase()
+
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-800 antialiased p-3 md:p-6 flex justify-center items-start">
+    <div className="min-h-screen bg-[#f1f5f9] text-slate-800 antialiased flex justify-center py-0 sm:py-6">
       
       {/* Hidden File Input for Avatar Upload */}
       <input 
@@ -491,270 +489,290 @@ export default function PortalSurveyPage() {
         className="hidden" 
       />
 
-      {/* Main Container Mockup (Mobile-first responsive card) */}
-      <div className="w-full max-w-md bg-[#f8fafc] rounded-[2.5rem] shadow-2xl border border-slate-200/90 overflow-hidden flex flex-col my-auto transition-all">
+      {/* Main Container Mockup (Persis Gambar 2: edge-to-edge mobile, max-w-md on desktop) */}
+      <div className="w-full max-w-md bg-[#f1f5f9] min-h-screen flex flex-col px-4 py-4 sm:py-2 space-y-3.5 pb-8">
         
-        {/* ================= TOP HEADER BAR ================= */}
-        <header className="px-6 pt-6 pb-4 flex items-center justify-between bg-white border-b border-slate-100">
+        {/* ================= TOP HEADER BAR (Sesuai Gambar 2) ================= */}
+        <header className="flex items-center justify-between pt-1 pb-1">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 flex items-center gap-2">
-              SIMPU
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 leading-none">
+              Portal Petugas
             </h1>
-            <p className="text-xs font-semibold text-slate-500">
+            <p className="text-[11px] font-semibold text-slate-400 mt-1">
               Pendataan Bantuan Dana Hibah UMKM
             </p>
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Shield ID Badge */}
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-sky-50 border border-sky-200/90 rounded-full text-sky-700 text-xs font-bold shadow-2xs">
+              <Shield className="w-3.5 h-3.5 text-sky-600" />
+              <span className="font-mono">{officerCode}</span>
+              <span className="text-[10px] font-medium text-sky-500">(Petugas)</span>
+            </div>
+
+            {/* Logout Button */}
             <button 
               onClick={handleLogout}
               title="Keluar / Logout" 
-              className="w-9 h-9 rounded-full bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors shadow-xs border border-rose-100 active:scale-95"
+              className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 hover:bg-rose-100 flex items-center justify-center transition-colors shadow-2xs border border-rose-100 active:scale-95"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5" />
             </button>
           </div>
         </header>
 
-        {/* ================= MAIN CONTENT BODY ================= */}
-        <main className="p-4 space-y-4 flex-1">
-
-          {/* ================= HERO PROFILE CARD ================= */}
-          <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200/80 overflow-hidden relative">
-            
-            {/* Banner Header Gradient */}
-            <div className="h-24 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-3.5 flex justify-end items-start relative">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.2),transparent)]"></div>
-              <span className="relative z-10 px-3 py-0.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold text-white uppercase tracking-wider border border-white/20">
-                DKUKM SURVEY
-              </span>
-            </div>
-
-            {/* Avatar & Identity Info */}
-            <div className="px-5 pb-5 pt-0 -mt-12 flex flex-col items-center text-center relative z-10">
-              
-              {/* Avatar Frame with Click-to-Upload Photo */}
-              <div className="relative mb-2.5 group">
-                <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  title="Klik untuk mengubah foto profil"
-                  className="w-24 h-24 rounded-full border-4 border-white shadow-md bg-gradient-to-tr from-amber-500 to-orange-400 flex items-center justify-center text-white text-3xl font-black overflow-hidden cursor-pointer relative"
-                >
-                  {userProfile?.photoURL ? (
-                    <img 
-                      src={userProfile.photoURL} 
-                      alt="Foto Petugas" 
-                      className="w-full h-full object-cover" 
-                    />
-                  ) : (
-                    <span className="uppercase">
-                      {(userProfile?.fullName || "PS").slice(0, 2)}
-                    </span>
-                  )}
-
-                  {/* Hover Overlay Camera */}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold">
-                    {isUploadingPhoto ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <>
-                        <Camera className="w-4 h-4 mb-0.5" />
-                        <span>Ubah</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Online status indicator dot */}
-                <span className="absolute bottom-1 right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
-                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                </span>
-              </div>
-
-              {/* Petugas Full Name */}
-              <h2 className="text-xl font-black text-slate-800 tracking-tight uppercase">
-                {userProfile?.fullName || "PETUGAS SURVEY"}
-              </h2>
-              
-              {/* Subtitle / Role Badge */}
-              <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 text-xs">
-                <span className="px-2.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold rounded-full text-[11px]">
-                  PETUGAS SURVEY LAPANGAN
-                </span>
-                <span className="text-slate-400">•</span>
-                <span className="text-slate-500 font-medium text-[11px]">
-                  {pejabatForm.petugasJabatan || "Dinas Koperasi & UKM"}
-                </span>
-              </div>
-
-              {/* Detailed Data Box: Petugas & Verifikator */}
-              <div className="w-full mt-4 bg-slate-50 rounded-2xl p-3.5 border border-slate-100 text-left space-y-3">
-                
-                {/* Data Petugas Survey */}
-                <div>
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                    <span>NIP / NIPPPK PETUGAS</span>
-                    <span className="text-emerald-600 font-bold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> AKTIF
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-baseline">
-                    <span className="font-mono font-bold text-slate-800 text-sm">
-                      {pejabatForm.petugasNipppk || (userProfile as any)?.nipppk || "(Belum Diisi)"}
-                    </span>
-                    <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
-                      {pejabatForm.petugasPangkat || (userProfile as any)?.pangkat || "Staff Survey"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Data Petugas Verifikator */}
-                <div className="border-t border-slate-200/60 pt-2.5">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                    <span className="flex items-center gap-1 text-slate-500 font-bold">
-                      <UserCheck className="w-3.5 h-3.5 text-indigo-500 inline" /> PETUGAS VERIFIKATOR
-                    </span>
-                    <span className="text-[10px] text-slate-400">PEMERIKSA BERKAS</span>
-                  </div>
-                  
-                  <div className="bg-white rounded-xl p-2.5 border border-slate-200/70 shadow-2xs space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-black text-slate-800">
-                        {pejabatForm.verifikatorNama || "(Belum Diatur)"}
-                      </span>
-                      <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
-                        {pejabatForm.verifikatorJabatan || "Verifikator Dinas"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-[11px] text-slate-500">
-                      <span>NIP: {pejabatForm.verifikatorNipppk || "-"}</span>
-                      <span>{pejabatForm.verifikatorPangkat || "-"}</span>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-
-            </div>
+        {/* ================= HERO PROFILE CARD (Persis Gambar 2) ================= */}
+        <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden relative">
+          
+          {/* Banner Header Gradient */}
+          <div className="h-24 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 p-3.5 flex justify-end items-start relative">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.2),transparent)]"></div>
+            <span className="relative z-10 px-3 py-0.5 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-bold text-white uppercase tracking-wider border border-white/25 shadow-2xs">
+              DKUKM KEPRI
+            </span>
           </div>
 
-          {/* ================= 3 MENU UTAMA BAGIAN BAWAH ================= */}
-          <div className="space-y-3">
-
-            {/* MENU 1: Input Data Pejabat Berita Acara */}
-            <div 
-              onClick={() => setActiveModal('pejabat')}
-              className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/90 flex items-center justify-between cursor-pointer hover:border-indigo-400 hover:shadow-md active:scale-[0.98] transition-all group"
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-xl shadow-xs group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                  <FileSignature className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-black tracking-wider text-indigo-500 uppercase">
-                    MENU 1 • PENGATURAN BA
-                  </span>
-                  <h3 className="text-sm font-black text-slate-800 group-hover:text-indigo-600 transition-colors">
-                    Input Data Pejabat Berita Acara
-                  </h3>
-                  <p className="text-[11px] text-slate-400">Data Verifikator & Petugas Survey</p>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                {isPejabatComplete ? (
-                  <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-black">
-                    Lengkap
-                  </span>
+          {/* Avatar & Identity Info */}
+          <div className="px-5 pb-5 pt-0 -mt-12 flex flex-col items-center text-center relative z-10">
+            
+            {/* Avatar Frame with Click-to-Upload Photo */}
+            <div className="relative mb-2.5 group">
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                title="Klik untuk mengubah foto profil"
+                className="w-24 h-24 rounded-full border-4 border-white shadow-md bg-gradient-to-tr from-amber-500 to-orange-400 flex items-center justify-center text-white text-3xl font-black overflow-hidden cursor-pointer relative"
+              >
+                {userProfile?.photoURL ? (
+                  <img 
+                    src={userProfile.photoURL} 
+                    alt="Foto Petugas" 
+                    className="w-full h-full object-cover" 
+                  />
                 ) : (
-                  <span className="px-2.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-full text-[10px] font-black">
-                    Perlu Diisi
+                  <span className="uppercase">
+                    {(userProfile?.fullName || "PS").slice(0, 2)}
                   </span>
                 )}
-                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-0.5 transition-all" />
+
+                {/* Hover Overlay Camera */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold">
+                  {isUploadingPhoto ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Camera className="w-4 h-4 mb-0.5" />
+                      <span>Ubah</span>
+                    </>
+                  )}
+                </div>
               </div>
+
+              {/* Online status indicator dot */}
+              <span className="absolute bottom-1 right-1 w-5 h-5 bg-emerald-500 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+              </span>
             </div>
 
-            {/* MENU 2: Data Pelaku Usaha (Hanya yang atas nama petugas) */}
-            <div 
-              onClick={() => setActiveModal('pelaku-usaha')}
-              className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/90 flex items-center justify-between cursor-pointer hover:border-blue-400 hover:shadow-md active:scale-[0.98] transition-all group"
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center text-xl shadow-xs group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                  <Store className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-black tracking-wider text-blue-500 uppercase">
-                    MENU 2 • TUGAS LAPANGAN
-                  </span>
-                  <h3 className="text-sm font-black text-slate-800 group-hover:text-blue-600 transition-colors">
-                    Data Pelaku Usaha
-                  </h3>
-                  <p className="text-[11px] text-slate-400">Daftar & Form Survey Lapangan</p>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className="px-2.5 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-full text-[10px] font-black">
-                  {totalAssigned} UMKM
-                </span>
-                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all" />
-              </div>
+            {/* Petugas Full Name */}
+            <h2 className="text-xl font-black text-slate-800 tracking-tight uppercase">
+              {userProfile?.fullName || "PETUGAS SURVEY"}
+            </h2>
+            
+            {/* Subtitle / Role Badge Pill (Persis Gambar 2) */}
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 text-xs">
+              <span className="px-3 py-0.5 bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold rounded-full text-[11px]">
+                PETUGAS SURVEY LAPANGAN
+              </span>
+              <span className="text-slate-300">•</span>
+              <span className="text-slate-500 font-medium text-[11px]">
+                {pejabatForm.petugasJabatan || "Penata Layanan Operasional"}
+              </span>
             </div>
 
-            {/* MENU 3: Rekapan Berita Acara (Per Petugas Survey - dari awal s/d akhir) */}
-            <div 
-              onClick={() => setActiveModal('rekapan')}
-              className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/90 flex items-center justify-between cursor-pointer hover:border-amber-400 hover:shadow-md active:scale-[0.98] transition-all group"
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center text-xl shadow-xs group-hover:scale-110 group-hover:bg-amber-600 group-hover:text-white transition-all">
-                  <ClipboardCheck className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-black tracking-wider text-amber-500 uppercase">
-                    MENU 3 • ARSIP & CETAK
+            {/* Detailed Data Box: Petugas & Verifikator (Persis Gambar 2) */}
+            <div className="w-full mt-4 bg-[#f8fafc] rounded-2xl p-4 border border-slate-100/90 text-left space-y-3">
+              
+              {/* Row 1: NIP / NIPPPK & Status */}
+              <div>
+                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  <span>NIP / NIPPPK</span>
+                  <span className="text-emerald-600 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Tetap (Aktif)
                   </span>
-                  <h3 className="text-sm font-black text-slate-800 group-hover:text-amber-600 transition-colors">
-                    Rekapan Berita Acara
-                  </h3>
-                  <p className="text-[11px] text-slate-400">Riwayat Survey dari Awal s/d Akhir</p>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="font-mono font-bold text-slate-800 text-sm">
+                    {pejabatForm.petugasNipppk || (userProfile as any)?.nipppk || "198301162025212006"}
+                  </span>
+                  <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
+                    {pejabatForm.petugasPangkat || (userProfile as any)?.pangkat || "Golongan IX"}
+                  </span>
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className="px-2.5 py-0.5 bg-amber-50 text-amber-600 border border-amber-200 rounded-full text-[10px] font-black">
-                  {totalCompleted} Selesai
-                </span>
-                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
+
+              {/* Row 2: Data Petugas Verifikator */}
+              <div className="border-t border-slate-200/60 pt-2.5">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                  <span className="flex items-center gap-1 text-slate-600 font-bold">
+                    <UserCheck className="w-3.5 h-3.5 text-indigo-500 inline" /> PETUGAS VERIFIKATOR
+                  </span>
+                  <span className="text-[10px] text-slate-400">PEMERIKSA BERKAS</span>
+                </div>
+                
+                <div className="bg-white rounded-xl p-2.5 border border-slate-200/70 shadow-2xs space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-black text-slate-800">
+                      {pejabatForm.verifikatorNama || "WELLY MAWA, S.T."}
+                    </span>
+                    <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+                      {pejabatForm.verifikatorJabatan || "Pengawas Koperasi Ahli Muda"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-500">
+                    <span>NIP: {pejabatForm.verifikatorNipppk || "197312022003121002"}</span>
+                    <span>{pejabatForm.verifikatorPangkat || "Penata Tk.I / IIId"}</span>
+                  </div>
+                </div>
               </div>
+
+              {/* Row 3: Extra Details like Nomor Kontak & Wilayah */}
+              <div className="border-t border-slate-200/60 pt-2.5 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between text-slate-600">
+                  <span className="flex items-center gap-1 text-slate-400 font-semibold text-[11px]">
+                    <Phone className="w-3 h-3 text-emerald-500" /> NOMOR KONTAK
+                  </span>
+                  <span className="font-mono font-bold text-slate-700">
+                    {(userProfile as any)?.phone || "0817319885"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-slate-600">
+                  <span className="flex items-center gap-1 text-slate-400 font-semibold text-[11px]">
+                    <MapPin className="w-3 h-3 text-rose-500" /> WILAYAH TUGAS
+                  </span>
+                  <span className="font-bold text-slate-700 truncate max-w-[170px]">
+                    {(userProfile as any)?.address || "KOTA TANJUNGPINANG"}
+                  </span>
+                </div>
+              </div>
+
             </div>
 
           </div>
+        </div>
 
-          {/* ================= FOOTER REALTIME WIDGET ================= */}
-          <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-md flex items-center justify-between">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-                <Calendar className="w-3 h-3 text-sky-400 inline" />
-                <span>WAKTU & TANGGAL REALTIME</span>
+        {/* ================= 3 MENU UTAMA BAGIAN BAWAH (GRID 3 KOLOM PERSIS GAMBAR 2) ================= */}
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+
+          {/* MENU 1: PEJABAT BA */}
+          <div 
+            onClick={() => setActiveModal('pejabat')}
+            className="bg-white rounded-2xl p-3 sm:p-3.5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all cursor-pointer group"
+          >
+            <div>
+              {/* Rounded Square Icon Badge */}
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 mb-2.5 group-hover:scale-105 transition-transform">
+                <FileSignature className="w-5 h-5" />
               </div>
-              <p className="text-sm font-black text-slate-100">
-                {currentDateTime.date || "Memuat Tanggal..."}
+              <span className="text-[9px] font-black text-blue-600 uppercase tracking-wider block">
+                MENU UTAMA
+              </span>
+              <h3 className="text-xs font-black text-slate-800 leading-tight mt-0.5">
+                PEJABAT BA
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-1 leading-snug">
+                Data & TTD
               </p>
-              <p className="text-[10px] text-slate-400">Waktu Indonesia Barat (WIB)</p>
             </div>
 
-            <div className="bg-slate-800/90 border border-slate-700/80 px-3 py-1.5 rounded-xl flex items-center gap-2 shadow-inner">
-              <Clock className="w-3.5 h-3.5 text-sky-400" />
-              <span className="font-mono text-sm font-black text-sky-300 tracking-wider">
-                {currentDateTime.time || "00.00.00"}
-              </span>
-              <span className="px-1.5 py-0.5 bg-rose-500 text-white text-[9px] font-black rounded-sm uppercase animate-pulse">
-                LIVE
-              </span>
+            {/* Bottom Pill Action */}
+            <div className="mt-3 py-1 px-2 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-[10px] font-bold flex items-center justify-between">
+              <span>{isPejabatComplete ? "Lengkap" : "Isi Data"}</span>
+              <ChevronRight className="w-3 h-3 text-blue-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </div>
 
-        </main>
+          {/* MENU 2: DATA PELAKU USAHA */}
+          <div 
+            onClick={() => setActiveModal('pelaku-usaha')}
+            className="bg-white rounded-2xl p-3 sm:p-3.5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all cursor-pointer group"
+          >
+            <div>
+              {/* Rounded Square Icon Badge */}
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white flex items-center justify-center shadow-md shadow-orange-500/20 mb-2.5 group-hover:scale-105 transition-transform">
+                <Store className="w-5 h-5" />
+              </div>
+              <span className="text-[9px] font-black text-orange-600 uppercase tracking-wider block">
+                TUGAS UMKM
+              </span>
+              <h3 className="text-xs font-black text-slate-800 leading-tight mt-0.5">
+                DATA UMKM
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-1 leading-snug">
+                Tugas Petugas
+              </p>
+            </div>
+
+            {/* Bottom Pill Action */}
+            <div className="mt-3 py-1 px-2 bg-amber-50 text-amber-700 border border-amber-100 rounded-lg text-[10px] font-bold flex items-center justify-between">
+              <span>{totalAssigned} Data</span>
+              <ChevronRight className="w-3 h-3 text-amber-400 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </div>
+
+          {/* MENU 3: REKAPAN BERITA ACARA */}
+          <div 
+            onClick={() => setActiveModal('rekapan')}
+            className="bg-white rounded-2xl p-3 sm:p-3.5 shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 active:scale-95 transition-all cursor-pointer group"
+          >
+            <div>
+              {/* Rounded Square Icon Badge */}
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20 mb-2.5 group-hover:scale-105 transition-transform">
+                <ClipboardCheck className="w-5 h-5" />
+              </div>
+              <span className="text-[9px] font-black text-emerald-600 uppercase tracking-wider block">
+                ARSIP DOKUMEN
+              </span>
+              <h3 className="text-xs font-black text-slate-800 leading-tight mt-0.5">
+                REKAPAN BA
+              </h3>
+              <p className="text-[10px] text-slate-400 mt-1 leading-snug">
+                Awal s/d Akhir
+              </p>
+            </div>
+
+            {/* Bottom Pill Action */}
+            <div className="mt-3 py-1 px-2 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[10px] font-bold flex items-center justify-between">
+              <span>{totalCompleted} Selesai</span>
+              <ChevronRight className="w-3 h-3 text-emerald-400 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </div>
+
+        </div>
+
+        {/* ================= FOOTER REALTIME WIDGET (Persis Gambar 2) ================= */}
+        <div className="bg-[#0b1329] text-white rounded-[1.75rem] p-4 shadow-xl flex items-center justify-between border border-slate-800/80">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-sky-400 tracking-wider uppercase">
+              <Calendar className="w-3 h-3 text-sky-400 inline" />
+              <span>WAKTU & TANGGAL REALTIME</span>
+            </div>
+            <p className="text-sm font-black text-slate-100">
+              {currentDateTime.date || "Selasa, 8 September 2026"}
+            </p>
+            <p className="text-[10px] text-slate-400 font-medium">Waktu Lokal Indonesia</p>
+          </div>
+
+          <div className="bg-[#132247] border border-[#1e346b] px-3.5 py-1.5 rounded-2xl flex items-center gap-2 shadow-inner">
+            <Clock className="w-3.5 h-3.5 text-sky-400" />
+            <span className="font-mono text-sm font-black text-sky-300 tracking-wider">
+              {currentDateTime.time || "22.11.10"}
+            </span>
+            <span className="px-1.5 py-0.5 bg-rose-500 text-white text-[9px] font-black rounded-sm uppercase tracking-wider animate-pulse">
+              LIVE
+            </span>
+          </div>
+        </div>
 
       </div>
 
@@ -765,7 +783,7 @@ export default function PortalSurveyPage() {
         <DialogContent className="max-w-md w-[95vw] rounded-3xl p-5 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-black text-slate-800 flex items-center gap-2">
-              <FileSignature className="w-5 h-5 text-indigo-600" />
+              <FileSignature className="w-5 h-5 text-blue-600" />
               Data Pejabat Berita Acara
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
@@ -783,16 +801,16 @@ export default function PortalSurveyPage() {
               <div className="space-y-1">
                 <Label className="text-[11px] font-semibold text-slate-600">Nama Lengkap & Gelar Verifikator</Label>
                 <Input 
-                  placeholder="Contoh: DEDI SUPRIADI, S.E."
+                  placeholder="Contoh: WELLY MAWA, S.T."
                   value={pejabatForm.verifikatorNama}
                   onChange={(e) => setPejabatForm(prev => ({ ...prev, verifikatorNama: e.target.value }))}
-                  className="bg-white rounded-xl text-xs"
+                  className="bg-white rounded-xl text-xs font-bold"
                 />
               </div>
               <div className="space-y-1">
                 <Label className="text-[11px] font-semibold text-slate-600">NIP / NIPPPK Verifikator</Label>
                 <Input 
-                  placeholder="Contoh: 19820415 201001 1 012"
+                  placeholder="Contoh: 197312022003121002"
                   value={pejabatForm.verifikatorNipppk}
                   onChange={(e) => setPejabatForm(prev => ({ ...prev, verifikatorNipppk: e.target.value }))}
                   className="bg-white rounded-xl text-xs font-mono"
@@ -802,7 +820,7 @@ export default function PortalSurveyPage() {
                 <div className="space-y-1">
                   <Label className="text-[11px] font-semibold text-slate-600">Pangkat / Golongan</Label>
                   <Input 
-                    placeholder="Contoh: Pembina (IV/a)"
+                    placeholder="Contoh: Penata Tk.I / IIId"
                     value={pejabatForm.verifikatorPangkat}
                     onChange={(e) => setPejabatForm(prev => ({ ...prev, verifikatorPangkat: e.target.value }))}
                     className="bg-white rounded-xl text-xs"
@@ -811,7 +829,7 @@ export default function PortalSurveyPage() {
                 <div className="space-y-1">
                   <Label className="text-[11px] font-semibold text-slate-600">Jabatan</Label>
                   <Input 
-                    placeholder="Contoh: Verifikator Dinas"
+                    placeholder="Contoh: Pengawas Koperasi Ahli Muda"
                     value={pejabatForm.verifikatorJabatan}
                     onChange={(e) => setPejabatForm(prev => ({ ...prev, verifikatorJabatan: e.target.value }))}
                     className="bg-white rounded-xl text-xs"
@@ -821,9 +839,9 @@ export default function PortalSurveyPage() {
             </div>
 
             {/* Box Petugas Survey */}
-            <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-2xl p-3.5 space-y-2.5">
-              <div className="flex items-center gap-2 text-indigo-900 font-bold border-b border-indigo-200 pb-1.5">
-                <UserCheck className="w-4 h-4 text-indigo-600" />
+            <div className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-3.5 space-y-2.5">
+              <div className="flex items-center gap-2 text-blue-900 font-bold border-b border-blue-200 pb-1.5">
+                <UserCheck className="w-4 h-4 text-blue-600" />
                 <span>DATA PETUGAS SURVEY (Anda)</span>
               </div>
               <div className="space-y-1">
@@ -838,7 +856,7 @@ export default function PortalSurveyPage() {
               <div className="space-y-1">
                 <Label className="text-[11px] font-semibold text-slate-600">NIP / NIPPPK Petugas</Label>
                 <Input 
-                  placeholder="Contoh: 19880512 202321 1 004"
+                  placeholder="Contoh: 198301162025212006"
                   value={pejabatForm.petugasNipppk}
                   onChange={(e) => setPejabatForm(prev => ({ ...prev, petugasNipppk: e.target.value }))}
                   className="bg-white rounded-xl text-xs font-mono"
@@ -848,7 +866,7 @@ export default function PortalSurveyPage() {
                 <div className="space-y-1">
                   <Label className="text-[11px] font-semibold text-slate-600">Pangkat / Golongan</Label>
                   <Input 
-                    placeholder="Contoh: Penata Muda (III/a)"
+                    placeholder="Contoh: Golongan IX"
                     value={pejabatForm.petugasPangkat}
                     onChange={(e) => setPejabatForm(prev => ({ ...prev, petugasPangkat: e.target.value }))}
                     className="bg-white rounded-xl text-xs"
@@ -857,7 +875,7 @@ export default function PortalSurveyPage() {
                 <div className="space-y-1">
                   <Label className="text-[11px] font-semibold text-slate-600">Jabatan</Label>
                   <Input 
-                    placeholder="Contoh: Petugas Survey Lapangan"
+                    placeholder="Contoh: Penata Layanan Operasional"
                     value={pejabatForm.petugasJabatan}
                     onChange={(e) => setPejabatForm(prev => ({ ...prev, petugasJabatan: e.target.value }))}
                     className="bg-white rounded-xl text-xs"
@@ -878,7 +896,7 @@ export default function PortalSurveyPage() {
             <Button 
               onClick={handleSavePejabat}
               disabled={isSavingPejabat}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow-md"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md"
             >
               {isSavingPejabat ? (
                 <>
@@ -901,10 +919,10 @@ export default function PortalSurveyPage() {
           <DialogHeader className="shrink-0">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg font-black text-slate-800 flex items-center gap-2">
-                <Store className="w-5 h-5 text-blue-600" />
+                <Store className="w-5 h-5 text-orange-500" />
                 Data Pelaku Usaha Tugas Anda
               </DialogTitle>
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-bold">
+              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 font-bold">
                 {myActors.length} Pelaku Usaha
               </Badge>
             </div>
@@ -968,7 +986,7 @@ export default function PortalSurveyPage() {
                 return (
                   <div 
                     key={actor.id}
-                    className="p-3 bg-white border border-slate-200/80 rounded-2xl shadow-2xs hover:border-blue-300 transition-all space-y-2"
+                    className="p-3 bg-white border border-slate-200/80 rounded-2xl shadow-2xs hover:border-orange-300 transition-all space-y-2"
                   >
                     <div className="flex justify-between items-start gap-2">
                       <div>
@@ -978,7 +996,7 @@ export default function PortalSurveyPage() {
                             {actor.businessCategory || "UMKM"}
                           </span>
                         </div>
-                        <p className="text-[11px] font-bold text-blue-600">{actor.businessName || "Usaha Mandiri"}</p>
+                        <p className="text-[11px] font-bold text-orange-600">{actor.businessName || "Usaha Mandiri"}</p>
                         <p className="text-[10px] text-slate-400 font-mono">NIK: {actor.nik || "-"}</p>
                       </div>
 
@@ -1024,7 +1042,7 @@ export default function PortalSurveyPage() {
                           "h-8 px-3 rounded-xl text-[11px] font-bold shadow-xs",
                           isDone 
                             ? "bg-slate-700 hover:bg-slate-800 text-white" 
-                            : "bg-blue-600 hover:bg-blue-700 text-white"
+                            : "bg-orange-600 hover:bg-orange-700 text-white"
                         )}
                       >
                         {isDone ? "Tinjau Hasil Survey" : "Mulai Survey Lapangan"}
@@ -1057,10 +1075,10 @@ export default function PortalSurveyPage() {
           <DialogHeader className="shrink-0">
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg font-black text-slate-800 flex items-center gap-2">
-                <ClipboardCheck className="w-5 h-5 text-amber-600" />
+                <ClipboardCheck className="w-5 h-5 text-emerald-600" />
                 Rekapan Berita Acara Survey
               </DialogTitle>
-              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 font-bold">
+              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold">
                 {completedBeritaAcaraList.length} Dokumen Selesai
               </Badge>
             </div>
@@ -1095,11 +1113,11 @@ export default function PortalSurveyPage() {
                 return (
                   <div 
                     key={actor.id}
-                    className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-2xs hover:border-amber-400 transition-all flex flex-col gap-2"
+                    className="p-3.5 bg-white border border-slate-200/90 rounded-2xl shadow-2xs hover:border-emerald-400 transition-all flex flex-col gap-2"
                   >
                     <div className="flex justify-between items-start gap-2">
                       <div className="flex items-start gap-2.5">
-                        <span className="w-6 h-6 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-black flex items-center justify-center shrink-0">
+                        <span className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-black flex items-center justify-center shrink-0">
                           {idx + 1}
                         </span>
                         <div>
@@ -1130,7 +1148,7 @@ export default function PortalSurveyPage() {
                         size="sm"
                         disabled={isGenerating}
                         onClick={() => handlePrintBeritaAcara(actor)}
-                        className="h-8 px-3 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs"
+                        className="h-8 px-3 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
                       >
                         {isGenerating ? (
                           <>

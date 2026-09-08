@@ -41,6 +41,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const isLoginPage = pathname === '/login';
   const isCekDataPage = pathname === '/cek-data' || pathname?.startsWith('/cek-data');
   const isLayarInformasiPage = pathname === '/layar-informasi' || pathname?.startsWith('/layar-informasi');
+  const isPortalSurveyPage = pathname === '/portal-survey' || pathname?.startsWith('/portal-survey');
   const isPublicPage = isLoginPage || isCekDataPage || isLayarInformasiPage;
   const isRootPage = pathname === '/';
   const isAdmin = profile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
@@ -253,7 +254,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           {user && !isLoginPage && <MessageNotification />}
           <Toaster />
 
-          {!isLoginPage && !isLayarInformasiPage && (
+          {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
             <>
               <header className="sticky top-0 z-50 flex items-center justify-between px-4 md:px-6 lg:px-8 h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 shrink-0 print:hidden shadow-sm gap-3 md:gap-4">
                 <div className="flex items-center gap-3 md:gap-5 shrink-0">
@@ -375,7 +376,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
-            {!isLoginPage && !isLayarInformasiPage && (!isCekDataPage || (user && !isCekDataPage)) && (
+            {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (!isCekDataPage || (user && !isCekDataPage)) && (
               <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50 pointer-events-none">
                 <div className="pointer-events-auto flex flex-col items-end gap-3 max-h-[calc(100dvh-5.5rem)] overflow-y-auto no-scrollbar pb-6 pr-1">
                   <div className="hidden lg:flex flex-col gap-3">
@@ -437,11 +438,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
             <main className={cn(
               "flex-1 bg-transparent print:bg-white relative z-0 isolate flex flex-col",
-              isLoginPage ? "overflow-hidden" : isLayarInformasiPage ? "overflow-y-auto lg:overflow-hidden" : "overflow-y-auto"
+              isLoginPage ? "overflow-hidden" : (isLayarInformasiPage || isPortalSurveyPage) ? "overflow-y-auto lg:overflow-hidden" : "overflow-y-auto"
             )}>
               <div key={pathname} className={cn(
                 "w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out",
                 isLoginPage ? "flex-1 flex flex-col min-h-0 p-0 overflow-hidden" : 
+                isPortalSurveyPage ? "p-0 min-h-full flex-1 flex flex-col" :
                 isLayarInformasiPage ? "p-0 min-h-full lg:h-full lg:max-h-full flex-1 flex flex-col overflow-y-auto lg:overflow-hidden" :
                 isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-20 max-w-7xl mx-auto" :
                 isRootPage ? "p-4 md:p-8 flex-1 flex flex-col min-h-0 pb-20 lg:pr-[360px]" : 
@@ -452,9 +454,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             </main>
           </div>
 
-          {!isLoginPage && !isLayarInformasiPage && <RunningText />}
+          {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && <RunningText />}
 
-          {!isLoginPage && !isLayarInformasiPage && !isRootPage && !isKoordinator && (
+          {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && !isRootPage && !isKoordinator && (
             <button 
               onClick={() => router.push('/')}
               className="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-primary text-white shadow-2xl flex items-center justify-center z-50 animate-in slide-in-from-bottom-10 duration-500 border-4 border-white active:scale-90"
