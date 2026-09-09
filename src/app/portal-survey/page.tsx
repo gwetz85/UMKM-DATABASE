@@ -1726,9 +1726,9 @@ export default function PortalSurveyPage() {
       {/* MODAL / FORM SURVEY LANGSUNG DI PORTAL (TANPA BUKA TAMPILAN LAMA)         */}
       {/* ========================================================================= */}
       <Dialog open={Boolean(surveyingActor)} onOpenChange={(open) => !open && setSurveyingActor(null)}>
-        <DialogContent className="max-w-2xl w-[96vw] rounded-3xl p-5 max-h-[92vh] flex flex-col">
-          <DialogHeader className="shrink-0 border-b border-slate-100 pb-3">
-            <div className="flex items-start justify-between">
+        <DialogContent className="max-w-3xl w-[96vw] rounded-3xl p-4 sm:p-5 max-h-[92vh] flex flex-col">
+          <DialogHeader className="shrink-0 border-b border-slate-100 pb-3 pr-8">
+            <div className="flex items-start justify-between gap-3">
               <div>
                 <span className="text-[10px] font-black text-orange-600 uppercase tracking-wider">
                   SURVEY LAPANGAN
@@ -1742,7 +1742,7 @@ export default function PortalSurveyPage() {
               </div>
 
               {/* Progress Bar */}
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <span className="text-xs font-black text-blue-700">{surveyProgress}%</span>
                 <Progress value={surveyProgress} className="w-20 h-2 mt-1" />
               </div>
@@ -2247,93 +2247,100 @@ export default function PortalSurveyPage() {
           </div>
 
           {/* Action Footer */}
-          <DialogFooter className="pt-3 border-t border-slate-100 gap-2 flex-wrap sm:flex-nowrap justify-end">
-            <Button 
-              type="button"
-              variant="outline" 
-              onClick={() => setSurveyingActor(null)} 
-              className="rounded-xl text-xs"
-            >
-              Tutup
-            </Button>
-            <Button 
-              type="button"
-              variant="outline"
-              onClick={() => {
-                const target = surveyingActor
-                setSurveyingActor(null)
-                if (target) {
-                  setCancelTargetActor(target)
-                  setCancelReasonPreset("Usaha Tutup / Tidak Beroperasi")
-                  setCustomCancelReason("")
-                  setCancelPhotoProof(null)
-                }
-              }}
-              className="rounded-xl text-xs font-bold border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300"
-            >
-              <Ban className="w-3.5 h-3.5 mr-1 text-rose-500" />
-              Cancel Dinas
-            </Button>
-            <Button 
-              type="button"
-              variant="outline" 
-              disabled={!surveyingActor || generatingPdfId === surveyingActor.id}
-              onClick={() => {
-                if (surveyingActor) {
-                  handlePrintBeritaAcara(surveyingActor, { ...surveyData, fotoSurveyUrl: surveyPhotoPreview || undefined })
-                }
-              }}
-              className="rounded-xl text-xs font-bold border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
-            >
-              {surveyingActor && generatingPdfId === surveyingActor.id ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-blue-600" />
-                  Mengunduh...
-                </>
-              ) : (
-                <>
-                  <FileDown className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
-                  Unduh Berita Acara
-                </>
-              )}
-            </Button>
-            <Button 
-              type="button"
-              variant="outline"
-              disabled={isSubmittingDraft || isSubmittingSurvey}
-              onClick={handleSaveDraftInPortal}
-              className="rounded-xl text-xs font-bold border-slate-300 text-slate-700 hover:bg-slate-100"
-            >
-              {isSubmittingDraft ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  Menyimpan Draft...
-                </>
-              ) : (
-                <>
-                  <Save className="w-3.5 h-3.5 mr-1.5" />
-                  Simpan Draft
-                </>
-              )}
-            </Button>
-            <Button 
-              type="button"
-              disabled={isSubmittingSurvey || isSubmittingDraft}
-              onClick={handleCompleteSurveyInPortal}
-              className="rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-            >
-              {isSubmittingSurvey ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                  Memproses...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
-                  Selesai & Loloskan Survey
-                </>
-              )}
-            </Button>
+          <DialogFooter className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:space-x-0">
+            {/* Sisi Kiri: Tutup & Cancel Dinas */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={() => setSurveyingActor(null)} 
+                className="rounded-xl text-xs h-9 px-3 flex-1 sm:flex-initial"
+              >
+                Tutup
+              </Button>
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  const target = surveyingActor
+                  setSurveyingActor(null)
+                  if (target) {
+                    setCancelTargetActor(target)
+                    setCancelReasonPreset("Usaha Tutup / Tidak Beroperasi")
+                    setCustomCancelReason("")
+                    setCancelPhotoProof(null)
+                  }
+                }}
+                className="rounded-xl text-xs font-bold border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 h-9 px-3 flex-1 sm:flex-initial"
+              >
+                <Ban className="w-3.5 h-3.5 mr-1 text-rose-500 shrink-0" />
+                <span>Cancel Dinas</span>
+              </Button>
+            </div>
+
+            {/* Sisi Kanan: Unduh BA, Simpan Draft, Selesai & Loloskan Survey */}
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto justify-end">
+              <Button 
+                type="button"
+                variant="outline" 
+                disabled={!surveyingActor || generatingPdfId === surveyingActor.id}
+                onClick={() => {
+                  if (surveyingActor) {
+                    handlePrintBeritaAcara(surveyingActor, { ...surveyData, fotoSurveyUrl: surveyPhotoPreview || undefined })
+                  }
+                }}
+                className="rounded-xl text-xs font-bold border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300 h-9 px-3 flex-1 sm:flex-initial"
+              >
+                {surveyingActor && generatingPdfId === surveyingActor.id ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-blue-600 shrink-0" />
+                    <span>Mengunduh...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="w-3.5 h-3.5 mr-1.5 text-blue-600 shrink-0" />
+                    <span>Unduh BA</span>
+                  </>
+                )}
+              </Button>
+              <Button 
+                type="button"
+                variant="outline" 
+                disabled={isSubmittingDraft || isSubmittingSurvey}
+                onClick={handleSaveDraftInPortal}
+                className="rounded-xl text-xs font-bold border-slate-300 text-slate-700 hover:bg-slate-100 h-9 px-3 flex-1 sm:flex-initial"
+              >
+                {isSubmittingDraft ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin shrink-0" />
+                    <span>Menyimpan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                    <span>Simpan Draft</span>
+                  </>
+                )}
+              </Button>
+              <Button 
+                type="button"
+                disabled={isSubmittingSurvey || isSubmittingDraft}
+                onClick={handleCompleteSurveyInPortal}
+                className="rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-700 text-white shadow-md h-9 px-3.5 flex-1 sm:flex-initial whitespace-nowrap"
+              >
+                {isSubmittingSurvey ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin shrink-0" />
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                    <span>Selesai & Loloskan</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
