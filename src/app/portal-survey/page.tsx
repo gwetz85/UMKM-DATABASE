@@ -1278,25 +1278,6 @@ export default function PortalSurveyPage() {
                 </div>
               </div>
 
-              {/* Row 3: Extra Details like Nomor Kontak & Wilayah */}
-              <div className="border-t border-slate-200/60 pt-2.5 space-y-1.5 text-xs">
-                <div className="flex items-center justify-between text-slate-600">
-                  <span className="flex items-center gap-1 text-slate-400 font-semibold text-[11px]">
-                    <Phone className="w-3 h-3 text-emerald-500" /> NOMOR KONTAK
-                  </span>
-                  <span className="font-mono font-bold text-slate-700">
-                    {(userProfile as any)?.phone || "0817319885"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-slate-600">
-                  <span className="flex items-center gap-1 text-slate-400 font-semibold text-[11px]">
-                    <MapPin className="w-3 h-3 text-rose-500" /> WILAYAH TUGAS
-                  </span>
-                  <span className="font-bold text-slate-700 truncate max-w-[170px]">
-                    {(userProfile as any)?.address || "KOTA TANJUNGPINANG"}
-                  </span>
-                </div>
-              </div>
 
             </div>
 
