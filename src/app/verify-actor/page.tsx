@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, updateDocumentNonBlocking, useObject, deleteDocumentNonBlocking } from "@/firebase"
-import { ref, query, equalTo, limitToFirst } from "firebase/database"
+import { ref, query, equalTo, limitToFirst, orderByChild } from "firebase/database"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -254,12 +254,30 @@ export default function VerifyActorPage() {
   const isMonitoring = userProfile?.role === 'monitoring'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
 
-  const memoQuery = useMemoFirebase(() => {
+  const pendingQuery = useMemoFirebase(() => {
     if (!database) return null
-    return ref(database, 'businessActors')
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('pending'))
   }, [database])
 
-  const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
+  const lengkapiQuery = useMemoFirebase(() => {
+    if (!database) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('lengkapi_data'))
+  }, [database])
+
+  const holdQuery = useMemoFirebase(() => {
+    if (!database) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('hold'))
+  }, [database])
+
+  const manualQuery = useMemoFirebase(() => {
+    if (!database) return null
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verifikasi_manual'))
+  }, [database])
+
+  const { data: pendingActors } = useList<BusinessActor>(pendingQuery)
+  const { data: lengkapiActors } = useList<BusinessActor>(lengkapiQuery)
+  const { data: holdActors } = useList<BusinessActor>(holdQuery)
+  const { data: manualActors } = useList<BusinessActor>(manualQuery)
 
   const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
   const master2024Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2024') : null, [database])
@@ -278,12 +296,36 @@ export default function VerifyActorPage() {
   // Ini mencegah timer dimulai dengan data yang masih null/belum siap.
   const dataReady = data2023 !== null && data2024 !== null && data2025 !== null && dataBlacklist !== null
 
-  const actors = allActorsRaw?.filter(a => {
-    if (activeTab === 'pending') return a.status === 'pending' || a.status === 'lengkapi_data';
-    if (activeTab === 'hold') return a.status === 'hold';
-    if (activeTab === 'manual') return a.status === 'verifikasi_manual';
-    return false;
-  })
+  const allActorsRaw = useMemo(() => {
+    if (pendingActors === null && lengkapiActors === null && holdActors === null && manualActors === null) {
+      return null
+    }
+    return [
+      ...(pendingActors || []),
+      ...(lengkapiActors || []),
+      ...(holdActors || []),
+      ...(manualActors || [])
+    ]
+  }, [pendingActors, lengkapiActors, holdActors, manualActors])
+
+  const actors = useMemo(() => {
+    if (activeTab === 'pending') {
+      return [...(pendingActors || []), ...(lengkapiActors || [])]
+    }
+    if (activeTab === 'hold') {
+      return holdActors || []
+    }
+    if (activeTab === 'manual') {
+      return manualActors || []
+    }
+    return []
+  }, [activeTab, pendingActors, lengkapiActors, holdActors, manualActors])
+
+  const isLoading = activeTab === 'pending'
+    ? (pendingActors === null && lengkapiActors === null)
+    : activeTab === 'hold'
+    ? (holdActors === null)
+    : (manualActors === null)
 
   const filteredActors = actors?.filter(actor =>
     (actor.fullName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -317,11 +359,11 @@ export default function VerifyActorPage() {
 
   // Background check: otomatis pindahkan data HOLD ke Verifikasi Manual jika waktu (24 jam) habis
   useEffect(() => {
-    if (!isAdmin || !database || !allActorsRaw) return;
+    if (!isAdmin || !database || !holdActors) return;
 
     const checkHolds = () => {
       const now = Date.now();
-      allActorsRaw.forEach(actor => {
+      holdActors.forEach(actor => {
         if (actor.status === 'hold') {
           const createdAtTimestamp = new Date(actor.createdAt).getTime();
           const validCreatedAt = isNaN(createdAtTimestamp) ? now : createdAtTimestamp;
@@ -340,7 +382,7 @@ export default function VerifyActorPage() {
     checkHolds();
     const interval = setInterval(checkHolds, 60000); // Cek setiap 1 menit
     return () => clearInterval(interval);
-  }, [allActorsRaw, isAdmin, database]);
+  }, [holdActors, isAdmin, database]);
 
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
@@ -604,9 +646,9 @@ export default function VerifyActorPage() {
 
         <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
           {[
-            { id: 'pending', label: 'Menunggu', count: (allActorsRaw?.filter(a => a.status === 'pending' || a.status === 'lengkapi_data').length || 0) },
-            { id: 'hold', label: 'HOLD', count: (allActorsRaw?.filter(a => a.status === 'hold').length || 0) },
-            { id: 'manual', label: 'Manual', count: (allActorsRaw?.filter(a => a.status === 'verifikasi_manual').length || 0) }
+            { id: 'pending', label: 'Menunggu', count: (pendingActors?.length || 0) + (lengkapiActors?.length || 0) },
+            { id: 'hold', label: 'HOLD', count: (holdActors?.length || 0) },
+            { id: 'manual', label: 'Manual', count: (manualActors?.length || 0) }
           ].map((tab) => (
             <button
               key={tab.id}

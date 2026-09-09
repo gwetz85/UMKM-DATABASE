@@ -262,7 +262,7 @@ export default function InputDataPage() {
         createdAt: new Date().toISOString(),
       }
 
-      addDocumentNonBlocking(actorsRef, data)
+      await addDocumentNonBlocking(actorsRef, data)
       
       // Update global stats for dashboard (Efficient alternative to fetching all docs)
       import("@/lib/stats-service").then(({ updateStatsOnNewActor }) => {
