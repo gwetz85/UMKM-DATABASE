@@ -951,16 +951,7 @@ export default function PortalSurveyPage() {
   }
 
   // PDF Berita Acara Generator
-  const handlePrintBeritaAcara = async (actor: BusinessActor) => {
-    if (!actor.surveyData) {
-      toast({
-        variant: "destructive",
-        title: "Belum Disurvey",
-        description: "Data survey belum lengkap untuk membuat Berita Acara."
-      })
-      return
-    }
-
+  const handlePrintBeritaAcara = async (actor: BusinessActor, customSurveyData?: Partial<SurveyDinasData>) => {
     setGeneratingPdfId(actor.id)
     try {
       const activePejabat: PejabatData = {
@@ -979,8 +970,42 @@ export default function PortalSurveyPage() {
         updatedAt: new Date().toISOString()
       }
 
-      const targetDate = actor.surveyData.tanggalSurvey || new Date().toISOString().split('T')[0]
-      await generateBeritaAcaraPDF(actor, actor.surveyData, activePejabat, targetDate)
+      const baseSurvey: Partial<SurveyDinasData> = customSurveyData || actor.surveyData || {}
+
+      let defaultGender = 'Laki-Laki'
+      if (baseSurvey.jenisKelamin) {
+        defaultGender = baseSurvey.jenisKelamin
+      } else if (actor.gender) {
+        defaultGender = actor.gender.toLowerCase().includes('perempuan') ? 'Perempuan' : 'Laki-Laki'
+      }
+
+      // Pastikan objek SurveyDinasData terisi lengkap agar dokumen PDF Berita Acara resmi terbentuk sempurna
+      const effectiveSurveyData: SurveyDinasData = {
+        namaUsaha: baseSurvey.namaUsaha || actor.businessName || '-',
+        namaPemilik: baseSurvey.namaPemilik || actor.fullName || '-',
+        jenisKelamin: defaultGender,
+        status: baseSurvey.status || 'Kepala Keluarga',
+        alamatRumah: baseSurvey.alamatRumah || actor.address || `Kel. ${actor.kelurahan || '-'}, Kec. ${actor.kecamatan || '-'}`,
+        noHp: baseSurvey.noHp || actor.phone || '-',
+        email: baseSurvey.email || '-',
+        sosmed: baseSurvey.sosmed || '-',
+        dtks: baseSurvey.dtks || { masuk: false },
+        bidangUsaha: baseSurvey.bidangUsaha || actor.businessCategory || '-',
+        peralatan: baseSurvey.peralatan || 'Standar Operasional Usaha',
+        tahunBerdiri: baseSurvey.tahunBerdiri || '2020',
+        izin: baseSurvey.izin && baseSurvey.izin.length > 0 ? baseSurvey.izin : ['NIB'],
+        modalUsaha: baseSurvey.modalUsaha || 'Rp 5.000.000',
+        omset: baseSurvey.omset || 'Rp 3.000.000',
+        hibah: baseSurvey.hibah || { pernah: false },
+        rencanaPenggunaan: baseSurvey.rencanaPenggunaan || 'Pengembangan Usaha & Modal Kerja',
+        hasilSurvey: baseSurvey.hasilSurvey || 'Layak',
+        fotoSurveyUrl: baseSurvey.fotoSurveyUrl || (actor.id === surveyingActor?.id ? surveyPhotoPreview : null) || actor.photoUsahaUri || undefined,
+        tanggalSurvey: baseSurvey.tanggalSurvey || new Date().toISOString().split('T')[0],
+        pejabatData: activePejabat
+      }
+
+      const targetDate = effectiveSurveyData.tanggalSurvey || new Date().toISOString().split('T')[0]
+      await generateBeritaAcaraPDF(actor, effectiveSurveyData, activePejabat, targetDate)
       toast({
         title: "✅ Berita Acara Diunduh",
         description: `Dokumen PDF Berita Acara untuk ${actor.fullName} berhasil dibuat.`
@@ -1558,7 +1583,7 @@ export default function PortalSurveyPage() {
                         <span className="font-mono">{actor.phone || "-"}</span>
                       </div>
 
-                      {/* Action buttons (Survey langsung di portal & Cancel Dinas) */}
+                      {/* Action buttons (Survey langsung di portal & Cancel Dinas & Unduh BA) */}
                       <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1.5 border-t border-slate-100">
                         {actor.phone && actor.phone !== "-" && (
                           <Button 
@@ -1571,6 +1596,26 @@ export default function PortalSurveyPage() {
                             Hubungi WA
                           </Button>
                         )}
+
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          disabled={generatingPdfId === actor.id}
+                          onClick={() => handlePrintBeritaAcara(actor)}
+                          className="h-7.5 px-2.5 rounded-xl text-[10.5px] font-bold border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+                        >
+                          {generatingPdfId === actor.id ? (
+                            <>
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin text-blue-600" />
+                              Unduh...
+                            </>
+                          ) : (
+                            <>
+                              <FileDown className="w-3 h-3 mr-1 text-blue-600" />
+                              Unduh BA
+                            </>
+                          )}
+                        </Button>
 
                         <Button 
                           size="sm" 
@@ -2012,7 +2057,7 @@ export default function PortalSurveyPage() {
           </div>
 
           {/* Action Footer */}
-          <DialogFooter className="pt-3 border-t border-slate-100 gap-2 sm:gap-0 flex-row justify-end">
+          <DialogFooter className="pt-3 border-t border-slate-100 gap-2 flex-wrap sm:flex-nowrap justify-end">
             <Button 
               type="button"
               variant="outline" 
@@ -2020,6 +2065,29 @@ export default function PortalSurveyPage() {
               className="rounded-xl text-xs"
             >
               Tutup
+            </Button>
+            <Button 
+              type="button"
+              variant="outline" 
+              disabled={!surveyingActor || generatingPdfId === surveyingActor.id}
+              onClick={() => {
+                if (surveyingActor) {
+                  handlePrintBeritaAcara(surveyingActor, { ...surveyData, fotoSurveyUrl: surveyPhotoPreview || undefined })
+                }
+              }}
+              className="rounded-xl text-xs font-bold border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+            >
+              {surveyingActor && generatingPdfId === surveyingActor.id ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-blue-600" />
+                  Mengunduh...
+                </>
+              ) : (
+                <>
+                  <FileDown className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
+                  Unduh Berita Acara
+                </>
+              )}
             </Button>
             <Button 
               type="button"
