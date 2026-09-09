@@ -289,9 +289,27 @@ export default function PortalSurveyPage() {
 
   const { data: secondaryActorsList } = useList<BusinessActor>(secondaryQuery)
 
+  // 3b. Safety Query: jika ada variasi nama dari Pejabat BA (gelar), pastikan data tetap termuat
+  const officerTitleUpper = useMemo(() => {
+    return ((activeProfile as any)?.pejabatData?.petugas?.nama || "").toUpperCase().trim()
+  }, [(activeProfile as any)?.pejabatData?.petugas?.nama])
+
+  const titleQuery = useMemoFirebase(() => {
+    if (!database || !officerTitleUpper || officerTitleUpper === officerNameUpper || officerTitleUpper === officerUsernameUpper || isAdmin) {
+      return null
+    }
+    return query(
+      ref(database, 'businessActors'),
+      orderByChild('petugasSurvey'),
+      equalTo(officerTitleUpper)
+    )
+  }, [database, officerTitleUpper, officerNameUpper, officerUsernameUpper, isAdmin])
+
+  const { data: titleActorsList } = useList<BusinessActor>(titleQuery)
+
   // 4. Ultra-fast deduplication of server-indexed actor list
   const rawActorsList = useMemo(() => {
-    if (!primaryActorsList && !secondaryActorsList) return null
+    if (!primaryActorsList && !secondaryActorsList && !titleActorsList) return null
     const map = new Map<string, BusinessActor>()
     if (primaryActorsList) {
       for (const a of primaryActorsList) {
@@ -303,8 +321,13 @@ export default function PortalSurveyPage() {
         if (a && a.id && !map.has(a.id)) map.set(a.id, a)
       }
     }
+    if (titleActorsList) {
+      for (const a of titleActorsList) {
+        if (a && a.id && !map.has(a.id)) map.set(a.id, a)
+      }
+    }
     return Array.from(map.values())
-  }, [primaryActorsList, secondaryActorsList])
+  }, [primaryActorsList, secondaryActorsList, titleActorsList])
 
   const isActorsLoading = isPrimaryLoading && !rawActorsList
 
@@ -616,7 +639,17 @@ export default function PortalSurveyPage() {
         hasilSurvey: hasilText
       }
 
-      const officerName = (activePejabat.petugas.nama || userProfile.fullName || surveyingActor.petugasSurvey || "").toUpperCase().trim()
+      // PENTING: Pengisian nama di Pejabat BA HANYA untuk cetak dokumen Berita Acara (activePejabat.petugas.nama).
+      // Jangan pernah menimpa petugasSurvey pada data pelaku usaha agar pembagian data tidak berubah
+      // dan tidak membuat nama petugas survey ganda / hilang dari ID login petugas survey.
+      const assignedOfficerName = (
+        surveyingActor.petugasSurvey && 
+        surveyingActor.petugasSurvey.trim() !== "" && 
+        surveyingActor.petugasSurvey.trim() !== "-" && 
+        surveyingActor.petugasSurvey.trim().toUpperCase() !== "BELUM ADA"
+      ) 
+        ? surveyingActor.petugasSurvey.trim().toUpperCase()
+        : (userProfile.fullName || userProfile.username || user?.email || "PETUGAS SURVEY").trim().toUpperCase()
 
       const actorRef = ref(database, `businessActors/${surveyingActor.id}`)
       const updateData: any = {
@@ -629,7 +662,7 @@ export default function PortalSurveyPage() {
         verifiedDinasBy: userProfile.fullName || user?.email || "Petugas Survey",
         verifikatorDinas: activePejabat.verifikator.nama,
         pejabatData: activePejabat,
-        petugasSurvey: officerName
+        petugasSurvey: assignedOfficerName
       }
       if (surveyData.alamatUsaha) {
         updateData.businessLocation = surveyData.alamatUsaha

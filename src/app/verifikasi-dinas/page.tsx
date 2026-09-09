@@ -748,6 +748,25 @@ export default function VerifikasiDinasPage() {
     }
   }, [actors])
 
+  // Map gelar Pejabat BA -> Nama Petugas Survey Resmi
+  const titleToCanonicalSurveyor = useMemo(() => {
+    const map = new Map<string, string>()
+    if (systemUsersRaw) {
+      systemUsersRaw.forEach((u: any) => {
+        if (u.role === 'petugas' || u.role === 'petugas_survey') {
+          const canonical = (u.fullName || u.name || u.id || '').toUpperCase().trim()
+          if (canonical && u.pejabatData?.petugas?.nama) {
+            const titleName = u.pejabatData.petugas.nama.toUpperCase().trim()
+            if (titleName && titleName !== canonical) {
+              map.set(titleName, canonical)
+            }
+          }
+        }
+      })
+    }
+    return map
+  }, [systemUsersRaw])
+
   // Surveyor Options (petugas survey terdaftar di system_users atau yang ada di data)
   const surveyorOptions = useMemo(() => {
     const set = new Set<string>()
@@ -763,26 +782,32 @@ export default function VerifikasiDinasPage() {
       actors.forEach((a: any) => {
         const ps = (a.petugasSurvey || '').toUpperCase().trim()
         if (ps && ps !== 'BELUM ADA' && ps !== '-') {
-          set.add(ps)
+          // Jangan buat nama petugas baru jika merupakan gelar Pejabat BA dari petugas terdaftar
+          if (!titleToCanonicalSurveyor.has(ps)) {
+            set.add(ps)
+          }
         }
       })
     }
     return Array.from(set).sort((a, b) => a.localeCompare(b))
-  }, [systemUsersRaw, actors])
+  }, [systemUsersRaw, actors, titleToCanonicalSurveyor])
 
   // Hitung jumlah data per petugas survey
   const surveyorCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     if (actors) {
       actors.forEach(a => {
-        const ps = (a.petugasSurvey || '').toUpperCase().trim()
+        let ps = (a.petugasSurvey || '').toUpperCase().trim()
         if (ps && ps !== '-' && ps !== 'BELUM ADA') {
+          if (titleToCanonicalSurveyor.has(ps)) {
+            ps = titleToCanonicalSurveyor.get(ps)!
+          }
           counts[ps] = (counts[ps] || 0) + 1
         }
       })
     }
     return counts
-  }, [actors])
+  }, [actors, titleToCanonicalSurveyor])
 
   // Hitung data yang belum ada petugas survey
   const unassignedCount = useMemo(() => {
@@ -805,7 +830,13 @@ export default function VerifikasiDinasPage() {
           return !ps || ps === "-" || ps === "BELUM ADA"
         })
       } else {
-        list = list.filter(a => (a.petugasSurvey || "").toUpperCase().trim() === selectedPetugasFilter)
+        list = list.filter(a => {
+          let ps = (a.petugasSurvey || "").toUpperCase().trim()
+          if (titleToCanonicalSurveyor.has(ps)) {
+            ps = titleToCanonicalSurveyor.get(ps)!
+          }
+          return ps === selectedPetugasFilter
+        })
       }
     }
 

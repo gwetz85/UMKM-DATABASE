@@ -143,11 +143,21 @@ function ActorDataContent() {
 
   const surveyorOptions = useMemo(() => {
     const set = new Set<string>()
+    const titleToCanonical = new Map<string, string>()
+
     if (systemUsersRaw) {
       systemUsersRaw.forEach((u: any) => {
         if (u.role === 'petugas' || u.role === 'petugas_survey') {
-          const name = (u.fullName || u.name || u.id || '').toUpperCase().trim()
-          if (name) set.add(name)
+          const canonical = (u.fullName || u.name || u.id || '').toUpperCase().trim()
+          if (canonical) {
+            set.add(canonical)
+            if (u.pejabatData?.petugas?.nama) {
+              const titleName = u.pejabatData.petugas.nama.toUpperCase().trim()
+              if (titleName && titleName !== canonical) {
+                titleToCanonical.set(titleName, canonical)
+              }
+            }
+          }
         }
       })
     }
@@ -155,7 +165,10 @@ function ActorDataContent() {
       allActorsRaw.forEach((a: any) => {
         const ps = (a.petugasSurvey || '').toUpperCase().trim()
         if (ps && ps !== 'BELUM ADA' && ps !== '-') {
-          set.add(ps)
+          // Jangan buat nama petugas baru jika merupakan gelar Pejabat BA dari petugas resmi
+          if (!titleToCanonical.has(ps)) {
+            set.add(ps)
+          }
         }
       })
     }
