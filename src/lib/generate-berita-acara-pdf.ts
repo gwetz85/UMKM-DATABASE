@@ -273,9 +273,35 @@ export async function generateBeritaAcaraPDF(
   const dataColonX = marginL + noW + dataLabelW; // 88mm
   const dataValueX = dataColonX + 3; // 91mm
   const maxValW = pageW - marginR - dataValueX - 8; // 96mm
-  const lineY_offset = 1.6; // Garis berada 1.6mm di bawah baseline teks agar tidak menimpa huruf
+  const lineY_offset = 1.8; // Garis berada 1.8mm di bawah baseline teks agar tidak menimpa huruf
 
   doc.setFontSize(8.5);
+
+  // Helper menggambar kotak checklist standar resmi (Bebas tabrakan / tumpang tindih Unicode)
+  const drawCheckbox = (x: number, yPos: number, checked: boolean, label: string): number => {
+    const boxSize = 2.8;
+    const boxY = yPos - 2.5;
+
+    // Gambar kotak persegi checklist
+    doc.setLineWidth(0.25);
+    doc.setDrawColor(0, 0, 0);
+    doc.rect(x, boxY, boxSize, boxSize);
+
+    // Jika terpilih, gambar silang bold 'X' di dalam kotak
+    if (checked) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.text("X", x + 0.6, yPos - 0.4);
+    }
+
+    // Gambar label teks di samping kotak
+    doc.setFont("helvetica", checked ? "bold" : "normal");
+    doc.setFontSize(8.5);
+    const textX = x + boxSize + 1.4;
+    doc.text(label, textX, yPos);
+
+    return textX + doc.getTextWidth(label);
+  };
 
   const renderDataRow = (
     noStr: string | null,
@@ -291,6 +317,7 @@ export async function generateBeritaAcaraPDF(
     const lSpacing = options?.lineSpacing || 4.3;
 
     doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
     if (noStr) {
       doc.text(noStr, marginL, y);
     }
@@ -322,29 +349,32 @@ export async function generateBeritaAcaraPDF(
   renderDataRow("3.", "NIK", actor.nik);
 
   // Row 4: Jenis Kelamin-Status *
-  // Row 4: Jenis Kelamin-Status *
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
   doc.text("4.", marginL, y);
   doc.text("Jenis Kelamin-Status *", marginL + noW, y);
   doc.text(":", dataColonX, y);
+
   const optJK = ["P", "L", "Janda", "Duda", "Lajang", "Kepala Keluarga"];
-  let oxJK = dataValueX;
-  const currentJK = surveyData.jenisKelamin?.toLowerCase().includes("perempuan") ? "P" : surveyData.jenisKelamin?.toLowerCase().includes("laki") ? "L" : "";
+  const currentJK = surveyData.jenisKelamin?.toLowerCase().includes("perempuan")
+    ? "P"
+    : surveyData.jenisKelamin?.toLowerCase().includes("laki")
+    ? "L"
+    : "";
   const currentStatus = (surveyData.status || "").toLowerCase();
 
-  optJK.forEach((opt) => {
-    const isSelected = (currentJK && opt === currentJK) || (currentStatus && currentStatus.includes(opt.toLowerCase()));
-    if (isSelected) {
-      doc.setFont("helvetica", "bold");
-      const markText = `[✓] ${opt}`;
-      doc.text(markText, oxJK, y);
-      oxJK += doc.getTextWidth(markText) + 3.5;
-    } else {
-      doc.setFont("helvetica", "normal");
-      doc.text(opt, oxJK, y);
-      oxJK += doc.getTextWidth(opt) + 4.5;
-    }
+  let curJK_X = dataValueX;
+  optJK.forEach((opt, idx) => {
+    let isSelected = false;
+    if (opt === "P" && currentJK === "P") isSelected = true;
+    else if (opt === "L" && currentJK === "L") isSelected = true;
+    else if (opt !== "P" && opt !== "L" && currentStatus.includes(opt.toLowerCase())) isSelected = true;
+
+    curJK_X = drawCheckbox(curJK_X, y, isSelected, opt) + (idx === 1 ? 5.0 : 3.5);
   });
+
+  doc.setLineWidth(0.2);
+  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
   y += 4.7;
 
   // Row 5: Alamat Usaha
@@ -358,44 +388,39 @@ export async function generateBeritaAcaraPDF(
 
   // Row 7: DTKS
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
   doc.text("7.", marginL, y);
   doc.text("Apakah Saudara Masuk dalam DTKS ?", marginL + noW, y);
   doc.text(":", dataColonX, y);
-  const masukDTKS = Boolean(surveyData.dtks?.masuk);
-  if (masukDTKS) {
-    doc.setFont("helvetica", "bold");
-    doc.text("[✓] YA", dataValueX, y);
-    doc.setFont("helvetica", "normal");
-    doc.text("  /  TIDAK", dataValueX + doc.getTextWidth("[✓] YA"), y);
-  } else {
-    doc.setFont("helvetica", "normal");
-    doc.text("YA  /  ", dataValueX, y);
-    doc.setFont("helvetica", "bold");
-    doc.text("[✓] TIDAK", dataValueX + doc.getTextWidth("YA  /  "), y);
-  }
-  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.7;
 
-  // Teks "Jika YA, DTKS Kategori *:" sejajar dengan isian data (dataValueX)
+  const masukDTKS = Boolean(surveyData.dtks?.masuk);
+  let curDtksX = dataValueX;
+  curDtksX = drawCheckbox(curDtksX, y, masukDTKS, "YA") + 3.5;
   doc.setFont("helvetica", "normal");
-  const prefixDTKS = "Jika YA, DTKS Kategori *: ";
+  doc.text("/", curDtksX, y);
+  curDtksX += doc.getTextWidth("/") + 3.5;
+  curDtksX = drawCheckbox(curDtksX, y, !masukDTKS, "TIDAK");
+
+  doc.setLineWidth(0.2);
+  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
+  y += 4.5;
+
+  // Sub-baris: Kategori DTKS
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  const prefixDTKS = "Jika YA, DTKS Kategori * : ";
   doc.text(prefixDTKS, dataValueX, y);
+  let oxDTKS = dataValueX + doc.getTextWidth(prefixDTKS) + 2;
+
   const optDTKS = ["PKH", "BPNT", "KIP", "LANSIA"];
-  let oxDTKS = dataValueX + doc.getTextWidth(prefixDTKS);
-  const selectedDTKS = surveyData.dtks?.jenis?.toUpperCase() || "";
-  optDTKS.forEach((opt) => {
+  const selectedDTKS = (surveyData.dtks?.jenis || "").toUpperCase();
+  optDTKS.forEach((opt, idx) => {
     const isMatched = masukDTKS && selectedDTKS.includes(opt);
-    if (isMatched) {
-      doc.setFont("helvetica", "bold");
-      const mark = `[✓] ${opt}`;
-      doc.text(mark, oxDTKS, y);
-      oxDTKS += doc.getTextWidth(mark) + 3;
-    } else {
-      doc.setFont("helvetica", "normal");
-      doc.text(opt, oxDTKS, y);
-      oxDTKS += doc.getTextWidth(opt) + 4;
-    }
+    oxDTKS = drawCheckbox(oxDTKS, y, isMatched, opt) + (idx < optDTKS.length - 1 ? 4.5 : 0);
   });
+
+  doc.setLineWidth(0.2);
+  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
   y += 4.7;
 
   // Row 8: Bidang Usaha
@@ -409,77 +434,84 @@ export async function generateBeritaAcaraPDF(
 
   // Row 11: Izin Yang dimiliki *
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
   doc.text("11.", marginL, y);
   doc.text("Izin Yang dimiliki *", marginL + noW, y);
   doc.text(":", dataColonX, y);
-  const optIzin = ["NIB", "HALAL", "PIRT", "Lainnya :"];
+
+  const optIzin = [
+    { key: "NIB", label: "NIB" },
+    { key: "HALAL", label: "HALAL" },
+    { key: "PIRT", label: "PIRT" },
+    { key: "LAINNYA", label: "Lainnya :" }
+  ];
   let oxIzin = dataValueX;
   const currentIzin = (surveyData.izin || []).map(i => i.toUpperCase());
+
   optIzin.forEach((opt) => {
-    const optKey = opt.replace(" :", "");
-    const isMatched = currentIzin.some(ci => ci.includes(optKey));
-    if (isMatched) {
-      doc.setFont("helvetica", "bold");
-      const mark = `[✓] ${opt}`;
-      doc.text(mark, oxIzin, y);
-      oxIzin += doc.getTextWidth(mark) + 3.5;
-    } else {
-      doc.setFont("helvetica", "normal");
-      doc.text(opt, oxIzin, y);
-      oxIzin += doc.getTextWidth(opt) + 4.5;
-    }
+    const isMatched = currentIzin.some(ci => ci.includes(opt.key));
+    oxIzin = drawCheckbox(oxIzin, y, isMatched, opt.label) + 5.5;
   });
+
+  doc.setLineWidth(0.2);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
   y += 4.7;
 
   // Row 12: Modal Usaha dan Omset per bulan
-  const val12 = `Modal: Rp ${surveyData.modalUsaha || "-"}  |  Omset: Rp ${surveyData.omset || "-"}`;
+  const formatUang = (raw?: string) => {
+    if (!raw || raw.trim() === "" || raw.trim() === "-") return "-";
+    const cleaned = raw.replace(/[^0-9]/g, "");
+    if (!cleaned) return raw;
+    return `Rp ${Number(cleaned).toLocaleString("id-ID")}`;
+  };
+  const val12 = `Modal: ${formatUang(surveyData.modalUsaha)}  |  Omset: ${formatUang(surveyData.omset)}`;
   renderDataRow("12.", "Modal Usaha dan Omset per bulan", val12);
 
   // Row 13: Apakah Pernah Menerima Dana Hibah ?
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
   doc.text("13.", marginL, y);
   doc.text("Apakah Pernah Menerima Dana Hibah ?", marginL + noW, y);
   doc.text(":", dataColonX, y);
+
   const isPernahHibah = Boolean(surveyData.hibah?.pernah);
-  if (isPernahHibah) {
-    doc.setFont("helvetica", "bold");
-    doc.text("[✓] YA", dataValueX, y);
-    doc.setFont("helvetica", "normal");
-    const yaW = doc.getTextWidth("[✓] YA");
-    doc.text("  dari mana : ", dataValueX + yaW, y);
-    const ymW = doc.getTextWidth("  dari mana : ");
-    const dariManaVal = surveyData.hibah?.dariMana || "-";
-    doc.setFont("helvetica", "bold");
-    doc.text(dariManaVal, dataValueX + yaW + ymW, y);
-    doc.line(dataValueX + yaW + ymW, y + lineY_offset, dataValueX + yaW + ymW + 32, y + lineY_offset);
+  let oxHibah = dataValueX;
 
-    doc.setFont("helvetica", "normal");
-    doc.text(" Tahun : ", dataValueX + yaW + ymW + 33, y);
-    const thnW = doc.getTextWidth(" Tahun : ");
-    const tahunVal = surveyData.hibah?.tahun ? String(surveyData.hibah.tahun) : "-";
-    doc.setFont("helvetica", "bold");
-    doc.text(tahunVal, dataValueX + yaW + ymW + 33 + thnW, y);
-    doc.line(dataValueX + yaW + ymW + 33 + thnW, y + lineY_offset, pageW - marginR, y + lineY_offset);
-    y += 4.3;
+  // Checkbox YA
+  oxHibah = drawCheckbox(oxHibah, y, isPernahHibah, "YA") + 4;
 
-    doc.setFont("helvetica", "normal");
-    doc.text("TIDAK", dataValueX, y);
-    y += 4.7;
-  } else {
-    doc.setFont("helvetica", "normal");
-    doc.text("YA  dari mana :", dataValueX, y);
-    const ymW = doc.getTextWidth("YA  dari mana : ");
-    doc.line(dataValueX + ymW, y + lineY_offset, dataValueX + ymW + 35, y + lineY_offset);
-    doc.text("Tahun berapa :", dataValueX + ymW + 37, y);
-    const thnW = doc.getTextWidth("Tahun berapa : ");
-    doc.line(dataValueX + ymW + 37 + thnW, y + lineY_offset, pageW - marginR, y + lineY_offset);
-    y += 4.3;
+  // "Dari mana :"
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.text("Dari mana :", oxHibah, y);
+  oxHibah += doc.getTextWidth("Dari mana :") + 2;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("[✓] TIDAK", dataValueX, y);
-    y += 4.7;
-  }
+  const dariManaVal = isPernahHibah && surveyData.hibah?.dariMana ? surveyData.hibah.dariMana : "-";
+  doc.setFont("helvetica", isPernahHibah ? "bold" : "normal");
+  doc.text(dariManaVal, oxHibah, y);
+  const dariManaW = Math.max(22, doc.getTextWidth(dariManaVal) + 2);
+  doc.setLineWidth(0.2);
+  doc.line(oxHibah, y + lineY_offset, oxHibah + dariManaW, y + lineY_offset);
+  oxHibah += dariManaW + 4;
+
+  // "Tahun :"
+  doc.setFont("helvetica", "normal");
+  doc.text("Tahun :", oxHibah, y);
+  oxHibah += doc.getTextWidth("Tahun :") + 2;
+
+  const tahunVal = isPernahHibah && surveyData.hibah?.tahun ? String(surveyData.hibah.tahun) : "-";
+  doc.setFont("helvetica", isPernahHibah ? "bold" : "normal");
+  doc.text(tahunVal, oxHibah, y);
+  doc.setLineWidth(0.2);
+  doc.line(oxHibah, y + lineY_offset, pageW - marginR, y + lineY_offset);
+
+  y += 4.5;
+
+  // Baris kedua: Checkbox TIDAK
+  drawCheckbox(dataValueX, y, !isPernahHibah, "TIDAK");
+  doc.setLineWidth(0.2);
+  doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
+  y += 4.7;
 
   // Row 14: Rencana Penggunaan Dana Hibah
   renderDataRow("14.", "Rencana Penggunaan Dana Hibah", surveyData.rencanaPenggunaan);
