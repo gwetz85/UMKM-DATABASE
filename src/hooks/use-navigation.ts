@@ -64,7 +64,7 @@ export function useNavigation() {
       name: "Portal SIMPU",
       href: "/portal-survey",
       icon: UserCheck,
-      show: isAdmin || isPetugas || isMonitoring || isStaff,
+      show: false,
       color: "#4f46e5",
       description: "Portal Petugas Survey Lapangan"
     },
@@ -80,7 +80,7 @@ export function useNavigation() {
       name: "Layar Informasi",
       href: "/layar-informasi",
       icon: Tv,
-      show: !!user || true, // Can be accessed with or without login
+      show: false,
       color: "#06b6d4",
       description: "Live Display & Layar Monitoring Realtime"
     },
