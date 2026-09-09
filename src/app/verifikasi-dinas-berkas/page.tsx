@@ -1561,100 +1561,81 @@ export default function VerifikasiDinasBerkasPage() {
                       </Button>
                     )}
 
-                    {selectedPetugasFilter !== "ALL" && (
-                      <span className="text-xs font-bold px-2.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-sm flex items-center gap-1.5">
-                        <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Petugas: <strong>{selectedPetugasFilter === "BELUM_ADA" ? "Belum Ada Petugas" : selectedPetugasFilter}</strong></span>
-                      </span>
-                    )}
+                    {/* Dropdown Menu Pilih Petugas Survey untuk Bagian Verifikator Ini */}
+                    {(() => {
+                      const verifikatorActors = actors?.filter(a => getVerifikatorNipppk(a) === nipKey) || []
+                      const groupSurveyorCounts: Record<string, number> = {}
+                      let groupUnassigned = 0
+
+                      verifikatorActors.forEach(a => {
+                        const p = getActorPetugasSurvey(a)
+                        if (!p || p === '-' || p.toUpperCase() === 'BELUM ADA') {
+                          groupUnassigned++
+                        } else {
+                          const key = p.toUpperCase().trim()
+                          groupSurveyorCounts[key] = (groupSurveyorCounts[key] || 0) + 1
+                        }
+                      })
+
+                      const groupSurveyors = Object.keys(groupSurveyorCounts).sort((a, b) => a.localeCompare(b))
+                      if (groupSurveyors.length <= 1 && groupUnassigned === 0) return null
+
+                      return (
+                        <div className="flex items-center gap-1.5">
+                          <Select 
+                            value={selectedPetugasFilter} 
+                            onValueChange={setSelectedPetugasFilter}
+                          >
+                            <SelectTrigger className="h-8 text-xs font-bold rounded-xl border-emerald-300 bg-emerald-50/90 text-emerald-950 focus:ring-emerald-500 shadow-xs hover:bg-emerald-100 transition-colors min-w-[190px] max-w-[270px]">
+                              <div className="flex items-center gap-1.5 truncate">
+                                <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <SelectValue placeholder="Pilih Petugas Survey" />
+                              </div>
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[300px]">
+                              <SelectItem value="ALL" className="font-bold">
+                                Semua Petugas ({verifikatorActors.length})
+                              </SelectItem>
+                              {groupSurveyors.map((sName) => {
+                                const count = groupSurveyorCounts[sName] || 0
+                                return (
+                                  <SelectItem key={sName} value={sName} className="font-semibold text-xs">
+                                    🟢 {sName} ({count})
+                                  </SelectItem>
+                                )
+                              })}
+                              {groupUnassigned > 0 && (
+                                <SelectItem value="BELUM_ADA" className="font-bold text-xs text-rose-600">
+                                  🔴 Belum Ada Petugas ({groupUnassigned})
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          {selectedPetugasFilter !== "ALL" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setSelectedPetugasFilter("ALL")}
+                              className="h-8 px-2 text-xs text-emerald-700 hover:text-emerald-950 hover:bg-emerald-100 rounded-xl"
+                              title="Reset Filter Petugas"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      )
+                    })()}
 
                     <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-purple-600" />
-                      <strong>{group.actors.length}</strong> Berkas
+                      <strong>{group.actors.length}</strong>
+                      {selectedPetugasFilter !== "ALL" && (
+                        <span className="text-slate-400 font-normal">/ {actors?.filter(a => getVerifikatorNipppk(a) === nipKey).length || 0}</span>
+                      )}
+                      <span>Berkas</span>
                     </span>
                   </div>
                 </div>
-
-                {/* ─── QUICK SELECTOR PETUGAS SURVEY PER BAGIAN VERIFIKATOR ───── */}
-                {(() => {
-                  const verifikatorActors = actors?.filter(a => getVerifikatorNipppk(a) === nipKey) || []
-                  const groupSurveyorCounts: Record<string, number> = {}
-                  let groupUnassigned = 0
-
-                  verifikatorActors.forEach(a => {
-                    const p = getActorPetugasSurvey(a)
-                    if (!p || p === '-' || p.toUpperCase() === 'BELUM ADA') {
-                      groupUnassigned++
-                    } else {
-                      const key = p.toUpperCase().trim()
-                      groupSurveyorCounts[key] = (groupSurveyorCounts[key] || 0) + 1
-                    }
-                  })
-
-                  const groupSurveyors = Object.keys(groupSurveyorCounts).sort((a, b) => a.localeCompare(b))
-                  if (groupSurveyors.length <= 1 && groupUnassigned === 0) return null
-
-                  return (
-                    <div className="flex items-center gap-2 flex-wrap bg-white/90 backdrop-blur-sm border border-emerald-200/80 shadow-xs p-3 rounded-2xl animate-in fade-in duration-300">
-                      <div className="flex items-center gap-1.5 text-xs font-black text-emerald-900 mr-1 shrink-0">
-                        <UserCheck className="w-4 h-4 text-emerald-600" />
-                        <span>PILIH PETUGAS SURVEY:</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedPetugasFilter("ALL")}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                          selectedPetugasFilter === "ALL"
-                            ? "bg-purple-600 text-white shadow-md ring-2 ring-purple-300"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
-                        }`}
-                      >
-                        Semua ({verifikatorActors.length})
-                      </button>
-                      {groupSurveyors.map((sName) => {
-                        const count = groupSurveyorCounts[sName] || 0
-                        const isSelected = selectedPetugasFilter === sName
-                        return (
-                          <button
-                            key={sName}
-                            type="button"
-                            onClick={() => setSelectedPetugasFilter(sName)}
-                            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
-                              isSelected
-                                ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400"
-                                : "bg-emerald-50/80 text-emerald-900 hover:bg-emerald-100 border border-emerald-200"
-                            }`}
-                          >
-                            <span>🟢 {sName}</span>
-                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
-                              isSelected ? "bg-emerald-800 text-white" : "bg-emerald-200/70 text-emerald-950"
-                            }`}>
-                              {count}
-                            </span>
-                          </button>
-                        )
-                      })}
-                      {groupUnassigned > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedPetugasFilter("BELUM_ADA")}
-                          className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
-                            selectedPetugasFilter === "BELUM_ADA"
-                              ? "bg-rose-600 text-white shadow-md ring-2 ring-rose-400"
-                              : "bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200"
-                          }`}
-                        >
-                          <span>🔴 Belum Ada Petugas</span>
-                          <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
-                            selectedPetugasFilter === "BELUM_ADA" ? "bg-rose-800 text-white" : "bg-rose-200 text-rose-950"
-                          }`}>
-                            {groupUnassigned}
-                          </span>
-                        </button>
-                      )}
-                    </div>
-                  )
-                })()}
 
                 {/* ─── GRID KARTU PELAKU USAHA ─────────────────────────── */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
