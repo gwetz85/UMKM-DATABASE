@@ -326,8 +326,8 @@ export default function VerifikasiDinasBerkasPage() {
     const raw = allActorsRaw?.filter(a => a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos' && !(a as any).berkasDinasVerified)
     if (!raw) return []
 
-    // ISOLASI DATA: Jika login sebagai Verifikator Dinas (dan bukan Admin), HANYA tampilkan data di bawah verifikator ini
-    if (isVerifikatorDinas && !isAdmin) {
+    // ISOLASI DATA: Jika login sebagai Verifikator Dinas spesifik (dan bukan Admin/Dinas umum), HANYA tampilkan data di bawah verifikator ini
+    if (userProfile?.role === 'verifikator_dinas' && !isAdmin) {
       const myNip = userProfile?.nipppk 
         ? String(userProfile.nipppk).trim().replace(/[^a-zA-Z0-9]/g, "").toLowerCase() 
         : (userProfile?.username ? String(userProfile.username).trim().toLowerCase() : "")
@@ -338,7 +338,7 @@ export default function VerifikasiDinasBerkasPage() {
         const pd = getActorPejabat(actor)
         const aName = String(pd?.verifikator?.nama || actor.verifikatorDinas || getVerifikatorName(actor) || "").trim().toUpperCase()
 
-        if (myNip && aNip && myNip === aNip) return true
+        if (myNip && aNip && (myNip === aNip || aNip.includes(myNip) || myNip.includes(aNip))) return true
         if (myName && aName && (myName === aName || aName.includes(myName) || myName.includes(aName))) return true
         return false
       })
@@ -1446,8 +1446,8 @@ export default function VerifikasiDinasBerkasPage() {
                                 <User className="w-6 h-6" />
                               </div>
                               <div className="min-w-0">
-                                <h3 className="font-black text-slate-800 uppercase text-sm truncate" title={actor.fullName}>
-                                  {actor.fullName}
+                                <h3 className="font-black text-slate-800 uppercase text-sm truncate" title={actor.fullName || actor.surveyData?.namaPemilik}>
+                                  {actor.fullName || actor.surveyData?.namaPemilik}
                                 </h3>
                                 <p className="text-[10px] font-mono text-slate-500 mt-0.5 tracking-tighter">
                                   NIK: {actor.nik}
@@ -1458,7 +1458,7 @@ export default function VerifikasiDinasBerkasPage() {
                             <div className="grid grid-cols-2 gap-3 py-3 border-y border-slate-100">
                               <div className="space-y-0.5">
                                 <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Usaha</span>
-                                <p className="text-[11px] font-black text-slate-700 truncate uppercase">{actor.businessName}</p>
+                                <p className="text-[11px] font-black text-slate-700 truncate uppercase">{actor.businessName || actor.surveyData?.namaUsaha}</p>
                               </div>
                               <div className="space-y-0.5">
                                 <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Kelurahan</span>
@@ -1506,17 +1506,24 @@ export default function VerifikasiDinasBerkasPage() {
 
                                 <div className="flex flex-col min-w-0">
                                   <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">PETUGAS SURVEY</span>
-                                  {actor.petugasSurvey && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim() !== '' ? (
-                                    <span className="text-[10px] font-black text-emerald-700 truncate uppercase flex items-center gap-1" title={actor.petugasSurvey}>
-                                      <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
-                                      <span className="truncate">{actor.petugasSurvey}</span>
-                                    </span>
-                                  ) : (
-                                    <span className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-1">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 animate-pulse" />
-                                      Belum Ada
-                                    </span>
-                                  )}
+                                  {(() => {
+                                    const pName = (actor.petugasSurvey && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim() !== '')
+                                      ? actor.petugasSurvey.trim()
+                                      : (actor.surveyData?.pejabatData?.petugas?.nama && actor.surveyData.pejabatData.petugas.nama.trim() !== '-'
+                                          ? actor.surveyData.pejabatData.petugas.nama.trim()
+                                          : ((actor as any).verifiedDinasBy || actor.createdBy || ''))
+                                    return pName ? (
+                                      <span className="text-[10px] font-black text-emerald-700 truncate uppercase flex items-center gap-1" title={pName}>
+                                        <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                                        <span className="truncate">{pName}</span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                        Belum Ada
+                                      </span>
+                                    )
+                                  })()}
                                 </div>
                               </div>
 
@@ -1755,8 +1762,9 @@ export default function VerifikasiDinasBerkasPage() {
                           { label: "Nama Pemilik", value: verifyingActor.surveyData?.namaPemilik },
                           { label: "Jenis Kelamin", value: verifyingActor.surveyData?.jenisKelamin },
                           { label: "Status", value: verifyingActor.surveyData?.status },
-                          { label: "Alamat Rumah", value: verifyingActor.surveyData?.alamatRumah },
-                          { label: "No HP", value: verifyingActor.surveyData?.noHp },
+                          { label: "Alamat Rumah", value: verifyingActor.surveyData?.alamatRumah || verifyingActor.address },
+                          { label: "Alamat Usaha", value: verifyingActor.surveyData?.alamatUsaha || verifyingActor.businessLocation },
+                          { label: "No HP", value: verifyingActor.surveyData?.noHp || verifyingActor.phone },
                           { label: "Email", value: verifyingActor.surveyData?.email },
                           { label: "Sosial Media", value: verifyingActor.surveyData?.sosmed },
                           { label: "DTKS", value: verifyingActor.surveyData?.dtks?.masuk ? `Ya (${verifyingActor.surveyData.dtks.jenis})` : 'Tidak' },
@@ -2073,8 +2081,9 @@ export default function VerifikasiDinasBerkasPage() {
                         <Field label="Nama Pemilik" value={av.surveyData.namaPemilik} />
                         <Field label="Jenis Kelamin" value={av.surveyData.jenisKelamin} />
                         <Field label="Status Perkawinan" value={av.surveyData.status} />
-                        <Field label="Alamat Rumah" value={av.surveyData.alamatRumah} />
-                        <Field label="No HP" value={av.surveyData.noHp} />
+                        <Field label="Alamat Rumah" value={av.surveyData.alamatRumah || av.address} />
+                        <Field label="Alamat Usaha (Survey)" value={av.surveyData.alamatUsaha || av.businessLocation} />
+                        <Field label="No HP" value={av.surveyData.noHp || av.phone} />
                         <Field label="Email" value={av.surveyData.email} />
                         <Field label="Sosial Media" value={av.surveyData.sosmed} />
                         <Field label="DTKS" value={av.surveyData.dtks?.masuk ? `Ya — ${av.surveyData.dtks.jenis || "-"}` : "Tidak"} />

@@ -9,7 +9,8 @@ import {
   useObject, 
   useMemoFirebase, 
   updateDocumentNonBlocking,
-  useAuth
+  useAuth,
+  sanitizeForFirebase
 } from "@/firebase"
 import { ref, update, get, query, orderByChild, equalTo, limitToLast } from "firebase/database"
 import { signOut } from "firebase/auth"
@@ -322,11 +323,11 @@ export default function PortalSurveyPage() {
       const isCancelled = Boolean(a.alasanCancelDinas) || 
                           a.hasilVerifikasiDinas === 'Tidak Lolos' || 
                           a.status === 'rejected';
-      // HANYA dianggap selesai jika status adalah verified_dinas atau finish
-      // yang SUDAH memiliki verifiedDinasAt atau hasilVerifikasiDinas Lolos.
-      // DRAFT (perubahan survey sementara) TIDAK PERNAH dianggap selesai!
-      const isDone = (a.status === 'verified_dinas' || a.status === 'finish') && 
-                     (Boolean(a.verifiedDinasAt) || a.hasilVerifikasiDinas === 'Lolos');
+      // HANYA dianggap belum selesai jika belum berstatus verified_dinas atau finish
+      // Begitu berstatus verified_dinas atau finish atau Lolos, langsung hilang dari antrean survei!
+      const isDone = a.status === 'verified_dinas' || 
+                     a.status === 'finish' || 
+                     a.hasilVerifikasiDinas === 'Lolos';
       return !isDone && !isCancelled;
     })
   }, [myActors])
@@ -609,15 +610,17 @@ export default function PortalSurveyPage() {
 
       const finalSurveyData: any = {
         ...surveyData,
-        fotoSurveyUrl: surveyPhotoPreview,
-        location: surveyLocation,
+        fotoSurveyUrl: surveyPhotoPreview || surveyData.fotoSurveyUrl || null,
+        location: surveyLocation || null,
         pejabatData: activePejabat,
         hasilSurvey: hasilText
       }
 
+      const officerName = (activePejabat.petugas.nama || userProfile.fullName || surveyingActor.petugasSurvey || "").toUpperCase().trim()
+
       const actorRef = ref(database, `businessActors/${surveyingActor.id}`)
       const updateData: any = {
-        status: 'verified_dinas',
+        status: isLolos ? 'verified_dinas' : 'rejected',
         hasilVerifikasiDinas: isLolos ? 'Lolos' : 'Tidak Lolos',
         surveyData: finalSurveyData,
         surveyProgress: 100,
@@ -625,7 +628,8 @@ export default function PortalSurveyPage() {
         verifiedDinasAt: new Date().toISOString(),
         verifiedDinasBy: userProfile.fullName || user?.email || "Petugas Survey",
         verifikatorDinas: activePejabat.verifikator.nama,
-        pejabatData: activePejabat
+        pejabatData: activePejabat,
+        petugasSurvey: officerName
       }
       if (surveyData.alamatUsaha) {
         updateData.businessLocation = surveyData.alamatUsaha
@@ -636,15 +640,45 @@ export default function PortalSurveyPage() {
       if (surveyData.namaPemilik) {
         updateData.fullName = surveyData.namaPemilik
       }
-      if (surveyingActor.petugasSurvey) {
-        updateData.petugasSurvey = surveyingActor.petugasSurvey
+      if (surveyData.noHp) {
+        updateData.phone = surveyData.noHp
+      }
+      if (surveyData.alamatRumah) {
+        updateData.address = surveyData.alamatRumah
+      }
+      if (surveyData.jenisKelamin) {
+        updateData.gender = surveyData.jenisKelamin
+      }
+      if (surveyData.bidangUsaha) {
+        updateData.businessCategory = surveyData.bidangUsaha
+      }
+      if (surveyPhotoPreview) {
+        updateData.photoSurveyUrl = surveyPhotoPreview
+        if (!surveyingActor.photoUsahaUri) {
+          updateData.photoUsahaUri = surveyPhotoPreview
+        }
       }
 
-      await update(actorRef, updateData)
+      const cleanData = sanitizeForFirebase(updateData)
+      await update(actorRef, cleanData)
+
+      // Sync global stats
+      try {
+        const { updateStatsOnStatusChange } = await import("@/lib/stats-service")
+        const updatedActor = { ...surveyingActor, ...cleanData }
+        await updateStatsOnStatusChange(database, surveyingActor, updatedActor, updatedActor)
+      } catch (statsErr) {
+        console.error("Error updating stats:", statsErr)
+      }
+
+      // Auto-ensure verifikator user account
+      if (activePejabat?.verifikator?.nama) {
+        ensureVerifikatorUser(database, activePejabat.verifikator).catch(console.error)
+      }
 
       logActivity({
         query: `SURVEY DINAS PORTAL: ${surveyingActor.fullName} - ${isLolos ? 'LOLOS' : 'TIDAK LOLOS'}`,
-        results: "Berhasil Selesai",
+        results: "Berhasil Selesai & Diteruskan ke Verifikasi Dinas",
         device: getDeviceType(navigator.userAgent),
         source: "Web",
         method: "SURVEY PORTAL",
@@ -653,7 +687,9 @@ export default function PortalSurveyPage() {
 
       toast({
         title: isLolos ? "🎉 Survey Selesai & Lolos" : "📋 Survey Selesai",
-        description: `${surveyingActor.fullName} telah selesai disurvey dan otomatis dipindahkan ke Rekapan Berita Acara.`
+        description: isLolos 
+          ? `${surveyingActor.fullName} telah selesai disurvey dan berhasil diteruskan ke menu Verifikasi Dinas.`
+          : `${surveyingActor.fullName} telah selesai disurvey (Tidak Lolos).`
       })
 
       setSurveyingActor(null)
@@ -679,6 +715,8 @@ export default function PortalSurveyPage() {
         location: surveyLocation || null
       }
 
+      const officerName = (pejabatForm.petugasNama || userProfile.fullName || surveyingActor.petugasSurvey || "").toUpperCase().trim()
+
       const actorRef = ref(database, `businessActors/${surveyingActor.id}`)
       const updateData: any = {
         surveyData: draftSurveyData,
@@ -697,15 +735,27 @@ export default function PortalSurveyPage() {
       if (surveyData.noHp) {
         updateData.phone = surveyData.noHp
       }
+      if (surveyData.alamatRumah) {
+        updateData.address = surveyData.alamatRumah
+      }
+      if (surveyData.jenisKelamin) {
+        updateData.gender = surveyData.jenisKelamin
+      }
+      if (surveyData.bidangUsaha) {
+        updateData.businessCategory = surveyData.bidangUsaha
+      }
       if (surveyLocation) {
         updateData.verificationLocationDinas = surveyLocation
       }
-      // Pastikan petugasSurvey tidak hilang saat simpan draft
-      if (surveyingActor.petugasSurvey) {
-        updateData.petugasSurvey = surveyingActor.petugasSurvey
+      if (surveyPhotoPreview) {
+        updateData.photoSurveyUrl = surveyPhotoPreview
+      }
+      if (officerName) {
+        updateData.petugasSurvey = officerName
       }
 
-      await update(actorRef, updateData)
+      const cleanData = sanitizeForFirebase(updateData)
+      await update(actorRef, cleanData)
 
       toast({
         title: "💾 Draft Berhasil Disimpan",

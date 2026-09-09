@@ -716,6 +716,10 @@ export default function VerifikasiDinasPage() {
     if (!allActorsRaw) return []
     return allActorsRaw.filter(a => {
       if (!a) return false;
+      // Jangan tampilkan data yang sudah berstatus verified_dinas, finish, atau lolos
+      if (a.status === 'verified_dinas' || a.status === 'finish' || a.hasilVerifikasiDinas === 'Lolos') {
+        return false;
+      }
       if (isPetugas) {
         if (!userProfile?.fullName) return false;
         const userPetugasUpper = String(userProfile.fullName).toUpperCase().trim();
@@ -915,6 +919,9 @@ export default function VerifikasiDinasPage() {
       const mergedSurveyData: any = {
         ...surveyData,
       };
+      if (photoPreview) {
+        mergedSurveyData.fotoSurveyUrl = photoPreview;
+      }
       if (activePejabat) {
         mergedSurveyData.pejabatData = activePejabat;
       }
@@ -924,6 +931,8 @@ export default function VerifikasiDinasPage() {
 
       const actorRef = ref(database, `businessActors/${verifyingActor.id}`);
       const currentOfficerName = isPetugas ? (userProfile?.fullName || pejabatForm.petugasNama) : (pejabatForm.petugasNama || userProfile?.fullName);
+      const officerUpper = currentOfficerName ? currentOfficerName.toUpperCase().trim() : (verifyingActor.petugasSurvey ? verifyingActor.petugasSurvey.toUpperCase().trim() : "");
+
       const updateData: any = {
         status: 'verified_dinas',
         hasilVerifikasiDinas: 'Lolos',
@@ -931,14 +940,41 @@ export default function VerifikasiDinasPage() {
         surveyProgress: 100,
         verificationLocationDinas: { lat: location.lat, lon: location.lon },
         verifiedDinasAt: new Date().toISOString(),
-        verifiedDinasBy: userProfile?.fullName || user?.email || user?.uid || 'Admin',
+        verifiedDinasBy: userProfile?.fullName || user?.email || user?.uid || 'Petugas Survey',
       };
-      if (currentOfficerName && (!verifyingActor.petugasSurvey || verifyingActor.petugasSurvey === '-' || verifyingActor.petugasSurvey.trim() === '')) {
-        updateData.petugasSurvey = currentOfficerName.toUpperCase().trim();
+      if (officerUpper) {
+        updateData.petugasSurvey = officerUpper;
       }
       if (activePejabat?.verifikator?.nama) {
         updateData.verifikatorDinas = activePejabat.verifikator.nama;
         updateData.pejabatData = activePejabat;
+      }
+      if (surveyData.namaUsaha) {
+        updateData.businessName = surveyData.namaUsaha;
+      }
+      if (surveyData.namaPemilik) {
+        updateData.fullName = surveyData.namaPemilik;
+      }
+      if (surveyData.alamatUsaha) {
+        updateData.businessLocation = surveyData.alamatUsaha;
+      }
+      if (surveyData.noHp) {
+        updateData.phone = surveyData.noHp;
+      }
+      if (surveyData.alamatRumah) {
+        updateData.address = surveyData.alamatRumah;
+      }
+      if (surveyData.jenisKelamin) {
+        updateData.gender = surveyData.jenisKelamin;
+      }
+      if (surveyData.bidangUsaha) {
+        updateData.businessCategory = surveyData.bidangUsaha;
+      }
+      if (photoPreview) {
+        updateData.photoSurveyUrl = photoPreview;
+        if (!verifyingActor.photoUsahaUri) {
+          updateData.photoUsahaUri = photoPreview;
+        }
       }
 
       const cleanData = sanitizeForFirebase(updateData);
@@ -947,13 +983,13 @@ export default function VerifikasiDinasPage() {
 
       // Update global stats
       import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-        const updatedActor = { ...verifyingActor, ...updateData };
+        const updatedActor = { ...verifyingActor, ...cleanData };
         updateStatsOnStatusChange(database, verifyingActor, updatedActor, updatedActor).catch(e => console.error(e));
       });
 
       logActivity({
         query: `SURVEY DINAS: ${verifyingActor.fullName} - LOLOS`,
-        results: "Berhasil",
+        results: "Berhasil Selesai & Diteruskan ke Verifikasi Dinas",
         device: getDeviceType(navigator.userAgent),
         source: 'Web',
         method: 'SURVEY DINAS',
@@ -965,7 +1001,10 @@ export default function VerifikasiDinasPage() {
         ensureVerifikatorUser(database, activePejabat.verifikator).catch(console.error);
       }
 
-      toast({ title: "Survey Berhasil Disimpan", description: `Data pelaku usaha telah di-update.` });
+      toast({ 
+        title: "🎉 Survey Berhasil & Lolos", 
+        description: `Data ${verifyingActor.fullName} telah selesai disurvey dan diteruskan ke menu Verifikasi Dinas.` 
+      });
       setVerifyingActor(null);
     } catch (err: any) {
       console.error("Error saving survey verification:", err);

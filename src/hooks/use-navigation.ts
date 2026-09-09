@@ -153,7 +153,7 @@ export function useNavigation() {
       name: "Verifikasi Dinas",
       href: "/verifikasi-dinas-berkas",
       icon: ClipboardCheck,
-      show: (isAdmin || isVerifikatorDinas || isStaff) && !isPetugas,
+      show: (isAdmin || isDinas || isVerifikatorDinas || isStaff) && !isPetugas,
       color: "#9333ea",
       description: "Cek Kelengkapan Berkas"
     },
