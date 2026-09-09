@@ -1084,7 +1084,7 @@ export default function PortalSurveyPage() {
         <header className="flex items-center justify-between pt-1 pb-1">
           <div>
             <h1 className="text-2xl font-black tracking-tight text-slate-900 leading-none">
-              Portal Petugas
+              SIMPU
             </h1>
             <p className="text-[11px] font-semibold text-slate-400 mt-1">
               Pendataan Bantuan Dana Hibah UMKM
@@ -1583,40 +1583,21 @@ export default function PortalSurveyPage() {
                         <span className="font-mono">{actor.phone || "-"}</span>
                       </div>
 
-                      {/* Action buttons (Survey langsung di portal & Cancel Dinas & Unduh BA) */}
-                      <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1.5 border-t border-slate-100">
-                        {actor.phone && actor.phone !== "-" && (
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleOpenWhatsApp(actor)}
-                            className="h-7.5 px-2 rounded-xl text-[10.5px] border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                          >
-                            <Phone className="w-3 h-3 mr-1" />
-                            Hubungi WA
-                          </Button>
-                        )}
-
+                      {/* Tombol aksi tersusun rapi di bagian bawah: Hubungi WA, Cancell, Mulai Survey Lapangan, Download BA */}
+                      <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-100">
+                        {/* 1. Hubungi WA */}
                         <Button 
                           size="sm" 
-                          variant="outline"
-                          disabled={generatingPdfId === actor.id}
-                          onClick={() => handlePrintBeritaAcara(actor)}
-                          className="h-7.5 px-2.5 rounded-xl text-[10.5px] font-bold border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+                          variant="outline" 
+                          onClick={() => handleOpenWhatsApp(actor)}
+                          disabled={!actor.phone || actor.phone.trim() === "" || actor.phone === "-"}
+                          className="h-8 px-2 rounded-xl text-[11px] font-semibold border-emerald-300 text-emerald-700 bg-emerald-50/40 hover:bg-emerald-100/60 w-full justify-center disabled:opacity-40 transition-all"
                         >
-                          {generatingPdfId === actor.id ? (
-                            <>
-                              <Loader2 className="w-3 h-3 mr-1 animate-spin text-blue-600" />
-                              Unduh...
-                            </>
-                          ) : (
-                            <>
-                              <FileDown className="w-3 h-3 mr-1 text-blue-600" />
-                              Unduh BA
-                            </>
-                          )}
+                          <Phone className="w-3.5 h-3.5 mr-1 text-emerald-600 shrink-0" />
+                          <span className="truncate">Hubungi WA</span>
                         </Button>
 
+                        {/* 2. Cancell */}
                         <Button 
                           size="sm" 
                           variant="outline"
@@ -1626,19 +1607,41 @@ export default function PortalSurveyPage() {
                             setCustomCancelReason("")
                             setCancelPhotoProof(null)
                           }}
-                          className="h-7.5 px-2.5 rounded-xl text-[10.5px] font-bold border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300"
+                          className="h-8 px-2 rounded-xl text-[11px] font-semibold border-rose-200 text-rose-600 bg-rose-50/40 hover:bg-rose-100/60 w-full justify-center transition-all"
                         >
-                          <Ban className="w-3 h-3 mr-1 text-rose-500" />
-                          Cancel Dinas
+                          <Ban className="w-3.5 h-3.5 mr-1 text-rose-500 shrink-0" />
+                          <span className="truncate">Cancell</span>
                         </Button>
 
+                        {/* 3. Mulai Survey Lapangan */}
                         <Button 
                           size="sm" 
                           onClick={() => openInPortalSurvey(actor)}
-                          className="h-7.5 px-3 rounded-xl text-[10.5px] font-bold shadow-xs bg-orange-600 hover:bg-orange-700 text-white"
+                          className="h-8 px-2 rounded-xl text-[11px] font-bold shadow-xs bg-orange-600 hover:bg-orange-700 text-white w-full justify-center transition-all"
                         >
-                          Mulai Survey Lapangan
-                          <ChevronRight className="w-3 h-3 ml-1" />
+                          <Store className="w-3.5 h-3.5 mr-1 shrink-0" />
+                          <span className="truncate">Mulai Survey Lapangan</span>
+                        </Button>
+
+                        {/* 4. Download BA */}
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          disabled={generatingPdfId === actor.id}
+                          onClick={() => handlePrintBeritaAcara(actor)}
+                          className="h-8 px-2 rounded-xl text-[11px] font-bold border-blue-200 text-blue-700 bg-blue-50/40 hover:bg-blue-100/60 w-full justify-center transition-all"
+                        >
+                          {generatingPdfId === actor.id ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin text-blue-600 shrink-0" />
+                              <span className="truncate">Mengunduh...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FileDown className="w-3.5 h-3.5 mr-1 text-blue-600 shrink-0" />
+                              <span className="truncate">Download BA</span>
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>
