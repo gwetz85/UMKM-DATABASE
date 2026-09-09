@@ -277,30 +277,23 @@ export async function generateBeritaAcaraPDF(
 
   doc.setFontSize(8.5);
 
-  // Helper menggambar kotak checklist standar resmi (Bebas tabrakan / tumpang tindih Unicode)
-  const drawCheckbox = (x: number, yPos: number, checked: boolean, label: string): number => {
-    const boxSize = 2.8;
-    const boxY = yPos - 2.5;
+  // Helper mencetak teks pilihan: Coret yang tidak dipilih (strikethrough resmi)
+  const drawOption = (x: number, yPos: number, label: string, isSelected: boolean): number => {
+    doc.setFont("helvetica", isSelected ? "bold" : "normal");
+    doc.setFontSize(8.5);
+    doc.text(label, x, yPos);
 
-    // Gambar kotak persegi checklist
-    doc.setLineWidth(0.25);
-    doc.setDrawColor(0, 0, 0);
-    doc.rect(x, boxY, boxSize, boxSize);
+    const w = doc.getTextWidth(label);
 
-    // Jika terpilih, gambar silang bold 'X' di dalam kotak
-    if (checked) {
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(7.5);
-      doc.text("X", x + 0.6, yPos - 0.4);
+    // Jika TIDAK dipilih, coret dengan garis horizontal di tengah teks ("coret yang tidak perlu")
+    if (!isSelected) {
+      const strikeY = yPos - 1.05; // tepat di tengah tinggi huruf
+      doc.setLineWidth(0.35);
+      doc.setDrawColor(0, 0, 0);
+      doc.line(x - 0.5, strikeY, x + w + 0.5, strikeY);
     }
 
-    // Gambar label teks di samping kotak
-    doc.setFont("helvetica", checked ? "bold" : "normal");
-    doc.setFontSize(8.5);
-    const textX = x + boxSize + 1.4;
-    doc.text(label, textX, yPos);
-
-    return textX + doc.getTextWidth(label);
+    return x + w;
   };
 
   const renderDataRow = (
@@ -364,14 +357,16 @@ export async function generateBeritaAcaraPDF(
   const currentStatus = (surveyData.status || "").toLowerCase();
 
   let curJK_X = dataValueX;
-  optJK.forEach((opt, idx) => {
-    let isSelected = false;
-    if (opt === "P" && currentJK === "P") isSelected = true;
-    else if (opt === "L" && currentJK === "L") isSelected = true;
-    else if (opt !== "P" && opt !== "L" && currentStatus.includes(opt.toLowerCase())) isSelected = true;
 
-    curJK_X = drawCheckbox(curJK_X, y, isSelected, opt) + (idx === 1 ? 5.0 : 3.5);
-  });
+  // P & L
+  curJK_X = drawOption(curJK_X, y, "P", currentJK === "P") + 4.5;
+  curJK_X = drawOption(curJK_X, y, "L", currentJK === "L") + 8.0;
+
+  // Status Pernikahan / Keluarga
+  curJK_X = drawOption(curJK_X, y, "Janda", currentStatus.includes("janda")) + 5.0;
+  curJK_X = drawOption(curJK_X, y, "Duda", currentStatus.includes("duda")) + 5.0;
+  curJK_X = drawOption(curJK_X, y, "Lajang", currentStatus.includes("lajang")) + 5.0;
+  curJK_X = drawOption(curJK_X, y, "Kepala Keluarga", currentStatus.includes("kepala keluarga"));
 
   doc.setLineWidth(0.2);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
@@ -395,11 +390,11 @@ export async function generateBeritaAcaraPDF(
 
   const masukDTKS = Boolean(surveyData.dtks?.masuk);
   let curDtksX = dataValueX;
-  curDtksX = drawCheckbox(curDtksX, y, masukDTKS, "YA") + 3.5;
+  curDtksX = drawOption(curDtksX, y, "YA", masukDTKS) + 3.0;
   doc.setFont("helvetica", "normal");
   doc.text("/", curDtksX, y);
-  curDtksX += doc.getTextWidth("/") + 3.5;
-  curDtksX = drawCheckbox(curDtksX, y, !masukDTKS, "TIDAK");
+  curDtksX += doc.getTextWidth("/") + 3.0;
+  curDtksX = drawOption(curDtksX, y, "TIDAK", !masukDTKS);
 
   doc.setLineWidth(0.2);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
@@ -416,7 +411,7 @@ export async function generateBeritaAcaraPDF(
   const selectedDTKS = (surveyData.dtks?.jenis || "").toUpperCase();
   optDTKS.forEach((opt, idx) => {
     const isMatched = masukDTKS && selectedDTKS.includes(opt);
-    oxDTKS = drawCheckbox(oxDTKS, y, isMatched, opt) + (idx < optDTKS.length - 1 ? 4.5 : 0);
+    oxDTKS = drawOption(oxDTKS, y, opt, isMatched) + (idx < optDTKS.length - 1 ? 6.0 : 0);
   });
 
   doc.setLineWidth(0.2);
@@ -448,9 +443,9 @@ export async function generateBeritaAcaraPDF(
   let oxIzin = dataValueX;
   const currentIzin = (surveyData.izin || []).map(i => i.toUpperCase());
 
-  optIzin.forEach((opt) => {
+  optIzin.forEach((opt, idx) => {
     const isMatched = currentIzin.some(ci => ci.includes(opt.key));
-    oxIzin = drawCheckbox(oxIzin, y, isMatched, opt.label) + 5.5;
+    oxIzin = drawOption(oxIzin, y, opt.label, isMatched) + (idx < optIzin.length - 1 ? 7.0 : 0);
   });
 
   doc.setLineWidth(0.2);
@@ -477,8 +472,8 @@ export async function generateBeritaAcaraPDF(
   const isPernahHibah = Boolean(surveyData.hibah?.pernah);
   let oxHibah = dataValueX;
 
-  // Checkbox YA
-  oxHibah = drawCheckbox(oxHibah, y, isPernahHibah, "YA") + 4;
+  // Pilihan YA (coret jika tidak pernah)
+  oxHibah = drawOption(oxHibah, y, "YA", isPernahHibah) + 5.0;
 
   // "Dari mana :"
   doc.setFont("helvetica", "normal");
@@ -492,7 +487,7 @@ export async function generateBeritaAcaraPDF(
   const dariManaW = Math.max(22, doc.getTextWidth(dariManaVal) + 2);
   doc.setLineWidth(0.2);
   doc.line(oxHibah, y + lineY_offset, oxHibah + dariManaW, y + lineY_offset);
-  oxHibah += dariManaW + 4;
+  oxHibah += dariManaW + 5.0;
 
   // "Tahun :"
   doc.setFont("helvetica", "normal");
@@ -507,8 +502,8 @@ export async function generateBeritaAcaraPDF(
 
   y += 4.5;
 
-  // Baris kedua: Checkbox TIDAK
-  drawCheckbox(dataValueX, y, !isPernahHibah, "TIDAK");
+  // Baris kedua: Pilihan TIDAK (coret jika pernah)
+  drawOption(dataValueX, y, "TIDAK", !isPernahHibah);
   doc.setLineWidth(0.2);
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
   y += 4.7;
