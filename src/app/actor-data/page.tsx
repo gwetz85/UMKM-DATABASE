@@ -1522,6 +1522,15 @@ function ActorDataContent() {
                             className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
                           >
                             <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
+                            {viewingActor.petugasSurvey && 
+                             viewingActor.petugasSurvey.trim() !== "" && 
+                             viewingActor.petugasSurvey.trim() !== "-" && 
+                             viewingActor.petugasSurvey.toUpperCase().trim() !== "BELUM ADA" && 
+                             !surveyorOptions.includes(viewingActor.petugasSurvey.toUpperCase().trim()) && (
+                              <option value={viewingActor.petugasSurvey.toUpperCase().trim()}>
+                                🟢 {viewingActor.petugasSurvey.toUpperCase().trim()} (Saat Ini)
+                              </option>
+                            )}
                             {surveyorOptions.map((name: string) => (
                               <option key={name} value={name}>
                                 🟢 {name}
@@ -1681,6 +1690,15 @@ function ActorDataContent() {
                                       title="Admin: Ganti Petugas Survey secara langsung"
                                     >
                                       <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
+                                      {viewingActor.petugasSurvey && 
+                                       viewingActor.petugasSurvey.trim() !== "" && 
+                                       viewingActor.petugasSurvey.trim() !== "-" && 
+                                       viewingActor.petugasSurvey.toUpperCase().trim() !== "BELUM ADA" && 
+                                       !surveyorOptions.includes(viewingActor.petugasSurvey.toUpperCase().trim()) && (
+                                        <option value={viewingActor.petugasSurvey.toUpperCase().trim()}>
+                                          🟢 {viewingActor.petugasSurvey.toUpperCase().trim()} (Saat Ini)
+                                        </option>
+                                      )}
                                       {surveyorOptions.map((name: string) => (
                                         <option key={name} value={name}>
                                           🟢 {name}

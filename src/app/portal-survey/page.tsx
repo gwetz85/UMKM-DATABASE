@@ -65,7 +65,8 @@ import {
   Check,
   RotateCcw,
   Ban,
-  XCircle
+  XCircle,
+  FileEdit
 } from "lucide-react"
 
 const IZIN_OPTIONS = ["NIB", "P-IRT", "HALAL", "BPOM", "HAKI", "Belum Ada"]
@@ -313,18 +314,19 @@ export default function PortalSurveyPage() {
   }, [rawActorsList])
 
   // =========================================================================
-  // RULE USER: Menu 2 HANYA menampilkan data yang BELUM disurvey!
-  // Cancel Dinas / Tidak Lolos / Selesai langsung menghilang dari daftar ini!
+  // RULE USER: Menu 2 HANYA menampilkan data yang BELUM disurvey / MASIH DRAFT!
+  // Cancel Dinas / Tidak Lolos / Selesai (Final) langsung dipindahkan!
   // =========================================================================
   const uncompletedMyActors = useMemo(() => {
     return myActors.filter(a => {
       const isCancelled = Boolean(a.alasanCancelDinas) || 
                           a.hasilVerifikasiDinas === 'Tidak Lolos' || 
                           a.status === 'rejected';
-      const isDone = a.status === 'verified_dinas' || 
-                     a.status === 'finish' || 
-                     Boolean(a.surveyData?.hasilSurvey) ||
-                     Boolean(a.verifiedDinasAt);
+      // HANYA dianggap selesai jika status adalah verified_dinas atau finish
+      // yang SUDAH memiliki verifiedDinasAt atau hasilVerifikasiDinas Lolos.
+      // DRAFT (perubahan survey sementara) TIDAK PERNAH dianggap selesai!
+      const isDone = (a.status === 'verified_dinas' || a.status === 'finish') && 
+                     (Boolean(a.verifiedDinasAt) || a.hasilVerifikasiDinas === 'Lolos');
       return !isDone && !isCancelled;
     })
   }, [myActors])
@@ -359,7 +361,7 @@ export default function PortalSurveyPage() {
         return false
       }
       return (a.status === 'verified_dinas' || a.status === 'finish') &&
-             (Boolean(a.surveyData?.hasilSurvey) || Boolean(a.verifiedDinasAt))
+             (Boolean(a.verifiedDinasAt) || a.hasilVerifikasiDinas === 'Lolos');
     })
 
     if (!searchRekapanQuery.trim()) return list
@@ -634,6 +636,9 @@ export default function PortalSurveyPage() {
       if (surveyData.namaPemilik) {
         updateData.fullName = surveyData.namaPemilik
       }
+      if (surveyingActor.petugasSurvey) {
+        updateData.petugasSurvey = surveyingActor.petugasSurvey
+      }
 
       await update(actorRef, updateData)
 
@@ -683,8 +688,21 @@ export default function PortalSurveyPage() {
       if (surveyData.alamatUsaha) {
         updateData.businessLocation = surveyData.alamatUsaha
       }
+      if (surveyData.namaUsaha) {
+        updateData.businessName = surveyData.namaUsaha
+      }
+      if (surveyData.namaPemilik) {
+        updateData.fullName = surveyData.namaPemilik
+      }
+      if (surveyData.noHp) {
+        updateData.phone = surveyData.noHp
+      }
       if (surveyLocation) {
         updateData.verificationLocationDinas = surveyLocation
+      }
+      // Pastikan petugasSurvey tidak hilang saat simpan draft
+      if (surveyingActor.petugasSurvey) {
+        updateData.petugasSurvey = surveyingActor.petugasSurvey
       }
 
       await update(actorRef, updateData)
@@ -1595,9 +1613,15 @@ export default function PortalSurveyPage() {
                           </div>
                         </div>
 
-                        <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold flex items-center gap-1">
-                          <Clock3 className="w-3 h-3" /> Belum Survey
-                        </span>
+                        {actor.lastDraftAt || (actor.surveyData && Object.keys(actor.surveyData).length > 0) ? (
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-[10px] font-bold flex items-center gap-1">
+                            <FileEdit className="w-3 h-3 text-blue-600" /> Draft Disimpan
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold flex items-center gap-1">
+                            <Clock3 className="w-3 h-3" /> Belum Survey
+                          </span>
+                        )}
                       </div>
 
                       <div className="text-[10px] text-slate-500 bg-slate-50 p-2 rounded-xl flex justify-between items-center">
