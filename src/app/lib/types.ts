@@ -7,6 +7,7 @@ export interface SurveyDinasData {
   jenisKelamin: 'Laki-Laki' | 'Perempuan' | string;
   status: 'Janda' | 'Duda' | 'Lajang' | 'Kepala Keluarga' | string;
   alamatRumah: string;
+  alamatUsaha?: string;
   noHp: string;
   email: string;
   sosmed: string;

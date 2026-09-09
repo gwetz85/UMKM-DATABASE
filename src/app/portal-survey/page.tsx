@@ -421,8 +421,9 @@ export default function PortalSurveyPage() {
       namaUsaha: existing.namaUsaha || actor.businessName || '',
       namaPemilik: existing.namaPemilik || actor.fullName || '',
       jenisKelamin: defaultGender,
-      status: existing.status || '',
+      status: existing.status || 'Kepala Keluarga',
       alamatRumah: existing.alamatRumah || actor.address || '',
+      alamatUsaha: existing.alamatUsaha || actor.businessLocation || actor.address || '',
       noHp: existing.noHp || actor.phone || '',
       email: existing.email || '',
       sosmed: existing.sosmed || '',
@@ -432,10 +433,10 @@ export default function PortalSurveyPage() {
       modalUsaha: existing.modalUsaha || '',
       omset: existing.omset || '',
       rencanaPenggunaan: existing.rencanaPenggunaan || '',
-      hasilSurvey: existing.hasilSurvey || 'Lolos',
+      hasilSurvey: existing.hasilSurvey || 'Layak Memperoleh Bantuan Hibah Penguatan Modal',
       dtks: existing.dtks || { masuk: false },
       hibah: existing.hibah || { pernah: false },
-      izin: existing.izin || [],
+      izin: existing.izin && existing.izin.length > 0 ? existing.izin : ['NIB'],
       fotoSurveyUrl: existingPhoto || undefined
     })
   }
@@ -443,7 +444,7 @@ export default function PortalSurveyPage() {
   // Survey Progress Calculation
   const surveyProgress = useMemo(() => {
     if (!surveyingActor) return 0
-    let requiredFields = 16
+    let requiredFields = 18
     let filled = 0
     if (surveyData.tanggalSurvey) filled++
     if (surveyData.namaUsaha) filled++
@@ -451,6 +452,7 @@ export default function PortalSurveyPage() {
     if (surveyData.jenisKelamin) filled++
     if (surveyData.status) filled++
     if (surveyData.alamatRumah) filled++
+    if (surveyData.alamatUsaha) filled++
     if (surveyData.noHp) filled++
     if (surveyData.dtks?.masuk !== undefined) {
       filled++
@@ -461,7 +463,12 @@ export default function PortalSurveyPage() {
     if (surveyData.tahunBerdiri) filled++
     if (surveyData.modalUsaha) filled++
     if (surveyData.omset) filled++
+    if (surveyData.hibah?.pernah !== undefined) {
+      filled++
+      if (surveyData.hibah.pernah && surveyData.hibah.dariMana) filled++
+    }
     if (surveyData.rencanaPenggunaan) filled++
+    if (surveyData.hasilSurvey) filled++
     if (surveyLocation) filled++
     if (surveyPhotoPreview) filled++
     return Math.min(100, Math.round((filled / requiredFields) * 100))
@@ -595,18 +602,21 @@ export default function PortalSurveyPage() {
         updatedAt: new Date().toISOString()
       }
 
+      const hasilText = surveyData.hasilSurvey || "Layak Memperoleh Bantuan Hibah Penguatan Modal"
+      const isLolos = !hasilText.toLowerCase().includes("tidak layak") && !hasilText.toLowerCase().includes("tidak lolos")
+
       const finalSurveyData: any = {
         ...surveyData,
         fotoSurveyUrl: surveyPhotoPreview,
         location: surveyLocation,
         pejabatData: activePejabat,
-        hasilSurvey: "Lolos"
+        hasilSurvey: hasilText
       }
 
       const actorRef = ref(database, `businessActors/${surveyingActor.id}`)
       const updateData: any = {
         status: 'verified_dinas',
-        hasilVerifikasiDinas: 'Lolos',
+        hasilVerifikasiDinas: isLolos ? 'Lolos' : 'Tidak Lolos',
         surveyData: finalSurveyData,
         surveyProgress: 100,
         verificationLocationDinas: surveyLocation,
@@ -615,11 +625,20 @@ export default function PortalSurveyPage() {
         verifikatorDinas: activePejabat.verifikator.nama,
         pejabatData: activePejabat
       }
+      if (surveyData.alamatUsaha) {
+        updateData.businessLocation = surveyData.alamatUsaha
+      }
+      if (surveyData.namaUsaha) {
+        updateData.businessName = surveyData.namaUsaha
+      }
+      if (surveyData.namaPemilik) {
+        updateData.fullName = surveyData.namaPemilik
+      }
 
       await update(actorRef, updateData)
 
       logActivity({
-        query: `SURVEY DINAS PORTAL: ${surveyingActor.fullName} - LOLOS`,
+        query: `SURVEY DINAS PORTAL: ${surveyingActor.fullName} - ${isLolos ? 'LOLOS' : 'TIDAK LOLOS'}`,
         results: "Berhasil Selesai",
         device: getDeviceType(navigator.userAgent),
         source: "Web",
@@ -628,7 +647,7 @@ export default function PortalSurveyPage() {
       }, database)
 
       toast({
-        title: "🎉 Survey Selesai & Lolos",
+        title: isLolos ? "🎉 Survey Selesai & Lolos" : "📋 Survey Selesai",
         description: `${surveyingActor.fullName} telah selesai disurvey dan otomatis dipindahkan ke Rekapan Berita Acara.`
       })
 
@@ -660,6 +679,9 @@ export default function PortalSurveyPage() {
         surveyData: draftSurveyData,
         lastDraftAt: new Date().toISOString(),
         lastDraftBy: userProfile.fullName || "Petugas Survey"
+      }
+      if (surveyData.alamatUsaha) {
+        updateData.businessLocation = surveyData.alamatUsaha
       }
       if (surveyLocation) {
         updateData.verificationLocationDinas = surveyLocation
@@ -1706,16 +1728,16 @@ export default function PortalSurveyPage() {
           {/* Form Content Scrollable */}
           <div className="flex-1 overflow-y-auto space-y-4 py-3 text-xs pr-1 custom-scrollbar">
 
-            {/* SEKSI 1: TANGGAL & DATA PELAKU */}
+            {/* SEKSI 1: TANGGAL & DATA IDENTITAS PELAKU USAHA (Baris 2, 3, 4, 6 BA) */}
             <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-3">
               <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5">
                 <User className="w-4 h-4 text-blue-600" />
-                1. Data Pelaku Usaha & Identitas
+                1. Identitas Pelaku Usaha & Kontak
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-semibold text-slate-600">Tanggal Survey</Label>
+                  <Label className="text-[11px] font-semibold text-slate-600">Tanggal Pelaksanaan Survey</Label>
                   <Input 
                     type="date"
                     value={surveyData.tanggalSurvey || ""}
@@ -1733,31 +1755,40 @@ export default function PortalSurveyPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">NIK (Nomor Induk Kependudukan)</Label>
+                  <Input 
+                    value={surveyingActor?.nik || "-"}
+                    disabled
+                    className="bg-slate-100 rounded-xl text-xs font-mono font-bold text-slate-700"
+                  />
+                </div>
+
                 <div className="space-y-1">
                   <Label className="text-[11px] font-semibold text-slate-600">Jenis Kelamin</Label>
                   <RadioGroup 
                     value={surveyData.jenisKelamin || ""}
                     onValueChange={(val) => setSurveyData(prev => ({ ...prev, jenisKelamin: val }))}
-                    className="flex gap-4 pt-1"
+                    className="flex gap-4 pt-1.5"
                   >
                     <div className="flex items-center space-x-1.5">
                       <RadioGroupItem value="Laki-Laki" id="r-laki" />
-                      <Label htmlFor="r-laki" className="text-xs cursor-pointer">Laki-Laki</Label>
+                      <Label htmlFor="r-laki" className="text-xs cursor-pointer">Laki-Laki (L)</Label>
                     </div>
                     <div className="flex items-center space-x-1.5">
                       <RadioGroupItem value="Perempuan" id="r-perempuan" />
-                      <Label htmlFor="r-perempuan" className="text-xs cursor-pointer">Perempuan</Label>
+                      <Label htmlFor="r-perempuan" className="text-xs cursor-pointer">Perempuan (P)</Label>
                     </div>
                   </RadioGroup>
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-semibold text-slate-600">Status Perkawinan / Keluarga</Label>
+                  <Label className="text-[11px] font-semibold text-slate-600">Status Keluarga / Sipil</Label>
                   <select 
                     value={surveyData.status || ""}
                     onChange={(e) => setSurveyData(prev => ({ ...prev, status: e.target.value }))}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-medium"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-medium"
                   >
                     <option value="">-- Pilih Status --</option>
                     {STATUS_OPTIONS.map(opt => (
@@ -1768,7 +1799,7 @@ export default function PortalSurveyPage() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-[11px] font-semibold text-slate-600">Alamat Rumah Lengkap</Label>
+                <Label className="text-[11px] font-semibold text-slate-600">Alamat Rumah Tinggal (Sesuai KTP/Domisili)</Label>
                 <Input 
                   value={surveyData.alamatRumah || ""}
                   onChange={(e) => setSurveyData(prev => ({ ...prev, alamatRumah: e.target.value }))}
@@ -1776,9 +1807,9 @@ export default function PortalSurveyPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-semibold text-slate-600">Nomor HP / WhatsApp</Label>
+                  <Label className="text-[11px] font-semibold text-slate-600">No HP / WhatsApp</Label>
                   <Input 
                     value={surveyData.noHp || ""}
                     onChange={(e) => setSurveyData(prev => ({ ...prev, noHp: e.target.value }))}
@@ -1786,9 +1817,19 @@ export default function PortalSurveyPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-semibold text-slate-600">Media Sosial / Akun Usaha (Opsional)</Label>
+                  <Label className="text-[11px] font-semibold text-slate-600">Alamat Email (Opsional)</Label>
                   <Input 
-                    placeholder="Instagram / Facebook / TikTok / Tidak Ada"
+                    type="email"
+                    placeholder="nama@email.com / -"
+                    value={surveyData.email || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, email: e.target.value }))}
+                    className="bg-white rounded-xl text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Akun Media Sosial Usaha</Label>
+                  <Input 
+                    placeholder="Instagram / FB / TikTok / -"
                     value={surveyData.sosmed || ""}
                     onChange={(e) => setSurveyData(prev => ({ ...prev, sosmed: e.target.value }))}
                     className="bg-white rounded-xl text-xs"
@@ -1797,71 +1838,16 @@ export default function PortalSurveyPage() {
               </div>
             </div>
 
-            {/* SEKSI 2: DATA DTKS / BANSOS */}
-            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-3">
-              <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-purple-600" />
-                2. Status DTKS & Penerima Bantuan Sosial
-              </h4>
-
-              <div className="flex items-center gap-4">
-                <Label className="text-[11px] font-semibold text-slate-600">Terdaftar di DTKS?</Label>
-                <RadioGroup 
-                  value={surveyData.dtks?.masuk ? "YA" : "TIDAK"}
-                  onValueChange={(val) => setSurveyData(prev => ({
-                    ...prev,
-                    dtks: { ...prev.dtks, masuk: val === "YA" }
-                  }))}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-1.5">
-                    <RadioGroupItem value="YA" id="dtks-ya" />
-                    <Label htmlFor="dtks-ya" className="text-xs cursor-pointer">Ya</Label>
-                  </div>
-                  <div className="flex items-center space-x-1.5">
-                    <RadioGroupItem value="TIDAK" id="dtks-tidak" />
-                    <Label htmlFor="dtks-tidak" className="text-xs cursor-pointer">Tidak</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {surveyData.dtks?.masuk && (
-                <div className="space-y-1 pt-1">
-                  <Label className="text-[11px] font-semibold text-slate-600">Jenis Bansos yang Diterima</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {BANSOS_OPTIONS.map(opt => (
-                      <button
-                        key={opt}
-                        type="button"
-                        onClick={() => setSurveyData(prev => ({
-                          ...prev,
-                          dtks: { ...prev.dtks, masuk: true, jenis: opt }
-                        }))}
-                        className={cn(
-                          "px-2.5 py-1 rounded-lg text-xs font-bold transition-all border",
-                          surveyData.dtks?.jenis === opt
-                            ? "bg-purple-600 text-white border-purple-600 shadow-xs"
-                            : "bg-white text-slate-600 border-slate-200"
-                        )}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* SEKSI 3: USAHA & KEUANGAN */}
+            {/* SEKSI 2: PROFIL TEMPAT USAHA & LEGALITAS (Baris 1, 5, 8, 9, 10, 11 BA) */}
             <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-3">
               <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5">
                 <Store className="w-4 h-4 text-orange-600" />
-                3. Profil Usaha, Modal & Omset
+                2. Profil Usaha, Alamat Tempat Usaha & Legalitas
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-semibold text-slate-600">Nama Usaha</Label>
+                  <Label className="text-[11px] font-semibold text-slate-600">Nama Usaha / Merk Dagang</Label>
                   <Input 
                     value={surveyData.namaUsaha || ""}
                     onChange={(e) => setSurveyData(prev => ({ ...prev, namaUsaha: e.target.value }))}
@@ -1871,7 +1857,7 @@ export default function PortalSurveyPage() {
                 <div className="space-y-1">
                   <Label className="text-[11px] font-semibold text-slate-600">Bidang Usaha</Label>
                   <Input 
-                    placeholder="Contoh: Kuliner, Jahit, Perikanan, dsb."
+                    placeholder="Contoh: Kuliner, Jahit, Perbengkelan, Sembako, dsb."
                     value={surveyData.bidangUsaha || ""}
                     onChange={(e) => setSurveyData(prev => ({ ...prev, bidangUsaha: e.target.value }))}
                     className="bg-white rounded-xl text-xs"
@@ -1880,41 +1866,32 @@ export default function PortalSurveyPage() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-[11px] font-semibold text-slate-600">Peralatan yang Digunakan Saat Ini</Label>
+                <Label className="text-[11px] font-semibold text-slate-600">Alamat Tempat Usaha (Sesuai Lokasi Fisik Survey)</Label>
                 <Input 
-                  placeholder="Contoh: Kompor gas, Blender, Wajan, Mesin Jahit, dsb."
-                  value={surveyData.peralatan || ""}
-                  onChange={(e) => setSurveyData(prev => ({ ...prev, peralatan: e.target.value }))}
+                  placeholder="Alamat ruko / kedai / stan / rumah produksi..."
+                  value={surveyData.alamatUsaha || ""}
+                  onChange={(e) => setSurveyData(prev => ({ ...prev, alamatUsaha: e.target.value }))}
                   className="bg-white rounded-xl text-xs"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-semibold text-slate-600">Tahun Berdiri</Label>
+                  <Label className="text-[11px] font-semibold text-slate-600">Peralatan yang Digunakan Saat Ini</Label>
+                  <Input 
+                    placeholder="Contoh: Kompor gas, Blender, Wajan, Mesin Jahit, Etalase..."
+                    value={surveyData.peralatan || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, peralatan: e.target.value }))}
+                    className="bg-white rounded-xl text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Tahun Berdiri Usaha</Label>
                   <Input 
                     placeholder="Contoh: 2021"
                     value={surveyData.tahunBerdiri || ""}
                     onChange={(e) => setSurveyData(prev => ({ ...prev, tahunBerdiri: e.target.value }))}
                     className="bg-white rounded-xl text-xs font-mono"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[11px] font-semibold text-slate-600">Modal Usaha (Rp)</Label>
-                  <Input 
-                    placeholder="Contoh: 5.000.000"
-                    value={surveyData.modalUsaha || ""}
-                    onChange={(e) => setSurveyData(prev => ({ ...prev, modalUsaha: formatRupiah(e.target.value) }))}
-                    className="bg-white rounded-xl text-xs font-mono font-bold"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[11px] font-semibold text-slate-600">Omset per Bulan (Rp)</Label>
-                  <Input 
-                    placeholder="Contoh: 3.000.000"
-                    value={surveyData.omset || ""}
-                    onChange={(e) => setSurveyData(prev => ({ ...prev, omset: formatRupiah(e.target.value) }))}
-                    className="bg-white rounded-xl text-xs font-mono font-bold"
                   />
                 </div>
               </div>
@@ -1952,23 +1929,198 @@ export default function PortalSurveyPage() {
                   })}
                 </div>
               </div>
+            </div>
+
+            {/* SEKSI 3: MODAL, OMSET, DTKS & RIWAYAT HIBAH (Baris 7, 12, 13 BA) */}
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-3">
+              <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5">
+                <Shield className="w-4 h-4 text-purple-600" />
+                3. Keuangan Usaha, DTKS & Riwayat Bantuan Dana Hibah
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Modal Usaha (Rp)</Label>
+                  <Input 
+                    placeholder="Contoh: 5.000.000"
+                    value={surveyData.modalUsaha || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, modalUsaha: formatRupiah(e.target.value) }))}
+                    className="bg-white rounded-xl text-xs font-mono font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-semibold text-slate-600">Omset per Bulan (Rp)</Label>
+                  <Input 
+                    placeholder="Contoh: 3.000.000"
+                    value={surveyData.omset || ""}
+                    onChange={(e) => setSurveyData(prev => ({ ...prev, omset: formatRupiah(e.target.value) }))}
+                    className="bg-white rounded-xl text-xs font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* Status DTKS */}
+              <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[11px] font-bold text-slate-700">Apakah Saudara Masuk dalam DTKS ?</Label>
+                  <RadioGroup 
+                    value={surveyData.dtks?.masuk ? "YA" : "TIDAK"}
+                    onValueChange={(val) => setSurveyData(prev => ({
+                      ...prev,
+                      dtks: { ...prev.dtks, masuk: val === "YA" }
+                    }))}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-1.5">
+                      <RadioGroupItem value="YA" id="dtks-ya" />
+                      <Label htmlFor="dtks-ya" className="text-xs cursor-pointer font-bold text-purple-700">YA</Label>
+                    </div>
+                    <div className="flex items-center space-x-1.5">
+                      <RadioGroupItem value="TIDAK" id="dtks-tidak" />
+                      <Label htmlFor="dtks-tidak" className="text-xs cursor-pointer">TIDAK</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {surveyData.dtks?.masuk && (
+                  <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                    <Label className="text-[10.5px] font-semibold text-slate-500">Jika YA, Kategori Bansos DTKS yang Diterima:</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {BANSOS_OPTIONS.map(opt => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setSurveyData(prev => ({
+                            ...prev,
+                            dtks: { ...prev.dtks, masuk: true, jenis: opt }
+                          }))}
+                          className={cn(
+                            "px-2.5 py-1 rounded-lg text-xs font-bold transition-all border",
+                            surveyData.dtks?.jenis === opt
+                              ? "bg-purple-600 text-white border-purple-600 shadow-xs"
+                              : "bg-slate-50 text-slate-600 border-slate-200"
+                          )}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Riwayat Dana Hibah */}
+              <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[11px] font-bold text-slate-700">Apakah Pernah Menerima Dana Hibah ?</Label>
+                  <RadioGroup 
+                    value={surveyData.hibah?.pernah ? "YA" : "TIDAK"}
+                    onValueChange={(val) => setSurveyData(prev => ({
+                      ...prev,
+                      hibah: { ...prev.hibah, pernah: val === "YA" }
+                    }))}
+                    className="flex gap-4"
+                  >
+                    <div className="flex items-center space-x-1.5">
+                      <RadioGroupItem value="YA" id="hibah-ya" />
+                      <Label htmlFor="hibah-ya" className="text-xs cursor-pointer font-bold text-purple-700">YA</Label>
+                    </div>
+                    <div className="flex items-center space-x-1.5">
+                      <RadioGroupItem value="TIDAK" id="hibah-tidak" />
+                      <Label htmlFor="hibah-tidak" className="text-xs cursor-pointer">TIDAK</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {surveyData.hibah?.pernah && (
+                  <div className="pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="space-y-1">
+                      <Label className="text-[10.5px] font-semibold text-slate-500">Dari Mana Sumber Hibah Sebelumnya?</Label>
+                      <Input 
+                        placeholder="Contoh: Dinas Sosial / BAZNAS / Bank Indonesia"
+                        value={surveyData.hibah?.dariMana || ""}
+                        onChange={(e) => setSurveyData(prev => ({
+                          ...prev,
+                          hibah: { ...prev.hibah, pernah: true, dariMana: e.target.value }
+                        }))}
+                        className="bg-slate-50 rounded-xl text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[10.5px] font-semibold text-slate-500">Tahun Berapa Menerima?</Label>
+                      <Input 
+                        placeholder="Contoh: 2022"
+                        type="number"
+                        value={surveyData.hibah?.tahun || ""}
+                        onChange={(e) => setSurveyData(prev => ({
+                          ...prev,
+                          hibah: { ...prev.hibah, pernah: true, tahun: e.target.value }
+                        }))}
+                        className="bg-slate-50 rounded-xl text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* SEKSI 4: RENCANA PENGGUNAAN & KESIMPULAN HASIL SURVEY (Baris 14, 15 BA) */}
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-3">
+              <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-emerald-600" />
+                4. Rencana Penggunaan Dana & Hasil Survey
+              </h4>
 
               <div className="space-y-1">
                 <Label className="text-[11px] font-semibold text-slate-600">Rencana Penggunaan Modal Bantuan Hibah</Label>
                 <Textarea 
-                  placeholder="Jelaskan rencana pembelian barang/peralatan/bahan baku jika bantuan disetujui..."
+                  placeholder="Jelaskan rencana pembelian barang / peralatan / bahan baku jika bantuan disetujui..."
                   value={surveyData.rencanaPenggunaan || ""}
                   onChange={(e) => setSurveyData(prev => ({ ...prev, rencanaPenggunaan: e.target.value }))}
-                  className="bg-white rounded-xl text-xs min-h-[60px]"
+                  className="bg-white rounded-xl text-xs min-h-[55px]"
+                />
+              </div>
+
+              <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                <Label className="text-[11px] font-semibold text-slate-600">Kesimpulan / Hasil Rekomendasi Survey</Label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Layak Memperoleh Bantuan Hibah Penguatan Modal",
+                    "Tidak Layak",
+                    "Perlu Verifikasi Lapangan Ulang"
+                  ].map(hasilOpt => (
+                    <button
+                      key={hasilOpt}
+                      type="button"
+                      onClick={() => setSurveyData(prev => ({ ...prev, hasilSurvey: hasilOpt }))}
+                      className={cn(
+                        "px-2.5 py-1 rounded-lg text-xs font-bold transition-all border",
+                        (surveyData.hasilSurvey || "").includes(hasilOpt)
+                          ? hasilOpt.includes("Tidak")
+                            ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                            : "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                          : "bg-white text-slate-600 border-slate-200"
+                      )}
+                    >
+                      {hasilOpt}
+                    </button>
+                  ))}
+                </div>
+
+                <Textarea 
+                  placeholder="Catatan / keterangan tambahan hasil survey lapangan untuk lembar Berita Acara..."
+                  value={surveyData.hasilSurvey || ""}
+                  onChange={(e) => setSurveyData(prev => ({ ...prev, hasilSurvey: e.target.value }))}
+                  className="bg-white rounded-xl text-xs min-h-[50px]"
                 />
               </div>
             </div>
 
-            {/* SEKSI 4: LOKASI GPS & FOTO SURVEY */}
+            {/* SEKSI 5: LOKASI GPS & FOTO SURVEY */}
             <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-3">
               <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5">
                 <Navigation className="w-4 h-4 text-emerald-600" />
-                4. Titik GPS Lokasi & Foto Survey Lapangan
+                5. Titik GPS Lokasi & Foto Survey Lapangan
               </h4>
 
               {/* GPS Lokasi Button & Display */}

@@ -322,20 +322,33 @@ export async function generateBeritaAcaraPDF(
   renderDataRow("3.", "NIK", actor.nik);
 
   // Row 4: Jenis Kelamin-Status *
+  // Row 4: Jenis Kelamin-Status *
   doc.setFont("helvetica", "normal");
   doc.text("4.", marginL, y);
   doc.text("Jenis Kelamin-Status *", marginL + noW, y);
   doc.text(":", dataColonX, y);
   const optJK = ["P", "L", "Janda", "Duda", "Lajang", "Kepala Keluarga"];
   let oxJK = dataValueX;
+  const currentJK = surveyData.jenisKelamin?.toLowerCase().includes("perempuan") ? "P" : surveyData.jenisKelamin?.toLowerCase().includes("laki") ? "L" : "";
+  const currentStatus = (surveyData.status || "").toLowerCase();
+
   optJK.forEach((opt) => {
-    doc.text(opt, oxJK, y);
-    oxJK += doc.getTextWidth(opt) + 4.5;
+    const isSelected = (currentJK && opt === currentJK) || (currentStatus && currentStatus.includes(opt.toLowerCase()));
+    if (isSelected) {
+      doc.setFont("helvetica", "bold");
+      const markText = `[✓] ${opt}`;
+      doc.text(markText, oxJK, y);
+      oxJK += doc.getTextWidth(markText) + 3.5;
+    } else {
+      doc.setFont("helvetica", "normal");
+      doc.text(opt, oxJK, y);
+      oxJK += doc.getTextWidth(opt) + 4.5;
+    }
   });
   y += 4.7;
 
   // Row 5: Alamat Usaha
-  renderDataRow("5.", "Alamat Usaha", actor.businessLocation || actor.address);
+  renderDataRow("5.", "Alamat Usaha", surveyData.alamatUsaha || actor.businessLocation || actor.address);
 
   // Row 6: Alamat Rumah & Kontak
   renderDataRow("6.", "Alamat Rumah", surveyData.alamatRumah || actor.address);
@@ -348,7 +361,18 @@ export async function generateBeritaAcaraPDF(
   doc.text("7.", marginL, y);
   doc.text("Apakah Saudara Masuk dalam DTKS ?", marginL + noW, y);
   doc.text(":", dataColonX, y);
-  doc.text("YA  /  TIDAK", dataValueX, y);
+  const masukDTKS = Boolean(surveyData.dtks?.masuk);
+  if (masukDTKS) {
+    doc.setFont("helvetica", "bold");
+    doc.text("[✓] YA", dataValueX, y);
+    doc.setFont("helvetica", "normal");
+    doc.text("  /  TIDAK", dataValueX + doc.getTextWidth("[✓] YA"), y);
+  } else {
+    doc.setFont("helvetica", "normal");
+    doc.text("YA  /  ", dataValueX, y);
+    doc.setFont("helvetica", "bold");
+    doc.text("[✓] TIDAK", dataValueX + doc.getTextWidth("YA  /  "), y);
+  }
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
   y += 4.7;
 
@@ -358,11 +382,19 @@ export async function generateBeritaAcaraPDF(
   doc.text(prefixDTKS, dataValueX, y);
   const optDTKS = ["PKH", "BPNT", "KIP", "LANSIA"];
   let oxDTKS = dataValueX + doc.getTextWidth(prefixDTKS);
+  const selectedDTKS = surveyData.dtks?.jenis?.toUpperCase() || "";
   optDTKS.forEach((opt) => {
-    doc.setFont("helvetica", "bold");
-    doc.text(opt, oxDTKS, y);
-    doc.setFont("helvetica", "normal");
-    oxDTKS += doc.getTextWidth(opt) + 4;
+    const isMatched = masukDTKS && selectedDTKS.includes(opt);
+    if (isMatched) {
+      doc.setFont("helvetica", "bold");
+      const mark = `[✓] ${opt}`;
+      doc.text(mark, oxDTKS, y);
+      oxDTKS += doc.getTextWidth(mark) + 3;
+    } else {
+      doc.setFont("helvetica", "normal");
+      doc.text(opt, oxDTKS, y);
+      oxDTKS += doc.getTextWidth(opt) + 4;
+    }
   });
   y += 4.7;
 
@@ -382,9 +414,20 @@ export async function generateBeritaAcaraPDF(
   doc.text(":", dataColonX, y);
   const optIzin = ["NIB", "HALAL", "PIRT", "Lainnya :"];
   let oxIzin = dataValueX;
+  const currentIzin = (surveyData.izin || []).map(i => i.toUpperCase());
   optIzin.forEach((opt) => {
-    doc.text(opt, oxIzin, y);
-    oxIzin += doc.getTextWidth(opt) + 5;
+    const optKey = opt.replace(" :", "");
+    const isMatched = currentIzin.some(ci => ci.includes(optKey));
+    if (isMatched) {
+      doc.setFont("helvetica", "bold");
+      const mark = `[✓] ${opt}`;
+      doc.text(mark, oxIzin, y);
+      oxIzin += doc.getTextWidth(mark) + 3.5;
+    } else {
+      doc.setFont("helvetica", "normal");
+      doc.text(opt, oxIzin, y);
+      oxIzin += doc.getTextWidth(opt) + 4.5;
+    }
   });
   doc.line(dataValueX, y + lineY_offset, pageW - marginR, y + lineY_offset);
   y += 4.7;
@@ -398,16 +441,45 @@ export async function generateBeritaAcaraPDF(
   doc.text("13.", marginL, y);
   doc.text("Apakah Pernah Menerima Dana Hibah ?", marginL + noW, y);
   doc.text(":", dataColonX, y);
-  doc.text("YA  dari mana :", dataValueX, y);
-  const ymW = doc.getTextWidth("YA  dari mana : ");
-  doc.line(dataValueX + ymW, y + lineY_offset, dataValueX + ymW + 35, y + lineY_offset);
-  doc.text("Tahun berapa :", dataValueX + ymW + 37, y);
-  const thnW = doc.getTextWidth("Tahun berapa : ");
-  doc.line(dataValueX + ymW + 37 + thnW, y + lineY_offset, pageW - marginR, y + lineY_offset);
-  y += 4.3;
+  const isPernahHibah = Boolean(surveyData.hibah?.pernah);
+  if (isPernahHibah) {
+    doc.setFont("helvetica", "bold");
+    doc.text("[✓] YA", dataValueX, y);
+    doc.setFont("helvetica", "normal");
+    const yaW = doc.getTextWidth("[✓] YA");
+    doc.text("  dari mana : ", dataValueX + yaW, y);
+    const ymW = doc.getTextWidth("  dari mana : ");
+    const dariManaVal = surveyData.hibah?.dariMana || "-";
+    doc.setFont("helvetica", "bold");
+    doc.text(dariManaVal, dataValueX + yaW + ymW, y);
+    doc.line(dataValueX + yaW + ymW, y + lineY_offset, dataValueX + yaW + ymW + 32, y + lineY_offset);
 
-  doc.text("TIDAK", dataValueX, y);
-  y += 4.7;
+    doc.setFont("helvetica", "normal");
+    doc.text(" Tahun : ", dataValueX + yaW + ymW + 33, y);
+    const thnW = doc.getTextWidth(" Tahun : ");
+    const tahunVal = surveyData.hibah?.tahun ? String(surveyData.hibah.tahun) : "-";
+    doc.setFont("helvetica", "bold");
+    doc.text(tahunVal, dataValueX + yaW + ymW + 33 + thnW, y);
+    doc.line(dataValueX + yaW + ymW + 33 + thnW, y + lineY_offset, pageW - marginR, y + lineY_offset);
+    y += 4.3;
+
+    doc.setFont("helvetica", "normal");
+    doc.text("TIDAK", dataValueX, y);
+    y += 4.7;
+  } else {
+    doc.setFont("helvetica", "normal");
+    doc.text("YA  dari mana :", dataValueX, y);
+    const ymW = doc.getTextWidth("YA  dari mana : ");
+    doc.line(dataValueX + ymW, y + lineY_offset, dataValueX + ymW + 35, y + lineY_offset);
+    doc.text("Tahun berapa :", dataValueX + ymW + 37, y);
+    const thnW = doc.getTextWidth("Tahun berapa : ");
+    doc.line(dataValueX + ymW + 37 + thnW, y + lineY_offset, pageW - marginR, y + lineY_offset);
+    y += 4.3;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("[✓] TIDAK", dataValueX, y);
+    y += 4.7;
+  }
 
   // Row 14: Rencana Penggunaan Dana Hibah
   renderDataRow("14.", "Rencana Penggunaan Dana Hibah", surveyData.rencanaPenggunaan);
