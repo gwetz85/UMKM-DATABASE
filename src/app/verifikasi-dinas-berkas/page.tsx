@@ -53,7 +53,8 @@ import {
   RefreshCw,
   UserX,
   RotateCcw,
-  Clock
+  Clock,
+  X
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -68,6 +69,7 @@ export default function VerifikasiDinasBerkasPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const deferredSearch = useDeferredValue(searchQuery)
   const [selectedVerifikatorFilter, setSelectedVerifikatorFilter] = useState<string>("ALL")
+  const [selectedPetugasFilter, setSelectedPetugasFilter] = useState<string>("ALL")
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [verifyingActor, setVerifyingActor] = useState<BusinessActor | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -299,6 +301,25 @@ export default function VerifikasiDinasBerkasPage() {
     return "Belum Ditentukan"
   }
 
+  // Helper untuk mendapatkan Nama Petugas Survey yang melakukan survey
+  const getActorPetugasSurvey = (actor: BusinessActor): string => {
+    if (actor.petugasSurvey && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim() !== '' && actor.petugasSurvey.trim().toUpperCase() !== 'BELUM ADA') {
+      return actor.petugasSurvey.trim()
+    }
+    const rawPetugas = actor.pejabatData?.petugas?.nama || actor.surveyData?.pejabatData?.petugas?.nama
+    if (rawPetugas && rawPetugas.trim() !== '-' && rawPetugas.trim() !== '' && rawPetugas.trim().toUpperCase() !== 'BELUM ADA') {
+      return rawPetugas.trim()
+    }
+    const verifiedBy = (actor as any).verifiedDinasBy
+    if (verifiedBy && verifiedBy.trim() !== '-' && verifiedBy.trim() !== '') {
+      return verifiedBy.trim()
+    }
+    if (actor.createdBy && actor.createdBy.trim() !== '-' && actor.createdBy.trim() !== '') {
+      return actor.createdBy.trim()
+    }
+    return ""
+  }
+
   // Auto-generate akun untuk Verifikator Dinas yang terdeteksi pada data (hanya jika Admin yang membuka)
   useEffect(() => {
     if (!isAdmin || !database || !allActorsRaw) return
@@ -361,16 +382,71 @@ export default function VerifikasiDinasBerkasPage() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
   }, [actors])
 
-  // Filter berdasarkan search query dan pilihan verifikator
+  // Data aktor berdasarkan filter Verifikator yang aktif (untuk menghitung daftar Petugas Survey yang relevan)
+  const scopedActorsForSurveyor = useMemo(() => {
+    if (!actors) return []
+    if (selectedVerifikatorFilter === "ALL") return actors
+    return actors.filter(a => getVerifikatorNipppk(a) === selectedVerifikatorFilter)
+  }, [actors, selectedVerifikatorFilter])
+
+  // Opsi dan hitungan Petugas Survey
+  const { surveyorOptions, surveyorCounts, unassignedCount } = useMemo(() => {
+    const counts: Record<string, number> = {}
+    let unassigned = 0
+    const namesSet = new Set<string>()
+
+    scopedActorsForSurveyor.forEach(actor => {
+      const pName = getActorPetugasSurvey(actor)
+      if (!pName || pName === '-' || pName.toUpperCase() === 'BELUM ADA') {
+        unassigned++
+      } else {
+        const canonical = pName.toUpperCase().trim()
+        namesSet.add(canonical)
+        counts[canonical] = (counts[canonical] || 0) + 1
+      }
+    })
+
+    const sorted = Array.from(namesSet).sort((a, b) => a.localeCompare(b))
+    return {
+      surveyorOptions: sorted,
+      surveyorCounts: counts,
+      unassignedCount: unassigned
+    }
+  }, [scopedActorsForSurveyor])
+
+  // Reset selectedPetugasFilter jika petugas survey yang dipilih tidak ada di opsi saat ini
+  useEffect(() => {
+    if (selectedPetugasFilter !== "ALL" && selectedPetugasFilter !== "BELUM_ADA") {
+      if (!surveyorOptions.includes(selectedPetugasFilter)) {
+        setSelectedPetugasFilter("ALL")
+      }
+    } else if (selectedPetugasFilter === "BELUM_ADA" && unassignedCount === 0) {
+      setSelectedPetugasFilter("ALL")
+    }
+  }, [surveyorOptions, unassignedCount, selectedPetugasFilter])
+
+  // Filter berdasarkan search query, pilihan verifikator, dan petugas survey
   const filteredActors = useMemo(() => {
     if (!actors) return []
     return actors.filter(actor => {
       const nipKey = getVerifikatorNipppk(actor)
       const vName = getVerifikatorName(actor)
+      const pName = getActorPetugasSurvey(actor)
+      const isBelumAdaPetugas = !pName || pName === '-' || pName.toUpperCase() === 'BELUM ADA'
       
       // Filter Verifikator
       if (selectedVerifikatorFilter !== "ALL" && nipKey !== selectedVerifikatorFilter) {
         return false
+      }
+
+      // Filter Petugas Survey
+      if (selectedPetugasFilter !== "ALL") {
+        if (selectedPetugasFilter === "BELUM_ADA") {
+          if (!isBelumAdaPetugas) return false
+        } else {
+          if (isBelumAdaPetugas) return false
+          if (pName.toUpperCase().trim() !== selectedPetugasFilter) return false
+        }
       }
 
       // Filter Pencarian
@@ -385,13 +461,14 @@ export default function VerifikasiDinasBerkasPage() {
         (actor.kelurahan && actor.kelurahan.toLowerCase().includes(q)) ||
         (actor.coordinator && actor.coordinator.toLowerCase().includes(q)) ||
         (actor.petugasSurvey && actor.petugasSurvey.toLowerCase().includes(q)) ||
+        pName.toLowerCase().includes(q) ||
         vName.toLowerCase().includes(q) ||
         nipKey.toLowerCase().includes(q) ||
         (pd?.verifikator?.nipppk && pd.verifikator.nipppk.includes(q)) ||
         (pd?.verifikator?.jabatan && pd.verifikator.jabatan.toLowerCase().includes(q))
       )
     })
-  }, [actors, deferredSearch, selectedVerifikatorFilter])
+  }, [actors, deferredSearch, selectedVerifikatorFilter, selectedPetugasFilter])
 
   // Mengelompokkan data berdasarkan NIPPPK Verifikator yang diisi oleh Petugas Survey
   const groupedActorsByVerifikator = useMemo(() => {
@@ -1042,7 +1119,10 @@ export default function VerifikasiDinasBerkasPage() {
             {filteredActors && (
               <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/20 shadow-sm flex items-center gap-2">
                 <span>Total Berkas:</span>
-                <span className="bg-primary text-white px-2 py-0.5 rounded-full">{filteredActors.length}</span>
+                <span className="bg-primary text-white px-2 py-0.5 rounded-full">
+                  {filteredActors.length}
+                  {(selectedPetugasFilter !== "ALL" || selectedVerifikatorFilter !== "ALL" || searchQuery) && actors && ` / ${actors.length}`}
+                </span>
               </div>
             )}
           </div>
@@ -1051,7 +1131,7 @@ export default function VerifikasiDinasBerkasPage() {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto flex-wrap">
           {/* Dropdown Filter Verifikator - Hanya Admin */}
           {isAdmin && verifikatorOptions.length > 0 && (
             <div className="flex items-center gap-2 min-w-[200px]">
@@ -1077,6 +1157,38 @@ export default function VerifikasiDinasBerkasPage() {
                       </SelectItem>
                     )
                   })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Dropdown Filter Petugas Survey - Admin & Petugas Verifikator */}
+          {(surveyorOptions.length > 0 || unassignedCount > 0) && (
+            <div className="flex items-center gap-2 min-w-[210px]">
+              <Select value={selectedPetugasFilter} onValueChange={setSelectedPetugasFilter}>
+                <SelectTrigger className="h-11 rounded-xl border-emerald-300 bg-emerald-50/90 text-emerald-950 font-bold focus:ring-emerald-500 shadow-sm hover:bg-emerald-100/70 transition-colors">
+                  <div className="flex items-center gap-2 truncate">
+                    <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <SelectValue placeholder="Pilih Petugas Survey" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="max-h-[320px]">
+                  <SelectItem value="ALL" className="font-bold">
+                    Semua Petugas Survey ({scopedActorsForSurveyor.length})
+                  </SelectItem>
+                  {surveyorOptions.map((sName) => {
+                    const count = surveyorCounts[sName] || 0
+                    return (
+                      <SelectItem key={sName} value={sName} className="font-medium">
+                        🟢 {sName} ({count})
+                      </SelectItem>
+                    )
+                  })}
+                  {unassignedCount > 0 && (
+                    <SelectItem value="BELUM_ADA" className="font-bold text-rose-600">
+                      🔴 BELUM ADA PETUGAS ({unassignedCount})
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -1159,6 +1271,24 @@ export default function VerifikasiDinasBerkasPage() {
         </div>
       </div>
 
+      {/* Active Filter Petugas Survey Badge */}
+      {selectedPetugasFilter !== "ALL" && (
+        <div className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-900 w-fit animate-in fade-in duration-300">
+          <Filter className="w-3.5 h-3.5 text-emerald-600" />
+          <span>
+            Petugas Survey: <strong>{selectedPetugasFilter === "BELUM_ADA" ? "Belum Ada Petugas" : selectedPetugasFilter}</strong> ({filteredActors.length} berkas)
+          </span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setSelectedPetugasFilter("ALL")}
+            className="h-6 px-2 text-xs text-emerald-700 hover:text-emerald-950 hover:bg-emerald-200/60 rounded-lg gap-1 ml-1 font-bold"
+          >
+            <X className="w-3 h-3" /> Reset
+          </Button>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
           {[...Array(6)].map((_, i) => (
@@ -1183,15 +1313,23 @@ export default function VerifikasiDinasBerkasPage() {
       ) : filteredActors?.length === 0 ? (
         <Card className="border-dashed border-2 flex flex-col items-center justify-center py-20 text-muted-foreground bg-slate-50/50 rounded-3xl">
           <ClipboardCheck className="w-12 h-12 mb-4 opacity-20" />
-          <p className="font-bold uppercase tracking-widest text-xs">Tidak ada data untuk diverifikasi Dinas</p>
-          {selectedVerifikatorFilter !== "ALL" && (
+          <p className="font-bold uppercase tracking-widest text-xs">
+            {selectedPetugasFilter !== "ALL"
+              ? `Tidak ada berkas untuk petugas survey "${selectedPetugasFilter === "BELUM_ADA" ? "Belum Ada Petugas" : selectedPetugasFilter}"`
+              : "Tidak ada data untuk diverifikasi Dinas"}
+          </p>
+          {(selectedVerifikatorFilter !== "ALL" || selectedPetugasFilter !== "ALL" || searchQuery) && (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setSelectedVerifikatorFilter("ALL")}
-              className="mt-4 text-xs font-bold rounded-xl"
+              onClick={() => {
+                setSelectedVerifikatorFilter("ALL")
+                setSelectedPetugasFilter("ALL")
+                setSearchQuery("")
+              }}
+              className="mt-4 text-xs font-bold rounded-xl gap-1.5"
             >
-              Reset Filter Verifikator
+              <RotateCcw className="w-3.5 h-3.5" /> Reset Semua Filter
             </Button>
           )}
         </Card>
@@ -1423,12 +1561,100 @@ export default function VerifikasiDinasBerkasPage() {
                       </Button>
                     )}
 
+                    {selectedPetugasFilter !== "ALL" && (
+                      <span className="text-xs font-bold px-2.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 shadow-sm flex items-center gap-1.5">
+                        <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Petugas: <strong>{selectedPetugasFilter === "BELUM_ADA" ? "Belum Ada Petugas" : selectedPetugasFilter}</strong></span>
+                      </span>
+                    )}
+
                     <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-purple-600" />
                       <strong>{group.actors.length}</strong> Berkas
                     </span>
                   </div>
                 </div>
+
+                {/* ─── QUICK SELECTOR PETUGAS SURVEY PER BAGIAN VERIFIKATOR ───── */}
+                {(() => {
+                  const verifikatorActors = actors?.filter(a => getVerifikatorNipppk(a) === nipKey) || []
+                  const groupSurveyorCounts: Record<string, number> = {}
+                  let groupUnassigned = 0
+
+                  verifikatorActors.forEach(a => {
+                    const p = getActorPetugasSurvey(a)
+                    if (!p || p === '-' || p.toUpperCase() === 'BELUM ADA') {
+                      groupUnassigned++
+                    } else {
+                      const key = p.toUpperCase().trim()
+                      groupSurveyorCounts[key] = (groupSurveyorCounts[key] || 0) + 1
+                    }
+                  })
+
+                  const groupSurveyors = Object.keys(groupSurveyorCounts).sort((a, b) => a.localeCompare(b))
+                  if (groupSurveyors.length <= 1 && groupUnassigned === 0) return null
+
+                  return (
+                    <div className="flex items-center gap-2 flex-wrap bg-white/90 backdrop-blur-sm border border-emerald-200/80 shadow-xs p-3 rounded-2xl animate-in fade-in duration-300">
+                      <div className="flex items-center gap-1.5 text-xs font-black text-emerald-900 mr-1 shrink-0">
+                        <UserCheck className="w-4 h-4 text-emerald-600" />
+                        <span>PILIH PETUGAS SURVEY:</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPetugasFilter("ALL")}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                          selectedPetugasFilter === "ALL"
+                            ? "bg-purple-600 text-white shadow-md ring-2 ring-purple-300"
+                            : "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200"
+                        }`}
+                      >
+                        Semua ({verifikatorActors.length})
+                      </button>
+                      {groupSurveyors.map((sName) => {
+                        const count = groupSurveyorCounts[sName] || 0
+                        const isSelected = selectedPetugasFilter === sName
+                        return (
+                          <button
+                            key={sName}
+                            type="button"
+                            onClick={() => setSelectedPetugasFilter(sName)}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                              isSelected
+                                ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400"
+                                : "bg-emerald-50/80 text-emerald-900 hover:bg-emerald-100 border border-emerald-200"
+                            }`}
+                          >
+                            <span>🟢 {sName}</span>
+                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                              isSelected ? "bg-emerald-800 text-white" : "bg-emerald-200/70 text-emerald-950"
+                            }`}>
+                              {count}
+                            </span>
+                          </button>
+                        )
+                      })}
+                      {groupUnassigned > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPetugasFilter("BELUM_ADA")}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                            selectedPetugasFilter === "BELUM_ADA"
+                              ? "bg-rose-600 text-white shadow-md ring-2 ring-rose-400"
+                              : "bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200"
+                          }`}
+                        >
+                          <span>🔴 Belum Ada Petugas</span>
+                          <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black ${
+                            selectedPetugasFilter === "BELUM_ADA" ? "bg-rose-800 text-white" : "bg-rose-200 text-rose-950"
+                          }`}>
+                            {groupUnassigned}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  )
+                })()}
 
                 {/* ─── GRID KARTU PELAKU USAHA ─────────────────────────── */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1507,21 +1733,33 @@ export default function VerifikasiDinasBerkasPage() {
                                 <div className="flex flex-col min-w-0">
                                   <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">PETUGAS SURVEY</span>
                                   {(() => {
-                                    const pName = (actor.petugasSurvey && actor.petugasSurvey.trim() !== '-' && actor.petugasSurvey.trim() !== '')
-                                      ? actor.petugasSurvey.trim()
-                                      : (actor.surveyData?.pejabatData?.petugas?.nama && actor.surveyData.pejabatData.petugas.nama.trim() !== '-'
-                                          ? actor.surveyData.pejabatData.petugas.nama.trim()
-                                          : ((actor as any).verifiedDinasBy || actor.createdBy || ''))
+                                    const pName = getActorPetugasSurvey(actor)
                                     return pName ? (
-                                      <span className="text-[10px] font-black text-emerald-700 truncate uppercase flex items-center gap-1" title={pName}>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setSelectedPetugasFilter(pName.toUpperCase().trim())
+                                        }}
+                                        className="text-[10px] font-black text-emerald-700 truncate uppercase flex items-center gap-1 hover:underline hover:text-emerald-900 text-left transition-colors cursor-pointer"
+                                        title={`Klik untuk filter berkas Petugas Survey: ${pName}`}
+                                      >
                                         <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
                                         <span className="truncate">{pName}</span>
-                                      </span>
+                                      </button>
                                     ) : (
-                                      <span className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setSelectedPetugasFilter("BELUM_ADA")
+                                        }}
+                                        className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-1 hover:underline text-left cursor-pointer"
+                                        title="Klik untuk filter berkas yang belum ada petugas survey"
+                                      >
                                         <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0 animate-pulse" />
                                         Belum Ada
-                                      </span>
+                                      </button>
                                     )
                                   })()}
                                 </div>
