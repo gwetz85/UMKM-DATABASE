@@ -1809,7 +1809,18 @@ export default function PortalSurveyPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div className="space-y-1">
-                  <Label className="text-[11px] font-semibold text-slate-600">No HP / WhatsApp</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[11px] font-semibold text-slate-600">No HP / WhatsApp</Label>
+                    {surveyData.noHp && surveyData.noHp.trim() !== "" && surveyData.noHp !== "-" && surveyingActor && (
+                      <button
+                        type="button"
+                        onClick={() => handleOpenWhatsApp({ ...surveyingActor, phone: surveyData.noHp || "" })}
+                        className="text-[10.5px] font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 hover:underline"
+                      >
+                        <Phone className="w-2.5 h-2.5" /> Hubungi WA
+                      </button>
+                    )}
+                  </div>
                   <Input 
                     value={surveyData.noHp || ""}
                     onChange={(e) => setSurveyData(prev => ({ ...prev, noHp: e.target.value }))}
@@ -2220,6 +2231,24 @@ export default function PortalSurveyPage() {
               className="rounded-xl text-xs"
             >
               Tutup
+            </Button>
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const target = surveyingActor
+                setSurveyingActor(null)
+                if (target) {
+                  setCancelTargetActor(target)
+                  setCancelReasonPreset("Usaha Tutup / Tidak Beroperasi")
+                  setCustomCancelReason("")
+                  setCancelPhotoProof(null)
+                }
+              }}
+              className="rounded-xl text-xs font-bold border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300"
+            >
+              <Ban className="w-3.5 h-3.5 mr-1 text-rose-500" />
+              Cancel Dinas
             </Button>
             <Button 
               type="button"
