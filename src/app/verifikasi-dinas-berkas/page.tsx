@@ -69,7 +69,7 @@ export default function VerifikasiDinasBerkasPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const deferredSearch = useDeferredValue(searchQuery)
   const [selectedVerifikatorFilter, setSelectedVerifikatorFilter] = useState<string>("ALL")
-  const [selectedPetugasFilter, setSelectedPetugasFilter] = useState<string>("ALL")
+  const [selectedPetugasFilterByVerifikator, setSelectedPetugasFilterByVerifikator] = useState<Record<string, string>>({})
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
   const [verifyingActor, setVerifyingActor] = useState<BusinessActor | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -382,71 +382,17 @@ export default function VerifikasiDinasBerkasPage() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
   }, [actors])
 
-  // Data aktor berdasarkan filter Verifikator yang aktif (untuk menghitung daftar Petugas Survey yang relevan)
-  const scopedActorsForSurveyor = useMemo(() => {
-    if (!actors) return []
-    if (selectedVerifikatorFilter === "ALL") return actors
-    return actors.filter(a => getVerifikatorNipppk(a) === selectedVerifikatorFilter)
-  }, [actors, selectedVerifikatorFilter])
-
-  // Opsi dan hitungan Petugas Survey
-  const { surveyorOptions, surveyorCounts, unassignedCount } = useMemo(() => {
-    const counts: Record<string, number> = {}
-    let unassigned = 0
-    const namesSet = new Set<string>()
-
-    scopedActorsForSurveyor.forEach(actor => {
-      const pName = getActorPetugasSurvey(actor)
-      if (!pName || pName === '-' || pName.toUpperCase() === 'BELUM ADA') {
-        unassigned++
-      } else {
-        const canonical = pName.toUpperCase().trim()
-        namesSet.add(canonical)
-        counts[canonical] = (counts[canonical] || 0) + 1
-      }
-    })
-
-    const sorted = Array.from(namesSet).sort((a, b) => a.localeCompare(b))
-    return {
-      surveyorOptions: sorted,
-      surveyorCounts: counts,
-      unassignedCount: unassigned
-    }
-  }, [scopedActorsForSurveyor])
-
-  // Reset selectedPetugasFilter jika petugas survey yang dipilih tidak ada di opsi saat ini
-  useEffect(() => {
-    if (selectedPetugasFilter !== "ALL" && selectedPetugasFilter !== "BELUM_ADA") {
-      if (!surveyorOptions.includes(selectedPetugasFilter)) {
-        setSelectedPetugasFilter("ALL")
-      }
-    } else if (selectedPetugasFilter === "BELUM_ADA" && unassignedCount === 0) {
-      setSelectedPetugasFilter("ALL")
-    }
-  }, [surveyorOptions, unassignedCount, selectedPetugasFilter])
-
-  // Filter berdasarkan search query, pilihan verifikator, dan petugas survey
+  // Filter berdasarkan search query dan pilihan verifikator
   const filteredActors = useMemo(() => {
     if (!actors) return []
     return actors.filter(actor => {
       const nipKey = getVerifikatorNipppk(actor)
       const vName = getVerifikatorName(actor)
       const pName = getActorPetugasSurvey(actor)
-      const isBelumAdaPetugas = !pName || pName === '-' || pName.toUpperCase() === 'BELUM ADA'
       
       // Filter Verifikator
       if (selectedVerifikatorFilter !== "ALL" && nipKey !== selectedVerifikatorFilter) {
         return false
-      }
-
-      // Filter Petugas Survey
-      if (selectedPetugasFilter !== "ALL") {
-        if (selectedPetugasFilter === "BELUM_ADA") {
-          if (!isBelumAdaPetugas) return false
-        } else {
-          if (isBelumAdaPetugas) return false
-          if (pName.toUpperCase().trim() !== selectedPetugasFilter) return false
-        }
       }
 
       // Filter Pencarian
@@ -468,7 +414,7 @@ export default function VerifikasiDinasBerkasPage() {
         (pd?.verifikator?.jabatan && pd.verifikator.jabatan.toLowerCase().includes(q))
       )
     })
-  }, [actors, deferredSearch, selectedVerifikatorFilter, selectedPetugasFilter])
+  }, [actors, deferredSearch, selectedVerifikatorFilter])
 
   // Mengelompokkan data berdasarkan NIPPPK Verifikator yang diisi oleh Petugas Survey
   const groupedActorsByVerifikator = useMemo(() => {
@@ -1121,7 +1067,7 @@ export default function VerifikasiDinasBerkasPage() {
                 <span>Total Berkas:</span>
                 <span className="bg-primary text-white px-2 py-0.5 rounded-full">
                   {filteredActors.length}
-                  {(selectedPetugasFilter !== "ALL" || selectedVerifikatorFilter !== "ALL" || searchQuery) && actors && ` / ${actors.length}`}
+                  {(selectedVerifikatorFilter !== "ALL" || searchQuery) && actors && ` / ${actors.length}`}
                 </span>
               </div>
             )}
@@ -1157,38 +1103,6 @@ export default function VerifikasiDinasBerkasPage() {
                       </SelectItem>
                     )
                   })}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Dropdown Filter Petugas Survey - Admin & Petugas Verifikator */}
-          {(surveyorOptions.length > 0 || unassignedCount > 0) && (
-            <div className="flex items-center gap-2 min-w-[210px]">
-              <Select value={selectedPetugasFilter} onValueChange={setSelectedPetugasFilter}>
-                <SelectTrigger className="h-11 rounded-xl border-emerald-300 bg-emerald-50/90 text-emerald-950 font-bold focus:ring-emerald-500 shadow-sm hover:bg-emerald-100/70 transition-colors">
-                  <div className="flex items-center gap-2 truncate">
-                    <UserCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <SelectValue placeholder="Pilih Petugas Survey" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent className="max-h-[320px]">
-                  <SelectItem value="ALL" className="font-bold">
-                    Semua Petugas Survey ({scopedActorsForSurveyor.length})
-                  </SelectItem>
-                  {surveyorOptions.map((sName) => {
-                    const count = surveyorCounts[sName] || 0
-                    return (
-                      <SelectItem key={sName} value={sName} className="font-medium">
-                        🟢 {sName} ({count})
-                      </SelectItem>
-                    )
-                  })}
-                  {unassignedCount > 0 && (
-                    <SelectItem value="BELUM_ADA" className="font-bold text-rose-600">
-                      🔴 BELUM ADA PETUGAS ({unassignedCount})
-                    </SelectItem>
-                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -1271,24 +1185,6 @@ export default function VerifikasiDinasBerkasPage() {
         </div>
       </div>
 
-      {/* Active Filter Petugas Survey Badge */}
-      {selectedPetugasFilter !== "ALL" && (
-        <div className="flex items-center gap-2 px-3.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-900 w-fit animate-in fade-in duration-300">
-          <Filter className="w-3.5 h-3.5 text-emerald-600" />
-          <span>
-            Petugas Survey: <strong>{selectedPetugasFilter === "BELUM_ADA" ? "Belum Ada Petugas" : selectedPetugasFilter}</strong> ({filteredActors.length} berkas)
-          </span>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setSelectedPetugasFilter("ALL")}
-            className="h-6 px-2 text-xs text-emerald-700 hover:text-emerald-950 hover:bg-emerald-200/60 rounded-lg gap-1 ml-1 font-bold"
-          >
-            <X className="w-3 h-3" /> Reset
-          </Button>
-        </div>
-      )}
-
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-2">
           {[...Array(6)].map((_, i) => (
@@ -1314,17 +1210,14 @@ export default function VerifikasiDinasBerkasPage() {
         <Card className="border-dashed border-2 flex flex-col items-center justify-center py-20 text-muted-foreground bg-slate-50/50 rounded-3xl">
           <ClipboardCheck className="w-12 h-12 mb-4 opacity-20" />
           <p className="font-bold uppercase tracking-widest text-xs">
-            {selectedPetugasFilter !== "ALL"
-              ? `Tidak ada berkas untuk petugas survey "${selectedPetugasFilter === "BELUM_ADA" ? "Belum Ada Petugas" : selectedPetugasFilter}"`
-              : "Tidak ada data untuk diverifikasi Dinas"}
+            Tidak ada data untuk diverifikasi Dinas
           </p>
-          {(selectedVerifikatorFilter !== "ALL" || selectedPetugasFilter !== "ALL" || searchQuery) && (
+          {(selectedVerifikatorFilter !== "ALL" || searchQuery) && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
                 setSelectedVerifikatorFilter("ALL")
-                setSelectedPetugasFilter("ALL")
                 setSearchQuery("")
               }}
               className="mt-4 text-xs font-bold rounded-xl gap-1.5"
@@ -1351,6 +1244,15 @@ export default function VerifikasiDinasBerkasPage() {
             const displayName = (vInfo?.nama && vInfo.nama !== "Belum Ditentukan")
               ? vInfo.nama
               : (foundUser?.fullName || (isUnassigned ? "Belum Ditentukan" : nipKey))
+
+            const currentPetugasFilter = selectedPetugasFilterByVerifikator[nipKey] || "ALL"
+            const displayedGroupActors = group.actors.filter(actor => {
+              if (currentPetugasFilter === "ALL") return true
+              const pName = getActorPetugasSurvey(actor)
+              const isBelumAda = !pName || pName === '-' || pName.toUpperCase() === 'BELUM ADA'
+              if (currentPetugasFilter === "BELUM_ADA") return isBelumAda
+              return pName.toUpperCase().trim() === currentPetugasFilter
+            })
 
             return (
               <div key={nipKey} className="space-y-6">
@@ -1563,11 +1465,10 @@ export default function VerifikasiDinasBerkasPage() {
 
                     {/* Dropdown Menu Pilih Petugas Survey untuk Bagian Verifikator Ini */}
                     {(() => {
-                      const verifikatorActors = actors?.filter(a => getVerifikatorNipppk(a) === nipKey) || []
                       const groupSurveyorCounts: Record<string, number> = {}
                       let groupUnassigned = 0
 
-                      verifikatorActors.forEach(a => {
+                      group.actors.forEach(a => {
                         const p = getActorPetugasSurvey(a)
                         if (!p || p === '-' || p.toUpperCase() === 'BELUM ADA') {
                           groupUnassigned++
@@ -1578,13 +1479,16 @@ export default function VerifikasiDinasBerkasPage() {
                       })
 
                       const groupSurveyors = Object.keys(groupSurveyorCounts).sort((a, b) => a.localeCompare(b))
-                      if (groupSurveyors.length <= 1 && groupUnassigned === 0) return null
+                      if (groupSurveyors.length <= 1 && groupUnassigned === 0 && currentPetugasFilter === "ALL") return null
 
                       return (
                         <div className="flex items-center gap-1.5">
                           <Select 
-                            value={selectedPetugasFilter} 
-                            onValueChange={setSelectedPetugasFilter}
+                            value={currentPetugasFilter} 
+                            onValueChange={(val) => setSelectedPetugasFilterByVerifikator(prev => ({
+                              ...prev,
+                              [nipKey]: val
+                            }))}
                           >
                             <SelectTrigger className="h-8 text-xs font-bold rounded-xl border-emerald-300 bg-emerald-50/90 text-emerald-950 focus:ring-emerald-500 shadow-xs hover:bg-emerald-100 transition-colors min-w-[190px] max-w-[270px]">
                               <div className="flex items-center gap-1.5 truncate">
@@ -1594,7 +1498,7 @@ export default function VerifikasiDinasBerkasPage() {
                             </SelectTrigger>
                             <SelectContent className="max-h-[300px]">
                               <SelectItem value="ALL" className="font-bold">
-                                Semua Petugas ({verifikatorActors.length})
+                                Semua Petugas ({group.actors.length})
                               </SelectItem>
                               {groupSurveyors.map((sName) => {
                                 const count = groupSurveyorCounts[sName] || 0
@@ -1611,11 +1515,14 @@ export default function VerifikasiDinasBerkasPage() {
                               )}
                             </SelectContent>
                           </Select>
-                          {selectedPetugasFilter !== "ALL" && (
+                          {currentPetugasFilter !== "ALL" && (
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => setSelectedPetugasFilter("ALL")}
+                              onClick={() => setSelectedPetugasFilterByVerifikator(prev => ({
+                                ...prev,
+                                [nipKey]: "ALL"
+                              }))}
                               className="h-8 px-2 text-xs text-emerald-700 hover:text-emerald-950 hover:bg-emerald-100 rounded-xl"
                               title="Reset Filter Petugas"
                             >
@@ -1628,9 +1535,9 @@ export default function VerifikasiDinasBerkasPage() {
 
                     <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 shadow-sm flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-purple-600" />
-                      <strong>{group.actors.length}</strong>
-                      {selectedPetugasFilter !== "ALL" && (
-                        <span className="text-slate-400 font-normal">/ {actors?.filter(a => getVerifikatorNipppk(a) === nipKey).length || 0}</span>
+                      <strong>{displayedGroupActors.length}</strong>
+                      {currentPetugasFilter !== "ALL" && (
+                        <span className="text-slate-400 font-normal">/ {group.actors.length}</span>
                       )}
                       <span>Berkas</span>
                     </span>
@@ -1638,8 +1545,24 @@ export default function VerifikasiDinasBerkasPage() {
                 </div>
 
                 {/* ─── GRID KARTU PELAKU USAHA ─────────────────────────── */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {group.actors.map((actor) => {
+                {displayedGroupActors.length === 0 ? (
+                  <div className="py-12 text-center bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
+                    <UserCheck className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      Tidak ada berkas untuk petugas survey &ldquo;{currentPetugasFilter === 'BELUM_ADA' ? 'Belum Ada Petugas' : currentPetugasFilter}&rdquo;
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedPetugasFilterByVerifikator(prev => ({ ...prev, [nipKey]: "ALL" }))}
+                      className="mt-3 text-xs font-bold rounded-xl"
+                    >
+                      Tampilkan Semua Petugas
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {displayedGroupActors.map((actor) => {
                     const actorPejabat = getActorPejabat(actor)
                     const vDinas = actorPejabat?.verifikator || (actor.verifikatorDinas ? { nama: actor.verifikatorDinas } : null)
 
@@ -1720,12 +1643,15 @@ export default function VerifikasiDinasBerkasPage() {
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation()
-                                          setSelectedPetugasFilter(pName.toUpperCase().trim())
+                                          setSelectedPetugasFilterByVerifikator(prev => ({
+                                            ...prev,
+                                            [nipKey]: pName.toUpperCase().trim()
+                                          }))
                                         }}
                                         className="text-[10px] font-black text-emerald-700 truncate uppercase flex items-center gap-1 hover:underline hover:text-emerald-900 text-left transition-colors cursor-pointer"
                                         title={`Klik untuk filter berkas Petugas Survey: ${pName}`}
                                       >
-                                        <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                                        <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                                         <span className="truncate">{pName}</span>
                                       </button>
                                     ) : (
@@ -1733,7 +1659,10 @@ export default function VerifikasiDinasBerkasPage() {
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation()
-                                          setSelectedPetugasFilter("BELUM_ADA")
+                                          setSelectedPetugasFilterByVerifikator(prev => ({
+                                            ...prev,
+                                            [nipKey]: "BELUM_ADA"
+                                          }))
                                         }}
                                         className="text-[9px] font-bold text-rose-500 uppercase flex items-center gap-1 hover:underline text-left cursor-pointer"
                                         title="Klik untuk filter berkas yang belum ada petugas survey"
@@ -1857,7 +1786,8 @@ export default function VerifikasiDinasBerkasPage() {
                     )
                   })}
                 </div>
-              </div>
+              )}
+            </div>
             )
           })}
         </div>
