@@ -17,6 +17,7 @@ import { signOut } from "firebase/auth"
 import { BusinessActor, PejabatData, SurveyDinasData } from "../lib/types"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { ensureVerifikatorUser } from "@/lib/verifikator-service"
+import { resolveSurveyorCanonicalName } from "@/lib/surveyor-utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -640,9 +641,9 @@ export default function PortalSurveyPage() {
       }
 
       // PENTING: Pengisian nama di Pejabat BA HANYA untuk cetak dokumen Berita Acara (activePejabat.petugas.nama).
-      // Jangan pernah menimpa petugasSurvey pada data pelaku usaha agar pembagian data tidak berubah
+      // Jangan pernah menimpa petugasSurvey pada data pelaku usaha dengan gelar agar pembagian data tidak berubah
       // dan tidak membuat nama petugas survey ganda / hilang dari ID login petugas survey.
-      const assignedOfficerName = (
+      const rawOfficerName = (
         surveyingActor.petugasSurvey && 
         surveyingActor.petugasSurvey.trim() !== "" && 
         surveyingActor.petugasSurvey.trim() !== "-" && 
@@ -650,6 +651,8 @@ export default function PortalSurveyPage() {
       ) 
         ? surveyingActor.petugasSurvey.trim().toUpperCase()
         : (userProfile.fullName || userProfile.username || user?.email || "PETUGAS SURVEY").trim().toUpperCase()
+
+      const assignedOfficerName = resolveSurveyorCanonicalName(rawOfficerName)
 
       const actorRef = ref(database, `businessActors/${surveyingActor.id}`)
       const updateData: any = {
@@ -748,7 +751,19 @@ export default function PortalSurveyPage() {
         location: surveyLocation || null
       }
 
-      const officerName = (pejabatForm.petugasNama || userProfile.fullName || surveyingActor.petugasSurvey || "").toUpperCase().trim()
+      // PENTING: Pengisian nama di Pejabat BA HANYA untuk cetak dokumen Berita Acara.
+      // JANGAN gunakan pejabatForm.petugasNama untuk petugasSurvey agar pembagian data tidak terpecah
+      // dan tidak membuat akun ganda bergelar di sistem!
+      const rawOfficerName = (
+        surveyingActor.petugasSurvey && 
+        surveyingActor.petugasSurvey.trim() !== "" && 
+        surveyingActor.petugasSurvey.trim() !== "-" && 
+        surveyingActor.petugasSurvey.trim().toUpperCase() !== "BELUM ADA"
+      ) 
+        ? surveyingActor.petugasSurvey.trim().toUpperCase()
+        : (userProfile.fullName || userProfile.username || user?.email || "PETUGAS SURVEY").trim().toUpperCase()
+
+      const canonicalOfficerName = resolveSurveyorCanonicalName(rawOfficerName)
 
       const actorRef = ref(database, `businessActors/${surveyingActor.id}`)
       const updateData: any = {
@@ -783,8 +798,8 @@ export default function PortalSurveyPage() {
       if (surveyPhotoPreview) {
         updateData.photoSurveyUrl = surveyPhotoPreview
       }
-      if (officerName) {
-        updateData.petugasSurvey = officerName
+      if (canonicalOfficerName && canonicalOfficerName !== "BELUM ADA") {
+        updateData.petugasSurvey = canonicalOfficerName
       }
 
       const cleanData = sanitizeForFirebase(updateData)

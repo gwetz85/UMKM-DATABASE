@@ -36,6 +36,7 @@ const normalizeGender = (g: string) => {
 
 import { cn, extractDobFromNik, parsePobDob, calculateAge } from "@/lib/utils"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
+import { resolveSurveyorCanonicalName, buildSurveyorMaps } from "@/lib/surveyor-utils"
 import { generateRegistrationForm, generateCoordinatorReport, generateAllCoordinatorsReport } from "@/lib/pdf-generator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -142,38 +143,10 @@ function ActorDataContent() {
   const { data: systemUsersRaw } = useList<any>(systemUsersRef)
 
   const surveyorOptions = useMemo(() => {
-    const set = new Set<string>()
-    const titleToCanonical = new Map<string, string>()
-
-    if (systemUsersRaw) {
-      systemUsersRaw.forEach((u: any) => {
-        if (u.role === 'petugas' || u.role === 'petugas_survey') {
-          const canonical = (u.fullName || u.name || u.id || '').toUpperCase().trim()
-          if (canonical) {
-            set.add(canonical)
-            if (u.pejabatData?.petugas?.nama) {
-              const titleName = u.pejabatData.petugas.nama.toUpperCase().trim()
-              if (titleName && titleName !== canonical) {
-                titleToCanonical.set(titleName, canonical)
-              }
-            }
-          }
-        }
-      })
-    }
-    if (allActorsRaw) {
-      allActorsRaw.forEach((a: any) => {
-        const ps = (a.petugasSurvey || '').toUpperCase().trim()
-        if (ps && ps !== 'BELUM ADA' && ps !== '-') {
-          // Jangan buat nama petugas baru jika merupakan gelar Pejabat BA dari petugas resmi
-          if (!titleToCanonical.has(ps)) {
-            set.add(ps)
-          }
-        }
-      })
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b))
-  }, [systemUsersRaw, allActorsRaw])
+    if (!systemUsersRaw) return []
+    const { registeredSurveyors } = buildSurveyorMaps(systemUsersRaw)
+    return registeredSurveyors
+  }, [systemUsersRaw])
 
   const availableCoordinators = useMemo(() => {
     if (!kuotaData) return []
@@ -499,7 +472,7 @@ function ActorDataContent() {
     const formData = new FormData(e.currentTarget)
     
     const pSurveyRaw = (formData.get('petugasSurvey') as string || "").trim()
-    const pSurvey = (pSurveyRaw === "BELUM ADA" || !pSurveyRaw) ? "BELUM ADA" : pSurveyRaw.toUpperCase()
+    const pSurvey = resolveSurveyorCanonicalName(pSurveyRaw, systemUsersRaw)
 
     const updates: Partial<BusinessActor> = {
       fullName: formData.get('fullName') as string,
@@ -548,7 +521,7 @@ function ActorDataContent() {
 
   const handleQuickReassignPetugas = (actorId: string, newPetugas: string) => {
     if (!isAdmin || !database) return
-    const val = (newPetugas === "BELUM ADA" || !newPetugas) ? "BELUM ADA" : newPetugas.toUpperCase().trim()
+    const val = resolveSurveyorCanonicalName(newPetugas, systemUsersRaw)
     
     updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
       petugasSurvey: val
@@ -1528,45 +1501,46 @@ function ActorDataContent() {
                           <span>Petugas Survey</span>
                           {isAdmin && <span className="text-[10px] text-muted-foreground font-normal">Pilih nama atau BELUM ADA</span>}
                         </Label>
-                        {isAdmin ? (
-                          <select 
-                            name="petugasSurvey" 
-                            defaultValue={viewingActor.petugasSurvey && viewingActor.petugasSurvey.trim() !== "" && viewingActor.petugasSurvey.trim() !== "-" ? viewingActor.petugasSurvey.toUpperCase().trim() : "BELUM ADA"}
-                            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
-                          >
-                            <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
-                            {viewingActor.petugasSurvey && 
-                             viewingActor.petugasSurvey.trim() !== "" && 
-                             viewingActor.petugasSurvey.trim() !== "-" && 
-                             viewingActor.petugasSurvey.toUpperCase().trim() !== "BELUM ADA" && 
-                             !surveyorOptions.includes(viewingActor.petugasSurvey.toUpperCase().trim()) && (
-                              <option value={viewingActor.petugasSurvey.toUpperCase().trim()}>
-                                🟢 {viewingActor.petugasSurvey.toUpperCase().trim()} (Saat Ini)
-                              </option>
-                            )}
-                            {surveyorOptions.map((name: string) => (
-                              <option key={name} value={name}>
-                                🟢 {name}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <>
-                            {/* Hidden input agar nilai tidak berubah saat form disimpan oleh non-Admin */}
-                            <input type="hidden" name="petugasSurvey" value={viewingActor.petugasSurvey && viewingActor.petugasSurvey.trim() !== "" && viewingActor.petugasSurvey.trim() !== "-" ? viewingActor.petugasSurvey.toUpperCase().trim() : "BELUM ADA"} />
-                            {viewingActor.petugasSurvey && viewingActor.petugasSurvey.toUpperCase().trim() !== "BELUM ADA" && viewingActor.petugasSurvey.trim() !== "" && viewingActor.petugasSurvey.trim() !== "-" ? (
-                              <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 h-9 w-full">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                                <span>{viewingActor.petugasSurvey.toUpperCase().trim()}</span>
-                              </div>
-                            ) : (
-                              <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900 h-9 w-full">
-                                <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
-                                <span>BELUM ADA</span>
-                              </div>
-                            )}
-                          </>
-                        )}
+                        {(() => {
+                          const canonicalPetugas = resolveSurveyorCanonicalName(viewingActor.petugasSurvey, systemUsersRaw)
+                          const isBelumAda = canonicalPetugas === "BELUM ADA"
+
+                          return isAdmin ? (
+                            <select 
+                              name="petugasSurvey" 
+                              defaultValue={canonicalPetugas}
+                              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
+                            >
+                              <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
+                              {!isBelumAda && !surveyorOptions.includes(canonicalPetugas) && (
+                                <option value={canonicalPetugas}>
+                                  🟢 {canonicalPetugas} (Saat Ini)
+                                </option>
+                              )}
+                              {surveyorOptions.map((name: string) => (
+                                <option key={name} value={name}>
+                                  🟢 {name}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <>
+                              {/* Hidden input agar nilai tidak berubah saat form disimpan oleh non-Admin */}
+                              <input type="hidden" name="petugasSurvey" value={canonicalPetugas} />
+                              {!isBelumAda ? (
+                                <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 h-9 w-full">
+                                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                  <span>{canonicalPetugas}</span>
+                                </div>
+                              ) : (
+                                <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900 h-9 w-full">
+                                  <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                  <span>BELUM ADA</span>
+                                </div>
+                              )}
+                            </>
+                          )
+                        })()}
                       </div>
                       <div className="space-y-1"><Label className="text-xs font-bold uppercase">Link Google Drive</Label><Input name="googleDriveLink" defaultValue={viewingActor.googleDriveLink || ""} placeholder="Link folder Google Drive (opsional)" /></div>
                     </div>
@@ -1662,7 +1636,8 @@ function ActorDataContent() {
                           return `https://wa.me/${clean}`;
                         };
 
-                        const isBelumAdaPetugas = !viewingActor.petugasSurvey || viewingActor.petugasSurvey.trim() === "" || viewingActor.petugasSurvey.trim() === "-" || viewingActor.petugasSurvey.toUpperCase().trim() === "BELUM ADA";
+                        const canonicalPetugas = resolveSurveyorCanonicalName(viewingActor.petugasSurvey, systemUsersRaw);
+                        const isBelumAdaPetugas = canonicalPetugas === "BELUM ADA";
 
                         return [
                           { label: "Usaha", value: viewingActor.businessName },
@@ -1673,7 +1648,7 @@ function ActorDataContent() {
                             { label: "NO. HP USULAN", value: coordPhone, isPhone: true },
                             { 
                               label: "PETUGAS SURVEY", 
-                              value: viewingActor.petugasSurvey,
+                              value: canonicalPetugas !== "BELUM ADA" ? canonicalPetugas : "BELUM ADA",
                               isPetugasField: true,
                               isBelumAda: isBelumAdaPetugas
                             }
@@ -1697,19 +1672,15 @@ function ActorDataContent() {
                                 {isAdmin && (
                                   <div className="pt-0.5">
                                     <select
-                                      value={!item.isBelumAda ? item.value.toUpperCase().trim() : "BELUM ADA"}
+                                      value={!item.isBelumAda ? canonicalPetugas : "BELUM ADA"}
                                       onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value)}
                                       className="text-[11px] font-bold h-7 rounded border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-sm text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[220px]"
                                       title="Admin: Ganti Petugas Survey secara langsung"
                                     >
                                       <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
-                                      {viewingActor.petugasSurvey && 
-                                       viewingActor.petugasSurvey.trim() !== "" && 
-                                       viewingActor.petugasSurvey.trim() !== "-" && 
-                                       viewingActor.petugasSurvey.toUpperCase().trim() !== "BELUM ADA" && 
-                                       !surveyorOptions.includes(viewingActor.petugasSurvey.toUpperCase().trim()) && (
-                                        <option value={viewingActor.petugasSurvey.toUpperCase().trim()}>
-                                          🟢 {viewingActor.petugasSurvey.toUpperCase().trim()} (Saat Ini)
+                                      {!item.isBelumAda && !surveyorOptions.includes(canonicalPetugas) && (
+                                        <option value={canonicalPetugas}>
+                                          🟢 {canonicalPetugas} (Saat Ini)
                                         </option>
                                       )}
                                       {surveyorOptions.map((name: string) => (

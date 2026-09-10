@@ -40,6 +40,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { BusinessActor } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { cn, parsePobDob, calculateAge, extractDobFromNik, formatDateTimeIndo } from "@/lib/utils"
+import { resolveSurveyorCanonicalName } from "@/lib/surveyor-utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useSearchParams, useRouter } from "next/navigation"
 import * as XLSX from "xlsx"
@@ -249,7 +250,8 @@ function HasilVerifikasiContent() {
     setIsSubmittingReturn(true)
     try {
       const actorRef = ref(database, `businessActors/${returnTargetActor.id}`)
-      const officerName = returnTargetActor.petugasSurvey || returnTargetActor.createdBy || returnTargetActor.surveyData?.pejabatData?.petugas?.nama || ''
+      const rawOfficerName = returnTargetActor.petugasSurvey || returnTargetActor.createdBy || returnTargetActor.surveyData?.pejabatData?.petugas?.nama || ''
+      const officerName = resolveSurveyorCanonicalName(rawOfficerName)
 
       const updates: any = {
         status: 'lpj_pending',
@@ -266,8 +268,8 @@ function HasilVerifikasiContent() {
         verifiedDinasBy: null,
       }
 
-      if (officerName && (!returnTargetActor.petugasSurvey || returnTargetActor.petugasSurvey.trim() === '-' || returnTargetActor.petugasSurvey.trim() === '')) {
-        updates.petugasSurvey = officerName.toUpperCase().trim()
+      if (officerName && officerName !== 'BELUM ADA' && (!returnTargetActor.petugasSurvey || returnTargetActor.petugasSurvey.trim() === '-' || returnTargetActor.petugasSurvey.trim() === '')) {
+        updates.petugasSurvey = officerName
       }
 
       const cleanData = sanitizeForFirebase(updates)

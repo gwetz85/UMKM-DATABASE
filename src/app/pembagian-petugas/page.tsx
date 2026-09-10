@@ -71,6 +71,7 @@ import * as XLSX from "xlsx"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { addTunasBangsaHeader } from "@/lib/pdf-generator"
+import { resolveSurveyorCanonicalName } from "@/lib/surveyor-utils"
 
 export default function PembagianPetugasSurveyPage() {
   const [mounted, setMounted] = useState(false)
@@ -168,22 +169,25 @@ export default function PembagianPetugasSurveyPage() {
         actor.petugasSurvey.trim() !== '-' &&
         actor.petugasSurvey.trim().toUpperCase() !== 'BELUM ADA'
       ) {
-        const key = actor.petugasSurvey.trim().toUpperCase()
-        if (!map[key]) map[key] = []
-        map[key].push(actor)
+        const canonicalKey = resolveSurveyorCanonicalName(actor.petugasSurvey, systemUsersRaw)
+        if (canonicalKey && canonicalKey !== 'BELUM ADA') {
+          if (!map[canonicalKey]) map[canonicalKey] = []
+          map[canonicalKey].push(actor)
+        }
       }
     })
     return map
-  }, [businessActorsRaw])
+  }, [businessActorsRaw, systemUsersRaw])
 
   // Count unassigned actors (including BELUM ADA)
   const unassignedActorsCount = useMemo(() => {
     if (!businessActorsRaw) return 0
-    return businessActorsRaw.filter(a => 
-      a && a.fullName && a.fullName.trim() &&
-      (!a.petugasSurvey || a.petugasSurvey.trim() === '' || a.petugasSurvey.trim() === '-' || a.petugasSurvey.trim().toUpperCase() === 'BELUM ADA')
-    ).length
-  }, [businessActorsRaw])
+    return businessActorsRaw.filter(a => {
+      if (!a || !a.fullName || !a.fullName.trim()) return false
+      const canonical = resolveSurveyorCanonicalName(a.petugasSurvey, systemUsersRaw)
+      return canonical === 'BELUM ADA'
+    }).length
+  }, [businessActorsRaw, systemUsersRaw])
 
   // Helper to get connected actors for a surveyor
   const getConnectedActors = (surveyor: any): BusinessActor[] => {
@@ -592,7 +596,7 @@ export default function PembagianPetugasSurveyPage() {
 
   const handleReassignSingleActor = (actorId: string, actorName: string, newPetugas: string) => {
     if (!database || !isAdmin) return
-    const val = (newPetugas === 'BELUM ADA' || !newPetugas) ? 'BELUM ADA' : newPetugas.toUpperCase().trim()
+    const val = resolveSurveyorCanonicalName(newPetugas, systemUsersRaw)
 
     updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
       petugasSurvey: val
@@ -1118,7 +1122,7 @@ export default function PembagianPetugasSurveyPage() {
                       </TableCell>
                       <TableCell className="text-center">
                         <select
-                          value={actor.petugasSurvey && actor.petugasSurvey.trim() !== '' && actor.petugasSurvey.trim() !== '-' ? actor.petugasSurvey.toUpperCase().trim() : "BELUM ADA"}
+                          value={resolveSurveyorCanonicalName(actor.petugasSurvey, systemUsersRaw)}
                           onChange={(e) => handleReassignSingleActor(actor.id, actor.fullName, e.target.value)}
                           className="text-[11px] font-bold h-7 rounded border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-sm text-primary cursor-pointer hover:border-primary transition-all w-[180px]"
                         >

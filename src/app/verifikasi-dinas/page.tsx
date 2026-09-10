@@ -53,6 +53,7 @@ import {
 } from "lucide-react"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { ensureVerifikatorUser } from "@/lib/verifikator-service"
+import { resolveSurveyorCanonicalName, buildSurveyorMaps } from "@/lib/surveyor-utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function VerifikasiDinasPage() {
@@ -767,56 +768,35 @@ export default function VerifikasiDinasPage() {
     return map
   }, [systemUsersRaw])
 
-  // Surveyor Options (petugas survey terdaftar di system_users atau yang ada di data)
+  // Surveyor Options (petugas survey resmi terdaftar di system_users)
   const surveyorOptions = useMemo(() => {
-    const set = new Set<string>()
-    if (systemUsersRaw) {
-      systemUsersRaw.forEach((u: any) => {
-        if (u.role === 'petugas' || u.role === 'petugas_survey') {
-          const name = (u.fullName || u.name || u.id || '').toUpperCase().trim()
-          if (name) set.add(name)
-        }
-      })
-    }
-    if (actors) {
-      actors.forEach((a: any) => {
-        const ps = (a.petugasSurvey || '').toUpperCase().trim()
-        if (ps && ps !== 'BELUM ADA' && ps !== '-') {
-          // Jangan buat nama petugas baru jika merupakan gelar Pejabat BA dari petugas terdaftar
-          if (!titleToCanonicalSurveyor.has(ps)) {
-            set.add(ps)
-          }
-        }
-      })
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b))
-  }, [systemUsersRaw, actors, titleToCanonicalSurveyor])
+    if (!systemUsersRaw) return []
+    const { registeredSurveyors } = buildSurveyorMaps(systemUsersRaw)
+    return registeredSurveyors
+  }, [systemUsersRaw])
 
   // Hitung jumlah data per petugas survey
   const surveyorCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     if (actors) {
       actors.forEach(a => {
-        let ps = (a.petugasSurvey || '').toUpperCase().trim()
-        if (ps && ps !== '-' && ps !== 'BELUM ADA') {
-          if (titleToCanonicalSurveyor.has(ps)) {
-            ps = titleToCanonicalSurveyor.get(ps)!
-          }
-          counts[ps] = (counts[ps] || 0) + 1
+        const canonical = resolveSurveyorCanonicalName(a.petugasSurvey, systemUsersRaw)
+        if (canonical && canonical !== 'BELUM ADA') {
+          counts[canonical] = (counts[canonical] || 0) + 1
         }
       })
     }
     return counts
-  }, [actors, titleToCanonicalSurveyor])
+  }, [actors, systemUsersRaw])
 
   // Hitung data yang belum ada petugas survey
   const unassignedCount = useMemo(() => {
     if (!actors) return 0
     return actors.filter(a => {
-      const ps = (a.petugasSurvey || '').toUpperCase().trim()
-      return !ps || ps === '-' || ps === 'BELUM ADA'
+      const canonical = resolveSurveyorCanonicalName(a.petugasSurvey, systemUsersRaw)
+      return canonical === 'BELUM ADA'
     }).length
-  }, [actors])
+  }, [actors, systemUsersRaw])
 
   const filteredActors = useMemo(() => {
     if (!actors) return []
@@ -826,16 +806,13 @@ export default function VerifikasiDinasPage() {
     if (selectedPetugasFilter !== "ALL") {
       if (selectedPetugasFilter === "BELUM_ADA") {
         list = list.filter(a => {
-          const ps = (a.petugasSurvey || "").toUpperCase().trim()
-          return !ps || ps === "-" || ps === "BELUM ADA"
+          const canonical = resolveSurveyorCanonicalName(a.petugasSurvey, systemUsersRaw)
+          return canonical === "BELUM ADA"
         })
       } else {
         list = list.filter(a => {
-          let ps = (a.petugasSurvey || "").toUpperCase().trim()
-          if (titleToCanonicalSurveyor.has(ps)) {
-            ps = titleToCanonicalSurveyor.get(ps)!
-          }
-          return ps === selectedPetugasFilter
+          const canonical = resolveSurveyorCanonicalName(a.petugasSurvey, systemUsersRaw)
+          return canonical === selectedPetugasFilter
         })
       }
     }
@@ -1758,7 +1735,7 @@ export default function VerifikasiDinasPage() {
                                     onClick={isAdmin ? (e) => {
                                       e.stopPropagation()
                                       setReassignActor(actor)
-                                      setSelectedNewPetugas(actor.petugasSurvey ? actor.petugasSurvey.toUpperCase().trim() : 'BELUM ADA')
+                                      setSelectedNewPetugas(resolveSurveyorCanonicalName(actor.petugasSurvey, systemUsersRaw))
                                     } : undefined}
                                   >
                                     <UserCheck className="w-3 h-3 text-emerald-600 shrink-0" />
@@ -2010,7 +1987,7 @@ export default function VerifikasiDinasPage() {
                                   variant="outline"
                                   onClick={() => {
                                     setReassignActor(viewingActor)
-                                    setSelectedNewPetugas(viewingActor.petugasSurvey && viewingActor.petugasSurvey !== '-' ? viewingActor.petugasSurvey.toUpperCase().trim() : 'BELUM ADA')
+                                    setSelectedNewPetugas(resolveSurveyorCanonicalName(viewingActor.petugasSurvey, systemUsersRaw))
                                   }}
                                   className="h-7 px-2 text-[10px] font-bold text-emerald-700 border-emerald-200 hover:bg-emerald-50 rounded-lg gap-1"
                                 >
@@ -3323,7 +3300,7 @@ export default function VerifikasiDinasPage() {
                 if (!reassignActor || !database) return;
                 setIsReassigning(true);
                 try {
-                  const val = (!selectedNewPetugas || selectedNewPetugas === 'BELUM ADA') ? 'BELUM ADA' : selectedNewPetugas.toUpperCase().trim();
+                  const val = resolveSurveyorCanonicalName(selectedNewPetugas, systemUsersRaw);
                   await updateDocumentNonBlocking(ref(database, `businessActors/${reassignActor.id}`), {
                     petugasSurvey: val
                   });

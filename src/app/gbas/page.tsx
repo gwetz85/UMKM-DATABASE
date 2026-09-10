@@ -47,6 +47,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { BusinessActor, PejabatData, SurveyDinasData } from "../lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
+import { resolveSurveyorCanonicalName } from "@/lib/surveyor-utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { Textarea } from "@/components/ui/textarea"
 import * as XLSX from "xlsx"
@@ -241,9 +242,10 @@ export default function GBASPage() {
   const petugasList = useMemo(() => {
     const setPet = new Set<string>()
     uniqueGbasActors.forEach(a => {
-      const pNama = a.surveyData?.pejabatData?.petugas?.nama || a.petugasSurvey || a.createdBy
-      if (pNama && String(pNama).trim() !== "" && String(pNama).trim() !== "-") {
-        setPet.add(String(pNama).trim().toUpperCase())
+      const raw = a.petugasSurvey || a.createdBy || a.surveyData?.pejabatData?.petugas?.nama
+      const canonical = resolveSurveyorCanonicalName(raw)
+      if (canonical && canonical !== "BELUM ADA") {
+        setPet.add(canonical)
       }
     })
     return Array.from(setPet).sort()
@@ -272,7 +274,7 @@ export default function GBASPage() {
       }
 
       if (petugasFilter !== "ALL") {
-        const pNama = (actor.surveyData?.pejabatData?.petugas?.nama || actor.petugasSurvey || actor.createdBy || "").trim().toUpperCase()
+        const pNama = resolveSurveyorCanonicalName(actor.petugasSurvey || actor.createdBy || actor.surveyData?.pejabatData?.petugas?.nama)
         if (pNama !== petugasFilter) return false
       }
 

@@ -60,6 +60,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { ensureVerifikatorUser, regenerateVerifikatorUser, deleteVerifikatorUser } from "@/lib/verifikator-service"
+import { resolveSurveyorCanonicalName } from "@/lib/surveyor-utils"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 
 export default function VerifikasiDinasBerkasPage() {
@@ -489,7 +490,8 @@ export default function VerifikasiDinasBerkasPage() {
       const actorRef = ref(database, `businessActors/${returnTargetActor.id}`)
       
       // Pastikan nama petugas survey tersimpan dengan benar agar kembali ke akun petugas survey masing-masing
-      const officerName = returnTargetActor.petugasSurvey || returnTargetActor.createdBy || returnTargetActor.surveyData?.pejabatData?.petugas?.nama || ''
+      const rawOfficerName = returnTargetActor.petugasSurvey || returnTargetActor.createdBy || returnTargetActor.surveyData?.pejabatData?.petugas?.nama || ''
+      const officerName = resolveSurveyorCanonicalName(rawOfficerName, systemUsers)
 
       const updates: any = {
         status: 'lpj_pending',
@@ -506,8 +508,8 @@ export default function VerifikasiDinasBerkasPage() {
         verifiedDinasBy: null,
       }
 
-      if (officerName && (!returnTargetActor.petugasSurvey || returnTargetActor.petugasSurvey.trim() === '-' || returnTargetActor.petugasSurvey.trim() === '')) {
-        updates.petugasSurvey = officerName.toUpperCase().trim()
+      if (officerName && officerName !== 'BELUM ADA' && (!returnTargetActor.petugasSurvey || returnTargetActor.petugasSurvey.trim() === '-' || returnTargetActor.petugasSurvey.trim() === '')) {
+        updates.petugasSurvey = officerName
       }
 
       const cleanData = sanitizeForFirebase(updates)
