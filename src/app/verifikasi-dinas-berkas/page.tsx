@@ -132,13 +132,30 @@ export default function VerifikasiDinasBerkasPage() {
   const isVerifikatorDinas = userProfile?.role === 'verifikator_dinas' || userProfile?.role === 'dinas'
   const isPetugas = userProfile?.role === 'petugas_survey' || userProfile?.role === 'petugas'
 
-  // Pastikan Foto Survey Dinas tidak mengambil/menampilkan Foto Perbandingan
+  // Pastikan Foto Survey Dinas hanya foto survey, dan tidak mengambil Foto Perbandingan
   const getCleanSurveyPhoto = (actor?: BusinessActor | null) => {
     if (!actor) return null
-    const surveyPhoto = actor.surveyData?.fotoSurveyUrl
+    const surveyPhoto = actor.surveyData?.fotoSurveyUrl || actor.photoSurveyUrl
     if (!surveyPhoto) return null
     if (actor.comparisonPhotoUrl && surveyPhoto === actor.comparisonPhotoUrl) return null
     return surveyPhoto
+  }
+
+  // Pastikan Foto Usaha HANYA foto usaha pendaftaran awal (TIDAK BOLEH menampilkan foto survey dinas)
+  const getCleanUsahaPhoto = (actor?: BusinessActor | null) => {
+    if (!actor || !actor.photoUsahaUri) return null
+    const surveyPhoto = actor.surveyData?.fotoSurveyUrl || actor.photoSurveyUrl
+    if (surveyPhoto && actor.photoUsahaUri === surveyPhoto) return null
+    if (actor.comparisonPhotoUrl && actor.photoUsahaUri === actor.comparisonPhotoUrl) return null
+    return actor.photoUsahaUri
+  }
+
+  // Pastikan Foto Perbandingan TIDAK menampilkan Foto Survey Dinas
+  const getCleanComparisonPhoto = (actor?: BusinessActor | null) => {
+    if (!actor || !actor.comparisonPhotoUrl) return null
+    const surveyPhoto = actor.surveyData?.fotoSurveyUrl || actor.photoSurveyUrl
+    if (surveyPhoto && actor.comparisonPhotoUrl === surveyPhoto) return null
+    return actor.comparisonPhotoUrl
   }
 
   const memoQuery = useMemoFirebase(() => {
@@ -2269,8 +2286,8 @@ export default function VerifikasiDinasBerkasPage() {
                         { label: "Foto KTP", url: av.ktpUri },
                         { label: "Foto KK", url: av.kkUri },
                         { label: "Foto NIB", url: av.nibUri },
-                        { label: "Foto Usaha", url: av.photoUsahaUri },
-                        { label: "Foto Perbandingan", url: av.comparisonPhotoUrl },
+                        { label: "Foto Usaha", url: getCleanUsahaPhoto(av) },
+                        { label: "Foto Perbandingan", url: getCleanComparisonPhoto(av) },
                         { label: "Foto Survey Dinas", url: getCleanSurveyPhoto(av) },
                       ].map((doc, i) => (
                         <div key={i} className="space-y-1">

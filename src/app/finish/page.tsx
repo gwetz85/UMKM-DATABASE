@@ -255,7 +255,8 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
   <div class="sec-body" style="padding:10px 12px;">
     ${actor.googleDriveLink ? `<div style="margin-bottom:8px;"><strong>Link Google Drive Berkas:</strong> <a href="${actor.googleDriveLink}" target="_blank" style="color:#1565C0;">${actor.googleDriveLink}</a></div>` : ''}
     ${(() => {
-      const validPhoto = (sd.fotoSurveyUrl && sd.fotoSurveyUrl !== a.comparisonPhotoUrl) ? sd.fotoSurveyUrl : (a.photoUsahaUri || null);
+      const rawSurvey = sd.fotoSurveyUrl || a.photoSurveyUrl;
+      const validPhoto = (rawSurvey && rawSurvey !== a.comparisonPhotoUrl) ? rawSurvey : null;
       if (validPhoto) {
         return `<div style="margin-bottom:4px;"><strong>Foto Survey Lapangan:</strong></div><div><img src="${validPhoto}" alt="Foto Survey" style="max-width:100%;max-height:220px;border-radius:6px;border:1px solid #ccc;object-fit:cover;"/></div>`;
       }

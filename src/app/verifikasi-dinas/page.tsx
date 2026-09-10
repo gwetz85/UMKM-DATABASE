@@ -439,13 +439,30 @@ export default function VerifikasiDinasPage() {
     setIsSubmittingCancel(false)
   }
 
-  // Pastikan Foto Survey Dinas tidak mengambil/menampilkan Foto Perbandingan
+  // Pastikan Foto Survey Dinas hanya foto survey, dan tidak mengambil Foto Perbandingan
   const getCleanSurveyPhoto = (actor?: BusinessActor | null) => {
     if (!actor) return null
-    const surveyPhoto = actor.surveyData?.fotoSurveyUrl
+    const surveyPhoto = actor.surveyData?.fotoSurveyUrl || actor.photoSurveyUrl
     if (!surveyPhoto) return null
     if (actor.comparisonPhotoUrl && surveyPhoto === actor.comparisonPhotoUrl) return null
     return surveyPhoto
+  }
+
+  // Pastikan Foto Usaha HANYA foto usaha pendaftaran awal (TIDAK BOLEH menampilkan foto survey dinas)
+  const getCleanUsahaPhoto = (actor?: BusinessActor | null) => {
+    if (!actor || !actor.photoUsahaUri) return null
+    const surveyPhoto = actor.surveyData?.fotoSurveyUrl || actor.photoSurveyUrl
+    if (surveyPhoto && actor.photoUsahaUri === surveyPhoto) return null
+    if (actor.comparisonPhotoUrl && actor.photoUsahaUri === actor.comparisonPhotoUrl) return null
+    return actor.photoUsahaUri
+  }
+
+  // Pastikan Foto Perbandingan TIDAK menampilkan Foto Survey Dinas
+  const getCleanComparisonPhoto = (actor?: BusinessActor | null) => {
+    if (!actor || !actor.comparisonPhotoUrl) return null
+    const surveyPhoto = actor.surveyData?.fotoSurveyUrl || actor.photoSurveyUrl
+    if (surveyPhoto && actor.comparisonPhotoUrl === surveyPhoto) return null
+    return actor.comparisonPhotoUrl
   }
 
   const openSurveyDialog = (actor: BusinessActor) => {
@@ -980,9 +997,6 @@ export default function VerifikasiDinasPage() {
       }
       if (photoPreview) {
         updateData.photoSurveyUrl = photoPreview;
-        if (!verifyingActor.photoUsahaUri) {
-          updateData.photoUsahaUri = photoPreview;
-        }
       }
 
       const cleanData = sanitizeForFirebase(updateData);
@@ -2074,8 +2088,8 @@ export default function VerifikasiDinasPage() {
                       { label: "Foto KTP", url: viewingActor.ktpUri },
                       { label: "Foto KK", url: viewingActor.kkUri },
                       { label: "Foto NIB", url: viewingActor.nibUri },
-                      { label: "Foto Usaha", url: viewingActor.photoUsahaUri },
-                      { label: "Foto Perbandingan", url: viewingActor.comparisonPhotoUrl },
+                      { label: "Foto Usaha", url: getCleanUsahaPhoto(viewingActor) },
+                      { label: "Foto Perbandingan", url: getCleanComparisonPhoto(viewingActor) },
                       { label: "Foto Survey Dinas", url: getCleanSurveyPhoto(viewingActor) },
                     ].map((doc, i) => (
                       <div key={i} className="space-y-1">

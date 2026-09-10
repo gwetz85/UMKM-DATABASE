@@ -399,9 +399,10 @@ export default function GBASPage() {
 
   const handleGeneratePDF = async (actor: BusinessActor, customDate?: string, saveToSurvey?: boolean) => {
     const rawSurvey = actor.surveyData;
-    const cleanSurveyPhoto = (rawSurvey?.fotoSurveyUrl && rawSurvey.fotoSurveyUrl !== actor.comparisonPhotoUrl)
-      ? rawSurvey.fotoSurveyUrl
-      : (actor.photoUsahaUri || undefined);
+    const surveyPhotoCandidate = rawSurvey?.fotoSurveyUrl || actor.photoSurveyUrl;
+    const cleanSurveyPhoto = (surveyPhotoCandidate && surveyPhotoCandidate !== actor.comparisonPhotoUrl)
+      ? surveyPhotoCandidate
+      : undefined;
 
     const surveyToUse: SurveyDinasData = rawSurvey ? {
       ...rawSurvey,
@@ -489,9 +490,10 @@ export default function GBASPage() {
 
       try {
         const rawSurvey = actor.surveyData;
-        const cleanSurveyPhoto = (rawSurvey?.fotoSurveyUrl && rawSurvey.fotoSurveyUrl !== actor.comparisonPhotoUrl)
-          ? rawSurvey.fotoSurveyUrl
-          : (actor.photoUsahaUri || undefined);
+        const surveyPhotoCandidate = rawSurvey?.fotoSurveyUrl || actor.photoSurveyUrl;
+        const cleanSurveyPhoto = (surveyPhotoCandidate && surveyPhotoCandidate !== actor.comparisonPhotoUrl)
+          ? surveyPhotoCandidate
+          : undefined;
 
         const surveyToUse: SurveyDinasData = rawSurvey ? {
           ...rawSurvey,
@@ -1607,9 +1609,10 @@ export default function GBASPage() {
           {viewingActor && (
             <div className="space-y-5 pt-2 text-xs">
               {(() => {
-                const validPhoto = (viewingActor.surveyData?.fotoSurveyUrl && viewingActor.surveyData.fotoSurveyUrl !== viewingActor.comparisonPhotoUrl) 
-                  ? viewingActor.surveyData.fotoSurveyUrl 
-                  : (viewingActor.photoUsahaUri || null);
+                const surveyPhoto = viewingActor.surveyData?.fotoSurveyUrl || viewingActor.photoSurveyUrl;
+                const validPhoto = (surveyPhoto && surveyPhoto !== viewingActor.comparisonPhotoUrl) 
+                  ? surveyPhoto 
+                  : null;
                 return validPhoto ? (
                   <div className="space-y-1.5">
                     <Label className="font-bold text-slate-700">Foto Survey Lapangan</Label>

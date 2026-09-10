@@ -690,9 +690,6 @@ export default function PortalSurveyPage() {
       }
       if (surveyPhotoPreview) {
         updateData.photoSurveyUrl = surveyPhotoPreview
-        if (!surveyingActor.photoUsahaUri) {
-          updateData.photoUsahaUri = surveyPhotoPreview
-        }
       }
 
       const cleanData = sanitizeForFirebase(updateData)
@@ -1137,7 +1134,7 @@ export default function PortalSurveyPage() {
         hibah: baseSurvey.hibah || { pernah: false },
         rencanaPenggunaan: baseSurvey.rencanaPenggunaan || 'Pengembangan Usaha & Modal Kerja',
         hasilSurvey: baseSurvey.hasilSurvey || 'Layak',
-        fotoSurveyUrl: baseSurvey.fotoSurveyUrl || (actor.id === surveyingActor?.id ? surveyPhotoPreview : null) || actor.photoUsahaUri || undefined,
+        fotoSurveyUrl: baseSurvey.fotoSurveyUrl || (actor.id === surveyingActor?.id ? surveyPhotoPreview : null) || actor.photoSurveyUrl || undefined,
         tanggalSurvey: baseSurvey.tanggalSurvey || new Date().toISOString().split('T')[0],
         pejabatData: activePejabat
       }

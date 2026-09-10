@@ -60,6 +60,7 @@ export interface BusinessActor {
   nibUri?: string;
   photoUsahaUri?: string;
   comparisonPhotoUrl?: string;
+  photoSurveyUrl?: string;
   status: BusinessActorStatus;
   rejectionReason?: string;
   createdAt: string;
