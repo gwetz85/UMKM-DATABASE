@@ -84,12 +84,36 @@
     background-attachment: fixed;
     background-repeat: no-repeat;
   }
+  @media (max-width: 768px) {
+    body.app-bg {
+      background-attachment: scroll;
+      background-size: cover;
+      background-image: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+  }
   .dark body.app-bg,
   body.dark.app-bg,
   html.dark body.app-bg {
     background-image: linear-gradient(rgba(11, 15, 25, 0.93), rgba(11, 15, 25, 0.93)), url('/bg-dkukm-bpjs.jpg?v=20260723');
     background-color: #0b0f19;
   }
+  @media (max-width: 768px) {
+    .dark body.app-bg,
+    body.dark.app-bg,
+    html.dark body.app-bg {
+      background-image: none;
+      background-color: #0b0f19;
+    }
+  }
+}
+
+/* Mobile Touch & Safe Area Utilities */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4.5rem);
 }
 
 @keyframes gradientBG {
