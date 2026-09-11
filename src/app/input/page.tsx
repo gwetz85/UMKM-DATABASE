@@ -526,10 +526,10 @@ export default function InputDataPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {availableCoordinators.filter(c => c.remaining > 0).map((c) => (
-                    <SelectItem key={c.id} value={c.name} className="group focus:bg-primary focus:text-white">
+                    <SelectItem key={c.id} value={c.name} className="group focus:bg-primary focus:text-white data-[highlighted]:bg-primary data-[highlighted]:text-white">
                       <div className="flex justify-between items-center w-full min-w-[300px]">
-                        <span className="font-bold group-focus:text-white">{c.name}</span>
-                        <span className="text-[10px] bg-primary/10 text-primary group-focus:bg-white/20 group-focus:text-white px-2 py-0.5 rounded-full whitespace-nowrap">
+                        <span className="font-bold group-focus:text-white group-data-[highlighted]:text-white">{c.name}</span>
+                        <span className="text-[10px] bg-primary/10 text-primary group-focus:bg-white/20 group-focus:text-white group-data-[highlighted]:bg-white/20 group-data-[highlighted]:text-white px-2 py-0.5 rounded-full whitespace-nowrap">
                           Sisa Kuota: {c.remaining}
                         </span>
                       </div>

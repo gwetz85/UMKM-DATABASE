@@ -653,10 +653,10 @@ export default function PendaftaranPage() {
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px] rounded-xl">
                   {availableCoordinators.filter(c => c.remaining > 0).map((c) => (
-                    <SelectItem key={c.id || c.name} value={c.name} className="font-semibold py-2.5">
+                    <SelectItem key={c.id || c.name} value={c.name} className="group font-semibold py-2.5">
                       <div className="flex justify-between items-center w-full min-w-[260px] sm:min-w-[320px] gap-4">
-                        <span className="font-bold text-slate-800 dark:text-slate-200">{c.name}</span>
-                        <span className="text-[11px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+                        <span className="font-bold text-slate-800 dark:text-slate-200 group-data-[highlighted]:text-white group-focus:text-white transition-colors">{c.name}</span>
+                        <span className="text-[11px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 group-data-[highlighted]:bg-white/20 group-data-[highlighted]:text-white group-data-[highlighted]:border-transparent border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-bold whitespace-nowrap transition-colors">
                           Sisa: {c.remaining}
                         </span>
                       </div>

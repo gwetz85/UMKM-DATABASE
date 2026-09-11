@@ -66,19 +66,24 @@ export function ThemePersistence() {
       styleEl.innerHTML = `
         :root {
           --primary: ${palette} !important;
+          --primary-foreground: 0 0% 100% !important;
           --sidebar-background: ${palette} !important;
           --sidebar-primary-foreground: ${palette} !important;
           --sidebar-border: ${palette} !important;
           --ring: ${palette} !important;
           --accent: ${palette} !important;
+          --accent-foreground: 0 0% 100% !important;
           --sidebar-ring: ${palette} !important;
           --sidebar-accent: ${palette} !important;
+          --sidebar-accent-foreground: 0 0% 100% !important;
         }
         .dark {
           --primary: ${palette} !important;
+          --primary-foreground: 0 0% 100% !important;
           --sidebar-primary: ${palette} !important;
           --ring: ${palette} !important;
           --accent: ${palette} !important;
+          --accent-foreground: 0 0% 100% !important;
         }
       `;
     }
