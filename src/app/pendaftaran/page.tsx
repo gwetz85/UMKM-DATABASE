@@ -17,7 +17,6 @@ import {
   Save, 
   CheckCircle2, 
   ShieldAlert, 
-  Sparkles, 
   Building2, 
   User, 
   MapPin, 
@@ -273,49 +272,14 @@ export default function PendaftaranPage() {
 
   return (
     <div className="min-h-screen py-6 sm:py-10 px-3 sm:px-6 max-w-4xl mx-auto space-y-6 sm:space-y-8">
-      {/* Top Banner & Public Portal Info */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-slate-900 text-white p-6 sm:p-8 rounded-3xl sm:rounded-[2.5rem] shadow-2xl border border-white/10 animate-in fade-in slide-in-from-top-4 duration-700">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 border border-white/20 text-[10px] sm:text-xs font-black uppercase tracking-widest text-emerald-300 backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-300 animate-pulse" />
-              Link Pendaftaran Mandiri Pelaku Usaha
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-black font-headline tracking-tight uppercase leading-tight drop-shadow-sm">
-              TUNAS BANGSA KEPULAUAN RIAU
-            </h1>
-            <p className="text-sm sm:text-lg font-bold text-white/85 uppercase tracking-wide">
-              Pengajuan Bantuan Pelaku Usaha UMKM Tahun 2026
-            </p>
-            <div className="h-1 w-20 bg-emerald-400 rounded-full mt-2" />
-          </div>
-
-          <div className="flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center md:items-end gap-2.5 shrink-0">
-            <Link
-              href="/cek-data"
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 active:scale-95 border border-white/30 text-white font-black text-xs uppercase tracking-wider backdrop-blur-md transition-all shadow-md"
-            >
-              <SearchCheck className="w-4 h-4 text-emerald-300" />
-              <span>Cek Status Pendaftaran</span>
-            </Link>
-            <div className="text-[11px] text-white/60 font-semibold text-center md:text-right">
-              Tidak perlu login aplikasi
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Intro Description */}
-      <div className="flex flex-col gap-1.5 px-2">
-        <h2 className="text-2xl sm:text-3xl font-black text-primary font-headline uppercase tracking-tight flex items-center gap-2">
+      {/* Header Formulir */}
+      <div className="flex flex-col gap-2 px-1">
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary font-headline uppercase tracking-tighter flex items-center gap-2.5">
           <Building2 className="w-7 h-7 sm:w-8 sm:h-8 text-primary shrink-0" />
           Formulir Pendaftaran
-        </h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
-          Silakan isi formulir di bawah ini dengan lengkap dan benar. Data yang Anda kirimkan akan otomatis masuk ke sistem verifikasi SIMPU Dinas Koperasi dan UKM.
+        </h1>
+        <p className="text-muted-foreground font-medium text-sm">
+          Silakan isi formulir di bawah ini dengan lengkap dan benar untuk pendaftaran pelaku usaha.
         </p>
       </div>
 
