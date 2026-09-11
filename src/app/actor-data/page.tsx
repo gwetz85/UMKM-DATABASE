@@ -935,7 +935,7 @@ function ActorDataContent() {
           </div>
           <p className="text-xs md:text-sm text-muted-foreground">Data lolos verifikasi siap diisi rekening.</p>
         </div>
-        <div className="flex flex-wrap gap-2 w-full md:w-auto print:hidden">
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full md:w-auto print:hidden">
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
@@ -946,48 +946,50 @@ function ActorDataContent() {
             />
           </div>
 
-          {!isMonitoring && (
-          <Button onClick={() => handleExportExcel()} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md w-full md:w-auto h-10 rounded-xl">
-            <FileSpreadsheet className="w-4 h-4 mr-2" /> EKSPOR EXCEL
-          </Button>
-        )}
-          {!isMonitoring && (
-          <Button
-            onClick={async () => {
-              if (filterCoordinator) {
-                generateCoordinatorReport(filterCoordinator, groupedActors[filterCoordinator] || [])
-              } else {
-                if (Object.keys(groupedActors).length === 0) {
-                  toast({ title: "Menyiapkan Dokumen", description: "Sedang mengambil data untuk cetak PDF seluruh koordinator..." })
-                  try {
-                    const { get, ref } = await import("firebase/database")
-                    const snap = await get(ref(database!, 'businessActors'))
-                    if (snap.exists()) {
-                      const allActors = Object.values(snap.val()) as BusinessActor[]
-                      const groups: Record<string, BusinessActor[]> = {}
-                      allActors.forEach(a => {
-                        const s = a.status || "";
-                        const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
-                        if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) return;
-                        const coord = (a.coordinator || "Tanpa Koordinator").toUpperCase().trim()
-                        if (!groups[coord]) groups[coord] = []
-                        groups[coord].push(a)
-                      })
-                      generateAllCoordinatorsReport(groups)
+          <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto">
+            {!isMonitoring && (
+              <Button onClick={() => handleExportExcel()} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md h-10 rounded-xl text-xs sm:text-sm">
+                <FileSpreadsheet className="w-4 h-4 mr-1.5" /> EKSPOR EXCEL
+              </Button>
+            )}
+            {!isMonitoring && (
+              <Button
+                onClick={async () => {
+                  if (filterCoordinator) {
+                    generateCoordinatorReport(filterCoordinator, groupedActors[filterCoordinator] || [])
+                  } else {
+                    if (Object.keys(groupedActors).length === 0) {
+                      toast({ title: "Menyiapkan Dokumen", description: "Sedang mengambil data untuk cetak PDF seluruh koordinator..." })
+                      try {
+                        const { get, ref } = await import("firebase/database")
+                        const snap = await get(ref(database!, 'businessActors'))
+                        if (snap.exists()) {
+                          const allActors = Object.values(snap.val()) as BusinessActor[]
+                          const groups: Record<string, BusinessActor[]> = {}
+                          allActors.forEach(a => {
+                            const s = a.status || "";
+                            const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+                            if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) return;
+                            const coord = (a.coordinator || "Tanpa Koordinator").toUpperCase().trim()
+                            if (!groups[coord]) groups[coord] = []
+                            groups[coord].push(a)
+                          })
+                          generateAllCoordinatorsReport(groups)
+                        }
+                      } catch (e) {
+                        toast({ variant: "destructive", title: "Gagal", description: "Gagal memuat data PDF." })
+                      }
+                    } else {
+                      generateAllCoordinatorsReport(groupedActors)
                     }
-                  } catch (e) {
-                    toast({ variant: "destructive", title: "Gagal", description: "Gagal memuat data PDF." })
                   }
-                } else {
-                  generateAllCoordinatorsReport(groupedActors)
-                }
-              }
-            }}
-            className="bg-red-600 hover:bg-red-700 font-bold shadow-md w-full md:w-auto h-10"
-          >
-            <Printer className="w-4 h-4 mr-2" /> CETAK PDF
-          </Button>
-        )}
+                }}
+                className="bg-red-600 hover:bg-red-700 font-bold shadow-md h-10 rounded-xl text-xs sm:text-sm"
+              >
+                <Printer className="w-4 h-4 mr-1.5" /> CETAK PDF
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1049,229 +1051,405 @@ function ActorDataContent() {
           </div>
         ) : (isKoordinator || filterCoordinator || isInspektorat || isSearching) ? (
           <div className="space-y-6">
-            <div className="flex items-center gap-4 mb-2">
-              {!isInspektorat && !isKoordinator && (filterCoordinator || isSearching) && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => {
-                    setSearchInput("")
-                    setSearchQuery("")
-                    if (filterCoordinator) router.push('/actor-data')
-                  }}
-                  className="font-bold border-primary text-primary hover:bg-primary/5"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" /> KEMBALI KE MODUL
-                </Button>
-              )}
-              <h2 className="text-xl font-black text-primary uppercase tracking-tighter">
-                {isSearching
-                  ? `HASIL PENCARIAN: "${searchQuery}" (${currentDataToDisplay.length} DATA)`
-                  : isInspektorat
-                  ? "DATABASE PELAKU USAHA"
-                  : isKoordinator
-                  ? `DATA: ${userProfile?.fullName}`
-                  : `DATA: ${filterCoordinator}`}
-              </h2>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 mb-2">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start flex-wrap">
+                {!isInspektorat && !isKoordinator && (filterCoordinator || isSearching) && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setSearchInput("")
+                      setSearchQuery("")
+                      if (filterCoordinator) router.push('/actor-data')
+                    }}
+                    className="font-bold border-primary text-primary hover:bg-primary/5 shrink-0 h-9 text-xs sm:text-sm"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1.5" /> Kembali
+                  </Button>
+                )}
+                <h2 className="text-base sm:text-xl font-black text-primary uppercase tracking-tight truncate max-w-[240px] sm:max-w-none">
+                  {isSearching
+                    ? `HASIL: "${searchQuery}" (${currentDataToDisplay.length})`
+                    : isInspektorat
+                    ? "DATABASE PELAKU USAHA"
+                    : isKoordinator
+                    ? `DATA: ${userProfile?.fullName}`
+                    : `DATA: ${filterCoordinator}`}
+                </h2>
+              </div>
               {isAdmin && filterCoordinator && !isKoordinator && !isInspektorat && (
                 <Button 
                   size="sm" 
                   disabled={isLanjutDinasBatching}
                   onClick={() => handleLanjutDinasBatch(filterCoordinator, groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || [])} 
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold ml-auto shadow-sm" 
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm w-full sm:w-auto h-9 text-xs sm:text-sm shrink-0" 
                   title="Lanjut ke Verifikasi Dinas"
                 >
                   {isLanjutDinasBatching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ClipboardCheck className="w-4 h-4 mr-2" />}
-                  <span className="hidden md:inline">Lanjut Dinas (Koordinator)</span>
-                  <span className="md:hidden">Lanjut Dinas</span>
+                  <span>Lanjut Dinas (Koordinator)</span>
                 </Button>
               )}
             </div>
             
             {isMonitoring ? (
-  <div className="rounded-xl border bg-white/95 backdrop-blur-md shadow-sm overflow-hidden print:border-black print:rounded-none">
-    <div className="max-h-[calc(100vh-280px)] overflow-auto print:max-h-none print:overflow-visible">
-    <Table>
-      <TableHeader className="bg-muted/50 print:bg-slate-100 sticky top-0 z-10">
-        <TableRow>
-          <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
-          <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
-          <TableHead className="font-bold text-primary py-4 print:text-black">USIA</TableHead>
-          <TableHead className="font-bold text-primary py-4 print:text-black">JENIS USAHA</TableHead>
-          <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
-          <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT</TableHead>
-          <TableHead className="font-bold text-primary py-4 print:text-black">KOORDINATOR</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
-          <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
-            <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{globalIndexMap.get(actor.id) || index + 1}</TableCell>
-            <TableCell className={cn("py-4 font-bold", normalizeGender(actor.gender) === 'Perempuan' ? "text-red-600" : "text-blue-600")}>{actor.fullName}</TableCell>
-            <TableCell className="py-4 text-[13px] font-bold text-slate-700">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</TableCell>
-            <TableCell className="py-4">{actor.businessCategory}</TableCell>
-            <TableCell className="py-4">{actor.phone}</TableCell>
-            <TableCell className="py-4">{actor.address}</TableCell>
-            <TableCell className="py-4 font-black text-primary">{normalizeCoordinator(actor.coordinator)}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-    {currentDataToDisplay.length > pageLimit && (
-      <div className="p-4 flex justify-center border-t bg-slate-50 print:hidden">
-        <Button variant="outline" onClick={() => setPageLimit(prev => prev + 50)} className="font-bold border-primary text-primary hover:bg-primary/10">
-          <RefreshCw className="w-4 h-4 mr-2" /> Tampilkan Lebih Banyak Data
-        </Button>
-      </div>
-    )}
-    </div>
-  </div>
-) : (
-  <div className="rounded-xl border bg-white shadow-sm overflow-hidden print:border-black print:rounded-none">
-    <div className="max-h-[calc(100vh-280px)] overflow-auto print:max-h-none print:overflow-visible">
-    <Table>
-      <TableHeader className="bg-muted/50 print:bg-slate-100 sticky top-0 z-10">
-        <TableRow>
-          <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
-          <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
+              <div className="space-y-4">
+                {/* Mobile Monitoring Cards */}
+                <div className="md:hidden flex flex-col gap-3">
+                  {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => {
+                    const isFemale = normalizeGender(actor.gender) === 'Perempuan';
+                    const actorAge = calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""));
+                    return (
+                      <Card key={actor.id} className="bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl overflow-hidden">
+                        <CardContent className="p-4 space-y-2.5">
+                          <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-black flex items-center justify-center shrink-0">
+                                {globalIndexMap.get(actor.id) || index + 1}
+                              </span>
+                              <h3 className={cn("font-black text-sm uppercase truncate", isFemale ? "text-red-600" : "text-blue-600")}>
+                                {actor.fullName}
+                              </h3>
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-500 uppercase shrink-0">
+                              {actor.businessCategory || '-'}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
+                            <div><span className="text-slate-400">Usia:</span> <strong>{actorAge || '-'}</strong></div>
+                            <div><span className="text-slate-400">HP:</span> <strong>{actor.phone || '-'}</strong></div>
+                            <div className="col-span-2"><span className="text-slate-400">Alamat:</span> {actor.address || '-'}</div>
+                            <div className="col-span-2 text-primary font-black"><span className="text-slate-400 font-normal">Koor:</span> {normalizeCoordinator(actor.coordinator)}</div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
 
-          <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
-          <TableHead className="font-bold text-primary py-4 print:text-black">USIA</TableHead>
-          <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
-          <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT LENGKAP</TableHead>
-          <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
-          {!isMonitoring && <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
-          <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
-            <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{globalIndexMap.get(actor.id) || index + 1}</TableCell>
-            <TableCell className="py-4">
-              <div className="flex flex-col items-start gap-2">
-                {isKoordinator && (
-                  <div className={cn(
-                    "flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 shadow-sm border print:hidden",
-                    normalizeGender(actor.gender) === 'Perempuan'
-                      ? "bg-pink-100 border-pink-200 text-pink-600"
-                      : "bg-blue-100 border-blue-200 text-blue-600"
-                  )}>
-                    <span className="text-lg">{normalizeGender(actor.gender) === 'Perempuan' ? '👧' : '👦'}</span>
+                {/* Desktop Monitoring Table */}
+                <div className="hidden md:block rounded-xl border bg-white/95 backdrop-blur-md shadow-sm overflow-hidden print:block print:border-black print:rounded-none">
+                  <div className="max-h-[calc(100vh-280px)] overflow-auto print:max-h-none print:overflow-visible">
+                    <Table>
+                      <TableHeader className="bg-muted/50 print:bg-slate-100 sticky top-0 z-10">
+                        <TableRow>
+                          <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">USIA</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">JENIS USAHA</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">KOORDINATOR</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
+                          <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
+                            <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{globalIndexMap.get(actor.id) || index + 1}</TableCell>
+                            <TableCell className={cn("py-4 font-bold", normalizeGender(actor.gender) === 'Perempuan' ? "text-red-600" : "text-blue-600")}>{actor.fullName}</TableCell>
+                            <TableCell className="py-4 text-[13px] font-bold text-slate-700">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</TableCell>
+                            <TableCell className="py-4">{actor.businessCategory}</TableCell>
+                            <TableCell className="py-4">{actor.phone}</TableCell>
+                            <TableCell className="py-4">{actor.address}</TableCell>
+                            <TableCell className="py-4 font-black text-primary">{normalizeCoordinator(actor.coordinator)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+
+                {currentDataToDisplay.length > pageLimit && (
+                  <div className="p-4 flex justify-center border-t bg-slate-50 rounded-2xl print:hidden">
+                    <Button variant="outline" onClick={() => setPageLimit(prev => prev + 50)} className="font-bold border-primary text-primary hover:bg-primary/10">
+                      <RefreshCw className="w-4 h-4 mr-2" /> Tampilkan Lebih Banyak Data
+                    </Button>
                   </div>
                 )}
-                <div className="flex flex-col">
-                  <span className={cn("font-bold uppercase text-[13px] leading-tight print:text-black", normalizeGender(actor.gender) === 'Perempuan' ? "text-red-600" : "text-blue-600")}>{actor.fullName}</span>
-                </div>
               </div>
-            </TableCell>
+            ) : (
+              <div className="space-y-4">
+                {/* Mobile Normal Cards (md:hidden) */}
+                <div className="md:hidden flex flex-col gap-3">
+                  {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => {
+                    const isFemale = normalizeGender(actor.gender) === 'Perempuan';
+                    const actorAge = calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""));
+                    return (
+                      <Card key={actor.id} className="bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl overflow-hidden">
+                        <CardContent className="p-4 space-y-3">
+                          {/* Card Header: Index, Name, Gender, Badge */}
+                          <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                            <div className="flex items-start gap-2.5 min-w-0">
+                              <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
+                                {globalIndexMap.get(actor.id) || index + 1}
+                              </span>
+                              <div className="min-w-0">
+                                <h3 className={cn(
+                                  "font-black text-sm uppercase leading-snug truncate",
+                                  isFemale ? "text-rose-600 dark:text-rose-400" : "text-blue-600 dark:text-blue-400"
+                                )}>
+                                  {actor.fullName}
+                                </h3>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[11px] text-slate-500 font-mono font-bold">
+                                    {actor.nik || '-'}
+                                  </span>
+                                  <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                                    Reg: {actor.registrationCode || '...'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="shrink-0">
+                              <VerificationBadge actor={actor} />
+                            </div>
+                          </div>
 
-            <TableCell className="py-4">
-              <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.nik}</span>
-              <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm print:hidden inline-block mt-0.5">
-                Reg: {actor.registrationCode || "..."}
-              </span>
-            </TableCell>
-            <TableCell className="py-4">
-              <span className="font-bold text-slate-700 text-[13px] print:text-black block">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</span>
-            </TableCell>
-            <TableCell className="py-4">
-              <span className="font-bold text-slate-800 text-[13px] print:text-black block">{actor.phone || "-"}</span>
-            </TableCell>
-            <TableCell className="py-4">
-              <span className="text-[10px] text-slate-600 print:text-black block leading-tight max-w-[200px]">{actor.address || "-"}</span>
-            </TableCell>
-            <TableCell className="py-4">
-              <div className="flex flex-col">
-                <span className="font-black text-primary uppercase text-[12px] print:text-black">{actor.businessName}</span>
-                <span className="text-[10px] text-slate-500 font-bold uppercase print:hidden">{actor.businessCategory}</span>
-                <VerificationBadge actor={actor} />
-              </div>
-            </TableCell>
-            {!isMonitoring && (
-              <TableCell className="py-4 pr-6 text-right print:hidden">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
-                    onClick={() => {
-                      setViewingActor(actor);
-                      setIsEditMode(false);
-                      setEditingBankMode(false);
-                      setEditingDriveMode(false);
-                      fetchAuxData(actor);
-                    }}
-                    title="Lihat Detail"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                  {isAdmin && (actor as any).surveyData && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 text-teal-600 hover:bg-teal-50"
-                      onClick={() => setSurveyViewActor(actor)}
-                      title="Lihat Form Survey Lengkap"
-                    >
-                      <ClipboardList className="w-4 h-4" />
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className={cn(
-                      "h-8 w-8 p-0 hover:bg-blue-50 transition-colors",
-                      actor.googleDriveLink ? "text-blue-600 bg-blue-50 hover:bg-blue-100" : "text-slate-400 hover:text-blue-600"
-                    )}
-                    onClick={() => {
-                      setViewingActor(actor);
-                      setIsEditMode(false);
-                      setEditingBankMode(false);
-                      setEditingDriveMode(true);
-                      fetchAuxData(actor);
-                    }}
-                    title={actor.googleDriveLink ? "Edit/Buka Link Google Drive" : "Input Link Google Drive"}
-                  >
-                    <Folder className="w-4 h-4" />
-                  </Button>
-                  {isAdmin && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0 text-purple-600 hover:bg-purple-50"
-                      onClick={() => handleSingleLanjutDinas(actor)}
-                      title="Lanjut Dinas (Push Data Susulan)"
-                    >
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50"
-                    onClick={() => handlePrintForm(actor)}
-                    title="Cetak Formulir"
-                  >
-                    <Printer className="w-4 h-4" />
-                  </Button>
+                          {/* Business & Personal Info */}
+                          <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl space-y-1.5 text-xs">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-black text-xs text-primary uppercase truncate">
+                                {actor.businessName || 'Nama Usaha Belum Diisi'}
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-500 uppercase shrink-0">
+                                {actor.businessCategory || '-'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-[11px]">
+                              <span>Usia: <strong>{actorAge || '-'}</strong></span>
+                              <span>•</span>
+                              <span>HP: <strong>{actor.phone || '-'}</strong></span>
+                            </div>
+                            {actor.address && (
+                              <p className="text-[11px] text-slate-500 leading-tight">
+                                <MapPin className="w-3.5 h-3.5 inline mr-1 text-slate-400" />
+                                {actor.address}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Action Buttons Row */}
+                          <div className="flex items-center gap-1.5 pt-1">
+                            <Button
+                              size="sm"
+                              className="flex-1 h-9 rounded-xl font-black text-xs bg-primary text-white hover:bg-primary/90 shadow-sm flex items-center justify-center gap-1.5"
+                              onClick={() => {
+                                setViewingActor(actor);
+                                setIsEditMode(false);
+                                setEditingBankMode(false);
+                                setEditingDriveMode(false);
+                                fetchAuxData(actor);
+                              }}
+                            >
+                              <Eye className="w-4 h-4" />
+                              <span>Lihat Detail</span>
+                            </Button>
+
+                            {isAdmin && (actor as any).surveyData && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-9 px-2.5 rounded-xl text-teal-600 border-teal-200 hover:bg-teal-50"
+                                onClick={() => setSurveyViewActor(actor)}
+                                title="Form Survey Lengkap"
+                              >
+                                <ClipboardList className="w-4 h-4" />
+                              </Button>
+                            )}
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className={cn(
+                                "h-9 px-2.5 rounded-xl transition-colors",
+                                actor.googleDriveLink ? "text-blue-600 bg-blue-50 border-blue-200" : "text-slate-400 border-slate-200 hover:text-blue-600"
+                              )}
+                              onClick={() => {
+                                setViewingActor(actor);
+                                setIsEditMode(false);
+                                setEditingBankMode(false);
+                                setEditingDriveMode(true);
+                                fetchAuxData(actor);
+                              }}
+                              title="Google Drive"
+                            >
+                              <Folder className="w-4 h-4" />
+                            </Button>
+
+                            {isAdmin && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-9 px-2.5 rounded-xl text-purple-600 border-purple-200 hover:bg-purple-50"
+                                onClick={() => handleSingleLanjutDinas(actor)}
+                                title="Lanjut Dinas"
+                              >
+                                <Send className="w-4 h-4" />
+                              </Button>
+                            )}
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-9 px-2.5 rounded-xl text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                              onClick={() => handlePrintForm(actor)}
+                              title="Cetak Formulir"
+                            >
+                              <Printer className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
-              </TableCell>
+
+                {/* Desktop Normal Table (hidden md:block) */}
+                <div className="hidden md:block rounded-xl border bg-white shadow-sm overflow-hidden print:block print:border-black print:rounded-none">
+                  <div className="max-h-[calc(100vh-280px)] overflow-auto print:max-h-none print:overflow-visible">
+                    <Table>
+                      <TableHeader className="bg-muted/50 print:bg-slate-100 sticky top-0 z-10">
+                        <TableRow>
+                          <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">USIA</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT LENGKAP</TableHead>
+                          <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
+                          {!isMonitoring && <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
+                          <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
+                            <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{globalIndexMap.get(actor.id) || index + 1}</TableCell>
+                            <TableCell className="py-4">
+                              <div className="flex flex-col items-start gap-2">
+                                {isKoordinator && (
+                                  <div className={cn(
+                                    "flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 shadow-sm border print:hidden",
+                                    normalizeGender(actor.gender) === 'Perempuan'
+                                      ? "bg-pink-100 border-pink-200 text-pink-600"
+                                      : "bg-blue-100 border-blue-200 text-blue-600"
+                                  )}>
+                                    <span className="text-lg">{normalizeGender(actor.gender) === 'Perempuan' ? '👧' : '👦'}</span>
+                                  </div>
+                                )}
+                                <div className="flex flex-col">
+                                  <span className={cn("font-bold uppercase text-[13px] leading-tight print:text-black", normalizeGender(actor.gender) === 'Perempuan' ? "text-red-600" : "text-blue-600")}>{actor.fullName}</span>
+                                </div>
+                              </div>
+                            </TableCell>
+
+                            <TableCell className="py-4">
+                              <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.nik}</span>
+                              <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm print:hidden inline-block mt-0.5">
+                                Reg: {actor.registrationCode || "..."}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <span className="font-bold text-slate-700 text-[13px] print:text-black block">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</span>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <span className="font-bold text-slate-800 text-[13px] print:text-black block">{actor.phone || "-"}</span>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <span className="text-[10px] text-slate-600 print:text-black block leading-tight max-w-[200px]">{actor.address || "-"}</span>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <div className="flex flex-col">
+                                <span className="font-black text-primary uppercase text-[12px] print:text-black">{actor.businessName}</span>
+                                <span className="text-[10px] text-slate-500 font-bold uppercase print:hidden">{actor.businessCategory}</span>
+                                <VerificationBadge actor={actor} />
+                              </div>
+                            </TableCell>
+                            {!isMonitoring && (
+                              <TableCell className="py-4 pr-6 text-right print:hidden">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
+                                    onClick={() => {
+                                      setViewingActor(actor);
+                                      setIsEditMode(false);
+                                      setEditingBankMode(false);
+                                      setEditingDriveMode(false);
+                                      fetchAuxData(actor);
+                                    }}
+                                    title="Lihat Detail"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </Button>
+                                  {isAdmin && (actor as any).surveyData && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0 text-teal-600 hover:bg-teal-50"
+                                      onClick={() => setSurveyViewActor(actor)}
+                                      title="Lihat Form Survey Lengkap"
+                                    >
+                                      <ClipboardList className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className={cn(
+                                      "h-8 w-8 p-0 hover:bg-blue-50 transition-colors",
+                                      actor.googleDriveLink ? "text-blue-600 bg-blue-50 hover:bg-blue-100" : "text-slate-400 hover:text-blue-600"
+                                    )}
+                                    onClick={() => {
+                                      setViewingActor(actor);
+                                      setIsEditMode(false);
+                                      setEditingBankMode(false);
+                                      setEditingDriveMode(true);
+                                      fetchAuxData(actor);
+                                    }}
+                                    title={actor.googleDriveLink ? "Edit/Buka Link Google Drive" : "Input Link Google Drive"}
+                                  >
+                                    <Folder className="w-4 h-4" />
+                                  </Button>
+                                  {isAdmin && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0 text-purple-600 hover:bg-purple-50"
+                                      onClick={() => handleSingleLanjutDinas(actor)}
+                                      title="Lanjut Dinas (Push Data Susulan)"
+                                    >
+                                      <Send className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50"
+                                    onClick={() => handlePrintForm(actor)}
+                                    title="Cetak Formulir"
+                                  >
+                                    <Printer className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            )}
+
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+
+                {currentDataToDisplay.length > pageLimit && (
+                  <div className="p-4 flex justify-center border-t bg-slate-50 rounded-2xl print:hidden">
+                    <Button variant="outline" onClick={() => setPageLimit(prev => prev + 50)} className="font-bold border-primary text-primary hover:bg-primary/10">
+                      <RefreshCw className="w-4 h-4 mr-2" /> Tampilkan Lebih Banyak Data
+                    </Button>
+                  </div>
+                )}
+              </div>
             )}
-
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-    {currentDataToDisplay.length > pageLimit && (
-      <div className="p-4 flex justify-center border-t bg-slate-50 print:hidden">
-        <Button variant="outline" onClick={() => setPageLimit(prev => prev + 50)} className="font-bold border-primary text-primary hover:bg-primary/10">
-          <RefreshCw className="w-4 h-4 mr-2" /> Tampilkan Lebih Banyak Data
-        </Button>
-      </div>
-    )}
-    </div>
-  </div>
-)}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
