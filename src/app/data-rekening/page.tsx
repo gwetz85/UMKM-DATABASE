@@ -571,98 +571,167 @@ function DataRekeningContent() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <header className="flex items-center gap-3 px-4 py-3 border-b bg-card/80 backdrop-blur sticky top-0 z-10 shrink-0">
-        <SidebarTrigger />
-        <div className="flex-1 flex flex-col md:flex-row md:items-center gap-2">
-          <div className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-emerald-600 shrink-0" />
-            <h1 className="font-black text-base md:text-lg uppercase text-emerald-700">Data Rekening</h1>
-            <Badge className="bg-emerald-600 text-white font-black text-xs">{actors?.length ?? 0}</Badge>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 md:ml-4">
-            <div className="relative flex-1 min-w-[160px]">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Cari nama / NIK / no rek…"
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                className="pl-8 h-8 text-xs"
-              />
+    <div className="p-4 md:p-8 space-y-6 pb-24 md:pb-8">
+      {/* Top Header & Search / Filters */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex items-center gap-3">
+            <SidebarTrigger className="text-emerald-700 hover:bg-emerald-50 transition-colors" />
+            <div>
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-emerald-600 shrink-0" />
+                <h1 className="font-black text-xl md:text-2xl uppercase text-emerald-700 font-headline">Data Rekening</h1>
+                <Badge className="bg-emerald-600 text-white font-black text-xs">{actors?.length ?? 0}</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">Basis data rekening pelaku usaha perbankan lolos verifikasi.</p>
             </div>
-            <select
-              value={selectedBank}
-              onChange={e => setSelectedBank(e.target.value)}
-              className="h-8 text-xs px-2 rounded-md border border-input bg-background font-semibold"
+          </div>
+
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleExportExcel}
+              className="border-emerald-500 text-emerald-700 font-bold hover:bg-emerald-50 text-xs w-full sm:w-auto h-9 shadow-sm shrink-0"
+              disabled={!actors || actors.length === 0}
             >
-              <option value="">Semua Bank</option>
-              {bankStats.map(({ bank, count }) => (
-                <option key={bank} value={bank}>{bank} ({count})</option>
+              <FileSpreadsheet className="w-4 h-4 mr-1.5" />
+              Export Excel
+            </Button>
+          )}
+        </div>
+
+        {/* Search & Filters Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Cari nama / NIK / no rek…"
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              className="pl-9 h-10 text-xs sm:text-sm bg-white border-slate-200"
+            />
+          </div>
+
+          <select
+            value={selectedBank}
+            onChange={e => setSelectedBank(e.target.value)}
+            className="h-10 text-xs sm:text-sm px-3 rounded-md border border-slate-200 bg-white font-semibold text-slate-700"
+          >
+            <option value="">Semua Bank</option>
+            {bankStats.map(({ bank, count }) => (
+              <option key={bank} value={bank}>{bank} ({count})</option>
+            ))}
+          </select>
+
+          <select
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            className="h-10 text-xs sm:text-sm px-3 rounded-md border border-slate-200 bg-white text-slate-700"
+          >
+            <option value="">Semua Kategori</option>
+            <option value="Kuliner">Kuliner</option>
+            <option value="Bukan Kuliner">Bukan Kuliner</option>
+          </select>
+
+          {!isKoordinator && coordinatorList.length > 0 && (
+            <select
+              value={filterCoordinator}
+              onChange={e => setFilterCoordinator(e.target.value)}
+              className="h-10 text-xs sm:text-sm px-3 rounded-md border border-slate-200 bg-white text-slate-700 truncate"
+            >
+              <option value="">Semua Koordinator</option>
+              {coordinatorList.map(c => (
+                <option key={c} value={c}>{c}</option>
               ))}
             </select>
-            <select
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              className="h-8 text-xs px-2 rounded-md border border-input bg-background"
-            >
-              <option value="">Semua Kategori</option>
-              <option value="Kuliner">Kuliner</option>
-              <option value="Bukan Kuliner">Bukan Kuliner</option>
-            </select>
-            {!isKoordinator && coordinatorList.length > 0 && (
-              <select
-                value={filterCoordinator}
-                onChange={e => setFilterCoordinator(e.target.value)}
-                className="h-8 text-xs px-2 rounded-md border border-input bg-background max-w-[160px] truncate"
-              >
-                <option value="">Semua Koordinator</option>
-                {coordinatorList.map(c => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            )}
-          </div>
-        </div>
-        {isAdmin && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleExportExcel}
-            className="border-emerald-500 text-emerald-700 font-bold hover:bg-emerald-50 text-xs shrink-0"
-            disabled={!actors || actors.length === 0}
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
-            Export Excel
-          </Button>
-        )}
-      </header>
-
-      {/* Ringkasan Statistik */}
-      <div className="p-4 pb-0 grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 flex flex-col justify-between">
-          <p className="text-[10px] font-black uppercase text-emerald-700 tracking-wider">Total Rekening Terinput</p>
-          <p className="text-xl md:text-2xl font-black text-emerald-900 mt-1">{statsSummary.total}</p>
-        </div>
-        <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 flex flex-col justify-between">
-          <p className="text-[10px] font-black uppercase text-blue-700 tracking-wider">Selesai LPJ (Final)</p>
-          <p className="text-xl md:text-2xl font-black text-blue-900 mt-1">{statsSummary.lpjSelesai}</p>
-        </div>
-        <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3 flex flex-col justify-between">
-          <p className="text-[10px] font-black uppercase text-amber-700 tracking-wider">Menunggu LPJ</p>
-          <p className="text-xl md:text-2xl font-black text-amber-900 mt-1">{statsSummary.lpjProses}</p>
-        </div>
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col justify-between">
-          <p className="text-[10px] font-black uppercase text-slate-700 tracking-wider">Belum Diteruskan ke LPJ</p>
-          <p className="text-xl md:text-2xl font-black text-slate-900 mt-1">{statsSummary.belumLpj}</p>
+          )}
         </div>
       </div>
 
-      {/* Rincian Total Rekening Per Bank (Hanya menampilkan bank yang sudah ada datanya) */}
+      {/* Ringkasan Statistik */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-sm">
+          <p className="text-[10px] sm:text-xs font-black uppercase text-emerald-700 tracking-wider">Total Rekening</p>
+          <p className="text-xl sm:text-2xl md:text-3xl font-black text-emerald-900 mt-1">{statsSummary.total}</p>
+        </div>
+        <div className="bg-blue-50/70 border border-blue-200 rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-sm">
+          <p className="text-[10px] sm:text-xs font-black uppercase text-blue-700 tracking-wider">Selesai LPJ</p>
+          <p className="text-xl sm:text-2xl md:text-3xl font-black text-blue-900 mt-1">{statsSummary.lpjSelesai}</p>
+        </div>
+        <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-sm">
+          <p className="text-[10px] sm:text-xs font-black uppercase text-amber-700 tracking-wider">Menunggu LPJ</p>
+          <p className="text-xl sm:text-2xl md:text-3xl font-black text-amber-900 mt-1">{statsSummary.lpjProses}</p>
+        </div>
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-sm">
+          <p className="text-[10px] sm:text-xs font-black uppercase text-slate-700 tracking-wider">Belum LPJ</p>
+          <p className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 mt-1">{statsSummary.belumLpj}</p>
+        </div>
+      </div>
+
+      {/* Rincian Total Rekening Per Bank */}
       {bankStats.length > 0 && (
-        <div className="px-4 pt-3 pb-0">
-          <div className="bg-slate-50/70 border border-slate-200/80 rounded-xl p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+        <div className="space-y-2">
+          {/* Mobile: Horizontal scrollable bank filter chips */}
+          <div className="md:hidden space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black uppercase text-slate-700 flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-emerald-600" />
+                Pilih Bank ({bankStats.length})
+              </span>
+              {selectedBank && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedBank("")}
+                  className="text-[11px] text-emerald-700 font-bold hover:underline"
+                >
+                  Reset Filter
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar">
+              <button
+                type="button"
+                onClick={() => setSelectedBank("")}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl border text-xs font-bold shrink-0 transition-all flex items-center gap-1.5",
+                  !selectedBank
+                    ? "bg-emerald-700 text-white border-emerald-700 shadow-sm"
+                    : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                )}
+              >
+                <span>Semua</span>
+                <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-black", !selectedBank ? "bg-emerald-800 text-white" : "bg-slate-100 text-slate-600")}>
+                  {statsSummary.total}
+                </span>
+              </button>
+              {bankStats.map(({ bank, count }) => {
+                const isSelected = selectedBank.toUpperCase() === bank.toUpperCase()
+                return (
+                  <button
+                    key={bank}
+                    type="button"
+                    onClick={() => setSelectedBank(isSelected ? "" : bank)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl border text-xs font-bold shrink-0 transition-all flex items-center gap-1.5",
+                      isSelected
+                        ? "bg-emerald-700 text-white border-emerald-700 shadow-sm"
+                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                    )}
+                  >
+                    <span>{bank}</span>
+                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-black", isSelected ? "bg-emerald-800 text-white" : "bg-slate-100 text-slate-600")}>
+                      {count}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Desktop: Grid bank cards */}
+          <div className="hidden md:block bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-emerald-600" />
                 <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
@@ -744,17 +813,104 @@ function DataRekeningContent() {
         </div>
       )}
 
-      {/* Card Grid */}
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* Pelaku Usaha Rekening List */}
+      <div>
         {isLoading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
             {Array.from({ length: 12 }).map((_, i) => (
-              <Skeleton key={i} className="h-40 rounded-xl" />
+              <Skeleton key={i} className="h-44 rounded-2xl" />
             ))}
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {/* Mobile Cards (1 card per item, clean, readable, matching actor-data) */}
+            <div className="md:hidden flex flex-col gap-3">
+              {actors?.slice(0, pageLimit).map((actor, idx) => {
+                const hasLpj = !!actor.lpjNominal && Number(actor.lpjNominal) > 0
+                const isLpjWaiting = actor.readyForLPJ && !hasLpj
+
+                return (
+                  <Card
+                    key={actor.id}
+                    className="cursor-pointer hover:shadow-md transition-all border-slate-200 bg-white shadow-sm rounded-2xl overflow-hidden active:scale-[0.99]"
+                    onClick={() => setViewingActor(actor)}
+                  >
+                    <CardContent className="p-4 space-y-3">
+                      {/* Top row: #index, Bank Name, Status Badge */}
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                            #{idx + 1}
+                          </span>
+                          <span className="text-xs font-black px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 uppercase tracking-tight">
+                            {actor.bankName || "BANK"}
+                          </span>
+                        </div>
+                        {hasLpj ? (
+                          <span className="text-[9px] font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 uppercase">
+                            SELESAI LPJ
+                          </span>
+                        ) : isLpjWaiting ? (
+                          <span className="text-[9px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 uppercase">
+                            PROSES LPJ
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full uppercase">
+                            TERCATAT
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Main Account Info */}
+                      <div>
+                        <div className="font-mono font-black text-lg text-emerald-700 tracking-wider">
+                          {actor.bankNumber || "-"}
+                        </div>
+                        <div className="text-xs font-bold uppercase text-slate-900 mt-0.5 flex items-center gap-1.5">
+                          <CreditCard className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span className="truncate">{actor.bankOwner || actor.fullName}</span>
+                        </div>
+                      </div>
+
+                      {/* Metadata Grid */}
+                      <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <div>
+                          <div className="text-[10px] text-slate-400 font-semibold uppercase">Pelaku Usaha</div>
+                          <div className="text-slate-800 font-bold truncate">{actor.fullName}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-slate-400 font-semibold uppercase">NIK</div>
+                          <div className="font-mono text-slate-700 font-medium truncate">{actor.nik || "-"}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-slate-400 font-semibold uppercase">Usaha</div>
+                          <div className="text-slate-700 font-medium truncate">{actor.businessName || "-"}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-slate-400 font-semibold uppercase">Koordinator</div>
+                          <div className="text-slate-700 font-medium truncate">{normalizeCoordinator(actor.coordinator) || "-"}</div>
+                        </div>
+                      </div>
+
+                      {/* Detail Button */}
+                      <Button
+                        size="sm"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl h-8 shadow-sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setViewingActor(actor)
+                        }}
+                      >
+                        DETAIL REKENING
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+
+            {/* Desktop Cards Grid */}
+            <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
               {actors?.slice(0, pageLimit).map(actor => {
                 const hasLpj = !!actor.lpjNominal && Number(actor.lpjNominal) > 0
                 const isLpjWaiting = actor.readyForLPJ && !hasLpj
@@ -813,14 +969,14 @@ function DataRekeningContent() {
                   </Card>
                 )
               })}
-
-              {(!actors || actors.length === 0) && (
-                <div className="col-span-full py-20 text-center text-muted-foreground grid place-items-center">
-                  <CreditCard className="w-12 h-12 mb-4 opacity-20" />
-                  <p>Tidak ada data rekening yang ditemukan.</p>
-                </div>
-              )}
             </div>
+
+            {(!actors || actors.length === 0) && (
+              <div className="py-20 text-center text-muted-foreground grid place-items-center">
+                <CreditCard className="w-12 h-12 mb-4 opacity-20" />
+                <p>Tidak ada data rekening yang ditemukan.</p>
+              </div>
+            )}
 
             {actors && actors.length > pageLimit && (
               <div className="p-4 flex justify-center">
