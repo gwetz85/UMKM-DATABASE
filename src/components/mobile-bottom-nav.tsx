@@ -164,7 +164,7 @@ export function MobileBottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-2 py-1.5 shadow-lg pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] print:hidden">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-t border-slate-200/60 dark:border-slate-800/60 px-2 py-1.5 shadow-[0_-4px_25px_rgba(0,0,0,0.06)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] print:hidden">
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;

@@ -54,8 +54,8 @@ export default function RootPage() {
   if (!user) return null
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col pt-2 md:pt-4">
-      <MenuLaunchpad className="flex-1 min-h-0" />
+    <div className="w-full flex flex-col pt-1 md:pt-4">
+      <MenuLaunchpad />
     </div>
   )
 }

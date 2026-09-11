@@ -451,14 +451,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 isLayarInformasiPage ? "p-0 min-h-full lg:h-full lg:max-h-full flex-1 flex flex-col overflow-y-auto lg:overflow-hidden" :
                 isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-7xl mx-auto" :
                 isPendaftaranPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-5xl mx-auto" :
-                isRootPage ? "p-3 sm:p-4 md:p-8 flex-1 flex flex-col min-h-0 pb-32 sm:pb-28 md:pb-20 lg:pr-[360px]" : 
+                isRootPage ? "p-3 sm:p-4 md:p-8 min-h-full pb-6 md:pb-20 lg:pr-[360px]" : 
                 "p-3 sm:p-4 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 lg:pr-[360px]"
               )}>
                 {children}
 
                 {/* Safe Area Spacer for Mobile Bottom Navigation */}
                 {!isLoginPage && !isLayarInformasiPage && (
-                  <div className="h-28 sm:h-24 md:hidden shrink-0 pointer-events-none" aria-hidden="true" />
+                  <div className="h-20 sm:h-16 md:hidden shrink-0 pointer-events-none" aria-hidden="true" />
                 )}
               </div>
             </main>

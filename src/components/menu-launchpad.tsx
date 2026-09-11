@@ -42,18 +42,25 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
   }
 
   return (
-    <div className={cn("w-full max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in zoom-in duration-500 flex flex-col", className)}>
-      <div className="flex flex-col mb-6 space-y-2 shrink-0">
-        <h2 className="text-4xl md:text-6xl font-black text-slate-800 tracking-tighter uppercase">
-          Sistem Navigasi
-        </h2>
-        <p className="text-slate-500 font-bold text-sm md:text-base uppercase tracking-[0.3em]">
+    <div className={cn("w-full max-w-7xl mx-auto p-3 sm:p-4 md:p-8 animate-in fade-in zoom-in duration-500 flex flex-col", className)}>
+      <div className="flex flex-col mb-4 md:mb-6 space-y-1.5 md:space-y-2 shrink-0">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-black text-slate-800 dark:text-slate-100 tracking-tight uppercase">
+            Sistem Navigasi
+          </h2>
+          {userProfile && (
+            <span className="md:hidden text-[10px] font-black text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full uppercase tracking-wider">
+              {userProfile.role || 'Staff'}
+            </span>
+          )}
+        </div>
+        <p className="text-slate-400 dark:text-slate-500 font-bold text-xs sm:text-sm md:text-base uppercase tracking-[0.15em] md:tracking-[0.3em]">
           Pilih Modul Untuk Melanjutkan
         </p>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1 custom-scrollbar">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-5 pb-16">
+      <div className="w-full md:flex-1 md:min-h-0 md:overflow-y-auto overflow-x-hidden md:pr-1 custom-scrollbar">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3 md:gap-5 pb-6 md:pb-16">
         {navigation.map((item: any, index) => (
           <div
             key={item.name}
@@ -66,48 +73,54 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               }
             }}
             style={{ 
-              animationDelay: `${index * 40}ms`,
+              animationDelay: `${index * 30}ms`,
               backgroundColor: item.color,
-              borderColor: `${item.color}44`
+              borderColor: `${item.color}55`
             }}
             className={cn(
-              "group relative flex flex-col p-4 md:p-5 rounded-[2rem] transition-all duration-300 ease-out overflow-hidden shadow-lg border cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-4 h-[135px] md:h-[150px] lg:h-[160px]",
+              "group relative flex flex-col justify-between p-3 sm:p-4 md:p-5 rounded-2xl md:rounded-[2rem] transition-all duration-300 ease-out overflow-hidden shadow-md md:shadow-lg border cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-3",
+              "h-[110px] sm:h-[125px] md:h-[150px] lg:h-[160px]",
               "hover:shadow-2xl hover:-translate-y-1.5 hover:brightness-110"
             )}
           >
             {/* Glossy Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-white/10 to-transparent pointer-events-none" />
 
-            {/* Icon Section */}
-            <div className="absolute top-4 right-4 md:top-5 md:right-5 z-10">
-              <div className="bg-white/20 p-3 rounded-2xl group-hover:scale-110 transition-transform duration-300 ease-out shadow-xl backdrop-blur-sm">
+            {/* Top Bar: Icon on left, Badges on right */}
+            <div className="relative z-10 flex items-start justify-between w-full">
+              {/* Icon Container */}
+              <div className="bg-white/25 backdrop-blur-md p-2 sm:p-2.5 md:p-3 rounded-xl md:rounded-2xl group-hover:scale-110 transition-transform duration-300 ease-out shadow-md">
                 <item.icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
+              </div>
+
+              {/* Badges */}
+              <div className="flex items-center gap-1">
+                {item.badge !== undefined && (
+                  <div className="flex items-center gap-1 px-2 py-0.5 md:px-2.5 md:py-1 bg-white/30 rounded-full backdrop-blur-md border border-white/30 animate-pulse shadow-md">
+                    <span className="w-1.5 h-1.5 bg-white rounded-full" />
+                    <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-wider">{item.badge}</span>
+                  </div>
+                )}
+
+                {item.items && item.items.length > 0 && (
+                  <div className="flex items-center gap-0.5 sm:gap-1 text-[8px] md:text-[10px] font-black text-white/90 uppercase tracking-wider bg-black/15 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded-full backdrop-blur-md border border-white/10">
+                    <ChevronRight className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
+                    <span className="hidden sm:inline">Sub-Menu</span>
+                    <span className="sm:hidden text-[7px]">Sub</span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Title Section */}
-            <div className="flex-1 relative z-10 flex flex-col items-center justify-center gap-3">
-              <div className="text-sm md:text-base font-black text-white leading-tight uppercase tracking-tight text-center break-words line-clamp-2 w-full px-2">
+            <div className="relative z-10 flex flex-col items-start md:items-center justify-end md:justify-center md:flex-1 mt-auto">
+              <div className="text-xs sm:text-sm md:text-base font-black text-white leading-tight uppercase tracking-tight text-left md:text-center break-words line-clamp-2 w-full drop-shadow-sm">
                 {item.name}
               </div>
-              
-              {item.badge !== undefined && (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-white/20 rounded-full backdrop-blur-md border border-white/20 animate-pulse shadow-xl">
-                  <span className="w-1.5 h-1.5 bg-white rounded-full" />
-                  <span className="text-[10px] font-black text-white uppercase tracking-wider">{item.badge} Pesan</span>
-                </div>
-              )}
-
-              {item.items && item.items.length > 0 && (
-                <div className="flex items-center gap-2 text-[10px] font-black text-white/80 uppercase tracking-widest bg-black/10 w-fit px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
-                  <ChevronRight className="w-3 h-3 text-white" />
-                  <span>Sub-Menu</span>
-                </div>
-              )}
             </div>
 
             {/* Decorative Light Effect */}
-            <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000 pointer-events-none" />
+            <div className="absolute -bottom-8 -right-8 w-24 h-24 md:w-32 md:h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000 pointer-events-none" />
           </div>
         ))}
         </div>
