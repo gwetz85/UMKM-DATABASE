@@ -317,10 +317,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
                       <button
                         onClick={() => setIsLogoutDialogOpen(true)}
-                        className="hidden sm:flex w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 items-center justify-center hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all active:scale-90 border border-rose-100 dark:border-rose-900/40 shadow-sm group"
+                        className="flex w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-xl sm:rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 items-center justify-center hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all active:scale-90 border border-rose-200/80 dark:border-rose-900/40 shadow-sm group shrink-0"
                         title="Logout / Keluar"
+                        aria-label="Logout"
                       >
-                        <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" />
+                        <LogOut className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:-translate-x-0.5" />
                       </button>
 
                       <ConfirmDialog
