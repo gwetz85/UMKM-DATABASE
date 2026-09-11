@@ -312,7 +312,7 @@ export default function InputDataPage() {
   ]
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8">
+    <div className="p-3 sm:p-6 md:p-8 max-w-4xl mx-auto space-y-6 sm:space-y-8">
       {/* Header Tunas Bangsa */}
       <div className="bg-white dark:bg-slate-900/50 p-6 rounded-[2rem] shadow-xl shadow-primary/5 border border-primary/10 animate-in fade-in slide-in-from-top-4 duration-1000">
         <div className="flex flex-col text-center md:text-left gap-1">
@@ -541,16 +541,16 @@ export default function InputDataPage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-end pb-8">
+        <div className="flex justify-end pt-4 pb-12 sm:pb-8">
           <Button 
             type="submit" 
             disabled={loading || isMonitoring} 
             className={cn(
-              "w-full md:w-auto min-w-[200px] font-bold shadow-lg",
-              isMonitoring ? "bg-slate-400 cursor-not-allowed" : "bg-primary text-primary-foreground"
+              "w-full md:w-auto min-w-[240px] h-12 text-base font-bold shadow-xl rounded-xl transition-all active:scale-[0.98]",
+              isMonitoring ? "bg-slate-400 cursor-not-allowed" : "bg-primary text-primary-foreground hover:bg-primary/90"
             )}
           >
-            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
             {isMonitoring ? "Akses Terbatas" : "Simpan Data Pendaftaran"}
           </Button>
         </div>
