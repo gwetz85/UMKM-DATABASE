@@ -69,36 +69,31 @@ export default function BusinessListPage() {
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : (
-            <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow>
-                  <TableHead className="font-semibold">Nama Perusahaan</TableHead>
-                  <TableHead className="font-semibold">Tipe Bisnis</TableHead>
-                  <TableHead className="font-semibold">Lokasi</TableHead>
-                  <TableHead className="font-semibold">NIB / No Reg</TableHead>
-                  <TableHead className="text-right font-semibold">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {businesses?.map((item) => (
-                  <TableRow key={item.id} className="hover:bg-muted/20">
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-primary">{item.companyName}</span>
-                        <span className="text-xs text-muted-foreground">{item.ownerName || '-'}</span>
+            <>
+              {/* Mobile Cards View */}
+              <div className="md:hidden divide-y divide-slate-100">
+                {businesses?.map((item: any, idx: number) => (
+                  <div key={item.id || idx} className="p-4 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                            #{idx + 1}
+                          </span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {item.registrationNumber || '-'}
+                          </span>
+                        </div>
+                        <div className="font-bold text-primary text-base leading-tight">
+                          {item.companyName}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Pemilik: {item.ownerName || '-'}
+                        </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none">
-                        {item.businessType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{item.city}</TableCell>
-                    <TableCell className="font-mono text-xs">{item.registrationNumber}</TableCell>
-                    <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -112,18 +107,84 @@ export default function BusinessListPage() {
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-50">
+                      <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none text-[10px]">
+                        {item.businessType}
+                      </Badge>
+                      <span className="text-slate-500 font-medium">
+                        {item.city || '-'}
+                      </span>
+                    </div>
+                  </div>
                 ))}
                 {(!businesses || businesses.length === 0) && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
-                      Tidak ada data pelaku usaha ditemukan.
-                    </TableCell>
-                  </TableRow>
+                  <div className="text-center py-12 text-muted-foreground text-sm">
+                    Tidak ada data pelaku usaha ditemukan.
+                  </div>
                 )}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead className="font-semibold">Nama Perusahaan</TableHead>
+                      <TableHead className="font-semibold">Tipe Bisnis</TableHead>
+                      <TableHead className="font-semibold">Lokasi</TableHead>
+                      <TableHead className="font-semibold">NIB / No Reg</TableHead>
+                      <TableHead className="text-right font-semibold">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {businesses?.map((item) => (
+                      <TableRow key={item.id} className="hover:bg-muted/20">
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-primary">{item.companyName}</span>
+                            <span className="text-xs text-muted-foreground">{item.ownerName || '-'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-none">
+                            {item.businessType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{item.city}</TableCell>
+                        <TableCell className="font-mono text-xs">{item.registrationNumber}</TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuLabel>Opsi</DropdownMenuLabel>
+                              <DropdownMenuItem>
+                                <Edit className="w-4 h-4 mr-2" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive">
+                                <Trash2 className="w-4 h-4 mr-2" /> Hapus
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {(!businesses || businesses.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                          Tidak ada data pelaku usaha ditemukan.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

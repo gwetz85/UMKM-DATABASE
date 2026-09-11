@@ -474,50 +474,101 @@ function RekeningBankContent() {
 
                 <Card className="glass border-none shadow-xl overflow-hidden rounded-3xl print:shadow-none print:border-2 print:border-black print:rounded-none">
                   <CardContent className="p-0">
-                    <Table className="print:border-collapse">
-                      <TableHeader className="bg-slate-50/50 print:bg-slate-100">
-                        <TableRow className="hover:bg-transparent border-b-slate-100 print:border-b-2 print:border-black">
-                          <TableHead className="w-[50px] font-black uppercase text-[10px] tracking-widest py-4 pl-6 print:text-black print:border-r-2 print:border-black">NO</TableHead>
-                          <TableHead className="w-[180px] font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">Nomor Rekening</TableHead>
-                          <TableHead className="w-[120px] font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">Nama Bank</TableHead>
-                          <TableHead className="font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">Nama Pelaku Usaha</TableHead>
-                          <TableHead className="w-[150px] font-black uppercase text-[10px] tracking-widest py-4 pr-6 text-right print:text-black text-center">Nominal</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {actors.map((actor, index) => (
-                          <TableRow key={actor.id} className="group hover:bg-primary/5 transition-colors border-b-slate-50 print:border-b-2 print:border-black">
-                            <TableCell className="py-4 pl-6 font-bold text-xs print:text-black print:border-r-2 print:border-black text-center">
-                              {index + 1}
-                            </TableCell>
-                            <TableCell className="font-mono text-base font-black text-primary py-4 print:text-black print:border-r-2 print:border-black text-center">
-                              {actor.bankNumber || "-"}
-                            </TableCell>
-                            <TableCell className="font-bold text-xs uppercase text-slate-600 print:text-black print:border-r-2 print:border-black text-center">
-                              {actor.bankName || bankName}
-                            </TableCell>
-                            <TableCell className="print:border-r-2 print:border-black pl-4">
-                              <div className="flex items-center justify-between gap-4">
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="font-bold text-slate-800 uppercase text-sm leading-tight print:text-black">
-                                    {actor.fullName}
-                                  </span>
-                                  <span className="text-[10px] font-bold text-muted-foreground uppercase print:hidden">{actor.businessName}</span>
-                                </div>
-                                {actor.readyForLPJ && (
-                                  <Badge variant="outline" className="h-5 text-[8px] font-black uppercase text-emerald-600 bg-emerald-50 border-emerald-200 gap-1 print:hidden">
-                                     <CheckCircle2 className="w-2.5 h-2.5" /> LPJ READY
-                                  </Badge>
-                                )}
+                    {/* Mobile Card View */}
+                    <div className="md:hidden print:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                      {actors.map((actor, index) => (
+                        <div key={actor.id} className="p-4 space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2.5">
+                              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-black text-xs shrink-0">
+                                {index + 1}
+                              </span>
+                              <div>
+                                <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 uppercase leading-tight">
+                                  {actor.fullName}
+                                </h4>
+                                <p className="text-[11px] text-muted-foreground uppercase font-medium">
+                                  {actor.businessName || "-"}
+                                </p>
                               </div>
-                            </TableCell>
-                            <TableCell className="text-right pr-6 font-mono font-black text-sm text-emerald-600 print:text-black text-center whitespace-nowrap">
-                              Rp. 1.000.000
-                            </TableCell>
+                            </div>
+                            <span className="font-mono font-black text-xs text-emerald-600 dark:text-emerald-400 shrink-0">
+                              Rp 1.000.000
+                            </span>
+                          </div>
+
+                          <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl space-y-1.5 border border-slate-100 dark:border-slate-800">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground font-medium">Nomor Rekening:</span>
+                              <span className="font-mono font-bold text-primary dark:text-primary-foreground">
+                                {actor.bankNumber || "-"}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground font-medium">Nama Bank:</span>
+                              <span className="font-semibold uppercase text-slate-700 dark:text-slate-300">
+                                {actor.bankName || bankName}
+                              </span>
+                            </div>
+                            {actor.readyForLPJ && (
+                              <div className="pt-1 flex justify-end">
+                                <Badge variant="outline" className="h-5 text-[9px] font-black uppercase text-emerald-600 bg-emerald-50 border-emerald-200 gap-1">
+                                  <CheckCircle2 className="w-2.5 h-2.5" /> LPJ READY
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block print:block overflow-x-auto">
+                      <Table className="print:border-collapse">
+                        <TableHeader className="bg-slate-50/50 print:bg-slate-100">
+                          <TableRow className="hover:bg-transparent border-b-slate-100 print:border-b-2 print:border-black">
+                            <TableHead className="w-[50px] font-black uppercase text-[10px] tracking-widest py-4 pl-6 print:text-black print:border-r-2 print:border-black">NO</TableHead>
+                            <TableHead className="w-[180px] font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">Nomor Rekening</TableHead>
+                            <TableHead className="w-[120px] font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">Nama Bank</TableHead>
+                            <TableHead className="font-black uppercase text-[10px] tracking-widest py-4 print:text-black print:border-r-2 print:border-black text-center">Nama Pelaku Usaha</TableHead>
+                            <TableHead className="w-[150px] font-black uppercase text-[10px] tracking-widest py-4 pr-6 text-right print:text-black text-center">Nominal</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {actors.map((actor, index) => (
+                            <TableRow key={actor.id} className="group hover:bg-primary/5 transition-colors border-b-slate-50 print:border-b-2 print:border-black">
+                              <TableCell className="py-4 pl-6 font-bold text-xs print:text-black print:border-r-2 print:border-black text-center">
+                                {index + 1}
+                              </TableCell>
+                              <TableCell className="font-mono text-base font-black text-primary py-4 print:text-black print:border-r-2 print:border-black text-center">
+                                {actor.bankNumber || "-"}
+                              </TableCell>
+                              <TableCell className="font-bold text-xs uppercase text-slate-600 print:text-black print:border-r-2 print:border-black text-center">
+                                {actor.bankName || bankName}
+                              </TableCell>
+                              <TableCell className="print:border-r-2 print:border-black pl-4">
+                                <div className="flex items-center justify-between gap-4">
+                                  <div className="flex flex-col gap-0.5">
+                                    <span className="font-bold text-slate-800 uppercase text-sm leading-tight print:text-black">
+                                      {actor.fullName}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase print:hidden">{actor.businessName}</span>
+                                  </div>
+                                  {actor.readyForLPJ && (
+                                    <Badge variant="outline" className="h-5 text-[8px] font-black uppercase text-emerald-600 bg-emerald-50 border-emerald-200 gap-1 print:hidden">
+                                       <CheckCircle2 className="w-2.5 h-2.5" /> LPJ READY
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right pr-6 font-mono font-black text-sm text-emerald-600 print:text-black text-center whitespace-nowrap">
+                                Rp. 1.000.000
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </CardContent>
                 </Card>
               </div>

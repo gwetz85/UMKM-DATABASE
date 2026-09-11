@@ -1083,8 +1083,149 @@ export default function GBASPage() {
         {/* TAMPILAN TABEL RESPONSIVE DENGAN STICKY ACTION COLUMN */}
         {/* ───────────────────────────────────────────────────────────────────────────── */}
         {viewMode === 'table' ? (
-          <Card className="border-slate-200 shadow-sm bg-white overflow-hidden rounded-2xl">
-            <div className="overflow-x-auto w-full">
+          <Card className="border-slate-200 shadow-sm bg-white dark:bg-slate-900 overflow-hidden rounded-2xl">
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {isDataLoading ? (
+                <div className="py-20 flex flex-col items-center justify-center gap-2 text-slate-400">
+                  <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+                  <span className="text-xs font-semibold">Memuat data Berita Acara Survey...</span>
+                </div>
+              ) : filteredActors.length === 0 ? (
+                <div className="py-16 text-center space-y-2">
+                  <ClipboardCheck className="w-8 h-8 text-slate-300 mx-auto" />
+                  <span className="text-sm font-bold text-slate-700 block">Tidak ada Berita Acara Survey ditemukan</span>
+                  <p className="text-xs text-slate-400">Coba sesuaikan kata kunci pencarian atau filter yang dipilih.</p>
+                </div>
+              ) : (
+                filteredActors.slice(0, pageLimit).map((actor, idx) => {
+                  const stage = getActorMenuStage(actor)
+                  const survey = actor.surveyData
+                  const pejabats = survey?.pejabatData || actor.pejabatData
+                  const vNama = pejabats?.verifikator?.nama || (actor as any).verifikatorDinas || (actor as any).verifiedDinasBy || "-"
+                  const vNip = pejabats?.verifikator?.nipppk || ""
+                  const pNama = pejabats?.petugas?.nama || actor.petugasSurvey || actor.createdBy || "-"
+                  const pNip = pejabats?.petugas?.nipppk || ""
+                  const isSelected = selectedIds.includes(actor.id)
+                  const isGeneratingThis = generatingPdfId === actor.id
+
+                  return (
+                    <div key={actor.id} className={`p-4 space-y-3 ${isSelected ? 'bg-indigo-50/50 dark:bg-indigo-950/20' : ''}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => handleToggleSelect(actor.id)}
+                            aria-label={`Pilih ${actor.fullName}`}
+                            className="shrink-0"
+                          />
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-black text-[11px] shrink-0">
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">
+                              {actor.fullName}
+                            </h4>
+                            <span className="font-mono text-[11px] text-muted-foreground">{actor.nik || "-"}</span>
+                          </div>
+                        </div>
+                        <Badge className={`text-[9px] font-bold border shrink-0 ${stage.badgeClass}`}>
+                          {stage.label}
+                        </Badge>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">Usaha:</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">
+                            {actor.businessName || survey?.namaUsaha || "-"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">Kategori:</span>
+                          <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                            {actor.businessCategory || survey?.bidangUsaha || "-"}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">Wilayah:</span>
+                          <span className="text-slate-700 dark:text-slate-300">
+                            {actor.kelurahan || "-"}, {actor.kecamatan || "-"}
+                          </span>
+                        </div>
+                        {survey?.tanggalSurvey && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground font-medium">Tgl Survey:</span>
+                            <span className="text-slate-700 dark:text-slate-300">
+                              {formatTanggalIndonesia(survey.tanggalSurvey).fullText}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                          <span className="text-muted-foreground font-medium">Petugas Survey:</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[180px]">
+                            {pNama} {pNip && `(${pNip})`}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">Verifikator:</span>
+                          <span className="font-semibold text-indigo-700 dark:text-indigo-300 truncate max-w-[180px]">
+                            {vNama} {vNip && `(${vNip})`}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center justify-end gap-1 pt-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2.5 text-xs text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 border-indigo-200 rounded-xl gap-1"
+                          onClick={() => handleOpenPrintModal(actor)}
+                          disabled={isGeneratingThis}
+                        >
+                          {isGeneratingThis ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
+                          PDF
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2.5 text-xs text-slate-700 hover:bg-slate-100 rounded-xl gap-1"
+                          onClick={() => setViewingActor(actor)}
+                        >
+                          <Eye className="w-3.5 h-3.5" /> Detail
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 px-2.5 text-xs text-amber-600 hover:bg-amber-50 border-amber-200 rounded-xl gap-1"
+                          onClick={() => handleOpenEditPejabat(actor)}
+                        >
+                          <Edit className="w-3.5 h-3.5" /> Koreksi
+                        </Button>
+                        {isAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 px-2 text-xs text-rose-600 hover:bg-rose-50 border-rose-200 rounded-xl gap-1"
+                            title="Kembalikan ke Verifikator Dinas"
+                            onClick={() => {
+                              setReturnVerifikatorActor(actor)
+                              setReturnVerifikatorReason("")
+                            }}
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto w-full">
               <Table className="w-full min-w-[1200px]">
                 <TableHeader className="bg-slate-100/80">
                   <TableRow className="hover:bg-transparent">

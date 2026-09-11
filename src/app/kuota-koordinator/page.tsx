@@ -453,165 +453,292 @@ export default function KuotaKorlapDewanAktifPage() {
         </div>
       </div>
 
-      <Card className="border-none shadow-sm overflow-hidden bg-white">
+      <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-slate-900 rounded-3xl">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
           ) : (
-            <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow>
-                  <TableHead className="font-bold uppercase text-[10px] w-[50px] text-center">No</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px]">USULAN</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px]">No. HP</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] text-center">Kuota USULAN</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] text-center">Tercapai</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] text-center">Rekening Input</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px] text-center">Sisa</TableHead>
-                  <TableHead className="text-right font-bold uppercase text-[10px]">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div>
+              {/* Mobile Card View */}
+              <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
                 {combinedKuotaData.map((item: any, index: number) => (
-                  <TableRow key={item.id} className="hover:bg-muted/10">
-                    <TableCell className="font-bold text-slate-700 text-center">
-                      {index + 1}
-                    </TableCell>
-                    <TableCell className="font-bold text-primary">
-                      {item.name}
-                    </TableCell>
-                    <TableCell className="font-semibold text-slate-600 text-xs">
-                      {item.phone ? (
-                        <a
-                          href={(() => {
-                            let clean = String(item.phone).replace(/\D/g, "");
-                            if (clean.startsWith("0")) clean = "62" + clean.slice(1);
-                            else if (!clean.startsWith("62")) clean = "62" + clean;
-                            return `https://wa.me/${clean}`;
-                          })()}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold hover:underline hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200/80 dark:border-emerald-800 transition-all active:scale-95"
-                          title="Klik untuk membuka WhatsApp"
+                  <div key={item.id} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-black text-xs shrink-0">
+                          {index + 1}
+                        </span>
+                        <div>
+                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 uppercase leading-tight">
+                            {item.name}
+                          </h4>
+                          {item.phone && (
+                            <div className="pt-0.5">
+                              <a
+                                href={(() => {
+                                  let clean = String(item.phone).replace(/\D/g, "");
+                                  if (clean.startsWith("0")) clean = "62" + clean.slice(1);
+                                  else if (!clean.startsWith("62")) clean = "62" + clean;
+                                  return `https://wa.me/${clean}`;
+                                })()}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold text-[11px] hover:underline"
+                              >
+                                <MessageCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
+                                <span>{item.phone}</span>
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingData(item)}
+                          className="h-8 px-2.5 text-[10px] font-bold border-primary/20 hover:bg-primary/5 text-primary rounded-xl gap-1"
                         >
-                          <MessageCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
-                          <span>{item.phone}</span>
-                        </a>
-                      ) : (
-                        <span className="text-slate-300">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center font-black text-slate-800">
-                       <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
+                          <Edit className="w-3 h-3" /> EDIT
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-xl"
+                          onClick={() => handleDelete(item.id, item.name)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] font-black uppercase text-slate-400 block">Kuota</span>
+                        <span className="inline-flex items-center justify-center font-black text-xs text-slate-700 dark:text-slate-300">
                           {item.quota}
-                       </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                       <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
+                        </span>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] font-black uppercase text-slate-400 block">Tercapai</span>
+                        <span className="inline-flex items-center justify-center font-black text-xs text-emerald-600 dark:text-emerald-400">
                           {item.achieved}
-                       </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                       <span className="inline-flex items-center justify-center bg-amber-100 text-amber-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-amber-200">
+                        </span>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] font-black uppercase text-slate-400 block">Rekening</span>
+                        <span className="inline-flex items-center justify-center font-black text-xs text-amber-600 dark:text-amber-400">
                           {item.rekeningInput}
-                       </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                       <span className={cn(
-                          "inline-flex items-center justify-center font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border",
-                          item.remaining <= 0 ? "bg-red-100 text-red-700 border-red-200" : "bg-primary text-white border-primary/20"
+                        </span>
+                      </div>
+                      <div className="space-y-0.5">
+                        <span className="text-[9px] font-black uppercase text-slate-400 block">Sisa</span>
+                        <span className={cn(
+                          "inline-flex items-center justify-center font-black text-xs px-2 py-0.5 rounded-full",
+                          item.remaining <= 0 ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400" : "bg-primary/10 text-primary"
                         )}>
                           {item.remaining}
-                       </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {combinedKuotaData.length === 0 && (
+                  <div className="text-center py-16 text-muted-foreground italic font-medium">
+                    Belum ada data target kuota yang didaftarkan.
+                  </div>
+                )}
+
+                {/* Mobile Total Summary */}
+                {combinedKuotaData.length > 0 && (
+                  <div className="p-4 bg-primary/5 border-t border-primary/10 space-y-2">
+                    <span className="text-xs font-black uppercase text-slate-700 dark:text-slate-300 block">
+                      Total Keseluruhan Kuota
+                    </span>
+                    <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                      <div>
+                        <span className="text-[9px] font-black text-slate-400 block uppercase">Kuota</span>
+                        <span className="font-black text-slate-700 dark:text-slate-300">{totalQuota}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-black text-slate-400 block uppercase">Tercapai</span>
+                        <span className="font-black text-emerald-600">{totalAchieved}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-black text-slate-400 block uppercase">Rekening</span>
+                        <span className="font-black text-amber-600">{totalRekeningInput}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-black text-slate-400 block uppercase">Sisa</span>
+                        <span className={cn("font-black", (totalQuota - totalAchieved) <= 0 ? "text-red-600" : "text-primary")}>
+                          {totalQuota - totalAchieved}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead className="font-bold uppercase text-[10px] w-[50px] text-center">No</TableHead>
+                      <TableHead className="font-bold uppercase text-[10px]">USULAN</TableHead>
+                      <TableHead className="font-bold uppercase text-[10px]">No. HP</TableHead>
+                      <TableHead className="font-bold uppercase text-[10px] text-center">Kuota USULAN</TableHead>
+                      <TableHead className="font-bold uppercase text-[10px] text-center">Tercapai</TableHead>
+                      <TableHead className="font-bold uppercase text-[10px] text-center">Rekening Input</TableHead>
+                      <TableHead className="font-bold uppercase text-[10px] text-center">Sisa</TableHead>
+                      <TableHead className="text-right font-bold uppercase text-[10px]">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {combinedKuotaData.map((item: any, index: number) => (
+                      <TableRow key={item.id} className="hover:bg-muted/10">
+                        <TableCell className="font-bold text-slate-700 text-center">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell className="font-bold text-primary">
+                          {item.name}
+                        </TableCell>
+                        <TableCell className="font-semibold text-slate-600 text-xs">
+                          {item.phone ? (
+                            <a
+                              href={(() => {
+                                let clean = String(item.phone).replace(/\D/g, "");
+                                if (clean.startsWith("0")) clean = "62" + clean.slice(1);
+                                else if (!clean.startsWith("62")) clean = "62" + clean;
+                                return `https://wa.me/${clean}`;
+                              })()}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold hover:underline hover:text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200/80 dark:border-emerald-800 transition-all active:scale-95"
+                              title="Klik untuk membuka WhatsApp"
+                            >
+                              <MessageCircle className="w-3 h-3 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
+                              <span>{item.phone}</span>
+                            </a>
+                          ) : (
+                            <span className="text-slate-300">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center font-black text-slate-800">
+                           <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
+                              {item.quota}
+                           </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                           <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
+                              {item.achieved}
+                           </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                           <span className="inline-flex items-center justify-center bg-amber-100 text-amber-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-amber-200">
+                              {item.rekeningInput}
+                           </span>
+                        </TableCell>
+                        <TableCell className="text-center">
+                           <span className={cn(
+                              "inline-flex items-center justify-center font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border",
+                              item.remaining <= 0 ? "bg-red-100 text-red-700 border-red-200" : "bg-primary text-white border-primary/20"
+                            )}>
+                              {item.remaining}
+                           </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
                             <Button variant="outline" size="sm" onClick={() => setEditingData(item)} className="h-8 text-[10px] font-bold border-primary/20 hover:bg-primary/5 text-primary">
                               <Edit className="w-3 h-3 mr-1" /> EDIT
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <form onSubmit={handleUpdate}>
-                              <DialogHeader>
-                                <DialogTitle className="text-primary font-black uppercase">Edit Data Kuota</DialogTitle>
-                                <CardDescription>Ubah target kuota untuk {item.name}.</CardDescription>
-                              </DialogHeader>
-                              <div className="py-6">
-                                <div className="grid gap-4 py-4">
-                                  <div className="space-y-2">
-                                    <Label className="font-bold">Nama Koordinator</Label>
-                                    <Input name="name" defaultValue={item.name} required />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="font-bold">Nomor Ponsel</Label>
-                                    <Input name="phone" type="tel" defaultValue={item.phone || ''} placeholder="08xxxxxxxxxx" />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="font-bold">Jumlah Kuota</Label>
-                                    <Input name="quota" type="number" min="0" defaultValue={item.quota} required />
-                                  </div>
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button type="submit" className="w-full font-bold">Simpan Perubahan</Button>
-                              </DialogFooter>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(item.id, item.name)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {combinedKuotaData.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-20 text-muted-foreground italic font-medium">
-                      Belum ada data target kuota yang didaftarkan.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-              <TableFooter>
-                <TableRow className="bg-primary/5 border-t-2 border-primary/20">
-                  <TableCell colSpan={3} className="font-black text-slate-800 uppercase text-right text-xs pr-6">
-                    Total Keseluruhan Kuota Data
-                  </TableCell>
-                  <TableCell className="text-center font-black text-slate-600 text-base">
-                    {totalQuota}
-                  </TableCell>
-                  <TableCell className="text-center font-black text-emerald-600 text-base">
-                    {totalAchieved}
-                  </TableCell>
-                  <TableCell className="text-center font-black text-amber-600 text-base">
-                    {totalRekeningInput}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <span className={cn(
-                        "inline-flex items-center gap-1 font-black px-3 py-1 rounded-full shadow-sm text-xs border",
-                        (totalQuota - totalAchieved) <= 0 ? "bg-red-100 text-red-700 border-red-200" : "bg-primary text-white border-primary/20"
-                      )}>
-                        {totalQuota - totalAchieved}
-                        <span className="text-[10px] opacity-70">
-                          ({(totalQuota > 0 ? ((totalQuota - totalAchieved) / totalQuota) * 100 : 0).toFixed(1)}%)
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDelete(item.id, item.name)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {combinedKuotaData.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-20 text-muted-foreground italic font-medium">
+                          Belum ada data target kuota yang didaftarkan.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                  <TableFooter>
+                    <TableRow className="bg-primary/5 border-t-2 border-primary/20">
+                      <TableCell colSpan={3} className="font-black text-slate-800 uppercase text-right text-xs pr-6">
+                        Total Keseluruhan Kuota Data
+                      </TableCell>
+                      <TableCell className="text-center font-black text-slate-600 text-base">
+                        {totalQuota}
+                      </TableCell>
+                      <TableCell className="text-center font-black text-emerald-600 text-base">
+                        {totalAchieved}
+                      </TableCell>
+                      <TableCell className="text-center font-black text-amber-600 text-base">
+                        {totalRekeningInput}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className={cn(
+                            "inline-flex items-center gap-1 font-black px-3 py-1 rounded-full shadow-sm text-xs border",
+                            (totalQuota - totalAchieved) <= 0 ? "bg-red-100 text-red-700 border-red-200" : "bg-primary text-white border-primary/20"
+                          )}>
+                            {totalQuota - totalAchieved}
+                            <span className="text-[10px] opacity-70">
+                              ({(totalQuota > 0 ? ((totalQuota - totalAchieved) / totalQuota) * 100 : 0).toFixed(1)}%)
+                            </span>
                         </span>
-                    </span>
-                  </TableCell>
-                  <TableCell></TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
+                      </TableCell>
+                      <TableCell></TableCell>
+                    </TableRow>
+                  </TableFooter>
+                </Table>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Shared Edit Dialog */}
+      <Dialog open={!!editingData} onOpenChange={(open) => { if (!open) setEditingData(null) }}>
+        <DialogContent>
+          {editingData && (
+            <form onSubmit={handleUpdate}>
+              <DialogHeader>
+                <DialogTitle className="text-primary font-black uppercase">Edit Data Kuota</DialogTitle>
+                <CardDescription>Ubah target kuota untuk {editingData.name}.</CardDescription>
+              </DialogHeader>
+              <div className="py-6">
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label className="font-bold">Nama Koordinator</Label>
+                    <Input name="name" defaultValue={editingData.name} key={`name-${editingData.id}`} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold">Nomor Ponsel</Label>
+                    <Input name="phone" type="tel" defaultValue={editingData.phone || ''} key={`phone-${editingData.id}`} placeholder="08xxxxxxxxxx" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold">Jumlah Kuota</Label>
+                    <Input name="quota" type="number" min="0" defaultValue={editingData.quota} key={`quota-${editingData.id}`} required />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" className="w-full font-bold">Simpan Perubahan</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={showDeleteDialog}

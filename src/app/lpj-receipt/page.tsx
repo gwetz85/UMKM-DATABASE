@@ -149,34 +149,74 @@ export default function LPJReceiptPage() {
                 Tidak ada data pelaku usaha yang ditemukan
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
-                      <TableHead className="w-12 text-center font-black text-slate-500 text-[10px] uppercase">No</TableHead>
-                      <TableHead className="w-32 font-black text-slate-500 text-[10px] uppercase">Reg ID</TableHead>
-                      <TableHead className="font-black text-slate-500 text-[10px] uppercase">Nama Lengkap</TableHead>
-                      <TableHead className="w-40 font-black text-slate-500 text-[10px] uppercase">NIK</TableHead>
-                      <TableHead className="font-black text-slate-500 text-[10px] uppercase text-center w-20">Cek</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredActors.map((actor, idx) => (
-                      <TableRow key={actor.id} className="hover:bg-slate-50 transition-colors">
-                        <TableCell className="text-center font-mono text-slate-400 text-xs">{idx + 1}</TableCell>
-                        <TableCell className="font-mono font-bold text-slate-700 text-xs">{actor.registrationCode || "-"}</TableCell>
-                        <TableCell>
-                          <div className="font-black text-slate-800 uppercase text-xs">{actor.fullName}</div>
-                          <div className="text-[9px] text-muted-foreground uppercase">{actor.address?.substring(0, 40)}...</div>
-                        </TableCell>
-                        <TableCell className="font-mono text-slate-600 text-xs">{actor.nik}</TableCell>
-                        <TableCell className="text-center">
-                          <div className="w-6 h-6 border-2 border-slate-200 rounded-md mx-auto" />
-                        </TableCell>
+              <div>
+                {/* Mobile Card View */}
+                <div className="md:hidden print:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredActors.map((actor, idx) => (
+                    <div key={actor.id} className="p-4 space-y-2.5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-black text-xs shrink-0">
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 uppercase leading-tight">
+                              {actor.fullName}
+                            </h4>
+                            <span className="font-mono text-[10px] text-primary font-bold">
+                              {actor.registrationCode || "-"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-6 h-6 border-2 border-slate-300 dark:border-slate-600 rounded-md shrink-0 flex items-center justify-center" />
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl space-y-1 border border-slate-100 dark:border-slate-800 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">NIK:</span>
+                          <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{actor.nik}</span>
+                        </div>
+                        {actor.address && (
+                          <div className="text-[11px] text-muted-foreground pt-0.5 border-t border-slate-200/50 dark:border-slate-700/50">
+                            <span className="font-medium text-slate-600 dark:text-slate-400">Alamat: </span>
+                            {actor.address}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block print:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-50/50 hover:bg-slate-50/50">
+                        <TableHead className="w-12 text-center font-black text-slate-500 text-[10px] uppercase">No</TableHead>
+                        <TableHead className="w-32 font-black text-slate-500 text-[10px] uppercase">Reg ID</TableHead>
+                        <TableHead className="font-black text-slate-500 text-[10px] uppercase">Nama Lengkap</TableHead>
+                        <TableHead className="w-40 font-black text-slate-500 text-[10px] uppercase">NIK</TableHead>
+                        <TableHead className="font-black text-slate-500 text-[10px] uppercase text-center w-20">Cek</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredActors.map((actor, idx) => (
+                        <TableRow key={actor.id} className="hover:bg-slate-50 transition-colors">
+                          <TableCell className="text-center font-mono text-slate-400 text-xs">{idx + 1}</TableCell>
+                          <TableCell className="font-mono font-bold text-slate-700 text-xs">{actor.registrationCode || "-"}</TableCell>
+                          <TableCell>
+                            <div className="font-black text-slate-800 uppercase text-xs">{actor.fullName}</div>
+                            <div className="text-[9px] text-muted-foreground uppercase">{actor.address?.substring(0, 40)}...</div>
+                          </TableCell>
+                          <TableCell className="font-mono text-slate-600 text-xs">{actor.nik}</TableCell>
+                          <TableCell className="text-center">
+                            <div className="w-6 h-6 border-2 border-slate-200 rounded-md mx-auto" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             )}
           </CardContent>

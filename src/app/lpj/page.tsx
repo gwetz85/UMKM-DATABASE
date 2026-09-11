@@ -42,6 +42,7 @@ export default function LPJPage() {
   const [printDate, setPrintDate] = useState<string>("")
   const [showUnblacklistDialog, setShowUnblacklistDialog] = useState(false)
   const [unblacklistPending, setUnblacklistPending] = useState<{ id: string; fullName: string } | null>(null)
+  const [lpjInputs, setLpjInputs] = useState<Record<string, string>>({})
 
   useEffect(() => {
     setMounted(true)
@@ -88,21 +89,20 @@ export default function LPJPage() {
         return true;
       }) || [];
       return filtered;
-  }, [allActorsRaw, isKoordinator, userProfile, filterCoordinator])
+  }, [allActorsRaw, filterCoordinator, isKoordinator, userProfile?.fullName])
 
   const coordinators = useMemo(() => {
-    if (!allActorsRaw) return [];
-    const unique = Array.from(new Set(allActorsRaw
-      .filter(a => (a.status === 'finish' && a.readyForLPJ && !a.lpjNominal) || a.status === 'blacklist')
-      .map(a => a.coordinator)
-      .filter(Boolean)
-    )).sort();
+    const unique = Array.from(new Set(allActorsRaw?.map(a => a.coordinator).filter(Boolean))) as string[];
     return unique;
   }, [allActorsRaw])
 
-  const handleSaveLPJ = async (actorId: string, fullName: string, nominal: string) => {
-    if (!canAccess || !database || !nominal) return
-    const numNominal = parseFloat(nominal.replace(/[^0-9]/g, ''))
+  const handleSaveLPJ = async (actorId: string, fullName: string, nominal?: string) => {
+    const valueToUse = nominal !== undefined ? nominal : (lpjInputs[actorId] || "")
+    if (!canAccess || !database || !valueToUse) {
+      toast({ variant: "destructive", title: "Input Kosong", description: "Harap masukkan nominal LPJ terlebih dahulu." })
+      return
+    }
+    const numNominal = parseFloat(valueToUse.replace(/[^0-9]/g, ''))
     if (isNaN(numNominal)) {
         toast({ variant: "destructive", title: "Input Tidak Valid", description: "Harap masukkan nominal angka yang benar." })
         return
@@ -241,122 +241,239 @@ export default function LPJPage() {
           {isLoading ? (
             <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-slate-50">
-                  <TableRow>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Status / Durasi</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Batas Waktu</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Nama Lengkap</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">NIK / Rekening Bank</TableHead>
-                    <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Nominal LPJ</TableHead>
-                    <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {actors?.slice(0, pageLimit).map((actor) => {
-                    const entryDate = actor.lpjEntryDate ? new Date(actor.lpjEntryDate) : new Date()
-                    const deadlineDate = new Date(entryDate.getTime() + (14 * 24 * 60 * 60 * 1000))
-                    const daysInLPJ = Math.floor((new Date().getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24))
-                    const isOverdue = daysInLPJ >= 14
-                    const isBlacklisted = actor.status === 'blacklist' || (isOverdue && actor.status === 'finish')
-                    
-                    // Auto-blacklist logic (visual cue, in a real app this would be a trigger)
-                    const statusLabel = isBlacklisted ? "BLACKLIST" : "Menunggu LPJ"
+            <div>
+              {/* Mobile Card View */}
+              <div className="md:hidden print:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                {actors?.slice(0, pageLimit).map((actor, index) => {
+                  const entryDate = actor.lpjEntryDate ? new Date(actor.lpjEntryDate) : new Date()
+                  const deadlineDate = new Date(entryDate.getTime() + (14 * 24 * 60 * 60 * 1000))
+                  const daysInLPJ = Math.floor((new Date().getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24))
+                  const isOverdue = daysInLPJ >= 14
+                  const isBlacklisted = actor.status === 'blacklist' || (isOverdue && actor.status === 'finish')
+                  const statusLabel = isBlacklisted ? "BLACKLIST" : "Menunggu LPJ"
 
-                    return (
-                      <TableRow key={actor.id} className={cn("hover:bg-slate-50 transition-colors", isBlacklisted && "bg-red-50/50")}>
-                        <TableCell>
-                           <div className="flex flex-col gap-1">
-                             <Badge variant={isBlacklisted ? "destructive" : "outline"} className={cn(
-                                "w-fit font-black text-[9px] uppercase tracking-wider",
-                                !isBlacklisted && "border-primary text-primary"
-                             )}>
-                               {statusLabel}
-                             </Badge>
-                             <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400">
-                                <Clock className="w-3 h-3" /> {daysInLPJ} hari di LPJ
-                             </div>
-                           </div>
-                        </TableCell>
-                        <TableCell>
-                            <div className="flex flex-col gap-1">
-                                <span className={cn(
-                                    "font-black text-xs",
-                                    isOverdue ? "text-destructive" : "text-primary"
-                                )}>
-                                    {deadlineDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
-                                </span>
-                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
-                                    {isOverdue ? "WAKTU HABIS" : "PENYERAHAN TERAKHIR"}
-                                </span>
-                            </div>
-                        </TableCell>
-                        <TableCell className="font-black text-slate-700 uppercase">{actor.fullName}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col text-[10px]">
-                            <span className="font-mono text-slate-400">{actor.nik}</span>
-                            <span className="font-bold text-slate-600 uppercase">{actor.bankName} - {actor.bankNumber}</span>
+                  return (
+                    <div key={actor.id} className={cn("p-4 space-y-3", isBlacklisted && "bg-red-50/50 dark:bg-red-950/20")}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-black text-xs shrink-0">
+                            {index + 1}
+                          </span>
+                          <div>
+                            <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 uppercase leading-tight">
+                              {actor.fullName}
+                            </h4>
+                            <p className="text-[11px] font-mono text-muted-foreground">{actor.nik}</p>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                           {isBlacklisted ? (
-                             <div className="flex items-center gap-2 text-destructive font-black text-xs">
-                               <Ban className="w-4 h-4" /> DIBLOKIR
+                        </div>
+                        <Badge variant={isBlacklisted ? "destructive" : "outline"} className={cn(
+                          "text-[9px] font-black uppercase tracking-wider shrink-0",
+                          !isBlacklisted && "border-primary text-primary"
+                        )}>
+                          {statusLabel}
+                        </Badge>
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl space-y-2 border border-slate-100 dark:border-slate-800 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">Batas Waktu:</span>
+                          <div className="text-right">
+                            <span className={cn("font-bold block", isOverdue ? "text-destructive" : "text-primary")}>
+                              {deadlineDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+                            </span>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase">
+                              {isOverdue ? "WAKTU HABIS" : "PENYERAHAN TERAKHIR"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">Durasi:</span>
+                          <div className="flex items-center gap-1 font-bold text-slate-600 dark:text-slate-400 text-xs">
+                            <Clock className="w-3 h-3" /> {daysInLPJ} hari di LPJ
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">Rekening:</span>
+                          <span className="font-bold uppercase text-slate-700 dark:text-slate-300">
+                            {actor.bankName || "-"} - {actor.bankNumber || "-"}
+                          </span>
+                        </div>
+                        {actor.coordinator && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground font-medium">Koordinator:</span>
+                            <span className="font-semibold uppercase text-slate-700 dark:text-slate-300">
+                              {actor.coordinator}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action section */}
+                      <div>
+                        {isBlacklisted ? (
+                          isAdmin ? (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="w-full rounded-xl font-black text-xs border-red-200 text-red-600 hover:bg-red-50 h-9" 
+                              onClick={() => handleUnblacklist(actor.id, actor.fullName)}
+                            >
+                              AKTIFKAN KEMBALI
+                            </Button>
+                          ) : (
+                            <div className="text-center py-2 text-xs font-black text-red-500 uppercase bg-red-50 dark:bg-red-950/40 rounded-xl">
+                              HUBUNGI ADMIN
+                            </div>
+                          )
+                        ) : (
+                          !isMonitoring && (
+                            <div className="flex gap-2">
+                              <div className="relative flex-1">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">RP</span>
+                                <Input 
+                                  value={lpjInputs[actor.id] || ""}
+                                  onChange={(e) => setLpjInputs(prev => ({ ...prev, [actor.id]: e.target.value }))}
+                                  placeholder="0" 
+                                  className="pl-9 h-9 rounded-xl font-black text-xs border-slate-200 focus:ring-primary shadow-inner" 
+                                />
+                              </div>
+                              <Button 
+                                size="sm" 
+                                className="bg-primary hover:bg-primary/90 font-black text-xs rounded-xl px-4 h-9 shadow-lg shadow-primary/20 shrink-0"
+                                onClick={() => handleSaveLPJ(actor.id, actor.fullName)}
+                              >
+                                <Save className="w-3.5 h-3.5 mr-1.5" /> SIMPAN
+                              </Button>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+                {(!actors || actors.length === 0) && (
+                  <div className="text-center py-16 opacity-30">
+                    <CheckCircle2 className="w-12 h-12 mx-auto mb-2" />
+                    <p className="font-black uppercase tracking-widest text-xs">SEMUA DATA LPJ TELAH DISELESAIKAN</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block print:block overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-slate-50">
+                    <TableRow>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Status / Durasi</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Batas Waktu</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Nama Lengkap</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">NIK / Rekening Bank</TableHead>
+                      <TableHead className="font-black uppercase text-[10px] tracking-widest text-slate-400">Nominal LPJ</TableHead>
+                      <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-slate-400">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {actors?.slice(0, pageLimit).map((actor) => {
+                      const entryDate = actor.lpjEntryDate ? new Date(actor.lpjEntryDate) : new Date()
+                      const deadlineDate = new Date(entryDate.getTime() + (14 * 24 * 60 * 60 * 1000))
+                      const daysInLPJ = Math.floor((new Date().getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24))
+                      const isOverdue = daysInLPJ >= 14
+                      const isBlacklisted = actor.status === 'blacklist' || (isOverdue && actor.status === 'finish')
+                      const statusLabel = isBlacklisted ? "BLACKLIST" : "Menunggu LPJ"
+
+                      return (
+                        <TableRow key={actor.id} className={cn("hover:bg-slate-50 transition-colors", isBlacklisted && "bg-red-50/50")}>
+                          <TableCell>
+                             <div className="flex flex-col gap-1">
+                               <Badge variant={isBlacklisted ? "destructive" : "outline"} className={cn(
+                                  "w-fit font-black text-[9px] uppercase tracking-wider",
+                                  !isBlacklisted && "border-primary text-primary"
+                               )}>
+                                 {statusLabel}
+                               </Badge>
+                               <div className="flex items-center gap-1 text-[9px] font-bold text-slate-400">
+                                  <Clock className="w-3 h-3" /> {daysInLPJ} hari di LPJ
+                               </div>
                              </div>
-                           ) : (
-                             <div className="relative max-w-[200px]">
-                               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">RP</span>
-                               <Input 
-                                 id={`lpj-${actor.id}`}
-                                 placeholder="0" 
-                                 disabled={isMonitoring}
-                                 className="pl-9 h-9 rounded-xl font-black text-sm border-slate-200 focus:ring-primary shadow-inner" 
-                               />
-                             </div>
-                           )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            {isBlacklisted ? (
-                              isAdmin ? (
-                                <Button size="sm" variant="outline" className="rounded-xl font-black text-[10px] border-red-200 text-red-600 hover:bg-red-50" onClick={() => handleUnblacklist(actor.id, actor.fullName)}>
-                                    AKTIFKAN KEMBALI
-                                </Button>
+                          </TableCell>
+                          <TableCell>
+                              <div className="flex flex-col gap-1">
+                                  <span className={cn(
+                                      "font-black text-xs",
+                                      isOverdue ? "text-destructive" : "text-primary"
+                                  )}>
+                                      {deadlineDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                  </span>
+                                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">
+                                      {isOverdue ? "WAKTU HABIS" : "PENYERAHAN TERAKHIR"}
+                                  </span>
+                              </div>
+                          </TableCell>
+                          <TableCell className="font-black text-slate-700 uppercase">{actor.fullName}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col text-[10px]">
+                              <span className="font-mono text-slate-400">{actor.nik}</span>
+                              <span className="font-bold text-slate-600 uppercase">{actor.bankName} - {actor.bankNumber}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                             {isBlacklisted ? (
+                               <div className="flex items-center gap-2 text-destructive font-black text-xs">
+                                 <Ban className="w-4 h-4" /> DIBLOKIR
+                               </div>
+                             ) : (
+                               <div className="relative max-w-[200px]">
+                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">RP</span>
+                                 <Input 
+                                   id={`lpj-${actor.id}`}
+                                   value={lpjInputs[actor.id] || ""}
+                                   onChange={(e) => setLpjInputs(prev => ({ ...prev, [actor.id]: e.target.value }))}
+                                   placeholder="0" 
+                                   disabled={isMonitoring}
+                                   className="pl-9 h-9 rounded-xl font-black text-sm border-slate-200 focus:ring-primary shadow-inner" 
+                                 />
+                               </div>
+                             )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              {isBlacklisted ? (
+                                isAdmin ? (
+                                  <Button size="sm" variant="outline" className="rounded-xl font-black text-[10px] border-red-200 text-red-600 hover:bg-red-50" onClick={() => handleUnblacklist(actor.id, actor.fullName)}>
+                                      AKTIFKAN KEMBALI
+                                  </Button>
+                                ) : (
+                                  <span className="text-[9px] font-black text-red-400 uppercase bg-red-50 px-3 py-2 rounded-lg py-1">HUBUNGI ADMIN</span>
+                                )
                               ) : (
-                                <span className="text-[9px] font-black text-red-400 uppercase bg-red-50 px-3 py-2 rounded-lg py-1">HUBUNGI ADMIN</span>
-                              )
-                            ) : (
-                              !isMonitoring && (
-                                <Button 
-                                  size="sm" 
-                                  className="bg-primary hover:bg-primary/90 font-black text-[10px] rounded-xl px-4 h-9 shadow-lg shadow-primary/20"
-                                  onClick={() => {
-                                      const input = document.getElementById(`lpj-${actor.id}`) as HTMLInputElement
-                                      handleSaveLPJ(actor.id, actor.fullName, input.value)
-                                  }}
-                                >
-                                  <Save className="w-3.5 h-3.5 mr-2" /> SIMPAN LPJ
-                                </Button>
-                              )
-                            )}
+                                !isMonitoring && (
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-primary hover:bg-primary/90 font-black text-[10px] rounded-xl px-4 h-9 shadow-lg shadow-primary/20"
+                                    onClick={() => handleSaveLPJ(actor.id, actor.fullName)}
+                                  >
+                                    <Save className="w-3.5 h-3.5 mr-2" /> SIMPAN LPJ
+                                  </Button>
+                                )
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                    {(!actors || actors.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-24">
+                          <div className="flex flex-col items-center opacity-20">
+                              <CheckCircle2 className="w-16 h-16 mb-4" />
+                              <p className="font-black uppercase tracking-widest text-xs">SEMUA DATA LPJ TELAH DISELESAIKAN</p>
                           </div>
                         </TableCell>
                       </TableRow>
-                    )
-                  })}
-                  {(!actors || actors.length === 0) && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-24">
-                        <div className="flex flex-col items-center opacity-20">
-                            <CheckCircle2 className="w-16 h-16 mb-4" />
-                            <p className="font-black uppercase tracking-widest text-xs">SEMUA DATA LPJ TELAH DISELESAIKAN</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
               {actors && actors.length > pageLimit && (
                 <div className="p-4 flex justify-center border-t bg-slate-50">
                   <Button 

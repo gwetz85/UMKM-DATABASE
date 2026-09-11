@@ -685,7 +685,167 @@ export default function VerifyActorPage() {
       <Card className="border border-slate-200/60 shadow-md overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl">
         <CardContent className="p-0">
           {isLoading ? <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div> : (
-            <Table>
+            <>
+              {/* Mobile Card List (md:hidden) */}
+              <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                {filteredActors && filteredActors.length > 0 ? (
+                  filteredActors.map((actor, idx) => {
+                    const checkMatch = (data: any[] | null) => (data || []).some((m: any) => 
+                      (m.nik && m.nik === actor.nik) || (m.noKK && m.noKK === actor.noKK)
+                    );
+                    const matches = {
+                      has2023: checkMatch(data2023),
+                      has2024: checkMatch(data2024),
+                      has2025: checkMatch(data2025),
+                      hasBlacklist: checkMatch(dataBlacklist),
+                    };
+
+                    return (
+                      <div
+                        key={actor.id}
+                        onClick={() => setViewingActor(actor)}
+                        className={cn(
+                          "p-3.5 space-y-2.5 bg-white dark:bg-slate-900 active:bg-slate-50 transition-colors cursor-pointer",
+                          actor.status === 'verifikasi_manual' && "bg-rose-50/40 border-l-4 border-rose-500"
+                        )}
+                      >
+                        {/* Row 1: Nomor, Nama & Kategori */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md shrink-0 mt-0.5">
+                              #{idx + 1}
+                            </span>
+                            <div>
+                              <span className="font-black text-slate-800 dark:text-slate-100 text-sm uppercase leading-tight block">
+                                {actor.fullName}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-mono">
+                                NIK: {actor.nik}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded text-[9px] uppercase tracking-wider shrink-0">
+                            {actor.businessCategory || "-"}
+                          </span>
+                        </div>
+
+                        {/* Row 2: Badges */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <VerificationBadge actor={actor} />
+                          <CheckDataIndicator 
+                            actor={actor} 
+                            data2023={data2023}
+                            data2024={data2024}
+                            data2025={data2025}
+                            dataBlacklist={dataBlacklist}
+                          />
+                        </div>
+
+                        {/* Row 3: Usaha & Koordinator */}
+                        <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Usaha</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-200 uppercase truncate block" title={actor.businessName}>
+                              {actor.businessName || "-"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Koordinator</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-200 uppercase truncate block" title={actor.coordinator}>
+                              {actor.coordinator || "-"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Row 4: Countdown Timer */}
+                        {activeTab !== 'manual' && (
+                          <div className="flex items-center justify-between bg-slate-50/80 p-2 rounded-lg border text-xs" onClick={(e) => e.stopPropagation()}>
+                            <span className="text-[9px] font-bold text-slate-500 uppercase">Countdown:</span>
+                            <VerificationTimer 
+                              actorId={actor.id} 
+                              createdAt={actor.createdAt} 
+                              matches={matches}
+                              database={database}
+                              isAdmin={isAdmin || isPetugas}
+                              actor={actor}
+                              dataReady={dataReady}
+                            />
+                          </div>
+                        )}
+
+                        {/* Row 5: Action Buttons */}
+                        <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1" onClick={(e) => e.stopPropagation()}>
+                          {actor.status !== 'verifikasi_manual' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => setViewingActor(actor)} 
+                              className="h-8 text-xs font-bold border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg gap-1"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Detail</span>
+                            </Button>
+                          )}
+                          {isAdmin && !isMonitoring && actor.status !== 'verifikasi_manual' && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => openEditDialog(actor, 'edit')} 
+                              className="h-8 text-xs font-bold border-amber-200 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg gap-1"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </Button>
+                          )}
+                          {(isAdmin || isPetugas) && !isMonitoring && (
+                            <Button 
+                              size="sm" 
+                              onClick={() => openEditDialog(actor, 'verify')} 
+                              className={cn(
+                                "h-8 text-xs font-bold text-white rounded-lg gap-1",
+                                actor.status === 'verifikasi_manual' ? "bg-rose-600 hover:bg-rose-700" : "bg-emerald-600 hover:bg-emerald-700"
+                              )}
+                            >
+                              {actor.status === 'verifikasi_manual' ? <Camera className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}
+                              <span>{actor.status === 'verifikasi_manual' ? "Upload Foto" : "Verifikasi"}</span>
+                            </Button>
+                          )}
+                          {isAdmin && !isMonitoring && (
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => setRejectingActor(actor)} 
+                              className="h-8 text-xs font-bold border-red-200 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg gap-1"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span>{actor.status === 'verifikasi_manual' ? "Cancell" : "Tolak"}</span>
+                            </Button>
+                          )}
+                          {isAdmin && !isMonitoring && actor.status !== 'verifikasi_manual' && (
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => handleDelete(actor.id, actor.fullName)} 
+                              className="h-8 text-xs text-red-500 hover:bg-red-50 rounded-lg p-2"
+                              title="Hapus Permanen"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="py-12 text-center text-muted-foreground text-xs font-bold uppercase tracking-wider">
+                    Tidak ada data antrean verifikasi.
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Table View (hidden md:block) */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
               <TableHeader className="bg-muted/30">
                 <TableRow>
                   <TableHead className="font-bold">Nama Lengkap</TableHead>
@@ -1445,8 +1605,10 @@ export default function VerifyActorPage() {
                   </TableRow>
                 )})}
               </TableBody>
-            </Table>
-          )}
+              </Table>
+            </div>
+          </>
+        )}
         </CardContent>
       </Card>
 

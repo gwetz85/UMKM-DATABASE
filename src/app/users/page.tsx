@@ -522,117 +522,111 @@ export default function UserManagementPage() {
         </Dialog>
       </div>
 
-      <Card className="border-none shadow-sm overflow-hidden bg-white">
+      <Card className="border-none shadow-sm overflow-hidden bg-white dark:bg-slate-900 rounded-3xl">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-primary" /></div>
           ) : (
-            <Table>
-              <TableHeader className="bg-muted/30">
-                <TableRow>
-                  <TableHead className="font-bold uppercase text-[10px]">Nama User & NIPPPK</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px]">Status</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px]">Role</TableHead>
-                  <TableHead className="font-bold uppercase text-[10px]">Keamanan Perangkat</TableHead>
-                  <TableHead className="text-right font-bold uppercase text-[10px]">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <div>
+              {/* Mobile Card View */}
+              <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
                 {(systemUsers ? [...systemUsers].filter((u: any) => u.role !== 'petugas_survey').reverse() : []).map((u: any) => (
-                  <TableRow key={u.id} className="hover:bg-muted/10">
-                    <TableCell className="font-bold text-slate-700">
-                      <div className="flex flex-col">
-                        <span>{u.fullName}</span>
-                        <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-muted-foreground font-mono">
+                  <div key={u.id} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 leading-tight">
+                          {u.fullName}
+                        </h4>
+                        <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-muted-foreground font-mono mt-0.5">
                           {u.nipppk && (
-                            <span className="text-purple-700 font-bold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                            <span className="text-purple-700 font-bold bg-purple-50 dark:bg-purple-950/40 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800">
                               NIP: {u.nipppk}
                             </span>
                           )}
                           {u.pangkat && (
-                            <span className="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                            <span className="text-slate-600 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
                               {u.pangkat}
                             </span>
                           )}
                           <span className="text-slate-400 font-normal">@{u.username || u.id}</span>
                         </div>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {u.status === 'inactive' ? (
-                        <Badge variant="destructive" className="font-black uppercase text-[9px] gap-1 bg-red-100 text-red-600 border-red-200">Nonaktif</Badge>
-                      ) : (
-                        <Badge variant="secondary" className="font-black uppercase text-[9px] bg-green-100 text-green-700 border-green-200">Aktif</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {u.role === 'admin' ? (
-                        <Badge className="bg-primary hover:bg-primary font-black uppercase text-[9px] gap-1">
-                          <Shield className="w-3 h-3" /> Administrator
-                        </Badge>
-                      ) : u.role === 'monitoring' ? (
-                        <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 font-black uppercase text-[9px] gap-1">
-                          <Eye className="w-3 h-3" /> Monitoring
-                        </Badge>
-                      ) : u.role === 'koordinator' ? (
-                        <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 font-black uppercase text-[9px] gap-1">
-                          <UserCheck className="w-3 h-3" /> USULAN
-                        </Badge>
-                      ) : u.role === 'petugas' ? (
-                        <Badge variant="secondary" className="text-slate-600 bg-slate-100 font-black uppercase text-[9px] gap-1">
-                          <UserCheck className="w-3 h-3" /> Petugas Survey
-                        </Badge>
-                      ) : u.role === 'dinas' ? (
-                        <Badge variant="outline" className="text-indigo-600 border-indigo-200 bg-indigo-50 font-black uppercase text-[9px] gap-1">
-                          <Building2 className="w-3 h-3" /> Dinas
-                        </Badge>
-                      ) : u.role === 'verifikator_dinas' ? (
-                        <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50 font-black uppercase text-[9px] gap-1">
-                          <ClipboardCheck className="w-3 h-3" /> Verifikator Dinas
-                        </Badge>
-                      ) : u.role === 'inspektorat' ? (
-                        <Badge variant="outline" className="text-slate-600 border-slate-300 bg-slate-50 font-black uppercase text-[9px] gap-1">
-                          <ShieldCheck className="w-3 h-3" /> Inspektorat
-                        </Badge>
-                      ) : u.role === 'staff' ? (
-                        <Badge variant="outline" className="text-teal-700 border-teal-300 bg-teal-50 font-black uppercase text-[9px] gap-1">
-                          <UserCheck className="w-3 h-3" /> Staff
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive" className="animate-pulse font-black uppercase text-[9px] gap-1 bg-red-100 text-red-600 border-red-200">
-                          <ShieldQuestion className="w-3 h-3" /> Menunggu Aktivasi
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1.5">
-                        {/* Status Online / Offline & Terakhir Login */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {u.isOnline ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-black text-[9px] uppercase border border-emerald-300 shadow-xs">
-                              <span className="relative flex h-1.5 w-1.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                              </span>
-                              Online
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full font-bold text-[9px] uppercase border border-slate-200">
-                              <span className="inline-flex rounded-full h-1.5 w-1.5 bg-slate-400"></span>
-                              Offline
-                            </span>
-                          )}
+                      <div>
+                        {u.status === 'inactive' ? (
+                          <Badge variant="destructive" className="font-black uppercase text-[9px] gap-1 bg-red-100 text-red-600 border-red-200">Nonaktif</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="font-black uppercase text-[9px] bg-green-100 text-green-700 border-green-200">Aktif</Badge>
+                        )}
+                      </div>
+                    </div>
 
-                          <span className="text-[9px] text-slate-500 font-medium flex items-center gap-1" title={u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum pernah login"}>
-                            <Clock className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                            <span className="truncate max-w-[120px]">
-                              {u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum login"}
+                    <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
+                      <div>
+                        {u.role === 'admin' ? (
+                          <Badge className="bg-primary hover:bg-primary font-black uppercase text-[9px] gap-1">
+                            <Shield className="w-3 h-3" /> Administrator
+                          </Badge>
+                        ) : u.role === 'monitoring' ? (
+                          <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 font-black uppercase text-[9px] gap-1">
+                            <Eye className="w-3 h-3" /> Monitoring
+                          </Badge>
+                        ) : u.role === 'koordinator' ? (
+                          <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 font-black uppercase text-[9px] gap-1">
+                            <UserCheck className="w-3 h-3" /> USULAN
+                          </Badge>
+                        ) : u.role === 'petugas' ? (
+                          <Badge variant="secondary" className="text-slate-600 bg-slate-100 font-black uppercase text-[9px] gap-1">
+                            <UserCheck className="w-3 h-3" /> Petugas Survey
+                          </Badge>
+                        ) : u.role === 'dinas' ? (
+                          <Badge variant="outline" className="text-indigo-600 border-indigo-200 bg-indigo-50 font-black uppercase text-[9px] gap-1">
+                            <Building2 className="w-3 h-3" /> Dinas
+                          </Badge>
+                        ) : u.role === 'verifikator_dinas' ? (
+                          <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50 font-black uppercase text-[9px] gap-1">
+                            <ClipboardCheck className="w-3 h-3" /> Verifikator Dinas
+                          </Badge>
+                        ) : u.role === 'inspektorat' ? (
+                          <Badge variant="outline" className="text-slate-600 border-slate-300 bg-slate-50 font-black uppercase text-[9px] gap-1">
+                            <ShieldCheck className="w-3 h-3" /> Inspektorat
+                          </Badge>
+                        ) : u.role === 'staff' ? (
+                          <Badge variant="outline" className="text-teal-700 border-teal-300 bg-teal-50 font-black uppercase text-[9px] gap-1">
+                            <UserCheck className="w-3 h-3" /> Staff
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive" className="animate-pulse font-black uppercase text-[9px] gap-1 bg-red-100 text-red-600 border-red-200">
+                            <ShieldQuestion className="w-3 h-3" /> Menunggu Aktivasi
+                          </Badge>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {u.isOnline ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-black text-[9px] uppercase border border-emerald-300 shadow-xs">
+                            <span className="relative flex h-1.5 w-1.5">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                             </span>
+                            Online
                           </span>
-                        </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full font-bold text-[9px] uppercase border border-slate-200">
+                            <span className="inline-flex rounded-full h-1.5 w-1.5 bg-slate-400"></span>
+                            Offline
+                          </span>
+                        )}
+                        <span className="text-[9px] text-slate-400 font-medium flex items-center gap-1">
+                          <Clock className="w-2.5 h-2.5" />
+                          {u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum login"}
+                        </span>
+                      </div>
+                    </div>
 
-                        {u.uid ? (
-                          <div className="flex flex-col gap-1">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                      {u.uid ? (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[9px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-black uppercase w-fit">Terkunci di Perangkat</span>
                             {u.activeSessionId && (
                               <span className="text-[9px] px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full font-black uppercase border border-orange-200 w-fit flex items-center gap-1">
@@ -640,154 +634,353 @@ export default function UserManagementPage() {
                                 AKTIF DI PERANGKAT LAIN
                               </span>
                             )}
-                            <span className="text-[8px] font-mono text-muted-foreground truncate max-w-[100px]">{u.uid}</span>
                           </div>
-                        ) : (
-                          <UserDeletionTimer 
-                            userId={u.id} 
-                            userUid={u.uid} 
-                            addedAt={u.addedAt} 
-                            database={database} 
-                            isAdmin={isAdmin} 
-                          />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                          <span className="text-[8px] font-mono text-muted-foreground truncate max-w-[200px]">{u.uid}</span>
+                        </div>
+                      ) : (
+                        <UserDeletionTimer 
+                          userId={u.id} 
+                          userUid={u.uid} 
+                          addedAt={u.addedAt} 
+                          database={database} 
+                          isAdmin={isAdmin} 
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-1.5 pt-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => { setDetailUser(u); setShowPassword(false); }} 
+                        className="h-8 px-2.5 text-xs border-blue-200 text-blue-700 hover:bg-blue-50 rounded-xl gap-1"
+                      >
+                        <Eye className="w-3.5 h-3.5" /> Detail
+                      </Button>
+                      {isAdmin && (
+                        <Button 
+                          variant={u.status === 'inactive' ? "secondary" : "destructive"} 
+                          size="icon" 
+                          onClick={() => handleToggleStatus(u.id, u.status)} 
+                          className={`h-8 w-8 rounded-xl ${u.status === 'inactive' ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200' : ''}`}
+                          title={u.status === 'inactive' ? 'Aktifkan' : 'Nonaktifkan'}
+                        >
+                          <Power className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      <Button 
+                        variant="outline" 
+                        size="icon" 
+                        onClick={() => setEditingUser(u)} 
+                        className="h-8 w-8 border-primary/20 hover:bg-primary/5 text-primary rounded-xl" 
+                        title="Ganti Role"
+                      >
+                        <UserCog className="w-3.5 h-3.5" />
+                      </Button>
+                      {u.uid && (
                         <Button 
                           variant="outline" 
                           size="icon" 
-                          onClick={() => { setDetailUser(u); setShowPassword(false); }} 
-                          className="h-8 w-8 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
-                          title="Lihat Data"
+                          className="h-8 w-8 text-amber-600 hover:bg-amber-50 border-amber-200 rounded-xl"
+                          onClick={() => handleResetUID(u.id, u.fullName)}
+                          title="Reset Perangkat"
                         >
-                          <Eye className="w-4 h-4" />
+                          <RefreshCcw className="w-3.5 h-3.5" />
                         </Button>
-                        {isAdmin && (
-                          <Button 
-                            variant={u.status === 'inactive' ? "secondary" : "destructive"} 
-                            size="icon" 
-                            onClick={() => handleToggleStatus(u.id, u.status)} 
-                            className={`h-8 w-8 ${u.status === 'inactive' ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200' : ''}`}
-                            title={u.status === 'inactive' ? 'Aktifkan' : 'Nonaktifkan'}
-                          >
-                            <Power className="w-4 h-4" />
-                          </Button>
-                        )}
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="icon" onClick={() => setEditingUser(u)} className="h-8 w-8 border-primary/20 hover:bg-primary/5 text-primary" title="Ganti Role">
-                              <UserCog className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <form onSubmit={handleUpdateRole}>
-                              <DialogHeader>
-                                <DialogTitle className="text-primary font-black uppercase">Update Akses Pengguna</DialogTitle>
-                                <CardDescription>Ubah peranan akses untuk {u.fullName}.</CardDescription>
-                              </DialogHeader>
-                              <div className="py-6">
-                                <div className="grid gap-4 py-4">
-                                  <div className="space-y-2">
-                                    <Label className="font-bold">Nama Lengkap</Label>
-                                    <Input name="fullName" defaultValue={u.fullName} required />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="font-bold">Nomor Ponsel</Label>
-                                    <Input name="phoneNumber" defaultValue={u.phoneNumber} />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="font-bold">NIK</Label>
-                                    <Input name="nik" defaultValue={u.nik} maxLength={16} />
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="font-bold">Alamat Lengkap</Label>
-                                    <Textarea name="address" defaultValue={u.address} />
-                                  </div>
-                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <div className="space-y-2">
-                                      <Label className="font-bold text-xs">NIPPPK / NIP</Label>
-                                      <Input name="nipppk" defaultValue={u.nipppk || u.pejabatData?.verifikator?.nipppk || u.pejabatData?.petugas?.nipppk || ""} placeholder="Nomor NIPPPK" className="font-mono text-xs" />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="font-bold text-xs">Pangkat / Golongan</Label>
-                                      <Input name="pangkat" defaultValue={u.pangkat || u.pejabatData?.verifikator?.pangkat || u.pejabatData?.petugas?.pangkat || ""} placeholder="Contoh: Penata, III/c" className="text-xs" />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="font-bold text-xs">Jabatan</Label>
-                                      <Input name="jabatan" defaultValue={u.jabatan || u.pejabatData?.verifikator?.jabatan || u.pejabatData?.petugas?.jabatan || ""} placeholder="Contoh: Verifikator Dinas" className="text-xs" />
-                                    </div>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="font-bold text-amber-600">Reset Kata Sandi</Label>
-                                    <Input name="newPassword" placeholder="Biarkan kosong jika tidak ingin mengubah" />
-                                    <p className="text-[10px] text-muted-foreground mt-1">
-                                      Jika diisi, kata sandi lama akan hangus dan perangkat pengguna akan direset (logout otomatis).
-                                    </p>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <Label className="font-bold">Peranan / Jabatan</Label>
-                                    <Select name="role" defaultValue={u.role || "petugas"}>
-                                      <SelectTrigger><SelectValue /></SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="petugas">Petugas Survey</SelectItem>
-                                        <SelectItem value="koordinator">USULAN</SelectItem>
-                                        <SelectItem value="admin">Administrator</SelectItem>
-                                        <SelectItem value="monitoring">Monitoring</SelectItem>
-                                        <SelectItem value="staff">Staff</SelectItem>
-                                        <SelectItem value="dinas">Dinas</SelectItem>
-                                        <SelectItem value="verifikator_dinas">Verifikator Dinas</SelectItem>
-                                        <SelectItem value="inspektorat">Inspektorat</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-                              </div>
-                              <DialogFooter>
-                                <Button type="submit" className="w-full font-bold">Simpan Akses</Button>
-                              </DialogFooter>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
-
-                        {u.uid && (
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
-                            className="h-8 w-8 text-amber-600 hover:bg-amber-50 border-amber-200"
-                            onClick={() => handleResetUID(u.id, u.fullName)}
-                            title="Reset Perangkat"
-                          >
-                            <RefreshCcw className="w-4 h-4" />
-                          </Button>
-                        )}
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                          onClick={() => handleDelete(u.id, u.fullName, u.uid)}
-                          disabled={isCurrentSelfAccount(u)}
-                          title={isCurrentSelfAccount(u) ? "Akun Anda Sendiri (Aktif)" : "Hapus Pengguna"}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-xl"
+                        onClick={() => handleDelete(u.id, u.fullName, u.uid)}
+                        disabled={isCurrentSelfAccount(u)}
+                        title={isCurrentSelfAccount(u) ? "Akun Anda Sendiri (Aktif)" : "Hapus Pengguna"}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
                 ))}
                 {(!systemUsers || systemUsers.length === 0) && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center py-20 text-muted-foreground italic font-medium">
-                      Belum ada data pengguna.
-                    </TableCell>
-                  </TableRow>
+                  <div className="text-center py-16 text-muted-foreground italic font-medium">
+                    Belum ada data pengguna.
+                  </div>
                 )}
-              </TableBody>
-            </Table>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead className="font-bold uppercase text-[10px]">Nama User & NIPPPK</TableHead>
+                      <TableHead className="font-bold uppercase text-[10px]">Status</TableHead>
+                      <TableHead className="font-bold uppercase text-[10px]">Role</TableHead>
+                      <TableHead className="font-bold uppercase text-[10px]">Keamanan Perangkat</TableHead>
+                      <TableHead className="text-right font-bold uppercase text-[10px]">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(systemUsers ? [...systemUsers].filter((u: any) => u.role !== 'petugas_survey').reverse() : []).map((u: any) => (
+                      <TableRow key={u.id} className="hover:bg-muted/10">
+                        <TableCell className="font-bold text-slate-700">
+                          <div className="flex flex-col">
+                            <span>{u.fullName}</span>
+                            <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-muted-foreground font-mono">
+                              {u.nipppk && (
+                                <span className="text-purple-700 font-bold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                                  NIP: {u.nipppk}
+                                </span>
+                              )}
+                              {u.pangkat && (
+                                <span className="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                                  {u.pangkat}
+                                </span>
+                              )}
+                              <span className="text-slate-400 font-normal">@{u.username || u.id}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {u.status === 'inactive' ? (
+                            <Badge variant="destructive" className="font-black uppercase text-[9px] gap-1 bg-red-100 text-red-600 border-red-200">Nonaktif</Badge>
+                          ) : (
+                            <Badge variant="secondary" className="font-black uppercase text-[9px] bg-green-100 text-green-700 border-green-200">Aktif</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {u.role === 'admin' ? (
+                            <Badge className="bg-primary hover:bg-primary font-black uppercase text-[9px] gap-1">
+                              <Shield className="w-3 h-3" /> Administrator
+                            </Badge>
+                          ) : u.role === 'monitoring' ? (
+                            <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 font-black uppercase text-[9px] gap-1">
+                              <Eye className="w-3 h-3" /> Monitoring
+                            </Badge>
+                          ) : u.role === 'koordinator' ? (
+                            <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 font-black uppercase text-[9px] gap-1">
+                              <UserCheck className="w-3 h-3" /> USULAN
+                            </Badge>
+                          ) : u.role === 'petugas' ? (
+                            <Badge variant="secondary" className="text-slate-600 bg-slate-100 font-black uppercase text-[9px] gap-1">
+                              <UserCheck className="w-3 h-3" /> Petugas Survey
+                            </Badge>
+                          ) : u.role === 'dinas' ? (
+                            <Badge variant="outline" className="text-indigo-600 border-indigo-200 bg-indigo-50 font-black uppercase text-[9px] gap-1">
+                              <Building2 className="w-3 h-3" /> Dinas
+                            </Badge>
+                          ) : u.role === 'verifikator_dinas' ? (
+                            <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50 font-black uppercase text-[9px] gap-1">
+                              <ClipboardCheck className="w-3 h-3" /> Verifikator Dinas
+                            </Badge>
+                          ) : u.role === 'inspektorat' ? (
+                            <Badge variant="outline" className="text-slate-600 border-slate-300 bg-slate-50 font-black uppercase text-[9px] gap-1">
+                              <ShieldCheck className="w-3 h-3" /> Inspektorat
+                            </Badge>
+                          ) : u.role === 'staff' ? (
+                            <Badge variant="outline" className="text-teal-700 border-teal-300 bg-teal-50 font-black uppercase text-[9px] gap-1">
+                              <UserCheck className="w-3 h-3" /> Staff
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive" className="animate-pulse font-black uppercase text-[9px] gap-1 bg-red-100 text-red-600 border-red-200">
+                              <ShieldQuestion className="w-3 h-3" /> Menunggu Aktivasi
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1.5">
+                            {/* Status Online / Offline & Terakhir Login */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {u.isOnline ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-black text-[9px] uppercase border border-emerald-300 shadow-xs">
+                                  <span className="relative flex h-1.5 w-1.5">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                  </span>
+                                  Online
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full font-bold text-[9px] uppercase border border-slate-200">
+                                  <span className="inline-flex rounded-full h-1.5 w-1.5 bg-slate-400"></span>
+                                  Offline
+                                </span>
+                              )}
+
+                              <span className="text-[9px] text-slate-500 font-medium flex items-center gap-1" title={u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum pernah login"}>
+                                <Clock className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                <span className="truncate max-w-[120px]">
+                                  {u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum login"}
+                                </span>
+                              </span>
+                            </div>
+
+                            {u.uid ? (
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[9px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-black uppercase w-fit">Terkunci di Perangkat</span>
+                                {u.activeSessionId && (
+                                  <span className="text-[9px] px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full font-black uppercase border border-orange-200 w-fit flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse inline-block" />
+                                    AKTIF DI PERANGKAT LAIN
+                                  </span>
+                                )}
+                                <span className="text-[8px] font-mono text-muted-foreground truncate max-w-[100px]">{u.uid}</span>
+                              </div>
+                            ) : (
+                              <UserDeletionTimer 
+                                userId={u.id} 
+                                userUid={u.uid} 
+                                addedAt={u.addedAt} 
+                                database={database} 
+                                isAdmin={isAdmin} 
+                              />
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              onClick={() => { setDetailUser(u); setShowPassword(false); }} 
+                              className="h-8 w-8 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+                              title="Lihat Data"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            {isAdmin && (
+                              <Button 
+                                variant={u.status === 'inactive' ? "secondary" : "destructive"} 
+                                size="icon" 
+                                onClick={() => handleToggleStatus(u.id, u.status)} 
+                                className={`h-8 w-8 ${u.status === 'inactive' ? 'bg-green-100 text-green-700 hover:bg-green-200 border border-green-200' : ''}`}
+                                title={u.status === 'inactive' ? 'Aktifkan' : 'Nonaktifkan'}
+                              >
+                                <Power className="w-4 h-4" />
+                              </Button>
+                            )}
+                            <Button 
+                              variant="outline" 
+                              size="icon" 
+                              onClick={() => setEditingUser(u)} 
+                              className="h-8 w-8 border-primary/20 hover:bg-primary/5 text-primary" 
+                              title="Ganti Role"
+                            >
+                              <UserCog className="w-4 h-4" />
+                            </Button>
+
+                            {u.uid && (
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="h-8 w-8 text-amber-600 hover:bg-amber-50 border-amber-200"
+                                onClick={() => handleResetUID(u.id, u.fullName)}
+                                title="Reset Perangkat"
+                              >
+                                <RefreshCcw className="w-4 h-4" />
+                              </Button>
+                            )}
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDelete(u.id, u.fullName, u.uid)}
+                              disabled={isCurrentSelfAccount(u)}
+                              title={isCurrentSelfAccount(u) ? "Akun Anda Sendiri (Aktif)" : "Hapus Pengguna"}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {(!systemUsers || systemUsers.length === 0) && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic font-medium">
+                          Belum ada data pengguna.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Shared Edit Role & Access Dialog */}
+      <Dialog open={!!editingUser} onOpenChange={(open) => { if (!open) setEditingUser(null) }}>
+        <DialogContent>
+          {editingUser && (
+            <form onSubmit={handleUpdateRole}>
+              <DialogHeader>
+                <DialogTitle className="text-primary font-black uppercase">Update Akses Pengguna</DialogTitle>
+                <CardDescription>Ubah peranan akses untuk {editingUser.fullName}.</CardDescription>
+              </DialogHeader>
+              <div className="py-6">
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label className="font-bold">Nama Lengkap</Label>
+                    <Input name="fullName" defaultValue={editingUser.fullName} key={`fn-${editingUser.id}`} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold">Nomor Ponsel</Label>
+                    <Input name="phoneNumber" defaultValue={editingUser.phoneNumber} key={`pn-${editingUser.id}`} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold">NIK</Label>
+                    <Input name="nik" defaultValue={editingUser.nik} key={`nik-${editingUser.id}`} maxLength={16} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold">Alamat Lengkap</Label>
+                    <Textarea name="address" defaultValue={editingUser.address} key={`addr-${editingUser.id}`} />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <Label className="font-bold text-xs">NIPPPK / NIP</Label>
+                      <Input name="nipppk" defaultValue={editingUser.nipppk || editingUser.pejabatData?.verifikator?.nipppk || editingUser.pejabatData?.petugas?.nipppk || ""} placeholder="Nomor NIPPPK" className="font-mono text-xs" key={`nip-${editingUser.id}`} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-bold text-xs">Pangkat / Golongan</Label>
+                      <Input name="pangkat" defaultValue={editingUser.pangkat || editingUser.pejabatData?.verifikator?.pangkat || editingUser.pejabatData?.petugas?.pangkat || ""} placeholder="Contoh: Penata, III/c" className="text-xs" key={`pkt-${editingUser.id}`} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-bold text-xs">Jabatan</Label>
+                      <Input name="jabatan" defaultValue={editingUser.jabatan || editingUser.pejabatData?.verifikator?.jabatan || editingUser.pejabatData?.petugas?.jabatan || ""} placeholder="Contoh: Verifikator Dinas" className="text-xs" key={`jbt-${editingUser.id}`} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold text-amber-600">Reset Kata Sandi</Label>
+                    <Input name="newPassword" placeholder="Biarkan kosong jika tidak ingin mengubah" />
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Jika diisi, kata sandi lama akan hangus dan perangkat pengguna akan direset (logout otomatis).
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="font-bold">Peranan / Jabatan</Label>
+                    <Select name="role" defaultValue={editingUser.role || "petugas"}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="petugas">Petugas Survey</SelectItem>
+                        <SelectItem value="koordinator">USULAN</SelectItem>
+                        <SelectItem value="admin">Administrator</SelectItem>
+                        <SelectItem value="monitoring">Monitoring</SelectItem>
+                        <SelectItem value="staff">Staff</SelectItem>
+                        <SelectItem value="dinas">Dinas</SelectItem>
+                        <SelectItem value="verifikator_dinas">Verifikator Dinas</SelectItem>
+                        <SelectItem value="inspektorat">Inspektorat</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit" className="w-full font-bold">Simpan Akses</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
       <ConfirmDialog
         open={showStatusDialog}
         onOpenChange={setShowStatusDialog}

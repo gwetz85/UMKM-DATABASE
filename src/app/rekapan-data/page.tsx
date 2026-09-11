@@ -719,71 +719,139 @@ function RekapanDataContent() {
             <p className="text-xs text-slate-400">Coba ubah atau reset filter wilayah</p>
           </div>
         ) : (
-          <div className="overflow-x-auto w-full">
-            <Table className="w-full text-left border-collapse">
-              <TableHeader className="bg-slate-50/80 border-b">
-                <TableRow>
-                  <TableHead className="font-black text-primary py-3 pl-4 w-10 text-center text-[11px]">NO</TableHead>
-                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">NAMA LENGKAP</TableHead>
-                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">NIK</TableHead>
-                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">USAHA</TableHead>
-                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">KECAMATAN</TableHead>
-                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">KELURAHAN</TableHead>
-                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">RT / RW</TableHead>
-                  <TableHead className="font-black text-primary py-3 px-2 text-[11px]">USULAN</TableHead>
-                  <TableHead className="font-black text-primary py-3 pr-4 text-right text-[11px]">SUMBER DATA</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.slice(0, pageLimit).map((actor, index) => {
-                  const { rt, rw } = parseRtRw(actor.rtRw)
-                  return (
-                    <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors border-b border-slate-100">
-                      <TableCell className="py-2.5 pl-4 text-center font-bold text-slate-500 text-xs">{index + 1}</TableCell>
-                      <TableCell className="py-2.5 px-2">
-                        <div className="flex flex-col">
-                          <span className="font-bold text-slate-800 uppercase text-xs leading-tight">{actor.fullName}</span>
-                          <span className="text-[9px] text-slate-400 font-bold">{actor.gender}</span>
+          <div>
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {filtered.slice(0, pageLimit).map((actor, index) => {
+                const { rt, rw } = parseRtRw(actor.rtRw)
+                return (
+                  <div key={actor.id} className="p-4 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-black text-xs shrink-0">
+                          {index + 1}
+                        </span>
+                        <div>
+                          <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 uppercase leading-tight">
+                            {actor.fullName}
+                          </h4>
+                          <span className="font-mono text-xs text-muted-foreground">{actor.nik || "-"}</span>
                         </div>
-                      </TableCell>
-                      <TableCell className="py-2.5 px-2 font-mono text-[11px] text-slate-600 tracking-tighter">{actor.nik || "-"}</TableCell>
-                      <TableCell className="py-2.5 px-2 max-w-[170px]">
-                        <div className="flex flex-col overflow-hidden">
-                          <span className="font-black text-primary text-[11px] uppercase truncate" title={actor.businessName}>{actor.businessName}</span>
-                          <span className="text-[9px] text-slate-400 font-bold truncate">{actor.businessCategory}</span>
+                      </div>
+                      <Badge variant="outline" className={cn(
+                        "text-[9px] font-black uppercase px-2 py-0.5 border-none shadow-xs shrink-0",
+                        actor.source?.includes("Pengajuan") ? "bg-emerald-100 text-emerald-800" :
+                        actor.source?.includes("Sheet 1") ? "bg-blue-100 text-blue-800" :
+                        actor.source?.includes("Sheet 2") ? "bg-indigo-100 text-indigo-800" :
+                        "bg-amber-100 text-amber-800"
+                      )}>
+                        {actor.source}
+                      </Badge>
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground font-medium">Usaha:</span>
+                        <div className="text-right">
+                          <span className="font-bold text-primary block">{actor.businessName || "-"}</span>
+                          <span className="text-[10px] text-muted-foreground">{actor.businessCategory || "-"}</span>
                         </div>
-                      </TableCell>
-                      <TableCell className="py-2.5 px-2">
-                        <span className="text-[11px] font-bold uppercase text-slate-700">{actor.kecamatan || "-"}</span>
-                      </TableCell>
-                      <TableCell className="py-2.5 px-2">
-                        <span className="text-[11px] font-bold uppercase text-slate-700">{actor.kelurahan || "-"}</span>
-                      </TableCell>
-                      <TableCell className="py-2.5 px-2">
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground font-medium">Wilayah:</span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300">
+                          {actor.kelurahan || "-"}, {actor.kecamatan || "-"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground font-medium">RT / RW:</span>
                         <div className="flex items-center gap-1">
                           <span className="text-[9px] font-black bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded">RT {rt}</span>
                           <span className="text-[9px] font-black bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded">RW {rw}</span>
                         </div>
-                      </TableCell>
-                      <TableCell className="py-2.5 px-2 max-w-[110px]">
-                        <span className="text-[11px] font-bold uppercase text-slate-700 truncate block" title={actor.coordinator || "-"}>{actor.coordinator || "-"}</span>
-                      </TableCell>
-                      <TableCell className="py-2.5 pr-4 text-right">
-                        <Badge variant="outline" className={cn(
-                          "text-[9px] font-black uppercase px-2 py-0.5 border-none shadow-xs shrink-0",
-                          actor.source?.includes("Pengajuan") ? "bg-emerald-100 text-emerald-800" :
-                          actor.source?.includes("Sheet 1") ? "bg-blue-100 text-blue-800" :
-                          actor.source?.includes("Sheet 2") ? "bg-indigo-100 text-indigo-800" :
-                          "bg-amber-100 text-amber-800"
-                        )}>
-                          {actor.source}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+                      </div>
+                      {actor.coordinator && (
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                          <span className="text-muted-foreground font-medium">Usulan:</span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-300 uppercase">
+                            {actor.coordinator}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto w-full">
+              <Table className="w-full text-left border-collapse">
+                <TableHeader className="bg-slate-50/80 border-b">
+                  <TableRow>
+                    <TableHead className="font-black text-primary py-3 pl-4 w-10 text-center text-[11px]">NO</TableHead>
+                    <TableHead className="font-black text-primary py-3 px-2 text-[11px]">NAMA LENGKAP</TableHead>
+                    <TableHead className="font-black text-primary py-3 px-2 text-[11px]">NIK</TableHead>
+                    <TableHead className="font-black text-primary py-3 px-2 text-[11px]">USAHA</TableHead>
+                    <TableHead className="font-black text-primary py-3 px-2 text-[11px]">KECAMATAN</TableHead>
+                    <TableHead className="font-black text-primary py-3 px-2 text-[11px]">KELURAHAN</TableHead>
+                    <TableHead className="font-black text-primary py-3 px-2 text-[11px]">RT / RW</TableHead>
+                    <TableHead className="font-black text-primary py-3 px-2 text-[11px]">USULAN</TableHead>
+                    <TableHead className="font-black text-primary py-3 pr-4 text-right text-[11px]">SUMBER DATA</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.slice(0, pageLimit).map((actor, index) => {
+                    const { rt, rw } = parseRtRw(actor.rtRw)
+                    return (
+                      <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors border-b border-slate-100">
+                        <TableCell className="py-2.5 pl-4 text-center font-bold text-slate-500 text-xs">{index + 1}</TableCell>
+                        <TableCell className="py-2.5 px-2">
+                          <div className="flex flex-col">
+                            <span className="font-bold text-slate-800 uppercase text-xs leading-tight">{actor.fullName}</span>
+                            <span className="text-[9px] text-slate-400 font-bold">{actor.gender}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2.5 px-2 font-mono text-[11px] text-slate-600 tracking-tighter">{actor.nik || "-"}</TableCell>
+                        <TableCell className="py-2.5 px-2 max-w-[170px]">
+                          <div className="flex flex-col overflow-hidden">
+                            <span className="font-black text-primary text-[11px] uppercase truncate" title={actor.businessName}>{actor.businessName}</span>
+                            <span className="text-[9px] text-slate-400 font-bold truncate">{actor.businessCategory}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2.5 px-2">
+                          <span className="text-[11px] font-bold uppercase text-slate-700">{actor.kecamatan || "-"}</span>
+                        </TableCell>
+                        <TableCell className="py-2.5 px-2">
+                          <span className="text-[11px] font-bold uppercase text-slate-700">{actor.kelurahan || "-"}</span>
+                        </TableCell>
+                        <TableCell className="py-2.5 px-2">
+                          <div className="flex items-center gap-1">
+                            <span className="text-[9px] font-black bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded">RT {rt}</span>
+                            <span className="text-[9px] font-black bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded">RW {rw}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2.5 px-2 max-w-[110px]">
+                          <span className="text-[11px] font-bold uppercase text-slate-700 truncate block" title={actor.coordinator || "-"}>{actor.coordinator || "-"}</span>
+                        </TableCell>
+                        <TableCell className="py-2.5 pr-4 text-right">
+                          <Badge variant="outline" className={cn(
+                            "text-[9px] font-black uppercase px-2 py-0.5 border-none shadow-xs shrink-0",
+                            actor.source?.includes("Pengajuan") ? "bg-emerald-100 text-emerald-800" :
+                            actor.source?.includes("Sheet 1") ? "bg-blue-100 text-blue-800" :
+                            actor.source?.includes("Sheet 2") ? "bg-indigo-100 text-indigo-800" :
+                            "bg-amber-100 text-amber-800"
+                          )}>
+                            {actor.source}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
             {filtered.length > pageLimit && (
               <div className="p-4 flex justify-center border-t bg-slate-50">
                 <Button 

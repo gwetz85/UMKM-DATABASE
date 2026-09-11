@@ -1542,97 +1542,76 @@ export default function UploadPetugasSurveyPage() {
               Belum ada akun Petugas Survey terdaftar. Upload file Excel di atas untuk membuat akun secara otomatis.
             </div>
           ) : (
-            <div className="max-h-[500px] overflow-x-auto overflow-y-auto">
-              <Table className="min-w-[900px]">
-                <TableHeader className="bg-slate-100 sticky top-0 z-10">
-                  <TableRow>
-                    <TableHead className="w-10 text-center font-bold">No</TableHead>
-                    <TableHead className="font-bold min-w-[140px]">Nama Petugas</TableHead>
-                    <TableHead className="font-bold min-w-[140px]">Username</TableHead>
-                    <TableHead className="font-bold min-w-[130px]">Password</TableHead>
-                    <TableHead className="font-bold text-center min-w-[110px]">Data Terhubung</TableHead>
-                    <TableHead className="font-bold text-center min-w-[140px]">Status & Kehadiran</TableHead>
-                    <TableHead className="font-bold text-center min-w-[90px]">Status Akun</TableHead>
-                    <TableHead className="text-center font-bold min-w-[200px]">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPetugasAccounts.map((u: any, idx: number) => {
-                    const isPassVisible = !!visiblePasswords[u.id]
-                    const isInactive = u.status === 'inactive'
-                    return (
-                      <TableRow key={u.id} className={`transition-colors ${isInactive ? 'bg-red-50/40 hover:bg-red-50/70' : 'hover:bg-slate-50'}`}>
-                        {/* No */}
-                        <TableCell className="text-center font-mono text-xs text-slate-500 w-10">{idx + 1}</TableCell>
+            <div>
+              {/* Mobile Card View */}
+              <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                {filteredPetugasAccounts.map((u: any, idx: number) => {
+                  const isPassVisible = !!visiblePasswords[u.id]
+                  const isInactive = u.status === 'inactive'
 
-                        {/* Nama */}
-                        <TableCell>
-                          <div className="flex flex-col gap-0.5">
-                            <span className={`font-black text-sm uppercase leading-tight ${isInactive ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                  return (
+                    <div key={u.id} className={`p-4 space-y-3 ${isInactive ? 'bg-red-50/30 dark:bg-red-950/20' : ''}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-black text-xs shrink-0">
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <h4 className={`font-black text-sm uppercase leading-tight ${isInactive ? 'text-slate-400 line-through' : 'text-slate-800 dark:text-slate-200'}`}>
                               {u.fullName}
+                            </h4>
+                            <span className="font-mono text-xs font-bold text-primary">
+                              @{u.id}
                             </span>
-                            {isInactive && (
-                              <span className="text-[9px] font-bold text-red-400 uppercase tracking-wider">Akun Nonaktif</span>
-                            )}
                           </div>
-                        </TableCell>
+                        </div>
+                        {isInactive ? (
+                          <div className="inline-flex items-center gap-1 bg-red-100 text-red-600 border border-red-200 rounded-full px-2 py-0.5 text-[9px] font-black uppercase shadow-xs">
+                            <PowerOff className="w-2.5 h-2.5" /> Nonaktif
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full px-2 py-0.5 text-[9px] font-black uppercase shadow-xs">
+                            <Power className="w-2.5 h-2.5" /> Aktif
+                          </div>
+                        )}
+                      </div>
 
-                        {/* Username */}
-                        <TableCell className={`font-mono text-xs font-bold ${isInactive ? 'text-slate-400' : 'text-primary'}`}>
-                          {u.id}
-                        </TableCell>
-
-                        {/* Password */}
-                        <TableCell className="font-mono text-xs">
+                      <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground font-medium">Password:</span>
                           <div className="flex items-center gap-1.5">
-                            <span className="bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 font-mono tracking-widest text-slate-600">
+                            <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-600 font-mono tracking-widest text-slate-700 dark:text-slate-300 text-xs">
                               {isPassVisible ? (u.password || "123456") : "••••••••"}
                             </span>
                             <button
-                              className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                              className="p-1 rounded-md text-slate-400 hover:text-slate-700 transition-colors"
                               onClick={() => togglePasswordVisibility(u.id)}
                             >
                               {isPassVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                             </button>
                           </div>
-                        </TableCell>
+                        </div>
 
-                        {/* Data Terhubung */}
-                        <TableCell className="text-center">
-                          <div className="inline-flex items-center gap-1 bg-sky-100 text-sky-700 border border-sky-200 rounded-full px-2.5 py-1 text-[11px] font-bold">
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                          <span className="text-muted-foreground font-medium">Data Terhubung:</span>
+                          <span className="inline-flex items-center gap-1 bg-sky-100 text-sky-700 border border-sky-200 rounded-full px-2 py-0.5 text-[10px] font-bold">
                             <Users className="w-3 h-3" />
                             {u.linkedCount} Data
-                          </div>
-                        </TableCell>
+                          </span>
+                        </div>
 
-                        {/* Status & Kehadiran */}
-                        <TableCell className="text-center">
-                          <div className="flex flex-col items-center gap-1">
-                            {/* Online / Offline badge */}
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                          <span className="text-muted-foreground font-medium">Kehadiran:</span>
+                          <div className="flex items-center gap-1.5">
                             {u.isOnline ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 border border-emerald-300 shadow-xs">
-                                <span className="relative flex h-1.5 w-1.5">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                                </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-700 border border-emerald-300">
                                 Online
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
-                                <span className="inline-flex rounded-full h-1.5 w-1.5 bg-slate-400"></span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
                                 Offline
                               </span>
                             )}
-
-                            {/* Terakhir Login */}
-                            <span className="text-[9px] text-slate-500 font-medium flex items-center gap-1" title={u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum pernah login"}>
-                              <Clock className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                              <span className="truncate max-w-[120px]">
-                                {u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum login"}
-                              </span>
-                            </span>
-
-                            {/* Status Perangkat */}
                             {u.uid ? (
                               <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase">
                                 <Lock className="w-2 h-2" /> Terkunci
@@ -1643,92 +1622,253 @@ export default function UploadPetugasSurveyPage() {
                               </span>
                             )}
                           </div>
-                        </TableCell>
+                        </div>
+                      </div>
 
-                        {/* Status Akun */}
-                        <TableCell className="text-center">
-                          {isInactive ? (
-                            <div className="inline-flex items-center gap-1 bg-red-100 text-red-600 border border-red-200 rounded-full px-2.5 py-1 text-[10px] font-black uppercase shadow-sm">
-                              <PowerOff className="w-2.5 h-2.5" /> Nonaktif
-                            </div>
-                          ) : (
-                            <div className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full px-2.5 py-1 text-[10px] font-black uppercase shadow-sm">
-                              <Power className="w-2.5 h-2.5" /> Aktif
-                            </div>
-                          )}
-                        </TableCell>
+                      {/* Actions grid */}
+                      <div className="grid grid-cols-2 gap-1.5 pt-1">
+                        <button
+                          onClick={() => {
+                            setEditingPetugas(u)
+                            setNewPasswordInput(u.password || "123456")
+                          }}
+                          className="flex items-center justify-center gap-1 h-8 px-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 font-bold text-xs"
+                        >
+                          <Key className="w-3 h-3" /> Password
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (u.uid) setShowResetConfirm({ id: u.id, fullName: u.fullName })
+                          }}
+                          disabled={!u.uid}
+                          className={`flex items-center justify-center gap-1 h-8 px-2 rounded-xl font-bold text-xs border ${
+                            u.uid
+                              ? 'bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200'
+                              : 'bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed opacity-60'
+                          }`}
+                        >
+                          <RefreshCcw className="w-3 h-3" />
+                          {u.uid ? 'Reset HP' : 'Belum Login'}
+                        </button>
+                        <button
+                          onClick={() => setShowStatusConfirm({
+                            id: u.id,
+                            fullName: u.fullName,
+                            currentStatus: u.status || 'active'
+                          })}
+                          className={`flex items-center justify-center gap-1 h-8 px-2 rounded-xl font-bold text-xs border ${
+                            isInactive
+                              ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+                              : 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200'
+                          }`}
+                        >
+                          {isInactive ? <><Power className="w-3 h-3" /> Aktifkan</> : <><PowerOff className="w-3 h-3" /> Nonaktif</>}
+                        </button>
+                        <button
+                          onClick={() => setShowDeleteConfirm({
+                            id: u.id,
+                            fullName: u.fullName,
+                            linkedCount: u.linkedCount || 0
+                          })}
+                          className="flex items-center justify-center gap-1 h-8 px-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-xs"
+                        >
+                          <Trash2 className="w-3 h-3" /> Hapus
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
 
-                        {/* Aksi */}
-                        <TableCell className="text-center px-4">
-                          <div className="inline-flex flex-col gap-1.5 items-stretch min-w-[120px]">
-                            {/* Row 1: Password + Reset */}
-                            <div className="flex gap-1.5">
-                              <button
-                                onClick={() => {
-                                  setEditingPetugas(u)
-                                  setNewPasswordInput(u.password || "123456")
-                                }}
-                                className="flex-1 flex items-center justify-center gap-1 h-7 px-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 font-bold text-[10px] transition-all hover:shadow-sm"
-                                title="Ubah password"
-                              >
-                                <Key className="w-3 h-3 shrink-0" /> Password
-                              </button>
-                              <button
-                                onClick={() => {
-                                  if (u.uid) setShowResetConfirm({ id: u.id, fullName: u.fullName })
-                                }}
-                                disabled={!u.uid}
-                                title={u.uid ? 'Reset perangkat' : 'Belum ada perangkat terkunci'}
-                                className={`flex-1 flex items-center justify-center gap-1 h-7 px-2 rounded-lg font-bold text-[10px] border transition-all ${
-                                  u.uid
-                                    ? 'bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200 hover:shadow-sm'
-                                    : 'bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed opacity-60'
-                                }`}
-                              >
-                                <RefreshCcw className="w-3 h-3 shrink-0" />
-                                {u.uid ? 'Reset' : 'Belum Login'}
-                              </button>
-                            </div>
+              {/* Desktop Table View */}
+              <div className="hidden md:block max-h-[500px] overflow-x-auto overflow-y-auto">
+                <Table className="min-w-[900px]">
+                  <TableHeader className="bg-slate-100 sticky top-0 z-10">
+                    <TableRow>
+                      <TableHead className="w-10 text-center font-bold">No</TableHead>
+                      <TableHead className="font-bold min-w-[140px]">Nama Petugas</TableHead>
+                      <TableHead className="font-bold min-w-[140px]">Username</TableHead>
+                      <TableHead className="font-bold min-w-[130px]">Password</TableHead>
+                      <TableHead className="font-bold text-center min-w-[110px]">Data Terhubung</TableHead>
+                      <TableHead className="font-bold text-center min-w-[140px]">Status & Kehadiran</TableHead>
+                      <TableHead className="font-bold text-center min-w-[90px]">Status Akun</TableHead>
+                      <TableHead className="text-center font-bold min-w-[200px]">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPetugasAccounts.map((u: any, idx: number) => {
+                      const isPassVisible = !!visiblePasswords[u.id]
+                      const isInactive = u.status === 'inactive'
+                      return (
+                        <TableRow key={u.id} className={`transition-colors ${isInactive ? 'bg-red-50/40 hover:bg-red-50/70' : 'hover:bg-slate-50'}`}>
+                          {/* No */}
+                          <TableCell className="text-center font-mono text-xs text-slate-500 w-10">{idx + 1}</TableCell>
 
-                            {/* Row 2: Toggle Status + Hapus */}
-                            <div className="flex gap-1.5">
+                          {/* Nama */}
+                          <TableCell>
+                            <div className="flex flex-col gap-0.5">
+                              <span className={`font-black text-sm uppercase leading-tight ${isInactive ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                                {u.fullName}
+                              </span>
+                              {isInactive && (
+                                <span className="text-[9px] font-bold text-red-400 uppercase tracking-wider">Akun Nonaktif</span>
+                              )}
+                            </div>
+                          </TableCell>
+
+                          {/* Username */}
+                          <TableCell className={`font-mono text-xs font-bold ${isInactive ? 'text-slate-400' : 'text-primary'}`}>
+                            {u.id}
+                          </TableCell>
+
+                          {/* Password */}
+                          <TableCell className="font-mono text-xs">
+                            <div className="flex items-center gap-1.5">
+                              <span className="bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 font-mono tracking-widest text-slate-600">
+                                {isPassVisible ? (u.password || "123456") : "••••••••"}
+                              </span>
                               <button
-                                onClick={() => setShowStatusConfirm({
-                                  id: u.id,
-                                  fullName: u.fullName,
-                                  currentStatus: u.status || 'active'
-                                })}
-                                title={isInactive ? 'Aktifkan akun ini' : 'Nonaktifkan akun ini'}
-                                className={`flex-1 flex items-center justify-center gap-1 h-7 px-2 rounded-lg font-bold text-[10px] border transition-all hover:shadow-sm ${
-                                  isInactive
-                                    ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
-                                    : 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200'
-                                }`}
+                                className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                                onClick={() => togglePasswordVisibility(u.id)}
                               >
-                                {isInactive
-                                  ? <><Power className="w-3 h-3 shrink-0" /> Aktifkan</>
-                                  : <><PowerOff className="w-3 h-3 shrink-0" /> Nonaktif</>
-                                }
-                              </button>
-                              <button
-                                onClick={() => setShowDeleteConfirm({
-                                  id: u.id,
-                                  fullName: u.fullName,
-                                  linkedCount: u.linkedCount || 0
-                                })}
-                                title="Hapus akun petugas survey"
-                                className="flex-1 flex items-center justify-center gap-1 h-7 px-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-[10px] transition-all hover:shadow-sm"
-                              >
-                                <Trash2 className="w-3 h-3 shrink-0" /> Hapus
+                                {isPassVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                               </button>
                             </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+                          </TableCell>
+
+                          {/* Data Terhubung */}
+                          <TableCell className="text-center">
+                            <div className="inline-flex items-center gap-1 bg-sky-100 text-sky-700 border border-sky-200 rounded-full px-2.5 py-1 text-[11px] font-bold">
+                              <Users className="w-3 h-3" />
+                              {u.linkedCount} Data
+                            </div>
+                          </TableCell>
+
+                          {/* Status & Kehadiran */}
+                          <TableCell className="text-center">
+                            <div className="flex flex-col items-center gap-1">
+                              {/* Online / Offline badge */}
+                              {u.isOnline ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 border border-emerald-300 shadow-xs">
+                                  <span className="relative flex h-1.5 w-1.5">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                  </span>
+                                  Online
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                  <span className="inline-flex rounded-full h-1.5 w-1.5 bg-slate-400"></span>
+                                  Offline
+                                </span>
+                              )}
+
+                              {/* Terakhir Login */}
+                              <span className="text-[9px] text-slate-500 font-medium flex items-center gap-1" title={u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum pernah login"}>
+                                <Clock className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                <span className="truncate max-w-[120px]">
+                                  {u.lastLogin ? formatDateTimeIndo(u.lastLogin) : "Belum login"}
+                                </span>
+                              </span>
+
+                              {/* Status Perangkat */}
+                              {u.uid ? (
+                                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase">
+                                  <Lock className="w-2 h-2" /> Terkunci
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase">
+                                  <UserCheck className="w-2 h-2" /> Siap Login
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+
+                          {/* Status Akun */}
+                          <TableCell className="text-center">
+                            {isInactive ? (
+                              <div className="inline-flex items-center gap-1 bg-red-100 text-red-600 border border-red-200 rounded-full px-2.5 py-1 text-[10px] font-black uppercase shadow-sm">
+                                <PowerOff className="w-2.5 h-2.5" /> Nonaktif
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full px-2.5 py-1 text-[10px] font-black uppercase shadow-sm">
+                                <Power className="w-2.5 h-2.5" /> Aktif
+                              </div>
+                            )}
+                          </TableCell>
+
+                          {/* Aksi */}
+                          <TableCell className="text-center px-4">
+                            <div className="inline-flex flex-col gap-1.5 items-stretch min-w-[120px]">
+                              {/* Row 1: Password + Reset */}
+                              <div className="flex gap-1.5">
+                                <button
+                                  onClick={() => {
+                                    setEditingPetugas(u)
+                                    setNewPasswordInput(u.password || "123456")
+                                  }}
+                                  className="flex-1 flex items-center justify-center gap-1 h-7 px-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 font-bold text-[10px] transition-all hover:shadow-sm"
+                                  title="Ubah password"
+                                >
+                                  <Key className="w-3 h-3 shrink-0" /> Password
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (u.uid) setShowResetConfirm({ id: u.id, fullName: u.fullName })
+                                  }}
+                                  disabled={!u.uid}
+                                  title={u.uid ? 'Reset perangkat' : 'Belum ada perangkat terkunci'}
+                                  className={`flex-1 flex items-center justify-center gap-1 h-7 px-2 rounded-lg font-bold text-[10px] border transition-all ${
+                                    u.uid
+                                      ? 'bg-orange-50 hover:bg-orange-100 text-orange-600 border-orange-200 hover:shadow-sm'
+                                      : 'bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed opacity-60'
+                                  }`}
+                                >
+                                  <RefreshCcw className="w-3 h-3 shrink-0" />
+                                  {u.uid ? 'Reset' : 'Belum Login'}
+                                </button>
+                              </div>
+
+                              {/* Row 2: Toggle Status + Hapus */}
+                              <div className="flex gap-1.5">
+                                <button
+                                  onClick={() => setShowStatusConfirm({
+                                    id: u.id,
+                                    fullName: u.fullName,
+                                    currentStatus: u.status || 'active'
+                                  })}
+                                  title={isInactive ? 'Aktifkan akun ini' : 'Nonaktifkan akun ini'}
+                                  className={`flex-1 flex items-center justify-center gap-1 h-7 px-2 rounded-lg font-bold text-[10px] border transition-all hover:shadow-sm ${
+                                    isInactive
+                                      ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300'
+                                      : 'bg-red-50 hover:bg-red-100 text-red-600 border-red-200'
+                                  }`}
+                                >
+                                  {isInactive
+                                    ? <><Power className="w-3 h-3 shrink-0" /> Aktifkan</>
+                                    : <><PowerOff className="w-3 h-3 shrink-0" /> Nonaktif</>
+                                  }
+                                </button>
+                                <button
+                                  onClick={() => setShowDeleteConfirm({
+                                    id: u.id,
+                                    fullName: u.fullName,
+                                    linkedCount: u.linkedCount || 0
+                                  })}
+                                  title="Hapus akun petugas survey"
+                                  className="flex-1 flex items-center justify-center gap-1 h-7 px-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold text-[10px] transition-all hover:shadow-sm"
+                                >
+                                  <Trash2 className="w-3 h-3 shrink-0" /> Hapus
+                                </button>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </CardContent>

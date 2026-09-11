@@ -368,93 +368,188 @@ function CetakBerkasContent() {
               </div>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50/50 hover:bg-transparent border-b border-slate-100">
-                    <TableHead className="w-12 text-center font-black text-[10px] uppercase tracking-widest py-3 pl-6">No</TableHead>
-                    <TableHead className="font-black text-[10px] uppercase tracking-widest py-3">Nama Lengkap</TableHead>
-                    <TableHead className="font-black text-[10px] uppercase tracking-widest py-3">NIK</TableHead>
-                    <TableHead className="font-black text-[10px] uppercase tracking-widest py-3">Jenis Usaha</TableHead>
-                    <TableHead className="font-black text-[10px] uppercase tracking-widest py-3">
-                      <span className="flex items-center gap-1"><CreditCard className="w-3 h-3" /> Rekening</span>
-                    </TableHead>
-                    <TableHead className="font-black text-[10px] uppercase tracking-widest py-3">
-                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Kelurahan</span>
-                    </TableHead>
-                    <TableHead className="font-black text-[10px] uppercase tracking-widest py-3">
-                      <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> Telepon</span>
-                    </TableHead>
-                    <TableHead className="font-black text-[10px] uppercase tracking-widest py-3 pr-6 text-center">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredActors.map((actor, index) => (
-                    <TableRow
-                      key={actor.id}
-                      className="group hover:bg-primary/5 transition-colors border-b border-slate-50"
-                    >
-                      <TableCell className="text-center py-3 pl-6 text-xs font-bold text-slate-400">
-                        {index + 1}
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <div className="font-bold text-slate-800 uppercase text-sm leading-tight">
-                          {actor.fullName}
+            <>
+              {/* Mobile Card List (md:hidden) */}
+              <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                {filteredActors.map((actor, index) => (
+                  <div
+                    key={actor.id}
+                    className="p-3.5 space-y-2.5 bg-white dark:bg-slate-900 active:bg-slate-50 transition-colors"
+                  >
+                    {/* Row 1: Nomor, Nama & Kategori */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
+                        <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md shrink-0 mt-0.5">
+                          #{index + 1}
+                        </span>
+                        <div>
+                          <span className="font-black text-slate-800 dark:text-slate-100 text-sm uppercase leading-tight block">
+                            {actor.fullName}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            NIK: {actor.nik || "-"}
+                          </span>
                         </div>
-                        <div className="text-[10px] text-muted-foreground font-medium">
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-[9px] font-black uppercase shrink-0",
+                          actor.businessCategory === "Kuliner"
+                            ? "border-orange-200 text-orange-600 bg-orange-50"
+                            : "border-blue-200 text-blue-600 bg-blue-50"
+                        )}
+                      >
+                        {actor.businessCategory || "-"}
+                      </Badge>
+                    </div>
+
+                    {/* Row 2: Rekening & Bank */}
+                    <div className="bg-primary/5 border border-primary/10 rounded-xl p-2.5 flex items-center justify-between">
+                      <div>
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">Rekening Bank</span>
+                        <span className="font-mono font-black text-primary text-sm tracking-wider">
+                          {actor.bankNumber || "-"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-black uppercase px-2.5 py-1 rounded-lg bg-white border border-primary/20 text-primary shadow-sm">
+                        {actor.bankName || "-"}
+                      </span>
+                    </div>
+
+                    {/* Row 3: Usaha & Koordinator */}
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Nama Usaha</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-200 uppercase truncate block">
+                          {actor.businessName || "-"}
+                        </span>
+                        <span className="text-[9px] text-slate-400 truncate block mt-0.5">
+                          {actor.kelurahan || "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Koordinator</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-200 uppercase truncate block">
                           {actor.coordinator || "-"}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-3 font-mono text-xs text-slate-600 font-bold">
-                        {actor.nik || "-"}
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[9px] font-black uppercase",
-                            actor.businessCategory === "Kuliner"
-                              ? "border-orange-200 text-orange-600 bg-orange-50"
-                              : "border-blue-200 text-blue-600 bg-blue-50"
-                          )}
-                        >
-                          {actor.businessName || actor.businessCategory || "-"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <div className="font-mono font-bold text-primary text-sm">
-                          {actor.bankNumber}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground uppercase font-bold">
-                          {actor.bankName || "-"}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-3 text-xs text-slate-600 uppercase font-medium">
-                        {actor.kelurahan || "-"}
-                      </TableCell>
-                      <TableCell className="py-3 text-xs text-slate-600 font-mono">
-                        {actor.phone || "-"}
-                      </TableCell>
-                      <TableCell className="py-3 pr-6 text-center">
-                        <Button
-                          size="sm"
-                          onClick={() => handlePrintSingle(actor)}
-                          disabled={printingId === actor.id}
-                          className="h-8 px-3 text-[10px] font-black uppercase rounded-lg gap-1.5 shadow-sm shadow-primary/20"
-                        >
-                          {printingId === actor.id ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Printer className="w-3 h-3" />
-                          )}
-                          CETAK
-                        </Button>
-                      </TableCell>
+                        </span>
+                        {actor.phone && (
+                          <span className="text-[9px] text-slate-500 font-mono block mt-0.5">
+                            {actor.phone}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row 4: Action Button */}
+                    <div className="flex items-center justify-end pt-1">
+                      <Button
+                        size="sm"
+                        onClick={() => handlePrintSingle(actor)}
+                        disabled={printingId === actor.id}
+                        className="h-8 px-4 text-xs font-black uppercase rounded-xl gap-1.5 shadow-sm shadow-primary/20"
+                      >
+                        {printingId === actor.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Printer className="w-3.5 h-3.5" />
+                        )}
+                        CETAK BERKAS
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View (hidden md:block) */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/50 hover:bg-transparent border-b border-slate-100">
+                      <TableHead className="w-12 text-center font-black text-[10px] uppercase tracking-widest py-3 pl-6">No</TableHead>
+                      <TableHead className="font-black text-[10px] uppercase tracking-widest py-3">Nama Lengkap</TableHead>
+                      <TableHead className="font-black text-[10px] uppercase tracking-widest py-3">NIK</TableHead>
+                      <TableHead className="font-black text-[10px] uppercase tracking-widest py-3">Jenis Usaha</TableHead>
+                      <TableHead className="font-black text-[10px] uppercase tracking-widest py-3">
+                        <span className="flex items-center gap-1"><CreditCard className="w-3 h-3" /> Rekening</span>
+                      </TableHead>
+                      <TableHead className="font-black text-[10px] uppercase tracking-widest py-3">
+                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Kelurahan</span>
+                      </TableHead>
+                      <TableHead className="font-black text-[10px] uppercase tracking-widest py-3">
+                        <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> Telepon</span>
+                      </TableHead>
+                      <TableHead className="font-black text-[10px] uppercase tracking-widest py-3 pr-6 text-center">Aksi</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredActors.map((actor, index) => (
+                      <TableRow
+                        key={actor.id}
+                        className="group hover:bg-primary/5 transition-colors border-b border-slate-50"
+                      >
+                        <TableCell className="text-center py-3 pl-6 text-xs font-bold text-slate-400">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <div className="font-bold text-slate-800 uppercase text-sm leading-tight">
+                            {actor.fullName}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground font-medium">
+                            {actor.coordinator || "-"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-3 font-mono text-xs text-slate-600 font-bold">
+                          {actor.nik || "-"}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[9px] font-black uppercase",
+                              actor.businessCategory === "Kuliner"
+                                ? "border-orange-200 text-orange-600 bg-orange-50"
+                                : "border-blue-200 text-blue-600 bg-blue-50"
+                            )}
+                          >
+                            {actor.businessName || actor.businessCategory || "-"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <div className="font-mono font-bold text-primary text-sm">
+                            {actor.bankNumber}
+                          </div>
+                          <div className="text-[10px] text-muted-foreground uppercase font-bold">
+                            {actor.bankName || "-"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-3 text-xs text-slate-600 uppercase font-medium">
+                          {actor.kelurahan || "-"}
+                        </TableCell>
+                        <TableCell className="py-3 text-xs text-slate-600 font-mono">
+                          {actor.phone || "-"}
+                        </TableCell>
+                        <TableCell className="py-3 pr-6 text-center">
+                          <Button
+                            size="sm"
+                            onClick={() => handlePrintSingle(actor)}
+                            disabled={printingId === actor.id}
+                            className="h-8 px-3 text-[10px] font-black uppercase rounded-lg gap-1.5 shadow-sm shadow-primary/20"
+                          >
+                            {printingId === actor.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Printer className="w-3 h-3" />
+                            )}
+                            CETAK
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -938,137 +938,249 @@ export default function PembagianPetugasSurveyPage() {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-slate-50 border-b border-slate-100">
-                    <TableRow>
-                      <TableHead className="font-black text-slate-600 text-[10px] uppercase w-12 text-center">NO</TableHead>
-                      <TableHead className="font-black text-slate-600 text-[10px] uppercase min-w-[200px]">NAMA PETUGAS SURVEY</TableHead>
-                      <TableHead className="font-black text-slate-600 text-[10px] uppercase">USERNAME LOGIN</TableHead>
-                      <TableHead className="font-black text-slate-600 text-[10px] uppercase">KATA SANDI (PASSWORD)</TableHead>
-                      <TableHead className="font-black text-slate-600 text-[10px] uppercase text-center">DATA TERHUBUNG</TableHead>
-                      <TableHead className="font-black text-slate-600 text-[10px] uppercase text-center">STATUS LOGIN</TableHead>
-                      <TableHead className="font-black text-slate-600 text-[10px] uppercase text-right pr-6">AKSI PENGATURAN</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredSurveyors.map((s: any, idx: number) => {
-                      const connectedList = getConnectedActors(s)
-                      const isLocked = !!s.uid
-                      const isPasswordShown = visiblePasswords[s.id]
+              <div>
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                  {filteredSurveyors.map((s: any, idx: number) => {
+                    const connectedList = getConnectedActors(s)
+                    const isLocked = !!s.uid
+                    const isPasswordShown = visiblePasswords[s.id]
 
-                      return (
-                        <TableRow key={s.id} className="hover:bg-slate-50/70 transition-colors border-b border-slate-100">
-                          {/* No */}
-                          <TableCell className="text-center font-bold text-slate-500 text-xs">
-                            {idx + 1}
-                          </TableCell>
+                    return (
+                      <div key={s.id} className="p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-rose-100 text-rose-700 font-black text-xs shrink-0">
+                              {idx + 1}
+                            </span>
+                            <div>
+                              <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">
+                                {s.fullName}
+                              </h4>
+                              <span className="font-mono text-xs font-semibold text-rose-600">
+                                @{s.username}
+                              </span>
+                            </div>
+                          </div>
+                          {isLocked ? (
+                            <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase font-black text-[9px] px-2 py-0.5 rounded-full shrink-0">
+                              TERKUNCI
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-amber-50 text-amber-700 border border-amber-200 uppercase font-black text-[9px] px-2 py-0.5 rounded-full shrink-0">
+                              SIAP LOGIN
+                            </Badge>
+                          )}
+                        </div>
 
-                          {/* Nama Petugas */}
-                          <TableCell className="font-black text-slate-900 text-xs">
-                            {s.fullName}
-                          </TableCell>
-
-                          {/* Username */}
-                          <TableCell className="font-mono text-xs font-semibold text-rose-600">
-                            {s.username}
-                          </TableCell>
-
-                          {/* Password */}
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-xs text-slate-700 bg-slate-100 px-2 py-1 rounded-md min-w-[70px] text-center">
+                        <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground font-medium">Password:</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-xs text-slate-700 dark:text-slate-300 bg-slate-200/60 dark:bg-slate-700 px-2 py-0.5 rounded-md min-w-[70px] text-center">
                                 {isPasswordShown ? s.password : "••••••••"}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => togglePasswordVisibility(s.id)}
                                 className="text-slate-400 hover:text-slate-700 p-1 rounded transition-colors"
-                                title={isPasswordShown ? "Sembunyikan" : "Tampilkan"}
                               >
                                 {isPasswordShown ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                               </button>
                             </div>
-                          </TableCell>
+                          </div>
 
-                          {/* Data Terhubung */}
-                          <TableCell className="text-center">
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                            <span className="text-muted-foreground font-medium">Data Terhubung:</span>
                             <button
                               type="button"
                               onClick={() => setViewingConnectedSurveyor({ surveyor: s, actors: connectedList })}
-                              className="group inline-flex items-center gap-1 transition-transform hover:scale-105"
-                              title="Klik untuk melihat daftar pelaku usaha"
+                              className="group inline-flex items-center gap-1 active:scale-95 transition-transform"
                             >
-                              <Badge className="bg-sky-100 hover:bg-sky-200 text-sky-700 border-none font-bold text-xs px-3 py-1 rounded-full cursor-pointer">
-                                {connectedList.length} Pelaku Usaha
+                              <Badge className="bg-sky-100 hover:bg-sky-200 text-sky-700 border-none font-bold text-[11px] px-2.5 py-0.5 rounded-full cursor-pointer">
+                                {connectedList.length} Pelaku Usaha →
                               </Badge>
                             </button>
-                          </TableCell>
+                          </div>
+                        </div>
 
-                          {/* Status Login */}
-                          <TableCell className="text-center">
-                            {isLocked ? (
-                              <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase font-black text-[9px] px-2.5 py-0.5 rounded-full">
-                                TERKUNCI DI HP/DEVICE
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-amber-50 text-amber-700 border border-amber-200 uppercase font-black text-[9px] px-2.5 py-0.5 rounded-full">
-                                SIAP LOGIN
-                              </Badge>
-                            )}
-                          </TableCell>
+                        <div className="flex items-center justify-end gap-1.5 pt-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingSurveyor(s)}
+                            className="h-8 text-[11px] font-bold border-rose-200 text-rose-600 hover:bg-rose-50 px-2.5 rounded-xl"
+                          >
+                            <Key className="w-3 h-3 mr-1" /> Password
+                          </Button>
 
-                          {/* Aksi Pengaturan */}
-                          <TableCell className="text-right pr-6">
-                            <div className="flex items-center justify-end gap-1.5">
-                              {/* Edit Password */}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditingSurveyor(s)}
-                                className="h-7 text-[10px] font-bold border-rose-200 text-rose-600 hover:bg-rose-50 px-2.5 rounded-lg"
+                          {isLocked ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleResetDevice(s)}
+                              className="h-8 text-[11px] font-bold border-amber-200 text-amber-600 hover:bg-amber-50 px-2.5 rounded-xl"
+                            >
+                              <RotateCcw className="w-3 h-3 mr-1" /> Reset
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled
+                              className="h-8 text-[11px] font-bold border-slate-200 text-slate-400 bg-slate-50/50 px-2.5 rounded-xl cursor-not-allowed"
+                            >
+                              <RotateCcw className="w-3 h-3 mr-1" /> Belum Login
+                            </Button>
+                          )}
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDeletingSurveyor(s)}
+                            className="h-8 text-[11px] font-bold border-red-200 text-red-600 hover:bg-red-50 px-2.5 rounded-xl"
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" /> Hapus
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-slate-50 border-b border-slate-100">
+                      <TableRow>
+                        <TableHead className="font-black text-slate-600 text-[10px] uppercase w-12 text-center">NO</TableHead>
+                        <TableHead className="font-black text-slate-600 text-[10px] uppercase min-w-[200px]">NAMA PETUGAS SURVEY</TableHead>
+                        <TableHead className="font-black text-slate-600 text-[10px] uppercase">USERNAME LOGIN</TableHead>
+                        <TableHead className="font-black text-slate-600 text-[10px] uppercase">KATA SANDI (PASSWORD)</TableHead>
+                        <TableHead className="font-black text-slate-600 text-[10px] uppercase text-center">DATA TERHUBUNG</TableHead>
+                        <TableHead className="font-black text-slate-600 text-[10px] uppercase text-center">STATUS LOGIN</TableHead>
+                        <TableHead className="font-black text-slate-600 text-[10px] uppercase text-right pr-6">AKSI PENGATURAN</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredSurveyors.map((s: any, idx: number) => {
+                        const connectedList = getConnectedActors(s)
+                        const isLocked = !!s.uid
+                        const isPasswordShown = visiblePasswords[s.id]
+
+                        return (
+                          <TableRow key={s.id} className="hover:bg-slate-50/70 transition-colors border-b border-slate-100">
+                            {/* No */}
+                            <TableCell className="text-center font-bold text-slate-500 text-xs">
+                              {idx + 1}
+                            </TableCell>
+
+                            {/* Nama Petugas */}
+                            <TableCell className="font-black text-slate-900 text-xs">
+                              {s.fullName}
+                            </TableCell>
+
+                            {/* Username */}
+                            <TableCell className="font-mono text-xs font-semibold text-rose-600">
+                              {s.username}
+                            </TableCell>
+
+                            {/* Password */}
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-xs text-slate-700 bg-slate-100 px-2 py-1 rounded-md min-w-[70px] text-center">
+                                  {isPasswordShown ? s.password : "••••••••"}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => togglePasswordVisibility(s.id)}
+                                  className="text-slate-400 hover:text-slate-700 p-1 rounded transition-colors"
+                                  title={isPasswordShown ? "Sembunyikan" : "Tampilkan"}
+                                >
+                                  {isPasswordShown ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                              </div>
+                            </TableCell>
+
+                            {/* Data Terhubung */}
+                            <TableCell className="text-center">
+                              <button
+                                type="button"
+                                onClick={() => setViewingConnectedSurveyor({ surveyor: s, actors: connectedList })}
+                                className="group inline-flex items-center gap-1 transition-transform hover:scale-105"
+                                title="Klik untuk melihat daftar pelaku usaha"
                               >
-                                <Key className="w-3 h-3 mr-1" /> Edit Password
-                              </Button>
+                                <Badge className="bg-sky-100 hover:bg-sky-200 text-sky-700 border-none font-bold text-xs px-3 py-1 rounded-full cursor-pointer">
+                                  {connectedList.length} Pelaku Usaha
+                                </Badge>
+                              </button>
+                            </TableCell>
 
-                              {/* Reset Device / Belum Login */}
+                            {/* Status Login */}
+                            <TableCell className="text-center">
                               {isLocked ? (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleResetDevice(s)}
-                                  className="h-7 text-[10px] font-bold border-amber-200 text-amber-600 hover:bg-amber-50 px-2.5 rounded-lg"
-                                >
-                                  <RotateCcw className="w-3 h-3 mr-1" /> Reset Device
-                                </Button>
+                                <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase font-black text-[9px] px-2.5 py-0.5 rounded-full">
+                                  TERKUNCI DI HP/DEVICE
+                                </Badge>
                               ) : (
+                                <Badge className="bg-amber-50 text-amber-700 border border-amber-200 uppercase font-black text-[9px] px-2.5 py-0.5 rounded-full">
+                                  SIAP LOGIN
+                                </Badge>
+                              )}
+                            </TableCell>
+
+                            {/* Aksi Pengaturan */}
+                            <TableCell className="text-right pr-6">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {/* Edit Password */}
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  disabled
-                                  className="h-7 text-[10px] font-bold border-slate-200 text-slate-400 bg-slate-50/50 px-2.5 rounded-lg cursor-not-allowed"
+                                  onClick={() => setEditingSurveyor(s)}
+                                  className="h-7 text-[10px] font-bold border-rose-200 text-rose-600 hover:bg-rose-50 px-2.5 rounded-lg"
                                 >
-                                  <RotateCcw className="w-3 h-3 mr-1" /> Belum Login
+                                  <Key className="w-3 h-3 mr-1" /> Edit Password
                                 </Button>
-                              )}
 
-                              {/* HAPUS BUTTON (Feature requested) */}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setDeletingSurveyor(s)}
-                                className="h-7 text-[10px] font-bold border-red-200 text-red-600 hover:bg-red-50 px-2.5 rounded-lg"
-                                title="Hapus Petugas Survey dan kosongkan pembagian data"
-                              >
-                                <Trash2 className="w-3 h-3 mr-1" /> Hapus
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
+                                {/* Reset Device / Belum Login */}
+                                {isLocked ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleResetDevice(s)}
+                                    className="h-7 text-[10px] font-bold border-amber-200 text-amber-600 hover:bg-amber-50 px-2.5 rounded-lg"
+                                  >
+                                    <RotateCcw className="w-3 h-3 mr-1" /> Reset Device
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled
+                                    className="h-7 text-[10px] font-bold border-slate-200 text-slate-400 bg-slate-50/50 px-2.5 rounded-lg cursor-not-allowed"
+                                  >
+                                    <RotateCcw className="w-3 h-3 mr-1" /> Belum Login
+                                  </Button>
+                                )}
+
+                                {/* HAPUS BUTTON */}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setDeletingSurveyor(s)}
+                                  className="h-7 text-[10px] font-bold border-red-200 text-red-600 hover:bg-red-50 px-2.5 rounded-lg"
+                                  title="Hapus Petugas Survey dan kosongkan pembagian data"
+                                >
+                                  <Trash2 className="w-3 h-3 mr-1" /> Hapus
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             )}
           </CardContent>
@@ -1090,41 +1202,49 @@ export default function PembagianPetugasSurveyPage() {
 
           <div className="overflow-y-auto flex-1 my-2 border rounded-xl">
             {viewingConnectedSurveyor?.actors && viewingConnectedSurveyor.actors.length > 0 ? (
-              <Table>
-                <TableHeader className="bg-slate-50">
-                  <TableRow>
-                    <TableHead className="text-[10px] font-bold uppercase w-10">No</TableHead>
-                    <TableHead className="text-[10px] font-bold uppercase">Nama Pelaku Usaha</TableHead>
-                    <TableHead className="text-[10px] font-bold uppercase">NIK / KK</TableHead>
-                    <TableHead className="text-[10px] font-bold uppercase">Nama Usaha</TableHead>
-                    <TableHead className="text-[10px] font-bold uppercase">Kelurahan / Kecamatan</TableHead>
-                    <TableHead className="text-[10px] font-bold uppercase text-center">Status</TableHead>
-                    <TableHead className="text-[10px] font-bold uppercase text-center">Petugas Survey (Ganti)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <div>
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
                   {viewingConnectedSurveyor.actors.map((actor, idx) => (
-                    <TableRow key={actor.id}>
-                      <TableCell className="text-xs font-bold text-slate-500">{idx + 1}</TableCell>
-                      <TableCell className="text-xs font-black text-slate-900">{actor.fullName}</TableCell>
-                      <TableCell className="text-xs font-mono text-slate-600">
-                        <div>{actor.nik || '-'}</div>
-                        <div className="text-[10px] text-muted-foreground">{actor.noKK || ''}</div>
-                      </TableCell>
-                      <TableCell className="text-xs text-slate-700">{actor.businessName || '-'}</TableCell>
-                      <TableCell className="text-xs text-slate-600">
-                        {actor.kelurahan || '-'}, {actor.kecamatan || '-'}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="outline" className="text-[9px] font-bold uppercase">
+                    <div key={actor.id} className="p-3.5 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-rose-100 text-rose-700 font-black text-[11px] shrink-0">
+                            {idx + 1}
+                          </span>
+                          <div>
+                            <h5 className="font-bold text-xs text-slate-900 dark:text-slate-100 leading-tight">
+                              {actor.fullName}
+                            </h5>
+                            <p className="text-[10px] text-muted-foreground font-mono">{actor.nik || '-'}</p>
+                          </div>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] font-bold uppercase shrink-0">
                           {actor.status || 'pending'}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
+                      </div>
+
+                      <div className="bg-slate-50 dark:bg-slate-800/60 p-2 rounded-lg space-y-1 text-xs">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground font-medium">Usaha:</span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">{actor.businessName || '-'}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground font-medium">Wilayah:</span>
+                          <span className="text-slate-600 dark:text-slate-400">
+                            {actor.kelurahan || '-'}, {actor.kecamatan || '-'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase text-slate-400 block">
+                          Ganti Petugas Survey:
+                        </label>
                         <select
                           value={resolveSurveyorCanonicalName(actor.petugasSurvey, systemUsersRaw)}
                           onChange={(e) => handleReassignSingleActor(actor.id, actor.fullName, e.target.value)}
-                          className="text-[11px] font-bold h-7 rounded border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-sm text-primary cursor-pointer hover:border-primary transition-all w-[180px]"
+                          className="text-xs font-bold h-8 rounded-lg border border-slate-300 dark:border-slate-700 bg-background px-2.5 shadow-sm text-primary cursor-pointer hover:border-primary transition-all w-full"
                         >
                           <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
                           {surveyors.map((s: any) => (
@@ -1133,11 +1253,63 @@ export default function PembagianPetugasSurveyPage() {
                             </option>
                           ))}
                         </select>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                    </div>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-slate-50">
+                      <TableRow>
+                        <TableHead className="text-[10px] font-bold uppercase w-10">No</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase">Nama Pelaku Usaha</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase">NIK / KK</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase">Nama Usaha</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase">Kelurahan / Kecamatan</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase text-center">Status</TableHead>
+                        <TableHead className="text-[10px] font-bold uppercase text-center">Petugas Survey (Ganti)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {viewingConnectedSurveyor.actors.map((actor, idx) => (
+                        <TableRow key={actor.id}>
+                          <TableCell className="text-xs font-bold text-slate-500">{idx + 1}</TableCell>
+                          <TableCell className="text-xs font-black text-slate-900">{actor.fullName}</TableCell>
+                          <TableCell className="text-xs font-mono text-slate-600">
+                            <div>{actor.nik || '-'}</div>
+                            <div className="text-[10px] text-muted-foreground">{actor.noKK || ''}</div>
+                          </TableCell>
+                          <TableCell className="text-xs text-slate-700">{actor.businessName || '-'}</TableCell>
+                          <TableCell className="text-xs text-slate-600">
+                            {actor.kelurahan || '-'}, {actor.kecamatan || '-'}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant="outline" className="text-[9px] font-bold uppercase">
+                              {actor.status || 'pending'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <select
+                              value={resolveSurveyorCanonicalName(actor.petugasSurvey, systemUsersRaw)}
+                              onChange={(e) => handleReassignSingleActor(actor.id, actor.fullName, e.target.value)}
+                              className="text-[11px] font-bold h-7 rounded border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-sm text-primary cursor-pointer hover:border-primary transition-all w-[180px]"
+                            >
+                              <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
+                              {surveyors.map((s: any) => (
+                                <option key={s.id} value={s.fullName.toUpperCase().trim()}>
+                                  🟢 {s.fullName.toUpperCase().trim()}
+                                </option>
+                              ))}
+                            </select>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
             ) : (
               <div className="py-12 text-center text-slate-400 text-xs font-medium">
                 Belum ada data pelaku usaha yang ditugaskan ke petugas ini.

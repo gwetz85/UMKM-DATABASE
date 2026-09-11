@@ -228,105 +228,183 @@ function AppLogsContent() {
               <p className="text-primary font-black uppercase text-xs animate-pulse">Memuat Log Aktivitas...</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-slate-50/50">
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[180px] font-black text-slate-500 uppercase text-[10px] pl-6">Waktu</TableHead>
-                    <TableHead className="w-[120px] font-black text-slate-500 uppercase text-[10px]">Sumber / Perangkat</TableHead>
-                    <TableHead className="w-[100px] font-black text-slate-500 uppercase text-[10px]">Metode</TableHead>
-                    <TableHead className="font-black text-slate-500 uppercase text-[10px]">Data Yang Dicari</TableHead>
-                    <TableHead className="font-black text-slate-500 uppercase text-[10px]">Hasil / Respon</TableHead>
-                    <TableHead className="w-[130px] font-black text-slate-500 uppercase text-[10px]">Pengakses</TableHead>
-                    <TableHead className="w-[80px] font-black text-slate-500 uppercase text-[10px] pr-6 text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLogs.map((log, idx) => (
-                    <TableRow key={log.id || idx} className="hover:bg-primary/5 transition-colors border-slate-100">
-                      <TableCell className="pl-6 py-4">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-xs font-black text-slate-700 text-left">
-                            {log.timestamp ? new Date(log.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : "-"}
-                          </span>
-                          <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 justify-start">
-                            <Clock className="w-3 h-3" />
-                            {log.timestamp ? new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "-"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1.5 items-start">
-                          <Badge 
-                            variant="outline" 
-                            className={cn(
-                              "w-fit text-[9px] font-black uppercase tracking-tighter px-1.5 py-0",
-                              log.source === 'Telegram' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                            )}
-                          >
-                            {log.source || 'Web'}
-                          </Badge>
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
-                            {getDeviceIcon(log.device)}
-                            <span className="truncate max-w-[80px] text-left">{log.device}</span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="text-[9px] font-black uppercase bg-slate-100 text-slate-600 border-none px-2">
+            <>
+              {/* Mobile Cards View */}
+              <div className="md:hidden divide-y divide-slate-100">
+                {filteredLogs.map((log, idx) => (
+                  <div key={log.id || idx} className="p-4 space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                          #{idx + 1}
+                        </span>
+                        <Badge 
+                          variant="outline" 
+                          className={cn(
+                            "text-[9px] font-black uppercase tracking-tighter px-1.5 py-0",
+                            log.source === 'Telegram' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                          )}
+                        >
+                          {log.source || 'Web'}
+                        </Badge>
+                        <Badge variant="secondary" className="text-[9px] font-black uppercase bg-slate-100 text-slate-600 border-none px-1.5 py-0">
                           {log.method || "NIK/KK"}
                         </Badge>
-                      </TableCell>
-                      <TableCell 
-                        className="text-left font-bold text-primary font-mono select-all cursor-pointer hover:underline decoration-primary/30 active:scale-95 transition-transform"
-                        onClick={() => setSelectedQuery(log.query)}
-                        title="Klik untuk lihat detail data"
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteLog(log.id)}
+                        className="w-7 h-7 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
                       >
-                        {log.query || "-"}
-                      </TableCell>
-                      <TableCell>
-                        <div className={cn(
-                          "text-xs font-bold px-3 py-1.5 rounded-lg border w-fit mx-auto sm:mx-0",
-                          (log.results || "").toLowerCase().includes("tidak") 
-                            ? "bg-red-50 text-red-600 border-red-100" 
-                            : "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-sm"
-                        )}>
-                          {log.results || "-"}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 justify-start">
-                          <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
-                            {log.source === 'Telegram' ? <MessageSquare className="w-3.5 h-3.5 text-blue-500" /> : <User className="w-3.5 h-3.5 text-slate-400" />}
-                          </div>
-                          <div className="flex flex-col overflow-hidden text-left">
-                            <span className="text-[10px] font-black text-slate-700 truncate">
-                              {log.source === 'Telegram' ? `ID: ${log.chatId}` : (log.userId === 'Public' ? 'USER PUBLIK' : log.userId)}
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+
+                    <div 
+                      className="font-mono font-bold text-sm text-primary cursor-pointer hover:underline active:scale-[0.99] transition-transform"
+                      onClick={() => setSelectedQuery(log.query)}
+                      title="Klik untuk lihat detail data"
+                    >
+                      {log.query || "-"}
+                    </div>
+
+                    <div className={cn(
+                      "text-xs font-bold px-2.5 py-1 rounded-lg border w-fit",
+                      (log.results || "").toLowerCase().includes("tidak") 
+                        ? "bg-red-50 text-red-600 border-red-100" 
+                        : "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-sm"
+                    )}>
+                      {log.results || "-"}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-slate-500 pt-2 border-t border-slate-50">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        <span>
+                          {log.timestamp ? new Date(log.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) + ' ' + new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : "-"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {getDeviceIcon(log.device)}
+                        <span className="truncate max-w-[80px]">{log.device}</span>
+                        <span className="text-slate-300">•</span>
+                        <span className="truncate max-w-[90px] font-bold text-slate-600">
+                          {log.source === 'Telegram' ? `ID: ${log.chatId}` : (log.userId === 'Public' ? 'Publik' : log.userId)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {!isLoading && filteredLogs.length === 0 && !error && (
+                  <div className="p-12 flex flex-col items-center justify-center gap-2 text-slate-400">
+                    <History className="w-10 h-10 opacity-10" />
+                    <p className="font-bold uppercase text-xs tracking-widest">Tidak ada record aktivitas</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-slate-50/50">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[180px] font-black text-slate-500 uppercase text-[10px] pl-6">Waktu</TableHead>
+                      <TableHead className="w-[120px] font-black text-slate-500 uppercase text-[10px]">Sumber / Perangkat</TableHead>
+                      <TableHead className="w-[100px] font-black text-slate-500 uppercase text-[10px]">Metode</TableHead>
+                      <TableHead className="font-black text-slate-500 uppercase text-[10px]">Data Yang Dicari</TableHead>
+                      <TableHead className="font-black text-slate-500 uppercase text-[10px]">Hasil / Respon</TableHead>
+                      <TableHead className="w-[130px] font-black text-slate-500 uppercase text-[10px]">Pengakses</TableHead>
+                      <TableHead className="w-[80px] font-black text-slate-500 uppercase text-[10px] pr-6 text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredLogs.map((log, idx) => (
+                      <TableRow key={log.id || idx} className="hover:bg-primary/5 transition-colors border-slate-100">
+                        <TableCell className="pl-6 py-4">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-xs font-black text-slate-700 text-left">
+                              {log.timestamp ? new Date(log.timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : "-"}
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1 justify-start">
+                              <Clock className="w-3 h-3" />
+                              {log.timestamp ? new Date(log.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "-"}
                             </span>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="pr-6 text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteLog(log.id)}
-                          className="w-8 h-8 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1.5 items-start">
+                            <Badge 
+                              variant="outline" 
+                              className={cn(
+                                "w-fit text-[9px] font-black uppercase tracking-tighter px-1.5 py-0",
+                                log.source === 'Telegram' ? "bg-blue-50 text-blue-600 border-blue-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                              )}
+                            >
+                              {log.source || 'Web'}
+                            </Badge>
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                              {getDeviceIcon(log.device)}
+                              <span className="truncate max-w-[80px] text-left">{log.device}</span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-[9px] font-black uppercase bg-slate-100 text-slate-600 border-none px-2">
+                            {log.method || "NIK/KK"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell 
+                          className="text-left font-bold text-primary font-mono select-all cursor-pointer hover:underline decoration-primary/30 active:scale-95 transition-transform"
+                          onClick={() => setSelectedQuery(log.query)}
+                          title="Klik untuk lihat detail data"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {!isLoading && filteredLogs.length === 0 && !error && (
-                <div className="p-20 flex flex-col items-center justify-center gap-2 text-slate-400">
-                  <History className="w-12 h-12 opacity-10" />
-                  <p className="font-bold uppercase text-xs tracking-widest">Tidak ada record aktivitas</p>
-                </div>
-              )}
-            </div>
+                          {log.query || "-"}
+                        </TableCell>
+                        <TableCell>
+                          <div className={cn(
+                            "text-xs font-bold px-3 py-1.5 rounded-lg border w-fit mx-auto sm:mx-0",
+                            (log.results || "").toLowerCase().includes("tidak") 
+                              ? "bg-red-50 text-red-600 border-red-100" 
+                              : "bg-emerald-50 text-emerald-600 border-emerald-100 shadow-sm"
+                          )}>
+                            {log.results || "-"}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 justify-start">
+                            <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200 overflow-hidden">
+                              {log.source === 'Telegram' ? <MessageSquare className="w-3.5 h-3.5 text-blue-500" /> : <User className="w-3.5 h-3.5 text-slate-400" />}
+                            </div>
+                            <div className="flex flex-col overflow-hidden text-left">
+                              <span className="text-[10px] font-black text-slate-700 truncate">
+                                {log.source === 'Telegram' ? `ID: ${log.chatId}` : (log.userId === 'Public' ? 'USER PUBLIK' : log.userId)}
+                              </span>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="pr-6 text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteLog(log.id)}
+                            className="w-8 h-8 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {!isLoading && filteredLogs.length === 0 && !error && (
+                  <div className="p-20 flex flex-col items-center justify-center gap-2 text-slate-400">
+                    <History className="w-12 h-12 opacity-10" />
+                    <p className="font-bold uppercase text-xs tracking-widest">Tidak ada record aktivitas</p>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

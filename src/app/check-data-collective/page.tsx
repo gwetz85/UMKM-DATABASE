@@ -308,7 +308,86 @@ export default function CheckDataCollectivePage() {
                     </Button>
                   </div>
                 </div>
-                <div className="overflow-x-auto">
+                {/* Mobile Cards View */}
+                <div className="md:hidden divide-y divide-slate-100">
+                  {results.map((res, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => !res._notFound && setSelectedResult(res)}
+                      className={cn(
+                        "p-4 transition-colors",
+                        !res._notFound && "cursor-pointer active:bg-slate-50",
+                        res._notFound && "bg-red-50/30",
+                        res._isMultiple && "bg-amber-50/30"
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                            #{idx + 1}
+                          </span>
+                          <span className="font-mono font-bold text-xs text-primary">
+                            {res.noKK || res._searchKk}
+                          </span>
+                          {res._isMultiple && (
+                            <span className="inline-flex items-center gap-0.5 text-[8px] bg-amber-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase">
+                              <AlertTriangle className="w-2 h-2" /> GANDA
+                            </span>
+                          )}
+                        </div>
+                        {!res._notFound && (
+                          <span className={cn(
+                            "text-[9px] font-black px-2 py-0.5 rounded uppercase shrink-0",
+                            res._source === "DATA BLACKLIST" ? "bg-red-100 text-red-700" : "bg-primary/10 text-primary"
+                          )}>
+                            {res._source}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-sm font-bold uppercase text-slate-900 mb-2">
+                        {res._notFound ? (
+                          <span className="text-red-500 italic">TIDAK DITEMUKAN</span>
+                        ) : (
+                          res.nama || res.fullName
+                        )}
+                      </div>
+
+                      {!res._notFound && (
+                        <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                          <div>
+                            <div className="text-[10px] text-slate-400 font-semibold uppercase">Usaha</div>
+                            <div className="text-slate-700 font-medium truncate">{res.usaha || res.businessName || "-"}</div>
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-slate-400 font-semibold uppercase">Koordinator</div>
+                            <div className="text-slate-700 font-medium truncate">{res.coordinator || "-"}</div>
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-slate-400 font-semibold uppercase">Status LPJ</div>
+                            <span className={cn(
+                              "inline-block text-[9px] font-bold px-2 py-0.5 rounded-full uppercase mt-0.5",
+                              res.statusLpj?.toLowerCase().includes("lengkap") || res.statusLpj?.toLowerCase().includes("sudah")
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-amber-100 text-amber-700"
+                            )}>
+                              {res.statusLpj || "PENDING"}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-slate-400 font-semibold uppercase">Nominal LPJ</div>
+                            <div className="font-mono font-bold text-slate-900 mt-0.5">
+                              {formatCurrency(res.nominal || res.lpjNominal || 0)}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                   <Table>
                     <TableHeader className="bg-muted/50">
                       <TableRow>
@@ -364,8 +443,8 @@ export default function CheckDataCollectivePage() {
                               <span className={cn(
                                 "text-[9px] font-bold px-2 py-0.5 rounded-full uppercase",
                                 res.statusLpj?.toLowerCase().includes("lengkap") || res.statusLpj?.toLowerCase().includes("sudah")
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-amber-100 text-amber-700"
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-amber-100 text-amber-700"
                               )}>
                                 {res.statusLpj || "PENDING"}
                               </span>

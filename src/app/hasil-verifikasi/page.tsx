@@ -569,7 +569,87 @@ function HasilVerifikasiContent() {
             </Card>
           ) : (
             <div className="bg-white border rounded-2xl overflow-hidden shadow-sm">
-              <div className="max-h-[calc(100vh-280px)] overflow-auto">
+              {/* Mobile Card List (md:hidden) */}
+              <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
+                  <div 
+                    key={actor.id}
+                    onClick={() => setViewingActor(actor)}
+                    className="p-3.5 space-y-2.5 bg-white dark:bg-slate-900 active:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    {/* Row 1: Nomor, Nama & Status */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
+                        <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md shrink-0 mt-0.5">
+                          #{globalIndexMap.get(actor.id) || index + 1}
+                        </span>
+                        <div>
+                          <span className={cn(
+                            "font-black uppercase text-sm leading-tight block",
+                            normalizeGender(actor.gender) === 'Perempuan' ? "text-red-600" : "text-blue-600"
+                          )}>
+                            {actor.fullName}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-500 uppercase">
+                            NIK: {actor.nik}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase border bg-emerald-50 text-emerald-700 border-emerald-200 shrink-0">
+                        LOLOS
+                      </span>
+                    </div>
+
+                    {/* Row 2: Informasi Usaha & Koordinator */}
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Usaha</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-200 uppercase truncate block" title={actor.businessName}>
+                          {actor.businessName || "-"}
+                        </span>
+                        <span className="text-[9px] text-slate-400 font-bold uppercase truncate block">
+                          {actor.businessCategory || "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Koordinator</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-200 uppercase truncate block" title={actor.coordinator}>
+                          {actor.coordinator || "-"}
+                        </span>
+                        {actor.verifiedDinasAt && (
+                          <span className="text-[9px] text-slate-400 font-mono block mt-0.5">
+                            {new Date(actor.verifiedDinasAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row 3: Action Buttons */}
+                    <div className="flex items-center justify-end gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setViewingActor(actor)}
+                        className="h-8 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200 rounded-lg gap-1.5"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Detail</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setInputtingBankActor(actor)}
+                        className="bg-amber-500 hover:bg-amber-600 text-white font-bold h-8 text-xs rounded-lg px-3 shadow-sm gap-1.5"
+                      >
+                        <CreditCard className="w-3.5 h-3.5" />
+                        <span>Input Rekening</span>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop Table View (hidden md:block) */}
+              <div className="hidden md:block max-h-[calc(100vh-280px)] overflow-auto">
                 <Table>
                   <TableHeader className="bg-slate-50 border-b sticky top-0 z-10">
                     <TableRow className="hover:bg-transparent">
@@ -611,30 +691,17 @@ function HasilVerifikasiContent() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-1.5 text-slate-700">
-                              <Clock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                              <span className="text-[11px] font-bold">
-                                {actor.berkasDinasVerifiedAt
-                                  ? formatDateTimeIndo(actor.berkasDinasVerifiedAt)
-                                  : (actor.verifiedDinasAt ? formatDateTimeIndo(actor.verifiedDinasAt) : "-")}
-                              </span>
-                            </div>
-                            {(() => {
-                              const name = actor.verifikatorDinas ||
-                                (actor.berkasDinasVerifiedBy && !actor.berkasDinasVerifiedBy.includes('@')
-                                  ? actor.berkasDinasVerifiedBy
-                                  : null)
-                              return name ? (
-                                <span className="text-[9px] text-emerald-700 font-bold pl-5 truncate max-w-[170px] uppercase" title={name}>
-                                  {name}
-                                </span>
-                              ) : null
-                            })()}
+                          <div className="flex flex-col text-[10px] text-slate-500">
+                            <span className="font-bold text-slate-700">
+                              {actor.verifiedDinasAt ? new Date(actor.verifiedDinasAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : "-"}
+                            </span>
+                            <span>Oleh: {actor.verifiedDinasBy || "Dinas"}</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-[10px] font-bold text-slate-600 uppercase">{actor.coordinator || "-"}</span>
+                          <span className="text-xs font-bold text-slate-600 uppercase">
+                            {actor.coordinator || "-"}
+                          </span>
                         </TableCell>
                         <TableCell className="text-right pr-6">
                           <div className="flex justify-end gap-2">

@@ -987,48 +987,97 @@ export default function BpjsPage() {
             </Button>
           </div>
 
-          <CardContent className="p-0 overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-slate-50">
-                <TableRow>
-                  <TableHead className="font-black text-slate-700 py-3 pl-6 w-14 text-center uppercase text-[10px]">NO</TableHead>
-                  <TableHead className="font-black text-slate-700 py-3 text-center uppercase text-[10px] w-24">BARIS EXCEL</TableHead>
-                  <TableHead className="font-black text-slate-700 py-3 uppercase text-[10px]">NAMA (DARI EXCEL)</TableHead>
-                  <TableHead className="font-black text-slate-700 py-3 text-center uppercase text-[10px]">NIK (DARI EXCEL)</TableHead>
-                  <TableHead className="font-black text-slate-700 py-3 text-center uppercase text-[10px]">NO KPJ</TableHead>
-                  <TableHead className="font-black text-slate-700 py-3 text-center uppercase text-[10px]">STATUS / KET DARI EXCEL</TableHead>
-                  <TableHead className="font-black text-slate-700 py-3 text-center uppercase text-[10px]">PENYEBAB</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUnmatchedRows.slice(0, pageLimit).map((row, idx) => (
-                  <TableRow key={idx} className="hover:bg-amber-50/40">
-                    <TableCell className="py-3 pl-6 text-center font-bold text-slate-400 text-xs">{idx + 1}</TableCell>
-                    <TableCell className="py-3 text-center">
-                      <Badge variant="outline" className="text-[10px] font-mono">Row #{row.rowNum}</Badge>
-                    </TableCell>
-                    <TableCell className="py-3 font-bold text-slate-800 uppercase text-xs">{row.name}</TableCell>
-                    <TableCell className="py-3 text-center font-mono text-xs font-bold text-slate-600">{row.nik}</TableCell>
-                    <TableCell className="py-3 text-center font-mono text-xs text-slate-600">{row.kpj || "-"}</TableCell>
-                    <TableCell className="py-3 text-center">
-                      <span className="text-xs text-slate-700 font-medium">{row.status}</span>
-                    </TableCell>
-                    <TableCell className="py-3 text-center">
+          <CardContent className="p-0">
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {filteredUnmatchedRows.slice(0, pageLimit).map((row, idx) => (
+                <div key={idx} className="p-4 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-black text-xs shrink-0">
+                        {idx + 1}
+                      </span>
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 uppercase leading-tight">
+                          {row.name}
+                        </h4>
+                        <span className="font-mono text-xs text-slate-500 font-bold">{row.nik}</span>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-[10px] font-mono shrink-0">
+                      Row #{row.rowNum}
+                    </Badge>
+                  </div>
+
+                  <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-medium">No KPJ:</span>
+                      <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{row.kpj || "-"}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground font-medium">Status Excel:</span>
+                      <span className="font-semibold text-slate-700 dark:text-slate-300">{row.status}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                      <span className="text-muted-foreground font-medium">Penyebab:</span>
                       <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-[10px] font-bold">
                         {row.reason}
                       </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredUnmatchedRows.length === 0 && (
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {filteredUnmatchedRows.length === 0 && (
+                <div className="py-16 text-center text-muted-foreground text-sm font-semibold">
+                  Tidak ada data yang tidak cocok dengan pencarian Anda.
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-slate-50">
                   <TableRow>
-                    <TableCell colSpan={7} className="py-16 text-center text-muted-foreground text-sm font-semibold">
-                      Tidak ada data yang tidak cocok dengan pencarian Anda.
-                    </TableCell>
+                    <TableHead className="font-black text-slate-700 py-3 pl-6 w-14 text-center uppercase text-[10px]">NO</TableHead>
+                    <TableHead className="font-black text-slate-700 py-3 text-center uppercase text-[10px] w-24">BARIS EXCEL</TableHead>
+                    <TableHead className="font-black text-slate-700 py-3 uppercase text-[10px]">NAMA (DARI EXCEL)</TableHead>
+                    <TableHead className="font-black text-slate-700 py-3 text-center uppercase text-[10px]">NIK (DARI EXCEL)</TableHead>
+                    <TableHead className="font-black text-slate-700 py-3 text-center uppercase text-[10px]">NO KPJ</TableHead>
+                    <TableHead className="font-black text-slate-700 py-3 text-center uppercase text-[10px]">STATUS / KET DARI EXCEL</TableHead>
+                    <TableHead className="font-black text-slate-700 py-3 text-center uppercase text-[10px]">PENYEBAB</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredUnmatchedRows.slice(0, pageLimit).map((row, idx) => (
+                    <TableRow key={idx} className="hover:bg-amber-50/40">
+                      <TableCell className="py-3 pl-6 text-center font-bold text-slate-400 text-xs">{idx + 1}</TableCell>
+                      <TableCell className="py-3 text-center">
+                        <Badge variant="outline" className="text-[10px] font-mono">Row #{row.rowNum}</Badge>
+                      </TableCell>
+                      <TableCell className="py-3 font-bold text-slate-800 uppercase text-xs">{row.name}</TableCell>
+                      <TableCell className="py-3 text-center font-mono text-xs font-bold text-slate-600">{row.nik}</TableCell>
+                      <TableCell className="py-3 text-center font-mono text-xs text-slate-600">{row.kpj || "-"}</TableCell>
+                      <TableCell className="py-3 text-center">
+                        <span className="text-xs text-slate-700 font-medium">{row.status}</span>
+                      </TableCell>
+                      <TableCell className="py-3 text-center">
+                        <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-[10px] font-bold">
+                          {row.reason}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredUnmatchedRows.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-16 text-center text-muted-foreground text-sm font-semibold">
+                        Tidak ada data yang tidak cocok dengan pencarian Anda.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
             {filteredUnmatchedRows.length > pageLimit && (
               <div className="p-4 flex justify-center border-t bg-slate-50">
                 <Button 
@@ -1045,197 +1094,352 @@ export default function BpjsPage() {
       ) : (
         /* Regular & Matched Actors Table View */
         <Card className="border-none shadow-xl bg-white/80 backdrop-blur-md overflow-hidden rounded-2xl">
-          <CardContent className="p-0 overflow-x-auto">
-            <Table>
-              <TableHeader className="bg-primary/5">
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="font-black text-primary py-4 pl-6 w-12 text-center uppercase text-[10px]">NO</TableHead>
-                  <TableHead className="font-black text-primary py-4 uppercase text-[10px]">NAMA LENGKAP</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">NIK</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">TEMPAT LAHIR</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">TANGGAL LAHIR</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">USIA</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">KOORDINATOR</TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">
-                    {activeTab === "matched" ? "HASIL CEK BPJS (EXCEL)" : "NOTE / KETERANGAN"}
-                  </TableHead>
-                  <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">AKSI</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  Array.from({ length: 8 }).map((_, i) => (
-                    <TableRow key={i} className="animate-pulse">
-                      <TableCell className="py-4 pl-6 text-center"><div className="h-4 bg-slate-200 rounded w-6 mx-auto" /></TableCell>
-                      <TableCell className="py-4"><div className="h-4 bg-slate-200 rounded w-40" /></TableCell>
-                      <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-36 mx-auto" /></TableCell>
-                      <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-24 mx-auto" /></TableCell>
-                      <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-24 mx-auto" /></TableCell>
-                      <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-10 mx-auto" /></TableCell>
-                      <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-28 mx-auto" /></TableCell>
-                      <TableCell className="py-4 text-center"><div className="h-6 bg-slate-200 rounded-full w-32 mx-auto" /></TableCell>
-                      <TableCell className="py-4 text-center"><div className="h-8 bg-slate-200 rounded w-24 mx-auto" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <>
-                    {filteredActors.slice(0, pageLimit).map((actor, index) => {
-                      const age = calculateAge(actor.pobDob || "")
-                      const matchInfo = matchedActorsMap.get(actor.id)
-                      const actorAny = actor as any
-                      const isAccepted = actorAny.bpjsSubmissionStatus === 'accepted'
-                      const isRejected = actorAny.bpjsSubmissionStatus === 'rejected'
+          <CardContent className="p-0">
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="p-4 space-y-2 animate-pulse">
+                    <div className="h-4 bg-slate-200 rounded w-1/2" />
+                    <div className="h-3 bg-slate-200 rounded w-3/4" />
+                    <div className="h-8 bg-slate-200 rounded" />
+                  </div>
+                ))
+              ) : (
+                <>
+                  {filteredActors.slice(0, pageLimit).map((actor, index) => {
+                    const age = calculateAge(actor.pobDob || "")
+                    const matchInfo = matchedActorsMap.get(actor.id)
+                    const actorAny = actor as any
+                    const isAccepted = actorAny.bpjsSubmissionStatus === 'accepted'
+                    const isRejected = actorAny.bpjsSubmissionStatus === 'rejected'
 
-                      return (
-                        <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group">
-                          <TableCell className="py-4 pl-6 text-center font-bold text-slate-400 text-xs">
-                            {index + 1}
-                          </TableCell>
-                          <TableCell className="py-4">
-                            <div className="flex flex-col">
-                              <span className="font-black text-slate-800 uppercase text-[13px] tracking-tight">
+                    return (
+                      <div key={actor.id} className="p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-black text-xs shrink-0">
+                              {index + 1}
+                            </span>
+                            <div>
+                              <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200 uppercase leading-tight">
                                 {actor.fullName}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground font-medium uppercase">
-                                {actor.kelurahan || "-"}
+                              </h4>
+                              <p className="text-[11px] text-muted-foreground uppercase">{actor.kelurahan || "-"}</p>
+                            </div>
+                          </div>
+                          <span className="font-mono text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md shrink-0">
+                            {actor.nik}
+                          </span>
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground font-medium">Usia:</span>
+                            <span className="font-bold text-slate-800 dark:text-slate-200">{age} Tahun</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground font-medium">Tempat / Tgl Lahir:</span>
+                            <span className="font-semibold uppercase text-slate-700 dark:text-slate-300">
+                              {actor.pob || parsePobDob(actor.pobDob || "").pob || "-"}, {actor.dob || parsePobDob(actor.pobDob || "").dob || "-"}
+                            </span>
+                          </div>
+                          {actor.coordinator && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-muted-foreground font-medium">Koordinator:</span>
+                              <span className="font-semibold uppercase text-slate-700 dark:text-slate-300">
+                                {actor.coordinator}
                               </span>
                             </div>
-                          </TableCell>
-                          <TableCell className="py-4 text-center">
-                            <span className="font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                              {actor.nik}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-4 text-center">
-                            <span className="text-[11px] font-bold text-slate-600 uppercase">
-                              {actor.pob || parsePobDob(actor.pobDob || "").pob || "-"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-4 text-center">
-                            <span className="text-[11px] font-bold text-slate-600 uppercase">
-                              {actor.dob || parsePobDob(actor.pobDob || "").dob || "-"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-4 text-center">
-                            <div className="flex flex-col items-center">
-                              <span className="text-sm font-black text-slate-800 leading-none">{age}</span>
-                              <span className="text-[8px] font-black text-muted-foreground uppercase mt-0.5">TAHUN</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-4 text-center">
-                            <span className="text-[11px] font-bold text-slate-600 uppercase">
-                              {actor.coordinator || "-"}
-                            </span>
-                          </TableCell>
-                          <TableCell className="py-4 text-center">
-                            <div className="flex flex-col items-center gap-1">
-                              {matchInfo ? (
-                                <>
-                                  <Badge className={cn(
-                                    "font-black uppercase tracking-wider text-[9px] px-2.5 py-1 shadow-sm flex items-center gap-1 border",
-                                    matchInfo.matchMethod === "nik_and_name" 
-                                      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                      : matchInfo.isNikMatched
-                                      ? "bg-teal-100 text-teal-800 border-teal-300"
-                                      : "bg-blue-100 text-blue-800 border-blue-300"
-                                  )}>
-                                    <Check className="w-3 h-3" />
-                                    {matchInfo.matchMethod === "nik_and_name" 
-                                      ? "Cocok NIK & Nama" 
-                                      : matchInfo.isNikMatched 
-                                      ? "Cocok NIK (Identitas)" 
-                                      : "Cocok Nama"}
-                                  </Badge>
-                                  {matchInfo.excelStatus && (
-                                    <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200" title={matchInfo.excelStatus}>
-                                      {matchInfo.excelStatus}
-                                    </span>
-                                  )}
-                                  {matchInfo.excelKpj && (
-                                    <span className="text-[9px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                                      KPJ: {matchInfo.excelKpj}
-                                    </span>
-                                  )}
-                                </>
-                              ) : actorAny.bpjsCheckStatus === 'sesuai' ? (
-                                <>
-                                  <Badge className="font-black uppercase tracking-wider text-[9px] px-3 py-1 bg-blue-50 text-blue-700 border-blue-200 shadow-sm">
-                                    Terverifikasi BPJS
-                                  </Badge>
-                                  {actorAny.bpjsCheckNote && (
-                                    <span className="text-[10px] text-muted-foreground">
-                                      {actorAny.bpjsCheckNote}
-                                    </span>
-                                  )}
-                                </>
-                              ) : (
+                          )}
+                          <div className="pt-1 border-t border-slate-200/50 dark:border-slate-700/50 flex flex-col gap-1 items-start">
+                            <span className="text-[10px] text-muted-foreground font-black uppercase">Status BPJS:</span>
+                            {matchInfo ? (
+                              <>
                                 <Badge className={cn(
-                                  "font-black uppercase tracking-wider text-[9px] px-3 py-1.5 border shadow-sm",
-                                  age < 65
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                                    : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                                  "font-black uppercase tracking-wider text-[9px] px-2.5 py-1 shadow-sm flex items-center gap-1 border",
+                                  matchInfo.matchMethod === "nik_and_name" 
+                                    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                    : matchInfo.isNikMatched 
+                                    ? "bg-teal-100 text-teal-800 border-teal-300"
+                                    : "bg-blue-100 text-blue-800 border-blue-300"
                                 )}>
-                                  {age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan"}
+                                  <Check className="w-3 h-3" />
+                                  {matchInfo.matchMethod === "nik_and_name" 
+                                    ? "Cocok NIK & Nama" 
+                                    : matchInfo.isNikMatched 
+                                    ? "Cocok NIK" 
+                                    : "Cocok Nama"}
                                 </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className="py-4 text-center">
-                            <div className="flex gap-1.5 justify-center">
-                              <Button 
-                                size="sm" 
-                                variant={isAccepted ? "default" : "outline"} 
-                                onClick={() => handleAccept(actor.id)}
-                                className={cn(
-                                  "h-8 text-xs font-bold transition-all",
-                                  isAccepted ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border-emerald-600/30 text-emerald-700 hover:bg-emerald-50"
+                                {matchInfo.excelStatus && (
+                                  <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                                    Ket: {matchInfo.excelStatus}
+                                  </span>
                                 )}
-                              >
-                                {isAccepted ? (
+                                {matchInfo.excelKpj && (
+                                  <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400">
+                                    KPJ: {matchInfo.excelKpj}
+                                  </span>
+                                )}
+                              </>
+                            ) : actorAny.bpjsCheckStatus === 'sesuai' ? (
+                              <>
+                                <Badge className="font-black uppercase tracking-wider text-[9px] px-3 py-1 bg-blue-50 text-blue-700 border-blue-200 shadow-sm">
+                                  Terverifikasi BPJS
+                                </Badge>
+                                {actorAny.bpjsCheckNote && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {actorAny.bpjsCheckNote}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <Badge className={cn(
+                                "font-black uppercase tracking-wider text-[9px] px-3 py-1 border shadow-sm",
+                                age < 65
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                  : "bg-rose-50 text-rose-700 border-rose-200"
+                              )}>
+                                {age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan"}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex gap-2 pt-1">
+                          <Button 
+                            size="sm" 
+                            variant={isAccepted ? "default" : "outline"} 
+                            onClick={() => handleAccept(actor.id)}
+                            className={cn(
+                              "flex-1 h-8 text-xs font-bold rounded-xl",
+                              isAccepted ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border-emerald-600/30 text-emerald-700 hover:bg-emerald-50"
+                            )}
+                          >
+                            {isAccepted ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 mr-1" /> Accepted
+                              </>
+                            ) : "Accept"}
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant={isRejected ? "destructive" : "outline"} 
+                            onClick={() => handleReject(actor.id)}
+                            className={cn(
+                              "flex-1 h-8 text-xs font-bold rounded-xl",
+                              !isRejected && "border-rose-300 text-rose-600 hover:bg-rose-50"
+                            )}
+                          >
+                            {isRejected ? "Rejected" : "Reject"}
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                  {!isLoading && filteredActors.length === 0 && (
+                    <div className="py-16 text-center text-muted-foreground text-sm font-semibold">
+                      Data tidak ditemukan
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-primary/5">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-black text-primary py-4 pl-6 w-12 text-center uppercase text-[10px]">NO</TableHead>
+                    <TableHead className="font-black text-primary py-4 uppercase text-[10px]">NAMA LENGKAP</TableHead>
+                    <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">NIK</TableHead>
+                    <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">TEMPAT LAHIR</TableHead>
+                    <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">TANGGAL LAHIR</TableHead>
+                    <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">USIA</TableHead>
+                    <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">KOORDINATOR</TableHead>
+                    <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">
+                      {activeTab === "matched" ? "HASIL CEK BPJS (EXCEL)" : "NOTE / KETERANGAN"}
+                    </TableHead>
+                    <TableHead className="font-black text-primary py-4 text-center uppercase text-[10px]">AKSI</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    Array.from({ length: 8 }).map((_, i) => (
+                      <TableRow key={i} className="animate-pulse">
+                        <TableCell className="py-4 pl-6 text-center"><div className="h-4 bg-slate-200 rounded w-6 mx-auto" /></TableCell>
+                        <TableCell className="py-4"><div className="h-4 bg-slate-200 rounded w-40" /></TableCell>
+                        <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-36 mx-auto" /></TableCell>
+                        <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-24 mx-auto" /></TableCell>
+                        <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-24 mx-auto" /></TableCell>
+                        <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-10 mx-auto" /></TableCell>
+                        <TableCell className="py-4 text-center"><div className="h-4 bg-slate-200 rounded w-28 mx-auto" /></TableCell>
+                        <TableCell className="py-4 text-center"><div className="h-6 bg-slate-200 rounded-full w-32 mx-auto" /></TableCell>
+                        <TableCell className="py-4 text-center"><div className="h-8 bg-slate-200 rounded w-24 mx-auto" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <>
+                      {filteredActors.slice(0, pageLimit).map((actor, index) => {
+                        const age = calculateAge(actor.pobDob || "")
+                        const matchInfo = matchedActorsMap.get(actor.id)
+                        const actorAny = actor as any
+                        const isAccepted = actorAny.bpjsSubmissionStatus === 'accepted'
+                        const isRejected = actorAny.bpjsSubmissionStatus === 'rejected'
+
+                        return (
+                          <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group">
+                            <TableCell className="py-4 pl-6 text-center font-bold text-slate-400 text-xs">
+                              {index + 1}
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <div className="flex flex-col">
+                                <span className="font-black text-slate-800 uppercase text-[13px] tracking-tight">
+                                  {actor.fullName}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground font-medium uppercase">
+                                  {actor.kelurahan || "-"}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-4 text-center">
+                              <span className="font-mono text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                                {actor.nik}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-4 text-center">
+                              <span className="text-[11px] font-bold text-slate-600 uppercase">
+                                {actor.pob || parsePobDob(actor.pobDob || "").pob || "-"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-4 text-center">
+                              <span className="text-[11px] font-bold text-slate-600 uppercase">
+                                {actor.dob || parsePobDob(actor.pobDob || "").dob || "-"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-4 text-center">
+                              <div className="flex flex-col items-center">
+                                <span className="text-sm font-black text-slate-800 leading-none">{age}</span>
+                                <span className="text-[8px] font-black text-muted-foreground uppercase mt-0.5">TAHUN</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-4 text-center">
+                              <span className="text-[11px] font-bold text-slate-600 uppercase">
+                                {actor.coordinator || "-"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-4 text-center">
+                              <div className="flex flex-col items-center gap-1">
+                                {matchInfo ? (
                                   <>
-                                    <Check className="w-3.5 h-3.5 mr-1" /> Accepted
+                                    <Badge className={cn(
+                                      "font-black uppercase tracking-wider text-[9px] px-2.5 py-1 shadow-sm flex items-center gap-1 border",
+                                      matchInfo.matchMethod === "nik_and_name" 
+                                        ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                        : matchInfo.isNikMatched 
+                                        ? "bg-teal-100 text-teal-800 border-teal-300"
+                                        : "bg-blue-100 text-blue-800 border-blue-300"
+                                    )}>
+                                      <Check className="w-3 h-3" />
+                                      {matchInfo.matchMethod === "nik_and_name" 
+                                        ? "Cocok NIK & Nama" 
+                                        : matchInfo.isNikMatched 
+                                        ? "Cocok NIK (Identitas)" 
+                                        : "Cocok Nama"}
+                                    </Badge>
+                                    {matchInfo.excelStatus && (
+                                      <span className="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200" title={matchInfo.excelStatus}>
+                                        {matchInfo.excelStatus}
+                                      </span>
+                                    )}
+                                    {matchInfo.excelKpj && (
+                                      <span className="text-[9px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                        KPJ: {matchInfo.excelKpj}
+                                      </span>
+                                    )}
                                   </>
-                                ) : "Accept"}
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant={isRejected ? "destructive" : "outline"} 
-                                onClick={() => handleReject(actor.id)}
-                                className={cn(
-                                  "h-8 text-xs font-bold transition-all",
-                                  !isRejected && "border-rose-300 text-rose-600 hover:bg-rose-50"
+                                ) : actorAny.bpjsCheckStatus === 'sesuai' ? (
+                                  <>
+                                    <Badge className="font-black uppercase tracking-wider text-[9px] px-3 py-1 bg-blue-50 text-blue-700 border-blue-200 shadow-sm">
+                                      Terverifikasi BPJS
+                                    </Badge>
+                                    {actorAny.bpjsCheckNote && (
+                                      <span className="text-[10px] text-muted-foreground">
+                                        {actorAny.bpjsCheckNote}
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <Badge className={cn(
+                                    "font-black uppercase tracking-wider text-[9px] px-3 py-1.5 border shadow-sm",
+                                    age < 65
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                      : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                                  )}>
+                                    {age < 65 ? "Bisa Didaftarkan" : "Tidak Bisa Didaftarkan"}
+                                  </Badge>
                                 )}
-                              >
-                                {isRejected ? "Rejected" : "Reject"}
-                              </Button>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-4 text-center">
+                              <div className="flex gap-1.5 justify-center">
+                                <Button 
+                                  size="sm" 
+                                  variant={isAccepted ? "default" : "outline"} 
+                                  onClick={() => handleAccept(actor.id)}
+                                  className={cn(
+                                    "h-8 text-xs font-bold transition-all",
+                                    isAccepted ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "border-emerald-600/30 text-emerald-700 hover:bg-emerald-50"
+                                  )}
+                                >
+                                  {isAccepted ? (
+                                    <>
+                                      <Check className="w-3.5 h-3.5 mr-1" /> Accepted
+                                    </>
+                                  ) : "Accept"}
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant={isRejected ? "destructive" : "outline"} 
+                                  onClick={() => handleReject(actor.id)}
+                                  className={cn(
+                                    "h-8 text-xs font-bold transition-all",
+                                    !isRejected && "border-rose-300 text-rose-600 hover:bg-rose-50"
+                                  )}
+                                >
+                                  {isRejected ? "Rejected" : "Reject"}
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                      {!isLoading && filteredActors.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={9} className="py-24 text-center">
+                            <div className="flex flex-col items-center gap-4">
+                              <div className="bg-slate-100 p-4 rounded-full">
+                                <Search className="w-10 h-10 text-slate-300" />
+                              </div>
+                              <div className="space-y-1">
+                                <p className="font-black text-slate-800 text-lg uppercase">Data Tidak Ditemukan</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {activeTab === "matched" 
+                                    ? "Belum ada data yang cocok dengan pencarian Anda pada hasil upload Excel BPJS." 
+                                    : "Silakan coba kata kunci pencarian lain."}
+                                </p>
+                              </div>
                             </div>
                           </TableCell>
                         </TableRow>
-                      )
-                    })}
-                    {!isLoading && filteredActors.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={9} className="py-24 text-center">
-                          <div className="flex flex-col items-center gap-4">
-                            <div className="bg-slate-100 p-4 rounded-full">
-                              <Search className="w-10 h-10 text-slate-300" />
-                            </div>
-                            <div className="space-y-1">
-                              <p className="font-black text-slate-800 text-lg uppercase">Data Tidak Ditemukan</p>
-                              <p className="text-sm text-muted-foreground">
-                                {activeTab === "matched" 
-                                  ? "Belum ada data yang cocok dengan pencarian Anda pada hasil upload Excel BPJS." 
-                                  : "Silakan coba kata kunci pencarian lain."}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </>
-                )}
-              </TableBody>
-            </Table>
+                      )}
+                    </>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
             {filteredActors.length > pageLimit && (
               <div className="p-4 flex justify-center border-t bg-slate-50">
                 <Button 
