@@ -42,7 +42,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const isCekDataPage = pathname === '/cek-data' || pathname?.startsWith('/cek-data');
   const isLayarInformasiPage = pathname === '/layar-informasi' || pathname?.startsWith('/layar-informasi');
   const isPortalSurveyPage = pathname === '/portal-survey' || pathname?.startsWith('/portal-survey');
-  const isPublicPage = isLoginPage || isCekDataPage || isLayarInformasiPage;
+  const isPendaftaranPage = pathname === '/pendaftaran' || pathname?.startsWith('/pendaftaran') || pathname === '/daftar' || pathname?.startsWith('/daftar');
+  const isPublicPage = isLoginPage || isCekDataPage || isLayarInformasiPage || isPendaftaranPage;
   const isRootPage = pathname === '/';
   const isAdmin = profile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
   const isStaff = profile?.role === 'staff';
@@ -209,9 +210,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   }, [playSound]);
 
 
-  // Toggle body background class — login, portal survey, and public cek-data pages have clean background
+  // Toggle body background class — login, portal survey, and public cek-data/pendaftaran pages have clean background
   useEffect(() => {
-    if (isLoginPage || isCekDataPage || isPortalSurveyPage) {
+    if (isLoginPage || isCekDataPage || isPortalSurveyPage || isPendaftaranPage) {
       document.body.classList.remove('app-bg');
     } else {
       document.body.classList.add('app-bg');
@@ -219,7 +220,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     return () => {
       document.body.classList.remove('app-bg');
     };
-  }, [isLoginPage, isCekDataPage, isPortalSurveyPage]);
+  }, [isLoginPage, isCekDataPage, isPortalSurveyPage, isPendaftaranPage]);
 
   const getPageTitle = (path: string) => {
     switch (path) {
@@ -230,6 +231,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       case '/rejected': return 'Data Ditolak';
       case '/verify-actor': return 'Verifikasi Admin';
       case '/input': return 'Input Data';
+      case '/pendaftaran':
+      case '/daftar': return 'Pendaftaran Pelaku Usaha';
       case '/check-data': return 'Cek Data';
       case '/cek-data': return 'Cek Data Publik';
       case '/profile': return 'Profil Saya';
@@ -263,7 +266,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       SIMPU
                     </span>
                     <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                      {isCekDataPage && !user ? "Portal Cek Data Publik" : "Sistem Manajemen UMKM"}
+                      {isCekDataPage && !user ? "Portal Cek Data Publik" : (isPendaftaranPage && !user ? "Pendaftaran Pelaku Usaha" : "Sistem Manajemen UMKM")}
                     </span>
                   </Link>
 
@@ -276,7 +279,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   )}
                 </div>
 
-                {activeEvent && !isCekDataPage && (
+                {activeEvent && !isCekDataPage && !isPendaftaranPage && (
                   <div className="hidden 2xl:flex items-center justify-center flex-1 min-w-0 px-2 py-1 animate-in fade-in zoom-in duration-1000">
                     <EventCountdown 
                       targetDate={activeEvent.endDate || activeEvent.date} 
@@ -376,7 +379,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
-            {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (!isCekDataPage || (user && !isCekDataPage)) && (
+            {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (!isCekDataPage || (user && !isCekDataPage)) && (!isPendaftaranPage || (user && !isPendaftaranPage)) && (
               <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50 pointer-events-none">
                 <div className="pointer-events-auto flex flex-col items-end gap-3 max-h-[calc(100dvh-5.5rem)] overflow-y-auto no-scrollbar pb-6 pr-1">
                   <div className="hidden lg:flex flex-col gap-3">
@@ -446,6 +449,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 isPortalSurveyPage ? "p-0 min-h-full flex-1 flex flex-col" :
                 isLayarInformasiPage ? "p-0 min-h-full lg:h-full lg:max-h-full flex-1 flex flex-col overflow-y-auto lg:overflow-hidden" :
                 isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-20 max-w-7xl mx-auto" :
+                isPendaftaranPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-20 max-w-5xl mx-auto" :
                 isRootPage ? "p-4 md:p-8 flex-1 flex flex-col min-h-0 pb-20 lg:pr-[360px]" : 
                 "p-4 md:p-8 min-h-full pb-20 lg:pr-[360px]"
               )}>
@@ -456,7 +460,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
           {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && <RunningText />}
 
-          {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && !isRootPage && !isKoordinator && (
+          {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && !isRootPage && !isKoordinator && user && (
             <button 
               onClick={() => router.push('/')}
               className="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-primary text-white shadow-2xl flex items-center justify-center z-50 animate-in slide-in-from-bottom-10 duration-500 border-4 border-white active:scale-90"

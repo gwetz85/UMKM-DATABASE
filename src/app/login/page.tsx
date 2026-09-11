@@ -652,11 +652,19 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-4 pt-4 px-2">
+              <div className="flex items-center justify-between gap-3 pt-4 px-1">
+                <button 
+                  type="button"
+                  onClick={() => router.push('/pendaftaran')}
+                  className="text-[10px] font-black text-emerald-400 hover:text-emerald-300 uppercase tracking-[0.15em] transition-colors flex items-center gap-1.5"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  Daftar Pelaku Usaha
+                </button>
                 <button 
                   type="button"
                   onClick={() => router.push('/cek-data')}
-                  className="text-[10px] font-black text-white/40 hover:text-white/80 uppercase tracking-[0.2em] transition-colors flex items-center gap-1.5"
+                  className="text-[10px] font-black text-white/40 hover:text-white/80 uppercase tracking-[0.15em] transition-colors flex items-center gap-1.5"
                 >
                   <SearchCheck className="w-3.5 h-3.5" />
                   Cek Data Publik
