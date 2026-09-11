@@ -102,10 +102,10 @@ function RejectedContent() {
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
 
-  // Query for Dinas-cancelled data (verified_dinas + Tidak Lolos)
+  // Query for Dinas-cancelled data (indexed directly by hasilVerifikasiDinas === 'Tidak Lolos')
   const dinasQuery = useMemoFirebase(() => {
     if (!database) return null
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'))
+    return query(ref(database, 'businessActors'), orderByChild('hasilVerifikasiDinas'), equalTo('Tidak Lolos'))
   }, [database])
   const { data: allActorsDinasRaw, isLoading: isLoadingDinas } = useList<BusinessActor>(dinasQuery)
   
@@ -192,7 +192,8 @@ function RejectedContent() {
   const actorsDinas = allActorsDinasRaw ? allActorsDinasRaw.filter(a => {
     const isDinasCancelled = 
       (a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') ||
-      (a as any).alasanCancelDinas;
+      a.hasilVerifikasiDinas === 'Tidak Lolos' ||
+      Boolean((a as any).alasanCancelDinas);
     if (!isDinasCancelled) return false;
 
     const matchesSearch = 
@@ -200,6 +201,16 @@ function RejectedContent() {
       a.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       a.nik?.includes(searchQuery)
     const matchesCategory = !category || a.businessCategory === category
+
+    if (isKoordinator) {
+      if (!a.coordinator || !userProfile?.fullName) return false;
+      const matchesKoor = a.coordinator.toLowerCase() === userProfile.fullName.toLowerCase();
+      return matchesSearch && matchesCategory && matchesKoor;
+    }
+    if (filterCoordinator) {
+      const matchesKoor = a.coordinator === filterCoordinator;
+      return matchesSearch && matchesCategory && matchesKoor;
+    }
     return matchesSearch && matchesCategory;
   }) : undefined
 
