@@ -88,6 +88,7 @@ function ActorDataContent() {
 
   const [surveyViewActor, setSurveyViewActor] = useState<BusinessActor | null>(null)
   const [pageLimit, setPageLimit] = useState(50)
+  const isSearching = Boolean(searchQuery && searchQuery.trim().length > 0)
 
   // Use pre-calculated stats for the overview
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
@@ -107,10 +108,16 @@ function ActorDataContent() {
     if (filterCoordinator) {
       return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(String(filterCoordinator).toUpperCase().trim()))
     }
+
+    // Only load all actors when actively searching across all data or for Inspektorat
+    if (isSearching || isInspektorat) {
+      return ref(database, 'businessActors')
+    }
     
-    // For Admin / Inspektorat / Monitoring / Staff / General view:
-    return ref(database, 'businessActors')
-  }, [database, isProfileLoading, isPetugas, isKoordinator, filterCoordinator, userProfile?.fullName])
+    // Default overview for Admin / Monitoring / Staff is the Koordinator Cards grid.
+    // Koordinator cards are rendered INSTANTLY (<0.1s) from systemStats & kuotaData without downloading 200MB+ of raw data!
+    return null
+  }, [database, isProfileLoading, isPetugas, isKoordinator, filterCoordinator, userProfile?.fullName, isSearching, isInspektorat])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
@@ -226,15 +233,27 @@ function ActorDataContent() {
   const hasAutoOpened = useRef(false)
 
   useEffect(() => {
-    if (viewId && actors && !viewingActor && !hasAutoOpened.current) {
-      const actorToView = actors.find(a => a.id === viewId)
-      if (actorToView) {
-        hasAutoOpened.current = true;
-        setViewingActor(actorToView)
-        fetchAuxData(actorToView)
+    if (viewId && database && !viewingActor && !hasAutoOpened.current) {
+      if (actors && actors.length > 0) {
+        const actorToView = actors.find(a => a.id === viewId)
+        if (actorToView) {
+          hasAutoOpened.current = true;
+          setViewingActor(actorToView)
+          fetchAuxData(actorToView)
+          return
+        }
       }
+      // Direct point fetch if actors list isn't loaded (instant <10ms)
+      get(ref(database, `businessActors/${viewId}`)).then(snap => {
+        if (snap.exists()) {
+          hasAutoOpened.current = true;
+          const actor = { ...snap.val(), id: snap.key } as BusinessActor;
+          setViewingActor(actor);
+          fetchAuxData(actor);
+        }
+      }).catch(console.error);
     }
-  }, [viewId, actors, viewingActor])
+  }, [viewId, actors, viewingActor, database])
 
   const { groupedActors, globalIndexMap } = useMemo(() => {
     if (!filteredActors) return { groupedActors: {}, globalIndexMap: new Map<string, number>() }
@@ -897,7 +916,6 @@ function ActorDataContent() {
     });
   }, [filteredActors, database]);
 
-  const isSearching = !!searchQuery.trim();
   const currentDataToDisplay = (isInspektorat || isKoordinator || isSearching) 
     ? (filteredActors || []) 
     : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []);
@@ -935,11 +953,34 @@ function ActorDataContent() {
         )}
           {!isMonitoring && (
           <Button
-            onClick={() => {
+            onClick={async () => {
               if (filterCoordinator) {
                 generateCoordinatorReport(filterCoordinator, groupedActors[filterCoordinator] || [])
               } else {
-                generateAllCoordinatorsReport(groupedActors)
+                if (Object.keys(groupedActors).length === 0) {
+                  toast({ title: "Menyiapkan Dokumen", description: "Sedang mengambil data untuk cetak PDF seluruh koordinator..." })
+                  try {
+                    const { get, ref } = await import("firebase/database")
+                    const snap = await get(ref(database!, 'businessActors'))
+                    if (snap.exists()) {
+                      const allActors = Object.values(snap.val()) as BusinessActor[]
+                      const groups: Record<string, BusinessActor[]> = {}
+                      allActors.forEach(a => {
+                        const s = a.status || "";
+                        const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+                        if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) return;
+                        const coord = (a.coordinator || "Tanpa Koordinator").toUpperCase().trim()
+                        if (!groups[coord]) groups[coord] = []
+                        groups[coord].push(a)
+                      })
+                      generateAllCoordinatorsReport(groups)
+                    }
+                  } catch (e) {
+                    toast({ variant: "destructive", title: "Gagal", description: "Gagal memuat data PDF." })
+                  }
+                } else {
+                  generateAllCoordinatorsReport(groupedActors)
+                }
               }
             }}
             className="bg-red-600 hover:bg-red-700 font-bold shadow-md w-full md:w-auto h-10"
