@@ -89,10 +89,47 @@ function ActorDataContent() {
   const [surveyViewActor, setSurveyViewActor] = useState<BusinessActor | null>(null)
   const [pageLimit, setPageLimit] = useState(50)
   const isSearching = Boolean(searchQuery && searchQuery.trim().length > 0)
+  const [searchResults, setSearchResults] = useState<BusinessActor[] | null>(null)
+  const [isSearchLoading, setIsSearchLoading] = useState(false)
 
   // Use pre-calculated stats for the overview
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
+
+  // High-speed server-side search across all actors (without downloading 200MB+ of raw data to browser)
+  useEffect(() => {
+    if (!isSearching || filterCoordinator) {
+      setSearchResults(null)
+      setIsSearchLoading(false)
+      return
+    }
+
+    const controller = new AbortController()
+    setIsSearchLoading(true)
+
+    fetch(`/api/actors/search?q=${encodeURIComponent(searchQuery)}`, {
+      signal: controller.signal
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setSearchResults(data.results || [])
+        } else {
+          setSearchResults([])
+        }
+      })
+      .catch(err => {
+        if (err.name !== 'AbortError') {
+          console.error('Search error:', err)
+          setSearchResults([])
+        }
+      })
+      .finally(() => {
+        setIsSearchLoading(false)
+      })
+
+    return () => controller.abort()
+  }, [searchQuery, isSearching, filterCoordinator])
 
   const memoQuery = useMemoFirebase(() => {
     if (!database || isProfileLoading) return null
@@ -109,15 +146,15 @@ function ActorDataContent() {
       return query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(String(filterCoordinator).toUpperCase().trim()))
     }
 
-    // Only load all actors when actively searching across all data or for Inspektorat
-    if (isSearching || isInspektorat) {
+    // Only load all actors when viewing Inspektorat. Global search is handled via ultra-fast API
+    if (isInspektorat) {
       return ref(database, 'businessActors')
     }
     
     // Default overview for Admin / Monitoring / Staff is the Koordinator Cards grid.
     // Koordinator cards are rendered INSTANTLY (<0.1s) from systemStats & kuotaData without downloading 200MB+ of raw data!
     return null
-  }, [database, isProfileLoading, isPetugas, isKoordinator, filterCoordinator, userProfile?.fullName, isSearching, isInspektorat])
+  }, [database, isProfileLoading, isPetugas, isKoordinator, filterCoordinator, userProfile?.fullName, isInspektorat])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
   
@@ -220,6 +257,11 @@ function ActorDataContent() {
   const [selectedExportSheets, setSelectedExportSheets] = useState<string[]>([])
 
   const filteredActors = useMemo(() => {
+    // If we have API search results (global search without filterCoordinator), use them directly!
+    if (isSearching && !filterCoordinator && searchResults !== null) {
+      return searchResults;
+    }
+
     if (!actors) return undefined;
     const lowerQuery = searchQuery.toLowerCase();
     return actors.filter(a => 
@@ -228,7 +270,7 @@ function ActorDataContent() {
       (a.businessName || "").toLowerCase().includes(lowerQuery) ||
       (a.address || "").toLowerCase().includes(lowerQuery)
     ).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
-  }, [actors, searchQuery]);
+  }, [actors, searchQuery, isSearching, filterCoordinator, searchResults]);
 
   const hasAutoOpened = useRef(false)
 
@@ -996,7 +1038,7 @@ function ActorDataContent() {
 
 
       <div className="bg-transparent print:bg-transparent">
-        {isLoading ? (
+        {(isSearching && !filterCoordinator ? isSearchLoading : isLoading) ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <Skeleton key={i} className="h-12 w-full rounded-lg" />
@@ -1544,7 +1586,21 @@ function ActorDataContent() {
                   {!isEditMode && isAdmin && viewingActor && (viewingActor as any).surveyData && (
                     <Button
                       size="sm"
-                      onClick={() => setSurveyViewActor(viewingActor)}
+                      onClick={() => {
+                        if (database && viewingActor?.id && !(viewingActor as any).surveyData?.fotoSurveyUrl) {
+                          get(ref(database, `businessActors/${viewingActor.id}`)).then(snap => {
+                            if (snap.exists()) {
+                              const full = { ...snap.val(), id: snap.key } as BusinessActor;
+                              setViewingActor(full);
+                              setSurveyViewActor(full);
+                            } else {
+                              setSurveyViewActor(viewingActor);
+                            }
+                          }).catch(() => setSurveyViewActor(viewingActor));
+                        } else {
+                          setSurveyViewActor(viewingActor);
+                        }
+                      }}
                       className="font-bold bg-teal-600 hover:bg-teal-700 text-white"
                     >
                       <ClipboardList className="w-4 h-4 mr-2" /> Lihat Form Survey
