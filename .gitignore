@@ -43,3 +43,8 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# backups & scratch
+backup*.json
+scratch/
+last-data-check.json

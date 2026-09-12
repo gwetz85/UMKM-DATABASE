@@ -29,12 +29,14 @@ export interface SurveyDinasData {
   rencanaPenggunaan: string;
   hasilSurvey: string;
   fotoSurveyUrl?: string;
+  hasPhoto?: boolean;
   tanggalSurvey?: string;
   pejabatData?: PejabatData;
 }
 
 export interface BusinessActor {
   id: string;
+  hasSurveyPhoto?: boolean;
   fullName: string;
   nik: string;
   noKK: string;

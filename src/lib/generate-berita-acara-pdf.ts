@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { BusinessActor, SurveyDinasData, PejabatData } from "@/app/lib/types";
+import { getSurveyPhoto } from "@/lib/survey-photo-service";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: wrap text and return array of lines
@@ -130,7 +131,15 @@ export async function generateBeritaAcaraPDF(
     logoBase64 = null;
   }
 
-  const rawSurveyPhoto = surveyData?.fotoSurveyUrl || actor?.photoSurveyUrl;
+  let rawSurveyPhoto = surveyData?.fotoSurveyUrl || actor?.photoSurveyUrl;
+  if (!rawSurveyPhoto && actor?.id) {
+    try {
+      const fetched = await getSurveyPhoto(null, actor.id, actor);
+      if (fetched) rawSurveyPhoto = fetched;
+    } catch (e) {
+      console.warn("Could not fetch decoupled survey photo for PDF:", e);
+    }
+  }
   const isComparison = Boolean(rawSurveyPhoto && actor?.comparisonPhotoUrl && rawSurveyPhoto === actor.comparisonPhotoUrl);
   const validSurveyPhoto = isComparison ? "" : (rawSurveyPhoto || "");
   const surveyPhotoUrl = validSurveyPhoto || "";

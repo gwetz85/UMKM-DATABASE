@@ -62,6 +62,7 @@ import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-b
 import { ensureVerifikatorUser, regenerateVerifikatorUser, deleteVerifikatorUser } from "@/lib/verifikator-service"
 import { resolveSurveyorCanonicalName } from "@/lib/surveyor-utils"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { hasSurveyPhoto, getSurveyPhoto, saveSurveyPhoto } from "@/lib/survey-photo-service"
 
 export default function VerifikasiDinasBerkasPage() {
   const { user, userProfile } = useUser()
@@ -116,11 +117,45 @@ export default function VerifikasiDinasBerkasPage() {
   const [deleteVerifikatorTarget, setDeleteVerifikatorTarget] = useState<{ username: string; displayName: string } | null>(null)
   const [isDeletingVerifikator, setIsDeletingVerifikator] = useState(false)
 
-  // Admin: upload / ganti foto survey
+  // Admin & Verifikator: upload / ganti foto survey
   const [adminPhotoUploading, setAdminPhotoUploading] = useState(false)
   const [photoEditActor, setPhotoEditActor] = useState<BusinessActor | null>(null)
   const [photoEditPreview, setPhotoEditPreview] = useState<string | null>(null)
   const [isSavingPhoto, setIsSavingPhoto] = useState(false)
+
+  // On-demand survey photo for modals
+  const [verifyingPhoto, setVerifyingPhoto] = useState<string | null>(null)
+  const [adminViewPhoto, setAdminViewPhoto] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!verifyingActor) {
+      setVerifyingPhoto(null)
+      return
+    }
+    const clean = getCleanSurveyPhoto(verifyingActor)
+    if (clean) {
+      setVerifyingPhoto(clean)
+    } else {
+      getSurveyPhoto(database, verifyingActor.id, verifyingActor).then(p => {
+        if (p) setVerifyingPhoto(p)
+      })
+    }
+  }, [verifyingActor, database])
+
+  useEffect(() => {
+    if (!adminViewActor) {
+      setAdminViewPhoto(null)
+      return
+    }
+    const clean = getCleanSurveyPhoto(adminViewActor)
+    if (clean) {
+      setAdminViewPhoto(clean)
+    } else {
+      getSurveyPhoto(database, adminViewActor.id, adminViewActor).then(p => {
+        if (p) setAdminViewPhoto(p)
+      })
+    }
+  }, [adminViewActor, database])
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -627,13 +662,14 @@ export default function VerifikasiDinasBerkasPage() {
     setIsSavingPhoto(true)
     try {
       const actorId = photoEditActor.id
-      const photoRef = ref(database, `businessActors/${actorId}/surveyData/fotoSurveyUrl`)
-      await set(photoRef, photoEditPreview)
+      await saveSurveyPhoto(database, actorId, photoEditPreview)
 
       // Update local states jika dialog detail sedang terbuka
       if (adminViewActor && adminViewActor.id === actorId) {
+        setAdminViewPhoto(photoEditPreview)
         setAdminViewActor(prev => prev ? ({
           ...prev,
+          hasSurveyPhoto: true,
           surveyData: {
             ...(prev.surveyData || ({} as any)),
             fotoSurveyUrl: photoEditPreview
@@ -641,8 +677,10 @@ export default function VerifikasiDinasBerkasPage() {
         }) : null)
       }
       if (verifyingActor && verifyingActor.id === actorId) {
+        setVerifyingPhoto(photoEditPreview)
         setVerifyingActor(prev => prev ? ({
           ...prev,
+          hasSurveyPhoto: true,
           surveyData: {
             ...(prev.surveyData || ({} as any)),
             fotoSurveyUrl: photoEditPreview
@@ -684,18 +722,21 @@ export default function VerifikasiDinasBerkasPage() {
     setAdminPhotoUploading(true)
     compressImageFile(file, async (compressedResult) => {
       try {
-        const photoRef = ref(database, `businessActors/${actorId}/surveyData/fotoSurveyUrl`)
-        await set(photoRef, compressedResult)
+        await saveSurveyPhoto(database, actorId, compressedResult)
 
         if (adminViewActor && adminViewActor.id === actorId) {
+          setAdminViewPhoto(compressedResult)
           setAdminViewActor(prev => prev ? ({
             ...prev,
+            hasSurveyPhoto: true,
             surveyData: { ...(prev.surveyData || ({} as any)), fotoSurveyUrl: compressedResult }
           }) : null)
         }
         if (verifyingActor && verifyingActor.id === actorId) {
+          setVerifyingPhoto(compressedResult)
           setVerifyingActor(prev => prev ? ({
             ...prev,
+            hasSurveyPhoto: true,
             surveyData: { ...(prev.surveyData || ({} as any)), fotoSurveyUrl: compressedResult }
           }) : null)
         }
@@ -1081,15 +1122,17 @@ export default function VerifikasiDinasBerkasPage() {
           <div className="flex items-center gap-3">
             <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
             <h1 className="text-3xl font-bold text-primary font-headline">VERIFIKASI DINAS</h1>
-            {filteredActors && (
-              <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/20 shadow-sm flex items-center gap-2">
-                <span>Total Berkas:</span>
-                <span className="bg-primary text-white px-2 py-0.5 rounded-full">
-                  {filteredActors.length}
-                  {(selectedVerifikatorFilter !== "ALL" || searchQuery) && actors && ` / ${actors.length}`}
-                </span>
-              </div>
-            )}
+            <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold border border-primary/20 shadow-sm flex items-center gap-2">
+              <span>Total Berkas:</span>
+              <span className="bg-primary text-white px-2 py-0.5 rounded-full min-w-[24px] inline-flex items-center justify-center text-center">
+                {isLoading ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  filteredActors.length
+                )}
+                {!isLoading && (selectedVerifikatorFilter !== "ALL" || searchQuery) && actors && ` / ${actors.length}`}
+              </span>
+            </div>
           </div>
           <p className="text-muted-foreground mt-1">
             Data dikelompokkan berdasarkan <strong>NIPPPK Verifikator</strong> yang diisi petugas survey pada Data Pejabat Berita Acara.
@@ -1731,16 +1774,17 @@ export default function VerifikasiDinasBerkasPage() {
                                     size="icon"
                                     variant="outline"
                                     type="button"
-                                    onClick={() => {
+                                    onClick={async () => {
                                       setPhotoEditActor(actor);
-                                      setPhotoEditPreview(getCleanSurveyPhoto(actor));
+                                      const p = await getSurveyPhoto(database, actor.id, actor);
+                                      setPhotoEditPreview(p);
                                     }}
                                     className={`h-9 w-9 rounded-xl shadow-sm transition-all duration-200 shrink-0 ${
-                                      getCleanSurveyPhoto(actor)
+                                      hasSurveyPhoto(actor)
                                         ? "bg-amber-50 hover:bg-amber-600 hover:text-white text-amber-700 border-amber-200 hover:border-amber-300"
                                         : "bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border-rose-200 hover:border-rose-300 animate-pulse"
                                     }`}
-                                    title={getCleanSurveyPhoto(actor) ? "Ganti Foto Survey Dinas" : "Upload Foto Survey Dinas (Belum Ada Foto)"}
+                                    title={hasSurveyPhoto(actor) ? "Ganti Foto Survey Dinas" : "Upload Foto Survey Dinas (Belum Ada Foto)"}
                                   >
                                     <Camera className="w-4 h-4 shrink-0" />
                                   </Button>
@@ -1971,8 +2015,8 @@ export default function VerifikasiDinasBerkasPage() {
                         </div>
                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-3 items-center justify-center">
                           <p className="text-[10px] font-bold text-slate-500 uppercase self-start">Foto Survey Dinas</p>
-                          {getCleanSurveyPhoto(verifyingActor) ? (
-                            <img src={getCleanSurveyPhoto(verifyingActor)!} alt="Foto Survey" className="max-h-[200px] w-full object-contain rounded-lg border border-slate-200" />
+                          {(verifyingPhoto || getCleanSurveyPhoto(verifyingActor)) ? (
+                            <img src={(verifyingPhoto || getCleanSurveyPhoto(verifyingActor))!} alt="Foto Survey" className="max-h-[200px] w-full object-contain rounded-lg border border-slate-200" />
                           ) : (
                             <p className="text-xs font-medium text-slate-500">Belum ada foto survey dinas.</p>
                           )}
@@ -1983,7 +2027,7 @@ export default function VerifikasiDinasBerkasPage() {
                                   {adminPhotoUploading ? (
                                     <><span className="animate-spin">⏳</span> Mengupload foto...</>
                                   ) : (
-                                    <><span>📷</span> {getCleanSurveyPhoto(verifyingActor) ? 'Ganti Foto Survey' : 'Upload Foto Survey'}</>
+                                    <><span>📷</span> {(verifyingPhoto || getCleanSurveyPhoto(verifyingActor)) ? 'Ganti Foto Survey' : 'Upload Foto Survey'}</>
                                   )}
                                 </div>
                                 <input
@@ -2288,7 +2332,7 @@ export default function VerifikasiDinasBerkasPage() {
                         { label: "Foto NIB", url: av.nibUri },
                         { label: "Foto Usaha", url: getCleanUsahaPhoto(av) },
                         { label: "Foto Perbandingan", url: getCleanComparisonPhoto(av) },
-                        { label: "Foto Survey Dinas", url: getCleanSurveyPhoto(av) },
+                        { label: "Foto Survey Dinas", url: adminViewPhoto || getCleanSurveyPhoto(av) },
                       ].map((doc, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-rose-700/80 uppercase">{doc.label}</p>
@@ -2309,9 +2353,10 @@ export default function VerifikasiDinasBerkasPage() {
                               type="button"
                               size="sm"
                               variant="outline"
-                              onClick={() => {
+                              onClick={async () => {
                                 setPhotoEditActor(av);
-                                setPhotoEditPreview(getCleanSurveyPhoto(av));
+                                const p = adminViewPhoto || (await getSurveyPhoto(database, av.id, av));
+                                setPhotoEditPreview(p);
                               }}
                               className="w-full text-[10px] h-7 bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 font-bold gap-1 mt-1"
                             >
