@@ -1611,23 +1611,23 @@ function ActorDataContent() {
           setEditingDriveMode(false)
         }
       }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[96vw] max-w-3xl max-h-[92vh] p-3.5 sm:p-6 overflow-y-auto overflow-x-hidden">
           {viewingActor && !editingBankMode && !editingDriveMode && (
             <div className="flex flex-col gap-2 relative">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800 pr-8">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <User className="w-5 h-5" />
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <User className="w-4 h-4" />
                   </div>
                   <div>
-                    <DialogTitle className="text-lg md:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                    <DialogTitle className="text-base sm:text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
                       {isEditMode ? "Edit Data Pelaku Usaha" : "Detail Pelaku Usaha"}
                     </DialogTitle>
-                    <p className="text-[11px] text-muted-foreground font-medium">Informasi data registrasi dan hasil verifikasi</p>
+                    <p className="text-[10px] sm:text-[11px] text-muted-foreground font-medium">Informasi data registrasi dan hasil verifikasi</p>
                   </div>
                 </div>
                 {isEditMode && (
-                  <Button variant="outline" size="sm" onClick={() => setIsEditMode(false)} className="text-xs font-bold border-amber-500 text-amber-600 hover:bg-amber-50 rounded-xl">
+                  <Button variant="outline" size="sm" onClick={() => setIsEditMode(false)} className="text-xs font-bold border-amber-500 text-amber-600 hover:bg-amber-50 rounded-lg">
                     Batal Edit
                   </Button>
                 )}
@@ -1811,87 +1811,87 @@ function ActorDataContent() {
                   </div>
                 </form>
               ) : (
-                <div className="flex flex-col gap-4 py-2">
-                  {/* Hero Profile Banner */}
-                  <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white p-4 sm:p-5 shadow-xl border border-slate-800">
-                    <div className="absolute -top-12 -right-12 w-40 h-40 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
-                    <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
+                <div className="flex flex-col gap-3 py-1">
+                  {/* Hero Profile Banner - Clean, Light & 100% Responsive */}
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/50 dark:from-slate-900 dark:via-slate-850 dark:to-indigo-950/40 p-3 sm:p-4 border border-blue-100/80 dark:border-slate-800 shadow-2xs">
+                    <div className="flex items-start gap-3 w-full">
+                      {/* Avatar initials with gender accent */}
+                      <div className={cn(
+                        "w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-black text-base sm:text-lg shrink-0 shadow-2xs border",
+                        normalizeGender(viewingActor.gender) === 'Perempuan'
+                          ? "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-900"
+                          : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-900"
+                      )}>
+                        {viewingActor.fullName
+                          ? viewingActor.fullName.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()
+                          : <User className="w-5 h-5" />}
+                      </div>
 
-                    <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div className="flex items-start sm:items-center gap-3.5 w-full">
-                        {/* Avatar initials with gender accent */}
-                        <div className={cn(
-                          "w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl shrink-0 shadow-inner border-2",
-                          normalizeGender(viewingActor.gender) === 'Perempuan'
-                            ? "bg-rose-500/20 border-rose-400/50 text-rose-200"
-                            : "bg-blue-500/20 border-blue-400/50 text-blue-200"
-                        )}>
-                          {viewingActor.fullName
-                            ? viewingActor.fullName.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()
-                            : <User className="w-6 h-6" />}
+                      <div className="space-y-1 w-full min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h2 className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white break-words leading-snug">
+                            {viewingActor.fullName}
+                          </h2>
+                          {normalizeGender(viewingActor.gender) && (
+                            <span className={cn(
+                              "text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0",
+                              normalizeGender(viewingActor.gender) === 'Perempuan' 
+                                ? "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300" 
+                                : "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300"
+                            )}>
+                              {normalizeGender(viewingActor.gender)}
+                            </span>
+                          )}
                         </div>
 
-                        <div className="space-y-1.5 w-full min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h2 className="text-base sm:text-xl font-black uppercase tracking-tight text-white truncate">
-                              {viewingActor.fullName}
-                            </h2>
-                            {normalizeGender(viewingActor.gender) && (
-                              <span className={cn(
-                                "text-[10px] font-bold px-2 py-0.5 rounded-full border",
-                                normalizeGender(viewingActor.gender) === 'Perempuan' 
-                                  ? "bg-rose-500/20 border-rose-400/40 text-rose-300" 
-                                  : "bg-blue-500/20 border-blue-400/40 text-blue-300"
-                              )}>
-                                {normalizeGender(viewingActor.gender)}
-                              </span>
-                            )}
-                          </div>
+                        {/* Dedicated line for business name with proper word break */}
+                        <div className="flex items-start gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400">
+                          <Store className="w-3.5 h-3.5 shrink-0 text-amber-500 mt-0.5" />
+                          <span className="uppercase break-words leading-snug">{viewingActor.businessName || "NAMA USAHA KOSONG"}</span>
+                        </div>
 
-                          <div className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-amber-300 truncate">
-                            <Store className="w-4 h-4 shrink-0 text-amber-400" />
-                            <span className="uppercase truncate">{viewingActor.businessName || "NAMA USAHA KOSONG"}</span>
-                            {viewingActor.businessCategory && (
-                              <span className="text-[10px] font-semibold text-slate-300 px-2 py-0.5 rounded bg-white/10 shrink-0">
-                                {viewingActor.businessCategory}
-                              </span>
-                            )}
-                          </div>
+                        {/* Badges Pill Row */}
+                        <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(viewingActor.registrationCode || '', 'Reg ID')}
+                            className="inline-flex items-center gap-1 text-[10px] font-mono font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 shadow-2xs hover:bg-slate-50 transition-all active:scale-95"
+                            title="Klik untuk salin Reg ID"
+                          >
+                            <span>REG: {viewingActor.registrationCode || 'PROSES'}</span>
+                            <Copy className="w-2.5 h-2.5 text-slate-400" />
+                          </button>
 
-                          <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                            <button
-                              type="button"
-                              onClick={() => handleCopyText(viewingActor.registrationCode || '', 'Reg ID')}
-                              className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold bg-white/10 hover:bg-white/20 text-white px-2.5 py-0.5 rounded-lg border border-white/15 transition-all active:scale-95"
-                              title="Klik untuk salin Reg ID"
-                            >
-                              <span>REG: {viewingActor.registrationCode || 'PROSES'}</span>
-                              <Copy className="w-3 h-3 opacity-70" />
-                            </button>
+                          {viewingActor.businessCategory && (
+                            <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-md">
+                              {viewingActor.businessCategory}
+                            </span>
+                          )}
 
-                            {viewingActor.coordinator && (
-                              <span className="text-[10px] font-bold bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 px-2 py-0.5 rounded-lg">
-                                Usulan: {viewingActor.coordinator}
-                              </span>
-                            )}
+                          {viewingActor.coordinator && (
+                            <span className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 px-2 py-0.5 rounded-md">
+                              Usulan: {viewingActor.coordinator}
+                            </span>
+                          )}
 
-                            <VerificationBadge actor={viewingActor} />
-                          </div>
+                          <VerificationBadge actor={viewingActor} />
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Clean Action Toolbar */}
-                  <div className="flex items-center justify-between gap-2 flex-wrap bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-                    <div className="flex items-center gap-2 flex-wrap">
+                  {/* Clean Action Toolbar - Non-overflowing with Responsive 2-Col Grid on Mobile */}
+                  <div className="bg-slate-50 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                    {/* Mobile Grid Layout (2 cols) */}
+                    <div className="grid grid-cols-2 gap-1.5 sm:hidden">
                       {!isKoordinator && !isInspektorat && (
                         <Button 
                           size="sm" 
                           onClick={() => handlePrintForm(viewingActor)}
-                          className="font-bold bg-primary hover:bg-primary/90 text-white h-9 rounded-xl text-xs shadow-xs"
+                          className="font-bold bg-primary hover:bg-primary/90 text-white h-9 rounded-lg text-xs w-full shadow-2xs"
                         >
-                          <Printer className="w-3.5 h-3.5 mr-1.5" /> Cetak Formulir
+                          <Printer className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                          <span className="truncate">Cetak Form</span>
                         </Button>
                       )}
 
@@ -1913,9 +1913,10 @@ function ActorDataContent() {
                               setSurveyViewActor(viewingActor);
                             }
                           }}
-                          className="font-bold bg-teal-600 hover:bg-teal-700 text-white h-9 rounded-xl text-xs shadow-xs"
+                          className="font-bold bg-teal-600 hover:bg-teal-700 text-white h-9 rounded-lg text-xs w-full shadow-2xs"
                         >
-                          <ClipboardList className="w-3.5 h-3.5 mr-1.5" /> Form Survey
+                          <ClipboardList className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                          <span className="truncate">Form Survey</span>
                         </Button>
                       )}
 
@@ -1924,22 +1925,21 @@ function ActorDataContent() {
                           variant="outline" 
                           size="sm" 
                           onClick={() => setIsEditMode(true)}
-                          className="font-bold h-9 rounded-xl text-xs border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 shadow-xs"
+                          className="font-bold h-9 rounded-lg text-xs border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 w-full shadow-2xs"
                         >
-                          <Edit3 className="w-3.5 h-3.5 mr-1.5 text-primary" /> Edit Data
+                          <Edit3 className="w-3.5 h-3.5 mr-1.5 text-primary shrink-0" />
+                          <span className="truncate">Edit Data</span>
                         </Button>
                       )}
-                    </div>
 
-                    {/* More Actions Dropdown Menu */}
-                    <div className="flex items-center gap-1.5 ml-auto">
                       {!isAdmin && !isMonitoring && !isKoordinator && viewingActor.status === 'verified_actor' && (
                         <Button 
                           size="sm" 
                           onClick={() => setEditingBankMode(true)}
-                          className="font-bold bg-amber-500 hover:bg-amber-600 text-white h-9 rounded-xl text-xs"
+                          className="font-bold bg-amber-500 hover:bg-amber-600 text-white h-9 rounded-lg text-xs w-full"
                         >
-                          <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Input Rekening
+                          <CreditCard className="w-3.5 h-3.5 mr-1.5 shrink-0" />
+                          <span className="truncate">Input Rekening</span>
                         </Button>
                       )}
 
@@ -1949,38 +1949,38 @@ function ActorDataContent() {
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="font-bold h-9 rounded-xl text-xs border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 flex items-center gap-1.5 shadow-xs"
+                              className="font-bold h-9 rounded-lg text-xs border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 flex items-center justify-center gap-1 w-full shadow-2xs"
                             >
-                              <MoreVertical className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-                              <span className="hidden sm:inline">Opsi Lainnya</span>
+                              <MoreVertical className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300 shrink-0" />
+                              <span className="truncate">Opsi Lain</span>
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-56 p-1.5 rounded-2xl shadow-xl border-slate-200 dark:border-slate-800">
+                          <DropdownMenuContent align="end" className="w-56 p-1.5 rounded-xl shadow-xl border-slate-200 dark:border-slate-800">
                             <DropdownMenuLabel className="text-[10px] font-black uppercase text-muted-foreground px-2 py-1">
                               Aksi Pelaku Usaha
                             </DropdownMenuLabel>
                             
                             <DropdownMenuItem 
                               onClick={() => handleSingleLanjutDinas(viewingActor)}
-                              className="font-bold text-xs rounded-xl py-2 cursor-pointer text-purple-700 dark:text-purple-400 focus:bg-purple-50 dark:focus:bg-purple-950/40"
+                              className="font-bold text-xs rounded-lg py-2 cursor-pointer text-purple-700 dark:text-purple-400 focus:bg-purple-50 dark:focus:bg-purple-950/40"
                             >
-                              <Send className="w-4 h-4 mr-2 text-purple-600" />
+                              <Send className="w-4 h-4 mr-2 text-purple-600 shrink-0" />
                               <span>Lanjut Dinas (Susulan)</span>
                             </DropdownMenuItem>
 
                             <DropdownMenuItem 
                               onClick={() => setEditingBankMode(true)}
-                              className="font-bold text-xs rounded-xl py-2 cursor-pointer text-amber-700 dark:text-amber-400 focus:bg-amber-50 dark:focus:bg-amber-950/40"
+                              className="font-bold text-xs rounded-lg py-2 cursor-pointer text-amber-700 dark:text-amber-400 focus:bg-amber-50 dark:focus:bg-amber-950/40"
                             >
-                              <CreditCard className="w-4 h-4 mr-2 text-amber-500" />
+                              <CreditCard className="w-4 h-4 mr-2 text-amber-500 shrink-0" />
                               <span>Input / Ubah Rekening</span>
                             </DropdownMenuItem>
 
                             <DropdownMenuItem 
                               onClick={() => setEditingDriveMode(true)}
-                              className="font-bold text-xs rounded-xl py-2 cursor-pointer text-blue-700 dark:text-blue-400 focus:bg-blue-50 dark:focus:bg-blue-950/40"
+                              className="font-bold text-xs rounded-lg py-2 cursor-pointer text-blue-700 dark:text-blue-400 focus:bg-blue-50 dark:focus:bg-blue-950/40"
                             >
-                              <Folder className="w-4 h-4 mr-2 text-blue-500" />
+                              <Folder className="w-4 h-4 mr-2 text-blue-500 shrink-0" />
                               <span>Link Google Drive</span>
                             </DropdownMenuItem>
 
@@ -1988,86 +1988,210 @@ function ActorDataContent() {
 
                             <DropdownMenuItem 
                               onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)}
-                              className="font-bold text-xs rounded-xl py-2 cursor-pointer text-amber-600 focus:bg-amber-50 dark:focus:bg-amber-950/40"
+                              className="font-bold text-xs rounded-lg py-2 cursor-pointer text-amber-600 focus:bg-amber-50 dark:focus:bg-amber-950/40"
                             >
-                              <RotateCcw className="w-4 h-4 mr-2 text-amber-500" />
+                              <RotateCcw className="w-4 h-4 mr-2 text-amber-500 shrink-0" />
                               <span>Kembalikan ke Antrean</span>
                             </DropdownMenuItem>
 
                             <DropdownMenuItem 
                               onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)}
-                              className="font-bold text-xs rounded-xl py-2 cursor-pointer text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-950/40"
+                              className="font-bold text-xs rounded-lg py-2 cursor-pointer text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-950/40"
                             >
-                              <Trash2 className="w-4 h-4 mr-2 text-rose-500" />
+                              <Trash2 className="w-4 h-4 mr-2 text-rose-500 shrink-0" />
                               <span>Hapus Permanen</span>
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
                     </div>
+
+                    {/* Desktop Toolbar Layout (Single Row) */}
+                    <div className="hidden sm:flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {!isKoordinator && !isInspektorat && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handlePrintForm(viewingActor)}
+                            className="font-bold bg-primary hover:bg-primary/90 text-white h-9 rounded-xl text-xs shadow-xs"
+                          >
+                            <Printer className="w-3.5 h-3.5 mr-1.5" /> Cetak Formulir
+                          </Button>
+                        )}
+
+                        {isAdmin && (viewingActor as any).surveyData && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              if (database && viewingActor?.id && !(viewingActor as any).surveyData?.fotoSurveyUrl) {
+                                get(ref(database, `businessActors/${viewingActor.id}`)).then(snap => {
+                                  if (snap.exists()) {
+                                    const full = { ...snap.val(), id: snap.key } as BusinessActor;
+                                    setViewingActor(full);
+                                    setSurveyViewActor(full);
+                                  } else {
+                                    setSurveyViewActor(viewingActor);
+                                  }
+                                }).catch(() => setSurveyViewActor(viewingActor));
+                              } else {
+                                setSurveyViewActor(viewingActor);
+                              }
+                            }}
+                            className="font-bold bg-teal-600 hover:bg-teal-700 text-white h-9 rounded-xl text-xs shadow-xs"
+                          >
+                            <ClipboardList className="w-3.5 h-3.5 mr-1.5" /> Form Survey
+                          </Button>
+                        )}
+
+                        {isAdmin && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setIsEditMode(true)}
+                            className="font-bold h-9 rounded-xl text-xs border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 shadow-xs"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 mr-1.5 text-primary" /> Edit Data
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 ml-auto">
+                        {!isAdmin && !isMonitoring && !isKoordinator && viewingActor.status === 'verified_actor' && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => setEditingBankMode(true)}
+                            className="font-bold bg-amber-500 hover:bg-amber-600 text-white h-9 rounded-xl text-xs"
+                          >
+                            <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Input Rekening
+                          </Button>
+                        )}
+
+                        {isAdmin && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="font-bold h-9 rounded-xl text-xs border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 flex items-center gap-1.5 shadow-xs"
+                              >
+                                <MoreVertical className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                                <span>Opsi Lainnya</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56 p-1.5 rounded-2xl shadow-xl border-slate-200 dark:border-slate-800">
+                              <DropdownMenuLabel className="text-[10px] font-black uppercase text-muted-foreground px-2 py-1">
+                                Aksi Pelaku Usaha
+                              </DropdownMenuLabel>
+                              
+                              <DropdownMenuItem 
+                                onClick={() => handleSingleLanjutDinas(viewingActor)}
+                                className="font-bold text-xs rounded-xl py-2 cursor-pointer text-purple-700 dark:text-purple-400 focus:bg-purple-50 dark:focus:bg-purple-950/40"
+                              >
+                                <Send className="w-4 h-4 mr-2 text-purple-600" />
+                                <span>Lanjut Dinas (Susulan)</span>
+                              </DropdownMenuItem>
+
+                              <DropdownMenuItem 
+                                onClick={() => setEditingBankMode(true)}
+                                className="font-bold text-xs rounded-xl py-2 cursor-pointer text-amber-700 dark:text-amber-400 focus:bg-amber-50 dark:focus:bg-amber-950/40"
+                              >
+                                <CreditCard className="w-4 h-4 mr-2 text-amber-500" />
+                                <span>Input / Ubah Rekening</span>
+                              </DropdownMenuItem>
+
+                              <DropdownMenuItem 
+                                onClick={() => setEditingDriveMode(true)}
+                                className="font-bold text-xs rounded-xl py-2 cursor-pointer text-blue-700 dark:text-blue-400 focus:bg-blue-50 dark:focus:bg-blue-950/40"
+                              >
+                                <Folder className="w-4 h-4 mr-2 text-blue-500" />
+                                <span>Link Google Drive</span>
+                              </DropdownMenuItem>
+
+                              <DropdownMenuSeparator />
+
+                              <DropdownMenuItem 
+                                onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)}
+                                className="font-bold text-xs rounded-xl py-2 cursor-pointer text-amber-600 focus:bg-amber-50 dark:focus:bg-amber-950/40"
+                              >
+                                <RotateCcw className="w-4 h-4 mr-2 text-amber-500" />
+                                <span>Kembalikan ke Antrean</span>
+                              </DropdownMenuItem>
+
+                              <DropdownMenuItem 
+                                onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)}
+                                className="font-bold text-xs rounded-xl py-2 cursor-pointer text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-950/40"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2 text-rose-500" />
+                                <span>Hapus Permanen</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Tabs Organization */}
+                  {/* Tabs Organization - Fits cleanly on mobile screens */}
                   <Tabs defaultValue="pribadi" className="w-full">
-                    <TabsList className="grid grid-cols-3 h-11 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl w-full border border-slate-200/60 dark:border-slate-700/60">
-                      <TabsTrigger value="pribadi" className="text-xs font-bold rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all">
-                        <User className="w-3.5 h-3.5 mr-1.5 hidden sm:inline" /> Pribadi
+                    <TabsList className="grid grid-cols-3 h-10 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl w-full border border-slate-200/60 dark:border-slate-700/60">
+                      <TabsTrigger value="pribadi" className="text-xs font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-primary data-[state=active]:shadow-xs transition-all">
+                        <User className="w-3.5 h-3.5 mr-1 hidden sm:inline" /> Pribadi
                       </TabsTrigger>
-                      <TabsTrigger value="usaha" className="text-xs font-bold rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all">
-                        <Store className="w-3.5 h-3.5 mr-1.5 hidden sm:inline" /> Usaha & Survey
+                      <TabsTrigger value="usaha" className="text-xs font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-primary data-[state=active]:shadow-xs transition-all">
+                        <Store className="w-3.5 h-3.5 mr-1 hidden sm:inline" /> Usaha
                       </TabsTrigger>
-                      <TabsTrigger value="rekening" className="text-xs font-bold rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all">
-                        <CreditCard className="w-3.5 h-3.5 mr-1.5 hidden sm:inline" /> Rekening & Map
+                      <TabsTrigger value="rekening" className="text-xs font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-primary data-[state=active]:shadow-xs transition-all">
+                        <CreditCard className="w-3.5 h-3.5 mr-1 hidden sm:inline" /> Rekening
                       </TabsTrigger>
                     </TabsList>
 
                     {/* TAB 1: PRIBADI & IDENTITAS */}
-                    <TabsContent value="pribadi" className="space-y-4 pt-2">
+                    <TabsContent value="pribadi" className="space-y-3 pt-2">
                       {/* NIK & KK Cards with dedicated Copy Buttons */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl shadow-xs flex items-center justify-between gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-3 rounded-xl shadow-2xs flex items-center justify-between gap-2">
                           <div className="space-y-0.5 min-w-0">
-                            <p className="text-[10px] font-black uppercase text-slate-400">Nomor Induk Kependudukan (NIK)</p>
+                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">NIK</p>
                             <p className="font-mono text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-wider truncate">
                               {viewingActor.nik || "-"}
                             </p>
                           </div>
                           {viewingActor.nik && (
                             <Button 
-                              variant="ghost" 
+                              variant="outline" 
                               size="sm" 
                               onClick={() => handleCopyText(viewingActor.nik || '', 'NIK')} 
-                              className="h-8 px-2.5 rounded-lg text-slate-600 hover:text-primary hover:bg-slate-100 shrink-0 font-bold text-xs"
+                              className="h-7 px-2 rounded-lg text-slate-600 hover:text-primary hover:bg-white dark:hover:bg-slate-700 shrink-0 font-bold text-xs border-slate-200 dark:border-slate-700"
                             >
-                              <Copy className="w-3.5 h-3.5 mr-1" /> Salin
+                              <Copy className="w-3 h-3 mr-1" /> Salin
                             </Button>
                           )}
                         </div>
 
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 rounded-2xl shadow-xs flex items-center justify-between gap-2">
+                        <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-3 rounded-xl shadow-2xs flex items-center justify-between gap-2">
                           <div className="space-y-0.5 min-w-0">
-                            <p className="text-[10px] font-black uppercase text-slate-400">Nomor Kartu Keluarga (KK)</p>
+                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Nomor Kartu Keluarga (KK)</p>
                             <p className="font-mono text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-wider truncate">
                               {viewingActor.noKK || "-"}
                             </p>
                           </div>
                           {viewingActor.noKK && (
                             <Button 
-                              variant="ghost" 
+                              variant="outline" 
                               size="sm" 
                               onClick={() => handleCopyText(viewingActor.noKK || '', 'Nomor KK')} 
-                              className="h-8 px-2.5 rounded-lg text-slate-600 hover:text-primary hover:bg-slate-100 shrink-0 font-bold text-xs"
+                              className="h-7 px-2 rounded-lg text-slate-600 hover:text-primary hover:bg-white dark:hover:bg-slate-700 shrink-0 font-bold text-xs border-slate-200 dark:border-slate-700"
                             >
-                              <Copy className="w-3.5 h-3.5 mr-1" /> Salin
+                              <Copy className="w-3 h-3 mr-1" /> Salin
                             </Button>
                           )}
                         </div>
                       </div>
 
                       {/* Personal Info Grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                        <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800 p-3 rounded-2xl space-y-1">
-                          <span className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-1">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 p-2.5 rounded-xl space-y-0.5">
+                          <span className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1">
                             <Calendar className="w-3 h-3 text-slate-400" /> Tgl Lahir
                           </span>
                           <p className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200">
@@ -2078,20 +2202,20 @@ function ActorDataContent() {
                           </p>
                         </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800 p-3 rounded-2xl space-y-1">
-                          <span className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-1">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 p-2.5 rounded-xl space-y-0.5">
+                          <span className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1">
                             <User className="w-3 h-3 text-slate-400" /> Usia
                           </span>
                           <p className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200">
-                            {calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")) ? `${calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || ""))} Tahun` : "-"}
+                            {calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")) || "-"}
                           </p>
                           <p className="text-[10px] font-bold text-muted-foreground uppercase truncate">
                             {normalizeGender(viewingActor.gender) || "-"}
                           </p>
                         </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-800 p-3 rounded-2xl space-y-1 col-span-2 sm:col-span-2">
-                          <span className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-1">
+                        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 p-2.5 rounded-xl space-y-0.5 col-span-2">
+                          <span className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1">
                             <Phone className="w-3 h-3 text-slate-400" /> No. WhatsApp / HP
                           </span>
                           {viewingActor.phone ? (
@@ -2100,10 +2224,10 @@ function ActorDataContent() {
                                 href={`https://wa.me/${String(viewingActor.phone).replace(/\D/g, "").replace(/^0/, "62")}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 px-3 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800 transition-all active:scale-95"
+                                className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-all active:scale-95"
                                 title="Klik untuk membuka WhatsApp"
                               >
-                                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                                <MessageCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                                 <span>{viewingActor.phone}</span>
                               </a>
                               <button
@@ -2122,29 +2246,29 @@ function ActorDataContent() {
                       </div>
 
                       {/* Alamat & Domisili Card */}
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-xs space-y-3">
+                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-xl shadow-2xs space-y-2.5">
                         <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
                           <MapPin className="w-4 h-4 text-primary" /> Alamat & Domisili
                         </div>
                         
                         <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl">
+                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg">
                             <p className="text-[9px] font-black uppercase text-slate-400">Kecamatan</p>
                             <p className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase truncate">{viewingActor.kecamatan || "-"}</p>
                           </div>
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl">
+                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg">
                             <p className="text-[9px] font-black uppercase text-slate-400">Kelurahan</p>
                             <p className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase truncate">{viewingActor.kelurahan || "-"}</p>
                           </div>
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl">
+                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg">
                             <p className="text-[9px] font-black uppercase text-slate-400">RT / RW</p>
                             <p className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase truncate">{viewingActor.rtRw || "-"}</p>
                           </div>
                         </div>
 
-                        <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
+                        <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg">
                           <p className="text-[9px] font-black uppercase text-slate-400 mb-0.5">Alamat Lengkap</p>
-                          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase leading-relaxed">{viewingActor.address || "-"}</p>
+                          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase leading-relaxed break-words">{viewingActor.address || "-"}</p>
                         </div>
                       </div>
 
@@ -2161,9 +2285,9 @@ function ActorDataContent() {
                     </TabsContent>
 
                     {/* TAB 2: INFORMASI USAHA & SURVEY */}
-                    <TabsContent value="usaha" className="space-y-4 pt-2">
+                    <TabsContent value="usaha" className="space-y-3 pt-2">
                       {/* Detail Usaha Card */}
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-xs space-y-3">
+                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-xl shadow-2xs space-y-2.5">
                         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                           <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-900 dark:text-white">
                             <Store className="w-4 h-4 text-amber-500" /> Informasi Profil Usaha
@@ -2175,24 +2299,24 @@ function ActorDataContent() {
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl space-y-0.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg space-y-0.5">
                             <p className="text-[9px] font-black uppercase text-slate-400">Nama Usaha</p>
-                            <p className="text-sm font-black text-primary uppercase">{viewingActor.businessName || "-"}</p>
+                            <p className="text-xs sm:text-sm font-black text-primary uppercase break-words">{viewingActor.businessName || "-"}</p>
                           </div>
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl space-y-0.5">
+                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg space-y-0.5">
                             <p className="text-[9px] font-black uppercase text-slate-400">Kategori Bidang Usaha</p>
-                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase">{viewingActor.businessCategory || "-"}</p>
+                            <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 uppercase break-words">{viewingActor.businessCategory || "-"}</p>
                           </div>
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl space-y-0.5 sm:col-span-2">
+                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg space-y-0.5 sm:col-span-2">
                             <p className="text-[9px] font-black uppercase text-slate-400">Lokasi / Alamat Usaha</p>
-                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase">{viewingActor.businessLocation || viewingActor.address || "-"}</p>
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase break-words">{viewingActor.businessLocation || viewingActor.address || "-"}</p>
                           </div>
                         </div>
                       </div>
 
                       {/* Koordinator Usulan Card */}
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-xs space-y-3">
+                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-xl shadow-2xs space-y-2.5">
                         <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
                           <User className="w-4 h-4 text-indigo-500" /> Koordinator Usulan
                         </div>
@@ -2209,17 +2333,17 @@ function ActorDataContent() {
                           };
 
                           return (
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg">
                               <div className="space-y-0.5">
                                 <p className="text-[9px] font-black uppercase text-slate-400">Nama Koordinator</p>
-                                <p className="text-sm font-black text-slate-900 dark:text-white uppercase">{viewingActor.coordinator || "TANPA KOORDINATOR"}</p>
+                                <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase">{viewingActor.coordinator || "TANPA KOORDINATOR"}</p>
                               </div>
                               {coordPhone && (
                                 <a
                                   href={getWaLink(coordPhone)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800 transition-all active:scale-95 w-fit"
+                                  className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-all active:scale-95 w-fit"
                                 >
                                   <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
                                   <span>WA: {coordPhone}</span>
@@ -2231,7 +2355,7 @@ function ActorDataContent() {
                       </div>
 
                       {/* Penugasan Petugas Survey Card */}
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-xs space-y-3">
+                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-xl shadow-2xs space-y-2.5">
                         <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
                           <ClipboardCheck className="w-4 h-4 text-teal-600" /> Penugasan Petugas Survey Lapangan
                         </div>
@@ -2241,17 +2365,17 @@ function ActorDataContent() {
                           const isBelumAdaPetugas = canonicalPetugas === "BELUM ADA";
 
                           return (
-                            <div className="space-y-3 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl">
+                            <div className="space-y-2.5 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg">
                               <div className="flex items-center justify-between gap-2 flex-wrap">
                                 <div>
                                   <p className="text-[9px] font-black uppercase text-slate-400">Petugas Terhubung</p>
                                   {isBelumAdaPetugas ? (
-                                    <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900 mt-1">
+                                    <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-200 dark:border-rose-900 mt-1">
                                       <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
                                       <span>BELUM ADA PETUGAS</span>
                                     </div>
                                   ) : (
-                                    <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 mt-1">
+                                    <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 mt-1">
                                       <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                                       <span>{canonicalPetugas}</span>
                                     </div>
@@ -2264,7 +2388,7 @@ function ActorDataContent() {
                                     <select
                                       value={!isBelumAdaPetugas ? canonicalPetugas : "BELUM ADA"}
                                       onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value)}
-                                      className="text-xs font-bold h-8 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 shadow-xs text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[200px]"
+                                      className="text-xs font-bold h-8 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 shadow-2xs text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[190px]"
                                       title="Admin: Ganti Petugas Survey secara langsung"
                                     >
                                       <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
@@ -2289,42 +2413,42 @@ function ActorDataContent() {
                     </TabsContent>
 
                     {/* TAB 3: PERBANKAN, PETA & AUDIT */}
-                    <TabsContent value="rekening" className="space-y-4 pt-2">
-                      {/* ATM Card Visual */}
-                      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white p-5 shadow-xl border border-emerald-900/40">
-                        <div className="absolute -top-10 -right-10 w-36 h-36 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none" />
+                    <TabsContent value="rekening" className="space-y-3 pt-2">
+                      {/* ATM Card Visual - Responsive */}
+                      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white p-4 sm:p-5 shadow-lg border border-emerald-900/40">
+                        <div className="absolute -top-10 -right-10 w-36 h-36 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
                         
-                        <div className="relative z-10 space-y-4">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-black tracking-widest text-emerald-400 uppercase">REKENING BANK PENCAIRAN</span>
-                            <span className="text-[10px] font-mono font-bold bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
+                        <div className="relative z-10 space-y-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] sm:text-xs font-black tracking-widest text-emerald-400 uppercase">REKENING BANK PENCAIRAN</span>
+                            <span className="text-[10px] font-mono font-bold bg-white/10 px-2 py-0.5 rounded-full border border-white/15">
                               {viewingActor.bankName || "BELUM DIPILIH"}
                             </span>
                           </div>
 
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-black uppercase text-slate-400">Nomor Rekening</p>
+                          <div className="space-y-0.5">
+                            <p className="text-[9px] font-black uppercase text-slate-400">Nomor Rekening</p>
                             <div className="flex items-center gap-2">
-                              <p className="font-mono text-lg sm:text-xl font-black tracking-widest text-white">
+                              <p className="font-mono text-base sm:text-lg font-black tracking-wider text-white">
                                 {viewingActor.bankNumber || "•••• •••• ••••"}
                               </p>
                               {viewingActor.bankNumber && (
                                 <button
                                   type="button"
                                   onClick={() => handleCopyText(viewingActor.bankNumber || '', 'Nomor Rekening')}
-                                  className="text-white/60 hover:text-white p-1"
+                                  className="text-white/70 hover:text-white p-1"
                                   title="Salin Nomor Rekening"
                                 >
-                                  <Copy className="w-4 h-4" />
+                                  <Copy className="w-3.5 h-3.5" />
                                 </button>
                               )}
                             </div>
                           </div>
 
-                          <div className="flex items-end justify-between pt-2 border-t border-white/10">
-                            <div>
+                          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 pt-2 border-t border-white/10">
+                            <div className="min-w-0">
                               <p className="text-[9px] font-black uppercase text-slate-400">Pemilik Rekening</p>
-                              <p className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
+                              <p className="text-xs sm:text-sm font-black uppercase tracking-wider text-white truncate">
                                 {viewingActor.bankOwner || viewingActor.fullName || "-"}
                               </p>
                             </div>
@@ -2332,7 +2456,7 @@ function ActorDataContent() {
                             <Button
                               size="sm"
                               onClick={() => setEditingBankMode(true)}
-                              className="font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-3 rounded-xl text-xs shadow-sm"
+                              className="font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-3 rounded-lg text-xs shadow-xs shrink-0 self-start sm:self-auto"
                             >
                               <CreditCard className="w-3.5 h-3.5 mr-1.5" />
                               <span>{viewingActor.bankNumber ? "Ubah Rekening" : "Input Rekening"}</span>
@@ -2342,14 +2466,14 @@ function ActorDataContent() {
                       </div>
 
                       {/* Titik Lokasi Verifikasi Card */}
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-xs space-y-3">
+                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-xl shadow-2xs space-y-2.5">
                         <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
                           <Navigation className="w-4 h-4 text-blue-500" /> Data Titik Lokasi Verifikasi GPS
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           {(viewingActor as any).verificationLocation && (
-                            <div className="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-2xl border border-emerald-200 dark:border-emerald-800 space-y-1.5">
+                            <div className="bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 space-y-1">
                               <p className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase">Sumber: Verifikasi Admin</p>
                               <p className="text-xs font-mono text-emerald-900 dark:text-emerald-200 font-bold">
                                 {(viewingActor as any).verificationLocation.lat}, {(viewingActor as any).verificationLocation.lon}
@@ -2366,7 +2490,7 @@ function ActorDataContent() {
                           )}
 
                           {(viewingActor as any).verificationLocationDinas && (
-                            <div className="bg-indigo-50 dark:bg-indigo-950/40 p-3 rounded-2xl border border-indigo-200 dark:border-indigo-800 space-y-1.5">
+                            <div className="bg-indigo-50 dark:bg-indigo-950/40 p-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800 space-y-1">
                               <p className="text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase">Sumber: Verifikasi Dinas</p>
                               <p className="text-xs font-mono text-indigo-900 dark:text-indigo-200 font-bold">
                                 {(viewingActor as any).verificationLocationDinas.lat}, {(viewingActor as any).verificationLocationDinas.lon}
@@ -2383,11 +2507,11 @@ function ActorDataContent() {
                           )}
 
                           {(viewingActor as any).verificationBypass?.isBypassed && (
-                            <div className="bg-amber-50 dark:bg-amber-950/40 p-3 rounded-2xl border border-amber-200 dark:border-amber-800 space-y-1 sm:col-span-2">
+                            <div className="bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800 space-y-1 sm:col-span-2">
                               <p className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase">Verifikasi Admin (Bypass)</p>
                               <p className="text-xs text-amber-900 dark:text-amber-200 font-medium">Alasan: {(viewingActor as any).verificationBypass.reason}</p>
                               {(viewingActor as any).verificationBypass.fileBase64 && (
-                                <a href={(viewingActor as any).verificationBypass.fileBase64} target="_blank" rel="noreferrer" className="text-[10px] font-bold bg-amber-200 text-amber-800 px-3 py-1 rounded shadow-xs hover:bg-amber-300 transition-colors inline-block mt-1">
+                                <a href={(viewingActor as any).verificationBypass.fileBase64} target="_blank" rel="noreferrer" className="text-[10px] font-bold bg-amber-200 text-amber-800 px-2 py-0.5 rounded shadow-2xs hover:bg-amber-300 transition-colors inline-block mt-1">
                                   Lihat Bukti Lampiran
                                 </a>
                               )}
@@ -2395,8 +2519,8 @@ function ActorDataContent() {
                           )}
 
                           {!(viewingActor as any).verificationLocation && !(viewingActor as any).verificationLocationDinas && !(viewingActor as any).verificationBypass?.isBypassed && (
-                            <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800 col-span-full text-center">
-                              <p className="text-xs font-medium text-slate-500">Belum ada titik koordinat lokasi yang direkam.</p>
+                            <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl text-center sm:col-span-2">
+                              <p className="text-xs text-muted-foreground font-medium">Belum ada data koordinat GPS verifikasi</p>
                             </div>
                           )}
                         </div>
@@ -2404,31 +2528,25 @@ function ActorDataContent() {
 
                       {/* Google Drive Link Card */}
                       {viewingActor.googleDriveLink && (
-                        <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="space-y-0.5">
-                            <p className="text-xs font-black text-blue-900 dark:text-blue-200 uppercase flex items-center gap-1.5">
-                              <Folder className="w-4 h-4 text-blue-600" /> Folder Google Drive Berkas
-                            </p>
-                            <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">Foto, dokumen usulan, atau file lampiran pendukung</p>
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-xl shadow-2xs flex items-center justify-between gap-3">
+                          <div className="space-y-0.5 min-w-0">
+                            <p className="text-[9px] font-black uppercase text-slate-400">Berkas Pendukung</p>
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">Folder Google Drive</p>
                           </div>
                           <a 
                             href={viewingActor.googleDriveLink} 
                             target="_blank" 
                             rel="noreferrer" 
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-xs flex items-center justify-center gap-1.5 shrink-0"
+                            className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow-xs flex items-center gap-1.5 shrink-0"
                           >
-                            <span>Buka Folder Drive</span>
-                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Buka Drive</span>
+                            <ExternalLink className="w-3 h-3" />
                           </a>
                         </div>
                       )}
 
-                      {/* Audit & System Info Card */}
-                      <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 p-3.5 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                        <div>
-                          <p className="text-[9px] font-black uppercase text-slate-400">Status Alur Sistem</p>
-                          <p className="capitalize font-black text-primary">{(viewingActor.status || "").replace('_', ' ')}</p>
-                        </div>
+                      {/* Audit & System Info */}
+                      <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs">
                         <div>
                           <p className="text-[9px] font-black uppercase text-slate-400">Petugas Input</p>
                           <p className="font-bold text-slate-800 dark:text-slate-200">{viewingActor.createdBy || "System"}</p>
