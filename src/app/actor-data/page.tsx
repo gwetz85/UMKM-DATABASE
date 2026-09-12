@@ -59,9 +59,23 @@ function ActorDataContent() {
   const [searchInput, setSearchInput] = useState(searchParams.get('search') || "")
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || "")
   const viewId = searchParams.get('viewId')
+  const [localIndex, setLocalIndex] = useState<BusinessActor[] | null>(null)
+
+  // Pre-fetch lightweight search index (590KB) in background for instant 0ms mobile search
+  useEffect(() => {
+    if (!database) return
+    get(ref(database, 'settings/actors_search')).then(snap => {
+      if (snap.exists()) {
+        const val = snap.val()
+        if (val) {
+          setLocalIndex(Object.values(val) as BusinessActor[])
+        }
+      }
+    }).catch(() => {})
+  }, [database])
 
   useEffect(() => {
-    const t = setTimeout(() => setSearchQuery(searchInput), 300)
+    const t = setTimeout(() => setSearchQuery(searchInput), 100)
     return () => clearTimeout(t)
   }, [searchInput])
 
@@ -96,10 +110,10 @@ function ActorDataContent() {
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
 
-  // High-speed server-side search across all actors (without downloading 200MB+ of raw data to browser)
+  // High-speed fallback search across all actors (if local index is still loading)
   useEffect(() => {
-    if (!isSearching || filterCoordinator) {
-      setSearchResults(null)
+    if (!isSearching || localIndex) {
+      if (!isSearching) setSearchResults(null)
       setIsSearchLoading(false)
       return
     }
@@ -107,7 +121,8 @@ function ActorDataContent() {
     const controller = new AbortController()
     setIsSearchLoading(true)
 
-    fetch(`/api/actors/search?q=${encodeURIComponent(searchQuery)}`, {
+    const coordParam = filterCoordinator ? `&coordinator=${encodeURIComponent(filterCoordinator)}` : ''
+    fetch(`/api/actors/search?q=${encodeURIComponent(searchQuery)}${coordParam}`, {
       signal: controller.signal
     })
       .then(res => res.json())
@@ -129,7 +144,7 @@ function ActorDataContent() {
       })
 
     return () => controller.abort()
-  }, [searchQuery, isSearching, filterCoordinator])
+  }, [searchQuery, isSearching, filterCoordinator, localIndex])
 
   const memoQuery = useMemoFirebase(() => {
     if (!database || isProfileLoading) return null
@@ -257,20 +272,39 @@ function ActorDataContent() {
   const [selectedExportSheets, setSelectedExportSheets] = useState<string[]>([])
 
   const filteredActors = useMemo(() => {
-    // If we have API search results (global search without filterCoordinator), use them directly!
-    if (isSearching && !filterCoordinator && searchResults !== null) {
-      return searchResults;
+    if (isSearching) {
+      // Prioritize localIndex for 0ms instant search, then searchResults, then actors
+      const sourceList = localIndex || searchResults || actors || [];
+      const lowerQuery = searchQuery.toLowerCase();
+      const cleanDigits = searchQuery.replace(/[^0-9]/g, '');
+
+      return sourceList.filter(a => {
+        if (filterCoordinator && String(a.coordinator || '').toUpperCase().trim() !== String(filterCoordinator).toUpperCase().trim()) {
+          return false;
+        }
+        const fullName = (a.fullName || "").toLowerCase();
+        const businessName = (a.businessName || "").toLowerCase();
+        const address = (a.address || "").toLowerCase();
+        const coord = (a.coordinator || "").toLowerCase();
+        const nik = String(a.nik || "");
+        const noKK = String(a.noKK || "");
+        const phone = String(a.phone || "").replace(/[^0-9]/g, "");
+
+        return (
+          fullName.includes(lowerQuery) ||
+          businessName.includes(lowerQuery) ||
+          address.includes(lowerQuery) ||
+          coord.includes(lowerQuery) ||
+          (nik && nik.includes(searchQuery)) ||
+          (noKK && noKK.includes(searchQuery)) ||
+          (cleanDigits.length >= 3 && phone.includes(cleanDigits))
+        );
+      }).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
     }
 
     if (!actors) return undefined;
-    const lowerQuery = searchQuery.toLowerCase();
-    return actors.filter(a => 
-      (a.fullName || "").toLowerCase().includes(lowerQuery) ||
-      (a.nik || "").includes(searchQuery) ||
-      (a.businessName || "").toLowerCase().includes(lowerQuery) ||
-      (a.address || "").toLowerCase().includes(lowerQuery)
-    ).sort((a, b) => (a.fullName || "").localeCompare(b.fullName || ""));
-  }, [actors, searchQuery, isSearching, filterCoordinator, searchResults]);
+    return actors;
+  }, [actors, searchQuery, isSearching, filterCoordinator, searchResults, localIndex]);
 
   const hasAutoOpened = useRef(false)
 
@@ -1038,7 +1072,7 @@ function ActorDataContent() {
 
 
       <div className="bg-transparent print:bg-transparent">
-        {(isSearching && !filterCoordinator ? isSearchLoading : isLoading) ? (
+        {(isSearching && !localIndex ? isSearchLoading : isLoading) ? (
           <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <Skeleton key={i} className="h-12 w-full rounded-lg" />

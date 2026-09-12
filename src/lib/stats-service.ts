@@ -165,6 +165,8 @@ export async function updateStatsOnNewActor(database: Database, actorData: any) 
     currentStats.lastUpdated = new Date().toISOString();
     return currentStats;
   });
+
+  syncActorToSearchIndex(database, actorData).catch(() => {});
 }
 
 export async function updateStatsOnStatusChange(
@@ -174,18 +176,17 @@ export async function updateStatsOnStatusChange(
   actorData?: any
 ) {
   const statsRef = ref(database, 'system_stats');
+  const baseActor = actorData || {};
+  const oldObj = typeof oldStatusOrData === 'object' 
+    ? { ...baseActor, ...oldStatusOrData } 
+    : { ...baseActor, status: oldStatusOrData };
+  const newObj = typeof newStatusOrData === 'object' 
+    ? { ...baseActor, ...newStatusOrData } 
+    : { ...baseActor, status: newStatusOrData };
+  const mergedActor = { ...oldObj, ...newObj };
   
   await runTransaction(statsRef, (rawStats: SystemStats | null) => {
     const currentStats = ensureStatsStructure(rawStats);
-
-    const baseActor = actorData || {};
-    const oldObj = typeof oldStatusOrData === 'object' 
-      ? { ...baseActor, ...oldStatusOrData } 
-      : { ...baseActor, status: oldStatusOrData };
-    const newObj = typeof newStatusOrData === 'object' 
-      ? { ...baseActor, ...newStatusOrData } 
-      : { ...baseActor, status: newStatusOrData };
-    const mergedActor = { ...oldObj, ...newObj };
 
     const oldCat = getCategory(oldObj);
     const newCat = getCategory(newObj);
@@ -270,6 +271,8 @@ export async function updateStatsOnStatusChange(
     currentStats.lastUpdated = new Date().toISOString();
     return currentStats;
   });
+
+  syncActorToSearchIndex(database, mergedActor).catch(() => {});
 }
 
 export async function updateStatsOnEdit(database: Database, oldData: any, newData: any) {
@@ -384,6 +387,8 @@ export async function updateStatsOnEdit(database: Database, oldData: any, newDat
     currentStats.lastUpdated = new Date().toISOString();
     return currentStats;
   });
+
+  syncActorToSearchIndex(database, { ...oldData, ...newData }).catch(() => {});
 }
 
 export async function updateStatsOnDelete(database: Database, actorData: any) {
@@ -436,6 +441,8 @@ export async function updateStatsOnDelete(database: Database, actorData: any) {
     currentStats.lastUpdated = new Date().toISOString();
     return currentStats;
   });
+
+  syncActorToSearchIndex(database, { ...actorData, status: 'deleted' }).catch(() => {});
 }
 
 export async function recalculateAndSaveSystemStats(database: Database) {
@@ -499,5 +506,55 @@ export async function recalculateAndSaveSystemStats(database: Database) {
 
   await set(ref(database, 'system_stats'), stats);
   return stats;
+}
+
+export async function syncActorToSearchIndex(database: Database, actorData: any) {
+  try {
+    if (!actorData || !actorData.id) return;
+    const { ref, set } = await import("firebase/database");
+    const s = (actorData.status || '').toLowerCase();
+    const isActorCancelDinas = isCancelDinas(actorData);
+    const searchActorRef = ref(database, `settings/actors_search/${actorData.id}`);
+
+    if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isActorCancelDinas) {
+      // Remove from search index if not eligible
+      await set(searchActorRef, null);
+      return;
+    }
+
+    const cleanItem = {
+      id: actorData.id,
+      fullName: actorData.fullName || '',
+      businessName: actorData.businessName || '',
+      address: actorData.address || '',
+      businessLocation: actorData.businessLocation || '',
+      coordinator: actorData.coordinator || '',
+      nik: actorData.nik || '',
+      noKK: actorData.noKK || '',
+      phone: actorData.phone || '',
+      status: actorData.status || '',
+      businessCategory: actorData.businessCategory || '',
+      petugasSurvey: actorData.petugasSurvey || (actorData.surveyData?.pejabatData?.petugas?.nama) || '',
+      verifikatorDinas: actorData.verifikatorDinas || '',
+      hasilVerifikasiDinas: actorData.hasilVerifikasiDinas || '',
+      alasanCancelDinas: actorData.alasanCancelDinas || '',
+      registrationCode: actorData.registrationCode || '',
+      gender: actorData.gender || '',
+      pobDob: actorData.pobDob || '',
+      dob: actorData.dob || '',
+      bankNumber: actorData.bankNumber || '',
+      bankOwner: actorData.bankOwner || '',
+      bankName: actorData.bankName || '',
+      berkasDinasVerified: Boolean(actorData.berkasDinasVerified),
+      readyForLPJ: Boolean(actorData.readyForLPJ),
+      lpjNominal: actorData.lpjNominal || '',
+      createdAt: actorData.createdAt || '',
+      ...(actorData.surveyData ? { surveyData: { hasSurvey: true, tanggalSurvey: actorData.surveyData.tanggalSurvey || '' } } : {})
+    };
+
+    await set(searchActorRef, cleanItem);
+  } catch (err) {
+    console.error('Error syncing actor to search index:', err);
+  }
 }
 

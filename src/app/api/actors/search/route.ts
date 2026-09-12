@@ -15,7 +15,7 @@ interface CacheItem {
   actors: any[];
 }
 let cachedActors: CacheItem | null = null;
-const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes in-memory cache
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes in-memory cache
 
 async function ensureAuth() {
   if (!auth.currentUser) {
@@ -31,13 +31,27 @@ async function getLightweightActors(): Promise<any[]> {
 
   await ensureAuth();
 
-  const snap = await get(ref(database, 'businessActors')).catch(() => null);
+  // 1. First priority: Read from pre-indexed settings/actors_search (takes ~60-100ms)
+  let snap = await get(ref(database, 'settings/actors_search')).catch(() => null);
+  if (snap && snap.exists()) {
+    const rawVal = snap.val() || {};
+    const list = Object.values(rawVal) as any[];
+    cachedActors = {
+      timestamp: now,
+      actors: list,
+    };
+    return list;
+  }
+
+  // 2. Fallback: If settings/actors_search not populated yet, build from raw businessActors
+  snap = await get(ref(database, 'businessActors')).catch(() => null);
   if (!snap || !snap.exists()) {
     return [];
   }
 
   const rawVal = snap.val();
   const list: any[] = [];
+  const searchIndexMap: Record<string, any> = {};
 
   for (const [id, a] of Object.entries(rawVal as Record<string, any>)) {
     if (!a) continue;
@@ -55,25 +69,47 @@ async function getLightweightActors(): Promise<any[]> {
       continue;
     }
 
-    // Strip heavy base64 strings (like fotoSurveyUrl) to keep memory & network feather-light
-    const { surveyData, ktpUri, kkUri, nibUri, suratPernyataanUri, ...rest } = a;
-
-    let lightSurvey = undefined;
-    if (surveyData) {
-      const { fotoSurveyUrl, ...surveyRest } = surveyData;
-      lightSurvey = surveyRest;
-    }
-
-    list.push({
-      ...rest,
+    const item = {
       id,
-      surveyData: lightSurvey,
-      // If URIs are short URLs (not base64 data URIs), preserve them
-      ktpUri: typeof ktpUri === 'string' && !ktpUri.startsWith('data:') ? ktpUri : undefined,
-      kkUri: typeof kkUri === 'string' && !kkUri.startsWith('data:') ? kkUri : undefined,
-      nibUri: typeof nibUri === 'string' && !nibUri.startsWith('data:') ? nibUri : undefined,
-    });
+      fullName: a.fullName || '',
+      businessName: a.businessName || '',
+      address: a.address || '',
+      businessLocation: a.businessLocation || '',
+      coordinator: a.coordinator || '',
+      nik: a.nik || '',
+      noKK: a.noKK || '',
+      phone: a.phone || '',
+      status: a.status || '',
+      businessCategory: a.businessCategory || '',
+      petugasSurvey: a.petugasSurvey || (a.surveyData?.pejabatData?.petugas?.nama) || '',
+      verifikatorDinas: a.verifikatorDinas || '',
+      hasilVerifikasiDinas: a.hasilVerifikasiDinas || '',
+      alasanCancelDinas: a.alasanCancelDinas || '',
+      registrationCode: a.registrationCode || '',
+      gender: a.gender || '',
+      pobDob: a.pobDob || '',
+      dob: a.dob || '',
+      bankNumber: a.bankNumber || '',
+      bankOwner: a.bankOwner || '',
+      bankName: a.bankName || '',
+      berkasDinasVerified: Boolean(a.berkasDinasVerified),
+      readyForLPJ: Boolean(a.readyForLPJ),
+      lpjNominal: a.lpjNominal || '',
+      createdAt: a.createdAt || '',
+      ...(a.surveyData ? { surveyData: { hasSurvey: true, tanggalSurvey: a.surveyData.tanggalSurvey || '' } } : {}),
+      ktpUri: typeof a.ktpUri === 'string' && !a.ktpUri.startsWith('data:') ? a.ktpUri : undefined,
+      kkUri: typeof a.kkUri === 'string' && !a.kkUri.startsWith('data:') ? a.kkUri : undefined,
+      nibUri: typeof a.nibUri === 'string' && !a.nibUri.startsWith('data:') ? a.nibUri : undefined,
+    };
+
+    list.push(item);
+    searchIndexMap[id] = item;
   }
+
+  // Self-heal settings/actors_search asynchronously
+  import('firebase/database').then(({ set }) => {
+    set(ref(database, 'settings/actors_search'), JSON.parse(JSON.stringify(searchIndexMap))).catch(() => {});
+  });
 
   cachedActors = {
     timestamp: now,
@@ -88,12 +124,25 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const query = (searchParams.get('q') || '').trim();
     const coordinator = (searchParams.get('coordinator') || '').trim().toUpperCase();
+    const isAll = searchParams.get('all') === 'true';
+
+    const actors = await getLightweightActors();
+
+    // If client requested full lightweight index for instant local searching
+    if (isAll) {
+      const results = coordinator
+        ? actors.filter(item => String(item.coordinator || '').toUpperCase().trim() === coordinator)
+        : actors;
+      return NextResponse.json({
+        success: true,
+        count: results.length,
+        results,
+      });
+    }
 
     if (!query) {
       return NextResponse.json({ success: true, count: 0, results: [] });
     }
-
-    const actors = await getLightweightActors();
 
     const lowerQuery = query.toLowerCase();
     const cleanDigits = query.replace(/[^0-9]/g, '');
