@@ -1611,26 +1611,98 @@ function ActorDataContent() {
           setEditingDriveMode(false)
         }
       }}>
-        <DialogContent className="w-[96vw] max-w-3xl max-h-[92vh] p-3.5 sm:p-6 overflow-y-auto overflow-x-hidden">
+        <DialogContent className="w-[96vw] max-w-4xl max-h-[90vh] p-4 sm:p-6 overflow-y-auto">
           {viewingActor && !editingBankMode && !editingDriveMode && (
             <div className="flex flex-col gap-2 relative">
-              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800 pr-8">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <User className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <DialogTitle className="text-base sm:text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                      {isEditMode ? "Edit Data Pelaku Usaha" : "Detail Pelaku Usaha"}
-                    </DialogTitle>
-                    <p className="text-[10px] sm:text-[11px] text-muted-foreground font-medium">Informasi data registrasi dan hasil verifikasi</p>
-                  </div>
+              <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b gap-4">
+                <div>
+                  <DialogTitle className="text-xl md:text-2xl font-black text-primary uppercase">
+                    {isEditMode ? "Edit Data Pelaku Usaha" : "Detail Pelaku Usaha"}
+                  </DialogTitle>
+                  <p className="text-xs text-muted-foreground font-medium mt-0.5">Informasi data registrasi dan hasil verifikasi</p>
                 </div>
-                {isEditMode && (
-                  <Button variant="outline" size="sm" onClick={() => setIsEditMode(false)} className="text-xs font-bold border-amber-500 text-amber-600 hover:bg-amber-50 rounded-lg">
-                    Batal Edit
-                  </Button>
-                )}
+                <div className="flex flex-wrap gap-2 items-center">
+                  {!isEditMode && viewingActor && !isKoordinator && !isInspektorat && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => handlePrintForm(viewingActor)}
+                      className="font-bold bg-primary hover:bg-primary/90 text-white shadow-xs"
+                    >
+                      <Printer className="w-4 h-4 mr-1.5" /> Cetak Formulir
+                    </Button>
+                  )}
+                  {!isEditMode && isAdmin && viewingActor && (viewingActor as any).surveyData && (
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        if (database && viewingActor?.id && !(viewingActor as any).surveyData?.fotoSurveyUrl) {
+                          get(ref(database, `businessActors/${viewingActor.id}`)).then(snap => {
+                            if (snap.exists()) {
+                              const full = { ...snap.val(), id: snap.key } as BusinessActor;
+                              setViewingActor(full);
+                              setSurveyViewActor(full);
+                            } else {
+                              setSurveyViewActor(viewingActor);
+                            }
+                          }).catch(() => setSurveyViewActor(viewingActor));
+                        } else {
+                          setSurveyViewActor(viewingActor);
+                        }
+                      }}
+                      className="font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs"
+                    >
+                      <ClipboardList className="w-4 h-4 mr-1.5" /> Lihat Form Survey
+                    </Button>
+                  )}
+                  {!isAdmin && !isMonitoring && !isKoordinator && !isEditMode && viewingActor.status === 'verified_actor' && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => setEditingBankMode(true)}
+                      className="font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-xs"
+                    >
+                      <CreditCard className="w-4 h-4 mr-1.5" /> Input Rekening
+                    </Button>
+                  )}
+                  {isAdmin && !isEditMode && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => setEditingDriveMode(true)}
+                      className="font-bold bg-blue-500 hover:bg-blue-600 text-white shadow-xs"
+                    >
+                      <Folder className="w-4 h-4 mr-1.5" /> Link Drive
+                    </Button>
+                  )}
+                  {isAdmin && !isEditMode && viewingActor && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => handleSingleLanjutDinas(viewingActor)}
+                      className="font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-xs"
+                      title="Push Data Susulan ke Verifikasi Dinas"
+                    >
+                      <Send className="w-4 h-4 mr-1.5" /> Lanjut Dinas (Susulan)
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button 
+                      variant={isEditMode ? "outline" : "default"} 
+                      size="sm" 
+                      onClick={() => setIsEditMode(!isEditMode)}
+                      className={cn("font-bold shadow-xs", isEditMode ? "border-amber-500 text-amber-600" : "bg-primary")}
+                    >
+                      {isEditMode ? "Batal Edit" : <><Edit3 className="w-4 h-4 mr-1.5"/> Edit Semua Data</>}
+                    </Button>
+                  )}
+                  {isAdmin && !isEditMode && (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 font-bold shadow-xs" title="Kembalikan ke antrean awal (Pending)">
+                        <RotateCcw className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Revert</span>
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="font-bold shadow-xs" title="Hapus Permanen">
+                        <Trash2 className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Delete</span>
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
 
               {isEditMode ? (
@@ -1811,469 +1883,68 @@ function ActorDataContent() {
                   </div>
                 </form>
               ) : (
-                <div className="flex flex-col gap-3 py-1">
-                  {/* Hero Profile Banner - Clean, Light & 100% Responsive */}
-                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/50 dark:from-slate-900 dark:via-slate-850 dark:to-indigo-950/40 p-3 sm:p-4 border border-blue-100/80 dark:border-slate-800 shadow-2xs">
-                    <div className="flex items-start gap-3 w-full">
-                      {/* Avatar initials with gender accent */}
-                      <div className={cn(
-                        "w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-black text-base sm:text-lg shrink-0 shadow-2xs border",
-                        normalizeGender(viewingActor.gender) === 'Perempuan'
-                          ? "bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-900"
-                          : "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-900"
-                      )}>
-                        {viewingActor.fullName
-                          ? viewingActor.fullName.split(" ").slice(0, 2).map(n => n[0]).join("").toUpperCase()
-                          : <User className="w-5 h-5" />}
+                <div className="grid gap-6 py-4">
+                  {/* 1. INFORMASI PRIBADI */}
+                  <section className="space-y-4">
+                    <div className="flex items-center justify-between border-b pb-1">
+                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
+                        <User className="w-4 h-4" /> Informasi Pribadi
                       </div>
-
-                      <div className="space-y-1 w-full min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h2 className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-900 dark:text-white break-words leading-snug">
-                            {viewingActor.fullName}
-                          </h2>
-                          {normalizeGender(viewingActor.gender) && (
-                            <span className={cn(
-                              "text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0",
-                              normalizeGender(viewingActor.gender) === 'Perempuan' 
-                                ? "bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300" 
-                                : "bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300"
-                            )}>
-                              {normalizeGender(viewingActor.gender)}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Dedicated line for business name with proper word break */}
-                        <div className="flex items-start gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-400">
-                          <Store className="w-3.5 h-3.5 shrink-0 text-amber-500 mt-0.5" />
-                          <span className="uppercase break-words leading-snug">{viewingActor.businessName || "NAMA USAHA KOSONG"}</span>
-                        </div>
-
-                        {/* Badges Pill Row */}
-                        <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                          <button
-                            type="button"
-                            onClick={() => handleCopyText(viewingActor.registrationCode || '', 'Reg ID')}
-                            className="inline-flex items-center gap-1 text-[10px] font-mono font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 shadow-2xs hover:bg-slate-50 transition-all active:scale-95"
-                            title="Klik untuk salin Reg ID"
-                          >
-                            <span>REG: {viewingActor.registrationCode || 'PROSES'}</span>
-                            <Copy className="w-2.5 h-2.5 text-slate-400" />
-                          </button>
-
-                          {viewingActor.businessCategory && (
-                            <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-md">
-                              {viewingActor.businessCategory}
-                            </span>
-                          )}
-
-                          {viewingActor.coordinator && (
-                            <span className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 px-2 py-0.5 rounded-md">
-                              Usulan: {viewingActor.coordinator}
-                            </span>
-                          )}
-
-                          <VerificationBadge actor={viewingActor} />
-                        </div>
+                      <div className="flex items-center gap-1.5">
+                        <VerificationBadge actor={viewingActor} />
                       </div>
                     </div>
-                  </div>
-
-                  {/* Clean Action Toolbar - Non-overflowing with Responsive 2-Col Grid on Mobile */}
-                  <div className="bg-slate-50 dark:bg-slate-900/60 p-2 rounded-xl border border-slate-200/80 dark:border-slate-800">
-                    {/* Mobile Grid Layout (2 cols) */}
-                    <div className="grid grid-cols-2 gap-1.5 sm:hidden">
-                      {!isKoordinator && !isInspektorat && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => handlePrintForm(viewingActor)}
-                          className="font-bold bg-primary hover:bg-primary/90 text-white h-9 rounded-lg text-xs w-full shadow-2xs"
-                        >
-                          <Printer className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                          <span className="truncate">Cetak Form</span>
-                        </Button>
-                      )}
-
-                      {isAdmin && (viewingActor as any).surveyData && (
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            if (database && viewingActor?.id && !(viewingActor as any).surveyData?.fotoSurveyUrl) {
-                              get(ref(database, `businessActors/${viewingActor.id}`)).then(snap => {
-                                if (snap.exists()) {
-                                  const full = { ...snap.val(), id: snap.key } as BusinessActor;
-                                  setViewingActor(full);
-                                  setSurveyViewActor(full);
-                                } else {
-                                  setSurveyViewActor(viewingActor);
-                                }
-                              }).catch(() => setSurveyViewActor(viewingActor));
-                            } else {
-                              setSurveyViewActor(viewingActor);
-                            }
-                          }}
-                          className="font-bold bg-teal-600 hover:bg-teal-700 text-white h-9 rounded-lg text-xs w-full shadow-2xs"
-                        >
-                          <ClipboardList className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                          <span className="truncate">Form Survey</span>
-                        </Button>
-                      )}
-
-                      {isAdmin && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => setIsEditMode(true)}
-                          className="font-bold h-9 rounded-lg text-xs border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 w-full shadow-2xs"
-                        >
-                          <Edit3 className="w-3.5 h-3.5 mr-1.5 text-primary shrink-0" />
-                          <span className="truncate">Edit Data</span>
-                        </Button>
-                      )}
-
-                      {!isAdmin && !isMonitoring && !isKoordinator && viewingActor.status === 'verified_actor' && (
-                        <Button 
-                          size="sm" 
-                          onClick={() => setEditingBankMode(true)}
-                          className="font-bold bg-amber-500 hover:bg-amber-600 text-white h-9 rounded-lg text-xs w-full"
-                        >
-                          <CreditCard className="w-3.5 h-3.5 mr-1.5 shrink-0" />
-                          <span className="truncate">Input Rekening</span>
-                        </Button>
-                      )}
-
-                      {isAdmin && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="font-bold h-9 rounded-lg text-xs border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 flex items-center justify-center gap-1 w-full shadow-2xs"
-                            >
-                              <MoreVertical className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300 shrink-0" />
-                              <span className="truncate">Opsi Lain</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-56 p-1.5 rounded-xl shadow-xl border-slate-200 dark:border-slate-800">
-                            <DropdownMenuLabel className="text-[10px] font-black uppercase text-muted-foreground px-2 py-1">
-                              Aksi Pelaku Usaha
-                            </DropdownMenuLabel>
-                            
-                            <DropdownMenuItem 
-                              onClick={() => handleSingleLanjutDinas(viewingActor)}
-                              className="font-bold text-xs rounded-lg py-2 cursor-pointer text-purple-700 dark:text-purple-400 focus:bg-purple-50 dark:focus:bg-purple-950/40"
-                            >
-                              <Send className="w-4 h-4 mr-2 text-purple-600 shrink-0" />
-                              <span>Lanjut Dinas (Susulan)</span>
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem 
-                              onClick={() => setEditingBankMode(true)}
-                              className="font-bold text-xs rounded-lg py-2 cursor-pointer text-amber-700 dark:text-amber-400 focus:bg-amber-50 dark:focus:bg-amber-950/40"
-                            >
-                              <CreditCard className="w-4 h-4 mr-2 text-amber-500 shrink-0" />
-                              <span>Input / Ubah Rekening</span>
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem 
-                              onClick={() => setEditingDriveMode(true)}
-                              className="font-bold text-xs rounded-lg py-2 cursor-pointer text-blue-700 dark:text-blue-400 focus:bg-blue-50 dark:focus:bg-blue-950/40"
-                            >
-                              <Folder className="w-4 h-4 mr-2 text-blue-500 shrink-0" />
-                              <span>Link Google Drive</span>
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator />
-
-                            <DropdownMenuItem 
-                              onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)}
-                              className="font-bold text-xs rounded-lg py-2 cursor-pointer text-amber-600 focus:bg-amber-50 dark:focus:bg-amber-950/40"
-                            >
-                              <RotateCcw className="w-4 h-4 mr-2 text-amber-500 shrink-0" />
-                              <span>Kembalikan ke Antrean</span>
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem 
-                              onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)}
-                              className="font-bold text-xs rounded-lg py-2 cursor-pointer text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-950/40"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2 text-rose-500 shrink-0" />
-                              <span>Hapus Permanen</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </div>
-
-                    {/* Desktop Toolbar Layout (Single Row) */}
-                    <div className="hidden sm:flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        {!isKoordinator && !isInspektorat && (
-                          <Button 
-                            size="sm" 
-                            onClick={() => handlePrintForm(viewingActor)}
-                            className="font-bold bg-primary hover:bg-primary/90 text-white h-9 rounded-xl text-xs shadow-xs"
-                          >
-                            <Printer className="w-3.5 h-3.5 mr-1.5" /> Cetak Formulir
-                          </Button>
-                        )}
-
-                        {isAdmin && (viewingActor as any).surveyData && (
-                          <Button
-                            size="sm"
-                            onClick={() => {
-                              if (database && viewingActor?.id && !(viewingActor as any).surveyData?.fotoSurveyUrl) {
-                                get(ref(database, `businessActors/${viewingActor.id}`)).then(snap => {
-                                  if (snap.exists()) {
-                                    const full = { ...snap.val(), id: snap.key } as BusinessActor;
-                                    setViewingActor(full);
-                                    setSurveyViewActor(full);
-                                  } else {
-                                    setSurveyViewActor(viewingActor);
-                                  }
-                                }).catch(() => setSurveyViewActor(viewingActor));
-                              } else {
-                                setSurveyViewActor(viewingActor);
-                              }
-                            }}
-                            className="font-bold bg-teal-600 hover:bg-teal-700 text-white h-9 rounded-xl text-xs shadow-xs"
-                          >
-                            <ClipboardList className="w-3.5 h-3.5 mr-1.5" /> Form Survey
-                          </Button>
-                        )}
-
-                        {isAdmin && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => setIsEditMode(true)}
-                            className="font-bold h-9 rounded-xl text-xs border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 shadow-xs"
-                          >
-                            <Edit3 className="w-3.5 h-3.5 mr-1.5 text-primary" /> Edit Data
-                          </Button>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1.5 ml-auto">
-                        {!isAdmin && !isMonitoring && !isKoordinator && viewingActor.status === 'verified_actor' && (
-                          <Button 
-                            size="sm" 
-                            onClick={() => setEditingBankMode(true)}
-                            className="font-bold bg-amber-500 hover:bg-amber-600 text-white h-9 rounded-xl text-xs"
-                          >
-                            <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Input Rekening
-                          </Button>
-                        )}
-
-                        {isAdmin && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="font-bold h-9 rounded-xl text-xs border-slate-300 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 flex items-center gap-1.5 shadow-xs"
-                              >
-                                <MoreVertical className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-                                <span>Opsi Lainnya</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56 p-1.5 rounded-2xl shadow-xl border-slate-200 dark:border-slate-800">
-                              <DropdownMenuLabel className="text-[10px] font-black uppercase text-muted-foreground px-2 py-1">
-                                Aksi Pelaku Usaha
-                              </DropdownMenuLabel>
-                              
-                              <DropdownMenuItem 
-                                onClick={() => handleSingleLanjutDinas(viewingActor)}
-                                className="font-bold text-xs rounded-xl py-2 cursor-pointer text-purple-700 dark:text-purple-400 focus:bg-purple-50 dark:focus:bg-purple-950/40"
-                              >
-                                <Send className="w-4 h-4 mr-2 text-purple-600" />
-                                <span>Lanjut Dinas (Susulan)</span>
-                              </DropdownMenuItem>
-
-                              <DropdownMenuItem 
-                                onClick={() => setEditingBankMode(true)}
-                                className="font-bold text-xs rounded-xl py-2 cursor-pointer text-amber-700 dark:text-amber-400 focus:bg-amber-50 dark:focus:bg-amber-950/40"
-                              >
-                                <CreditCard className="w-4 h-4 mr-2 text-amber-500" />
-                                <span>Input / Ubah Rekening</span>
-                              </DropdownMenuItem>
-
-                              <DropdownMenuItem 
-                                onClick={() => setEditingDriveMode(true)}
-                                className="font-bold text-xs rounded-xl py-2 cursor-pointer text-blue-700 dark:text-blue-400 focus:bg-blue-50 dark:focus:bg-blue-950/40"
-                              >
-                                <Folder className="w-4 h-4 mr-2 text-blue-500" />
-                                <span>Link Google Drive</span>
-                              </DropdownMenuItem>
-
-                              <DropdownMenuSeparator />
-
-                              <DropdownMenuItem 
-                                onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)}
-                                className="font-bold text-xs rounded-xl py-2 cursor-pointer text-amber-600 focus:bg-amber-50 dark:focus:bg-amber-950/40"
-                              >
-                                <RotateCcw className="w-4 h-4 mr-2 text-amber-500" />
-                                <span>Kembalikan ke Antrean</span>
-                              </DropdownMenuItem>
-
-                              <DropdownMenuItem 
-                                onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)}
-                                className="font-bold text-xs rounded-xl py-2 cursor-pointer text-rose-600 focus:bg-rose-50 dark:focus:bg-rose-950/40"
-                              >
-                                <Trash2 className="w-4 h-4 mr-2 text-rose-500" />
-                                <span>Hapus Permanen</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Tabs Organization - Fits cleanly on mobile screens */}
-                  <Tabs defaultValue="pribadi" className="w-full">
-                    <TabsList className="grid grid-cols-3 h-10 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl w-full border border-slate-200/60 dark:border-slate-700/60">
-                      <TabsTrigger value="pribadi" className="text-xs font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-primary data-[state=active]:shadow-xs transition-all">
-                        <User className="w-3.5 h-3.5 mr-1 hidden sm:inline" /> Pribadi
-                      </TabsTrigger>
-                      <TabsTrigger value="usaha" className="text-xs font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-primary data-[state=active]:shadow-xs transition-all">
-                        <Store className="w-3.5 h-3.5 mr-1 hidden sm:inline" /> Usaha
-                      </TabsTrigger>
-                      <TabsTrigger value="rekening" className="text-xs font-bold rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:text-primary data-[state=active]:shadow-xs transition-all">
-                        <CreditCard className="w-3.5 h-3.5 mr-1 hidden sm:inline" /> Rekening
-                      </TabsTrigger>
-                    </TabsList>
-
-                    {/* TAB 1: PRIBADI & IDENTITAS */}
-                    <TabsContent value="pribadi" className="space-y-3 pt-2">
-                      {/* NIK & KK Cards with dedicated Copy Buttons */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-3 rounded-xl shadow-2xs flex items-center justify-between gap-2">
-                          <div className="space-y-0.5 min-w-0">
-                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">NIK</p>
-                            <p className="font-mono text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-wider truncate">
-                              {viewingActor.nik || "-"}
-                            </p>
-                          </div>
-                          {viewingActor.nik && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleCopyText(viewingActor.nik || '', 'NIK')} 
-                              className="h-7 px-2 rounded-lg text-slate-600 hover:text-primary hover:bg-white dark:hover:bg-slate-700 shrink-0 font-bold text-xs border-slate-200 dark:border-slate-700"
-                            >
-                              <Copy className="w-3 h-3 mr-1" /> Salin
-                            </Button>
-                          )}
-                        </div>
-
-                        <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-3 rounded-xl shadow-2xs flex items-center justify-between gap-2">
-                          <div className="space-y-0.5 min-w-0">
-                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Nomor Kartu Keluarga (KK)</p>
-                            <p className="font-mono text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-wider truncate">
-                              {viewingActor.noKK || "-"}
-                            </p>
-                          </div>
-                          {viewingActor.noKK && (
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleCopyText(viewingActor.noKK || '', 'Nomor KK')} 
-                              className="h-7 px-2 rounded-lg text-slate-600 hover:text-primary hover:bg-white dark:hover:bg-slate-700 shrink-0 font-bold text-xs border-slate-200 dark:border-slate-700"
-                            >
-                              <Copy className="w-3 h-3 mr-1" /> Salin
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Personal Info Grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 p-2.5 rounded-xl space-y-0.5">
-                          <span className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1">
-                            <Calendar className="w-3 h-3 text-slate-400" /> Tgl Lahir
-                          </span>
-                          <p className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200">
-                            {viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || "-"}
-                          </p>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase truncate">
-                            {viewingActor.pob || parsePobDob(viewingActor.pobDob).pob || "-"}
-                          </p>
-                        </div>
-
-                        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 p-2.5 rounded-xl space-y-0.5">
-                          <span className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1">
-                            <User className="w-3 h-3 text-slate-400" /> Usia
-                          </span>
-                          <p className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200">
-                            {calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")) || "-"}
-                          </p>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase truncate">
-                            {normalizeGender(viewingActor.gender) || "-"}
-                          </p>
-                        </div>
-
-                        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60 p-2.5 rounded-xl space-y-0.5 col-span-2">
-                          <span className="text-[9px] font-black text-slate-400 uppercase flex items-center gap-1">
-                            <Phone className="w-3 h-3 text-slate-400" /> No. WhatsApp / HP
-                          </span>
-                          {viewingActor.phone ? (
-                            <div className="flex items-center gap-2 pt-0.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
+                      {[
+                        { label: "Reg ID", value: viewingActor.registrationCode, isCopyable: true },
+                        { label: "Nama Lengkap", value: viewingActor.fullName },
+                        { label: "NIK", value: viewingActor.nik, isCopyable: true },
+                        { label: "Nomor KK", value: viewingActor.noKK, isCopyable: true },
+                        { label: "Jenis Kelamin", value: normalizeGender(viewingActor.gender) || viewingActor.gender },
+                        { label: "Tempat Lahir", value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob },
+                        { label: "Tanggal Lahir", value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob },
+                        { label: "Usia", value: calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")) },
+                        { label: "Nomor HP", value: viewingActor.phone, isPhone: true }
+                      ].map((item, i) => (
+                        <div key={i} className="space-y-1">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                          {(item as any).isPhone && item.value ? (
+                            <div className="flex items-center gap-2">
                               <a
-                                href={`https://wa.me/${String(viewingActor.phone).replace(/\D/g, "").replace(/^0/, "62")}`}
+                                href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-all active:scale-95"
-                                title="Klik untuk membuka WhatsApp"
+                                className="text-sm font-bold text-green-600 hover:text-green-700 hover:underline flex items-center gap-1"
                               >
-                                <MessageCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                <span>{viewingActor.phone}</span>
+                                {item.value}
                               </a>
                               <button
                                 type="button"
-                                onClick={() => handleCopyText(viewingActor.phone || '', 'No HP')}
-                                className="text-slate-400 hover:text-slate-700 p-1"
+                                onClick={() => handleCopyText(item.value || '', 'No HP')}
+                                className="text-slate-400 hover:text-primary p-0.5"
                                 title="Salin No HP"
                               >
                                 <Copy className="w-3.5 h-3.5" />
                               </button>
                             </div>
+                          ) : (item as any).isCopyable && item.value ? (
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">{item.value}</p>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyText(item.value || '', item.label)}
+                                className="text-slate-400 hover:text-primary p-0.5"
+                                title={`Salin ${item.label}`}
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           ) : (
-                            <p className="text-xs font-bold text-slate-400">-</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{item.value || "-"}</p>
                           )}
                         </div>
-                      </div>
-
-                      {/* Alamat & Domisili Card */}
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-xl shadow-2xs space-y-2.5">
-                        <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
-                          <MapPin className="w-4 h-4 text-primary" /> Alamat & Domisili
-                        </div>
-                        
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg">
-                            <p className="text-[9px] font-black uppercase text-slate-400">Kecamatan</p>
-                            <p className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase truncate">{viewingActor.kecamatan || "-"}</p>
-                          </div>
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg">
-                            <p className="text-[9px] font-black uppercase text-slate-400">Kelurahan</p>
-                            <p className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase truncate">{viewingActor.kelurahan || "-"}</p>
-                          </div>
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg">
-                            <p className="text-[9px] font-black uppercase text-slate-400">RT / RW</p>
-                            <p className="text-xs font-black text-slate-800 dark:text-slate-200 uppercase truncate">{viewingActor.rtRw || "-"}</p>
-                          </div>
-                        </div>
-
-                        <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg">
-                          <p className="text-[9px] font-black uppercase text-slate-400 mb-0.5">Alamat Lengkap</p>
-                          <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase leading-relaxed break-words">{viewingActor.address || "-"}</p>
-                        </div>
-                      </div>
-
-                      {/* Status Audit Cek Data Kolektif */}
-                      <div className="pt-1">
+                      ))}
+                      <div className="sm:col-span-2 md:col-span-3 pt-2 border-t">
                         <CheckDataIndicator 
                           actor={viewingActor} 
                           data2023={activeDetailData.data2023}
@@ -2282,117 +1953,90 @@ function ActorDataContent() {
                           dataBlacklist={activeDetailData.dataBlacklist}
                         />
                       </div>
-                    </TabsContent>
+                    </div>
+                  </section>
 
-                    {/* TAB 2: INFORMASI USAHA & SURVEY */}
-                    <TabsContent value="usaha" className="space-y-3 pt-2">
-                      {/* Detail Usaha Card */}
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-xl shadow-2xs space-y-2.5">
-                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                          <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-900 dark:text-white">
-                            <Store className="w-4 h-4 text-amber-500" /> Informasi Profil Usaha
-                          </div>
-                          {viewingActor.businessCategory && (
-                            <Badge variant="secondary" className="font-bold text-[10px] uppercase">
-                              {viewingActor.businessCategory}
-                            </Badge>
-                          )}
+                  {/* 2. ALAMAT & DOMISILI */}
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
+                      <MapPin className="w-4 h-4" /> Alamat & Domisili
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
+                      {[
+                        { label: "Kecamatan", value: viewingActor.kecamatan },
+                        { label: "Kelurahan", value: viewingActor.kelurahan },
+                        { label: "RT/RW", value: viewingActor.rtRw },
+                        { label: "Alamat Lengkap", value: viewingActor.address, fullWidth: true }
+                      ].map((item, i) => (
+                        <div key={i} className={item.fullWidth ? "sm:col-span-2 md:col-span-3 space-y-1" : "space-y-1"}>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{item.value || "-"}</p>
                         </div>
+                      ))}
+                    </div>
+                  </section>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg space-y-0.5">
-                            <p className="text-[9px] font-black uppercase text-slate-400">Nama Usaha</p>
-                            <p className="text-xs sm:text-sm font-black text-primary uppercase break-words">{viewingActor.businessName || "-"}</p>
-                          </div>
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg space-y-0.5">
-                            <p className="text-[9px] font-black uppercase text-slate-400">Kategori Bidang Usaha</p>
-                            <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 uppercase break-words">{viewingActor.businessCategory || "-"}</p>
-                          </div>
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg space-y-0.5 sm:col-span-2">
-                            <p className="text-[9px] font-black uppercase text-slate-400">Lokasi / Alamat Usaha</p>
-                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase break-words">{viewingActor.businessLocation || viewingActor.address || "-"}</p>
-                          </div>
-                        </div>
-                      </div>
+                  {/* 3. INFORMASI USAHA */}
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
+                      <Building2 className="w-4 h-4" /> Informasi Usaha
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
+                      {(() => {
+                        const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim());
+                        const coordPhone = found?.phone || found?.noHp || found?.hp || "";
+                        
+                        const getWaLink = (phoneStr: string) => {
+                          if (!phoneStr) return "#";
+                          let clean = phoneStr.replace(/\D/g, "");
+                          if (clean.startsWith("0")) clean = "62" + clean.slice(1);
+                          else if (!clean.startsWith("62")) clean = "62" + clean;
+                          return `https://wa.me/${clean}`;
+                        };
 
-                      {/* Koordinator Usulan Card */}
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-xl shadow-2xs space-y-2.5">
-                        <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
-                          <User className="w-4 h-4 text-indigo-500" /> Koordinator Usulan
-                        </div>
+                        const canonicalPetugas = resolveSurveyorCanonicalName(viewingActor.petugasSurvey, systemUsersRaw);
+                        const isBelumAdaPetugas = canonicalPetugas === "BELUM ADA";
 
-                        {(() => {
-                          const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim());
-                          const coordPhone = found?.phone || found?.noHp || found?.hp || "";
-                          const getWaLink = (phoneStr: string) => {
-                            if (!phoneStr) return "#";
-                            let clean = phoneStr.replace(/\D/g, "");
-                            if (clean.startsWith("0")) clean = "62" + clean.slice(1);
-                            else if (!clean.startsWith("62")) clean = "62" + clean;
-                            return `https://wa.me/${clean}`;
-                          };
-
-                          return (
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg">
-                              <div className="space-y-0.5">
-                                <p className="text-[9px] font-black uppercase text-slate-400">Nama Koordinator</p>
-                                <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase">{viewingActor.coordinator || "TANPA KOORDINATOR"}</p>
-                              </div>
-                              {coordPhone && (
-                                <a
-                                  href={getWaLink(coordPhone)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-all active:scale-95 w-fit"
-                                >
-                                  <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>WA: {coordPhone}</span>
-                                </a>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-
-                      {/* Penugasan Petugas Survey Card */}
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-xl shadow-2xs space-y-2.5">
-                        <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
-                          <ClipboardCheck className="w-4 h-4 text-teal-600" /> Penugasan Petugas Survey Lapangan
-                        </div>
-
-                        {(() => {
-                          const canonicalPetugas = resolveSurveyorCanonicalName(viewingActor.petugasSurvey, systemUsersRaw);
-                          const isBelumAdaPetugas = canonicalPetugas === "BELUM ADA";
-
-                          return (
-                            <div className="space-y-2.5 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg">
-                              <div className="flex items-center justify-between gap-2 flex-wrap">
-                                <div>
-                                  <p className="text-[9px] font-black uppercase text-slate-400">Petugas Terhubung</p>
-                                  {isBelumAdaPetugas ? (
-                                    <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md border border-rose-200 dark:border-rose-900 mt-1">
-                                      <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
-                                      <span>BELUM ADA PETUGAS</span>
-                                    </div>
-                                  ) : (
-                                    <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 mt-1">
-                                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                                      <span>{canonicalPetugas}</span>
-                                    </div>
-                                  )}
-                                </div>
-
+                        return [
+                          { label: "Nama Usaha", value: viewingActor.businessName },
+                          { label: "Kategori Usaha", value: viewingActor.businessCategory },
+                          { label: "Lokasi Usaha", value: viewingActor.businessLocation || viewingActor.address },
+                          ...(!isInspektorat ? [
+                            { label: "USULAN / KOORDINATOR", value: viewingActor.coordinator },
+                            { label: "NO. HP USULAN", value: coordPhone, isPhone: true },
+                            { 
+                              label: "PETUGAS SURVEY", 
+                              value: canonicalPetugas !== "BELUM ADA" ? canonicalPetugas : "BELUM ADA",
+                              isPetugasField: true,
+                              isBelumAda: isBelumAdaPetugas
+                            }
+                          ] : [])
+                        ].map((item: any, i: number) => (
+                          <div key={i} className="space-y-1">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                            {item.isPetugasField ? (
+                              <div className="space-y-1.5">
+                                {item.isBelumAda ? (
+                                  <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900">
+                                    <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                    <span>BELUM ADA</span>
+                                  </div>
+                                ) : (
+                                  <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                    <span>{item.value}</span>
+                                  </div>
+                                )}
                                 {isAdmin && (
-                                  <div className="space-y-1">
-                                    <Label className="text-[9px] font-black uppercase text-slate-400">Ganti Petugas Langsung</Label>
+                                  <div className="pt-0.5">
                                     <select
-                                      value={!isBelumAdaPetugas ? canonicalPetugas : "BELUM ADA"}
+                                      value={!item.isBelumAda ? canonicalPetugas : "BELUM ADA"}
                                       onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value)}
-                                      className="text-xs font-bold h-8 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1 shadow-2xs text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[190px]"
+                                      className="text-[11px] font-bold h-7 rounded border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-xs text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[220px]"
                                       title="Admin: Ganti Petugas Survey secara langsung"
                                     >
                                       <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
-                                      {!isBelumAdaPetugas && !surveyorOptions.includes(canonicalPetugas) && (
+                                      {!item.isBelumAda && !surveyorOptions.includes(canonicalPetugas) && (
                                         <option value={canonicalPetugas}>
                                           🟢 {canonicalPetugas} (Saat Ini)
                                         </option>
@@ -2406,160 +2050,140 @@ function ActorDataContent() {
                                   </div>
                                 )}
                               </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </TabsContent>
-
-                    {/* TAB 3: PERBANKAN, PETA & AUDIT */}
-                    <TabsContent value="rekening" className="space-y-3 pt-2">
-                      {/* ATM Card Visual - Responsive */}
-                      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white p-4 sm:p-5 shadow-lg border border-emerald-900/40">
-                        <div className="absolute -top-10 -right-10 w-36 h-36 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
-                        
-                        <div className="relative z-10 space-y-3">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] sm:text-xs font-black tracking-widest text-emerald-400 uppercase">REKENING BANK PENCAIRAN</span>
-                            <span className="text-[10px] font-mono font-bold bg-white/10 px-2 py-0.5 rounded-full border border-white/15">
-                              {viewingActor.bankName || "BELUM DIPILIH"}
-                            </span>
-                          </div>
-
-                          <div className="space-y-0.5">
-                            <p className="text-[9px] font-black uppercase text-slate-400">Nomor Rekening</p>
-                            <div className="flex items-center gap-2">
-                              <p className="font-mono text-base sm:text-lg font-black tracking-wider text-white">
-                                {viewingActor.bankNumber || "•••• •••• ••••"}
-                              </p>
-                              {viewingActor.bankNumber && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopyText(viewingActor.bankNumber || '', 'Nomor Rekening')}
-                                  className="text-white/70 hover:text-white p-1"
-                                  title="Salin Nomor Rekening"
-                                >
-                                  <Copy className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5 pt-2 border-t border-white/10">
-                            <div className="min-w-0">
-                              <p className="text-[9px] font-black uppercase text-slate-400">Pemilik Rekening</p>
-                              <p className="text-xs sm:text-sm font-black uppercase tracking-wider text-white truncate">
-                                {viewingActor.bankOwner || viewingActor.fullName || "-"}
-                              </p>
-                            </div>
-
-                            <Button
-                              size="sm"
-                              onClick={() => setEditingBankMode(true)}
-                              className="font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-3 rounded-lg text-xs shadow-xs shrink-0 self-start sm:self-auto"
-                            >
-                              <CreditCard className="w-3.5 h-3.5 mr-1.5" />
-                              <span>{viewingActor.bankNumber ? "Ubah Rekening" : "Input Rekening"}</span>
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Titik Lokasi Verifikasi Card */}
-                      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-xl shadow-2xs space-y-2.5">
-                        <div className="flex items-center gap-2 text-xs font-black uppercase text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
-                          <Navigation className="w-4 h-4 text-blue-500" /> Data Titik Lokasi Verifikasi GPS
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                          {(viewingActor as any).verificationLocation && (
-                            <div className="bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 space-y-1">
-                              <p className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase">Sumber: Verifikasi Admin</p>
-                              <p className="text-xs font-mono text-emerald-900 dark:text-emerald-200 font-bold">
-                                {(viewingActor as any).verificationLocation.lat}, {(viewingActor as any).verificationLocation.lon}
-                              </p>
-                              <a 
-                                href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocation.lat},${(viewingActor as any).verificationLocation.lon}`} 
-                                target="_blank" 
-                                rel="noreferrer" 
-                                className="inline-flex items-center gap-1 text-[10px] text-blue-600 font-black hover:underline"
+                            ) : item.isPhone && item.value ? (
+                              <a
+                                href={getWaLink(item.value)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 shadow-xs transition-all active:scale-95 w-fit"
+                                title="Klik untuk membuka obrolan WhatsApp"
                               >
-                                <ExternalLink className="w-3 h-3" /> Buka di Google Maps
+                                <MessageCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
+                                <span>{item.value}</span>
                               </a>
-                            </div>
-                          )}
-
-                          {(viewingActor as any).verificationLocationDinas && (
-                            <div className="bg-indigo-50 dark:bg-indigo-950/40 p-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800 space-y-1">
-                              <p className="text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase">Sumber: Verifikasi Dinas</p>
-                              <p className="text-xs font-mono text-indigo-900 dark:text-indigo-200 font-bold">
-                                {(viewingActor as any).verificationLocationDinas.lat}, {(viewingActor as any).verificationLocationDinas.lon}
-                              </p>
-                              <a 
-                                href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocationDinas.lat},${(viewingActor as any).verificationLocationDinas.lon}`} 
-                                target="_blank" 
-                                rel="noreferrer" 
-                                className="inline-flex items-center gap-1 text-[10px] text-blue-600 font-black hover:underline"
-                              >
-                                <ExternalLink className="w-3 h-3" /> Buka di Google Maps
-                              </a>
-                            </div>
-                          )}
-
-                          {(viewingActor as any).verificationBypass?.isBypassed && (
-                            <div className="bg-amber-50 dark:bg-amber-950/40 p-2.5 rounded-xl border border-amber-200 dark:border-amber-800 space-y-1 sm:col-span-2">
-                              <p className="text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase">Verifikasi Admin (Bypass)</p>
-                              <p className="text-xs text-amber-900 dark:text-amber-200 font-medium">Alasan: {(viewingActor as any).verificationBypass.reason}</p>
-                              {(viewingActor as any).verificationBypass.fileBase64 && (
-                                <a href={(viewingActor as any).verificationBypass.fileBase64} target="_blank" rel="noreferrer" className="text-[10px] font-bold bg-amber-200 text-amber-800 px-2 py-0.5 rounded shadow-2xs hover:bg-amber-300 transition-colors inline-block mt-1">
-                                  Lihat Bukti Lampiran
-                                </a>
-                              )}
-                            </div>
-                          )}
-
-                          {!(viewingActor as any).verificationLocation && !(viewingActor as any).verificationLocationDinas && !(viewingActor as any).verificationBypass?.isBypassed && (
-                            <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl text-center sm:col-span-2">
-                              <p className="text-xs text-muted-foreground font-medium">Belum ada data koordinat GPS verifikasi</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Google Drive Link Card */}
-                      {viewingActor.googleDriveLink && (
-                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 rounded-xl shadow-2xs flex items-center justify-between gap-3">
-                          <div className="space-y-0.5 min-w-0">
-                            <p className="text-[9px] font-black uppercase text-slate-400">Berkas Pendukung</p>
-                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">Folder Google Drive</p>
+                            ) : (
+                              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{item.value || "-"}</p>
+                            )}
                           </div>
-                          <a 
-                            href={viewingActor.googleDriveLink} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold px-3 py-1.5 rounded-lg text-xs shadow-xs flex items-center gap-1.5 shrink-0"
-                          >
-                            <span>Buka Drive</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
+                        ));
+                      })()}
+                    </div>
+                  </section>
+
+                  {/* 4. DATA PERBANKAN */}
+                  <section className="space-y-4">
+                    <div className="flex items-center justify-between border-b pb-1">
+                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
+                        <CreditCard className="w-4 h-4" /> Data Perbankan
+                      </div>
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingBankMode(true)}
+                          className="h-7 text-xs font-bold text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                        >
+                          <CreditCard className="w-3.5 h-3.5 mr-1" /> Ubah Rekening
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
+                      {[
+                        { label: "Nama Bank", value: viewingActor.bankName },
+                        { label: "Nomor Rekening", value: viewingActor.bankNumber, isCopyable: true },
+                        { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner }
+                      ].map((item, i) => (
+                        <div key={i} className="space-y-1">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-black text-primary">{item.value || "BELUM TERISI"}</p>
+                            {item.isCopyable && item.value && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopyText(item.value || '', 'Nomor Rekening')}
+                                className="text-slate-400 hover:text-primary p-0.5"
+                                title="Salin Nomor Rekening"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* 5. DATA TITIK LOKASI VERIFIKASI */}
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
+                      <MapPin className="w-4 h-4" /> Data Titik Lokasi Verifikasi
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {(viewingActor as any).verificationLocation && (
+                        <div className="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800">
+                          <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Sumber: Verifikasi Admin</p>
+                          <p className="text-xs font-mono text-emerald-800 dark:text-emerald-200 font-semibold">{(viewingActor as any).verificationLocation.lat}, {(viewingActor as any).verificationLocation.lon}</p>
+                          <a href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocation.lat},${(viewingActor as any).verificationLocation.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 font-bold hover:underline mt-2 inline-block">Lihat di Peta</a>
                         </div>
                       )}
+                      {(viewingActor as any).verificationBypass?.isBypassed && (
+                        <div className="bg-amber-50 dark:bg-amber-950/40 p-4 rounded-xl border border-amber-100 dark:border-amber-800">
+                          <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase mb-1">Sumber: Verifikasi Admin (Bypass)</p>
+                          <p className="text-xs text-amber-800 dark:text-amber-200 font-medium mb-2">Alasan: {(viewingActor as any).verificationBypass.reason}</p>
+                          {(viewingActor as any).verificationBypass.fileBase64 && (
+                            <a href={(viewingActor as any).verificationBypass.fileBase64} target="_blank" rel="noreferrer" className="text-[10px] font-bold bg-amber-200 text-amber-800 px-3 py-1 rounded shadow-xs hover:bg-amber-300 transition-colors inline-block mt-1">Lihat Bukti Lampiran</a>
+                          )}
+                        </div>
+                      )}
+                      {(viewingActor as any).verificationLocationDinas && (
+                        <div className="bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800">
+                          <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase mb-1">Sumber: Verifikasi Dinas</p>
+                          <p className="text-xs font-mono text-indigo-800 dark:text-indigo-200 font-semibold">{(viewingActor as any).verificationLocationDinas.lat}, {(viewingActor as any).verificationLocationDinas.lon}</p>
+                          <a href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocationDinas.lat},${(viewingActor as any).verificationLocationDinas.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 font-bold hover:underline mt-2 inline-block">Lihat di Peta</a>
+                        </div>
+                      )}
+                      {!(viewingActor as any).verificationLocation && !(viewingActor as any).verificationLocationDinas && !(viewingActor as any).verificationBypass?.isBypassed && (
+                        <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800 col-span-full">
+                          <p className="text-xs font-medium text-slate-500 text-center">Belum ada titik lokasi yang direkam.</p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
 
-                      {/* Audit & System Info */}
-                      <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs">
+                  {/* 6. BERKAS TAMBAHAN (GOOGLE DRIVE) */}
+                  {viewingActor.googleDriveLink && (
+                    <section className="space-y-4">
+                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Folder className="w-4 h-4" /> Berkas Tambahan (Google Drive)</div>
+                      <div className="bg-blue-50 dark:bg-blue-950/40 p-4 rounded-xl border border-blue-100 dark:border-blue-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                          <p className="text-[9px] font-black uppercase text-slate-400">Petugas Input</p>
-                          <p className="font-bold text-slate-800 dark:text-slate-200">{viewingActor.createdBy || "System"}</p>
+                          <p className="text-xs font-bold text-blue-800 dark:text-blue-200 uppercase">Folder Google Drive Pelaku Usaha</p>
+                          <p className="text-[10px] font-medium text-blue-600 dark:text-blue-400 mt-1">Berisi foto, video, dokumen usulan, atau file lainnya</p>
                         </div>
-                        <div>
-                          <p className="text-[9px] font-black uppercase text-slate-400">Waktu Pendaftaran</p>
-                          <p className="font-bold text-slate-800 dark:text-slate-200">
-                            {viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}
-                          </p>
-                        </div>
+                        <a href={viewingActor.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold px-4 py-2.5 rounded-lg text-xs shadow-xs flex items-center justify-center min-w-[140px]">
+                          Buka Folder Drive
+                        </a>
                       </div>
-                    </TabsContent>
-                  </Tabs>
+                    </section>
+                  )}
+
+                  {/* 7. INFORMASI SISTEM & AUDIT */}
+                  <section className="space-y-4">
+                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Informasi Sistem & Audit</div>
+                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border border-slate-200 dark:border-slate-800">
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Alur Sistem</p>
+                        <p className="capitalize text-primary">{(viewingActor.status || "").replace('_', ' ')}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Input</p>
+                        <p className="text-slate-800 dark:text-slate-200">{viewingActor.createdBy || "System"}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Waktu Pendaftaran</p>
+                        <p className="text-slate-800 dark:text-slate-200">{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
+                      </div>
+                    </div>
+                  </section>
                 </div>
               )}
             </div>
