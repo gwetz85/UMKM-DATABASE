@@ -80,10 +80,10 @@ export default function DashboardStatsPage() {
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats, isLoading: isStatsLoading } = useObject(statsRef)
 
-  // 3. Fetch ONLY verified_dinas actors for the 5 latest tables (targeted query, fast limitToLast 50)
+  // 3. Fetch ONLY verified_dinas actors for the 5 latest tables (targeted query, real-time)
   const verifiedDinasQuery = useMemoFirebase(() => {
     if (!database) return null
-    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'), limitToLast(50))
+    return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'))
   }, [database])
 
   const { data: verifiedDinasData, isLoading: isVerifiedDinasLoading } = useList<BusinessActor>(verifiedDinasQuery)
@@ -132,7 +132,6 @@ export default function DashboardStatsPage() {
     if (!database || !selectedFilter) return null
     const baseRef = ref(database, 'businessActors')
     if (selectedFilter.filterType === 'pending') return query(baseRef, orderByChild('status'), equalTo('pending'))
-    if (selectedFilter.filterType === 'survey_dinas') return query(baseRef, orderByChild('status'), equalTo('lpj_pending'))
     if (selectedFilter.filterType === 'verifikasi_dinas' || selectedFilter.filterType === 'hasil_verifikasi') {
       return query(baseRef, orderByChild('status'), equalTo('verified_dinas'))
     }
@@ -145,8 +144,8 @@ export default function DashboardStatsPage() {
     if (systemStats) {
       return {
         total: (systemStats.status?.verified || 0) + (systemStats.status?.rejected || 0),
-        laki: systemStats.verifiedGender?.['Laki-laki'] || systemStats.gender?.['Laki-laki'] || systemStats.gender?.laki || 0,
-        perempuan: systemStats.verifiedGender?.['Perempuan'] || systemStats.gender?.['Perempuan'] || systemStats.gender?.perempuan || 0,
+        laki: systemStats.gender?.laki ?? (systemStats.gender as any)?.['Laki-laki'] ?? systemStats.verifiedGender?.['Laki-laki'] ?? 0,
+        perempuan: systemStats.gender?.perempuan ?? (systemStats.gender as any)?.['Perempuan'] ?? systemStats.verifiedGender?.['Perempuan'] ?? 0,
         verified: systemStats.status?.verified || 0,
         rejected: systemStats.status?.rejected || 0,
         pending: systemStats.status?.pending || 0,
@@ -154,7 +153,7 @@ export default function DashboardStatsPage() {
         verifikasiDinas: systemStats.detailedStatus?.verifikasi || 0,
         hasilVerifikasi: systemStats.detailedStatus?.hasilVerifikasi || 0,
         lpj: systemStats.detailedStatus?.lpj || 0,
-        selesai: systemStats.detailedStatus?.selesai || systemStats.status?.finish || 0,
+        selesai: (systemStats.detailedStatus?.selesai || 0) + (systemStats.detailedStatus?.lpj || 0) || systemStats.status?.finish || 0,
       }
     }
     return {
@@ -329,7 +328,7 @@ export default function DashboardStatsPage() {
     }
 
     if (type === "survey_dinas") {
-      return modalData.filter(d => (d.status || "") === 'lpj_pending')
+      return modalData.filter(d => ['lpj_pending', 'verified_actor'].includes(d.status || ""))
     }
 
     if (type === "verifikasi_dinas") {
@@ -1098,9 +1097,9 @@ export default function DashboardStatsPage() {
                               <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-orange-100 text-orange-700 border-orange-300">
                                 DITOLAK ADMIN
                               </span>
-                            ) : d.status === 'lpj_pending' ? (
+                            ) : (d.status === 'lpj_pending' || d.status === 'verified_actor') ? (
                               <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300">
-                                SURVEY DINAS
+                                {d.status === 'verified_actor' ? 'SURVEY (ANTREAN)' : 'SURVEY DINAS'}
                               </span>
                             ) : d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && !d.berkasDinasVerified ? (
                               <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-indigo-100 text-indigo-700 border-indigo-300">

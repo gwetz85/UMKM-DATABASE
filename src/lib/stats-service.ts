@@ -62,7 +62,7 @@ export const getDetailedStage = (actorData: any): keyof NonNullable<SystemStats[
   if (!actorData || !isVerifiedStatus(actorData)) return null;
   if (isCancelDinas(actorData)) return null;
   const s = (actorData.status || "").toLowerCase();
-  if (s === 'lpj_pending') return 'survey';
+  if (s === 'lpj_pending' || s === 'verified_actor') return 'survey';
   if (s === 'verified_dinas') {
     if (Boolean(actorData.berkasDinasVerified)) return 'hasilVerifikasi';
     return 'verifikasi';
@@ -464,6 +464,7 @@ export async function recalculateAndSaveSystemStats(database: Database) {
 
   snap.forEach((child) => {
     const actor = child.val();
+    if (!actor || (!actor.fullName && !actor.nik && !actor.status)) return;
     const s = (actor.status || 'pending').toLowerCase();
     const isActorCancelDinas = isCancelDinas(actor);
     const isRejected = s === 'rejected' || isActorCancelDinas;
