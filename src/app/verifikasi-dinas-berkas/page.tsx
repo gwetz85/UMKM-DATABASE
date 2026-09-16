@@ -1992,7 +1992,7 @@ export default function VerifikasiDinasBerkasPage() {
                         ].map((item, i) => (
                           <div key={i} className="space-y-1">
                             <p className="text-[10px] font-bold text-emerald-700/80 uppercase">{item.label}</p>
-                            <p className="text-xs font-bold text-slate-800">{item.value || "-"}</p>
+                            <p className="text-xs font-bold text-slate-800 break-words">{item.value || "-"}</p>
                           </div>
                         ))}
                       </div>

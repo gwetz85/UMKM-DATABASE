@@ -2451,15 +2451,15 @@ function ActorDataContent() {
             return (
               <div className="flex flex-col h-full max-h-[92vh] overflow-hidden">
                 {/* Modal Top Header */}
-                <div className="bg-white dark:bg-slate-900 px-5 py-3.5 md:px-6 md:py-4 border-b flex flex-row items-center justify-between gap-3 shrink-0 shadow-sm">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2.5 bg-teal-500/10 text-teal-700 dark:text-teal-400 rounded-xl border border-teal-500/20 shadow-sm shrink-0">
+                <div className="bg-white dark:bg-slate-900 px-4 py-3 md:px-6 md:py-4 border-b flex flex-row items-center justify-between gap-3 shrink-0 shadow-sm pr-12 md:pr-14">
+                  <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
+                    <div className="p-2 md:p-2.5 bg-teal-500/10 text-teal-700 dark:text-teal-400 rounded-xl border border-teal-500/20 shadow-sm shrink-0">
                       <ClipboardList className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
                     <div className="min-w-0">
-                      <DialogTitle className="text-base md:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
-                        Form Survey Lengkap
-                        <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100 border-teal-200 text-[9px] md:text-[10px] font-black uppercase px-2 py-0.5">
+                      <DialogTitle className="text-sm md:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex flex-wrap items-center gap-1.5 md:gap-2">
+                        <span>Form Survey Lengkap</span>
+                        <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100 border-teal-200 text-[9px] md:text-[10px] font-black uppercase px-2 py-0.5 whitespace-nowrap">
                           Dinas UKM
                         </Badge>
                       </DialogTitle>
@@ -2664,7 +2664,7 @@ function ActorDataContent() {
                        ══════════════════════════════════════════════════════════ */}
                     <div className="lg:col-span-7 space-y-4">
                       {/* 1. Highlight Banner: Tanggal Survey & Petugas Survey */}
-                      <div className="bg-gradient-to-br from-teal-50 via-emerald-50/70 to-teal-50/40 dark:from-teal-950/40 dark:via-emerald-950/30 dark:to-teal-950/20 border-2 border-teal-300/80 dark:border-teal-700/80 rounded-2xl p-4 md:p-5 shadow-sm space-y-3.5">
+                      <div className="bg-gradient-to-br from-teal-50 via-emerald-50/70 to-teal-50/40 dark:from-teal-950/40 dark:via-emerald-950/30 dark:to-teal-950/20 border-2 border-teal-300/80 dark:border-teal-700/80 rounded-2xl p-4 md:p-5 shadow-sm space-y-3.5 overflow-hidden">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                           {/* Tanggal Survey */}
                           <div className="bg-white/90 dark:bg-slate-900/90 rounded-xl p-3.5 border border-teal-100 dark:border-teal-900 shadow-sm flex items-start gap-3">
@@ -2691,11 +2691,11 @@ function ActorDataContent() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-[10px] font-black text-teal-600 dark:text-teal-400 uppercase tracking-wider">Petugas Survey</p>
-                              <p className="text-sm md:text-base font-black text-slate-900 dark:text-white truncate uppercase mt-0.5" title={petugasNama || "-"}>
+                              <p className="text-sm md:text-base font-black text-slate-900 dark:text-white uppercase mt-0.5 break-words" title={petugasNama || "-"}>
                                 {petugasNama || "-"}
                               </p>
                               {(sd.pejabatData?.petugas?.nipppk || sd.pejabatData?.petugas?.jabatan) && (
-                                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 break-words">
                                   {sd.pejabatData.petugas.nipppk ? `NIP: ${sd.pejabatData.petugas.nipppk}` : ''} {sd.pejabatData.petugas.jabatan ? `(${sd.pejabatData.petugas.jabatan})` : ''}
                                 </p>
                               )}
@@ -2704,30 +2704,30 @@ function ActorDataContent() {
                         </div>
 
                         {/* Baris Tambahan: Verifikator & Hasil Rekomendasi */}
-                        <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2.5 border-t border-teal-200/70 dark:border-teal-800/50 text-xs">
-                          <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 flex-wrap">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pt-2.5 border-t border-teal-200/70 dark:border-teal-800/50 text-xs">
+                          <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 flex-wrap min-w-0">
                             <ShieldCheck className="w-4 h-4 text-teal-600 shrink-0" />
-                            <span className="font-bold text-[11px]">Verifikator Dinas:</span>
-                            <strong className="text-slate-900 dark:text-white uppercase">
+                            <span className="font-bold text-[11px] shrink-0">Verifikator Dinas:</span>
+                            <strong className="text-slate-900 dark:text-white uppercase break-words">
                               {verifikatorNama || "-"}
                             </strong>
                             {sd.pejabatData?.verifikator?.nipppk && (
-                              <span className="text-[10px] font-mono text-slate-500">
+                              <span className="text-[10px] font-mono text-slate-500 break-all">
                                 (NIP: {sd.pejabatData.verifikator.nipppk})
                               </span>
                             )}
                           </div>
 
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="font-bold text-[11px] text-slate-600 dark:text-slate-400">Hasil:</span>
-                            <Badge className={cn(
-                              "text-[10px] font-black uppercase px-2.5 py-0.5 shadow-sm",
-                              sd.hasilSurvey === 'Layak' ? "bg-emerald-600 text-white hover:bg-emerald-600" :
-                              sd.hasilSurvey === 'Tidak Layak' ? "bg-rose-600 text-white hover:bg-rose-600" :
-                              "bg-teal-600 text-white hover:bg-teal-600"
+                          <div className="flex items-start sm:items-center gap-1.5 min-w-0 max-w-full">
+                            <span className="font-bold text-[11px] text-slate-600 dark:text-slate-400 shrink-0 mt-0.5 sm:mt-0">Hasil:</span>
+                            <div className={cn(
+                              "text-[10px] md:text-xs font-black uppercase px-2.5 py-1 rounded-lg shadow-sm leading-relaxed whitespace-normal break-words max-w-full inline-block text-left",
+                              sd.hasilSurvey === 'Layak' ? "bg-emerald-600 text-white" :
+                              sd.hasilSurvey === 'Tidak Layak' ? "bg-rose-600 text-white" :
+                              "bg-teal-600 text-white"
                             )}>
                               {sd.hasilSurvey || "-"}
-                            </Badge>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2831,7 +2831,7 @@ function ActorDataContent() {
                           </div>
                           <div className="p-3 bg-teal-50/80 dark:bg-teal-950/40 rounded-xl border border-teal-200 dark:border-teal-800/60 space-y-1">
                             <p className="text-[10px] font-black text-teal-700 dark:text-teal-400 uppercase tracking-wider">Hasil Rekomendasi Petugas Survey Lapangan</p>
-                            <p className="text-xs md:text-sm font-black text-teal-900 dark:text-teal-100">{sd.hasilSurvey || '-'}</p>
+                            <p className="text-xs md:text-sm font-black text-teal-900 dark:text-teal-100 break-words leading-relaxed">{sd.hasilSurvey || '-'}</p>
                           </div>
                           {(actor.keteranganDinas || (actor as any).filingNote) && (
                             <div className="p-3 bg-blue-50/80 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800/60 space-y-1">

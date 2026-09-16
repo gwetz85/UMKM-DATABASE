@@ -961,7 +961,7 @@ function HasilVerifikasiContent() {
                     {(viewingActor as any).surveyData?.hasilSurvey && (
                       <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
                         <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Kesimpulan / Hasil Survey</p>
-                        <p className="text-sm font-semibold text-blue-900">{(viewingActor as any).surveyData.hasilSurvey}</p>
+                        <p className="text-sm font-semibold text-blue-900 break-words leading-relaxed">{(viewingActor as any).surveyData.hasilSurvey}</p>
                       </div>
                     )}
 
