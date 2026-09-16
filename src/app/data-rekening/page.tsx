@@ -1052,7 +1052,7 @@ function DataRekeningContent() {
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs font-bold uppercase">Nomor Rekening</Label>
-                        <Input name="bankNumber" defaultValue={viewingActor.bankNumber} required className="font-mono font-bold" />
+                        <Input name="bankNumber" defaultValue={viewingActor.bankNumber} required className="font-mono font-black text-lg h-11 tracking-wider" />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs font-bold uppercase">Pemilik Rekening</Label>

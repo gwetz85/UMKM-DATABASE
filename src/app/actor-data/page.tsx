@@ -2197,20 +2197,94 @@ function ActorDataContent() {
                 </DialogTitle>
                 <Button variant="ghost" size="sm" onClick={() => setEditingBankMode(false)}>Batal</Button>
               </div>
+
+              {/* ── DETAIL PELAKU USAHA ── */}
+              <div className="bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 sm:p-4 space-y-3 shadow-inner">
+                <div className="flex items-start justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-2.5">
+                  <div className="space-y-1">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-500">
+                      <User className="w-3.5 h-3.5" /> Detail Pelaku Usaha
+                    </span>
+                    <h3 className="text-base font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight leading-snug">
+                      {viewingActor.fullName}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
+                      <span className="font-mono font-bold px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200">
+                        NIK: {viewingActor.nik || "-"}
+                      </span>
+                      {viewingActor.noKK && (
+                        <span className="font-mono text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                          KK: {viewingActor.noKK}
+                        </span>
+                      )}
+                      {viewingActor.phone && (
+                        <span className="font-semibold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                          <MessageCircle className="w-3 h-3" /> {viewingActor.phone}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="inline-block text-[10px] font-black px-2.5 py-1 bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 rounded-lg uppercase border border-amber-200 dark:border-amber-800">
+                      {viewingActor.kelurahan || "Kelurahan"}
+                    </span>
+                    {viewingActor.kecamatan && (
+                      <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase">
+                        Kec. {viewingActor.kecamatan}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="bg-white dark:bg-slate-800/90 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 space-y-0.5">
+                    <p className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1">
+                      <Building2 className="w-3 h-3" /> Nama Usaha & Kategori
+                    </p>
+                    <p className="font-black text-slate-900 dark:text-slate-100 uppercase">
+                      {viewingActor.businessName || "-"}
+                    </p>
+                    {viewingActor.businessCategory && (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        {viewingActor.businessCategory}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="bg-white dark:bg-slate-800/90 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 space-y-0.5">
+                    <p className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> Alamat / Lokasi
+                    </p>
+                    <p className="font-medium text-slate-800 dark:text-slate-200 line-clamp-2 text-[11px]">
+                      {viewingActor.address || viewingActor.businessLocation || "-"} {viewingActor.rtRw ? `(RT/RW ${viewingActor.rtRw})` : ""}
+                    </p>
+                  </div>
+
+                  {(viewingActor.coordinator || (viewingActor as any).petugasSurvey) && (
+                    <div className="sm:col-span-2 bg-white dark:bg-slate-800/90 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                      {viewingActor.coordinator && (
+                        <div>
+                          <span className="text-[9px] font-bold uppercase text-slate-400 mr-1.5">Usulan / Koord:</span>
+                          <span className="font-bold text-slate-700 dark:text-slate-300 uppercase">{viewingActor.coordinator}</span>
+                        </div>
+                      )}
+                      {(viewingActor as any).petugasSurvey && (
+                        <div>
+                          <span className="text-[9px] font-bold uppercase text-slate-400 mr-1.5">Petugas Survey:</span>
+                          <span className="font-black text-emerald-700 dark:text-emerald-400 uppercase">{(viewingActor as any).petugasSurvey}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <form onSubmit={handleSaveBank}>
-                <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <Label className="font-bold">Nomor Rekening</Label>
-                    <Input name="bankNumber" defaultValue={viewingActor.bankNumber} placeholder="Contoh: 00129384812" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="font-bold">Nama Pemilik Sesuai Rekening</Label>
-                    <Input name="bankOwner" defaultValue={viewingActor.bankOwner} className="uppercase" placeholder="Contoh: AGUS SURIYADI" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="font-bold">Nama Bank</Label>
+                <div className="grid gap-4 py-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400">Nama Bank</Label>
                     <Select name="bankName" defaultValue={viewingActor.bankName}>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full h-11 font-bold text-sm bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700">
                         <SelectValue placeholder="Pilih Bank..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -2220,9 +2294,43 @@ function ActorDataContent() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-black uppercase text-amber-700 dark:text-amber-500 flex items-center gap-1.5">
+                        <CreditCard className="w-4 h-4" /> Nomor Rekening <span className="text-rose-500">*</span>
+                      </Label>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
+                        Ukuran Besar & Jelas
+                      </span>
+                    </div>
+                    <Input
+                      name="bankNumber"
+                      defaultValue={viewingActor.bankNumber}
+                      placeholder="Contoh: 1234567890"
+                      className="h-14 text-xl sm:text-2xl font-mono font-black tracking-widest text-slate-900 dark:text-slate-100 bg-amber-50/50 dark:bg-amber-950/30 border-2 border-amber-400/80 dark:border-amber-600/80 focus-visible:border-amber-500 focus-visible:ring-4 focus-visible:ring-amber-500/20 rounded-xl px-4"
+                      autoComplete="off"
+                      spellCheck={false}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase text-slate-600 dark:text-slate-400">
+                      Nama Pemilik Sesuai Rekening <span className="text-rose-500">*</span>
+                    </Label>
+                    <Input
+                      name="bankOwner"
+                      defaultValue={viewingActor.bankOwner || viewingActor.fullName}
+                      className="h-11 font-bold uppercase text-sm bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 focus-visible:border-amber-500 rounded-xl px-3.5"
+                      placeholder="Contoh: AGUS SURIYADI"
+                      required
+                    />
+                  </div>
                 </div>
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button type="submit" className="w-full bg-primary font-bold"><Save className="w-4 h-4 mr-2" /> Simpan & Proses LPJ</Button>
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button type="button" variant="ghost" onClick={() => setEditingBankMode(false)}>Batal</Button>
+                  <Button type="submit" className="min-w-[170px] bg-primary font-bold h-11"><Save className="w-4 h-4 mr-2" /> Simpan & Proses LPJ</Button>
                 </div>
               </form>
             </div>
