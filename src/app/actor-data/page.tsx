@@ -2674,7 +2674,7 @@ function ActorDataContent() {
                             <div className="min-w-0 flex-1">
                               <p className="text-[10px] font-black text-teal-600 dark:text-teal-400 uppercase tracking-wider">Tanggal Survey</p>
                               <p className="text-sm md:text-base font-black text-slate-900 dark:text-white mt-0.5">
-                                {sd.tanggalSurvey ? (formatTanggalIndonesia(sd.tanggalSurvey).formattedText || sd.tanggalSurvey) : "-"}
+                                {sd.tanggalSurvey ? (formatTanggalIndonesia(sd.tanggalSurvey).fullText || sd.tanggalSurvey) : "-"}
                               </p>
                               {actor.verifiedDinasAt && (
                                 <p className="text-[10px] text-teal-700/90 dark:text-teal-400 font-semibold mt-0.5">
