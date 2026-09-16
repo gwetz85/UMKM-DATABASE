@@ -1317,7 +1317,7 @@ function HasilVerifikasiContent() {
                           <Label className="text-xs font-black uppercase text-amber-700 dark:text-amber-500 flex items-center gap-1.5">
                             <CreditCard className="w-4 h-4" /> Nomor Rekening <span className="text-rose-500">*</span>
                           </Label>
-                          <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wide">
+                          <span className="text-[11px] font-black text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950 px-2 py-0.5 rounded uppercase tracking-wide">
                             Ukuran Besar & Jelas
                           </span>
                         </div>
@@ -1325,7 +1325,8 @@ function HasilVerifikasiContent() {
                           name="bankNumber"
                           defaultValue={inputtingBankActor.bankNumber}
                           placeholder="Contoh: 1234567890"
-                          className="h-14 text-xl sm:text-2xl font-mono font-black tracking-widest text-slate-900 dark:text-slate-100 bg-amber-50/50 dark:bg-amber-950/30 border-2 border-amber-400/80 dark:border-amber-600/80 focus-visible:border-amber-500 focus-visible:ring-4 focus-visible:ring-amber-500/20 rounded-xl px-4"
+                          className="h-16 font-mono font-black tracking-widest text-slate-900 dark:text-slate-100 bg-amber-50/60 dark:bg-amber-950/40 border-2 border-amber-400 dark:border-amber-500 focus-visible:border-amber-500 focus-visible:ring-4 focus-visible:ring-amber-500/20 rounded-xl px-4 shadow-sm"
+                          style={{ fontSize: "28px", fontWeight: "900", letterSpacing: "0.1em" }}
                           autoComplete="off"
                           spellCheck={false}
                           required
