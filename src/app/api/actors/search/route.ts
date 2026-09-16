@@ -172,11 +172,18 @@ export async function GET(req: NextRequest) {
       );
     }).sort((a, b) => String(a.fullName || '').localeCompare(String(b.fullName || '')));
 
-    return NextResponse.json({
-      success: true,
-      count: filtered.length,
-      results: filtered,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        count: filtered.length,
+        results: filtered,
+      },
+      {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Error in /api/actors/search:', error);
     return NextResponse.json(
