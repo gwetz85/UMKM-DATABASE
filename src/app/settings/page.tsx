@@ -52,6 +52,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
   const [uploadingExcel, setUploadingExcel] = useState(false)
+  const [downloadingTarget, setDownloadingTarget] = useState<'master_2024' | 'master_2023' | 'master_2025' | 'blacklist' | 'all' | null>(null)
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -412,6 +413,211 @@ export default function SettingsPage() {
     }
   }
 
+  const mapToExcelRow = (item: any, index: number) => {
+    const valKK = item.noKK ?? item.kk ?? item.no_kk ?? item["NO KK"] ?? item["KK"] ?? ""
+    const valNik = item.nik ?? item.Nik ?? item["NIK"] ?? ""
+    const valNo = item.nomor ?? item.no ?? item["NO"] ?? item["No"] ?? (index + 1)
+    const valThn = item.tahunPengajuan ?? item.tahun ?? item.thn ?? item["THN"] ?? item["Thn"] ?? ""
+    const valNama = item.nama ?? item.fullName ?? item["NAMA"] ?? item["Nama"] ?? ""
+    const valStatus = item.status ?? item["STATUS"] ?? item["Status"] ?? ""
+    const valLpj = item.statusLpj ?? item.lpj ?? item["LPJ"] ?? ""
+    const valNom = item.nominal ?? item.nom ?? item.lpjNominal ?? item["NOM"] ?? item["Nom"] ?? ""
+    const valUsaha = item.usaha ?? item.businessName ?? item["USAHA"] ?? item["Usaha"] ?? ""
+    const valAlamat = item.alamat ?? item.address ?? item["ALAMAT"] ?? item["Alamat"] ?? ""
+    const valKel = item.kelurahan ?? item.kel ?? item["KEL"] ?? item["Kel"] ?? ""
+    const valKec = item.kecamatan ?? item.kec ?? item["KEC"] ?? item["Kec"] ?? ""
+    const valKoor = item.coordinator ?? item.koordinator ?? item.koor ?? item["KOOR"] ?? item["Koor"] ?? ""
+
+    return {
+      "KK": valKK ? String(valKK).trim() : "",
+      "NIK": valNik ? String(valNik).trim() : "",
+      "No": valNo !== "" && valNo !== undefined && valNo !== null ? String(valNo) : "",
+      "Thn": valThn ? String(valThn) : "",
+      "Nama": valNama ? String(valNama) : "",
+      "Status": valStatus ? String(valStatus) : "",
+      "LPJ": valLpj ? String(valLpj) : "",
+      "Nom": valNom !== "" && valNom !== undefined && valNom !== null ? String(valNom) : "",
+      "Usaha": valUsaha ? String(valUsaha) : "",
+      "Alamat": valAlamat ? String(valAlamat) : "",
+      "Kel": valKel ? String(valKel) : "",
+      "Kec": valKec ? String(valKec) : "",
+      "Koor": valKoor ? String(valKoor) : ""
+    }
+  }
+
+  const getTargetData = async (targetType: 'master_2024' | 'master_2023' | 'master_2025' | 'blacklist') => {
+    let list: any[] = []
+    if (targetType === 'master_2024' && data2024 && data2024.length > 0) list = data2024
+    else if (targetType === 'master_2023' && data2023 && data2023.length > 0) list = data2023
+    else if (targetType === 'master_2025' && data2025 && data2025.length > 0) list = data2025
+    else if (targetType === 'blacklist' && blacklistData && blacklistData.length > 0) list = blacklistData
+
+    // Fallback directly to Realtime Database if list not yet cached in state
+    if (list.length === 0 && database) {
+      const dbPath = targetType === 'master_2024' ? 'master_data_2024' :
+                     targetType === 'master_2023' ? 'master_data_2023' :
+                     targetType === 'master_2025' ? 'master_data_2025' : 'blacklist_data'
+      const snap = await get(ref(database, dbPath))
+      if (snap.exists()) {
+        const val = snap.val()
+        list = Array.isArray(val) ? val.filter(Boolean) : Object.values(val)
+      }
+    }
+    return list
+  }
+
+  const createSheetFromList = (list: any[]) => {
+    const rows = list.map((item, idx) => mapToExcelRow(item, idx))
+    const dataToExport = rows.length > 0 ? rows : [
+      {
+        "KK": "",
+        "NIK": "",
+        "No": "",
+        "Thn": "",
+        "Nama": "",
+        "Status": "",
+        "LPJ": "",
+        "Nom": "",
+        "Usaha": "",
+        "Alamat": "",
+        "Kel": "",
+        "Kec": "",
+        "Koor": ""
+      }
+    ]
+    const ws = XLSX.utils.json_to_sheet(dataToExport)
+    
+    // Column widths
+    ws['!cols'] = [
+      { wch: 20 }, // KK
+      { wch: 20 }, // NIK
+      { wch: 8 },  // No
+      { wch: 8 },  // Thn
+      { wch: 30 }, // Nama
+      { wch: 16 }, // Status
+      { wch: 12 }, // LPJ
+      { wch: 16 }, // Nom
+      { wch: 25 }, // Usaha
+      { wch: 35 }, // Alamat
+      { wch: 20 }, // Kel
+      { wch: 20 }, // Kec
+      { wch: 20 }, // Koor
+    ]
+
+    // Ensure KK and NIK are text to prevent scientific notation in Excel
+    const range = XLSX.utils.decode_range(ws['!ref'] || "A1")
+    for (let r = range.s.r + 1; r <= range.e.r; r++) {
+      const cellKK = ws[XLSX.utils.encode_cell({ r, c: 0 })]
+      if (cellKK) {
+        cellKK.t = 's'
+        cellKK.z = '@'
+        if (cellKK.v !== undefined && cellKK.v !== null) cellKK.v = String(cellKK.v)
+      }
+      const cellNIK = ws[XLSX.utils.encode_cell({ r, c: 1 })]
+      if (cellNIK) {
+        cellNIK.t = 's'
+        cellNIK.z = '@'
+        if (cellNIK.v !== undefined && cellNIK.v !== null) cellNIK.v = String(cellNIK.v)
+      }
+    }
+
+    return ws
+  }
+
+  const handleDownloadSheet = async (targetType: 'master_2024' | 'master_2023' | 'master_2025' | 'blacklist') => {
+    setDownloadingTarget(targetType)
+    try {
+      const list = await getTargetData(targetType)
+      const ws = createSheetFromList(list)
+      const wb = XLSX.utils.book_new()
+      
+      const sheetNames = {
+        'master_2024': 'Data Pembanding 2024',
+        'master_2023': 'Data Pembanding 2023',
+        'master_2025': 'Data Pembanding 2025',
+        'blacklist': 'Data Blacklist'
+      }
+      const fileNames = {
+        'master_2024': `Data_Pembanding_2024_${new Date().toISOString().split('T')[0]}.xlsx`,
+        'master_2023': `Data_Pembanding_2023_${new Date().toISOString().split('T')[0]}.xlsx`,
+        'master_2025': `Data_Pembanding_2025_${new Date().toISOString().split('T')[0]}.xlsx`,
+        'blacklist': `Data_Blacklist_${new Date().toISOString().split('T')[0]}.xlsx`
+      }
+      
+      XLSX.utils.book_append_sheet(wb, ws, sheetNames[targetType])
+      
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileNames[targetType]
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+
+      toast({
+        title: "Download Berhasil",
+        description: `${list.length.toLocaleString('id-ID')} data ${sheetNames[targetType]} berhasil diunduh.`
+      })
+    } catch (error: any) {
+      console.error(error)
+      toast({
+        variant: "destructive",
+        title: "Gagal Download",
+        description: error.message || "Terjadi kesalahan saat mengunduh data."
+      })
+    } finally {
+      setDownloadingTarget(null)
+    }
+  }
+
+  const handleDownloadAllSheets = async () => {
+    setDownloadingTarget('all')
+    try {
+      const [l24, l23, l25, lbl] = await Promise.all([
+        getTargetData('master_2024'),
+        getTargetData('master_2023'),
+        getTargetData('master_2025'),
+        getTargetData('blacklist')
+      ])
+
+      const wb = XLSX.utils.book_new()
+      
+      XLSX.utils.book_append_sheet(wb, createSheetFromList(l24), "Pembanding 2024")
+      XLSX.utils.book_append_sheet(wb, createSheetFromList(l23), "Pembanding 2023")
+      XLSX.utils.book_append_sheet(wb, createSheetFromList(l25), "Pembanding 2025")
+      XLSX.utils.book_append_sheet(wb, createSheetFromList(lbl), "Blacklist")
+
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Semua_Data_Pembanding_dan_Blacklist_${new Date().toISOString().split('T')[0]}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+
+      const total = l24.length + l23.length + l25.length + lbl.length
+      toast({
+        title: "Download Semua Berhasil",
+        description: `Total ${total.toLocaleString('id-ID')} data (4 Sheet) berhasil diunduh.`
+      })
+    } catch (error: any) {
+      console.error(error)
+      toast({
+        variant: "destructive",
+        title: "Gagal Download",
+        description: error.message || "Terjadi kesalahan saat mengunduh data."
+      })
+    } finally {
+      setDownloadingTarget(null)
+    }
+  }
+
   const router = useRouter()
 
   const handleLogout = async () => {
@@ -750,12 +956,28 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="p-4 border border-accent/20 bg-accent/5 dark:bg-accent/10 rounded-xl space-y-3 sm:col-span-2">
-                  <div className="flex items-center gap-2 font-bold text-sm text-primary">
-                    <FileSpreadsheet className="w-4 h-4" /> Import Data Otomatisasi (Excel)
+                  <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-dashed">
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-sm text-primary">
+                        <FileSpreadsheet className="w-4 h-4" /> Import & Export Data Otomatisasi (Excel)
+                      </div>
+                      <p className="text-[10px] text-muted-foreground italic mt-0.5">
+                        Upload & Download .xlsx dengan 13 kolom: KK, NIK, No, Thn, Nama, Status, LPJ, Nom, Usaha, Alamat, Kel, Kec, Koor.
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-primary/30 hover:bg-primary/10 text-primary font-bold text-xs h-9 gap-1.5 shadow-sm"
+                      onClick={handleDownloadAllSheets}
+                      disabled={downloadingTarget !== null}
+                    >
+                      {downloadingTarget === 'all' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                      Download Semua (4 Sheet .xlsx)
+                    </Button>
                   </div>
-                  <p className="text-[10px] text-muted-foreground italic mb-4">Upload .xlsx dengan 13 kolom: KK, NIK, No, Thn, Nama, Status, LPJ, Nom, Usaha, Alamat, Kel, Kec, Koor.</p>
                   
-                  <div className="space-y-6">
+                  <div className="space-y-6 pt-2">
                     {/* Sheet 1: 2024 */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -767,11 +989,11 @@ export default function SettingsPage() {
                           Total: {(data2024?.length || 0).toLocaleString('id-ID')} Data
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="relative">
                           <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'master_2024')} className="hidden" id="excel-2024-upload" disabled={uploadingExcel} />
                           <Label htmlFor="excel-2024-upload" className="cursor-pointer">
-                            <Button variant="outline" className="w-full border-emerald-500/20 hover:bg-emerald-500/5 text-emerald-700 dark:text-emerald-400" asChild>
+                            <Button variant="outline" className="w-full border-emerald-500/20 hover:bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 font-medium h-10" asChild>
                               <div className="flex items-center justify-center gap-2">
                                 {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                                 Upload Sheet 1 (2024)
@@ -779,7 +1001,18 @@ export default function SettingsPage() {
                             </Button>
                           </Label>
                         </div>
-                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => { setResetSheetTarget('2024'); setShowResetSheetDialog(true); }} disabled={loading}>
+                        <Button 
+                          variant="outline" 
+                          className="w-full border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 font-medium h-10" 
+                          onClick={() => handleDownloadSheet('master_2024')} 
+                          disabled={downloadingTarget !== null}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            {downloadingTarget === 'master_2024' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            Download Sheet 1 (2024)
+                          </div>
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full text-destructive border-destructive/20 hover:bg-destructive/5 font-medium h-10" onClick={() => { setResetSheetTarget('2024'); setShowResetSheetDialog(true); }} disabled={loading}>
                           <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 1
                         </Button>
                       </div>
@@ -796,11 +1029,11 @@ export default function SettingsPage() {
                           Total: {(data2023?.length || 0).toLocaleString('id-ID')} Data
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="relative">
                           <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'master_2023')} className="hidden" id="excel-2023-upload" disabled={uploadingExcel} />
                           <Label htmlFor="excel-2023-upload" className="cursor-pointer">
-                            <Button variant="outline" className="w-full border-blue-500/20 hover:bg-blue-500/5 text-blue-700 dark:text-blue-400" asChild>
+                            <Button variant="outline" className="w-full border-blue-500/20 hover:bg-blue-500/5 text-blue-700 dark:text-blue-400 font-medium h-10" asChild>
                               <div className="flex items-center justify-center gap-2">
                                 {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                                 Upload Sheet 2 (2023)
@@ -808,7 +1041,18 @@ export default function SettingsPage() {
                             </Button>
                           </Label>
                         </div>
-                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => { setResetSheetTarget('2023'); setShowResetSheetDialog(true); }} disabled={loading}>
+                        <Button 
+                          variant="outline" 
+                          className="w-full border-blue-500/30 hover:bg-blue-500/10 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20 font-medium h-10" 
+                          onClick={() => handleDownloadSheet('master_2023')} 
+                          disabled={downloadingTarget !== null}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            {downloadingTarget === 'master_2023' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            Download Sheet 2 (2023)
+                          </div>
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full text-destructive border-destructive/20 hover:bg-destructive/5 font-medium h-10" onClick={() => { setResetSheetTarget('2023'); setShowResetSheetDialog(true); }} disabled={loading}>
                           <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 2
                         </Button>
                       </div>
@@ -825,11 +1069,11 @@ export default function SettingsPage() {
                           Total: {(data2025?.length || 0).toLocaleString('id-ID')} Data
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="relative">
                           <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'master_2025')} className="hidden" id="excel-2025-upload" disabled={uploadingExcel} />
                           <Label htmlFor="excel-2025-upload" className="cursor-pointer">
-                            <Button variant="outline" className="w-full border-amber-500/20 hover:bg-amber-500/5 text-amber-700 dark:text-amber-400" asChild>
+                            <Button variant="outline" className="w-full border-amber-500/20 hover:bg-amber-500/5 text-amber-700 dark:text-amber-400 font-medium h-10" asChild>
                               <div className="flex items-center justify-center gap-2">
                                 {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                                 Upload Sheet 3 (2025)
@@ -837,7 +1081,18 @@ export default function SettingsPage() {
                             </Button>
                           </Label>
                         </div>
-                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => { setResetSheetTarget('2025'); setShowResetSheetDialog(true); }} disabled={loading}>
+                        <Button 
+                          variant="outline" 
+                          className="w-full border-amber-500/30 hover:bg-amber-500/10 text-amber-700 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/20 font-medium h-10" 
+                          onClick={() => handleDownloadSheet('master_2025')} 
+                          disabled={downloadingTarget !== null}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            {downloadingTarget === 'master_2025' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            Download Sheet 3 (2025)
+                          </div>
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full text-destructive border-destructive/20 hover:bg-destructive/5 font-medium h-10" onClick={() => { setResetSheetTarget('2025'); setShowResetSheetDialog(true); }} disabled={loading}>
                           <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 3
                         </Button>
                       </div>
@@ -854,11 +1109,11 @@ export default function SettingsPage() {
                           Total: {(blacklistData?.length || 0).toLocaleString('id-ID')} Data
                         </Badge>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="relative">
                           <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'blacklist')} className="hidden" id="excel-blacklist-upload" disabled={uploadingExcel} />
                           <Label htmlFor="excel-blacklist-upload" className="cursor-pointer">
-                            <Button variant="outline" className="w-full border-rose-500/20 hover:bg-rose-500/5 text-rose-700 dark:text-rose-400" asChild>
+                            <Button variant="outline" className="w-full border-rose-500/20 hover:bg-rose-500/5 text-rose-700 dark:text-rose-400 font-medium h-10" asChild>
                               <div className="flex items-center justify-center gap-2">
                                 {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                                 Upload Sheet 4 (Blacklist)
@@ -866,7 +1121,18 @@ export default function SettingsPage() {
                             </Button>
                           </Label>
                         </div>
-                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => { setResetSheetTarget('blacklist'); setShowResetSheetDialog(true); }} disabled={loading}>
+                        <Button 
+                          variant="outline" 
+                          className="w-full border-rose-500/30 hover:bg-rose-500/10 text-rose-700 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/20 font-medium h-10" 
+                          onClick={() => handleDownloadSheet('blacklist')} 
+                          disabled={downloadingTarget !== null}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            {downloadingTarget === 'blacklist' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            Download Sheet 4 (Blacklist)
+                          </div>
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full text-destructive border-destructive/20 hover:bg-destructive/5 font-medium h-10" onClick={() => { setResetSheetTarget('blacklist'); setShowResetSheetDialog(true); }} disabled={loading}>
                           <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 4
                         </Button>
                       </div>
