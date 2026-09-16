@@ -134,8 +134,8 @@ export default function LayarInformasiPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   
-  // Active selected stat category (Ordered: survey -> verifikasi -> hasil -> rekening -> cancel -> cancel_pendataan)
-  const [activeCategory, setActiveCategory] = useState<'survey' | 'verifikasi' | 'hasil' | 'rekening' | 'cancel' | 'cancel_pendataan'>('survey');
+  // Active selected stat category (Ordered: verified -> survey -> verifikasi -> hasil -> rekening -> cancel -> cancel_pendataan)
+  const [activeCategory, setActiveCategory] = useState<'verified' | 'survey' | 'verifikasi' | 'hasil' | 'rekening' | 'cancel' | 'cancel_pendataan'>('survey');
 
   // 1. Fetch real-time system stats
   const statsRef = useMemoFirebase(() => {
@@ -503,6 +503,8 @@ export default function LayarInformasiPage() {
   // Active current table data based on activeCategory
   const currentTableData = useMemo(() => {
     switch (activeCategory) {
+      case 'verified':
+        return listVerified;
       case 'survey':
         return listSurveyDinas;
       case 'verifikasi':
@@ -518,11 +520,17 @@ export default function LayarInformasiPage() {
       default:
         return listSurveyDinas;
     }
-  }, [activeCategory, listSurveyDinas, listVerifikasiDinas, listHasilDinas, listRekeningTerinput, listCancelDinas, listCancelPendataan]);
+  }, [activeCategory, listVerified, listSurveyDinas, listVerifikasiDinas, listHasilDinas, listRekeningTerinput, listCancelDinas, listCancelPendataan]);
 
   // Active Category Meta Information
   const activeCategoryMeta = useMemo(() => {
     switch (activeCategory) {
+      case 'verified':
+        return {
+          title: 'Total Data Terverifikasi',
+          petugasHeader: 'Petugas / Koordinator',
+          isHasil: false
+        };
       case 'survey':
         return {
           title: 'Survey Dinas',
@@ -569,6 +577,7 @@ export default function LayarInformasiPage() {
   }, [activeCategory]);
 
   const isLoadingCurrentTable = useMemo(() => {
+    if (activeCategory === 'verified') return isVerifiedActorLoading || isVerifiedDinasLoading || isFinishLoading;
     if (activeCategory === 'survey') return isSurveyLoading;
     if (activeCategory === 'verifikasi') return isVerifiedDinasLoading;
     if (activeCategory === 'hasil') return isVerifiedDinasLoading;
@@ -576,7 +585,7 @@ export default function LayarInformasiPage() {
     if (activeCategory === 'cancel') return isCancelLoading;
     if (activeCategory === 'cancel_pendataan') return isCancelPendataanLoading;
     return false;
-  }, [activeCategory, isSurveyLoading, isVerifiedDinasLoading, isFinishLoading, isCancelLoading, isCancelPendataanLoading]);
+  }, [activeCategory, isVerifiedActorLoading, isVerifiedDinasLoading, isFinishLoading, isSurveyLoading, isCancelLoading, isCancelPendataanLoading]);
 
   // Fullscreen Handler
   const toggleFullscreen = () => {
@@ -846,30 +855,71 @@ export default function LayarInformasiPage() {
             </div>
           </div>
 
-          {/* 6 Vibrant Clickable Cards Grid (2 cols x 3 rows) */}
-          <div className="flex-1 min-h-0 grid grid-cols-2 gap-2.5 sm:gap-3">
+          {/* 7 Vibrant Clickable Cards Grid (1 Hero Card + 6 Cards in 2 Cols) */}
+          <div className="flex-1 min-h-0 grid grid-cols-2 gap-2 sm:gap-2.5">
             
+            {/* 0. Total Data Terverifikasi (Emerald Green - Span 2 Columns) */}
+            <button
+              type="button"
+              onClick={() => setActiveCategory('verified')}
+              className={cn(
+                "col-span-2 w-full text-left rounded-2xl p-2.5 sm:p-3 flex items-center justify-between gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
+                "bg-gradient-to-r from-[#00b288] via-[#009e75] to-[#008964] text-white hover:brightness-105 active:scale-[0.98]",
+                activeCategory === 'verified' 
+                  ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.01]" 
+                  : "opacity-95 hover:opacity-100"
+              )}
+            >
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                  <ShieldCheck className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-[#009e75]" />
+                </div>
+                <div className="min-w-0 flex flex-col justify-center">
+                  <span className="text-xs sm:text-[13px] font-extrabold text-white uppercase tracking-wider truncate">
+                    Total Data Terverifikasi
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-100/90 flex items-center gap-1 mt-0.5">
+                    ↗ 12% dari minggu lalu
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-baseline gap-1 sm:gap-1.5 pr-1 sm:pr-2 shrink-0">
+                <span className="text-2xl sm:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
+                  {(systemStats?.status?.verified ?? (
+                    (systemStats?.detailedStatus?.survey ?? 0) +
+                    (systemStats?.detailedStatus?.verifikasi ?? 0) +
+                    (systemStats?.detailedStatus?.hasilVerifikasi ?? 0) +
+                    (systemStats?.detailedStatus?.selesai ?? systemStats?.status?.finish ?? 0)
+                  )).toLocaleString('id-ID')}
+                </span>
+                <span className="text-xs sm:text-sm font-bold text-white/90">
+                  Data
+                </span>
+              </div>
+            </button>
+
             {/* 1. Survey Dinas (Sky Blue) */}
             <button
               type="button"
               onClick={() => setActiveCategory('survey')}
               className={cn(
-                "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
+                "w-full text-left rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
                 "bg-gradient-to-r from-[#0096c7] to-[#0077b6] text-white hover:brightness-105 active:scale-[0.98]",
                 activeCategory === 'survey' 
                   ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
                   : "opacity-95 hover:opacity-100"
               )}
             >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
-                <UserCheck className="w-6 h-6 sm:w-7 sm:h-7 text-[#0077b6]" />
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <UserCheck className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-[#0077b6]" />
               </div>
               <div className="min-w-0 flex-1 flex flex-col justify-center">
                 <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide truncate">
                   Survey Dinas
                 </span>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
+                  <span className="text-xl sm:text-2xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
                     {(systemStats?.detailedStatus?.survey ?? 0).toLocaleString('id-ID')}
                   </span>
                   <span className="text-xs font-bold text-white/90">
@@ -887,22 +937,22 @@ export default function LayarInformasiPage() {
               type="button"
               onClick={() => setActiveCategory('verifikasi')}
               className={cn(
-                "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
+                "w-full text-left rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
                 "bg-gradient-to-r from-[#fca311] to-[#e85d04] text-white hover:brightness-105 active:scale-[0.98]",
                 activeCategory === 'verifikasi' 
                   ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
                   : "opacity-95 hover:opacity-100"
               )}
             >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
-                <ClipboardCheck className="w-6 h-6 sm:w-7 sm:h-7 text-[#e85d04]" />
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <ClipboardCheck className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-[#e85d04]" />
               </div>
               <div className="min-w-0 flex-1 flex flex-col justify-center">
                 <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide truncate">
                   Verifikasi Dinas
                 </span>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
+                  <span className="text-xl sm:text-2xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
                     {(systemStats?.detailedStatus?.verifikasi ?? 0).toLocaleString('id-ID')}
                   </span>
                   <span className="text-xs font-bold text-white/90">
@@ -920,22 +970,22 @@ export default function LayarInformasiPage() {
               type="button"
               onClick={() => setActiveCategory('hasil')}
               className={cn(
-                "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
+                "w-full text-left rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
                 "bg-gradient-to-r from-[#5a189a] to-[#7b2cbf] text-white hover:brightness-105 active:scale-[0.98]",
                 activeCategory === 'hasil' 
                   ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
                   : "opacity-95 hover:opacity-100"
               )}
             >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
-                <FileText className="w-6 h-6 sm:w-7 sm:h-7 text-[#7b2cbf]" />
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <FileText className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-[#7b2cbf]" />
               </div>
               <div className="min-w-0 flex-1 flex flex-col justify-center">
                 <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide truncate">
                   Hasil Dinas
                 </span>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
+                  <span className="text-xl sm:text-2xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
                     {(systemStats?.detailedStatus?.hasilVerifikasi ?? 0).toLocaleString('id-ID')}
                   </span>
                   <span className="text-xs font-bold text-white/90">
@@ -953,22 +1003,22 @@ export default function LayarInformasiPage() {
               type="button"
               onClick={() => setActiveCategory('rekening')}
               className={cn(
-                "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
+                "w-full text-left rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
                 "bg-gradient-to-r from-[#00a896] to-[#028090] text-white hover:brightness-105 active:scale-[0.98]",
                 activeCategory === 'rekening' 
                   ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
                   : "opacity-95 hover:opacity-100"
               )}
             >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
-                <Landmark className="w-6 h-6 sm:w-7 sm:h-7 text-[#028090]" />
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <Landmark className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-[#028090]" />
               </div>
               <div className="min-w-0 flex-1 flex flex-col justify-center">
                 <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide truncate">
                   Rekening Terinput
                 </span>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
+                  <span className="text-xl sm:text-2xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
                     {(systemStats?.detailedStatus?.selesai ?? systemStats?.status?.finish ?? 0).toLocaleString('id-ID')}
                   </span>
                   <span className="text-xs font-bold text-white/90">
@@ -986,22 +1036,22 @@ export default function LayarInformasiPage() {
               type="button"
               onClick={() => setActiveCategory('cancel')}
               className={cn(
-                "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
+                "w-full text-left rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
                 "bg-gradient-to-r from-[#fb5656] to-[#e63946] text-white hover:brightness-105 active:scale-[0.98]",
                 activeCategory === 'cancel' 
                   ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
                   : "opacity-95 hover:opacity-100"
               )}
             >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
-                <XCircle className="w-6 h-6 sm:w-7 sm:h-7 text-[#e63946]" />
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <XCircle className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-[#e63946]" />
               </div>
               <div className="min-w-0 flex-1 flex flex-col justify-center">
                 <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide truncate">
                   Cancell Dinas
                 </span>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
+                  <span className="text-xl sm:text-2xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
                     {(listCancelDinas.length || (cancelDinasData?.length ?? 0)).toLocaleString('id-ID')}
                   </span>
                   <span className="text-xs font-bold text-white/90">
@@ -1019,22 +1069,22 @@ export default function LayarInformasiPage() {
               type="button"
               onClick={() => setActiveCategory('cancel_pendataan')}
               className={cn(
-                "w-full text-left rounded-2xl p-3 sm:p-3.5 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
+                "w-full text-left rounded-2xl p-2.5 sm:p-3 flex items-center gap-2.5 sm:gap-3 transition-all duration-200 shadow-md relative overflow-hidden",
                 "bg-gradient-to-r from-[#e63946] to-[#9d0208] text-white hover:brightness-105 active:scale-[0.98]",
                 activeCategory === 'cancel_pendataan' 
                   ? "ring-4 ring-[#0077b6] shadow-xl scale-[1.02]" 
                   : "opacity-95 hover:opacity-100"
               )}
             >
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
-                <UserX className="w-6 h-6 sm:w-7 sm:h-7 text-[#9d0208]" />
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white flex items-center justify-center shadow-md shrink-0">
+                <UserX className="w-5.5 h-5.5 sm:w-6 sm:h-6 text-[#9d0208]" />
               </div>
               <div className="min-w-0 flex-1 flex flex-col justify-center">
                 <span className="text-[11px] sm:text-xs font-bold text-white uppercase tracking-wide truncate">
                   Cancell Pendataan
                 </span>
                 <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
+                  <span className="text-xl sm:text-2xl font-black text-white font-mono tracking-tight leading-none drop-shadow-sm">
                     {totalCancelPendataanCount.toLocaleString('id-ID')}
                   </span>
                   <span className="text-xs font-bold text-white/90">
