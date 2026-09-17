@@ -132,6 +132,8 @@ export default function LoginPage() {
       if (e.key === "Escape") setShowFullEvent(false);
     };
     const handleClickOutside = (e: MouseEvent) => {
+      // Keep form open on mobile screens to prevent accidental dismiss while tapping
+      if (typeof window !== 'undefined' && window.innerWidth < 768) return;
       if (formRef.current && !formRef.current.contains(e.target as Node)) {
         setIsFormOpen(false);
       }
@@ -452,7 +454,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="h-[100dvh] w-full flex flex-col items-center justify-center relative overflow-hidden font-sans bg-slate-950">
+    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center relative overflow-x-hidden overflow-y-auto md:overflow-hidden font-sans bg-slate-950 p-4 sm:p-6 md:p-0">
       {/* Background Image / Slideshow */}
       <div className="fixed inset-0 z-0 bg-slate-950 overflow-hidden pointer-events-none">
         {slides.length > 0 ? (
@@ -489,14 +491,12 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-black/40 z-20 backdrop-blur-[2px]" />
       </div>
 
-
-
       {/* Center — Logo & Title */}
-      <div className="relative z-10 flex flex-col items-center gap-6 w-full max-w-sm px-6 animate-in zoom-in-95 fade-in duration-1000">
+      <div className="relative z-10 flex flex-col items-center gap-4 sm:gap-6 w-full max-w-sm px-4 animate-in zoom-in-95 fade-in duration-1000 md:my-0">
         {/* Logo */}
         <div className="group relative">
           <div className="absolute inset-0 bg-white/20 rounded-full blur-2xl group-hover:bg-white/30 transition-all duration-500" />
-          <div className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-[10px] border-white/20 bg-white/10 backdrop-blur-md shadow-2xl overflow-hidden hover:scale-105 transition-transform duration-500 flex items-center justify-center">
+          <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full border-[6px] md:border-[10px] border-white/20 bg-white/10 backdrop-blur-md shadow-2xl overflow-hidden hover:scale-105 transition-transform duration-500 flex items-center justify-center">
             <img 
               src="/icon-512.png" 
               alt="Logo" 
@@ -506,19 +506,19 @@ export default function LoginPage() {
         </div>
 
         <div className="text-center space-y-1">
-          <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-2xl uppercase">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tighter drop-shadow-2xl uppercase">
             SIMPU
           </h1>
-          <p className="text-white/80 text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] drop-shadow-lg">
+          <p className="text-white/80 text-[9px] sm:text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] drop-shadow-lg">
             ( Sistem Informasi Manajemen Pelaku Usaha )
           </p>
         </div>
       </div>
 
-      {/* Bottom Left Content: Auth Forms */}
+      {/* Auth Forms: Flow naturally below logo on mobile, pinned to bottom-left on desktop */}
       <div 
         ref={formRef}
-        className="absolute bottom-6 left-6 md:bottom-10 md:left-12 z-20 max-w-sm animate-in slide-in-from-bottom-10 fade-in duration-1000"
+        className="relative z-20 w-full max-w-sm mt-6 md:mt-0 md:absolute md:bottom-10 md:left-12 animate-in slide-in-from-bottom-10 fade-in duration-1000"
       >
         {!isFormOpen ? (
           <button
