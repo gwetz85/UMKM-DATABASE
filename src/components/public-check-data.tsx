@@ -3,12 +3,13 @@ import { useDatabase, useList, useMemoFirebase } from "@/firebase"
 import { ref } from "firebase/database"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { SearchCheck, Loader2, CheckCircle2, XCircle, User, Eye, FileText, Database, Info, CreditCard, Users2 } from "lucide-react"
+import { SearchCheck, Loader2, CheckCircle2, XCircle, User, Eye, FileText, Database, Info, CreditCard, Users2, Camera } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { cn, formatCurrency } from "@/lib/utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
 import { useUser } from "@/firebase"
 import { useEffect } from "react"
+import { KtpKkScannerDialog } from "@/components/ktp-kk-scanner-dialog"
 
 export function PublicCheckData() {
   const { user } = useUser()
@@ -19,10 +20,10 @@ export function PublicCheckData() {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchMethod, setSearchMethod] = useState<'nik' | 'kk' | 'nama'>('nik')
   const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isScannerOpen, setIsScannerOpen] = useState(false)
 
-  const handleCheck = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const cleanVal = inputValue.trim()
+  const performSearchWithVal = async (method: 'nik' | 'kk' | 'nama', val: string) => {
+    const cleanVal = val.trim()
     if (!cleanVal) return
 
     setLoading(true)
@@ -30,7 +31,7 @@ export function PublicCheckData() {
     setSearchDone(false)
 
     try {
-      const typeParam = searchMethod === 'kk' ? 'noKK' : searchMethod
+      const typeParam = method === 'kk' ? 'noKK' : method
       const res = await fetch(`/api/cek-data?type=${typeParam}&q=${encodeURIComponent(cleanVal)}`)
       const json = await res.json()
 
@@ -40,7 +41,7 @@ export function PublicCheckData() {
 
       // Log search activity
       const resultStatus = results.length > 0 ? `Ditemukan ${results.length} data` : "Tidak ditemukan"
-      const methodLabel = searchMethod === 'nik' ? 'NIK' : searchMethod === 'kk' ? 'Nomor KK' : 'NAMA'
+      const methodLabel = method === 'nik' ? 'NIK' : method === 'kk' ? 'Nomor KK' : 'NAMA'
 
       logActivity({
         query: cleanVal,
@@ -58,6 +59,18 @@ export function PublicCheckData() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleCheck = async (e: React.FormEvent) => {
+    e.preventDefault()
+    performSearchWithVal(searchMethod, inputValue)
+  }
+
+  const handleScanComplete = (extractedNumber: string, scanMode: "ktp" | "noKK") => {
+    const targetMethod: 'nik' | 'kk' = scanMode === "ktp" ? "nik" : "kk"
+    setSearchMethod(targetMethod)
+    setInputValue(extractedNumber)
+    performSearchWithVal(targetMethod, extractedNumber)
   }
 
   return (
@@ -121,6 +134,16 @@ export function PublicCheckData() {
             onChange={(e) => setInputValue(e.target.value)}
             required
           />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsScannerOpen(true)}
+            className="h-12 border-teal-500/50 bg-teal-50/80 hover:bg-teal-100 text-teal-800 font-bold px-4 gap-2"
+            title="Scan NIK KTP atau Nomor KK dengan kamera"
+          >
+            <Camera className="w-4 h-4 text-teal-600" />
+            <span>Scan KTP / KK</span>
+          </Button>
           <Button type="submit" className="h-12 font-bold px-8 shadow-md hover:bg-primary/90 hover:scale-[1.02] active:scale-95 transition-all" disabled={loading}>
              {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <SearchCheck className="w-5 h-5 mr-2" />}
              CARI
@@ -208,6 +231,14 @@ export function PublicCheckData() {
            )}
         </div>
       )}
+
+      {/* Dialog Scanner Kamera KTP & KK */}
+      <KtpKkScannerDialog
+        open={isScannerOpen}
+        onOpenChange={setIsScannerOpen}
+        initialMode={searchMethod === "kk" ? "noKK" : "ktp"}
+        onScanComplete={handleScanComplete}
+      />
     </div>
   )
 }

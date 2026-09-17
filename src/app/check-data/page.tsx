@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database, UserSearch, User, Eye, FileText, ShieldAlert } from "lucide-react"
+import { SearchCheck, Loader2, CheckCircle2, XCircle, Info, Database, UserSearch, User, Eye, FileText, ShieldAlert, Camera } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { cn, formatCurrency } from "@/lib/utils"
 import { logActivity, getDeviceType } from "@/lib/logger"
+import { KtpKkScannerDialog } from "@/components/ktp-kk-scanner-dialog"
 
 
 export default function CheckDataPage() {
@@ -39,21 +40,21 @@ export default function CheckDataPage() {
   const hasAccess = isAdmin || isPetugas
 
   const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isScannerOpen, setIsScannerOpen] = useState(false)
 
-  const handleCheck = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const processedValue = inputValue.trim()
+  const performCheckWithVal = async (type: "nik" | "noKK" | "nama", val: string) => {
+    const processedValue = val.trim()
     if (!processedValue) return
     
     setLoading(true)
     setSearchDone(false)
     setSearchCriteria({ 
-      type: searchType, 
+      type: type, 
       value: processedValue 
     })
 
     try {
-      const res = await fetch(`/api/cek-data?type=${searchType}&q=${encodeURIComponent(processedValue)}`)
+      const res = await fetch(`/api/cek-data?type=${type}&q=${encodeURIComponent(processedValue)}`)
       const json = await res.json()
       const results = json.success && Array.isArray(json.results) ? json.results : []
       setSearchResults(results)
@@ -65,7 +66,7 @@ export default function CheckDataPage() {
         : "Data Tidak Ditemukan";
         
       logActivity({
-        query: `CEK ${searchType.toUpperCase()}: ${processedValue}`,
+        query: `CEK ${type.toUpperCase()}: ${processedValue}`,
         results: logResults,
         device: getDeviceType(navigator.userAgent),
         source: 'Web',
@@ -74,12 +75,24 @@ export default function CheckDataPage() {
       }, database || undefined).catch(err => console.error("Log error:", err))
 
     } catch (err) {
-      console.error("Error searching check-data:", err)
+      console.error("Search error:", err)
       setSearchResults([])
       setSearchDone(true)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleCheck = async (e: React.FormEvent) => {
+    e.preventDefault()
+    performCheckWithVal(searchType, inputValue)
+  }
+
+  const handleScanComplete = (extractedNumber: string, scanMode: "ktp" | "noKK") => {
+    const targetType: "nik" | "noKK" = scanMode === "ktp" ? "nik" : "noKK"
+    setSearchType(targetType)
+    setInputValue(extractedNumber)
+    performCheckWithVal(targetType, extractedNumber)
   }
 
 
@@ -150,6 +163,17 @@ export default function CheckDataPage() {
                   required 
                 />
               </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsScannerOpen(true)}
+                className="w-full h-11 border-teal-500/60 bg-teal-50/80 hover:bg-teal-100 text-teal-800 font-bold gap-2"
+                title="Scan NIK KTP atau Nomor KK menggunakan kamera"
+              >
+                <Camera className="w-4 h-4 text-teal-600" />
+                <span>Scan Dokumen KTP / KK</span>
+              </Button>
 
               <Button type="submit" className="w-full h-12 bg-primary hover:bg-primary/90 font-bold shadow-lg shadow-primary/20" disabled={loading}>
                 {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <SearchCheck className="w-5 h-5 mr-2" />}
@@ -316,7 +340,13 @@ export default function CheckDataPage() {
         </DialogContent>
       </Dialog>
 
-
+      {/* Dialog Scanner Kamera KTP & KK */}
+      <KtpKkScannerDialog
+        open={isScannerOpen}
+        onOpenChange={setIsScannerOpen}
+        initialMode={searchType === "noKK" ? "noKK" : "ktp"}
+        onScanComplete={handleScanComplete}
+      />
     </div>
   )
 }

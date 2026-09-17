@@ -32,12 +32,14 @@ import {
   Layers,
   ArrowRight,
   Sparkles,
-  SearchX
+  SearchX,
+  Camera
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { cn, formatCurrency, maskLast4Digits, maskPhoneNumber } from "@/lib/utils"
 import { formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { useToast } from "@/hooks/use-toast"
+import { KtpKkScannerDialog } from "@/components/ktp-kk-scanner-dialog"
 
 type SearchType = "nik" | "noKK" | "nama" | "phone"
 
@@ -59,6 +61,7 @@ function CekDataContent() {
   const [filterSource, setFilterSource] = useState<string>("ALL")
   const [selectedItem, setSelectedItem] = useState<any | null>(null)
   const [hasCopied, setHasCopied] = useState(false)
+  const [isScannerOpen, setIsScannerOpen] = useState(false)
 
   const abortControllerRef = useRef<AbortController | null>(null)
 
@@ -121,6 +124,20 @@ function CekDataContent() {
     params.set("q", processed)
     router.replace(`/cek-data?${params.toString()}`)
     executeSearch(searchType, processed)
+  }
+
+  const handleScanComplete = (extractedNumber: string, scanMode: "ktp" | "noKK") => {
+    const targetType: SearchType = scanMode === "ktp" ? "nik" : "noKK"
+    setSearchType(targetType)
+    setInputValue(extractedNumber)
+
+    const params = new URLSearchParams()
+    params.set("type", targetType)
+    params.set("q", extractedNumber)
+    router.replace(`/cek-data?${params.toString()}`)
+
+    // Otomatis langsung eksekusi pencarian data di database
+    executeSearch(targetType, extractedNumber)
   }
 
   const handleReset = () => {
@@ -305,6 +322,17 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                   </button>
                 )}
               </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsScannerOpen(true)}
+                className="h-12 sm:h-13 px-4 sm:px-5 rounded-xl border-teal-500/60 bg-teal-50/80 hover:bg-teal-100 text-teal-800 font-bold text-xs sm:text-sm tracking-wide shadow-sm transition-all shrink-0 flex items-center justify-center gap-2 hover:border-teal-600"
+                title="Scan NIK KTP atau Nomor KK menggunakan kamera perangkat"
+              >
+                <Camera className="w-4 h-4 text-teal-600" />
+                <span>Scan KTP / KK</span>
+              </Button>
 
               <Button
                 type="submit"
@@ -751,6 +779,14 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog Scanner Kamera KTP & KK */}
+      <KtpKkScannerDialog
+        open={isScannerOpen}
+        onOpenChange={setIsScannerOpen}
+        initialMode={searchType === "noKK" ? "noKK" : "ktp"}
+        onScanComplete={handleScanComplete}
+      />
     </div>
   )
 }
