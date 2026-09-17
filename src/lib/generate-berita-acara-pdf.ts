@@ -604,9 +604,30 @@ export async function generateBeritaAcaraPDF(
     }
   }
 
-  // Box Calon Penerima Dana Hibah – kolom tanda tangan biasa (kosong)
+  // Box Calon Penerima Dana Hibah – kolom tanda tangan (elektronik jika ada, atau kosong)
   const penerimaX = marginL + colTimSurveyW;
   doc.rect(penerimaX, signY, colPenerimaW, signBoxH);
+
+  // Jika ada tanda tangan elektronik pelaku usaha, sematkan secara proporsional di atas garis
+  const rawSignature = surveyData?.tandaTanganPelakuUsaha || actor?.tandaTanganPelakuUsaha || (actor as any)?.surveyData?.tandaTanganPelakuUsaha;
+  if (rawSignature && typeof rawSignature === "string" && rawSignature.startsWith("data:image")) {
+    try {
+      const imgProps = doc.getImageProperties(rawSignature);
+      const maxSigW = 46; // mm
+      const maxSigH = 14; // mm
+      let sigW = maxSigW;
+      let sigH = (imgProps.height * sigW) / imgProps.width;
+      if (sigH > maxSigH) {
+        sigH = maxSigH;
+        sigW = (imgProps.width * sigH) / imgProps.height;
+      }
+      const sigX = penerimaX + (colPenerimaW - sigW) / 2;
+      const sigY = (signY + signBoxH - 3.2) - sigH;
+      doc.addImage(rawSignature, "PNG", sigX, sigY, sigW, sigH);
+    } catch (sigErr) {
+      console.warn("Gagal menyematkan tanda tangan pelaku usaha ke PDF:", sigErr);
+    }
+  }
 
   // Titik-titik nama di bagian bawah kotak penerima
   doc.setFont("helvetica", "normal");

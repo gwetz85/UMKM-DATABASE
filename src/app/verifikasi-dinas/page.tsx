@@ -49,8 +49,10 @@ import {
   ExternalLink,
   Filter,
   X,
-  Users
+  Users,
+  PenTool
 } from "lucide-react"
+import { SignaturePadDialog } from "@/components/signature-pad-dialog"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { ensureVerifikatorUser } from "@/lib/verifikator-service"
 import { resolveSurveyorCanonicalName, buildSurveyorMaps } from "@/lib/surveyor-utils"
@@ -116,6 +118,7 @@ export default function VerifikasiDinasPage() {
 
   const [surveyData, setSurveyData] = useState<Partial<SurveyDinasData>>({})
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
 
   // Admin & Petugas: Modal khusus edit / upload foto survey
   const [photoEditActor, setPhotoEditActor] = useState<BusinessActor | null>(null)
@@ -514,7 +517,8 @@ export default function VerifikasiDinasPage() {
       hibah: existing.hibah || { pernah: false },
       izin: existing.izin || [],
       fotoSurveyUrl: cleanPhoto || undefined,
-      pejabatData: existing.pejabatData || actor.pejabatData || undefined
+      pejabatData: existing.pejabatData || actor.pejabatData || undefined,
+      tandaTanganPelakuUsaha: existing.tandaTanganPelakuUsaha || (actor as any).tandaTanganPelakuUsaha || undefined
     });
   };
 
@@ -998,6 +1002,9 @@ export default function VerifikasiDinasPage() {
       if (photoPreview) {
         updateData.photoSurveyUrl = photoPreview;
       }
+      if (surveyData.tandaTanganPelakuUsaha) {
+        updateData.tandaTanganPelakuUsaha = surveyData.tandaTanganPelakuUsaha;
+      }
 
       const cleanData = sanitizeForFirebase(updateData);
       const { update } = await import('firebase/database');
@@ -1090,6 +1097,9 @@ export default function VerifikasiDinasPage() {
       }
       if (location) {
         updateData.verificationLocationDinas = { lat: location.lat, lon: location.lon };
+      }
+      if (surveyData.tandaTanganPelakuUsaha) {
+        updateData.tandaTanganPelakuUsaha = surveyData.tandaTanganPelakuUsaha;
       }
 
       const cleanData = sanitizeForFirebase(updateData);
@@ -2091,12 +2101,13 @@ export default function VerifikasiDinasPage() {
                       { label: "Foto Usaha", url: getCleanUsahaPhoto(viewingActor) },
                       { label: "Foto Perbandingan", url: getCleanComparisonPhoto(viewingActor) },
                       { label: "Foto Survey Dinas", url: getCleanSurveyPhoto(viewingActor) },
+                      { label: "Tanda Tangan Pelaku Usaha", url: viewingActor.surveyData?.tandaTanganPelakuUsaha || viewingActor.tandaTanganPelakuUsaha },
                     ].map((doc, i) => (
                       <div key={i} className="space-y-1">
                         <p className="text-[10px] font-bold text-rose-700/80 uppercase">{doc.label}</p>
                         {doc.url ? (
                           <div className="space-y-1">
-                            <img src={doc.url} alt={doc.label} className="w-full h-28 object-cover rounded-lg border border-slate-200" />
+                            <img src={doc.url} alt={doc.label} className={`w-full h-28 ${doc.label.includes("Tanda Tangan") ? "object-contain bg-white p-2" : "object-cover"} rounded-lg border border-slate-200`} />
                             <a href={doc.url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 hover:underline flex items-center gap-1">
                               <Eye className="w-3 h-3" /> Buka penuh
                             </a>
@@ -2875,6 +2886,89 @@ export default function VerifikasiDinasPage() {
                     </div>
                   )}
                 </div>
+
+                {/* ─── TANDA TANGAN PELAKU USAHA (OPSIONAL) ─── */}
+                <div className="space-y-3 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-700">
+                        <PenTool className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-bold text-slate-800">
+                          Tanda Tangan Pelaku Usaha
+                        </Label>
+                        <span className="text-[11px] text-slate-400 ml-2 font-normal">
+                          (Opsional / Tidak Wajib)
+                        </span>
+                      </div>
+                    </div>
+                    {surveyData.tandaTanganPelakuUsaha && (
+                      <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        ✓ Sudah Ditandatangani
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-slate-500">
+                    Bubuhkan tanda tangan elektronik pelaku usaha. Jika ditandatangani, otomatis akan dicetak pada lembar Berita Acara Survey di kolom <strong>Calon Penerima Dana Hibah</strong>.
+                  </p>
+
+                  {surveyData.tandaTanganPelakuUsaha ? (
+                    <div className="p-4 bg-slate-50 border rounded-xl space-y-3">
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="bg-white p-3 rounded-lg border shadow-xs max-w-[280px] w-full flex flex-col items-center">
+                          <img
+                            src={surveyData.tandaTanganPelakuUsaha}
+                            alt="Tanda Tangan Pelaku Usaha"
+                            className="max-h-24 object-contain"
+                          />
+                          <div className="w-full border-t border-dashed border-slate-300 mt-2 pt-1 text-center">
+                            <span className="text-[10px] font-bold text-slate-600 uppercase">
+                              {surveyData.namaPemilik || verifyingActor.fullName}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsSignatureDialogOpen(true)}
+                            className="text-xs border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold"
+                          >
+                            <Edit className="w-3.5 h-3.5 mr-1.5" /> Ubah Tanda Tangan
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSurveyData(prev => ({ ...prev, tandaTanganPelakuUsaha: undefined }))}
+                            className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Hapus Tanda Tangan
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => setIsSignatureDialogOpen(true)}
+                      className="border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-indigo-50/30 hover:bg-indigo-50/60 transition-all rounded-xl p-5 flex flex-col items-center justify-center cursor-pointer text-center group"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-white shadow-xs border border-indigo-100 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform text-indigo-600">
+                        <PenTool className="w-5 h-5" />
+                      </div>
+                      <p className="text-xs font-bold text-indigo-900 group-hover:underline">
+                        Klik di sini untuk Membuka Pad Tanda Tangan
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Dapat ditandatangani langsung menggunakan layar sentuh HP atau mouse
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
               <DialogFooter className="pt-4 border-t mt-2 flex flex-row justify-between items-center w-full">
                 <div className="flex-1">
@@ -2907,6 +3001,16 @@ export default function VerifikasiDinasPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* ─── MODAL PAD TANDA TANGAN PELAKU USAHA ─────────────────────────── */}
+      <SignaturePadDialog
+        open={isSignatureDialogOpen}
+        onOpenChange={setIsSignatureDialogOpen}
+        signerName={surveyData.namaPemilik || verifyingActor?.fullName}
+        onSave={(sigBase64) => {
+          setSurveyData(prev => ({ ...prev, tandaTanganPelakuUsaha: sigBase64 }));
+        }}
+      />
 
       {/* ─── RESET SURVEY CONFIRM DIALOG ─────────────────────────────── */}
       <Dialog open={!!resetSurveyActor} onOpenChange={(open) => !open && setResetSurveyActor(null)}>

@@ -32,6 +32,7 @@ export interface SurveyDinasData {
   hasPhoto?: boolean;
   tanggalSurvey?: string;
   pejabatData?: PejabatData;
+  tandaTanganPelakuUsaha?: string;
 }
 
 export interface BusinessActor {
@@ -77,6 +78,7 @@ export interface BusinessActor {
   filingNote?: string;
   surveyData?: SurveyDinasData;
   surveyProgress?: number;
+  tandaTanganPelakuUsaha?: string;
   verificationLocationDinas?: { lat: number; lon: number };
   googleDriveLink?: string;
   verifikatorDinas?: string;

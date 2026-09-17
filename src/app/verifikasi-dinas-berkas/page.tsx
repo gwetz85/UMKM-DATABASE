@@ -2333,12 +2333,13 @@ export default function VerifikasiDinasBerkasPage() {
                         { label: "Foto Usaha", url: getCleanUsahaPhoto(av) },
                         { label: "Foto Perbandingan", url: getCleanComparisonPhoto(av) },
                         { label: "Foto Survey Dinas", url: adminViewPhoto || getCleanSurveyPhoto(av) },
+                        { label: "Tanda Tangan Pelaku Usaha", url: av.surveyData?.tandaTanganPelakuUsaha || av.tandaTanganPelakuUsaha },
                       ].map((doc, i) => (
                         <div key={i} className="space-y-1">
                           <p className="text-[10px] font-bold text-rose-700/80 uppercase">{doc.label}</p>
                           {doc.url ? (
                             <div className="space-y-1">
-                              <img src={doc.url} alt={doc.label} className="w-full h-28 object-cover rounded-lg border border-slate-200" />
+                              <img src={doc.url} alt={doc.label} className={`w-full h-28 ${doc.label.includes("Tanda Tangan") ? "object-contain bg-white p-2" : "object-cover"} rounded-lg border border-slate-200`} />
                               <a href={doc.url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 hover:underline flex items-center gap-1">
                                 <ExternalLink className="w-3 h-3" /> Buka penuh
                               </a>

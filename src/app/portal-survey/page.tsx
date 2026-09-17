@@ -68,8 +68,12 @@ import {
   RotateCcw,
   Ban,
   XCircle,
-  FileEdit
+  FileEdit,
+  PenTool,
+  Trash2,
+  Edit
 } from "lucide-react"
+import { SignaturePadDialog } from "@/components/signature-pad-dialog"
 
 const IZIN_OPTIONS = ["NIB", "P-IRT", "HALAL", "BPOM", "HAKI", "Belum Ada"]
 const STATUS_OPTIONS = ["Kepala Keluarga", "Ibu Rumah Tangga", "Lajang", "Janda", "Duda"]
@@ -130,6 +134,7 @@ export default function PortalSurveyPage() {
   const [isFetchingLocation, setIsFetchingLocation] = useState(false)
   const [isSubmittingSurvey, setIsSubmittingSurvey] = useState(false)
   const [isSubmittingDraft, setIsSubmittingDraft] = useState(false)
+  const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false)
 
   // ==========================================
   // CANCEL DINAS STATE (FUNGSI BATAL SURVEY)
@@ -464,7 +469,8 @@ export default function PortalSurveyPage() {
       dtks: existing.dtks || { masuk: false },
       hibah: existing.hibah || { pernah: false },
       izin: existing.izin && existing.izin.length > 0 ? existing.izin : ['NIB'],
-      fotoSurveyUrl: existingPhoto || undefined
+      fotoSurveyUrl: existingPhoto || undefined,
+      tandaTanganPelakuUsaha: existing.tandaTanganPelakuUsaha || (actor as any).tandaTanganPelakuUsaha || undefined
     })
   }
 
@@ -688,6 +694,9 @@ export default function PortalSurveyPage() {
       if (surveyData.bidangUsaha) {
         updateData.businessCategory = surveyData.bidangUsaha
       }
+      if (surveyData.tandaTanganPelakuUsaha) {
+        updateData.tandaTanganPelakuUsaha = surveyData.tandaTanganPelakuUsaha
+      }
       if (surveyPhotoPreview) {
         updateData.photoSurveyUrl = surveyPhotoPreview
       }
@@ -794,6 +803,9 @@ export default function PortalSurveyPage() {
       }
       if (surveyPhotoPreview) {
         updateData.photoSurveyUrl = surveyPhotoPreview
+      }
+      if (surveyData.tandaTanganPelakuUsaha) {
+        updateData.tandaTanganPelakuUsaha = surveyData.tandaTanganPelakuUsaha
       }
       if (canonicalOfficerName && canonicalOfficerName !== "BELUM ADA") {
         updateData.petugasSurvey = canonicalOfficerName
@@ -2320,6 +2332,74 @@ export default function PortalSurveyPage() {
               </div>
             </div>
 
+            {/* SEKSI 6: TANDA TANGAN PELAKU USAHA (OPSIONAL) */}
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/70 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="font-black text-slate-800 text-xs flex items-center gap-1.5">
+                  <PenTool className="w-4 h-4 text-indigo-600" />
+                  6. Tanda Tangan Pelaku Usaha
+                </h4>
+                <span className="text-[10px] bg-slate-200/80 text-slate-600 font-bold px-2 py-0.5 rounded-full">
+                  Opsional / Tidak Wajib
+                </span>
+              </div>
+
+              <p className="text-[11px] text-slate-500">
+                Bubuhkan tanda tangan elektronik pelaku usaha langsung di layar HP/tablet. Tanda tangan akan otomatis terisi pada lembar Berita Acara Survey di kolom <strong>Calon Penerima Dana Hibah</strong>.
+              </p>
+
+              {surveyData.tandaTanganPelakuUsaha ? (
+                <div className="bg-white p-3 rounded-xl border border-slate-200/80 space-y-3">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="p-2 border border-slate-100 rounded-lg bg-slate-50 flex flex-col items-center w-full sm:w-auto">
+                      <img 
+                        src={surveyData.tandaTanganPelakuUsaha} 
+                        alt="Tanda Tangan Pelaku Usaha" 
+                        className="max-h-20 object-contain"
+                      />
+                      <div className="w-full border-t border-dashed border-slate-300 mt-1.5 pt-1 text-center">
+                        <span className="text-[10px] font-bold text-slate-700 uppercase">
+                          {surveyData.namaPemilik || surveyingActor?.fullName}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsSignatureDialogOpen(true)}
+                        className="h-8 rounded-xl text-xs font-bold border-indigo-300 text-indigo-700 hover:bg-indigo-50 flex-1 sm:flex-initial"
+                      >
+                        <Edit className="w-3 h-3 mr-1" />
+                        Ubah
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSurveyData(prev => ({ ...prev, tandaTanganPelakuUsaha: undefined }))}
+                        className="h-8 rounded-xl text-xs text-rose-600 hover:bg-rose-50 flex-1 sm:flex-initial"
+                      >
+                        <Trash2 className="w-3 h-3 mr-1" />
+                        Hapus
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  onClick={() => setIsSignatureDialogOpen(true)}
+                  className="border-2 border-dashed border-indigo-200 hover:border-indigo-400 bg-white rounded-xl p-4 text-center cursor-pointer transition-colors"
+                >
+                  <PenTool className="w-7 h-7 mx-auto text-indigo-400 mb-1" />
+                  <p className="text-xs text-indigo-900 font-bold">Sentuh untuk Membuka Pad Tanda Tangan</p>
+                  <p className="text-[10px] text-slate-400">Pelaku usaha dapat menandatangani langsung di layar HP/Tablet</p>
+                </div>
+              )}
+            </div>
+
           </div>
 
           {/* Action Footer */}
@@ -2420,6 +2500,16 @@ export default function PortalSurveyPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ─── MODAL PAD TANDA TANGAN PELAKU USAHA ─────────────────────────── */}
+      <SignaturePadDialog
+        open={isSignatureDialogOpen}
+        onOpenChange={setIsSignatureDialogOpen}
+        signerName={surveyData.namaPemilik || surveyingActor?.fullName}
+        onSave={(sigBase64) => {
+          setSurveyData(prev => ({ ...prev, tandaTanganPelakuUsaha: sigBase64 }))
+        }}
+      />
 
       {/* ========================================================================= */}
       {/* DIALOG 3: REKAPAN BERITA ACARA (PER PETUGAS SURVEY DARI AWAL S/D AKHIR)   */}
