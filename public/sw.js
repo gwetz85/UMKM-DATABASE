@@ -1,6 +1,5 @@
-﻿const CACHE_NAME = 'simpu-pwa-v1';
+const CACHE_NAME = 'simpu-pwa-v2';
 const STATIC_ASSETS = [
-  '/',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
@@ -22,6 +21,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((name) => {
           if (name !== CACHE_NAME) {
+            console.log('[PWA SW] Deleting outdated cache:', name);
             return caches.delete(name);
           }
         })
@@ -45,7 +45,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for static assets (_next/static, public images/fonts)
+  // HTML Page Navigation: Network-First (Never serve stale HTML which breaks CSS chunk hashes)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .catch(() => {
+          return caches.match(request).then((cachedResponse) => {
+            return cachedResponse || Response.error();
+          });
+        })
+    );
+    return;
+  }
+
+  // Static assets (_next/static, public images/fonts): Stale-While-Revalidate / Network-First with Cache Fallback
   if (url.pathname.startsWith('/_next/static/') || url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|woff|woff2|ttf|css|js)$/)) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {
@@ -53,6 +66,7 @@ self.addEventListener('fetch', (event) => {
           return cachedResponse;
         }
         return fetch(request).then((networkResponse) => {
+          // Only cache successful 200 OK responses, NEVER cache 404 or 500 errors
           if (networkResponse && networkResponse.status === 200) {
             const responseClone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
@@ -60,21 +74,11 @@ self.addEventListener('fetch', (event) => {
             });
           }
           return networkResponse;
+        }).catch(() => {
+          return cachedResponse || Response.error();
         });
       })
     );
     return;
   }
-
-  // Network-first with cache fallback for pages
-  event.respondWith(
-    fetch(request).catch(() => {
-      return caches.match(request).then((cachedResponse) => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return caches.match('/');
-      });
-    })
-  );
 });
