@@ -71,9 +71,12 @@ export default function KuotaKorlapDewanAktifPage() {
 
     return kuotaData.map((item: any) => {
       const quota = item.quota || 0
-      const nameUpper = item.name ? item.name.toUpperCase().trim() : ''
-      const achieved = achievedMap[nameUpper] || 0
-      const rekeningInput = rekeningMap[nameUpper] || 0
+      const rawName = item.name ? String(item.name).trim() : ''
+      const nameUpper = rawName.toUpperCase()
+      const nameNormalized = normalizeCoordinator(rawName).toUpperCase().trim()
+
+      const achieved = (achievedMap[nameNormalized] !== undefined) ? achievedMap[nameNormalized] : (achievedMap[nameUpper] || 0)
+      const rekeningInput = (rekeningMap[nameNormalized] !== undefined) ? rekeningMap[nameNormalized] : (rekeningMap[nameUpper] || 0)
       const remaining = quota - achieved
       return {
         ...item,
@@ -228,6 +231,11 @@ export default function KuotaKorlapDewanAktifPage() {
         await update(ref(database), updates)
       }
 
+      // Sync system_stats so coordinator counts update immediately
+      import("@/lib/stats-service").then(({ recalculateAndSaveSystemStats }) => {
+        recalculateAndSaveSystemStats(database).catch(console.error)
+      })
+
       const updatedCount = Object.keys(updates).length
       logActivity({
         query: `UBAH NAMA KORLAP: "${oldName}" → "${newName}" (${updatedCount} data diperbarui)`,
@@ -281,6 +289,28 @@ export default function KuotaKorlapDewanAktifPage() {
     setDeletePending(null)
   }
 
+  const handleSync = async () => {
+    if (!database || isSyncing) return
+    setIsSyncing(true)
+    try {
+      const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service")
+      await recalculateAndSaveSystemStats(database)
+      toast({
+        title: "Sinkronisasi Berhasil",
+        description: "Data kuota dan rekening input per koordinator telah berhasil disinkronkan."
+      })
+    } catch (err: any) {
+      console.error("Gagal sinkronisasi:", err)
+      toast({
+        variant: "destructive",
+        title: "Gagal Sinkronisasi",
+        description: err?.message || "Terjadi kesalahan saat menyinkronkan data."
+      })
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
   const handleExportPDF = () => {
     import('jspdf').then(({ default: jsPDF }) => {
       import('jspdf-autotable').then(({ default: autoTable }) => {
@@ -304,6 +334,7 @@ export default function KuotaKorlapDewanAktifPage() {
           item.name || '-',
           item.quota,
           item.achieved,
+          item.rekeningInput,
           item.remaining,
           item.quota > 0 ? `${((item.achieved / item.quota) * 100).toFixed(1)}%` : '0%'
         ])
@@ -311,31 +342,32 @@ export default function KuotaKorlapDewanAktifPage() {
         // Footer row
         const totalRemaining = totalQuota - totalAchieved
         const totalPct = totalQuota > 0 ? `${((totalAchieved / totalQuota) * 100).toFixed(1)}%` : '0%'
-        tableBody.push(['', 'TOTAL', totalQuota, totalAchieved, totalRemaining, totalPct] as any)
+        tableBody.push(['', 'TOTAL', totalQuota, totalAchieved, totalRekeningInput, totalRemaining, totalPct] as any)
 
         // A4 portrait usable width: 210 - 14 (left) - 14 (right) = 182mm
-        // Fixed cols: No=10, Kuota=22, Tercapai=24, Sisa=22, %=24 → 102mm
+        // Fixed cols: No=10, Kuota=18, Tercapai=18, Rekening=20, Sisa=18, %=18 → 102mm
         // Name col = 182 - 102 = 80mm
         const margin = 14
         const usableWidth = pageWidth - margin * 2
-        const fixedWidth = 10 + 22 + 24 + 22 + 24
+        const fixedWidth = 10 + 18 + 18 + 20 + 18 + 18
         const nameWidth = usableWidth - fixedWidth
 
         autoTable(doc, {
           startY: 30,
           margin: { left: margin, right: margin },
           tableWidth: usableWidth,
-          head: [['No', 'Nama Koordinator', 'Kuota', 'Tercapai', 'Sisa', '% Tercapai']],
+          head: [['No', 'Nama Koordinator', 'Kuota', 'Tercapai', 'Rek. Input', 'Sisa', '% Tercapai']],
           body: tableBody,
-          styles: { font: 'helvetica', fontSize: 9, cellPadding: 3, halign: 'center' },
+          styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 2.5, halign: 'center' },
           headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold', halign: 'center' },
           columnStyles: {
             0: { cellWidth: 10 },
             1: { halign: 'left', cellWidth: nameWidth },
-            2: { cellWidth: 22 },
-            3: { cellWidth: 24 },
-            4: { cellWidth: 22 },
-            5: { cellWidth: 24 },
+            2: { cellWidth: 18 },
+            3: { cellWidth: 18 },
+            4: { cellWidth: 20 },
+            5: { cellWidth: 18 },
+            6: { cellWidth: 18 },
           },
           didParseCell: (data: any) => {
             // Style the last (total) row
@@ -346,7 +378,7 @@ export default function KuotaKorlapDewanAktifPage() {
           },
           didDrawCell: (data: any) => {
             // Color remaining cell: red if <= 0
-            if (data.column.index === 4 && data.section === 'body' && data.row.index < combinedKuotaData.length) {
+            if (data.column.index === 5 && data.section === 'body' && data.row.index < combinedKuotaData.length) {
               const item = combinedKuotaData[data.row.index]
               if (item.remaining <= 0) {
                 data.cell.styles.textColor = [220, 38, 38]
@@ -410,7 +442,16 @@ export default function KuotaKorlapDewanAktifPage() {
             <p className="text-muted-foreground font-medium">Pengelolaan target data pencapaian masing-masing usulan.</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={handleSync}
+            disabled={isSyncing}
+            className="font-bold border-blue-200 text-blue-600 hover:bg-blue-50 shadow-sm"
+          >
+            <RefreshCw className={cn("w-4 h-4 mr-2", isSyncing && "animate-spin")} />
+            {isSyncing ? "Menyinkronkan..." : "Sinkronkan Data"}
+          </Button>
           <Button
             variant="outline"
             onClick={handleExportPDF}

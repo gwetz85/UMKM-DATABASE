@@ -498,6 +498,7 @@ function ActorDataContent() {
           detailedStatus: { survey: 0, verifikasi: 0, lpj: 0, selesai: 0 },
           kelurahan: {},
           coordinator: {},
+          coordinatorRekening: {},
           lastUpdated: new Date().toISOString()
         } as any
 
@@ -545,6 +546,9 @@ function ActorDataContent() {
                 const rawCoord = actor.coordinator.toUpperCase().trim()
                 const coord = normalizeCoordinator(rawCoord).toUpperCase().trim()
                 stats.coordinator[coord] = (stats.coordinator[coord] || 0) + 1
+                if (actor.bankNumber && String(actor.bankNumber).trim() !== '') {
+                  stats.coordinatorRekening[coord] = (stats.coordinatorRekening[coord] || 0) + 1
+                }
                 
                 if (actor.coordinator !== coord) {
                   updates[`${child.key}/coordinator`] = coord
