@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogDescription
 } from "@/components/ui/dialog"
-import { Building2, ArrowRight, ChevronRight } from "lucide-react"
+import { Building2, ArrowRight, ChevronRight, Sparkles } from "lucide-react"
 
 interface MenuLaunchpadProps {
   onSelect?: () => void
@@ -42,148 +42,166 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
   }
 
   return (
-    <div className={cn("w-full max-w-7xl mx-auto p-3 sm:p-4 md:p-8 animate-in fade-in zoom-in duration-500 flex flex-col", className)}>
-      <div className="flex flex-col mb-4 md:mb-6 space-y-1.5 md:space-y-2 shrink-0">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-black text-slate-800 dark:text-slate-100 tracking-tight uppercase">
-            Sistem Navigasi
-          </h2>
+    <div className={cn("w-full max-w-7xl mx-auto p-2 sm:p-4 md:p-6 animate-in fade-in zoom-in duration-500 flex flex-col", className)}>
+      {/* Modern Frosted Canvas Container */}
+      <div className="bg-white/85 dark:bg-slate-900/90 backdrop-blur-xl border border-white/80 dark:border-slate-800 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl shadow-slate-300/40 dark:shadow-none space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] md:text-xs font-black uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              Pusat Navigasi Sistem SIMPU
+            </div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+              Sistem Navigasi Modul
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm">
+              Pilih modul kerja untuk mengakses database, alur verifikasi dinas, atau statistik.
+            </p>
+          </div>
           {userProfile && (
-            <span className="md:hidden text-[10px] font-black text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full uppercase tracking-wider">
-              {userProfile.role || 'Staff'}
-            </span>
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="text-[11px] font-black text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl uppercase tracking-wider shadow-sm">
+                Role: {userProfile.role || 'Staff'}
+              </span>
+            </div>
           )}
         </div>
-        <p className="text-slate-400 dark:text-slate-500 font-bold text-xs sm:text-sm md:text-base uppercase tracking-[0.15em] md:tracking-[0.3em]">
-          Pilih Modul Untuk Melanjutkan
-        </p>
-      </div>
 
-      <div className="w-full md:flex-1 md:min-h-0 md:overflow-y-auto overflow-x-hidden md:pr-1 custom-scrollbar">
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3 md:gap-5 pb-6 md:pb-16">
-        {navigation.map((item: any, index) => (
-          <div
-            key={item.name}
-            onClick={() => {
-              if (item.items && item.items.length > 0) {
-                playSound('click')
-                setSelectedItem(item)
-              } else {
-                handleNavigate(item.href)
-              }
-            }}
-            style={{ 
-              animationDelay: `${index * 30}ms`,
-              backgroundColor: item.color,
-              borderColor: `${item.color}55`
-            }}
-            className={cn(
-              "group relative flex flex-col justify-between p-3 sm:p-4 md:p-5 rounded-2xl md:rounded-[2rem] transition-all duration-300 ease-out overflow-hidden shadow-md md:shadow-lg border cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-3",
-              "h-[110px] sm:h-[125px] md:h-[150px] lg:h-[160px]",
-              "hover:shadow-2xl hover:-translate-y-1.5 hover:brightness-110"
-            )}
-          >
-            {/* Glossy Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/25 via-white/10 to-transparent pointer-events-none" />
+        {/* Modules Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-4 pb-2">
+          {navigation.map((item: any, index: number) => (
+            <div
+              key={item.name}
+              onClick={() => {
+                if (item.items && item.items.length > 0) {
+                  playSound('click')
+                  setSelectedItem(item)
+                } else {
+                  handleNavigate(item.href)
+                }
+              }}
+              style={{ animationDelay: `${index * 25}ms` }}
+              className={cn(
+                "group relative flex flex-col justify-between p-3.5 sm:p-4 rounded-2xl md:rounded-3xl transition-all duration-300 ease-out overflow-hidden shadow-sm hover:shadow-xl border border-slate-200/90 dark:border-slate-800 cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-2",
+                "bg-white/95 dark:bg-slate-900/95 hover:-translate-y-1.5",
+                "min-h-[140px] sm:min-h-[150px] md:min-h-[160px]"
+              )}
+            >
+              {/* Top Accent Stripe */}
+              <div 
+                className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 group-hover:h-2"
+                style={{ backgroundColor: item.color }} 
+              />
 
-            {/* Top Bar: Icon on left, Badges on right */}
-            <div className="relative z-10 flex items-start justify-between w-full">
-              {/* Icon Container */}
-              <div className="bg-white/25 backdrop-blur-md p-2 sm:p-2.5 md:p-3 rounded-xl md:rounded-2xl group-hover:scale-110 transition-transform duration-300 ease-out shadow-md">
-                <item.icon className="w-5 h-5 md:w-6 md:h-6 text-white" />
+              {/* Top Bar: Icon with theme color, Badges on right */}
+              <div className="relative z-10 flex items-start justify-between w-full pt-1">
+                <div 
+                  className="p-2 sm:p-2.5 rounded-xl md:rounded-2xl transition-transform duration-300 group-hover:scale-110 shadow-md flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: item.color, color: '#ffffff' }}
+                >
+                  <item.icon className="w-5 h-5 md:w-5.5 md:h-5.5 text-white" />
+                </div>
+
+                {/* Badges */}
+                <div className="flex flex-col items-end gap-1">
+                  {item.badge !== undefined && (
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-rose-500 text-white rounded-full shadow-sm animate-pulse">
+                      <span className="w-1.5 h-1.5 bg-white rounded-full" />
+                      <span className="text-[9px] md:text-[10px] font-black uppercase tracking-wider">{item.badge}</span>
+                    </div>
+                  )}
+
+                  {item.items && item.items.length > 0 && (
+                    <div className="flex items-center gap-0.5 text-[8px] md:text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
+                      <ChevronRight className="w-2.5 h-2.5" />
+                      <span>Sub-Menu</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Badges */}
-              <div className="flex items-center gap-1">
-                {item.badge !== undefined && (
-                  <div className="flex items-center gap-1 px-2 py-0.5 md:px-2.5 md:py-1 bg-white/30 rounded-full backdrop-blur-md border border-white/30 animate-pulse shadow-md">
-                    <span className="w-1.5 h-1.5 bg-white rounded-full" />
-                    <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-wider">{item.badge}</span>
-                  </div>
+              {/* Title & Description Section */}
+              <div className="relative z-10 flex flex-col justify-end mt-3 space-y-0.5">
+                <div className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight group-hover:text-primary transition-colors line-clamp-2">
+                  {item.name}
+                </div>
+                {item.description && (
+                  <p className="text-[10px] md:text-[11px] font-medium text-slate-500 dark:text-slate-400 line-clamp-1">
+                    {item.description}
+                  </p>
                 )}
+              </div>
 
-                {item.items && item.items.length > 0 && (
-                  <div className="flex items-center gap-0.5 sm:gap-1 text-[8px] md:text-[10px] font-black text-white/90 uppercase tracking-wider bg-black/15 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded-full backdrop-blur-md border border-white/10">
-                    <ChevronRight className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
-                    <span className="hidden sm:inline">Sub-Menu</span>
-                    <span className="sm:hidden text-[7px]">Sub</span>
-                  </div>
-                )}
+              {/* Subtle Hover Action Footer */}
+              <div className="relative z-10 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mt-2">
+                <span>{item.items && item.items.length > 0 ? "Pilih Opsi" : "Buka Modul"}</span>
+                <ArrowRight className="w-3 h-3 text-primary group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
-
-            {/* Title Section */}
-            <div className="relative z-10 flex flex-col items-start md:items-center justify-end md:justify-center md:flex-1 mt-auto">
-              <div className="text-xs sm:text-sm md:text-base font-black text-white leading-tight uppercase tracking-tight text-left md:text-center break-words line-clamp-2 w-full drop-shadow-sm">
-                {item.name}
-              </div>
-            </div>
-
-            {/* Decorative Light Effect */}
-            <div className="absolute -bottom-8 -right-8 w-24 h-24 md:w-32 md:h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000 pointer-events-none" />
-          </div>
-        ))}
+          ))}
         </div>
       </div>
 
       {/* Sub-Menu Dialog */}
       <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
-        <DialogContent className="max-w-2xl bg-white/95 backdrop-blur-xl border-none shadow-2xl rounded-[2.5rem] p-0 overflow-hidden flex flex-col max-h-[90vh]">
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-primary/20 to-transparent z-50" />
+        <DialogContent className="max-w-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 shadow-2xl rounded-3xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+          <div 
+            className="h-2 w-full"
+            style={{ backgroundColor: selectedItem?.color || 'var(--primary)' }}
+          />
           
-          <div className="p-8 pb-4">
-            <DialogHeader className="mb-4">
-              <div className="flex items-center gap-4">
+          <div className="p-6 sm:p-8 pb-4">
+            <DialogHeader className="mb-2">
+              <div className="flex items-center gap-3.5">
                 <div 
-                  className="p-4 rounded-2xl shadow-lg shadow-primary/10" 
-                  style={{ backgroundColor: selectedItem?.color }}
+                  className="p-3 sm:p-3.5 rounded-2xl shadow-lg" 
+                  style={{ backgroundColor: selectedItem?.color, color: '#ffffff' }}
                 >
                   {selectedItem && <selectedItem.icon className="w-6 h-6 text-white" />}
                 </div>
                 <div className="flex flex-col text-left">
-                  <DialogTitle className="text-2xl font-black uppercase tracking-tight text-slate-800">
+                  <DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-900 dark:text-white">
                     {selectedItem?.name}
                   </DialogTitle>
-                  <DialogDescription className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                    Pilih Sub-Menu Untuk Melanjutkan
+                  <DialogDescription className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-0.5">
+                    Pilih sub-menu untuk melanjutkan
                   </DialogDescription>
                 </div>
               </div>
             </DialogHeader>
           </div>
 
-          <div className="px-8 pb-8 overflow-y-auto custom-scrollbar flex-1">
+          <div className="px-6 sm:px-8 pb-6 overflow-y-auto custom-scrollbar flex-1">
             <div className={cn(
-              "grid gap-3",
+              "grid gap-2.5 sm:gap-3",
               selectedItem?.items?.length > 6 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
             )}>
               {selectedItem?.items?.map((sub: any, idx: number) => (
                 <button
                   key={sub.name}
                   onClick={() => handleNavigate(sub.href)}
-                  style={{ animationDelay: `${idx * 50}ms` }}
-                  className="group flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-primary text-slate-700 hover:text-white transition-all duration-300 border border-slate-100 hover:border-primary shadow-sm hover:shadow-xl hover:-translate-y-0.5 animate-in fade-in slide-in-from-right-4"
+                  style={{ animationDelay: `${idx * 40}ms` }}
+                  className="group flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-primary text-slate-700 dark:text-slate-200 hover:text-white transition-all duration-300 border border-slate-200/80 dark:border-slate-700/80 hover:border-primary shadow-sm hover:shadow-xl hover:-translate-y-0.5 active:scale-95 animate-in fade-in"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-white/50 flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-700 flex items-center justify-center group-hover:bg-white/20 transition-colors shadow-sm shrink-0">
                       <Building2 className="w-4 h-4 text-primary group-hover:text-white" />
                     </div>
-                    <span className="font-black uppercase tracking-tight text-sm">{sub.name}</span>
+                    <span className="font-black uppercase tracking-tight text-xs sm:text-sm text-left truncate">{sub.name}</span>
                   </div>
-                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all shrink-0" />
                 </button>
               ))}
             </div>
 
             <button 
               onClick={() => setSelectedItem(null)}
-              className="w-full mt-8 py-3 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-primary transition-colors border-t border-slate-100"
+              className="w-full mt-6 py-2.5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 hover:text-primary transition-colors border-t border-slate-100 dark:border-slate-800"
             >
               Tutup Menu
             </button>
           </div>
-          
-
         </DialogContent>
       </Dialog>
     </div>
