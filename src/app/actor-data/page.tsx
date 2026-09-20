@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle, ClipboardList, Camera, Copy, Check, MoreVertical, ExternalLink, Calendar, Phone, PhoneCall, Sparkles, Navigation, UserCheck, Maximize2, ShieldCheck, BadgeCheck } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, Users, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle, ClipboardList, Camera, Copy, Check, MoreVertical, ExternalLink, Calendar, Phone, PhoneCall, Sparkles, Navigation, UserCheck, Maximize2, ShieldCheck, BadgeCheck } from "lucide-react"
 import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -447,6 +447,18 @@ function ActorDataContent() {
     if (!filterCoordinator) return null
     return coordinatorStats.find(s => s.name === filterCoordinator)
   }, [coordinatorStats, filterCoordinator])
+
+  const activeCoordinatorCount = useMemo(() => {
+    return coordinatorStats.filter(s => s.count > 0).length
+  }, [coordinatorStats])
+
+  const totalVerifiedCount = useMemo(() => {
+    return coordinatorStats.reduce((acc, curr) => acc + curr.count, 0)
+  }, [coordinatorStats])
+
+  const fullQuotaCount = useMemo(() => {
+    return coordinatorStats.filter(s => s.count > 0 && s.isFull).length
+  }, [coordinatorStats])
 
 
 
@@ -1044,71 +1056,140 @@ function ActorDataContent() {
         <p className="text-xs font-bold uppercase tracking-widest">Sistem Informasi Manajemen Pelaku Usaha</p>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
-            <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline">Data Pelaku Usaha</h1>
-          </div>
-          <p className="text-xs md:text-sm text-muted-foreground">Data lolos verifikasi siap diisi rekening.</p>
-        </div>
-        <div className="flex flex-col sm:flex-row flex-wrap gap-2 w-full md:w-auto print:hidden">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Cari Nama, NIK, Usaha..." 
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-9 h-10 border-primary/20 bg-white"
-            />
+      {/* Modern Frosted Glass Canvas */}
+      <div className="bg-white/85 dark:bg-slate-900/90 backdrop-blur-xl border border-white/80 dark:border-slate-800 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl shadow-slate-300/40 dark:shadow-none space-y-6">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 print:hidden border-b border-slate-100 dark:border-slate-800/80 pb-6">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                <Sparkles className="w-3.5 h-3.5 text-primary" />
+                Direktori & Database Pelaku Usaha
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors h-9 w-9 rounded-xl" />
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight font-headline">
+                Data Pelaku Usaha
+              </h1>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium">
+              Data lolos verifikasi siap diisi rekening dan diteruskan ke tahap dinas.
+            </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto">
-            {!isMonitoring && (
-              <Button onClick={() => handleExportExcel()} className="bg-emerald-600 hover:bg-emerald-700 font-bold shadow-md h-10 rounded-xl text-xs sm:text-sm">
-                <FileSpreadsheet className="w-4 h-4 mr-1.5" /> EKSPOR EXCEL
-              </Button>
-            )}
-            {!isMonitoring && (
-              <Button
-                onClick={async () => {
-                  if (filterCoordinator) {
-                    generateCoordinatorReport(filterCoordinator, groupedActors[filterCoordinator] || [])
-                  } else {
-                    if (Object.keys(groupedActors).length === 0) {
-                      toast({ title: "Menyiapkan Dokumen", description: "Sedang mengambil data untuk cetak PDF seluruh koordinator..." })
-                      try {
-                        const { get, ref } = await import("firebase/database")
-                        const snap = await get(ref(database!, 'businessActors'))
-                        if (snap.exists()) {
-                          const allActors = Object.values(snap.val()) as BusinessActor[]
-                          const groups: Record<string, BusinessActor[]> = {}
-                          allActors.forEach(a => {
-                            const s = a.status || "";
-                            const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
-                            if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) return;
-                            const coord = (a.coordinator || "Tanpa Koordinator").toUpperCase().trim()
-                            if (!groups[coord]) groups[coord] = []
-                            groups[coord].push(a)
-                          })
-                          generateAllCoordinatorsReport(groups)
-                        }
-                      } catch (e) {
-                        toast({ variant: "destructive", title: "Gagal", description: "Gagal memuat data PDF." })
-                      }
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 w-full lg:w-auto print:hidden">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input 
+                placeholder="Cari Nama, NIK, Usaha..." 
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="pl-10 h-11 border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-800/80 rounded-2xl shadow-sm focus-visible:ring-primary font-medium text-xs sm:text-sm"
+              />
+              {searchInput && (
+                <button 
+                  onClick={() => { setSearchInput(""); setSearchQuery(""); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto">
+              {!isMonitoring && (
+                <Button 
+                  onClick={() => handleExportExcel()} 
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
+                >
+                  <FileSpreadsheet className="w-4 h-4 mr-1.5" /> EKSPOR EXCEL
+                </Button>
+              )}
+              {!isMonitoring && (
+                <Button
+                  onClick={async () => {
+                    if (filterCoordinator) {
+                      generateCoordinatorReport(filterCoordinator, groupedActors[filterCoordinator] || [])
                     } else {
-                      generateAllCoordinatorsReport(groupedActors)
+                      if (Object.keys(groupedActors).length === 0) {
+                        toast({ title: "Menyiapkan Dokumen", description: "Sedang mengambil data untuk cetak PDF seluruh koordinator..." })
+                        try {
+                          const { get, ref } = await import("firebase/database")
+                          const snap = await get(ref(database!, 'businessActors'))
+                          if (snap.exists()) {
+                            const allActors = Object.values(snap.val()) as BusinessActor[]
+                            const groups: Record<string, BusinessActor[]> = {}
+                            allActors.forEach(a => {
+                              const s = a.status || "";
+                              const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+                              if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) return;
+                              const coord = (a.coordinator || "Tanpa Koordinator").toUpperCase().trim()
+                              if (!groups[coord]) groups[coord] = []
+                              groups[coord].push(a)
+                            })
+                            generateAllCoordinatorsReport(groups)
+                          }
+                        } catch (e) {
+                          toast({ variant: "destructive", title: "Gagal", description: "Gagal memuat data PDF." })
+                        }
+                      } else {
+                        generateAllCoordinatorsReport(groupedActors)
+                      }
                     }
-                  }
-                }}
-                className="bg-red-600 hover:bg-red-700 font-bold shadow-md h-10 rounded-xl text-xs sm:text-sm"
-              >
-                <Printer className="w-4 h-4 mr-1.5" /> CETAK PDF
-              </Button>
-            )}
+                  }}
+                  className="bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-md shadow-rose-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
+                >
+                  <Printer className="w-4 h-4 mr-1.5" /> CETAK PDF
+                </Button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Overview Stats Ribbon (when showing all coordinators) */}
+        {!isSearching && !filterCoordinator && !isInspektorat && !isKoordinator && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 print:hidden">
+            <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-br from-indigo-50/80 to-blue-50/50 dark:from-indigo-950/20 dark:to-blue-950/10 border border-indigo-100/80 dark:border-indigo-900/30 shadow-sm">
+              <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 shrink-0">
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Koordinator</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">{activeCoordinatorCount}</span>
+                  <span className="text-xs font-semibold text-slate-500">Penanggung Jawab</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-br from-emerald-50/80 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/10 border border-emerald-100/80 dark:border-emerald-900/30 shadow-sm">
+              <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 shrink-0">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Berkas Siap Rekening</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-400 font-mono">{totalVerifiedCount.toLocaleString('id-ID')}</span>
+                  <span className="text-xs font-semibold text-slate-500">Pelaku Usaha</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/10 border border-amber-100/80 dark:border-amber-900/30 shadow-sm">
+              <div className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Ketercapaian Kuota</p>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">{fullQuotaCount}</span>
+                  <span className="text-xs font-semibold text-slate-500">/ {activeCoordinatorCount} Koordinator Penuh</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
 
 
 
@@ -1569,69 +1650,143 @@ function ActorDataContent() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4 md:gap-5">
             {(isKuotaLoading || (!systemStats && isStatsLoading)) ? (
               [...Array(12)].map((_, i) => (
                 <div 
                   key={i} 
-                  className="flex flex-col p-4 md:p-5 rounded-[2rem] bg-slate-100 dark:bg-slate-800 animate-pulse h-[130px] md:h-[150px] justify-center items-center gap-3 border border-slate-200/50"
+                  className="flex flex-col p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-slate-100 dark:bg-slate-800/60 animate-pulse min-h-[165px] justify-between border border-slate-200/50 dark:border-slate-800"
                 >
-                  <div className="w-16 h-3 bg-slate-300 dark:bg-slate-700 rounded-full" />
-                  <div className="w-24 h-5 bg-slate-300 dark:bg-slate-700 rounded-full" />
+                  <div className="flex justify-between items-center">
+                    <div className="w-9 h-9 bg-slate-200 dark:bg-slate-700 rounded-xl" />
+                    <div className="w-14 h-4 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                  </div>
+                  <div className="space-y-2 my-2">
+                    <div className="w-3/4 h-3.5 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                    <div className="w-1/2 h-6 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                  </div>
+                  <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full" />
                 </div>
               ))
-            ) : coordinatorStats.filter(stat => stat.count > 0).map((stat) => (
-              <div 
-                key={stat.name}
-                onClick={() => router.push(`/actor-data?coordinator=${stat.name}`)}
-                className={cn(
-                  "group relative flex flex-col p-4 md:p-5 rounded-[2rem] transition-all duration-300 ease-out overflow-hidden shadow-lg border cursor-pointer active:scale-95 h-[130px] md:h-[150px] justify-center items-center animate-in fade-in slide-in-from-bottom-4",
-                  "hover:shadow-2xl hover:-translate-y-1.5 hover:brightness-110",
-                  stat.isFull 
-                    ? "bg-gradient-to-br from-emerald-500 to-emerald-600 border-emerald-400/20" 
-                    : "bg-gradient-to-br from-rose-500 to-rose-600 border-rose-400/20"
-                )}
-              >
-                {/* Glossy Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+            ) : coordinatorStats.filter(stat => stat.count > 0).map((stat) => {
+              const quotaPercent = stat.quota > 0 ? Math.min(100, Math.round((stat.count / stat.quota) * 100)) : 0;
+              return (
+                <div 
+                  key={stat.name}
+                  onClick={() => router.push(`/actor-data?coordinator=${encodeURIComponent(stat.name)}`)}
+                  className={cn(
+                    "group relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-300 ease-out overflow-hidden cursor-pointer active:scale-95 min-h-[165px] border shadow-sm hover:shadow-xl hover:-translate-y-1.5 animate-in fade-in slide-in-from-bottom-3",
+                    "bg-white dark:bg-slate-900",
+                    stat.isFull 
+                      ? "border-emerald-200/90 dark:border-emerald-900/40 hover:border-emerald-400 dark:hover:border-emerald-700 hover:shadow-emerald-500/10" 
+                      : "border-slate-200/90 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-700 hover:shadow-indigo-500/10"
+                  )}
+                >
+                  {/* Glowing Top Accent Stripe */}
+                  <div 
+                    className={cn(
+                      "absolute top-0 left-0 right-0 h-1.5 transition-all duration-300",
+                      stat.isFull 
+                        ? "bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600" 
+                        : "bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500"
+                    )} 
+                  />
 
-                {/* Icon Section */}
-                <div className="absolute top-3 right-3 md:top-4 md:right-4 z-10">
-                  <div className="bg-white/20 p-2 rounded-xl group-hover:scale-110 transition-transform duration-300 ease-out shadow-xl backdrop-blur-sm">
-                    <User className="w-3.5 h-3.5 md:w-4.5 md:h-4.5 text-white" />
+                  {/* Top Row: Avatar & Status Badge */}
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <div 
+                      className={cn(
+                        "w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-sm shrink-0",
+                        stat.isFull 
+                          ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60" 
+                          : "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60"
+                      )}
+                    >
+                      <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </div>
+
+                    {stat.isFull ? (
+                      <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                        <CheckCircle2 className="w-3 h-3" /> Penuh
+                      </span>
+                    ) : stat.quota > 0 ? (
+                      <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/80 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800 shrink-0">
+                        Sisa {stat.remaining}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 shrink-0">
+                        Aktif
+                      </span>
+                    )}
                   </div>
-                </div>
 
-                {/* Title Section */}
-                <div className="flex-1 relative z-10 flex flex-col items-center justify-center gap-2 mt-4 w-full text-center">
-                  <h3 
-                    className="text-[11px] md:text-sm font-black text-white leading-tight uppercase tracking-tight text-center break-words line-clamp-2 w-full px-1" 
-                    title={stat.name}
-                  >
-                    {stat.name}
-                  </h3>
-                  
-                  <div className="flex items-center gap-1.5 px-3 py-0.5 bg-white/20 rounded-full backdrop-blur-md border border-white/20 shadow-md">
-                    <span className="text-[9px] md:text-[10px] font-black text-white uppercase tracking-wider">{stat.count} Berkas</span>
+                  {/* Middle: Coordinator Name & Berkas Count */}
+                  <div className="space-y-1.5 my-2">
+                    <h3 
+                      className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1 group-hover:text-primary transition-colors"
+                      title={stat.name}
+                    >
+                      {stat.name}
+                    </h3>
+                    
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
+                        {stat.count}
+                      </span>
+                      <span className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        Berkas
+                      </span>
+                    </div>
+
+                    {/* Mini Progress Bar when quota > 0 */}
+                    {stat.quota > 0 && (
+                      <div className="space-y-1 pt-1">
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                          <div 
+                            className={cn(
+                              "h-full rounded-full transition-all duration-500",
+                              stat.isFull ? "bg-emerald-500" : "bg-indigo-500"
+                            )}
+                            style={{ width: `${quotaPercent}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between items-center text-[9px] sm:text-[10px] text-slate-400 font-semibold">
+                          <span>Target: {stat.quota}</span>
+                          <span className="font-mono font-bold text-slate-600 dark:text-slate-300">{quotaPercent}%</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
 
-                {/* Decorative Light Effect */}
-                <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-1000 pointer-events-none" />
-              </div>
-            ))}
+                  {/* Bottom Action Cue */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] sm:text-[11px] font-bold text-primary group-hover:text-primary/90">
+                    <span>Lihat Berkas</span>
+                    <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+
+                  {/* Ambient Glow in background */}
+                  <div 
+                    className={cn(
+                      "absolute -bottom-8 -right-8 w-24 h-24 rounded-full blur-2xl transition-all duration-700 pointer-events-none group-hover:scale-150",
+                      stat.isFull ? "bg-emerald-500/10" : "bg-indigo-500/10"
+                    )} 
+                  />
+                </div>
+              );
+            })}
 
             {!(isKuotaLoading || (!systemStats && isStatsLoading)) && coordinatorStats.filter(stat => stat.count > 0).length === 0 && (
-               <div className="col-span-full py-20 text-center flex flex-col items-center gap-4 bg-white rounded-2xl border-2 border-dashed border-slate-200">
-                 <div className="p-4 bg-slate-50 rounded-full">
-                    <Search className="w-10 h-10 text-slate-300" />
+               <div className="col-span-full py-16 text-center flex flex-col items-center gap-4 bg-white/60 dark:bg-slate-900/60 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+                 <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl">
+                    <Search className="w-8 h-8 text-slate-400" />
                  </div>
-                 <p className="font-black text-slate-400 uppercase tracking-widest">Belum ada data koordinator ditemukan</p>
+                 <p className="font-bold text-slate-400 uppercase tracking-wider text-xs sm:text-sm">Belum ada data koordinator ditemukan</p>
                </div>
             )}
           </div>
         )}
       </div>
+    </div>
 
       <Dialog open={!!viewingActor} onOpenChange={(open) => {
         if (!open) {
