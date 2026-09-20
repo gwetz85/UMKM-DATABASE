@@ -22,7 +22,11 @@ import {
   AlertCircle,
   ExternalLink,
   ShieldCheck,
-  Clock
+  Clock,
+  Sparkles,
+  Store,
+  CheckCircle2,
+  ChevronRight
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useMemo, useState, useRef } from "react"
@@ -42,6 +46,13 @@ const KELURAHAN_LIST = [
   "Batu IX", "Kampung Bulang", "Melayu Kota Piring", "Pinang Kencana",
   "Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"
 ]
+
+const getInitials = (name?: string) => {
+  if (!name) return "UM"
+  const clean = name.trim().split(/\s+/)
+  if (clean.length === 1) return clean[0].substring(0, 2).toUpperCase()
+  return (clean[0][0] + clean[1][0]).toUpperCase()
+}
 
 export default function DashboardStatsPage() {
   const { user, isUserLoading, userProfile } = useUser()
@@ -379,121 +390,139 @@ export default function DashboardStatsPage() {
       name: "Total Data", 
       value: statsValues.total, 
       icon: Building2, 
-      color: "text-white", 
-      bg: "bg-white/20",
-      cardBg: "bg-amber-500",
-      hoverBg: "hover:bg-amber-600",
-      border: "border-amber-400",
       filterType: "total",
       percentage: null,
-      detail: "DATA TERKINI"
+      detail: "DATA TERKINI",
+      accentGradient: "from-blue-600 via-indigo-600 to-indigo-700",
+      iconBg: "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/50",
+      accentBorder: "hover:border-indigo-400/80",
+      badgeColor: "bg-indigo-50 text-indigo-700 border-indigo-200/60 dark:bg-indigo-900/40 dark:text-indigo-300",
+      glowColor: "hover:shadow-indigo-500/10",
+      barPercent: 100,
+      barColor: "bg-indigo-500"
     },
     { 
       name: "Laki-Laki", 
       value: statsValues.laki, 
       icon: Users, 
-      color: "text-white", 
-      bg: "bg-white/20",
-      cardBg: "bg-blue-600",
-      hoverBg: "hover:bg-blue-700",
-      border: "border-blue-500",
       filterType: "laki",
       percentage: getPercentage(statsValues.laki, statsValues.total),
-      detail: "DATA TERKINI"
+      detail: "PROPORSI GENDER",
+      accentGradient: "from-sky-500 via-blue-600 to-cyan-600",
+      iconBg: "bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/50",
+      accentBorder: "hover:border-sky-400/80",
+      badgeColor: "bg-sky-50 text-sky-700 border-sky-200/60 dark:bg-sky-900/40 dark:text-sky-300",
+      glowColor: "hover:shadow-sky-500/10",
+      barPercent: Number(getPercentage(statsValues.laki, statsValues.total)),
+      barColor: "bg-sky-500"
     },
     { 
       name: "Perempuan", 
       value: statsValues.perempuan, 
       icon: Users, 
-      color: "text-white", 
-      bg: "bg-white/20",
-      cardBg: "bg-rose-500",
-      hoverBg: "hover:bg-rose-600",
-      border: "border-rose-400",
       filterType: "perempuan",
       percentage: getPercentage(statsValues.perempuan, statsValues.total),
-      detail: "DATA TERKINI"
+      detail: "PROPORSI GENDER",
+      accentGradient: "from-pink-500 via-rose-600 to-rose-700",
+      iconBg: "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/50",
+      accentBorder: "hover:border-rose-400/80",
+      badgeColor: "bg-rose-50 text-rose-700 border-rose-200/60 dark:bg-rose-900/40 dark:text-rose-300",
+      glowColor: "hover:shadow-rose-500/10",
+      barPercent: Number(getPercentage(statsValues.perempuan, statsValues.total)),
+      barColor: "bg-rose-500"
     },
     { 
       name: "Data Terverifikasi", 
       value: statsValues.verified, 
       icon: UserCheck, 
-      color: "text-white", 
-      bg: "bg-white/20",
-      cardBg: "bg-emerald-600",
-      hoverBg: "hover:bg-emerald-700",
-      border: "border-emerald-500",
       filterType: "verified",
       percentage: getPercentage(statsValues.verified, totalKuotaDashboard),
-      detail: "DATA TERKINI"
+      detail: "DARI TOTAL KUOTA",
+      accentGradient: "from-emerald-500 via-teal-600 to-teal-700",
+      iconBg: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50",
+      accentBorder: "hover:border-emerald-400/80",
+      badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200/60 dark:bg-emerald-900/40 dark:text-emerald-300",
+      glowColor: "hover:shadow-emerald-500/10",
+      barPercent: Number(getPercentage(statsValues.verified, totalKuotaDashboard)),
+      barColor: "bg-emerald-500"
     },
     { 
-      name: "Cancell", 
+      name: "Dibatalkan", 
       value: statsValues.rejected, 
       icon: UserX, 
-      color: "text-white", 
-      bg: "bg-white/20",
-      cardBg: "bg-orange-500",
-      hoverBg: "hover:bg-orange-600",
-      border: "border-orange-400",
       filterType: "rejected",
       percentage: getPercentage(statsValues.rejected, totalKuotaDashboard),
-      detail: "ADMIN & DINAS"
+      detail: "ADMIN & DINAS",
+      accentGradient: "from-amber-500 via-orange-600 to-rose-600",
+      iconBg: "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/50",
+      accentBorder: "hover:border-amber-400/80",
+      badgeColor: "bg-amber-50 text-amber-700 border-amber-200/60 dark:bg-amber-900/40 dark:text-amber-300",
+      glowColor: "hover:shadow-amber-500/10",
+      barPercent: Number(getPercentage(statsValues.rejected, totalKuotaDashboard)),
+      barColor: "bg-amber-500"
     }
   ]
 
   const dinasStageCards = [
     {
+      stepNumber: "01",
       name: "Survey Dinas",
       stageTag: "Tahap 1",
       value: statsValues.surveyDinas,
       icon: ClipboardCheck,
-      cardBg: "bg-gradient-to-br from-fuchsia-600 to-purple-700",
-      hoverBorder: "hover:border-fuchsia-300",
-      textColor: "text-white",
-      badgeBg: "bg-fuchsia-500/40 text-fuchsia-100 border-fuchsia-300/30",
+      cardGradient: "from-violet-600 via-purple-600 to-indigo-700",
+      accentBorder: "hover:border-purple-300 dark:hover:border-purple-500",
+      badgeBg: "bg-white/20 text-white border-white/30 backdrop-blur-md",
+      iconBg: "bg-white/20 text-white shadow-inner",
+      glowColor: "group-hover:shadow-purple-500/25",
       description: "Antrean & Proses Survey Lapangan Petugas",
       filterType: "survey_dinas",
       targetUrl: "/verifikasi-dinas",
       percentage: getPercentage(statsValues.surveyDinas, statsValues.verified || 1)
     },
     {
+      stepNumber: "02",
       name: "Verifikasi Dinas",
       stageTag: "Tahap 2",
       value: statsValues.verifikasiDinas,
       icon: FileText,
-      cardBg: "bg-gradient-to-br from-indigo-600 to-violet-800",
-      hoverBorder: "hover:border-indigo-300",
-      textColor: "text-white",
-      badgeBg: "bg-indigo-500/40 text-indigo-100 border-indigo-300/30",
+      cardGradient: "from-indigo-600 via-blue-600 to-indigo-800",
+      accentBorder: "hover:border-indigo-300 dark:hover:border-indigo-500",
+      badgeBg: "bg-white/20 text-white border-white/30 backdrop-blur-md",
+      iconBg: "bg-white/20 text-white shadow-inner",
+      glowColor: "group-hover:shadow-indigo-500/25",
       description: "Survey Lolos & Menunggu Cek Berkas Dinas",
       filterType: "verifikasi_dinas",
       targetUrl: "/verifikasi-dinas-berkas",
       percentage: getPercentage(statsValues.verifikasiDinas, statsValues.verified || 1)
     },
     {
+      stepNumber: "03",
       name: "Hasil Verifikasi",
       stageTag: "Tahap 3",
       value: statsValues.hasilVerifikasi,
       icon: ListChecks,
-      cardBg: "bg-gradient-to-br from-teal-600 to-emerald-700",
-      hoverBorder: "hover:border-teal-300",
-      textColor: "text-white",
-      badgeBg: "bg-teal-500/40 text-teal-100 border-teal-300/30",
+      cardGradient: "from-teal-600 via-emerald-600 to-teal-800",
+      accentBorder: "hover:border-teal-300 dark:hover:border-teal-500",
+      badgeBg: "bg-white/20 text-white border-white/30 backdrop-blur-md",
+      iconBg: "bg-white/20 text-white shadow-inner",
+      glowColor: "group-hover:shadow-emerald-500/25",
       description: "Lolos Survey & Selesai Verifikasi Berkas",
       filterType: "hasil_verifikasi",
       targetUrl: "/hasil-verifikasi",
       percentage: getPercentage(statsValues.hasilVerifikasi, statsValues.verified || 1)
     },
     {
+      stepNumber: "04",
       name: "Rekening Terinput",
       stageTag: "Tahap 4 (Final)",
       value: statsValues.selesai,
       icon: BadgeCheck,
-      cardBg: "bg-gradient-to-br from-sky-600 to-blue-700",
-      hoverBorder: "hover:border-sky-300",
-      textColor: "text-white",
-      badgeBg: "bg-sky-500/40 text-sky-100 border-sky-300/30",
+      cardGradient: "from-sky-600 via-blue-600 to-indigo-700",
+      accentBorder: "hover:border-sky-300 dark:hover:border-sky-500",
+      badgeBg: "bg-white/20 text-white border-white/30 backdrop-blur-md",
+      iconBg: "bg-white/20 text-white shadow-inner",
+      glowColor: "group-hover:shadow-sky-500/25",
       description: "Data Lolos & Rekening Bank Telah Diinput",
       filterType: "selesai",
       targetUrl: "/finish",
@@ -502,416 +531,588 @@ export default function DashboardStatsPage() {
   ]
 
   return (
-    <div className="space-y-5 md:space-y-6 animate-in fade-in-up duration-700 w-full" style={{ zoom: "95%" }}>
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-3 md:gap-4">
-        <div className="space-y-0.5 relative">
-          <h1 className="text-2xl md:text-4xl font-black tracking-tight font-headline text-slate-800 uppercase drop-shadow-sm">
-            Dashboard Statistik
-          </h1>
-          <p className="text-xs md:text-sm text-slate-600 font-semibold">
-            Monitor pendaftaran, alur verifikasi dinas, dan status pelaku usaha secara real-time.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 lg:gap-3 flex-wrap justify-end">
-          {/* Auto-sync countdown info */}
-          <div className="glass-panel px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl flex items-center gap-2 border border-blue-200/60 bg-blue-50/80 shadow-sm">
-            <div className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-blue-500 animate-ping' : 'bg-blue-400 animate-pulse'}`} />
-            <div className="flex flex-col leading-none">
-              <span className="text-[9px] md:text-[10px] font-black text-blue-600 uppercase tracking-wider">
-                AUTO SYNC
-              </span>
-              <span className="text-[10px] md:text-xs font-black text-blue-700 font-mono">
-                {isSyncing ? 'Sinkronisasi...' : `${Math.floor(nextSyncIn / 60)}:${String(nextSyncIn % 60).padStart(2, '0')}`}
-              </span>
+    <div className="w-full space-y-6 animate-in fade-in-up duration-700">
+      {/* Modern Frosted Glass Canvas Container */}
+      <div className="bg-white/85 dark:bg-slate-900/90 backdrop-blur-xl border border-white/80 dark:border-slate-800 rounded-3xl p-4 sm:p-6 lg:p-7 shadow-2xl shadow-slate-300/40 dark:shadow-none space-y-6 md:space-y-7">
+        {/* Top Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] md:text-xs font-black uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              Pusat Kendali & Monitoring Data
             </div>
-            {lastSyncTime && (
-              <span className="text-[9px] text-blue-500 font-semibold hidden md:inline">
-                Terakhir: {lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false })} WIB
-              </span>
-            )}
-          </div>
-
-          {userProfile?.role === 'admin' && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => handleSyncStats(false)} 
-              disabled={isSyncing}
-              className="glass-panel border-primary/20 text-primary hover:bg-primary/5 font-bold text-[10px] md:text-xs h-8 md:h-9 rounded-xl shadow-sm"
-            >
-              {isSyncing ? <Loader2 className="w-3 h-3 md:w-3.5 md:h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 md:w-3.5 md:h-3.5 mr-1.5" />}
-              SYNC STATS
-            </Button>
-          )}
-          <div className="glass-panel px-3 py-1.5 md:px-3.5 md:py-2 rounded-xl flex items-center gap-2 md:gap-2.5 hover:shadow-md transition-all shadow-sm">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest">
-              Sistem: <span className="text-emerald-600">AKTIF</span>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Top 5 KPI Stats Cards */}
-      <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-5 items-stretch">
-        {topStats.map((stat) => (
-          <Card 
-            key={stat.name} 
-            onClick={() => setSelectedFilter({ name: stat.name, filterType: stat.filterType })}
-            className={cn(
-              "border shadow-md transition-all duration-300 group overflow-hidden cursor-pointer active:scale-95 flex flex-col justify-between h-full rounded-2xl",
-              "hover:shadow-xl hover:-translate-y-0.5",
-              stat.cardBg,
-              stat.hoverBg,
-              stat.border
-            )}
-          >
-            <CardHeader className="flex flex-row items-start justify-between p-3.5 pb-1.5">
-              <CardTitle className="text-[10px] md:text-xs font-bold text-white/90 uppercase tracking-wider truncate mr-1 pt-0.5">{stat.name}</CardTitle>
-              <div className="flex flex-col items-center gap-1">
-                <div className={cn(stat.bg, "p-1.5 md:p-2 rounded-lg md:rounded-xl group-hover:scale-105 transition-transform duration-300 shrink-0")}>
-                  <stat.icon className={cn("w-3.5 h-3.5 md:w-4 md:h-4", stat.color)} />
-                </div>
-                {stat.percentage ? (
-                  <div className="text-[9px] md:text-[10px] font-black text-white bg-white/20 px-2 py-0.5 rounded-full whitespace-nowrap">
-                    {stat.percentage}%
-                  </div>
-                ) : (
-                  <div className="h-[18px]" />
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="p-3.5 pt-0">
-              <div className="text-2xl md:text-3xl font-black text-white leading-tight">{isStatsLoading ? "..." : stat.value}</div>
-              <div className="flex items-center gap-1 mt-1 text-[8px] md:text-[9px] font-bold text-white/75 uppercase">
-                <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3 text-white" />
-                {stat.detail}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* ─── TAHAPAN VERIFIKASI DINAS (4 CARDS DALAM 1 BARIS) ─── */}
-      <div className="space-y-2.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <div>
-            <h2 className="text-sm md:text-base font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />
-              Statistik Alur & Tahapan Dinas
-            </h2>
-            <p className="text-[11px] md:text-xs text-slate-500 font-semibold">
-              Progres verifikasi pelaku usaha pada menu Survey Dinas, Verifikasi Dinas, Hasil Verifikasi, dan Selesai.
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight font-headline text-slate-900 dark:text-white uppercase">
+              Dashboard Statistik UMKM
+            </h1>
+            <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">
+              Monitor alur verifikasi dinas, rasio pendaftaran, dan target kuota secara real-time.
             </p>
           </div>
-          <div className="self-start sm:self-auto flex items-center gap-2">
-            <span className="text-[10px] md:text-xs font-bold text-slate-500 bg-white shadow-sm px-2.5 py-1 rounded-full border">
-              Total Terverifikasi: <strong className="text-emerald-600 font-black">{statsValues.verified}</strong>
-            </span>
+
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-start md:justify-end w-full md:w-auto">
+            {/* Auto-sync countdown pill */}
+            <div className="px-3.5 py-2 rounded-2xl flex items-center gap-2.5 border border-blue-200/70 bg-blue-50/80 dark:bg-blue-950/40 dark:border-blue-900 shadow-sm">
+              <div className={`w-2.5 h-2.5 rounded-full ${isSyncing ? 'bg-blue-600 animate-ping' : 'bg-blue-500 animate-pulse'}`} />
+              <div className="flex flex-col leading-none">
+                <span className="text-[9px] md:text-[10px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-wider">
+                  AUTO SYNC
+                </span>
+                <span className="text-[11px] md:text-xs font-black text-blue-900 dark:text-blue-200 font-mono mt-0.5">
+                  {isSyncing ? 'Sinkronisasi...' : `${Math.floor(nextSyncIn / 60)}:${String(nextSyncIn % 60).padStart(2, '0')}`}
+                </span>
+              </div>
+              {lastSyncTime && (
+                <span className="text-[9px] text-blue-600 dark:text-blue-400 font-bold hidden lg:inline border-l border-blue-200 dark:border-blue-800 pl-2">
+                  {lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false })} WIB
+                </span>
+              )}
+            </div>
+
+            {userProfile?.role === 'admin' && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handleSyncStats(false)} 
+                disabled={isSyncing}
+                className="border-primary/30 text-primary hover:bg-primary hover:text-white font-black text-[10px] md:text-xs h-9 sm:h-10 px-3.5 rounded-2xl shadow-sm transition-all active:scale-95"
+              >
+                {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
+                SYNC STATS
+              </Button>
+            )}
+
+            <div className="px-3.5 py-2 rounded-2xl flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-900 shadow-sm">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+              <span className="text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
+                Sistem: <strong className="text-emerald-700 dark:text-emerald-400 font-black">AKTIF</strong>
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
-          {dinasStageCards.map((stage) => (
+        {/* Top 5 KPI Stats Cards */}
+        <div className="grid gap-3.5 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 items-stretch">
+          {topStats.map((stat) => (
             <Card 
-              key={stage.name}
-              onClick={() => setSelectedFilter({ name: stage.name, filterType: stage.filterType, targetUrl: stage.targetUrl })}
+              key={stat.name} 
+              onClick={() => setSelectedFilter({ name: stat.name, filterType: stat.filterType })}
               className={cn(
-                "relative overflow-hidden border shadow-md transition-all duration-300 cursor-pointer active:scale-95 group flex flex-col justify-between h-full rounded-2xl",
+                "relative overflow-hidden bg-white/95 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm transition-all duration-300 group cursor-pointer active:scale-95 flex flex-col justify-between h-full",
                 "hover:shadow-xl hover:-translate-y-1",
-                stage.cardBg,
-                stage.hoverBorder
+                stat.accentBorder,
+                stat.glowColor
               )}
             >
-              {/* Background ambient shape */}
-              <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
-              
-              <CardHeader className="p-4 pb-2.5">
-                <div className="flex items-center justify-between">
-                  <span className={cn("text-[9px] md:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border backdrop-blur-sm", stage.badgeBg)}>
-                    {stage.stageTag}
+              {/* Gradient accent top stripe */}
+              <div className={cn("h-1.5 w-full bg-gradient-to-r shrink-0", stat.accentGradient)} />
+
+              <CardHeader className="p-3.5 sm:p-4 pb-2 flex flex-row items-start justify-between space-y-0">
+                <div className="space-y-1 pr-2">
+                  <span className="text-[10px] md:text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 line-clamp-1">
+                    {stat.name}
                   </span>
-                  <div className="p-1.5 md:p-2 bg-white/20 backdrop-blur-md rounded-xl text-white shadow-sm group-hover:scale-105 transition-transform">
-                    <stage.icon className="w-4 h-4 md:w-4.5 md:h-4.5" />
+                  <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
+                    {isStatsLoading ? "..." : stat.value.toLocaleString('id-ID')}
                   </div>
                 </div>
-                <CardTitle className="text-base md:text-lg font-black text-white uppercase tracking-tight mt-1.5 flex items-center gap-2">
-                  {stage.name}
-                </CardTitle>
-                <p className="text-[10px] md:text-[11px] font-semibold text-white/80 line-clamp-1">
-                  {stage.description}
-                </p>
+                <div className={cn("p-2 sm:p-2.5 rounded-xl transition-transform duration-300 group-hover:scale-110 shadow-sm shrink-0", stat.iconBg)}>
+                  <stat.icon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                </div>
               </CardHeader>
 
-              <CardContent className="p-4 pt-0 space-y-3">
-                <div className="flex items-baseline justify-between">
-                  <div className="text-2xl md:text-3xl font-black text-white tracking-tight leading-none">
-                    {isStatsLoading ? "..." : stage.value}
-                    <span className="text-[10px] md:text-xs font-bold text-white/70 ml-1.5">Pelaku Usaha</span>
+              <CardContent className="p-3.5 sm:p-4 pt-1 space-y-2.5">
+                {/* Visual proportion progress bar if percentage exists */}
+                {stat.percentage !== null ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[9px] md:text-[10px] font-bold text-slate-500">
+                      <span>Proporsi / Capaian</span>
+                      <span className="font-mono font-black text-slate-700 dark:text-slate-200">{stat.percentage}%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                      <div 
+                        className={cn("h-full rounded-full transition-all duration-700 ease-out", stat.barColor)}
+                        style={{ width: `${Math.min(100, Math.max(3, Number(stat.barPercent)))}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="text-[10px] md:text-xs font-black text-white bg-white/20 px-2 py-0.5 rounded-full">
-                    {stage.percentage}%
-                  </div>
-                </div>
+                ) : (
+                  <div className="h-2" />
+                )}
 
-                {/* Progress bar relative to total verified */}
-                <div className="w-full bg-black/20 rounded-full h-1.5 overflow-hidden">
-                  <div 
-                    className="bg-white h-full rounded-full transition-all duration-700 ease-out" 
-                    style={{ width: `${Math.min(100, Math.max(2, Number(stage.percentage)))}%` }}
-                  />
-                </div>
-
-                {/* Card Action Link */}
-                <div className="pt-2 border-t border-white/20 flex items-center justify-between text-[10px] md:text-[11px] font-bold text-white/90 group-hover:text-white">
-                  <span className="flex items-center gap-1">
-                    Lihat Rincian Data
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800 text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
+                  <span className="flex items-center gap-1 truncate">
+                    <TrendingUp className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                    {stat.detail}
                   </span>
-                  <Button 
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      router.push(stage.targetUrl)
-                    }}
-                    className="h-6 px-2 text-[9px] md:text-[10px] font-black bg-white/20 hover:bg-white text-white hover:text-slate-900 rounded-lg transition-all shadow-sm flex items-center gap-1"
-                  >
-                    Buka Menu <ArrowRight className="w-2.5 h-2.5" />
-                  </Button>
+                  <span className="text-primary group-hover:translate-x-0.5 transition-transform text-[10px] font-black shrink-0">
+                    &rarr;
+                  </span>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      </div>
 
-      {/* ─── 5 DATA TERBARU VERIFIKASI DINAS & HASIL VERIFIKASI ─── */}
-      <div className="space-y-2.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <div>
-            <h2 className="text-sm md:text-base font-black text-slate-800 tracking-tight uppercase flex items-center gap-2">
-              <Clock className="w-4 h-4 md:w-5 md:h-5 text-indigo-600" />
-              Data Terkini Masuk Tahapan Dinas
-            </h2>
-            <p className="text-[11px] md:text-xs text-slate-500 font-semibold">
-              Daftar 5 pelaku usaha terbaru yang masuk menu Verifikasi Dinas dan Hasil Verifikasi beserta waktu data masuk.
-            </p>
+        {/* ─── TAHAPAN VERIFIKASI DINAS (PIPELINE / STEPPER CARDS) ─── */}
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-200/80 dark:border-slate-800">
+            <div>
+              <h2 className="text-sm md:text-base font-black text-slate-900 dark:text-white tracking-tight uppercase flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-indigo-600 dark:text-indigo-400" />
+                Statistik Alur & Tahapan Dinas
+              </h2>
+              <p className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                Alur bertahap: Survey Lapangan &rarr; Cek Berkas Dinas &rarr; Lolos Verifikasi &rarr; Rekening Terinput Selesai.
+              </p>
+            </div>
+            <div className="self-start sm:self-auto flex items-center gap-2">
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-xs">
+                <span className="text-slate-500 font-bold uppercase text-[10px]">Total Terverifikasi:</span>
+                <strong className="text-emerald-600 dark:text-emerald-400 font-black text-sm">{statsValues.verified.toLocaleString('id-ID')}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3.5 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
+            {dinasStageCards.map((stage) => (
+              <Card 
+                key={stage.name}
+                onClick={() => setSelectedFilter({ name: stage.name, filterType: stage.filterType, targetUrl: stage.targetUrl })}
+                className={cn(
+                  "relative overflow-hidden border border-white/20 shadow-md transition-all duration-300 cursor-pointer active:scale-95 group flex flex-col justify-between h-full rounded-2xl text-white",
+                  "bg-gradient-to-br",
+                  stage.cardGradient,
+                  stage.accentBorder,
+                  stage.glowColor,
+                  "hover:shadow-2xl hover:-translate-y-1.5"
+                )}
+              >
+                {/* Decorative large step number watermark */}
+                <span className="absolute -top-3 -right-2 text-7xl md:text-8xl font-black text-white/[0.08] select-none pointer-events-none tracking-tighter leading-none">
+                  {stage.stepNumber}
+                </span>
+
+                {/* Ambient background glow bubble */}
+                <div className="absolute -right-8 -bottom-8 w-36 h-36 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
+
+                <CardHeader className="p-4 pb-2 relative z-10">
+                  <div className="flex items-center justify-between">
+                    <span className={cn("text-[9px] md:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border shadow-sm", stage.badgeBg)}>
+                      {stage.stageTag}
+                    </span>
+                    <div className={cn("p-2 rounded-xl backdrop-blur-md group-hover:scale-110 transition-transform duration-300 shadow-sm", stage.iconBg)}>
+                      <stage.icon className="w-4 h-4 md:w-4.5 md:h-4.5" />
+                    </div>
+                  </div>
+                  <CardTitle className="text-base md:text-lg font-black text-white uppercase tracking-tight mt-2 flex items-center gap-2">
+                    {stage.name}
+                  </CardTitle>
+                  <p className="text-[10px] md:text-[11px] font-medium text-white/80 line-clamp-1">
+                    {stage.description}
+                  </p>
+                </CardHeader>
+
+                <CardContent className="p-4 pt-1 space-y-3 relative z-10">
+                  <div className="flex items-baseline justify-between pt-1">
+                    <div className="text-2xl md:text-3xl font-black text-white tracking-tight leading-none">
+                      {isStatsLoading ? "..." : stage.value.toLocaleString('id-ID')}
+                      <span className="text-[10px] md:text-xs font-semibold text-white/75 ml-1.5">Pelaku Usaha</span>
+                    </div>
+                    <div className="text-[10px] md:text-xs font-black text-white bg-white/20 backdrop-blur-sm border border-white/25 px-2 py-0.5 rounded-full shadow-sm">
+                      {stage.percentage}%
+                    </div>
+                  </div>
+
+                  {/* Progress bar relative to total verified */}
+                  <div className="w-full bg-black/20 rounded-full h-1.5 overflow-hidden p-0.5">
+                    <div 
+                      className="bg-white h-full rounded-full transition-all duration-700 ease-out shadow-sm" 
+                      style={{ width: `${Math.min(100, Math.max(3, Number(stage.percentage)))}%` }}
+                    />
+                  </div>
+
+                  {/* Card Action Link */}
+                  <div className="pt-2 border-t border-white/20 flex items-center justify-between text-[10px] md:text-[11px] font-semibold text-white/90">
+                    <span className="flex items-center gap-1 group-hover:text-white transition-colors">
+                      Lihat Rincian Data
+                    </span>
+                    <Button 
+                      size="sm"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(stage.targetUrl)
+                      }}
+                      className="h-6 px-2 text-[9px] md:text-[10px] font-black bg-white/20 hover:bg-white text-white hover:text-slate-900 rounded-lg transition-all shadow-sm flex items-center gap-1 active:scale-95"
+                    >
+                      Buka Menu <ArrowRight className="w-2.5 h-2.5" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
 
-        <div className="grid gap-4 md:gap-5 grid-cols-1 lg:grid-cols-2 items-stretch">
-          {/* Card 1: 5 Data Terbaru Verifikasi Dinas (Tahap 2) */}
-          <Card className="glass overflow-hidden transition-all hover:shadow-lg border-indigo-100/80 flex flex-col shadow-sm rounded-2xl">
-            <CardHeader className="bg-gradient-to-r from-indigo-50/90 to-violet-50/90 border-b border-indigo-100/70 p-3.5 pb-2.5 flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 bg-indigo-600 text-white rounded-xl shadow-sm">
-                  <FileText className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <CardTitle className="text-xs md:text-sm font-black text-indigo-950 uppercase tracking-tight flex items-center gap-2">
-                    Verifikasi Dinas
-                    <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-indigo-200 text-[9px] md:text-[10px] font-black px-1.5 py-0.5">
-                      Tahap 2
-                    </Badge>
-                  </CardTitle>
-                  <p className="text-[10px] md:text-[11px] font-medium text-indigo-600/80">
-                    5 data terbaru lolos survey & menunggu cek berkas dinas
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/verifikasi-dinas-berkas')}
-                className="text-[10px] md:text-[11px] font-bold text-indigo-700 hover:bg-indigo-100/60 h-6 px-2 rounded-lg flex items-center gap-1 shrink-0"
-              >
-                Lihat Semua <ArrowRight className="w-2.5 h-2.5" />
-              </Button>
-            </CardHeader>
+        {/* ─── 5 DATA TERBARU VERIFIKASI DINAS & HASIL VERIFIKASI ─── */}
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1 border-b border-slate-200/80 dark:border-slate-800">
+            <div>
+              <h2 className="text-sm md:text-base font-black text-slate-900 dark:text-white tracking-tight uppercase flex items-center gap-2">
+                <Clock className="w-4 h-4 md:w-5 md:h-5 text-indigo-600 dark:text-indigo-400" />
+                Data Terkini Masuk Tahapan Dinas
+              </h2>
+              <p className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                Daftar 5 pelaku usaha terbaru yang masuk antrean Verifikasi Dinas dan Hasil Verifikasi beserta waktu data masuk.
+              </p>
+            </div>
+          </div>
 
-            <CardContent className="p-0 flex-1 flex flex-col justify-between">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-slate-50/80 border-b">
-                    <TableRow>
-                      <TableHead className="w-[36px] text-center font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">No</TableHead>
-                      <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">Pelaku Usaha</TableHead>
-                      <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">Usaha / Wilayah</TableHead>
-                      <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">Waktu Masuk</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isVerifiedDinasLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-6">
-                          <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
-                            <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
-                            Memuat data Verifikasi Dinas...
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ) : latestVerifikasiDinas.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-6 text-muted-foreground italic font-medium text-xs">
-                          Belum ada data pada menu Verifikasi Dinas.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      latestVerifikasiDinas.map((actor, idx) => {
-                        const masukTime = actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt
-                        return (
-                          <TableRow 
-                            key={actor.id} 
-                            onClick={() => setDetailActor(actor)}
-                            className="hover:bg-indigo-50/40 transition-colors cursor-pointer group"
-                          >
-                            <TableCell className="text-center font-bold text-slate-500 text-xs py-2">
-                              {idx + 1}
-                            </TableCell>
-                            <TableCell className="py-2">
-                              <div className="flex flex-col">
-                                <span className="font-black text-slate-800 text-xs uppercase group-hover:text-indigo-600 transition-colors">
-                                  {actor.fullName || "-"}
-                                </span>
-                                <span className="text-[9px] md:text-[10px] font-mono text-slate-500">
-                                  {actor.nik || "-"}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-2">
-                              <div className="flex flex-col">
-                                <span className="font-bold text-slate-700 text-xs uppercase truncate max-w-[130px]" title={actor.businessName}>
-                                  {actor.businessName || "-"}
-                                </span>
-                                <span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate max-w-[130px]">
-                                  {actor.kelurahan || actor.coordinator || "-"}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="py-2">
-                              <div className="flex items-center gap-1.5 text-indigo-900">
-                                <Clock className="w-3 h-3 text-indigo-600 shrink-0" />
-                                <span className="text-[10px] md:text-[11px] font-bold whitespace-nowrap">
-                                  {formatDateTimeIndo(masukTime)}
-                                </span>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-
-              <div className="p-2 bg-slate-50/60 border-t flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 px-3.5">
-                <span>Total antrean: <strong className="text-indigo-600 font-bold">{statsValues.verifikasiDinas}</strong> pelaku usaha</span>
+          <div className="grid gap-4 md:gap-5 grid-cols-1 lg:grid-cols-2 items-stretch">
+            {/* Card 1: 5 Data Terbaru Verifikasi Dinas (Tahap 2) */}
+            <Card className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-md overflow-hidden transition-all hover:shadow-xl border border-indigo-100 dark:border-indigo-950/60 flex flex-col shadow-sm rounded-2xl">
+              <CardHeader className="bg-gradient-to-r from-indigo-50/90 via-violet-50/80 to-blue-50/90 dark:from-indigo-950/40 dark:to-slate-900 border-b border-indigo-100/80 dark:border-indigo-900/50 p-3.5 pb-2.5 flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-600/20">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xs md:text-sm font-black text-indigo-950 dark:text-indigo-200 uppercase tracking-tight flex items-center gap-2">
+                      Verifikasi Dinas
+                      <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-indigo-200 dark:bg-indigo-900/60 dark:text-indigo-300 text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded-full">
+                        Tahap 2
+                      </Badge>
+                    </CardTitle>
+                    <p className="text-[10px] md:text-[11px] font-medium text-indigo-600/90 dark:text-indigo-400">
+                      5 data terbaru lolos survey & menunggu cek berkas dinas
+                    </p>
+                  </div>
+                </div>
                 <Button
+                  variant="ghost"
                   size="sm"
-                  variant="outline"
                   onClick={() => router.push('/verifikasi-dinas-berkas')}
-                  className="h-5 text-[9px] md:text-[10px] font-bold border-indigo-200 text-indigo-700 hover:bg-indigo-50 px-2"
+                  className="text-[10px] md:text-[11px] font-black text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/70 dark:hover:bg-indigo-900/50 h-7 px-2.5 rounded-xl flex items-center gap-1 shrink-0 transition-all"
                 >
-                  Buka Verifikasi Dinas <ExternalLink className="w-2.5 h-2.5 ml-1" />
+                  Lihat Semua <ArrowRight className="w-3 h-3" />
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
 
-          {/* Card 2: 5 Data Terbaru Hasil Verifikasi (Tahap 3) */}
-          <Card className="glass overflow-hidden transition-all hover:shadow-lg border-teal-100/80 flex flex-col shadow-sm rounded-2xl">
-            <CardHeader className="bg-gradient-to-r from-teal-50/90 to-emerald-50/90 border-b border-teal-100/70 p-3.5 pb-2.5 flex flex-row items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 bg-teal-600 text-white rounded-xl shadow-sm">
-                  <ListChecks className="w-3.5 h-3.5" />
+              <CardContent className="p-0 flex-1 flex flex-col justify-between">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-slate-50/90 dark:bg-slate-800/80 border-b">
+                      <TableRow>
+                        <TableHead className="w-[40px] text-center font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">No</TableHead>
+                        <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">Pelaku Usaha</TableHead>
+                        <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">Usaha / Wilayah</TableHead>
+                        <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">Waktu Masuk</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isVerifiedDinasLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-8">
+                            <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
+                              <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                              Memuat data Verifikasi Dinas...
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : latestVerifikasiDinas.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
+                            Belum ada data pada menu Verifikasi Dinas.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        latestVerifikasiDinas.map((actor, idx) => {
+                          const masukTime = actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt
+                          return (
+                            <TableRow 
+                              key={actor.id} 
+                              onClick={() => setDetailActor(actor)}
+                              className="hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-colors cursor-pointer group"
+                            >
+                              <TableCell className="text-center font-bold text-slate-500 text-xs py-2.5">
+                                <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 inline-flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                                  {idx + 1}
+                                </span>
+                              </TableCell>
+                              <TableCell className="py-2.5">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-black text-[10px] flex items-center justify-center shrink-0 border border-indigo-200/50">
+                                    {getInitials(actor.fullName)}
+                                  </div>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className="font-black text-slate-800 dark:text-slate-100 text-xs uppercase group-hover:text-indigo-600 transition-colors truncate max-w-[150px]">
+                                      {actor.fullName || "-"}
+                                    </span>
+                                    <span className="text-[10px] font-mono text-slate-500">
+                                      {actor.nik || "-"}
+                                    </span>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-2.5">
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-slate-700 dark:text-slate-200 text-xs uppercase truncate max-w-[140px]" title={actor.businessName}>
+                                    {actor.businessName || "-"}
+                                  </span>
+                                  <span className="text-[10px] text-slate-500 uppercase truncate max-w-[140px] flex items-center gap-1">
+                                    <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                    {actor.kelurahan || actor.coordinator || "-"}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-2.5">
+                                <div className="flex items-center gap-1.5 text-indigo-900 dark:text-indigo-300">
+                                  <Clock className="w-3 h-3 text-indigo-500 shrink-0" />
+                                  <span className="text-[10px] md:text-[11px] font-bold whitespace-nowrap">
+                                    {formatDateTimeIndo(masukTime)}
+                                  </span>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
-                <div>
-                  <CardTitle className="text-xs md:text-sm font-black text-teal-950 uppercase tracking-tight flex items-center gap-2">
-                    Hasil Verifikasi
-                    <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-100 border-teal-200 text-[9px] md:text-[10px] font-black px-1.5 py-0.5">
-                      Tahap 3 (Final)
-                    </Badge>
-                  </CardTitle>
-                  <p className="text-[10px] md:text-[11px] font-medium text-teal-600/80">
-                    5 data terbaru selesai verifikasi berkas & dinyatakan lolos
-                  </p>
+
+                <div className="p-2.5 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 dark:text-slate-400 px-4">
+                  <span>Total antrean: <strong className="text-indigo-600 dark:text-indigo-400 font-bold">{statsValues.verifikasiDinas}</strong> pelaku usaha</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => router.push('/verifikasi-dinas-berkas')}
+                    className="h-6 text-[9px] md:text-[10px] font-black border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 px-2.5 rounded-lg"
+                  >
+                    Buka Verifikasi Dinas <ExternalLink className="w-2.5 h-2.5 ml-1" />
+                  </Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Card 2: 5 Data Terbaru Hasil Verifikasi (Tahap 3) */}
+            <Card className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-md overflow-hidden transition-all hover:shadow-xl border border-teal-100 dark:border-teal-950/60 flex flex-col shadow-sm rounded-2xl">
+              <CardHeader className="bg-gradient-to-r from-teal-50/90 via-emerald-50/80 to-teal-50/90 dark:from-teal-950/40 dark:to-slate-900 border-b border-teal-100/80 dark:border-teal-900/50 p-3.5 pb-2.5 flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-teal-600 text-white rounded-xl shadow-md shadow-teal-600/20">
+                    <ListChecks className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xs md:text-sm font-black text-teal-950 dark:text-teal-200 uppercase tracking-tight flex items-center gap-2">
+                      Hasil Verifikasi
+                      <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-100 border-teal-200 dark:bg-teal-900/60 dark:text-teal-300 text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded-full">
+                        Tahap 3 (Final)
+                      </Badge>
+                    </CardTitle>
+                    <p className="text-[10px] md:text-[11px] font-medium text-teal-600/90 dark:text-teal-400">
+                      5 data terbaru selesai verifikasi berkas & dinyatakan lolos
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => router.push('/hasil-verifikasi')}
+                  className="text-[10px] md:text-[11px] font-black text-teal-700 dark:text-teal-300 hover:bg-teal-100/70 dark:hover:bg-teal-900/50 h-7 px-2.5 rounded-xl flex items-center gap-1 shrink-0 transition-all"
+                >
+                  Lihat Semua <ArrowRight className="w-3 h-3" />
+                </Button>
+              </CardHeader>
+
+              <CardContent className="p-0 flex-1 flex flex-col justify-between">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-slate-50/90 dark:bg-slate-800/80 border-b">
+                      <TableRow>
+                        <TableHead className="w-[40px] text-center font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">No</TableHead>
+                        <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">Pelaku Usaha</TableHead>
+                        <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">Usaha / Wilayah</TableHead>
+                        <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">Waktu Masuk</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {isVerifiedDinasLoading ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-8">
+                            <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
+                              <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
+                              Memuat data Hasil Verifikasi...
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : latestHasilVerifikasi.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
+                            Belum ada data pada menu Hasil Verifikasi.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        latestHasilVerifikasi.map((actor, idx) => {
+                          const masukTime = actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt
+                          return (
+                            <TableRow 
+                              key={actor.id} 
+                              onClick={() => setDetailActor(actor)}
+                              className="hover:bg-teal-50/50 dark:hover:bg-teal-950/30 transition-colors cursor-pointer group"
+                            >
+                              <TableCell className="text-center font-bold text-slate-500 text-xs py-2.5">
+                                <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 inline-flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                                  {idx + 1}
+                                </span>
+                              </TableCell>
+                              <TableCell className="py-2.5">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-black text-[10px] flex items-center justify-center shrink-0 border border-teal-200/50">
+                                    {getInitials(actor.fullName)}
+                                  </div>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className="font-black text-slate-800 dark:text-slate-100 text-xs uppercase group-hover:text-teal-600 transition-colors truncate max-w-[150px]">
+                                      {actor.fullName || "-"}
+                                    </span>
+                                    <span className="text-[10px] font-mono text-slate-500">
+                                      {actor.nik || "-"}
+                                    </span>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-2.5">
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-slate-700 dark:text-slate-200 text-xs uppercase truncate max-w-[140px]" title={actor.businessName}>
+                                    {actor.businessName || "-"}
+                                  </span>
+                                  <span className="text-[10px] text-slate-500 uppercase truncate max-w-[140px] flex items-center gap-1">
+                                    <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                    {actor.kelurahan || actor.coordinator || "-"}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-2.5">
+                                <div className="flex items-center gap-1.5 text-teal-900 dark:text-teal-300">
+                                  <Clock className="w-3 h-3 text-teal-500 shrink-0" />
+                                  <span className="text-[10px] md:text-[11px] font-bold whitespace-nowrap">
+                                    {formatDateTimeIndo(masukTime)}
+                                  </span>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                <div className="p-2.5 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 dark:text-slate-400 px-4">
+                  <span>Total lolos: <strong className="text-teal-600 dark:text-teal-400 font-bold">{statsValues.hasilVerifikasi}</strong> pelaku usaha</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => router.push('/hasil-verifikasi')}
+                    className="h-6 text-[9px] md:text-[10px] font-black border-teal-200 text-teal-700 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-300 px-2.5 rounded-lg"
+                  >
+                    Buka Hasil Verifikasi <ExternalLink className="w-2.5 h-2.5 ml-1" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* ─── GRID: KUOTA USULAN ─── */}
+        <div className="w-full flex flex-col h-full min-h-0">
+          <Card className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-md overflow-hidden transition-all hover:shadow-xl border border-slate-200/80 dark:border-slate-800 flex flex-col rounded-2xl shadow-sm">
+            <CardHeader className="bg-slate-50/90 dark:bg-slate-800/80 p-4 pb-3 border-b border-slate-200/80 dark:border-slate-800 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <CardTitle className="text-sm md:text-base font-black flex items-center gap-2 text-slate-900 dark:text-white uppercase tracking-tight">
+                <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-primary" /> Target & Ketercapaian Kuota Usulan
+              </CardTitle>
+
+              {/* Summary chips */}
+              <div className="flex items-center gap-2 flex-wrap text-xs">
+                <span className="px-2.5 py-1 rounded-xl bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-[10px]">
+                  Target: {totalKuotaDashboard}
+                </span>
+                <span className="px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-black text-[10px]">
+                  Tercapai: {totalAchievedDashboard}
+                </span>
+                <span className="px-2.5 py-1 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-black text-[10px]">
+                  Sisa: {Math.max(0, totalKuotaDashboard - totalAchievedDashboard)}
+                </span>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/hasil-verifikasi')}
-                className="text-[10px] md:text-[11px] font-bold text-teal-700 hover:bg-teal-100/60 h-6 px-2 rounded-lg flex items-center gap-1 shrink-0"
-              >
-                Lihat Semua <ArrowRight className="w-2.5 h-2.5" />
-              </Button>
             </CardHeader>
-
-            <CardContent className="p-0 flex-1 flex flex-col justify-between">
-              <div className="overflow-x-auto">
+            <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-y-auto">
                 <Table>
-                  <TableHeader className="bg-slate-50/80 border-b">
-                    <TableRow>
-                      <TableHead className="w-[36px] text-center font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">No</TableHead>
-                      <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">Pelaku Usaha</TableHead>
-                      <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">Usaha / Wilayah</TableHead>
-                      <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 uppercase py-2">Waktu Masuk</TableHead>
+                  <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-[40px] text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] py-2.5">No</TableHead>
+                      <TableHead className="font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] min-w-[140px] py-2.5">Nama Usulan</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] py-2.5">Target Kuota</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] py-2.5">Tercapai</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] py-2.5">Sisa Kuota</TableHead>
+                      <TableHead className="font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] min-w-[130px] py-2.5">Progress Capaian</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {isVerifiedDinasLoading ? (
+                    {isKuotaLoading ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-6">
+                        <TableCell colSpan={6} className="text-center py-8">
                           <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
-                            <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
-                            Memuat data Hasil Verifikasi...
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                            Memuat data kuota...
                           </div>
                         </TableCell>
                       </TableRow>
-                    ) : latestHasilVerifikasi.length === 0 ? (
+                    ) : combinedKuotaData.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-6 text-muted-foreground italic font-medium text-xs">
-                          Belum ada data pada menu Hasil Verifikasi.
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
+                          Belum ada data target kuota yang didaftarkan.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      latestHasilVerifikasi.map((actor, idx) => {
-                        const masukTime = actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt
+                      combinedKuotaData.map((item: any, index: number) => {
+                        const percentAchieved = item.quota > 0 ? Math.min(100, Math.round((item.achieved / item.quota) * 100)) : 0
                         return (
-                          <TableRow 
-                            key={actor.id} 
-                            onClick={() => setDetailActor(actor)}
-                            className="hover:bg-teal-50/40 transition-colors cursor-pointer group"
-                          >
-                            <TableCell className="text-center font-bold text-slate-500 text-xs py-2">
-                              {idx + 1}
+                          <TableRow key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                            <TableCell className="text-center font-bold text-slate-600 dark:text-slate-400 text-xs py-2.5">{index + 1}</TableCell>
+                            <TableCell className="font-black text-primary text-xs tracking-tight py-2.5">{item.name}</TableCell>
+                            <TableCell className="text-center py-2.5">
+                              <span className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border border-slate-200 dark:border-slate-700">
+                                {item.quota}
+                              </span>
                             </TableCell>
-                            <TableCell className="py-2">
-                              <div className="flex flex-col">
-                                <span className="font-black text-slate-800 text-xs uppercase group-hover:text-teal-600 transition-colors">
-                                  {actor.fullName || "-"}
-                                </span>
-                                <span className="text-[9px] md:text-[10px] font-mono text-slate-500">
-                                  {actor.nik || "-"}
-                                </span>
-                              </div>
+                            <TableCell className="text-center py-2.5">
+                              <span className="inline-flex items-center justify-center bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border border-emerald-200 dark:border-emerald-800">
+                                {item.achieved}
+                              </span>
                             </TableCell>
-                            <TableCell className="py-2">
-                              <div className="flex flex-col">
-                                <span className="font-bold text-slate-700 text-xs uppercase truncate max-w-[130px]" title={actor.businessName}>
-                                  {actor.businessName || "-"}
-                                </span>
-                                <span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate max-w-[130px]">
-                                  {actor.kelurahan || actor.coordinator || "-"}
-                                </span>
-                              </div>
+                            <TableCell className="text-center py-2.5">
+                              <span className={cn(
+                                "inline-flex items-center justify-center font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border",
+                                item.remaining <= 0 
+                                  ? "bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800" 
+                                  : "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                              )}>
+                                {item.remaining}
+                              </span>
                             </TableCell>
-                            <TableCell className="py-2">
-                              <div className="flex items-center gap-1.5 text-teal-900">
-                                <Clock className="w-3 h-3 text-teal-600 shrink-0" />
-                                <span className="text-[10px] md:text-[11px] font-bold whitespace-nowrap">
-                                  {formatDateTimeIndo(masukTime)}
+                            <TableCell className="py-2.5">
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                                  <div 
+                                    className={cn(
+                                      "h-full rounded-full transition-all duration-500",
+                                      percentAchieved >= 100 ? "bg-emerald-500" : percentAchieved >= 60 ? "bg-blue-500" : "bg-amber-500"
+                                    )}
+                                    style={{ width: `${percentAchieved}%` }}
+                                  />
+                                </div>
+                                <span className="text-[10px] font-mono font-black text-slate-700 dark:text-slate-300 w-9 text-right">
+                                  {percentAchieved}%
                                 </span>
                               </div>
                             </TableCell>
@@ -920,112 +1121,34 @@ export default function DashboardStatsPage() {
                       })
                     )}
                   </TableBody>
+                  {!isKuotaLoading && combinedKuotaData.length > 0 && (
+                    <TableFooter>
+                      <TableRow className="bg-primary/5 border-t-2 border-primary/20">
+                        <TableCell colSpan={2} className="font-black text-slate-800 dark:text-slate-100 uppercase text-right text-xs py-2.5">
+                          Total Kuota Data
+                        </TableCell>
+                        <TableCell className="text-center font-black text-slate-700 dark:text-slate-200 text-sm py-2.5">
+                          {totalKuotaDashboard}
+                        </TableCell>
+                        <TableCell className="text-center font-black text-emerald-600 dark:text-emerald-400 text-sm py-2.5">
+                          {totalAchievedDashboard}
+                        </TableCell>
+                        <TableCell className="text-center font-black text-primary text-sm py-2.5">
+                          {totalKuotaDashboard - totalAchievedDashboard}
+                        </TableCell>
+                        <TableCell className="py-2.5">
+                          <span className="text-[11px] font-black text-primary font-mono">
+                            {totalKuotaDashboard > 0 ? ((totalAchievedDashboard / totalKuotaDashboard) * 100).toFixed(1) : 0}% Tercapai
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  )}
                 </Table>
-              </div>
-
-              <div className="p-2 bg-slate-50/60 border-t flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 px-3.5">
-                <span>Total lolos: <strong className="text-teal-600 font-bold">{statsValues.hasilVerifikasi}</strong> pelaku usaha</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => router.push('/hasil-verifikasi')}
-                  className="h-5 text-[9px] md:text-[10px] font-bold border-teal-200 text-teal-700 hover:bg-teal-50 px-2"
-                >
-                  Buka Hasil Verifikasi <ExternalLink className="w-2.5 h-2.5 ml-1" />
-                </Button>
               </div>
             </CardContent>
           </Card>
         </div>
-      </div>
-
-      {/* Grid: Kuota Usulan */}
-      <div className="w-full flex flex-col h-full min-h-0">
-        <Card className="glass overflow-hidden transition-all hover:shadow-lg border-none h-full min-h-[400px] lg:min-h-0 flex flex-col rounded-2xl shadow-sm">
-          <CardHeader className="bg-primary/10 p-3.5 pb-3 shrink-0">
-            <CardTitle className="text-sm md:text-base font-bold flex items-center gap-2 text-primary">
-              <BarChart3 className="w-4 h-4 md:w-5 md:h-5" /> Jumlah Kuota
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <Table>
-                <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-[36px] text-center font-black text-slate-800 text-[9px] md:text-[10px] py-2">No</TableHead>
-                    <TableHead className="font-black text-slate-800 text-[9px] md:text-[10px] min-w-[120px] py-2">Nama Usulan</TableHead>
-                    <TableHead className="text-center font-black text-slate-800 text-[9px] md:text-[10px] py-2">Jumlah Kuota</TableHead>
-                    <TableHead className="text-center font-black text-slate-800 text-[9px] md:text-[10px] py-2">Kuota Tercapai</TableHead>
-                    <TableHead className="text-center font-black text-slate-800 text-[9px] md:text-[10px] py-2">Sisa Kuota</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isKuotaLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8">
-                        <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
-                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                          Memuat data kuota...
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : combinedKuotaData.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
-                        Belum ada data target kuota yang didaftarkan.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    combinedKuotaData.map((item: any, index: number) => (
-                      <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                        <TableCell className="text-center font-bold text-slate-600 text-xs py-2">{index + 1}</TableCell>
-                        <TableCell className="font-black text-primary text-xs tracking-tight py-2">{item.name}</TableCell>
-                        <TableCell className="text-center py-2">
-                          <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border border-slate-200">
-                            {item.quota}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center py-2">
-                          <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border border-emerald-200">
-                            {item.achieved}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-center py-2">
-                          <span className={cn(
-                            "inline-flex items-center justify-center font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border",
-                            item.remaining <= 0 
-                              ? "bg-rose-100 text-rose-700 border-rose-200" 
-                              : "bg-blue-100 text-blue-700 border-blue-200"
-                          )}>
-                            {item.remaining}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-                {!isKuotaLoading && combinedKuotaData.length > 0 && (
-                  <TableFooter>
-                    <TableRow className="bg-primary/5 border-t-2 border-primary/20">
-                      <TableCell colSpan={2} className="font-black text-slate-800 uppercase text-right text-xs py-2.5">
-                        Total Kuota Data
-                      </TableCell>
-                      <TableCell className="text-center font-black text-slate-600 text-sm py-2.5">
-                        {totalKuotaDashboard}
-                      </TableCell>
-                      <TableCell className="text-center font-black text-emerald-600 text-sm py-2.5">
-                        {totalAchievedDashboard}
-                      </TableCell>
-                      <TableCell className="text-center font-black text-primary text-sm py-2.5">
-                        {totalKuotaDashboard - totalAchievedDashboard}
-                      </TableCell>
-                    </TableRow>
-                  </TableFooter>
-                )}
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Detail Modal Dialog */}
