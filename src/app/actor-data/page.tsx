@@ -107,8 +107,6 @@ function ActorDataContent() {
     setPageLimit(50)
   }, [searchQuery, filterCoordinator])
 
-  const [filterBpjs, setFilterBpjs] = useState<string>("all")
-
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
     return ref(database, `roles_admin/${user.uid}`)
@@ -1111,21 +1109,9 @@ function ActorDataContent() {
     });
   }, [filteredActors, database]);
 
-  const rawDataToDisplay = (isInspektorat || isKoordinator || isSearching) 
+  const currentDataToDisplay = (isInspektorat || isKoordinator || isSearching) 
     ? (filteredActors || []) 
     : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []);
-
-  const currentDataToDisplay = useMemo(() => {
-    if (filterBpjs === "all") return rawDataToDisplay;
-    return rawDataToDisplay.filter(actor => {
-      const { isVerified, isRejected, hasData } = getActorBpjsStatus(actor);
-
-      if (filterBpjs === "bisa_daftar") return isVerified;
-      if (filterBpjs === "tidak_bisa") return isRejected;
-      if (filterBpjs === "belum_dicek") return !hasData;
-      return true;
-    });
-  }, [rawDataToDisplay, filterBpjs, bpjsLookupMap]);
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -1223,15 +1209,7 @@ function ActorDataContent() {
                     <Printer className="w-4 h-4 mr-1.5" /> CETAK PDF
                   </Button>
                 )}
-                {isAdmin && (
-                  <Button
-                    onClick={() => router.push('/settings#bpjs')}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
-                    title="Buka Menu Upload & Pengaturan Data Pembanding BPJS"
-                  >
-                    <ShieldCheck className="w-4 h-4 mr-1.5" /> PEMBANDING BPJS
-                  </Button>
-                )}
+
               </div>
             </div>
           </div>
@@ -1309,19 +1287,7 @@ function ActorDataContent() {
                 </h2>
               </div>
               <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <Select value={filterBpjs} onValueChange={setFilterBpjs}>
-                    <SelectTrigger className="h-9 text-xs font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl px-3 w-[150px] sm:w-[180px]">
-                      <SelectValue placeholder="Filter BPJS" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Semua BPJS</SelectItem>
-                      <SelectItem value="bisa_daftar">✓ BPJS: Terverifikasi</SelectItem>
-                      <SelectItem value="tidak_bisa">✕ BPJS: Tidak Lolos</SelectItem>
-                      <SelectItem value="belum_dicek">○ BPJS: Belum Dicek</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+
 
                 {isAdmin && filterCoordinator && !isKoordinator && !isInspektorat && (
                   <Button 
