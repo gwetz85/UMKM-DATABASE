@@ -45,6 +45,7 @@ import { useRouter } from "next/navigation"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 
 export default function SettingsPage() {
+  const router = useRouter()
   const { user } = useUser()
   const { toast } = useToast()
   const database = useDatabase()
@@ -52,7 +53,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
   const [uploadingExcel, setUploadingExcel] = useState(false)
-  const [downloadingTarget, setDownloadingTarget] = useState<'master_2024' | 'master_2023' | 'master_2025' | 'blacklist' | 'all' | null>(null)
+  const [downloadingTarget, setDownloadingTarget] = useState<'master_2024' | 'master_2023' | 'master_2025' | 'blacklist' | 'bpjs' | 'all' | null>(null)
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -69,7 +70,7 @@ export default function SettingsPage() {
 
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [showResetSheetDialog, setShowResetSheetDialog] = useState(false)
-  const [resetSheetTarget, setResetSheetTarget] = useState<'2023' | '2024' | '2025' | 'blacklist' | null>(null)
+  const [resetSheetTarget, setResetSheetTarget] = useState<'2023' | '2024' | '2025' | 'blacklist' | 'bpjs' | null>(null)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
 
 
@@ -104,11 +105,13 @@ export default function SettingsPage() {
   const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
   const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
   const blacklistDataRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
+  const bpjsDataRef = useMemoFirebase(() => database ? ref(database, 'bpjs_comparison_data') : null, [database])
 
   const { data: data2024, isLoading: is2024Loading } = useList(master2024Ref)
   const { data: data2023, isLoading: is2023Loading } = useList(master2023Ref)
   const { data: data2025, isLoading: is2025Loading } = useList(master2025Ref)
   const { data: blacklistData, isLoading: isBlacklistLoading } = useList(blacklistDataRef)
+  const { data: bpjsData, isLoading: isBpjsLoading } = useList(bpjsDataRef)
 
   useEffect(() => {
     if (themeError) {
@@ -263,7 +266,7 @@ export default function SettingsPage() {
     reader.readAsText(file)
   }
 
-  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>, targetType: 'master_2024' | 'master_2023' | 'master_2025' | 'blacklist') => {
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>, targetType: 'master_2024' | 'master_2023' | 'master_2025' | 'blacklist' | 'bpjs') => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -278,6 +281,159 @@ export default function SettingsPage() {
         const ws = wb.Sheets[wsname]
         
         const range = XLSX.utils.decode_range(ws['!ref'] || "A1")
+
+        if (targetType === 'bpjs') {
+          // Detect header row dynamically
+          let headerRowIndex = -1
+          let colNik = 1
+          let colNama = 2
+          let colDob = 3
+          let colStatus = 4
+          let colKet = 5
+          let colNo = 0
+
+          for (let r = range.s.r; r <= Math.min(range.s.r + 15, range.e.r); r++) {
+            const rowTexts: string[] = []
+            for (let c = range.s.c; c <= range.e.c; c++) {
+              const cell = ws[XLSX.utils.encode_cell({ r, c })]
+              rowTexts.push(cell ? String(cell.w || cell.v || "").trim().toUpperCase() : "")
+            }
+            const foundNik = rowTexts.findIndex(t => t === "NIK" || t.includes("NIK"))
+            const foundNama = rowTexts.findIndex(t => t === "NAMA" || t.includes("NAMA"))
+            if (foundNik !== -1 && foundNama !== -1) {
+              headerRowIndex = r
+              colNik = foundNik
+              colNama = foundNama
+              const fDob = rowTexts.findIndex(t => t.includes("LAHIR") || t.includes("DOB") || t.includes("TANGGAL"))
+              if (fDob !== -1) colDob = fDob
+              const fStatus = rowTexts.findIndex(t => t === "STATUS" || (t.includes("STATUS") && !t.includes("KET")))
+              if (fStatus !== -1) colStatus = fStatus
+              const fKet = rowTexts.findIndex(t => t.includes("KET") || t.includes("KETERANGAN") || t.includes("HASIL"))
+              if (fKet !== -1) colKet = fKet
+              const fNo = rowTexts.findIndex(t => t === "NO" || t === "NO.")
+              if (fNo !== -1) colNo = fNo
+              break
+            }
+          }
+
+          const startRow = headerRowIndex !== -1 ? headerRowIndex + 1 : range.s.r + 1
+          const bpjsImported: any[] = []
+
+          for (let r = startRow; r <= range.e.r; r++) {
+            const getCellStr = (c: number) => {
+              const cell = ws[XLSX.utils.encode_cell({ r, c })]
+              if (!cell) return ""
+              if (cell.t === 'n' && cell.v !== undefined && cell.v !== null) {
+                try {
+                  return BigInt(Math.floor(Number(cell.v))).toString()
+                } catch {
+                  return String(cell.w || cell.v).trim()
+                }
+              }
+              return String(cell.w || (cell.v !== undefined && cell.v !== null ? cell.v : "")).trim()
+            }
+
+            const rawNik = getCellStr(colNik)
+            const cleanNik = rawNik.replace(/\D/g, '')
+            const nama = getCellStr(colNama)
+            const dob = getCellStr(colDob)
+            const status = getCellStr(colStatus)
+            const keterangan = getCellStr(colKet)
+            const no = getCellStr(colNo)
+
+            if (cleanNik || nama) {
+              bpjsImported.push({
+                no: no || String(bpjsImported.length + 1),
+                nik: cleanNik || rawNik,
+                nama: nama,
+                tanggalLahir: dob,
+                status: status,
+                keterangan: keterangan,
+                fileName: file.name,
+                uploadedAt: new Date().toISOString()
+              })
+            }
+          }
+
+          if (bpjsImported.length === 0) {
+            throw new Error("Tidak ada data BPJS valid ditemukan. Pastikan kolom NIK dan NAMA terisi.")
+          }
+
+          // 1. Simpan ke bpjs_comparison_data (batch)
+          const batchSize = 500
+          for (let i = 0; i < bpjsImported.length; i += batchSize) {
+            const chunk = bpjsImported.slice(i, i + batchSize)
+            const updates: any = {}
+            chunk.forEach((item) => {
+              const newId = push(ref(database, 'bpjs_comparison_data')).key
+              updates[`bpjs_comparison_data/${newId}`] = item
+            })
+            await update(ref(database), updates)
+          }
+
+          // 2. Cocokkan langsung dengan data pelaku usaha di database
+          let matchedCount = 0
+          try {
+            const actorsSnap = await get(ref(database, 'businessActors'))
+            if (actorsSnap.exists()) {
+              const allActors = Object.values(actorsSnap.val()) as any[]
+              const actorUpdates: Record<string, any> = {}
+              const now = new Date().toISOString()
+
+              const actorsByNik = new Map<string, any>()
+              const actorsByName = new Map<string, any>()
+              allActors.forEach(a => {
+                if (a && a.id) {
+                  const clean = String(a.nik || "").replace(/\D/g, '')
+                  if (clean) actorsByNik.set(clean, a)
+                  if (a.fullName) {
+                    actorsByName.set(String(a.fullName).trim().toUpperCase(), a)
+                  }
+                }
+              })
+
+              bpjsImported.forEach(item => {
+                const itemNik = String(item.nik || "").replace(/\D/g, '')
+                const itemName = String(item.nama || "").trim().toUpperCase()
+
+                let matched = itemNik ? actorsByNik.get(itemNik) : undefined
+                if (!matched && itemName) {
+                  matched = actorsByName.get(itemName)
+                }
+
+                if (matched) {
+                  matchedCount++
+                  const isEligible = 
+                    String(item.status || "").toUpperCase() === 'Y' ||
+                    String(item.keterangan || "").toUpperCase().includes('BISA DAFTAR') ||
+                    String(item.keterangan || "").toUpperCase().includes('SESUAI') ||
+                    String(item.keterangan || "").toUpperCase().includes('LOLOS');
+
+                  actorUpdates[`businessActors/${matched.id}/bpjsSubmissionStatus`] = isEligible ? 'accepted' : 'rejected'
+                  actorUpdates[`businessActors/${matched.id}/bpjsCheckStatus`] = isEligible ? 'sesuai' : 'ditolak'
+                  actorUpdates[`businessActors/${matched.id}/bpjsStatus`] = item.status || (isEligible ? 'Y' : 'N')
+                  actorUpdates[`businessActors/${matched.id}/bpjsKeterangan`] = item.keterangan || (isEligible ? 'BISA DAFTAR' : 'TIDAK BISA DAFTAR')
+                  actorUpdates[`businessActors/${matched.id}/bpjsCheckNote`] = item.keterangan || (isEligible ? 'Bisa Daftar' : 'Tidak Bisa Daftar')
+                  actorUpdates[`businessActors/${matched.id}/bpjsCheckedAt`] = now
+                  actorUpdates[`businessActors/${matched.id}/bpjsSourceFile`] = file.name
+                }
+              })
+
+              if (Object.keys(actorUpdates).length > 0) {
+                await update(ref(database), actorUpdates)
+              }
+            }
+          } catch (matchErr) {
+            console.error("Gagal auto-matching BPJS dengan pelaku usaha:", matchErr)
+          }
+
+          toast({
+            title: "Upload Data Pembanding BPJS Berhasil",
+            description: `${bpjsImported.length.toLocaleString('id-ID')} data BPJS disimpan. ${matchedCount.toLocaleString('id-ID')} data pelaku usaha berhasil dicocokkan otomatis!`
+          })
+          return
+        }
+
         const importedData: any[] = []
 
         for (let r = range.s.r + 1; r <= range.e.r; r++) {
@@ -386,19 +542,21 @@ export default function SettingsPage() {
     }
   }
 
-  const handleResetSheet = async (target: '2023' | '2024' | '2025' | 'blacklist') => {
+  const handleResetSheet = async (target: '2023' | '2024' | '2025' | 'blacklist' | 'bpjs') => {
     setShowResetSheetDialog(false)
     const labels = {
       '2023': 'Sheet 2 (Data Pembanding 2023)',
       '2024': 'Sheet 1 (Data Pembanding 2024)',
       '2025': 'Sheet 3 (Data Pembanding 2025)',
-      'blacklist': 'Sheet 4 (Data Blacklist)'
+      'blacklist': 'Sheet 4 (Data Blacklist)',
+      'bpjs': 'Sheet 5 (Data Pembanding BPJS)'
     }
     const paths = {
       '2023': 'master_data_2023',
       '2024': 'master_data_2024',
       '2025': 'master_data_2025',
-      'blacklist': 'blacklist_data'
+      'blacklist': 'blacklist_data',
+      'bpjs': 'bpjs_comparison_data'
     }
 
     setLoading(true)
@@ -445,18 +603,20 @@ export default function SettingsPage() {
     }
   }
 
-  const getTargetData = async (targetType: 'master_2024' | 'master_2023' | 'master_2025' | 'blacklist') => {
+  const getTargetData = async (targetType: 'master_2024' | 'master_2023' | 'master_2025' | 'blacklist' | 'bpjs') => {
     let list: any[] = []
     if (targetType === 'master_2024' && data2024 && data2024.length > 0) list = data2024
     else if (targetType === 'master_2023' && data2023 && data2023.length > 0) list = data2023
     else if (targetType === 'master_2025' && data2025 && data2025.length > 0) list = data2025
     else if (targetType === 'blacklist' && blacklistData && blacklistData.length > 0) list = blacklistData
+    else if (targetType === 'bpjs' && bpjsData && bpjsData.length > 0) list = bpjsData
 
     // Fallback directly to Realtime Database if list not yet cached in state
     if (list.length === 0 && database) {
       const dbPath = targetType === 'master_2024' ? 'master_data_2024' :
                      targetType === 'master_2023' ? 'master_data_2023' :
-                     targetType === 'master_2025' ? 'master_data_2025' : 'blacklist_data'
+                     targetType === 'master_2025' ? 'master_data_2025' : 
+                     targetType === 'blacklist' ? 'blacklist_data' : 'bpjs_comparison_data'
       const snap = await get(ref(database, dbPath))
       if (snap.exists()) {
         const val = snap.val()
@@ -464,6 +624,49 @@ export default function SettingsPage() {
       }
     }
     return list
+  }
+
+  const createBpjsSheetFromList = (list: any[]) => {
+    const rows = list.map((item, idx) => ({
+      "NO": item.no || idx + 1,
+      "NIK": item.nik ? String(item.nik).trim() : "",
+      "NAMA": item.nama || item.name || item.fullName || "",
+      "TANGGAL LAHIR": item.tanggalLahir || item.dob || "",
+      "STATUS": item.status || "",
+      "KETERANGAN": item.keterangan || item.statusBpjs || item.bpjsKeterangan || "",
+      "SUMBER FILE": item.fileName || item.sourceFile || ""
+    }))
+    const dataToExport = rows.length > 0 ? rows : [
+      {
+        "NO": 1,
+        "NIK": "",
+        "NAMA": "",
+        "TANGGAL LAHIR": "",
+        "STATUS": "",
+        "KETERANGAN": "",
+        "SUMBER FILE": ""
+      }
+    ]
+    const ws = XLSX.utils.json_to_sheet(dataToExport)
+    ws['!cols'] = [
+      { wch: 8 },  // NO
+      { wch: 22 }, // NIK
+      { wch: 30 }, // NAMA
+      { wch: 20 }, // TANGGAL LAHIR
+      { wch: 12 }, // STATUS
+      { wch: 25 }, // KETERANGAN
+      { wch: 25 }, // SUMBER FILE
+    ]
+    const range = XLSX.utils.decode_range(ws['!ref'] || "A1")
+    for (let r = range.s.r + 1; r <= range.e.r; r++) {
+      const cellNIK = ws[XLSX.utils.encode_cell({ r, c: 1 })]
+      if (cellNIK) {
+        cellNIK.t = 's'
+        cellNIK.z = '@'
+        if (cellNIK.v !== undefined && cellNIK.v !== null) cellNIK.v = String(cellNIK.v)
+      }
+    }
+    return ws
   }
 
   const createSheetFromList = (list: any[]) => {
@@ -524,24 +727,26 @@ export default function SettingsPage() {
     return ws
   }
 
-  const handleDownloadSheet = async (targetType: 'master_2024' | 'master_2023' | 'master_2025' | 'blacklist') => {
+  const handleDownloadSheet = async (targetType: 'master_2024' | 'master_2023' | 'master_2025' | 'blacklist' | 'bpjs') => {
     setDownloadingTarget(targetType)
     try {
       const list = await getTargetData(targetType)
-      const ws = createSheetFromList(list)
+      const ws = targetType === 'bpjs' ? createBpjsSheetFromList(list) : createSheetFromList(list)
       const wb = XLSX.utils.book_new()
       
       const sheetNames = {
         'master_2024': 'Data Pembanding 2024',
         'master_2023': 'Data Pembanding 2023',
         'master_2025': 'Data Pembanding 2025',
-        'blacklist': 'Data Blacklist'
+        'blacklist': 'Data Blacklist',
+        'bpjs': 'Hasil Verifikasi BPJS'
       }
       const fileNames = {
         'master_2024': `Data_Pembanding_2024_${new Date().toISOString().split('T')[0]}.xlsx`,
         'master_2023': `Data_Pembanding_2023_${new Date().toISOString().split('T')[0]}.xlsx`,
         'master_2025': `Data_Pembanding_2025_${new Date().toISOString().split('T')[0]}.xlsx`,
-        'blacklist': `Data_Blacklist_${new Date().toISOString().split('T')[0]}.xlsx`
+        'blacklist': `Data_Blacklist_${new Date().toISOString().split('T')[0]}.xlsx`,
+        'bpjs': `Data_Pembanding_BPJS_${new Date().toISOString().split('T')[0]}.xlsx`
       }
       
       XLSX.utils.book_append_sheet(wb, ws, sheetNames[targetType])
@@ -576,11 +781,12 @@ export default function SettingsPage() {
   const handleDownloadAllSheets = async () => {
     setDownloadingTarget('all')
     try {
-      const [l24, l23, l25, lbl] = await Promise.all([
+      const [l24, l23, l25, lbl, lbpjs] = await Promise.all([
         getTargetData('master_2024'),
         getTargetData('master_2023'),
         getTargetData('master_2025'),
-        getTargetData('blacklist')
+        getTargetData('blacklist'),
+        getTargetData('bpjs')
       ])
 
       const wb = XLSX.utils.book_new()
@@ -589,22 +795,25 @@ export default function SettingsPage() {
       XLSX.utils.book_append_sheet(wb, createSheetFromList(l23), "Pembanding 2023")
       XLSX.utils.book_append_sheet(wb, createSheetFromList(l25), "Pembanding 2025")
       XLSX.utils.book_append_sheet(wb, createSheetFromList(lbl), "Blacklist")
+      if (lbpjs.length > 0) {
+        XLSX.utils.book_append_sheet(wb, createBpjsSheetFromList(lbpjs), "Pembanding BPJS")
+      }
 
       const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
       const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `Semua_Data_Pembanding_dan_Blacklist_${new Date().toISOString().split('T')[0]}.xlsx`
+      a.download = `Semua_Data_Pembanding_dan_BPJS_${new Date().toISOString().split('T')[0]}.xlsx`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       setTimeout(() => URL.revokeObjectURL(url), 5000)
 
-      const total = l24.length + l23.length + l25.length + lbl.length
+      const total = l24.length + l23.length + l25.length + lbl.length + lbpjs.length
       toast({
         title: "Download Semua Berhasil",
-        description: `Total ${total.toLocaleString('id-ID')} data (4 Sheet) berhasil diunduh.`
+        description: `Total ${total.toLocaleString('id-ID')} data berhasil diunduh.`
       })
     } catch (error: any) {
       console.error(error)
@@ -617,8 +826,6 @@ export default function SettingsPage() {
       setDownloadingTarget(null)
     }
   }
-
-  const router = useRouter()
 
   const handleLogout = async () => {
     setShowLogoutDialog(true)
@@ -962,7 +1169,7 @@ export default function SettingsPage() {
                         <FileSpreadsheet className="w-4 h-4" /> Import & Export Data Otomatisasi (Excel)
                       </div>
                       <p className="text-[10px] text-muted-foreground italic mt-0.5">
-                        Upload & Download .xlsx dengan 13 kolom: KK, NIK, No, Thn, Nama, Status, LPJ, Nom, Usaha, Alamat, Kel, Kec, Koor.
+                        Upload & Download .xlsx Data Pembanding (Sheet 1-3, Blacklist, serta Sheet 5 Hasil Verifikasi BPJS).
                       </p>
                     </div>
                     <Button 
@@ -973,7 +1180,7 @@ export default function SettingsPage() {
                       disabled={downloadingTarget !== null}
                     >
                       {downloadingTarget === 'all' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                      Download Semua (4 Sheet .xlsx)
+                      Download Semua Sheet (.xlsx)
                     </Button>
                   </div>
                   
@@ -1137,6 +1344,56 @@ export default function SettingsPage() {
                         </Button>
                       </div>
                     </div>
+
+                    {/* Sheet 5: Data Pembanding BPJS */}
+                    <div className="space-y-3 pt-4 border-t border-dashed" id="bpjs">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <Label className="text-[11px] font-black uppercase text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5" /> Sheet 5: Data Pembanding Hasil Verifikasi BPJS (Acuan Pelaku Usaha)
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-sm">
+                            {isBpjsLoading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                            Total: {(bpjsData?.length || 0).toLocaleString('id-ID')} Data
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-[10px] font-bold text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 dark:text-emerald-300 px-2 rounded-md"
+                            onClick={() => router.push('/bpjs')}
+                          >
+                            Analisis & Tabel Pencocokan →
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="relative">
+                          <input type="file" accept=".xlsx, .xls" onChange={(e) => handleExcelUpload(e, 'bpjs')} className="hidden" id="excel-bpjs-upload" disabled={uploadingExcel} />
+                          <Label htmlFor="excel-bpjs-upload" className="cursor-pointer">
+                            <Button variant="outline" className="w-full border-emerald-500/20 hover:bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 font-medium h-10" asChild>
+                              <div className="flex items-center justify-center gap-2">
+                                {uploadingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                                Upload Sheet 5 (BPJS)
+                              </div>
+                            </Button>
+                          </Label>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          className="w-full border-emerald-500/30 hover:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 font-medium h-10" 
+                          onClick={() => handleDownloadSheet('bpjs')} 
+                          disabled={downloadingTarget !== null}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            {downloadingTarget === 'bpjs' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            Download Sheet 5 (BPJS)
+                          </div>
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full text-destructive border-destructive/20 hover:bg-destructive/5 font-medium h-10" onClick={() => { setResetSheetTarget('bpjs'); setShowResetSheetDialog(true); }} disabled={loading}>
+                          <Trash2 className="w-3.5 h-3.5 mr-2" /> Reset Sheet 5
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1178,6 +1435,7 @@ export default function SettingsPage() {
           resetSheetTarget === '2023' ? 'Sheet 2 (Data Pembanding 2023)' :
           resetSheetTarget === '2024' ? 'Sheet 1 (Data Pembanding 2024)' :
           resetSheetTarget === '2025' ? 'Sheet 3 (Data Pembanding 2025)' :
+          resetSheetTarget === 'bpjs' ? 'Sheet 5 (Data Pembanding BPJS)' :
           'Sheet 4 (Data Blacklist)'
         }? Tindakan ini tidak dapat dibatalkan.`}
         confirmText="Ya, Hapus"

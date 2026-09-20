@@ -177,7 +177,7 @@ export function useNavigation() {
       name: "Hasil Verifikasi BPJS",
       href: "/bpjs",
       icon: ShieldCheck,
-      show: isAdmin, // KHUSUS ADMINISTRATOR
+      show: false, // Dipindahkan ke menu Pengaturan (Data Pembanding BPJS)
       color: "#059669",
       description: "Upload & Verifikasi Hasil BPJS Ketenagakerjaan"
     },

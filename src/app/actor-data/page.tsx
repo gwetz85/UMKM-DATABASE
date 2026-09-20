@@ -1177,11 +1177,11 @@ function ActorDataContent() {
                 )}
                 {isAdmin && (
                   <Button
-                    onClick={() => router.push('/bpjs')}
+                    onClick={() => router.push('/settings#bpjs')}
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
-                    title="Buka Menu Upload & Hasil Verifikasi BPJS"
+                    title="Buka Menu Upload & Pengaturan Data Pembanding BPJS"
                   >
-                    <ShieldCheck className="w-4 h-4 mr-1.5" /> HASIL BPJS
+                    <ShieldCheck className="w-4 h-4 mr-1.5" /> PEMBANDING BPJS
                   </Button>
                 )}
               </div>
@@ -2425,11 +2425,11 @@ function ActorDataContent() {
                           type="button"
                           onClick={() => {
                             setViewingActor(null)
-                            router.push('/bpjs')
+                            router.push('/settings#bpjs')
                           }}
                           className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-1"
                         >
-                          Kelola Data BPJS <ChevronRight className="w-3 h-3" />
+                          Data Pembanding BPJS <ChevronRight className="w-3 h-3" />
                         </button>
                       )}
                     </div>
@@ -2478,11 +2478,11 @@ function ActorDataContent() {
                             variant="outline"
                             onClick={() => {
                               setViewingActor(null)
-                              router.push('/bpjs')
+                              router.push('/settings#bpjs')
                             }}
                             className="shrink-0 font-bold border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300 h-9 rounded-xl text-xs"
                           >
-                            Update Verifikasi
+                            Update di Pengaturan
                           </Button>
                         )}
                       </div>
@@ -2497,11 +2497,11 @@ function ActorDataContent() {
                             variant="outline"
                             onClick={() => {
                               setViewingActor(null)
-                              router.push('/bpjs')
+                              router.push('/settings#bpjs')
                             }}
                             className="shrink-0 font-bold border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 h-8 rounded-lg text-xs"
                           >
-                            <ShieldCheck className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Upload Data BPJS
+                            <ShieldCheck className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Upload Data BPJS di Pengaturan
                           </Button>
                         )}
                       </div>
