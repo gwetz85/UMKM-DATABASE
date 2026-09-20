@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, Users, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle, ClipboardList, Camera, Copy, Check, MoreVertical, ExternalLink, Calendar, Phone, PhoneCall, Sparkles, Navigation, UserCheck, Maximize2, ShieldCheck, BadgeCheck, UploadCloud, Ban, XCircle } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, Users, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle, ClipboardList, Camera, Copy, Check, MoreVertical, ExternalLink, Calendar, Phone, PhoneCall, Sparkles, Navigation, UserCheck, Maximize2, ShieldCheck, BadgeCheck, UploadCloud, Ban, XCircle, AlertTriangle } from "lucide-react"
 import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -241,35 +241,104 @@ function ActorDataContent() {
     const upperName = actor.fullName ? String(actor.fullName).trim().toUpperCase() : ""
     const bpjsItem = (cleanNik ? bpjsLookupMap.get(cleanNik) : null) || (upperName ? bpjsLookupMap.get(upperName) : null)
 
-    const isVerified = 
-      actor.bpjsCheckStatus === 'sesuai' ||
-      (actor as any).bpjsStatus === 'Y' ||
-      ((actor as any).bpjsKeterangan || '').toUpperCase().includes('TERVERIFIKASI') ||
-      ((actor as any).bpjsKeterangan || '').toUpperCase().includes('BISA DAFTAR') ||
-      Boolean(bpjsItem && (
-        String(bpjsItem.status || '').toUpperCase() === 'Y' ||
-        String(bpjsItem.keterangan || '').toUpperCase().includes('BISA DAFTAR') ||
-        String(bpjsItem.keterangan || '').toUpperCase().includes('TERVERIFIKASI') ||
-        String(bpjsItem.keterangan || '').toUpperCase().includes('SESUAI') ||
-        String(bpjsItem.keterangan || '').toUpperCase().includes('LOLOS') ||
-        (!bpjsItem.status && !bpjsItem.keterangan)
-      ))
+    const rawKet = (
+      bpjsItem?.keterangan || 
+      (actor as any).bpjsCheckNote || 
+      (actor as any).bpjsKeterangan || 
+      ""
+    ).toUpperCase().trim()
 
-    const isRejected = !isVerified && Boolean(
-      actor.bpjsCheckStatus === 'ditolak' ||
-      (actor as any).bpjsStatus === 'N' ||
-      ((actor as any).bpjsKeterangan || '').toUpperCase().includes('TIDAK BISA') ||
-      ((actor as any).bpjsKeterangan || '').toUpperCase().includes('TIDAK LOLOS') ||
-      (bpjsItem && (
-        String(bpjsItem.status || '').toUpperCase() === 'N' ||
-        String(bpjsItem.keterangan || '').toUpperCase().includes('TIDAK')
-      ))
+    const rawStatus = (
+      bpjsItem?.status || 
+      (actor as any).bpjsStatus || 
+      ""
+    ).toUpperCase().trim()
+
+    const hasMatch = Boolean(
+      bpjsItem || 
+      (actor as any).bpjsCheckStatus || 
+      (actor as any).bpjsStatus || 
+      (actor as any).bpjsKeterangan || 
+      (actor as any).bpjsCheckNote
     )
 
+    if (!hasMatch) {
+      return {
+        hasMatch: false,
+        isVerified: false,
+        type: 'none' as const,
+        badgeLabel: '',
+        cardLabel: '',
+        color: '',
+        note: '',
+        statusCode: '',
+        bpjsItem
+      }
+    }
+
+    // 1. NIK Duplikasi -> Tidak Bisa Didaftarkan (Badge Oren)
+    if (rawKet.includes('DUPLIKASI') || rawKet.includes('DUPLIKAT') || rawKet.includes('GANDA') || rawKet.includes('SUDAH MENJADI PESERTA')) {
+      return {
+        hasMatch: true,
+        isVerified: false,
+        type: 'duplicate' as const,
+        badgeLabel: 'TIDAK BISA DIDAFTARKAN',
+        cardLabel: 'BPJS: TIDAK BISA DIDAFTARKAN',
+        color: 'orange',
+        note: bpjsItem?.keterangan || (actor as any).bpjsCheckNote || 'DUPLIKASI KEPESERTAAN BPJS',
+        statusCode: rawStatus || 'T',
+        bpjsItem
+      }
+    }
+
+    // 2. Usia Lebih 65 Tahun -> Usia diatas 65 Tahun (Badge Merah)
+    if (rawKet.includes('65') || (rawKet.includes('USIA') && (rawKet.includes('LEBIH') || rawKet.includes('DIATAS')))) {
+      return {
+        hasMatch: true,
+        isVerified: false,
+        type: 'overage' as const,
+        badgeLabel: 'USIA DIATAS 65 TAHUN',
+        cardLabel: 'BPJS: USIA DIATAS 65 TAHUN',
+        color: 'red',
+        note: bpjsItem?.keterangan || (actor as any).bpjsCheckNote || 'Usia Lebih 65 Tahun',
+        statusCode: rawStatus || 'T',
+        bpjsItem
+      }
+    }
+
+    // 3. Bisa Daftar -> Terverifikasi (Badge Hijau)
+    const isBisaDaftar = 
+      rawStatus === 'Y' ||
+      rawKet.includes('BISA DAFTAR') ||
+      rawKet.includes('TERVERIFIKASI') ||
+      rawKet.includes('SESUAI') ||
+      rawKet.includes('LOLOS') ||
+      (bpjsItem && !rawKet && !rawStatus)
+
+    if (isBisaDaftar && rawStatus !== 'T' && rawStatus !== 'N') {
+      return {
+        hasMatch: true,
+        isVerified: true,
+        type: 'verified' as const,
+        badgeLabel: 'TERVERIFIKASI',
+        cardLabel: 'BPJS: TERVERIFIKASI',
+        color: 'green',
+        note: bpjsItem?.keterangan || (actor as any).bpjsCheckNote || 'Bisa Daftar / Terverifikasi',
+        statusCode: rawStatus || 'Y',
+        bpjsItem
+      }
+    }
+
+    // 4. Other rejected
     return {
-      isVerified,
-      isRejected,
-      hasData: Boolean(isVerified || isRejected || bpjsItem || actor.bpjsCheckStatus),
+      hasMatch: true,
+      isVerified: false,
+      type: 'rejected' as const,
+      badgeLabel: bpjsItem?.keterangan || (actor as any).bpjsKeterangan || 'TIDAK LOLOS',
+      cardLabel: `BPJS: ${bpjsItem?.keterangan || (actor as any).bpjsKeterangan || 'TIDAK LOLOS'}`,
+      color: 'red',
+      note: bpjsItem?.keterangan || (actor as any).bpjsCheckNote || 'Tidak Lolos Verifikasi BPJS',
+      statusCode: rawStatus || 'T',
       bpjsItem
     }
   }
@@ -1402,16 +1471,45 @@ function ActorDataContent() {
                                 {/* Status Hasil Verifikasi BPJS */}
                                 {(() => {
                                   const bpjsInfo = getActorBpjsStatus(actor)
-                                  if (!bpjsInfo.isVerified) return null
-                                  return (
-                                    <span
-                                      className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                                      title={`Hasil Verifikasi BPJS: ${bpjsInfo.bpjsItem?.keterangan || (actor as any).bpjsKeterangan || 'Terverifikasi'}`}
-                                    >
-                                      <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                                      <span>BPJS: TERVERIFIKASI</span>
-                                    </span>
-                                  )
+                                  if (!bpjsInfo.hasMatch) return null
+
+                                  if (bpjsInfo.type === 'verified') {
+                                    return (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                                        title={`Hasil Verifikasi BPJS: ${bpjsInfo.note}`}
+                                      >
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                        <span>{bpjsInfo.cardLabel}</span>
+                                      </span>
+                                    )
+                                  }
+
+                                  if (bpjsInfo.type === 'duplicate') {
+                                    return (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+                                        title={`Hasil Verifikasi BPJS: ${bpjsInfo.note}`}
+                                      >
+                                        <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                                        <span>{bpjsInfo.cardLabel}</span>
+                                      </span>
+                                    )
+                                  }
+
+                                  if (bpjsInfo.type === 'overage' || bpjsInfo.type === 'rejected') {
+                                    return (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
+                                        title={`Hasil Verifikasi BPJS: ${bpjsInfo.note}`}
+                                      >
+                                        <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                                        <span>{bpjsInfo.cardLabel}</span>
+                                      </span>
+                                    )
+                                  }
+
+                                  return null
                                 })()}
 
                                 <VerificationBadge actor={actor} hideLocation />
@@ -1547,16 +1645,45 @@ function ActorDataContent() {
                                 {/* Status Hasil Verifikasi BPJS */}
                                 {(() => {
                                   const bpjsInfo = getActorBpjsStatus(actor)
-                                  if (!bpjsInfo.isVerified) return null
-                                  return (
-                                    <span
-                                      className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                                      title={`Hasil Verifikasi BPJS: ${bpjsInfo.bpjsItem?.keterangan || (actor as any).bpjsKeterangan || 'Terverifikasi'}`}
-                                    >
-                                      <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                                      <span>BPJS: TERVERIFIKASI</span>
-                                    </span>
-                                  )
+                                  if (!bpjsInfo.hasMatch) return null
+
+                                  if (bpjsInfo.type === 'verified') {
+                                    return (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                                        title={`Hasil Verifikasi BPJS: ${bpjsInfo.note}`}
+                                      >
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                        <span>{bpjsInfo.cardLabel}</span>
+                                      </span>
+                                    )
+                                  }
+
+                                  if (bpjsInfo.type === 'duplicate') {
+                                    return (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
+                                        title={`Hasil Verifikasi BPJS: ${bpjsInfo.note}`}
+                                      >
+                                        <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                                        <span>{bpjsInfo.cardLabel}</span>
+                                      </span>
+                                    )
+                                  }
+
+                                  if (bpjsInfo.type === 'overage' || bpjsInfo.type === 'rejected') {
+                                    return (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
+                                        title={`Hasil Verifikasi BPJS: ${bpjsInfo.note}`}
+                                      >
+                                        <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                                        <span>{bpjsInfo.cardLabel}</span>
+                                      </span>
+                                    )
+                                  }
+
+                                  return null
                                 })()}
 
                                 <VerificationBadge actor={actor} hideLocation />
@@ -2432,8 +2559,7 @@ function ActorDataContent() {
 
                     {(() => {
                       const bpjsInfo = getActorBpjsStatus(viewingActor)
-                      const isFound = Boolean(bpjsInfo.isVerified || bpjsInfo.bpjsItem || (viewingActor as any).bpjsCheckStatus || (viewingActor as any).bpjsStatus || (viewingActor as any).bpjsKeterangan)
-                      if (!isFound) {
+                      if (!bpjsInfo.hasMatch) {
                         return (
                           <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="text-xs text-slate-500 font-medium">
@@ -2456,37 +2582,46 @@ function ActorDataContent() {
                         )
                       }
 
-                      const isOk = bpjsInfo.isVerified
-                      const statusBadge = isOk ? 'TERVERIFIKASI' : (bpjsInfo.bpjsItem?.keterangan || (viewingActor as any).bpjsKeterangan || 'TIDAK LOLOS')
-                      const statusCode = bpjsInfo.bpjsItem?.status || (viewingActor as any).bpjsStatus
-                      const note = bpjsInfo.bpjsItem?.keterangan || (viewingActor as any).bpjsCheckNote
-                      const sourceFile = bpjsInfo.bpjsItem?.sumberFile || (viewingActor as any).bpjsSourceFile || 'Sheet Hasil Verifikasi BPJS'
-                      const checkedAt = (viewingActor as any).bpjsCheckedAt
+                      const badgeBg = 
+                        bpjsInfo.type === 'verified'
+                          ? "bg-emerald-600 text-white shadow-xs"
+                          : bpjsInfo.type === 'duplicate'
+                          ? "bg-amber-500 text-white shadow-xs"
+                          : "bg-rose-600 text-white shadow-xs"
+
+                      const containerBg = 
+                        bpjsInfo.type === 'verified'
+                          ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                          : bpjsInfo.type === 'duplicate'
+                          ? "bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800"
+                          : "bg-rose-50/80 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800"
+
+                      const btnBorder =
+                        bpjsInfo.type === 'verified'
+                          ? "border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300"
+                          : bpjsInfo.type === 'duplicate'
+                          ? "border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-300"
+                          : "border-rose-300 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:text-rose-300"
+
+                      const sourceFile = bpjsInfo.bpjsItem?.fileName || bpjsInfo.bpjsItem?.sumberFile || (viewingActor as any).bpjsSourceFile || 'Sheet Hasil Verifikasi BPJS'
+                      const checkedAt = (viewingActor as any).bpjsCheckedAt || bpjsInfo.bpjsItem?.uploadedAt
 
                       return (
-                        <div className={cn(
-                          "p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4",
-                          isOk
-                            ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
-                            : "bg-rose-50/80 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800"
-                        )}>
+                        <div className={cn("p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4", containerBg)}>
                           <div className="space-y-1.5 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className={cn(
-                                "text-xs font-black px-2.5 py-1 rounded-lg uppercase tracking-wider",
-                                isOk ? "bg-emerald-600 text-white shadow-xs" : "bg-rose-600 text-white shadow-xs"
-                              )}>
-                                {statusBadge}
+                              <span className={cn("text-xs font-black px-2.5 py-1 rounded-lg uppercase tracking-wider", badgeBg)}>
+                                {bpjsInfo.badgeLabel}
                               </span>
-                              {statusCode && (
+                              {bpjsInfo.statusCode && (
                                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-                                  Kode Status: {statusCode}
+                                  Kode Status: {bpjsInfo.statusCode}
                                 </span>
                               )}
                             </div>
-                            {note && (
+                            {bpjsInfo.note && (
                               <p className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                                Keterangan: {note}
+                                Keterangan: {bpjsInfo.note}
                               </p>
                             )}
                             <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
@@ -2507,7 +2642,7 @@ function ActorDataContent() {
                                 setViewingActor(null)
                                 router.push('/settings#bpjs')
                               }}
-                              className="shrink-0 font-bold border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300 h-9 rounded-xl text-xs"
+                              className={cn("shrink-0 font-bold h-9 rounded-xl text-xs", btnBorder)}
                             >
                               Update di Pengaturan
                             </Button>

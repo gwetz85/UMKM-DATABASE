@@ -403,18 +403,33 @@ export default function SettingsPage() {
 
                 if (matched) {
                   matchedCount++
-                  const isEligible = 
-                    String(item.status || "").toUpperCase() === 'Y' ||
-                    String(item.keterangan || "").toUpperCase().includes('BISA DAFTAR') ||
-                    String(item.keterangan || "").toUpperCase().includes('TERVERIFIKASI') ||
-                    String(item.keterangan || "").toUpperCase().includes('SESUAI') ||
-                    String(item.keterangan || "").toUpperCase().includes('LOLOS');
+                  const rawKet = String(item.keterangan || "").toUpperCase().trim()
+                  const rawStat = String(item.status || "").toUpperCase().trim()
+
+                  const isDuplicate = rawKet.includes('DUPLIKASI') || rawKet.includes('DUPLIKAT') || rawKet.includes('GANDA') || rawKet.includes('SUDAH MENJADI PESERTA')
+                  const isOverage = rawKet.includes('65') || (rawKet.includes('USIA') && rawKet.includes('LEBIH')) || rawKet.includes('DIATAS 65')
+                  const isEligible = !isDuplicate && !isOverage && (
+                    rawStat === 'Y' ||
+                    rawKet.includes('BISA DAFTAR') ||
+                    rawKet.includes('TERVERIFIKASI') ||
+                    rawKet.includes('SESUAI') ||
+                    rawKet.includes('LOLOS')
+                  )
+
+                  let labelKeterangan = 'TERVERIFIKASI'
+                  if (isDuplicate) {
+                    labelKeterangan = 'TIDAK BISA DIDAFTARKAN'
+                  } else if (isOverage) {
+                    labelKeterangan = 'USIA DIATAS 65 TAHUN'
+                  } else if (!isEligible) {
+                    labelKeterangan = item.keterangan || 'TIDAK LOLOS'
+                  }
 
                   actorUpdates[`businessActors/${matched.id}/bpjsSubmissionStatus`] = isEligible ? 'accepted' : 'rejected'
                   actorUpdates[`businessActors/${matched.id}/bpjsCheckStatus`] = isEligible ? 'sesuai' : 'ditolak'
-                  actorUpdates[`businessActors/${matched.id}/bpjsStatus`] = item.status || (isEligible ? 'Y' : 'N')
-                  actorUpdates[`businessActors/${matched.id}/bpjsKeterangan`] = isEligible ? 'TERVERIFIKASI' : (item.keterangan || 'TIDAK LOLOS')
-                  actorUpdates[`businessActors/${matched.id}/bpjsCheckNote`] = item.keterangan || (isEligible ? 'Terverifikasi' : 'Tidak Lolos')
+                  actorUpdates[`businessActors/${matched.id}/bpjsStatus`] = item.status || (isEligible ? 'Y' : 'T')
+                  actorUpdates[`businessActors/${matched.id}/bpjsKeterangan`] = labelKeterangan
+                  actorUpdates[`businessActors/${matched.id}/bpjsCheckNote`] = item.keterangan || labelKeterangan
                   actorUpdates[`businessActors/${matched.id}/bpjsCheckedAt`] = now
                   actorUpdates[`businessActors/${matched.id}/bpjsSourceFile`] = file.name
                 }
