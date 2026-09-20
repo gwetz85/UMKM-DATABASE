@@ -100,6 +100,14 @@ export interface BusinessActor {
   cancelDinasBy?: string;
   dihapusDinasAt?: string;
   dihapusDinasBy?: string;
+  bpjsSubmissionStatus?: 'accepted' | 'rejected' | 'pending';
+  bpjsCheckStatus?: 'sesuai' | 'ditolak' | 'belum_dicek' | string;
+  bpjsStatus?: string;
+  bpjsKeterangan?: string;
+  bpjsCheckNote?: string;
+  bpjsCheckedAt?: string;
+  bpjsSourceFile?: string;
+  bpjsKpj?: string;
 }
 
 export interface PejabatItem {

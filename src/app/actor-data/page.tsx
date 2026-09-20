@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, Users, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle, ClipboardList, Camera, Copy, Check, MoreVertical, ExternalLink, Calendar, Phone, PhoneCall, Sparkles, Navigation, UserCheck, Maximize2, ShieldCheck, BadgeCheck } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, Users, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle, ClipboardList, Camera, Copy, Check, MoreVertical, ExternalLink, Calendar, Phone, PhoneCall, Sparkles, Navigation, UserCheck, Maximize2, ShieldCheck, BadgeCheck, UploadCloud, Ban } from "lucide-react"
 import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -106,6 +106,8 @@ function ActorDataContent() {
   useEffect(() => {
     setPageLimit(50)
   }, [searchQuery, filterCoordinator])
+
+  const [filterBpjs, setFilterBpjs] = useState<string>("all")
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -1053,9 +1055,29 @@ function ActorDataContent() {
     });
   }, [filteredActors, database]);
 
-  const currentDataToDisplay = (isInspektorat || isKoordinator || isSearching) 
+  const rawDataToDisplay = (isInspektorat || isKoordinator || isSearching) 
     ? (filteredActors || []) 
     : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []);
+
+  const currentDataToDisplay = useMemo(() => {
+    if (filterBpjs === "all") return rawDataToDisplay;
+    return rawDataToDisplay.filter(actor => {
+      const isEligible = 
+        actor.bpjsCheckStatus === 'sesuai' ||
+        (actor as any).bpjsStatus === 'Y' ||
+        ((actor as any).bpjsKeterangan || '').toUpperCase().includes('BISA DAFTAR');
+      
+      const isRejected = 
+        actor.bpjsCheckStatus === 'ditolak' ||
+        (actor as any).bpjsStatus === 'N' ||
+        ((actor as any).bpjsKeterangan || '').toUpperCase().includes('TIDAK BISA');
+
+      if (filterBpjs === "bisa_daftar") return isEligible;
+      if (filterBpjs === "tidak_bisa") return isRejected;
+      if (filterBpjs === "belum_dicek") return !actor.bpjsCheckStatus && !(actor as any).bpjsStatus && !(actor as any).bpjsKeterangan;
+      return true;
+    });
+  }, [rawDataToDisplay, filterBpjs]);
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -1153,6 +1175,15 @@ function ActorDataContent() {
                     <Printer className="w-4 h-4 mr-1.5" /> CETAK PDF
                   </Button>
                 )}
+                {isAdmin && (
+                  <Button
+                    onClick={() => router.push('/bpjs')}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
+                    title="Buka Menu Upload & Hasil Verifikasi BPJS"
+                  >
+                    <ShieldCheck className="w-4 h-4 mr-1.5" /> HASIL BPJS
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -1229,18 +1260,34 @@ function ActorDataContent() {
                     : `DATA: ${filterCoordinator}`}
                 </h2>
               </div>
-              {isAdmin && filterCoordinator && !isKoordinator && !isInspektorat && (
-                <Button 
-                  size="sm" 
-                  disabled={isLanjutDinasBatching}
-                  onClick={() => handleLanjutDinasBatch(filterCoordinator, groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || [])} 
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm w-full sm:w-auto h-9 text-xs sm:text-sm shrink-0 rounded-xl" 
-                  title="Lanjut ke Verifikasi Dinas"
-                >
-                  {isLanjutDinasBatching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ClipboardCheck className="w-4 h-4 mr-2" />}
-                  <span>Lanjut Dinas (Koordinator)</span>
-                </Button>
-              )}
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Select value={filterBpjs} onValueChange={setFilterBpjs}>
+                    <SelectTrigger className="h-9 text-xs font-bold border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl px-3 w-[150px] sm:w-[180px]">
+                      <SelectValue placeholder="Filter BPJS" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua BPJS</SelectItem>
+                      <SelectItem value="bisa_daftar">✓ BPJS: Bisa Daftar</SelectItem>
+                      <SelectItem value="tidak_bisa">✕ BPJS: Tidak Bisa</SelectItem>
+                      <SelectItem value="belum_dicek">○ BPJS: Belum Dicek</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {isAdmin && filterCoordinator && !isKoordinator && !isInspektorat && (
+                  <Button 
+                    size="sm" 
+                    disabled={isLanjutDinasBatching}
+                    onClick={() => handleLanjutDinasBatch(filterCoordinator, groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || [])} 
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm w-full sm:w-auto h-9 text-xs sm:text-sm shrink-0 rounded-xl" 
+                    title="Lanjut ke Verifikasi Dinas"
+                  >
+                    {isLanjutDinasBatching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ClipboardCheck className="w-4 h-4 mr-2" />}
+                    <span>Lanjut Dinas (Koordinator)</span>
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1337,7 +1384,32 @@ function ActorDataContent() {
                                     {actor.registrationCode || '...'}
                                   </span>
                                 </div>
-                                <VerificationBadge actor={actor} />
+
+                                {/* Status Hasil Verifikasi BPJS */}
+                                {(actor.bpjsCheckStatus || (actor as any).bpjsStatus || (actor as any).bpjsKeterangan) ? (
+                                  <span
+                                    className={cn(
+                                      "inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0",
+                                      actor.bpjsCheckStatus === 'sesuai' || (actor as any).bpjsStatus === 'Y' || ((actor as any).bpjsKeterangan || '').toUpperCase().includes('BISA DAFTAR')
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                                        : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
+                                    )}
+                                    title={`Hasil Verifikasi BPJS: ${(actor as any).bpjsKeterangan || (actor as any).bpjsCheckNote || '-'}`}
+                                  >
+                                    <ShieldCheck className="w-3 h-3" />
+                                    <span>BPJS: {(actor as any).bpjsKeterangan || ((actor as any).bpjsStatus === 'Y' ? 'BISA DAFTAR' : 'TERVERIFIKASI')}</span>
+                                  </span>
+                                ) : (
+                                  <span
+                                    className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400 leading-tight shrink-0"
+                                    title="Belum ada data hasil verifikasi BPJS"
+                                  >
+                                    <ShieldCheck className="w-2.5 h-2.5 text-slate-400" />
+                                    <span>BPJS: -</span>
+                                  </span>
+                                )}
+
+                                <VerificationBadge actor={actor} hideLocation />
                               </div>
                             </div>
                           </div>
@@ -1365,7 +1437,7 @@ function ActorDataContent() {
                             </span>
                           </div>
                           <div className="flex items-center gap-2 text-xs sm:text-[13px] text-slate-600 dark:text-slate-300 flex-wrap">
-                            <span>Usia: <strong className="font-extrabold text-slate-800 dark:text-slate-100">{actorAge ? `${actorAge} Tahun` : '-'}</strong></span>
+                            <span>Usia: <strong className="font-extrabold text-slate-800 dark:text-slate-100">{actorAge || '-'}</strong></span>
                             <span className="text-slate-300 dark:text-slate-600">•</span>
                             <span>HP: <strong className="font-extrabold text-slate-800 dark:text-slate-100">{actor.phone || '-'}</strong></span>
                           </div>
@@ -1467,7 +1539,31 @@ function ActorDataContent() {
                                   </span>
                                 </div>
 
-                                <VerificationBadge actor={actor} />
+                                {/* Status Hasil Verifikasi BPJS */}
+                                {(actor.bpjsCheckStatus || (actor as any).bpjsStatus || (actor as any).bpjsKeterangan) ? (
+                                  <span
+                                    className={cn(
+                                      "inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0",
+                                      actor.bpjsCheckStatus === 'sesuai' || (actor as any).bpjsStatus === 'Y' || ((actor as any).bpjsKeterangan || '').toUpperCase().includes('BISA DAFTAR')
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                                        : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
+                                    )}
+                                    title={`Hasil Verifikasi BPJS: ${(actor as any).bpjsKeterangan || (actor as any).bpjsCheckNote || '-'}`}
+                                  >
+                                    <ShieldCheck className="w-3 h-3" />
+                                    <span>BPJS: {(actor as any).bpjsKeterangan || ((actor as any).bpjsStatus === 'Y' ? 'BISA DAFTAR' : 'TERVERIFIKASI')}</span>
+                                  </span>
+                                ) : (
+                                  <span
+                                    className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400 leading-tight shrink-0"
+                                    title="Belum ada data hasil verifikasi BPJS"
+                                  >
+                                    <ShieldCheck className="w-2.5 h-2.5 text-slate-400" />
+                                    <span>BPJS: -</span>
+                                  </span>
+                                )}
+
+                                <VerificationBadge actor={actor} hideLocation />
                               </div>
                             </div>
                           </div>
@@ -1498,7 +1594,7 @@ function ActorDataContent() {
                           </div>
 
                           <div className="flex items-center gap-2 text-xs sm:text-[13px] text-slate-600 dark:text-slate-300 flex-wrap">
-                            <span>Usia: <strong className="font-extrabold text-slate-800 dark:text-slate-100">{actorAge ? `${actorAge} Tahun` : '-'}</strong></span>
+                            <span>Usia: <strong className="font-extrabold text-slate-800 dark:text-slate-100">{actorAge || '-'}</strong></span>
                             <span className="text-slate-300 dark:text-slate-600">•</span>
                             <span>HP: <strong className="font-extrabold text-slate-800 dark:text-slate-100">{actor.phone || '-'}</strong></span>
                           </div>
@@ -2316,6 +2412,100 @@ function ActorDataContent() {
                         </div>
                       )}
                     </div>
+                  </section>
+
+                  {/* HASIL VERIFIKASI BPJS */}
+                  <section className="space-y-4">
+                    <div className="flex items-center justify-between border-b pb-1">
+                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" /> Hasil Verifikasi BPJS Ketenagakerjaan
+                      </div>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setViewingActor(null)
+                            router.push('/bpjs')
+                          }}
+                          className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-1"
+                        >
+                          Kelola Data BPJS <ChevronRight className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+
+                    {((viewingActor as any).bpjsCheckStatus || (viewingActor as any).bpjsStatus || (viewingActor as any).bpjsKeterangan) ? (
+                      <div className={cn(
+                        "p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4",
+                        (viewingActor as any).bpjsCheckStatus === 'sesuai' || (viewingActor as any).bpjsStatus === 'Y' || ((viewingActor as any).bpjsKeterangan || '').toUpperCase().includes('BISA DAFTAR')
+                          ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                          : "bg-rose-50/80 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800"
+                      )}>
+                        <div className="space-y-1.5 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={cn(
+                              "text-xs font-black px-2.5 py-1 rounded-lg uppercase tracking-wider",
+                              (viewingActor as any).bpjsCheckStatus === 'sesuai' || (viewingActor as any).bpjsStatus === 'Y' || ((viewingActor as any).bpjsKeterangan || '').toUpperCase().includes('BISA DAFTAR')
+                                ? "bg-emerald-600 text-white shadow-xs"
+                                : "bg-rose-600 text-white shadow-xs"
+                            )}>
+                              {(viewingActor as any).bpjsKeterangan || ((viewingActor as any).bpjsStatus === 'Y' ? 'BISA DAFTAR' : 'TIDAK BISA DAFTAR')}
+                            </span>
+                            {(viewingActor as any).bpjsStatus && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                                Kode Status: {(viewingActor as any).bpjsStatus}
+                              </span>
+                            )}
+                          </div>
+                          {(viewingActor as any).bpjsCheckNote && (
+                            <p className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                              Catatan: {(viewingActor as any).bpjsCheckNote}
+                            </p>
+                          )}
+                          <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+                            {(viewingActor as any).bpjsSourceFile && (
+                              <span>File Acuan: <strong className="text-slate-700 dark:text-slate-300 font-mono">{(viewingActor as any).bpjsSourceFile}</strong></span>
+                            )}
+                            {(viewingActor as any).bpjsCheckedAt && (
+                              <span>Waktu Cek: <strong className="text-slate-700 dark:text-slate-300">{new Date((viewingActor as any).bpjsCheckedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong></span>
+                            )}
+                          </div>
+                        </div>
+
+                        {isAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setViewingActor(null)
+                              router.push('/bpjs')
+                            }}
+                            className="shrink-0 font-bold border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300 h-9 rounded-xl text-xs"
+                          >
+                            Update Verifikasi
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="text-xs text-slate-500 font-medium">
+                          Belum ada catatan hasil verifikasi BPJS untuk pelaku usaha ini.
+                        </div>
+                        {isAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setViewingActor(null)
+                              router.push('/bpjs')
+                            }}
+                            className="shrink-0 font-bold border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 h-8 rounded-lg text-xs"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Upload Data BPJS
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </section>
 
                   {/* 6. BERKAS TAMBAHAN (GOOGLE DRIVE) */}

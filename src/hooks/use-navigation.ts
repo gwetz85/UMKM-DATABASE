@@ -174,6 +174,14 @@ export function useNavigation() {
       description: "Download Berita Acara Survey"
     },
     {
+      name: "Hasil Verifikasi BPJS",
+      href: "/bpjs",
+      icon: ShieldCheck,
+      show: isAdmin, // KHUSUS ADMINISTRATOR
+      color: "#059669",
+      description: "Upload & Verifikasi Hasil BPJS Ketenagakerjaan"
+    },
+    {
       name: "Rekapan Data",
       href: "/rekapan-data",
       icon: BarChart3,

@@ -120,6 +120,8 @@ export interface BpjsMatchInfo {
   excelNik: string
   excelName: string
   excelStatus: string
+  rawStatus?: string
+  excelDob?: string
   excelKpj?: string
   matchMethod: "nik_and_name" | "nik_exact" | "nik_normalized" | "name_exact" | "name_fuzzy"
   isNikMatched: boolean
@@ -340,56 +342,50 @@ export default function BpjsPage() {
         throw new Error("File Excel kosong atau tidak memiliki baris data.")
       }
 
-      // Check header row (row 0)
-      const headerRow = (rows2d[0] || []).map((h: any) => String(h || "").trim().toUpperCase())
+      // Scan first 10 rows to dynamically detect header row
+      let headerRowIdx = 0
+      for (let r = 0; r < Math.min(rows2d.length, 10); r++) {
+        const rowStrings = (rows2d[r] || []).map((c: any) => String(c || "").trim().toUpperCase())
+        if (rowStrings.some((h: string) => h === "NIK" || h === "NO. NIK" || h === "NO NIK" || h.includes("NOMOR IDENTITAS") || h.includes("NO IDENTITAS") || h.includes("IDENTITAS"))) {
+          headerRowIdx = r
+          break
+        }
+      }
 
-      // 1. Column D (Index 3) for NIK (Nomor Identitas*)
+      const headerRow = (rows2d[headerRowIdx] || []).map((h: any) => String(h || "").trim().toUpperCase())
+
+      // 1. Column for NIK (supports "NIK", "NOMOR IDENTITAS", etc.)
       let colNikIdx = headerRow.findIndex((h: string) =>
-        h.includes("NOMOR IDENTITAS") ||
-        h.includes("NO IDENTITAS") ||
-        h.includes("IDENTITAS") ||
-        h === "NIK" ||
-        h.includes("NIK") ||
-        h.includes("KTP")
+        h === "NIK" || h === "NO. NIK" || h === "NO NIK" || h.includes("NOMOR IDENTITAS") || h.includes("NO IDENTITAS") || h.includes("IDENTITAS") || h.includes("KTP")
       )
-      // Fallback to Column D (index 3) as specified
-      if (colNikIdx === -1 && rows2d[0] && rows2d[0].length > 3) {
-        colNikIdx = 3 // Kolom D
-      } else if (colNikIdx === -1) {
-        colNikIdx = 3
+      if (colNikIdx === -1) {
+        colNikIdx = rows2d[headerRowIdx]?.length > 3 ? 3 : 1
       }
 
-      // 2. Column E (Index 4) for Nama Lengkap
+      // 2. Column for Nama (supports "NAMA", "NAMA LENGKAP", "NAMA PESERTA", etc.)
       let colNamaIdx = headerRow.findIndex((h: string) =>
-        h.includes("NAMA LENGKAP") ||
-        h === "NAMA" ||
-        h.includes("NAMA") ||
-        h.includes("PESERTA")
+        h === "NAMA" || h.includes("NAMA LENGKAP") || h.includes("NAMA PESERTA") || h.includes("PESERTA") || (h.includes("NAMA") && !h.includes("IBU") && !h.includes("USAHA"))
       )
-      if (colNamaIdx === -1 && rows2d[0] && rows2d[0].length > 4) {
-        colNamaIdx = 4 // Kolom E
+      if (colNamaIdx === -1) {
+        colNamaIdx = colNikIdx === 1 ? 2 : 4
       }
 
-      // 3. Column C (Index 2) for Keterangan Status (e.g. BISA DAFTAR)
-      let colStatusKetIdx = headerRow.findIndex((h: string) =>
-        h.includes("KETERANGAN STATUS") ||
-        h.includes("KETERANGAN") ||
-        h.includes("HASIL") ||
-        h.includes("CATATAN")
+      // 3. Column for Tanggal Lahir (supports "TANGGAL LAHIR", "DOB", "TGL LAHIR")
+      let colDobIdx = headerRow.findIndex((h: string) =>
+        h.includes("TANGGAL LAHIR") || h.includes("TGL LAHIR") || h.includes("LAHIR") || h.includes("DOB")
       )
-      if (colStatusKetIdx === -1 && rows2d[0] && rows2d[0].length > 2) {
-        colStatusKetIdx = 2 // Kolom C
-      }
 
-      // 4. Column B (Index 1) for Status (e.g. Y)
+      // 4. Column for Status (e.g. "Y", "STATUS")
       let colStatusIdx = headerRow.findIndex((h: string) =>
-        h === "STATUS" || h.includes("STATUS")
+        h === "STATUS" || (h.includes("STATUS") && !h.includes("KETERANGAN"))
       )
-      if (colStatusIdx === -1 && rows2d[0] && rows2d[0].length > 1) {
-        colStatusIdx = 1 // Kolom B
-      }
 
-      // 5. Column for KPJ / No Kartu if present
+      // 5. Column for Keterangan (e.g. "BISA DAFTAR", "KETERANGAN")
+      let colStatusKetIdx = headerRow.findIndex((h: string) =>
+        h.includes("KETERANGAN") || h.includes("CATATAN") || h.includes("HASIL")
+      )
+
+      // 6. Column for KPJ / No Kartu if present
       let colKpjIdx = headerRow.findIndex((h: string) =>
         h.includes("KPJ") || h.includes("KARTU")
       )
@@ -419,21 +415,21 @@ export default function BpjsPage() {
       const matchedMap = new Map<string, BpjsMatchInfo>()
       const unmatchedList: UnmatchedExcelRow[] = []
 
-      // Process each row starting from row index 1 (skipping header)
-      for (let r = 1; r < rows2d.length; r++) {
+      // Process each row starting after the detected header row
+      for (let r = headerRowIdx + 1; r < rows2d.length; r++) {
         const rowArr = rows2d[r]
         if (!rowArr || rowArr.length === 0) continue
 
-        // Extract values from detected columns (specifically Column D for NIK, Column E for Nama)
-        const rawNikColD = colNikIdx >= 0 && rowArr[colNikIdx] !== undefined ? String(rowArr[colNikIdx]).trim() : ""
+        const rawNikCol = colNikIdx >= 0 && rowArr[colNikIdx] !== undefined ? String(rowArr[colNikIdx]).trim() : ""
         const rawNama = colNamaIdx >= 0 && rowArr[colNamaIdx] !== undefined ? String(rowArr[colNamaIdx]).trim() : ""
         const rawKet = colStatusKetIdx >= 0 && rowArr[colStatusKetIdx] !== undefined ? String(rowArr[colStatusKetIdx]).trim() : ""
         const rawStatusB = colStatusIdx >= 0 && rowArr[colStatusIdx] !== undefined ? String(rowArr[colStatusIdx]).trim() : ""
         const rawKpj = colKpjIdx >= 0 && rowArr[colKpjIdx] !== undefined ? String(rowArr[colKpjIdx]).trim() : ""
+        const rawDob = colDobIdx >= 0 && rowArr[colDobIdx] !== undefined ? String(rowArr[colDobIdx]).trim() : ""
 
-        if (!rawNikColD && !rawNama) continue
+        if (!rawNikCol && !rawNama) continue
 
-        const cleanedNik = cleanNik(rawNikColD)
+        const cleanedNik = cleanNik(rawNikCol)
         const normNama = normalizeName(rawNama)
 
         let matchedActor: BusinessActor | undefined = undefined
@@ -441,15 +437,15 @@ export default function BpjsPage() {
         let isNikMatched = false
         let isNameMatched = false
 
-        // 1. Cek NIK di database (Nomor Identitas = NIK)
+        // 1. Cek NIK di database
         let foundByNik: BusinessActor | undefined = undefined
-        if (rawNikColD && actorByNikExact.has(rawNikColD)) {
-          foundByNik = actorByNikExact.get(rawNikColD)
+        if (rawNikCol && actorByNikExact.has(rawNikCol)) {
+          foundByNik = actorByNikExact.get(rawNikCol)
         } else if (cleanedNik && cleanedNik.length >= 8 && actorByNikClean.has(cleanedNik)) {
           foundByNik = actorByNikClean.get(cleanedNik)
         }
 
-        // 2. Cek Nama Pelaku Usaha di database
+        // 2. Cek Nama di database
         let foundByName: BusinessActor | undefined = undefined
         if (normNama && actorByNameExact.has(normNama)) {
           foundByName = actorByNameExact.get(normNama)
@@ -460,17 +456,15 @@ export default function BpjsPage() {
           })
         }
 
-        // 3. Gabungkan hasil pengecekan NIK dan Nama
         if (foundByNik) {
           matchedActor = foundByNik
           isNikMatched = true
-
           const aName = String(foundByNik.fullName || (foundByNik as any).nama || "")
           if (rawNama && (normalizeName(aName) === normNama || fuzzyNameMatch(aName, rawNama))) {
             isNameMatched = true
-            matchMethod = "nik_and_name" // Cocok NIK & Nama!
+            matchMethod = "nik_and_name"
           } else {
-            matchMethod = rawNikColD && actorByNikExact.has(rawNikColD) ? "nik_exact" : "nik_normalized"
+            matchMethod = rawNikCol && actorByNikExact.has(rawNikCol) ? "nik_exact" : "nik_normalized"
           }
         } else if (foundByName) {
           matchedActor = foundByName
@@ -479,14 +473,16 @@ export default function BpjsPage() {
           matchMethod = normNama && actorByNameExact.has(normNama) ? "name_exact" : "name_fuzzy"
         }
 
-        const displayStatus = rawKet || (rawStatusB === "Y" ? "Bisa Daftar" : rawStatusB) || "Sesuai Pengecekan BPJS"
+        const displayStatus = rawKet || (rawStatusB.toUpperCase() === "Y" ? "Bisa Daftar" : (rawStatusB.toUpperCase() === "N" ? "Tidak Bisa Daftar" : rawStatusB)) || "Sesuai Pengecekan BPJS"
 
         if (matchedActor) {
           matchedMap.set(matchedActor.id, {
             excelRow: r + 1,
-            excelNik: rawNikColD || matchedActor.nik || "-",
+            excelNik: rawNikCol || matchedActor.nik || "-",
             excelName: rawNama || matchedActor.fullName,
             excelStatus: displayStatus,
+            rawStatus: rawStatusB || undefined,
+            excelDob: rawDob || undefined,
             excelKpj: rawKpj || undefined,
             matchMethod,
             isNikMatched,
@@ -495,13 +491,13 @@ export default function BpjsPage() {
         } else {
           unmatchedList.push({
             rowNum: r + 1,
-            nik: rawNikColD || "-",
+            nik: rawNikCol || "-",
             name: rawNama || "Tanpa Nama",
             status: displayStatus,
             kpj: rawKpj || undefined,
-            reason: rawNikColD && rawNama 
-              ? "NIK (Nomor Identitas) dan Nama tidak ditemukan di database pelaku usaha" 
-              : (rawNikColD ? "NIK (Nomor Identitas) tidak ditemukan di database" : "Nama tidak ditemukan di database")
+            reason: rawNikCol && rawNama 
+              ? "NIK dan Nama tidak ditemukan di database pelaku usaha" 
+              : (rawNikCol ? "NIK tidak ditemukan di database" : "Nama tidak ditemukan di database")
           })
         }
       }
@@ -510,7 +506,7 @@ export default function BpjsPage() {
       setMatchedActorsMap(matchedMap)
       setUnmatchedRows(unmatchedList)
       setComparisonStats({
-        totalRows: rows2d.length - 1,
+        totalRows: rows2d.length - (headerRowIdx + 1),
         matchedCount: matchedMap.size,
         unmatchedCount: unmatchedList.length
       })
@@ -595,9 +591,18 @@ export default function BpjsPage() {
       const now = new Date().toISOString()
 
       matchedActorsMap.forEach((info, actorId) => {
-        updates[`businessActors/${actorId}/bpjsSubmissionStatus`] = 'accepted'
-        updates[`businessActors/${actorId}/bpjsCheckStatus`] = 'sesuai'
-        updates[`businessActors/${actorId}/bpjsCheckNote`] = info.excelStatus || 'Sesuai Hasil Pengecekan BPJS'
+        const isEligible = 
+          (info.rawStatus && info.rawStatus.toUpperCase() === 'Y') ||
+          info.excelStatus.toUpperCase().includes('BISA DAFTAR') ||
+          info.excelStatus.toUpperCase().includes('SESUAI') ||
+          info.excelStatus.toUpperCase().includes('LOLOS') ||
+          info.excelStatus.toUpperCase().includes('DITERIMA');
+
+        updates[`businessActors/${actorId}/bpjsSubmissionStatus`] = isEligible ? 'accepted' : 'rejected'
+        updates[`businessActors/${actorId}/bpjsCheckStatus`] = isEligible ? 'sesuai' : 'ditolak'
+        updates[`businessActors/${actorId}/bpjsStatus`] = info.rawStatus || (isEligible ? 'Y' : 'N')
+        updates[`businessActors/${actorId}/bpjsKeterangan`] = info.excelStatus || (isEligible ? 'BISA DAFTAR' : 'TIDAK BISA DAFTAR')
+        updates[`businessActors/${actorId}/bpjsCheckNote`] = info.excelStatus || (isEligible ? 'Bisa Daftar' : 'Tidak Bisa Daftar')
         updates[`businessActors/${actorId}/bpjsCheckedAt`] = now
         updates[`businessActors/${actorId}/bpjsSourceFile`] = uploadedFileName
         if (info.excelKpj) {
@@ -608,7 +613,7 @@ export default function BpjsPage() {
       await update(ref(database), updates)
       toast({
         title: "Pembaruan Berhasil!",
-        description: `${matchedActorsMap.size} data pelaku usaha berhasil disimpan ke database dengan status Sesuai BPJS.`
+        description: `${matchedActorsMap.size} data hasil verifikasi BPJS berhasil disimpan ke database dan ditampilkan pada Data Pelaku Usaha.`
       })
       setIsUploadOpen(false)
     } catch (err: any) {
@@ -767,7 +772,7 @@ export default function BpjsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-[92rem] mx-auto space-y-6">
+    <div className="w-full max-w-7xl mx-auto p-2 sm:p-4 md:p-6 animate-in fade-in zoom-in duration-500 flex flex-col">
       {/* Hidden File Input for dialog */}
       <input
         type="file"
@@ -777,58 +782,73 @@ export default function BpjsPage() {
         className="hidden"
       />
 
-      {/* Header Section */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors" />
-            <h1 className="text-2xl md:text-3xl font-bold text-primary font-headline flex items-center gap-2">
-              <ShieldCheck className="w-6 h-6 md:w-8 md:h-8 text-emerald-600" /> BPJS Ketenagakerjaan
-            </h1>
+      {/* Modern Frosted Canvas Container */}
+      <div className="bg-white/85 dark:bg-slate-900/90 backdrop-blur-xl border border-white/80 dark:border-slate-800 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl shadow-slate-300/40 dark:shadow-none space-y-6">
+        
+        {/* Sticky Fixed Header & Controls */}
+        <div className="sticky -top-4 md:-top-8 z-30 -mx-4 -mt-4 sm:-mx-6 sm:-mt-6 lg:-mx-8 lg:-mt-8 p-4 sm:p-6 lg:p-8 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-b border-slate-200/80 dark:border-slate-800 rounded-t-3xl shadow-xs space-y-4 print:static print:p-0 print:border-none print:shadow-none">
+          {/* Header Row */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] sm:text-xs font-black uppercase tracking-wider">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Verifikasi BPJS Ketenagakerjaan</span>
+              </div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight uppercase flex items-center gap-2">
+                Hasil Verifikasi BPJS
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm">
+                Upload data acuan Excel BPJS dan perbarui status kelayakan pelaku usaha secara otomatis.
+              </p>
+            </div>
+
+            {/* Actions Toolbar */}
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  placeholder="Cari Nama atau NIK..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="pl-10 pr-8 h-11 border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/50 text-xs sm:text-sm rounded-2xl shadow-2xs font-medium"
+                />
+                {searchInput && (
+                  <button
+                    onClick={() => setSearchInput("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Upload BPJS Excel Button */}
+              <Button
+                onClick={() => setIsUploadOpen(true)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-black shadow-md shadow-emerald-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
+              >
+                <UploadCloud className="w-4 h-4 mr-1.5" /> UPLOAD EXCEL BPJS
+              </Button>
+
+              {/* Export Excel */}
+              <Button
+                onClick={handleExportExcel}
+                variant="outline"
+                className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 font-black shadow-2xs h-11 rounded-2xl text-xs sm:text-sm transition-all"
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-1.5" /> EKSPOR EXCEL
+              </Button>
+
+              {/* Print PDF */}
+              <Button
+                onClick={handlePrintPDF}
+                className="bg-primary hover:bg-primary/90 text-white font-black shadow-md shadow-primary/20 h-11 rounded-2xl text-xs sm:text-sm transition-all"
+              >
+                <Printer className="w-4 h-4 mr-1.5" /> CETAK PDF
+              </Button>
+            </div>
           </div>
-          <p className="text-xs md:text-sm text-muted-foreground">
-            Monitoring kelayakan dan komparasi hasil pengecekan BPJS Ketenagakerjaan dengan data pelaku usaha.
-          </p>
         </div>
-
-        {/* Action Buttons Toolbar */}
-        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Cari Nama atau NIK..." 
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-9 h-10 border-primary/20 bg-white text-xs md:text-sm shadow-sm"
-            />
-          </div>
-
-          {/* Upload BPJS Excel Button */}
-          <Button 
-            onClick={() => setIsUploadOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md h-10 flex-1 sm:flex-none transition-all"
-          >
-            <UploadCloud className="w-4 h-4 mr-2" /> UPLOAD HASIL BPJS
-          </Button>
-
-          {/* Export Excel */}
-          <Button 
-            onClick={handleExportExcel} 
-            variant="outline"
-            className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-bold shadow-sm h-10 flex-1 sm:flex-none"
-          >
-            <FileSpreadsheet className="w-4 h-4 mr-2" /> EXPORT EXCEL
-          </Button>
-
-          {/* Print PDF */}
-          <Button 
-            onClick={handlePrintPDF} 
-            className="bg-primary hover:bg-primary/90 font-bold shadow-md h-10 flex-1 sm:flex-none"
-          >
-            <Printer className="w-4 h-4 mr-2" /> PRINT DATA
-          </Button>
-        </div>
-      </div>
 
       {/* Uploaded Comparison Active Banner */}
       {comparisonStats && uploadedFileName && (
@@ -1618,6 +1638,7 @@ export default function BpjsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   )
 }

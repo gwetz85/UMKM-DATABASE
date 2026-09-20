@@ -4,11 +4,11 @@ import { useState } from "react"
 import { MapPin, Image as ImageIcon, FileCheck, ExternalLink } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
-export function VerificationBadge({ actor }: { actor: any }) {
+export function VerificationBadge({ actor, hideLocation = false }: { actor: any; hideLocation?: boolean }) {
   const [isImageOpen, setIsImageOpen] = useState(false)
 
   const loc = actor.verificationLocation || actor.verificationLocationDinas;
-  const hasLocation = !!loc;
+  const hasLocation = !!loc && !hideLocation;
   const hasImage = !!actor.verificationBypass?.fileBase64;
   const isBypassed = !!actor.verificationBypass?.isBypassed;
   
