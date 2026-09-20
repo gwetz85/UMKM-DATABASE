@@ -35,6 +35,14 @@ const normalizeGender = (g: string) => {
   return "";
 };
 
+const getActorMapUrl = (actor: BusinessActor) => {
+  const loc = (actor as any).verificationLocationDinas || (actor as any).verificationLocation || (actor as any).surveyData?.lokasiSurvey;
+  if (loc && loc.lat && loc.lon) return `https://www.google.com/maps?q=${loc.lat},${loc.lon}`;
+  if ((actor as any).lat && (actor as any).lon) return `https://www.google.com/maps?q=${(actor as any).lat},${(actor as any).lon}`;
+  const query = [actor.businessLocation || actor.address, actor.kelurahan, actor.kecamatan, "Tanjungpinang"].filter(Boolean).join(", ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+};
+
 
 import { cn, extractDobFromNik, parsePobDob, calculateAge, formatCurrency, formatDateTimeIndo } from "@/lib/utils"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
@@ -1299,69 +1307,112 @@ function ActorDataContent() {
             
             {isMonitoring ? (
               <div className="space-y-4">
-                {/* Mobile Monitoring Cards */}
-                <div className="md:hidden flex flex-col gap-3">
+                {/* Responsive Monitoring Cards (Screen) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 print:hidden">
                   {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => {
                     const isFemale = normalizeGender(actor.gender) === 'Perempuan';
                     const actorAge = calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""));
                     return (
-                      <Card key={actor.id} className="bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl overflow-hidden">
-                        <CardContent className="p-4 space-y-2.5">
-                          <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-black flex items-center justify-center shrink-0">
-                                {globalIndexMap.get(actor.id) || index + 1}
-                              </span>
-                              <h3 className={cn("font-black text-sm uppercase truncate", isFemale ? "text-red-600" : "text-blue-600")}>
+                      <div key={actor.id} className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                        {/* Top Section */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                            <span className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold text-sm sm:text-base flex items-center justify-center shrink-0">
+                              {globalIndexMap.get(actor.id) || index + 1}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <h3 className={cn(
+                                "font-extrabold text-base sm:text-[17px] tracking-tight truncate leading-tight uppercase",
+                                isFemale ? "text-rose-600 dark:text-rose-400" : "text-[#1d63c6] dark:text-blue-400"
+                              )}>
                                 {actor.fullName}
                               </h3>
+                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                <span className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 font-mono tracking-tight">
+                                  {actor.nik || '-'}
+                                </span>
+                                <div className="bg-[#edf5fd] dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/60 px-2.5 py-0.5 rounded-lg flex flex-col leading-none">
+                                  <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400">Reg:</span>
+                                  <span className="text-xs font-black text-blue-700 dark:text-blue-300 font-mono">
+                                    {actor.registrationCode || '...'}
+                                  </span>
+                                </div>
+                                <VerificationBadge actor={actor} />
+                              </div>
                             </div>
-                            <span className="text-[10px] font-bold text-slate-500 uppercase shrink-0">
+                          </div>
+                          <a
+                            href={getActorMapUrl(actor)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200/90 dark:border-blue-800 bg-[#edf5fd] dark:bg-blue-950/50 text-[#1d63c6] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 font-black text-xs transition-colors shrink-0 shadow-2xs group"
+                            title="Buka Lokasi di Google Maps"
+                          >
+                            <MapPin className="w-3.5 h-3.5 text-[#1d63c6] dark:text-blue-400 group-hover:scale-110 transition-transform" />
+                            <span>LOKASI</span>
+                            <ExternalLink className="w-3 h-3 text-[#1d63c6] dark:text-blue-400 opacity-70" />
+                          </a>
+                        </div>
+
+                        {/* Middle Info Container */}
+                        <div className="bg-[#f8fafc] dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 my-3.5 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-extrabold text-sm sm:text-[15px] text-[#1d63c6] dark:text-blue-400 uppercase tracking-tight truncate">
+                              {actor.businessName || 'Nama Usaha Belum Diisi'}
+                            </span>
+                            <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0">
                               {actor.businessCategory || '-'}
                             </span>
                           </div>
-                          <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
-                            <div><span className="text-slate-400">Usia:</span> <strong>{actorAge || '-'}</strong></div>
-                            <div><span className="text-slate-400">HP:</span> <strong>{actor.phone || '-'}</strong></div>
-                            <div className="col-span-2"><span className="text-slate-400">Alamat:</span> {actor.address || '-'}</div>
-                            <div className="col-span-2 text-primary font-black"><span className="text-slate-400 font-normal">Koor:</span> {normalizeCoordinator(actor.coordinator)}</div>
+                          <div className="flex items-center gap-2 text-xs sm:text-[13px] text-slate-600 dark:text-slate-300 flex-wrap">
+                            <span>Usia: <strong className="font-extrabold text-slate-800 dark:text-slate-100">{actorAge ? `${actorAge} Tahun` : '-'}</strong></span>
+                            <span className="text-slate-300 dark:text-slate-600">•</span>
+                            <span>HP: <strong className="font-extrabold text-slate-800 dark:text-slate-100">{actor.phone || '-'}</strong></span>
                           </div>
-                        </CardContent>
-                      </Card>
+                          <div className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                            <span className="font-medium line-clamp-1 uppercase tracking-tight">
+                              {actor.businessLocation || actor.address || 'Alamat belum diisi'}
+                            </span>
+                          </div>
+                          <div className="text-xs font-bold text-primary pt-1.5 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+                            <span className="text-slate-500 font-normal">Koordinator:</span>
+                            <span className="font-black text-primary">{normalizeCoordinator(actor.coordinator)}</span>
+                          </div>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
 
-                {/* Desktop Monitoring Table */}
-                <div className="hidden md:block rounded-xl border bg-white/95 backdrop-blur-md shadow-sm overflow-hidden print:block print:border-black print:rounded-none">
-                  <div className="max-h-[calc(100vh-280px)] overflow-auto print:max-h-none print:overflow-visible">
-                    <Table>
-                      <TableHeader className="bg-muted/50 print:bg-slate-100 sticky top-0 z-10">
-                        <TableRow>
-                          <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">USIA</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">JENIS USAHA</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">KOORDINATOR</TableHead>
+                {/* Printable Monitoring Table (Hidden on screen, shown when printing) */}
+                <div className="hidden print:block rounded-none border-b border-black">
+                  <Table>
+                    <TableHeader className="bg-slate-100 print:bg-slate-100">
+                      <TableRow>
+                        <TableHead className="font-bold text-black py-4 pl-6 w-12 text-center">NO</TableHead>
+                        <TableHead className="font-bold text-black py-4">NAMA PELAKU USAHA</TableHead>
+                        <TableHead className="font-bold text-black py-4">USIA</TableHead>
+                        <TableHead className="font-bold text-black py-4">JENIS USAHA</TableHead>
+                        <TableHead className="font-bold text-black py-4">NOMOR PONSEL</TableHead>
+                        <TableHead className="font-bold text-black py-4">ALAMAT</TableHead>
+                        <TableHead className="font-bold text-black py-4">KOORDINATOR</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
+                        <TableRow key={actor.id} className="border-black">
+                          <TableCell className="py-4 pl-6 text-center font-bold text-black">{globalIndexMap.get(actor.id) || index + 1}</TableCell>
+                          <TableCell className="py-4 font-bold text-black uppercase">{actor.fullName}</TableCell>
+                          <TableCell className="py-4 text-[13px] font-bold text-black">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</TableCell>
+                          <TableCell className="py-4 text-black">{actor.businessCategory}</TableCell>
+                          <TableCell className="py-4 text-black">{actor.phone}</TableCell>
+                          <TableCell className="py-4 text-black">{actor.address}</TableCell>
+                          <TableCell className="py-4 font-black text-black">{normalizeCoordinator(actor.coordinator)}</TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
-                          <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
-                            <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{globalIndexMap.get(actor.id) || index + 1}</TableCell>
-                            <TableCell className={cn("py-4 font-bold", normalizeGender(actor.gender) === 'Perempuan' ? "text-red-600" : "text-blue-600")}>{actor.fullName}</TableCell>
-                            <TableCell className="py-4 text-[13px] font-bold text-slate-700">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</TableCell>
-                            <TableCell className="py-4">{actor.businessCategory}</TableCell>
-                            <TableCell className="py-4">{actor.phone}</TableCell>
-                            <TableCell className="py-4">{actor.address}</TableCell>
-                            <TableCell className="py-4 font-black text-primary">{normalizeCoordinator(actor.coordinator)}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
 
                 {currentDataToDisplay.length > pageLimit && (
@@ -1374,277 +1425,201 @@ function ActorDataContent() {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Mobile Normal Cards (md:hidden) */}
-                <div className="md:hidden flex flex-col gap-3">
+                {/* Responsive Actor Cards Grid (Visible on all screen sizes, hidden on print) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 print:hidden">
                   {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => {
                     const isFemale = normalizeGender(actor.gender) === 'Perempuan';
                     const actorAge = calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""));
                     return (
-                      <Card key={actor.id} className="bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl overflow-hidden">
-                        <CardContent className="p-4 space-y-3">
-                          {/* Card Header: Index, Name, Gender, Badge */}
-                          <div className="flex items-start justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                            <div className="flex items-start gap-2.5 min-w-0">
-                              <span className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
-                                {globalIndexMap.get(actor.id) || index + 1}
-                              </span>
-                              <div className="min-w-0">
-                                <h3 className={cn(
-                                  "font-black text-sm uppercase leading-snug truncate",
-                                  isFemale ? "text-rose-600 dark:text-rose-400" : "text-blue-600 dark:text-blue-400"
-                                )}>
-                                  {actor.fullName}
-                                </h3>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="text-[11px] text-slate-500 font-mono font-bold">
-                                    {actor.nik || '-'}
-                                  </span>
-                                  <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                                    Reg: {actor.registrationCode || '...'}
+                      <div
+                        key={actor.id}
+                        className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
+                      >
+                        {/* Top Section */}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                            {/* Circle Index Badge */}
+                            <span className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold text-sm sm:text-base flex items-center justify-center shrink-0">
+                              {globalIndexMap.get(actor.id) || index + 1}
+                            </span>
+
+                            <div className="min-w-0 flex-1">
+                              {/* Full Name */}
+                              <h3
+                                className={cn(
+                                  "font-extrabold text-base sm:text-[17px] tracking-tight truncate leading-tight uppercase",
+                                  isFemale ? "text-rose-600 dark:text-rose-400" : "text-[#1d63c6] dark:text-blue-400"
+                                )}
+                              >
+                                {actor.fullName}
+                              </h3>
+
+                              {/* NIK & Reg Code */}
+                              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                <span className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 font-mono tracking-tight">
+                                  {actor.nik || '-'}
+                                </span>
+
+                                <div className="bg-[#edf5fd] dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900/60 px-2.5 py-0.5 rounded-lg flex flex-col leading-none">
+                                  <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400">Reg:</span>
+                                  <span className="text-xs font-black text-blue-700 dark:text-blue-300 font-mono">
+                                    {actor.registrationCode || '...'}
                                   </span>
                                 </div>
+
+                                <VerificationBadge actor={actor} />
                               </div>
                             </div>
-                            <div className="shrink-0">
-                              <VerificationBadge actor={actor} />
-                            </div>
                           </div>
 
-                          {/* Business & Personal Info */}
-                          <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl space-y-1.5 text-xs">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-black text-xs text-primary uppercase truncate">
-                                {actor.businessName || 'Nama Usaha Belum Diisi'}
-                              </span>
-                              <span className="text-[10px] font-bold text-slate-500 uppercase shrink-0">
-                                {actor.businessCategory || '-'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3 text-slate-600 dark:text-slate-300 text-[11px]">
-                              <span>Usia: <strong>{actorAge || '-'}</strong></span>
-                              <span>•</span>
-                              <span>HP: <strong>{actor.phone || '-'}</strong></span>
-                            </div>
-                            {actor.address && (
-                              <p className="text-[11px] text-slate-500 leading-tight">
-                                <MapPin className="w-3.5 h-3.5 inline mr-1 text-slate-400" />
-                                {actor.address}
-                              </p>
-                            )}
+                          {/* LOKASI Button */}
+                          <a
+                            href={getActorMapUrl(actor)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200/90 dark:border-blue-800 bg-[#edf5fd] dark:bg-blue-950/50 text-[#1d63c6] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 font-black text-xs transition-colors shrink-0 shadow-2xs group/btn"
+                            title="Buka Lokasi di Google Maps"
+                          >
+                            <MapPin className="w-3.5 h-3.5 text-[#1d63c6] dark:text-blue-400 group-hover/btn:scale-110 transition-transform" />
+                            <span>LOKASI</span>
+                            <ExternalLink className="w-3 h-3 text-[#1d63c6] dark:text-blue-400 opacity-70" />
+                          </a>
+                        </div>
+
+                        {/* Middle Info Container */}
+                        <div className="bg-[#f8fafc] dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 my-3.5 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-extrabold text-sm sm:text-[15px] text-[#1d63c6] dark:text-blue-400 uppercase tracking-tight truncate">
+                              {actor.businessName || 'Nama Usaha Belum Diisi'}
+                            </span>
+                            <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0">
+                              {actor.businessCategory || '-'}
+                            </span>
                           </div>
 
-                          {/* Action Buttons Row */}
-                          <div className="flex items-center gap-1.5 pt-1">
-                            <Button
-                              size="sm"
-                              className="flex-1 h-9 rounded-xl font-black text-xs bg-primary text-white hover:bg-primary/90 shadow-sm flex items-center justify-center gap-1.5"
-                              onClick={() => {
-                                setViewingActor(actor);
-                                setIsEditMode(false);
-                                setEditingBankMode(false);
-                                setEditingDriveMode(false);
-                                fetchAuxData(actor);
-                              }}
-                            >
-                              <Eye className="w-4 h-4" />
-                              <span>Lihat Detail</span>
-                            </Button>
-
-                            {isAdmin && (actor as any).surveyData && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-9 px-2.5 rounded-xl text-teal-600 border-teal-200 hover:bg-teal-50"
-                                onClick={() => setSurveyViewActor(actor)}
-                                title="Form Survey Lengkap"
-                              >
-                                <ClipboardList className="w-4 h-4" />
-                              </Button>
-                            )}
-
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className={cn(
-                                "h-9 px-2.5 rounded-xl transition-colors",
-                                actor.googleDriveLink ? "text-blue-600 bg-blue-50 border-blue-200" : "text-slate-400 border-slate-200 hover:text-blue-600"
-                              )}
-                              onClick={() => {
-                                setViewingActor(actor);
-                                setIsEditMode(false);
-                                setEditingBankMode(false);
-                                setEditingDriveMode(true);
-                                fetchAuxData(actor);
-                              }}
-                              title="Google Drive"
-                            >
-                              <Folder className="w-4 h-4" />
-                            </Button>
-
-                            {isAdmin && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-9 px-2.5 rounded-xl text-purple-600 border-purple-200 hover:bg-purple-50"
-                                onClick={() => handleSingleLanjutDinas(actor)}
-                                title="Lanjut Dinas"
-                              >
-                                <Send className="w-4 h-4" />
-                              </Button>
-                            )}
-
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-9 px-2.5 rounded-xl text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                              onClick={() => handlePrintForm(actor)}
-                              title="Cetak Formulir"
-                            >
-                              <Printer className="w-4 h-4" />
-                            </Button>
+                          <div className="flex items-center gap-2 text-xs sm:text-[13px] text-slate-600 dark:text-slate-300 flex-wrap">
+                            <span>Usia: <strong className="font-extrabold text-slate-800 dark:text-slate-100">{actorAge ? `${actorAge} Tahun` : '-'}</strong></span>
+                            <span className="text-slate-300 dark:text-slate-600">•</span>
+                            <span>HP: <strong className="font-extrabold text-slate-800 dark:text-slate-100">{actor.phone || '-'}</strong></span>
                           </div>
-                        </CardContent>
-                      </Card>
+
+                          <div className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-slate-400">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                            <span className="font-medium line-clamp-1 uppercase tracking-tight">
+                              {actor.businessLocation || actor.address || 'Alamat belum diisi'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons Row */}
+                        <div className="flex items-center gap-2 sm:gap-2.5 pt-0.5">
+                          {/* Lihat Detail */}
+                          <Button
+                            size="sm"
+                            className="flex-1 h-11 rounded-2xl font-black text-xs sm:text-sm bg-[#1d63c6] hover:bg-[#1550a2] text-white shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                            onClick={() => {
+                              setViewingActor(actor);
+                              setIsEditMode(false);
+                              setEditingBankMode(false);
+                              setEditingDriveMode(false);
+                              fetchAuxData(actor);
+                            }}
+                          >
+                            <Eye className="w-4 h-4" />
+                            <span>Lihat Detail</span>
+                          </Button>
+
+                          {/* Form Survey Lengkap */}
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="w-11 h-11 rounded-2xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shrink-0 transition-all active:scale-95 shadow-2xs"
+                            onClick={() => setSurveyViewActor(actor)}
+                            title="Form Survey Lengkap"
+                          >
+                            <ClipboardList className="w-5 h-5" />
+                          </Button>
+
+                          {/* Google Drive */}
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className={cn(
+                              "w-11 h-11 rounded-2xl border shrink-0 transition-all active:scale-95 shadow-2xs",
+                              actor.googleDriveLink
+                                ? "border-blue-300 dark:border-blue-700 bg-blue-50/70 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100"
+                                : "border-blue-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
+                            )}
+                            onClick={() => {
+                              setViewingActor(actor);
+                              setIsEditMode(false);
+                              setEditingBankMode(false);
+                              setEditingDriveMode(true);
+                              fetchAuxData(actor);
+                            }}
+                            title={actor.googleDriveLink ? "Buka / Edit Link Google Drive" : "Input Link Google Drive"}
+                          >
+                            <Folder className="w-5 h-5" />
+                          </Button>
+
+                          {/* Lanjut Dinas */}
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="w-11 h-11 rounded-2xl border border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/40 shrink-0 transition-all active:scale-95 shadow-2xs"
+                            onClick={() => handleSingleLanjutDinas(actor)}
+                            title="Lanjut Dinas (Push Data Susulan)"
+                          >
+                            <Send className="w-4 h-4 -rotate-12" />
+                          </Button>
+
+                          {/* Cetak Formulir */}
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="w-11 h-11 rounded-2xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shrink-0 transition-all active:scale-95 shadow-2xs"
+                            onClick={() => handlePrintForm(actor)}
+                            title="Cetak Formulir"
+                          >
+                            <Printer className="w-5 h-5" />
+                          </Button>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
 
-                {/* Desktop Normal Table (hidden md:block) */}
-                <div className="hidden md:block rounded-xl border bg-white shadow-sm overflow-hidden print:block print:border-black print:rounded-none">
-                  <div className="max-h-[calc(100vh-280px)] overflow-auto print:max-h-none print:overflow-visible">
-                    <Table>
-                      <TableHeader className="bg-muted/50 print:bg-slate-100 sticky top-0 z-10">
-                        <TableRow>
-                          <TableHead className="font-bold text-primary py-4 pl-6 w-12 text-center print:text-black">NO</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">NAMA PELAKU USAHA</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">NIK</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">USIA</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">NOMOR PONSEL</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">ALAMAT LENGKAP</TableHead>
-                          <TableHead className="font-bold text-primary py-4 print:text-black">USAHA</TableHead>
-                          {!isMonitoring && <TableHead className="font-bold text-primary py-4 pr-6 text-right print:hidden">AKSI</TableHead>}
+                {/* Printable Table (Hidden on screen, visible on print) */}
+                <div className="hidden print:block rounded-none border-b border-black">
+                  <Table>
+                    <TableHeader className="bg-slate-100 print:bg-slate-100">
+                      <TableRow>
+                        <TableHead className="font-bold text-black py-4 pl-6 w-12 text-center">NO</TableHead>
+                        <TableHead className="font-bold text-black py-4">NAMA PELAKU USAHA</TableHead>
+                        <TableHead className="font-bold text-black py-4">NIK</TableHead>
+                        <TableHead className="font-bold text-black py-4">USIA</TableHead>
+                        <TableHead className="font-bold text-black py-4">NOMOR PONSEL</TableHead>
+                        <TableHead className="font-bold text-black py-4">ALAMAT LENGKAP</TableHead>
+                        <TableHead className="font-bold text-black py-4">USAHA</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
+                        <TableRow key={actor.id} className="border-black">
+                          <TableCell className="py-4 pl-6 text-center font-bold text-black">{globalIndexMap.get(actor.id) || index + 1}</TableCell>
+                          <TableCell className="py-4 font-bold text-black uppercase">{actor.fullName}</TableCell>
+                          <TableCell className="py-4 font-mono text-[11px] text-black">{actor.nik}</TableCell>
+                          <TableCell className="py-4 font-bold text-black text-[13px]">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</TableCell>
+                          <TableCell className="py-4 font-bold text-black text-[13px]">{actor.phone || "-"}</TableCell>
+                          <TableCell className="py-4 text-[10px] text-black leading-tight max-w-[200px]">{actor.address || "-"}</TableCell>
+                          <TableCell className="py-4">
+                            <span className="font-black uppercase text-[12px] text-black block">{actor.businessName}</span>
+                            <span className="text-[10px] text-black font-bold uppercase">{actor.businessCategory}</span>
+                          </TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
-                          <TableRow key={actor.id} className="hover:bg-primary/5 transition-colors group print:border-black">
-                            <TableCell className="py-4 pl-6 text-center font-bold text-slate-500 print:text-black">{globalIndexMap.get(actor.id) || index + 1}</TableCell>
-                            <TableCell className="py-4">
-                              <div className="flex flex-col items-start gap-2">
-                                {isKoordinator && (
-                                  <div className={cn(
-                                    "flex items-center justify-center w-10 h-10 rounded-full flex-shrink-0 shadow-sm border print:hidden",
-                                    normalizeGender(actor.gender) === 'Perempuan'
-                                      ? "bg-pink-100 border-pink-200 text-pink-600"
-                                      : "bg-blue-100 border-blue-200 text-blue-600"
-                                  )}>
-                                    <span className="text-lg">{normalizeGender(actor.gender) === 'Perempuan' ? '👧' : '👦'}</span>
-                                  </div>
-                                )}
-                                <div className="flex flex-col">
-                                  <span className={cn("font-bold uppercase text-[13px] leading-tight print:text-black", normalizeGender(actor.gender) === 'Perempuan' ? "text-red-600" : "text-blue-600")}>{actor.fullName}</span>
-                                </div>
-                              </div>
-                            </TableCell>
-
-                            <TableCell className="py-4">
-                              <span className="font-mono text-[11px] text-slate-600 print:text-black block">{actor.nik}</span>
-                              <span className="text-[9px] font-bold text-primary bg-primary/10 px-1 py-0.5 rounded-sm print:hidden inline-block mt-0.5">
-                                Reg: {actor.registrationCode || "..."}
-                              </span>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <span className="font-bold text-slate-700 text-[13px] print:text-black block">{calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""))}</span>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <span className="font-bold text-slate-800 text-[13px] print:text-black block">{actor.phone || "-"}</span>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <span className="text-[10px] text-slate-600 print:text-black block leading-tight max-w-[200px]">{actor.address || "-"}</span>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <div className="flex flex-col">
-                                <span className="font-black text-primary uppercase text-[12px] print:text-black">{actor.businessName}</span>
-                                <span className="text-[10px] text-slate-500 font-bold uppercase print:hidden">{actor.businessCategory}</span>
-                                <VerificationBadge actor={actor} />
-                              </div>
-                            </TableCell>
-                            {!isMonitoring && (
-                              <TableCell className="py-4 pr-6 text-right print:hidden">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50"
-                                    onClick={() => {
-                                      setViewingActor(actor);
-                                      setIsEditMode(false);
-                                      setEditingBankMode(false);
-                                      setEditingDriveMode(false);
-                                      fetchAuxData(actor);
-                                    }}
-                                    title="Lihat Detail"
-                                  >
-                                    <Eye className="w-4 h-4" />
-                                  </Button>
-                                  {isAdmin && (actor as any).surveyData && (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-8 w-8 p-0 text-teal-600 hover:bg-teal-50"
-                                      onClick={() => setSurveyViewActor(actor)}
-                                      title="Lihat Form Survey Lengkap"
-                                    >
-                                      <ClipboardList className="w-4 h-4" />
-                                    </Button>
-                                  )}
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className={cn(
-                                      "h-8 w-8 p-0 hover:bg-blue-50 transition-colors",
-                                      actor.googleDriveLink ? "text-blue-600 bg-blue-50 hover:bg-blue-100" : "text-slate-400 hover:text-blue-600"
-                                    )}
-                                    onClick={() => {
-                                      setViewingActor(actor);
-                                      setIsEditMode(false);
-                                      setEditingBankMode(false);
-                                      setEditingDriveMode(true);
-                                      fetchAuxData(actor);
-                                    }}
-                                    title={actor.googleDriveLink ? "Edit/Buka Link Google Drive" : "Input Link Google Drive"}
-                                  >
-                                    <Folder className="w-4 h-4" />
-                                  </Button>
-                                  {isAdmin && (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-8 w-8 p-0 text-purple-600 hover:bg-purple-50"
-                                      onClick={() => handleSingleLanjutDinas(actor)}
-                                      title="Lanjut Dinas (Push Data Susulan)"
-                                    >
-                                      <Send className="w-4 h-4" />
-                                    </Button>
-                                  )}
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0 text-emerald-600 hover:bg-emerald-50"
-                                    onClick={() => handlePrintForm(actor)}
-                                    title="Cetak Formulir"
-                                  >
-                                    <Printer className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            )}
-
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
 
                 {currentDataToDisplay.length > pageLimit && (
