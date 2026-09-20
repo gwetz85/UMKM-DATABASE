@@ -105,7 +105,7 @@ export default function SettingsPage() {
   const master2023Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2023') : null, [database])
   const master2025Ref = useMemoFirebase(() => database ? ref(database, 'master_data_2025') : null, [database])
   const blacklistDataRef = useMemoFirebase(() => database ? ref(database, 'blacklist_data') : null, [database])
-  const bpjsDataRef = useMemoFirebase(() => database ? ref(database, 'bpjs_comparison_data') : null, [database])
+  const bpjsDataRef = useMemoFirebase(() => database ? ref(database, 'settings/bpjs_comparison_data') : null, [database])
 
   const { data: data2024, isLoading: is2024Loading } = useList(master2024Ref)
   const { data: data2023, isLoading: is2023Loading } = useList(master2023Ref)
@@ -359,14 +359,14 @@ export default function SettingsPage() {
             throw new Error("Tidak ada data BPJS valid ditemukan. Pastikan kolom NIK dan NAMA terisi.")
           }
 
-          // 1. Simpan ke bpjs_comparison_data (batch)
+          // 1. Simpan ke settings/bpjs_comparison_data (batch)
           const batchSize = 500
           for (let i = 0; i < bpjsImported.length; i += batchSize) {
             const chunk = bpjsImported.slice(i, i + batchSize)
             const updates: any = {}
             chunk.forEach((item) => {
-              const newId = push(ref(database, 'bpjs_comparison_data')).key
-              updates[`bpjs_comparison_data/${newId}`] = item
+              const newId = push(ref(database, 'settings/bpjs_comparison_data')).key
+              updates[`settings/bpjs_comparison_data/${newId}`] = item
             })
             await update(ref(database), updates)
           }
@@ -406,14 +406,15 @@ export default function SettingsPage() {
                   const isEligible = 
                     String(item.status || "").toUpperCase() === 'Y' ||
                     String(item.keterangan || "").toUpperCase().includes('BISA DAFTAR') ||
+                    String(item.keterangan || "").toUpperCase().includes('TERVERIFIKASI') ||
                     String(item.keterangan || "").toUpperCase().includes('SESUAI') ||
                     String(item.keterangan || "").toUpperCase().includes('LOLOS');
 
                   actorUpdates[`businessActors/${matched.id}/bpjsSubmissionStatus`] = isEligible ? 'accepted' : 'rejected'
                   actorUpdates[`businessActors/${matched.id}/bpjsCheckStatus`] = isEligible ? 'sesuai' : 'ditolak'
                   actorUpdates[`businessActors/${matched.id}/bpjsStatus`] = item.status || (isEligible ? 'Y' : 'N')
-                  actorUpdates[`businessActors/${matched.id}/bpjsKeterangan`] = item.keterangan || (isEligible ? 'BISA DAFTAR' : 'TIDAK BISA DAFTAR')
-                  actorUpdates[`businessActors/${matched.id}/bpjsCheckNote`] = item.keterangan || (isEligible ? 'Bisa Daftar' : 'Tidak Bisa Daftar')
+                  actorUpdates[`businessActors/${matched.id}/bpjsKeterangan`] = isEligible ? 'TERVERIFIKASI' : (item.keterangan || 'TIDAK LOLOS')
+                  actorUpdates[`businessActors/${matched.id}/bpjsCheckNote`] = item.keterangan || (isEligible ? 'Terverifikasi' : 'Tidak Lolos')
                   actorUpdates[`businessActors/${matched.id}/bpjsCheckedAt`] = now
                   actorUpdates[`businessActors/${matched.id}/bpjsSourceFile`] = file.name
                 }
@@ -556,7 +557,7 @@ export default function SettingsPage() {
       '2024': 'master_data_2024',
       '2025': 'master_data_2025',
       'blacklist': 'blacklist_data',
-      'bpjs': 'bpjs_comparison_data'
+      'bpjs': 'settings/bpjs_comparison_data'
     }
 
     setLoading(true)
@@ -616,7 +617,7 @@ export default function SettingsPage() {
       const dbPath = targetType === 'master_2024' ? 'master_data_2024' :
                      targetType === 'master_2023' ? 'master_data_2023' :
                      targetType === 'master_2025' ? 'master_data_2025' : 
-                     targetType === 'blacklist' ? 'blacklist_data' : 'bpjs_comparison_data'
+                     targetType === 'blacklist' ? 'blacklist_data' : 'settings/bpjs_comparison_data'
       const snap = await get(ref(database, dbPath))
       if (snap.exists()) {
         const val = snap.val()

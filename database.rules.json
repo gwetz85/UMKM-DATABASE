@@ -58,6 +58,11 @@
       ".write": "auth != null && (root.child('roles_admin').child(auth.uid).exists() || auth.token.email == 'agus@umkm.id')",
       ".indexOn": ["nik", "kk", "noKK", "nama", "koperasi"]
     },
+    "bpjs_comparison_data": {
+      ".read": "true",
+      ".write": "auth != null",
+      ".indexOn": ["nik", "nama", "status"]
+    },
     "users": {
        "$uid": {
           "businessActors": {

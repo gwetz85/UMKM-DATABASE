@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, Users, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle, ClipboardList, Camera, Copy, Check, MoreVertical, ExternalLink, Calendar, Phone, PhoneCall, Sparkles, Navigation, UserCheck, Maximize2, ShieldCheck, BadgeCheck, UploadCloud, Ban } from "lucide-react"
+import { Printer, Edit3, Loader2, Save, Trash2, Eye, User, Users, CreditCard, History, X, RotateCcw, Building2, MapPin, CheckCircle2, Store, Search, ChevronRight, FileSpreadsheet, ArrowLeft, BarChart3, RefreshCw, ClipboardCheck, Send, Folder, MessageCircle, ClipboardList, Camera, Copy, Check, MoreVertical, ExternalLink, Calendar, Phone, PhoneCall, Sparkles, Navigation, UserCheck, Maximize2, ShieldCheck, BadgeCheck, UploadCloud, Ban, XCircle } from "lucide-react"
 import * as XLSX from "xlsx"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -219,6 +219,62 @@ function ActorDataContent() {
   }, [database, isProfileLoading, isPetugas, isKoordinator, filterCoordinator, userProfile?.fullName, isInspektorat])
 
   const { data: allActorsRaw, isLoading } = useList<BusinessActor>(memoQuery)
+
+  const bpjsComparisonRef = useMemoFirebase(() => database ? ref(database, 'settings/bpjs_comparison_data') : null, [database])
+  const { data: rawBpjsData } = useList(bpjsComparisonRef)
+
+  const bpjsLookupMap = useMemo(() => {
+    const map = new Map<string, any>()
+    if (!rawBpjsData) return map
+    rawBpjsData.forEach((item: any) => {
+      if (item && item.nik) {
+        const clean = String(item.nik).replace(/\D/g, '')
+        if (clean) map.set(clean, item)
+      }
+      if (item && item.nama) {
+        map.set(String(item.nama).trim().toUpperCase(), item)
+      }
+    })
+    return map
+  }, [rawBpjsData])
+
+  const getActorBpjsStatus = (actor: BusinessActor) => {
+    const cleanNik = actor.nik ? String(actor.nik).replace(/\D/g, '') : ""
+    const upperName = actor.fullName ? String(actor.fullName).trim().toUpperCase() : ""
+    const bpjsItem = (cleanNik ? bpjsLookupMap.get(cleanNik) : null) || (upperName ? bpjsLookupMap.get(upperName) : null)
+
+    const isVerified = 
+      actor.bpjsCheckStatus === 'sesuai' ||
+      (actor as any).bpjsStatus === 'Y' ||
+      ((actor as any).bpjsKeterangan || '').toUpperCase().includes('TERVERIFIKASI') ||
+      ((actor as any).bpjsKeterangan || '').toUpperCase().includes('BISA DAFTAR') ||
+      Boolean(bpjsItem && (
+        String(bpjsItem.status || '').toUpperCase() === 'Y' ||
+        String(bpjsItem.keterangan || '').toUpperCase().includes('BISA DAFTAR') ||
+        String(bpjsItem.keterangan || '').toUpperCase().includes('TERVERIFIKASI') ||
+        String(bpjsItem.keterangan || '').toUpperCase().includes('SESUAI') ||
+        String(bpjsItem.keterangan || '').toUpperCase().includes('LOLOS') ||
+        (!bpjsItem.status && !bpjsItem.keterangan)
+      ))
+
+    const isRejected = !isVerified && Boolean(
+      actor.bpjsCheckStatus === 'ditolak' ||
+      (actor as any).bpjsStatus === 'N' ||
+      ((actor as any).bpjsKeterangan || '').toUpperCase().includes('TIDAK BISA') ||
+      ((actor as any).bpjsKeterangan || '').toUpperCase().includes('TIDAK LOLOS') ||
+      (bpjsItem && (
+        String(bpjsItem.status || '').toUpperCase() === 'N' ||
+        String(bpjsItem.keterangan || '').toUpperCase().includes('TIDAK')
+      ))
+    )
+
+    return {
+      isVerified,
+      isRejected,
+      hasData: Boolean(isVerified || isRejected || bpjsItem || actor.bpjsCheckStatus),
+      bpjsItem
+    }
+  }
   
   // Auxiliary data is now fetched on-demand in the detail dialog
   const [activeDetailData, setActiveDetailData] = useState<{
@@ -1062,22 +1118,14 @@ function ActorDataContent() {
   const currentDataToDisplay = useMemo(() => {
     if (filterBpjs === "all") return rawDataToDisplay;
     return rawDataToDisplay.filter(actor => {
-      const isEligible = 
-        actor.bpjsCheckStatus === 'sesuai' ||
-        (actor as any).bpjsStatus === 'Y' ||
-        ((actor as any).bpjsKeterangan || '').toUpperCase().includes('BISA DAFTAR');
-      
-      const isRejected = 
-        actor.bpjsCheckStatus === 'ditolak' ||
-        (actor as any).bpjsStatus === 'N' ||
-        ((actor as any).bpjsKeterangan || '').toUpperCase().includes('TIDAK BISA');
+      const { isVerified, isRejected, hasData } = getActorBpjsStatus(actor);
 
-      if (filterBpjs === "bisa_daftar") return isEligible;
+      if (filterBpjs === "bisa_daftar") return isVerified;
       if (filterBpjs === "tidak_bisa") return isRejected;
-      if (filterBpjs === "belum_dicek") return !actor.bpjsCheckStatus && !(actor as any).bpjsStatus && !(actor as any).bpjsKeterangan;
+      if (filterBpjs === "belum_dicek") return !hasData;
       return true;
     });
-  }, [rawDataToDisplay, filterBpjs]);
+  }, [rawDataToDisplay, filterBpjs, bpjsLookupMap]);
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -1268,8 +1316,8 @@ function ActorDataContent() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Semua BPJS</SelectItem>
-                      <SelectItem value="bisa_daftar">✓ BPJS: Bisa Daftar</SelectItem>
-                      <SelectItem value="tidak_bisa">✕ BPJS: Tidak Bisa</SelectItem>
+                      <SelectItem value="bisa_daftar">✓ BPJS: Terverifikasi</SelectItem>
+                      <SelectItem value="tidak_bisa">✕ BPJS: Tidak Lolos</SelectItem>
                       <SelectItem value="belum_dicek">○ BPJS: Belum Dicek</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1386,28 +1434,40 @@ function ActorDataContent() {
                                 </div>
 
                                 {/* Status Hasil Verifikasi BPJS */}
-                                {(actor.bpjsCheckStatus || (actor as any).bpjsStatus || (actor as any).bpjsKeterangan) ? (
-                                  <span
-                                    className={cn(
-                                      "inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0",
-                                      actor.bpjsCheckStatus === 'sesuai' || (actor as any).bpjsStatus === 'Y' || ((actor as any).bpjsKeterangan || '').toUpperCase().includes('BISA DAFTAR')
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                                        : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
-                                    )}
-                                    title={`Hasil Verifikasi BPJS: ${(actor as any).bpjsKeterangan || (actor as any).bpjsCheckNote || '-'}`}
-                                  >
-                                    <ShieldCheck className="w-3 h-3" />
-                                    <span>BPJS: {(actor as any).bpjsKeterangan || ((actor as any).bpjsStatus === 'Y' ? 'BISA DAFTAR' : 'TERVERIFIKASI')}</span>
-                                  </span>
-                                ) : (
-                                  <span
-                                    className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400 leading-tight shrink-0"
-                                    title="Belum ada data hasil verifikasi BPJS"
-                                  >
-                                    <ShieldCheck className="w-2.5 h-2.5 text-slate-400" />
-                                    <span>BPJS: -</span>
-                                  </span>
-                                )}
+                                {(() => {
+                                  const bpjsInfo = getActorBpjsStatus(actor)
+                                  if (bpjsInfo.isVerified) {
+                                    return (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                                        title={`Hasil Verifikasi BPJS: ${bpjsInfo.bpjsItem?.keterangan || (actor as any).bpjsKeterangan || 'Terverifikasi'}`}
+                                      >
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                        <span>BPJS: TERVERIFIKASI</span>
+                                      </span>
+                                    )
+                                  }
+                                  if (bpjsInfo.isRejected) {
+                                    return (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
+                                        title={`Hasil Verifikasi BPJS: ${bpjsInfo.bpjsItem?.keterangan || (actor as any).bpjsKeterangan || 'Tidak Lolos'}`}
+                                      >
+                                        <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                                        <span>BPJS: {bpjsInfo.bpjsItem?.keterangan || (actor as any).bpjsKeterangan || 'TIDAK LOLOS'}</span>
+                                      </span>
+                                    )
+                                  }
+                                  return (
+                                    <span
+                                      className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400 leading-tight shrink-0"
+                                      title="Belum ada data hasil verifikasi BPJS"
+                                    >
+                                      <ShieldCheck className="w-2.5 h-2.5 text-slate-400" />
+                                      <span>BPJS: -</span>
+                                    </span>
+                                  )
+                                })()}
 
                                 <VerificationBadge actor={actor} hideLocation />
                               </div>
@@ -1540,28 +1600,40 @@ function ActorDataContent() {
                                 </div>
 
                                 {/* Status Hasil Verifikasi BPJS */}
-                                {(actor.bpjsCheckStatus || (actor as any).bpjsStatus || (actor as any).bpjsKeterangan) ? (
-                                  <span
-                                    className={cn(
-                                      "inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0",
-                                      actor.bpjsCheckStatus === 'sesuai' || (actor as any).bpjsStatus === 'Y' || ((actor as any).bpjsKeterangan || '').toUpperCase().includes('BISA DAFTAR')
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
-                                        : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
-                                    )}
-                                    title={`Hasil Verifikasi BPJS: ${(actor as any).bpjsKeterangan || (actor as any).bpjsCheckNote || '-'}`}
-                                  >
-                                    <ShieldCheck className="w-3 h-3" />
-                                    <span>BPJS: {(actor as any).bpjsKeterangan || ((actor as any).bpjsStatus === 'Y' ? 'BISA DAFTAR' : 'TERVERIFIKASI')}</span>
-                                  </span>
-                                ) : (
-                                  <span
-                                    className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400 leading-tight shrink-0"
-                                    title="Belum ada data hasil verifikasi BPJS"
-                                  >
-                                    <ShieldCheck className="w-2.5 h-2.5 text-slate-400" />
-                                    <span>BPJS: -</span>
-                                  </span>
-                                )}
+                                {(() => {
+                                  const bpjsInfo = getActorBpjsStatus(actor)
+                                  if (bpjsInfo.isVerified) {
+                                    return (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
+                                        title={`Hasil Verifikasi BPJS: ${bpjsInfo.bpjsItem?.keterangan || (actor as any).bpjsKeterangan || 'Terverifikasi'}`}
+                                      >
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                        <span>BPJS: TERVERIFIKASI</span>
+                                      </span>
+                                    )
+                                  }
+                                  if (bpjsInfo.isRejected) {
+                                    return (
+                                      <span
+                                        className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
+                                        title={`Hasil Verifikasi BPJS: ${bpjsInfo.bpjsItem?.keterangan || (actor as any).bpjsKeterangan || 'Tidak Lolos'}`}
+                                      >
+                                        <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                                        <span>BPJS: {bpjsInfo.bpjsItem?.keterangan || (actor as any).bpjsKeterangan || 'TIDAK LOLOS'}</span>
+                                      </span>
+                                    )
+                                  }
+                                  return (
+                                    <span
+                                      className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400 leading-tight shrink-0"
+                                      title="Belum ada data hasil verifikasi BPJS"
+                                    >
+                                      <ShieldCheck className="w-2.5 h-2.5 text-slate-400" />
+                                      <span>BPJS: -</span>
+                                    </span>
+                                  )
+                                })()}
 
                                 <VerificationBadge actor={actor} hideLocation />
                               </div>
