@@ -1058,137 +1058,184 @@ function ActorDataContent() {
 
       {/* Modern Frosted Glass Canvas */}
       <div className="bg-white/85 dark:bg-slate-900/90 backdrop-blur-xl border border-white/80 dark:border-slate-800 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl shadow-slate-300/40 dark:shadow-none space-y-6">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 print:hidden border-b border-slate-100 dark:border-slate-800/80 pb-6">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-                <Sparkles className="w-3.5 h-3.5 text-primary" />
-                Direktori & Database Pelaku Usaha
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors h-9 w-9 rounded-xl" />
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight font-headline">
-                Data Pelaku Usaha
-              </h1>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              Data lolos verifikasi siap diisi rekening dan diteruskan ke tahap dinas.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 w-full lg:w-auto print:hidden">
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input 
-                placeholder="Cari Nama, NIK, Usaha..." 
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10 h-11 border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-800/80 rounded-2xl shadow-sm focus-visible:ring-primary font-medium text-xs sm:text-sm"
-              />
-              {searchInput && (
-                <button 
-                  onClick={() => { setSearchInput(""); setSearchQuery(""); }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+        {/* Sticky Fixed Header & Stats Ribbon Section */}
+        <div className="sticky -top-4 md:-top-8 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl -mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8 pb-4 border-b border-slate-200/80 dark:border-slate-800 rounded-t-3xl shadow-sm space-y-4 print:static print:p-0 print:m-0 print:border-none print:shadow-none">
+          {/* Main Top Header */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 print:hidden">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  Direktori & Database Pelaku Usaha
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors h-9 w-9 rounded-xl" />
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight font-headline">
+                  Data Pelaku Usaha
+                </h1>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                Data lolos verifikasi siap diisi rekening dan diteruskan ke tahap dinas.
+              </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto">
-              {!isMonitoring && (
-                <Button 
-                  onClick={() => handleExportExcel()} 
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
-                >
-                  <FileSpreadsheet className="w-4 h-4 mr-1.5" /> EKSPOR EXCEL
-                </Button>
-              )}
-              {!isMonitoring && (
-                <Button
-                  onClick={async () => {
-                    if (filterCoordinator) {
-                      generateCoordinatorReport(filterCoordinator, groupedActors[filterCoordinator] || [])
-                    } else {
-                      if (Object.keys(groupedActors).length === 0) {
-                        toast({ title: "Menyiapkan Dokumen", description: "Sedang mengambil data untuk cetak PDF seluruh koordinator..." })
-                        try {
-                          const { get, ref } = await import("firebase/database")
-                          const snap = await get(ref(database!, 'businessActors'))
-                          if (snap.exists()) {
-                            const allActors = Object.values(snap.val()) as BusinessActor[]
-                            const groups: Record<string, BusinessActor[]> = {}
-                            allActors.forEach(a => {
-                              const s = a.status || "";
-                              const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
-                              if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) return;
-                              const coord = (a.coordinator || "Tanpa Koordinator").toUpperCase().trim()
-                              if (!groups[coord]) groups[coord] = []
-                              groups[coord].push(a)
-                            })
-                            generateAllCoordinatorsReport(groups)
-                          }
-                        } catch (e) {
-                          toast({ variant: "destructive", title: "Gagal", description: "Gagal memuat data PDF." })
-                        }
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 w-full lg:w-auto print:hidden">
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input 
+                  placeholder="Cari Nama, NIK, Usaha..." 
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="pl-10 h-11 border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-800/80 rounded-2xl shadow-sm focus-visible:ring-primary font-medium text-xs sm:text-sm"
+                />
+                {searchInput && (
+                  <button 
+                    onClick={() => { setSearchInput(""); setSearchQuery(""); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto">
+                {!isMonitoring && (
+                  <Button 
+                    onClick={() => handleExportExcel()} 
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 mr-1.5" /> EKSPOR EXCEL
+                  </Button>
+                )}
+                {!isMonitoring && (
+                  <Button
+                    onClick={async () => {
+                      if (filterCoordinator) {
+                        generateCoordinatorReport(filterCoordinator, groupedActors[filterCoordinator] || [])
                       } else {
-                        generateAllCoordinatorsReport(groupedActors)
+                        if (Object.keys(groupedActors).length === 0) {
+                          toast({ title: "Menyiapkan Dokumen", description: "Sedang mengambil data untuk cetak PDF seluruh koordinator..." })
+                          try {
+                            const { get, ref } = await import("firebase/database")
+                            const snap = await get(ref(database!, 'businessActors'))
+                            if (snap.exists()) {
+                              const allActors = Object.values(snap.val()) as BusinessActor[]
+                              const groups: Record<string, BusinessActor[]> = {}
+                              allActors.forEach(a => {
+                                const s = a.status || "";
+                                const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+                                if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) return;
+                                const coord = (a.coordinator || "Tanpa Koordinator").toUpperCase().trim()
+                                if (!groups[coord]) groups[coord] = []
+                                groups[coord].push(a)
+                              })
+                              generateAllCoordinatorsReport(groups)
+                            }
+                          } catch (e) {
+                            toast({ variant: "destructive", title: "Gagal", description: "Gagal memuat data PDF." })
+                          }
+                        } else {
+                          generateAllCoordinatorsReport(groupedActors)
+                        }
                       }
-                    }
-                  }}
-                  className="bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-md shadow-rose-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
+                    }}
+                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-md shadow-rose-600/20 hover:shadow-lg h-11 rounded-2xl text-xs sm:text-sm transition-all"
+                  >
+                    <Printer className="w-4 h-4 mr-1.5" /> CETAK PDF
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Overview Stats Ribbon (when showing all coordinators) */}
+          {!isSearching && !filterCoordinator && !isInspektorat && !isKoordinator && (
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 print:hidden pt-1">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-indigo-50/80 to-blue-50/50 dark:from-indigo-950/20 dark:to-blue-950/10 border border-indigo-100/80 dark:border-indigo-900/30 shadow-sm">
+                <div className="w-7 h-7 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 shrink-0">
+                  <Users className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">Koordinator</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-base sm:text-2xl font-black text-slate-900 dark:text-white font-mono">{activeCoordinatorCount}</span>
+                    <span className="hidden sm:inline text-xs font-semibold text-slate-500">Penanggung Jawab</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-50/80 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/10 border border-emerald-100/80 dark:border-emerald-900/30 shadow-sm">
+                <div className="w-7 h-7 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">Siap Rekening</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-base sm:text-2xl font-black text-emerald-700 dark:text-emerald-400 font-mono">{totalVerifiedCount.toLocaleString('id-ID')}</span>
+                    <span className="hidden sm:inline text-xs font-semibold text-slate-500">Pelaku Usaha</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3.5 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/10 border border-amber-100/80 dark:border-amber-900/30 shadow-sm">
+                <div className="w-7 h-7 sm:w-11 sm:h-11 rounded-lg sm:rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
+                  <ShieldCheck className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">Penuh</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-base sm:text-2xl font-black text-slate-900 dark:text-white font-mono">{fullQuotaCount}</span>
+                    <span className="text-[10px] sm:text-xs font-semibold text-slate-500">/ {activeCoordinatorCount}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Subheader when filtered or searching */}
+          {(isKoordinator || filterCoordinator || isInspektorat || isSearching) && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start flex-wrap">
+                {!isInspektorat && !isKoordinator && (filterCoordinator || isSearching) && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => {
+                      setSearchInput("")
+                      setSearchQuery("")
+                      if (filterCoordinator) router.push('/actor-data')
+                    }}
+                    className="font-bold border-primary text-primary hover:bg-primary/5 shrink-0 h-9 text-xs sm:text-sm rounded-xl"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-1.5" /> Kembali
+                  </Button>
+                )}
+                <h2 className="text-base sm:text-xl font-black text-primary uppercase tracking-tight truncate max-w-[240px] sm:max-w-none">
+                  {isSearching
+                    ? `HASIL: "${searchQuery}" (${currentDataToDisplay.length})`
+                    : isInspektorat
+                    ? "DATABASE PELAKU USAHA"
+                    : isKoordinator
+                    ? `DATA: ${userProfile?.fullName}`
+                    : `DATA: ${filterCoordinator}`}
+                </h2>
+              </div>
+              {isAdmin && filterCoordinator && !isKoordinator && !isInspektorat && (
+                <Button 
+                  size="sm" 
+                  disabled={isLanjutDinasBatching}
+                  onClick={() => handleLanjutDinasBatch(filterCoordinator, groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || [])} 
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm w-full sm:w-auto h-9 text-xs sm:text-sm shrink-0 rounded-xl" 
+                  title="Lanjut ke Verifikasi Dinas"
                 >
-                  <Printer className="w-4 h-4 mr-1.5" /> CETAK PDF
+                  {isLanjutDinasBatching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ClipboardCheck className="w-4 h-4 mr-2" />}
+                  <span>Lanjut Dinas (Koordinator)</span>
                 </Button>
               )}
             </div>
-          </div>
+          )}
         </div>
-
-        {/* Overview Stats Ribbon (when showing all coordinators) */}
-        {!isSearching && !filterCoordinator && !isInspektorat && !isKoordinator && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 print:hidden">
-            <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-br from-indigo-50/80 to-blue-50/50 dark:from-indigo-950/20 dark:to-blue-950/10 border border-indigo-100/80 dark:border-indigo-900/30 shadow-sm">
-              <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 shrink-0">
-                <Users className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Koordinator</p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">{activeCoordinatorCount}</span>
-                  <span className="text-xs font-semibold text-slate-500">Penanggung Jawab</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-br from-emerald-50/80 to-teal-50/50 dark:from-emerald-950/20 dark:to-teal-950/10 border border-emerald-100/80 dark:border-emerald-900/30 shadow-sm">
-              <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 shrink-0">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Berkas Siap Rekening</p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-400 font-mono">{totalVerifiedCount.toLocaleString('id-ID')}</span>
-                  <span className="text-xs font-semibold text-slate-500">Pelaku Usaha</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/10 border border-amber-100/80 dark:border-amber-900/30 shadow-sm">
-              <div className="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Ketercapaian Kuota</p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">{fullQuotaCount}</span>
-                  <span className="text-xs font-semibold text-slate-500">/ {activeCoordinatorCount} Koordinator Penuh</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
 
 
@@ -1249,45 +1296,6 @@ function ActorDataContent() {
           </div>
         ) : (isKoordinator || filterCoordinator || isInspektorat || isSearching) ? (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 mb-2">
-              <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start flex-wrap">
-                {!isInspektorat && !isKoordinator && (filterCoordinator || isSearching) && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                      setSearchInput("")
-                      setSearchQuery("")
-                      if (filterCoordinator) router.push('/actor-data')
-                    }}
-                    className="font-bold border-primary text-primary hover:bg-primary/5 shrink-0 h-9 text-xs sm:text-sm"
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-1.5" /> Kembali
-                  </Button>
-                )}
-                <h2 className="text-base sm:text-xl font-black text-primary uppercase tracking-tight truncate max-w-[240px] sm:max-w-none">
-                  {isSearching
-                    ? `HASIL: "${searchQuery}" (${currentDataToDisplay.length})`
-                    : isInspektorat
-                    ? "DATABASE PELAKU USAHA"
-                    : isKoordinator
-                    ? `DATA: ${userProfile?.fullName}`
-                    : `DATA: ${filterCoordinator}`}
-                </h2>
-              </div>
-              {isAdmin && filterCoordinator && !isKoordinator && !isInspektorat && (
-                <Button 
-                  size="sm" 
-                  disabled={isLanjutDinasBatching}
-                  onClick={() => handleLanjutDinasBatch(filterCoordinator, groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || [])} 
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-sm w-full sm:w-auto h-9 text-xs sm:text-sm shrink-0" 
-                  title="Lanjut ke Verifikasi Dinas"
-                >
-                  {isLanjutDinasBatching ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ClipboardCheck className="w-4 h-4 mr-2" />}
-                  <span>Lanjut Dinas (Koordinator)</span>
-                </Button>
-              )}
-            </div>
             
             {isMonitoring ? (
               <div className="space-y-4">
