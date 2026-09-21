@@ -41,7 +41,7 @@ export function KelurahanWidget({ className }: KelurahanWidgetProps) {
       )}
     >
       {/* Header */}
-      <div className="p-2.5 px-3 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+      <div className="p-2.5 px-3 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30 shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
             <MapPin className="w-3 h-3" />
@@ -61,7 +61,7 @@ export function KelurahanWidget({ className }: KelurahanWidgetProps) {
       </div>
 
       {/* Table Content */}
-      <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         {isLoading ? (
           <div className="p-4 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs">
             <Loader2 className="w-4 h-4 animate-spin text-primary" />
@@ -72,7 +72,7 @@ export function KelurahanWidget({ className }: KelurahanWidgetProps) {
             Belum ada data sebaran
           </div>
         ) : (
-          <div className="h-[168px] max-h-[168px] overflow-y-auto overflow-x-hidden custom-scrollbar select-none">
+          <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar select-none">
             <table className="w-full table-fixed text-left border-collapse">
               <colgroup>
                 <col className="w-[34px]" />
@@ -112,7 +112,7 @@ export function KelurahanWidget({ className }: KelurahanWidgetProps) {
       </div>
 
       {/* Footer */}
-      <div className="p-2 px-3 bg-slate-100/80 dark:bg-slate-800/80 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
+      <div className="p-2 px-3 bg-slate-100/80 dark:bg-slate-800/80 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between shrink-0">
         <span className="text-[9.5px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-wider">
           Total Tersebar
         </span>
