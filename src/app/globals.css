@@ -322,11 +322,10 @@
    ========================================== */
 
 .weather-widget-container {
-  @apply rounded-2xl border border-white/40 shadow-lg overflow-hidden transition-all duration-500;
+  @apply rounded-2xl border border-white/40 shadow-lg overflow-hidden transition-all duration-500 w-full;
   background: linear-gradient(135deg, rgba(255,255,255,0.85) 0%, rgba(241,245,249,0.9) 100%);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  min-width: 260px;
 }
 
 .dark .weather-widget-container {
