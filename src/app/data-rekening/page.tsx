@@ -30,7 +30,13 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  Store
+  Store,
+  Copy,
+  Check,
+  ExternalLink,
+  Landmark,
+  ShieldCheck,
+  Phone
 } from "lucide-react"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -282,6 +288,20 @@ function DataRekeningContent() {
   const [editNik, setEditNik] = useState("")
   const [editPob, setEditPob] = useState("")
   const [editDob, setEditDob] = useState("")
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
+
+  const handleCopy = (text: string, label: string) => {
+    if (!text) return
+    navigator.clipboard.writeText(text)
+    setCopiedKey(label)
+    toast({
+      title: "Tersalin ke Clipboard",
+      description: `${label}: ${text}`,
+    })
+    setTimeout(() => {
+      setCopiedKey(null)
+    }, 2000)
+  }
 
   useEffect(() => {
     const t = setTimeout(() => setSearchQuery(searchInput), 250)
@@ -1242,305 +1262,604 @@ function DataRekeningContent() {
       <Dialog open={!!viewingActor} onOpenChange={(open) => {
         if (!open) { setViewingActor(null); setIsEditMode(false) }
       }}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          {viewingActor && (
-            <div className="flex flex-col gap-2 relative">
-              <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b gap-4">
-                <DialogTitle className="text-xl md:text-2xl font-black text-emerald-700 uppercase">
-                  {isEditMode ? "Edit Data Rekening & Pelaku Usaha" : "Detail Data Rekening"}
-                </DialogTitle>
-                <div className="flex flex-wrap gap-2">
-                  {!isEditMode && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handlePrintActor(viewingActor)}
-                      className="border-emerald-600 text-emerald-700 font-bold hover:bg-emerald-50"
-                    >
-                      <Printer className="w-4 h-4 mr-2" /> Cetak Lembar Rekening
-                    </Button>
-                  )}
-                  {isAdmin && (
-                    <Button
-                      variant={isEditMode ? "outline" : "default"}
-                      size="sm"
-                      onClick={() => setIsEditMode(!isEditMode)}
-                      className={cn("font-bold", isEditMode ? "border-amber-500 text-amber-600" : "bg-emerald-600 hover:bg-emerald-700 text-white")}
-                    >
-                      {isEditMode ? "Batal Edit" : <><Edit3 className="w-4 h-4 mr-2" />Edit Semua Data</>}
-                    </Button>
-                  )}
-                  {isAdmin && !isEditMode && (
-                    <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 font-bold" title="Kembalikan ke antrean awal">
-                      <RotateCcw className="w-4 h-4 mr-1" /> <span className="md:hidden">Revert</span>
-                    </Button>
-                  )}
-                  {isAdmin && !isEditMode && (
-                    <Button size="sm" variant="outline" onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="border-red-500 text-red-600 font-bold hover:bg-red-50" title="Hapus Data">
-                      <Trash2 className="w-4 h-4 mr-1" /> <span className="md:hidden">Hapus</span>
-                    </Button>
+        <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-0 border-2 rounded-2xl shadow-2xl bg-white dark:bg-slate-950">
+          {viewingActor && (() => {
+            const theme = getBankTheme(viewingActor.bankName)
+            const hasLpj = !!viewingActor.lpjNominal && Number(viewingActor.lpjNominal) > 0
+            const isLpjWaiting = viewingActor.readyForLPJ && !hasLpj
+            const isOwnerMatch = !!(viewingActor.bankOwner && viewingActor.fullName && 
+              viewingActor.bankOwner.trim().toLowerCase() === viewingActor.fullName.trim().toLowerCase())
+            const dob = viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")
+            const age = calculateAge(dob)
+            const pob = viewingActor.pob || parsePobDob(viewingActor.pobDob).pob
+
+            return (
+              <div className="flex flex-col relative">
+                {/* Top Bank Theme Stripe */}
+                <div className={cn("h-2.5 w-full shrink-0 rounded-t-2xl", theme.topStripe)} />
+
+                <div className="p-5 sm:p-7 space-y-6">
+                  {/* Modal Header */}
+                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800 pr-10">
+                    <div className="space-y-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-black uppercase tracking-wider shadow-2xs", theme.badge)}>
+                          <Landmark className="w-3.5 h-3.5" />
+                          {viewingActor.bankName || "BANK"}
+                        </span>
+                        {hasLpj ? (
+                          <Badge className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-[11px] gap-1 px-2.5 py-0.5">
+                            <CheckCircle2 className="w-3 h-3" /> LPJ Selesai
+                          </Badge>
+                        ) : isLpjWaiting ? (
+                          <Badge className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] gap-1 px-2.5 py-0.5">
+                            <Clock className="w-3 h-3" /> Antrean LPJ
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-slate-500 border-slate-300 font-bold text-[11px]">
+                            Tercatat
+                          </Badge>
+                        )}
+                        {viewingActor.status && (
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 capitalize px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-850">
+                            Status: {viewingActor.status.replace("_", " ")}
+                          </span>
+                        )}
+                      </div>
+                      <DialogTitle className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                        {isEditMode ? "Edit Data Rekening & Pelaku Usaha" : "Detail Data Rekening"}
+                      </DialogTitle>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        {isEditMode ? "Perbarui informasi perbankan atau data profil penerima bantuan" : "Informasi lengkap perbankan, data pribadi, alamat, dan profil usaha pelaku"}
+                      </p>
+                    </div>
+
+                    {/* Action Buttons Toolbar */}
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      {!isEditMode && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handlePrintActor(viewingActor)}
+                          className="border-emerald-600 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 font-bold shadow-2xs h-9 cursor-pointer"
+                        >
+                          <Printer className="w-4 h-4 mr-1.5" /> Cetak Lembar
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button
+                          variant={isEditMode ? "outline" : "default"}
+                          size="sm"
+                          onClick={() => setIsEditMode(!isEditMode)}
+                          className={cn(
+                            "font-bold shadow-2xs h-9 cursor-pointer",
+                            isEditMode
+                              ? "border-amber-500 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                              : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                          )}
+                        >
+                          {isEditMode ? (
+                            "Batal Edit"
+                          ) : (
+                            <>
+                              <Edit3 className="w-4 h-4 mr-1.5" /> Edit Data
+                            </>
+                          )}
+                        </Button>
+                      )}
+                      {isAdmin && !isEditMode && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)}
+                          className="border-amber-400 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950 font-bold h-9 px-2.5 cursor-pointer"
+                          title="Kembalikan ke antrean awal"
+                        >
+                          <RotateCcw className="w-4 h-4 mr-1" />
+                          <span className="hidden sm:inline text-xs">Kembalikan</span>
+                        </Button>
+                      )}
+                      {isAdmin && !isEditMode && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)}
+                          className="border-red-400 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 font-bold h-9 px-2.5 cursor-pointer"
+                          title="Hapus Data Rekening"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          <span className="hidden sm:inline text-xs">Hapus</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {isEditMode ? (
+                    <form onSubmit={handleSaveFullEdit} className="space-y-6">
+                      {/* Form: Data Perbankan */}
+                      <section className="bg-slate-50 dark:bg-slate-900/60 p-4 sm:p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 space-y-4">
+                        <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-black text-xs sm:text-sm uppercase tracking-wider pb-2 border-b border-slate-200 dark:border-slate-800">
+                          <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center text-white shadow-2xs", theme.topStripe)}>
+                            <CreditCard className="w-3.5 h-3.5" />
+                          </div>
+                          <span>Data Perbankan (Edit)</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-black uppercase text-slate-500">Nama Bank</Label>
+                            <Input name="bankName" defaultValue={viewingActor.bankName} required className="font-bold uppercase" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-black uppercase text-slate-500">Nomor Rekening</Label>
+                            <Input name="bankNumber" defaultValue={viewingActor.bankNumber} required className="font-mono font-black text-lg h-10 tracking-wider" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-black uppercase text-slate-500">Pemilik Rekening</Label>
+                            <Input name="bankOwner" defaultValue={viewingActor.bankOwner} required className="uppercase font-bold" />
+                          </div>
+                          <div className="space-y-1.5 md:col-span-3 pt-1">
+                            <Label className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-400">Nominal LPJ Terlaporkan (Rp)</Label>
+                            <Input name="lpjNominal" type="number" defaultValue={viewingActor.lpjNominal || 0} className="font-mono font-bold" />
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* Form: Informasi Pribadi */}
+                      <section className="bg-slate-50 dark:bg-slate-900/60 p-4 sm:p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 space-y-4">
+                        <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-black text-xs sm:text-sm uppercase tracking-wider pb-2 border-b border-slate-200 dark:border-slate-800">
+                          <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-2xs">
+                            <User className="w-3.5 h-3.5" />
+                          </div>
+                          <span>Informasi Pribadi (Edit)</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-black uppercase text-slate-500">Nama Lengkap</Label>
+                            <Input name="fullName" defaultValue={viewingActor.fullName} required className="font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-black uppercase text-slate-500">NIK</Label>
+                            <Input 
+                              name="nik" 
+                              value={editNik} 
+                              required 
+                              className="font-mono font-bold"
+                              onChange={(e) => {
+                                const clean = e.target.value.replace(/[^0-9]/g, "")
+                                setEditNik(clean)
+                                if (clean.length >= 12) {
+                                  const ex = extractDobFromNik(clean)
+                                  if (ex) setEditDob(ex)
+                                } else setEditDob("")
+                              }} 
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-black uppercase text-slate-500">Nomor KK</Label>
+                            <Input name="noKK" defaultValue={viewingActor.noKK} className="font-mono font-bold" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-black uppercase text-slate-500">Jenis Kelamin</Label>
+                            <select name="gender" defaultValue={viewingActor.gender || "Laki-laki"} className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs font-medium">
+                              <option value="Laki-laki">Laki-Laki</option>
+                              <option value="Perempuan">Perempuan</option>
+                            </select>
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-black uppercase text-slate-500">Tempat Lahir</Label>
+                            <Input name="pob" value={editPob} onChange={e => setEditPob(e.target.value)} />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-black uppercase text-slate-500">Tanggal Lahir</Label>
+                            <Input name="dob" value={editDob} readOnly className="bg-muted font-bold font-mono" />
+                          </div>
+                          <div className="space-y-1.5">
+                            <Label className="text-xs font-black uppercase text-slate-500">Nomor HP / WA</Label>
+                            <Input name="phone" defaultValue={viewingActor.phone} />
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* Form: Alamat & Domisili */}
+                      <section className="bg-slate-50 dark:bg-slate-900/60 p-4 sm:p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 space-y-4">
+                        <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-black text-xs sm:text-sm uppercase tracking-wider pb-2 border-b border-slate-200 dark:border-slate-800">
+                          <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-2xs">
+                            <MapPin className="w-3.5 h-3.5" />
+                          </div>
+                          <span>Alamat &amp; Domisili (Edit)</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-1.5"><Label className="text-xs font-black uppercase text-slate-500">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
+                          <div className="space-y-1.5"><Label className="text-xs font-black uppercase text-slate-500">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} /></div>
+                          <div className="space-y-1.5"><Label className="text-xs font-black uppercase text-slate-500">RT/RW</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} /></div>
+                          <div className="space-y-1.5 md:col-span-3"><Label className="text-xs font-black uppercase text-slate-500">Alamat Lengkap</Label><Input name="address" defaultValue={viewingActor.address} /></div>
+                        </div>
+                      </section>
+
+                      {/* Form: Informasi Usaha */}
+                      <section className="bg-slate-50 dark:bg-slate-900/60 p-4 sm:p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 space-y-4">
+                        <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-black text-xs sm:text-sm uppercase tracking-wider pb-2 border-b border-slate-200 dark:border-slate-800">
+                          <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-2xs">
+                            <Store className="w-3.5 h-3.5" />
+                          </div>
+                          <span>Informasi Usaha (Edit)</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5"><Label className="text-xs font-black uppercase text-slate-500">Nama Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} required className="font-bold" /></div>
+                          <div className="space-y-1.5"><Label className="text-xs font-black uppercase text-slate-500">Kategori</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
+                          <div className="space-y-1.5"><Label className="text-xs font-black uppercase text-slate-500">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
+                          <div className="space-y-1.5"><Label className="text-xs font-black uppercase text-slate-500">Koordinator</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
+                        </div>
+                      </section>
+
+                      {/* Sticky Action Footer */}
+                      <div className="sticky bottom-0 bg-white dark:bg-slate-950 p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2 shadow-lg rounded-b-2xl z-10">
+                        <Button type="button" variant="outline" onClick={() => setIsEditMode(false)} className="font-bold cursor-pointer">Batal</Button>
+                        <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-xs cursor-pointer"><Save className="w-4 h-4 mr-2" /> Simpan Perubahan</Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* SEKSI 1: DATA PERBANKAN & STATUS REKENING (HERO BANK THEME) */}
+                      <section className="space-y-3">
+                        <div className="flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                          <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center text-white shadow-2xs", theme.topStripe)}>
+                            <CreditCard className="w-3.5 h-3.5" />
+                          </div>
+                          <span>Data Perbankan &amp; Status Rekening</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                          {/* Nama Bank Card */}
+                          <div className={cn(
+                            "relative overflow-hidden border-2 rounded-2xl p-4 shadow-xs flex flex-col justify-between min-h-[120px] transition-all",
+                            theme.border,
+                            theme.bgGlow
+                          )}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className={cn("w-7 h-7 rounded-xl text-white flex items-center justify-center shadow-xs", theme.topStripe)}>
+                                <Landmark className="w-4 h-4" />
+                              </div>
+                              <p className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider leading-none">
+                                Nama Bank Penyalur
+                              </p>
+                            </div>
+                            <div className="mt-auto pt-2 space-y-1">
+                              <div>
+                                <span className={cn(
+                                  "inline-flex items-center px-3.5 py-1.5 rounded-xl text-base sm:text-lg font-black uppercase tracking-wider shadow-sm border",
+                                  theme.badge
+                                )} title={viewingActor.bankName}>
+                                  {viewingActor.bankName || "BELUM TERISI"}
+                                </span>
+                              </div>
+                              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                                Bank Rekening Resmi
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Nomor Rekening Card */}
+                          <div className={cn(
+                            "relative overflow-hidden border-2 rounded-2xl p-4 shadow-xs flex flex-col justify-between min-h-[120px] transition-all",
+                            theme.border,
+                            theme.bgGlow
+                          )}>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-2">
+                                <div className={cn("w-7 h-7 rounded-xl text-white flex items-center justify-center shadow-xs", theme.topStripe)}>
+                                  <CreditCard className="w-4 h-4" />
+                                </div>
+                                <p className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider leading-none">
+                                  Nomor Rekening
+                                </p>
+                              </div>
+                              {viewingActor.bankNumber && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopy(viewingActor.bankNumber || "", "Nomor Rekening")}
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                                  title="Salin Nomor Rekening"
+                                >
+                                  {copiedKey === "Nomor Rekening" ? (
+                                    <>
+                                      <Check className="w-3 h-3 text-emerald-600" />
+                                      <span className="text-emerald-700 dark:text-emerald-300">Tersalin!</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3 h-3" />
+                                      <span>Salin</span>
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                            </div>
+                            <div className="mt-auto pt-2 space-y-0.5">
+                              <p className={cn("text-xl sm:text-2xl font-black font-mono tracking-[0.08em] select-all leading-tight break-all", theme.textNum)}>
+                                {viewingActor.bankNumber || "BELUM TERISI"}
+                              </p>
+                              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                                Rekening Penerima Bantuan
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Pemilik Rekening Card */}
+                          <div className={cn(
+                            "relative overflow-hidden border-2 rounded-2xl p-4 shadow-xs flex flex-col justify-between min-h-[120px] transition-all",
+                            theme.border,
+                            theme.bgGlow
+                          )}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className={cn("w-7 h-7 rounded-xl text-white flex items-center justify-center shadow-xs", theme.topStripe)}>
+                                <User className="w-4 h-4" />
+                              </div>
+                              <p className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider leading-none">
+                                Pemilik Rekening
+                              </p>
+                            </div>
+                            <div className="mt-auto pt-2 space-y-1">
+                              <p className="text-base sm:text-lg font-black uppercase text-slate-900 dark:text-white tracking-tight leading-snug break-words">
+                                {viewingActor.bankOwner || "BELUM TERISI"}
+                              </p>
+                              <div>
+                                {isOwnerMatch ? (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-md border border-emerald-300/80 dark:border-emerald-800">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                    Sesuai Data Pelaku
+                                  </span>
+                                ) : viewingActor.bankOwner ? (
+                                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                                    Atas Nama Rekening
+                                  </p>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* LPJ & Nominal Status Banner */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1">
+                          <div className="bg-slate-50 dark:bg-slate-900/80 p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status Alur LPJ</p>
+                              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                {hasLpj
+                                  ? "Sudah Menyelesaikan Laporan LPJ" 
+                                  : (viewingActor.readyForLPJ ? "Sedang Dalam Antrean Penyusunan LPJ" : "Belum Diteruskan ke Tahap LPJ")}
+                              </p>
+                            </div>
+                            <Badge className={cn(
+                              "font-black text-xs px-3 py-1 shrink-0 rounded-xl shadow-2xs",
+                              hasLpj ? "bg-blue-600 hover:bg-blue-700 text-white" : (viewingActor.readyForLPJ ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-slate-400 text-white")
+                            )}>
+                              {hasLpj ? "SELESAI" : (viewingActor.readyForLPJ ? "MENUNGGU" : "HOLD")}
+                            </Badge>
+                          </div>
+
+                          <div className="bg-slate-50 dark:bg-slate-900/80 p-4 rounded-2xl border-2 border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">Nominal LPJ Terinput</p>
+                              <p className="text-lg font-black font-mono text-emerald-700 dark:text-emerald-400">
+                                Rp {Number(viewingActor.lpjNominal || 0).toLocaleString("id-ID")}
+                              </p>
+                            </div>
+                            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-800 flex items-center justify-center shrink-0">
+                              {hasLpj ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                              ) : (
+                                <Clock className="w-5 h-5 text-amber-500" />
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* SEKSI 2: INFORMASI PRIBADI PELAKU USAHA */}
+                      <section className="space-y-3">
+                        <div className="flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                          <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-2xs">
+                            <User className="w-3.5 h-3.5" />
+                          </div>
+                          <span>Informasi Pribadi Pelaku Usaha</span>
+                        </div>
+
+                        <div className="bg-slate-50/80 dark:bg-slate-900/70 rounded-2xl p-4 sm:p-5 border-2 border-slate-200 dark:border-slate-800 space-y-4">
+                          {/* Profile Header Row with Avatar */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-black text-lg shadow-sm">
+                                {(viewingActor.fullName || "P").substring(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                  {viewingActor.fullName}
+                                </h3>
+                                <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                                  {viewingActor.gender && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                      {String(viewingActor.gender).toUpperCase().startsWith("L") ? "Laki-laki" : "Perempuan"}
+                                    </span>
+                                  )}
+                                  {age && (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-800">
+                                      {age} Tahun
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* WhatsApp Quick Link */}
+                            {viewingActor.phone && (
+                              <a
+                                href={`https://wa.me/${String(viewingActor.phone).replace(/\D/g, "").replace(/^0/, "62")}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all w-fit cursor-pointer"
+                              >
+                                <Phone className="w-3.5 h-3.5" />
+                                <span>Hubungi WA ({viewingActor.phone})</span>
+                              </a>
+                            )}
+                          </div>
+
+                          {/* Detail Data Grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 pt-1">
+                            {/* NIK with Copy */}
+                            <div className="bg-white dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Nomor Induk Kependudukan (NIK)</span>
+                                {viewingActor.nik && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopy(viewingActor.nik || "", "NIK")}
+                                    className="text-slate-400 hover:text-emerald-600 transition-colors p-0.5 cursor-pointer"
+                                    title="Salin NIK"
+                                  >
+                                    {copiedKey === "NIK" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                                  </button>
+                                )}
+                              </div>
+                              <p className="font-mono font-bold text-sm text-slate-800 dark:text-slate-200 tracking-wider">
+                                {viewingActor.nik || "-"}
+                              </p>
+                            </div>
+
+                            {/* No KK with Copy */}
+                            <div className="bg-white dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Nomor Kartu Keluarga (KK)</span>
+                                {viewingActor.noKK && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopy(viewingActor.noKK || "", "Nomor KK")}
+                                    className="text-slate-400 hover:text-emerald-600 transition-colors p-0.5 cursor-pointer"
+                                    title="Salin Nomor KK"
+                                  >
+                                    {copiedKey === "Nomor KK" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                                  </button>
+                                )}
+                              </div>
+                              <p className="font-mono font-bold text-sm text-slate-800 dark:text-slate-200 tracking-wider">
+                                {viewingActor.noKK || "-"}
+                              </p>
+                            </div>
+
+                            {/* Tempat & Tanggal Lahir */}
+                            <div className="bg-white dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
+                              <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Tempat, Tanggal Lahir</span>
+                              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                                {pob || dob ? `${pob || "-"}, ${dob || "-"}` : "-"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* SEKSI 3: ALAMAT & DOMISILI */}
+                      <section className="space-y-3">
+                        <div className="flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                          <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-2xs">
+                            <MapPin className="w-3.5 h-3.5" />
+                          </div>
+                          <span>Alamat &amp; Domisili</span>
+                        </div>
+
+                        <div className="bg-slate-50/80 dark:bg-slate-900/70 rounded-2xl p-4 sm:p-5 border-2 border-slate-200 dark:border-slate-800 space-y-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+                              <span className="text-slate-400 text-[10px] uppercase font-semibold">Kec:</span> {viewingActor.kecamatan || "-"}
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+                              <span className="text-slate-400 text-[10px] uppercase font-semibold">Kel:</span> {viewingActor.kelurahan || "-"}
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300">
+                              <span className="text-slate-400 text-[10px] uppercase font-semibold">RT/RW:</span> {viewingActor.rtRw || "-"}
+                            </span>
+                          </div>
+
+                          <div className="bg-white dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 mb-1">Alamat Lengkap</p>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-relaxed">
+                              {viewingActor.address || "Alamat lengkap belum terisi"}
+                            </p>
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* SEKSI 4: INFORMASI USAHA & PENGUSUL */}
+                      <section className="space-y-3">
+                        <div className="flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                          <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-2xs">
+                            <Store className="w-3.5 h-3.5" />
+                          </div>
+                          <span>Informasi Usaha &amp; Pengusul</span>
+                        </div>
+
+                        <div className="bg-slate-50/80 dark:bg-slate-900/70 rounded-2xl p-4 sm:p-5 border-2 border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                          <div className="bg-white dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
+                            <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Nama Usaha</p>
+                            <p className="text-sm font-black text-slate-900 dark:text-white uppercase">{viewingActor.businessName || "-"}</p>
+                          </div>
+
+                          <div className="bg-white dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
+                            <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Kategori Usaha</p>
+                            <div>
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                {viewingActor.businessCategory || "-"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="bg-white dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
+                            <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Lokasi Usaha</p>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{viewingActor.businessLocation || "-"}</p>
+                          </div>
+
+                          <div className="bg-white dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1">
+                            <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Pengusul / Koordinator</p>
+                            <p className="text-sm font-black text-emerald-700 dark:text-emerald-400 uppercase">{normalizeCoordinator(viewingActor.coordinator) || "-"}</p>
+                          </div>
+
+                          <div className="bg-white dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1 sm:col-span-2 lg:col-span-2">
+                            <p className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Petugas Survey</p>
+                            <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{viewingActor.petugasSurvey || "-"}</p>
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* SEKSI 5: INFORMASI PENDAFTARAN & SISTEM */}
+                      <section className="space-y-3">
+                        <div className="flex items-center gap-2 font-black text-xs sm:text-sm uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                          <div className="w-6 h-6 rounded-lg bg-slate-600 text-white flex items-center justify-center shadow-2xs">
+                            <History className="w-3.5 h-3.5" />
+                          </div>
+                          <span>Informasi Pendaftaran &amp; Sistem</span>
+                        </div>
+
+                        <div className="bg-slate-50/80 dark:bg-slate-900/70 rounded-2xl p-4 border-2 border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase">Status Terakhir</p>
+                            <p className="font-bold capitalize text-emerald-700 dark:text-emerald-400">{viewingActor.status?.replace("_", " ") || "-"}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase">Petugas Input</p>
+                            <p className="font-bold text-slate-800 dark:text-slate-200">{viewingActor.createdBy || "System"}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase">Waktu Pendaftaran</p>
+                            <p className="font-bold text-slate-800 dark:text-slate-200">{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString("id-ID") : "-"}</p>
+                          </div>
+                        </div>
+                      </section>
+                    </div>
                   )}
                 </div>
               </div>
-
-              {isEditMode ? (
-                <form onSubmit={handleSaveFullEdit} className="grid gap-6 py-4">
-                  {/* Bagian Perbankan Diutamakan */}
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-emerald-700 font-black text-sm uppercase border-b pb-1">
-                      <CreditCard className="w-4 h-4" /> Data Perbankan (Edit)
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Nama Bank</Label>
-                        <Input name="bankName" defaultValue={viewingActor.bankName} required />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Nomor Rekening</Label>
-                        <Input name="bankNumber" defaultValue={viewingActor.bankNumber} required className="font-mono font-black text-lg h-11 tracking-wider" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Pemilik Rekening</Label>
-                        <Input name="bankOwner" defaultValue={viewingActor.bankOwner} required className="uppercase" />
-                      </div>
-                      <div className="space-y-1 md:col-span-3 pt-2">
-                        <Label className="text-xs font-bold uppercase text-emerald-600">Nominal LPJ Terlaporkan</Label>
-                        <Input name="lpjNominal" type="number" defaultValue={viewingActor.lpjNominal || 0} className="font-mono" />
-                      </div>
-                    </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
-                      <User className="w-4 h-4" /> Informasi Pribadi (Edit)
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Nama Lengkap</Label>
-                        <Input name="fullName" defaultValue={viewingActor.fullName} required />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">NIK</Label>
-                        <Input 
-                          name="nik" 
-                          value={editNik} 
-                          required 
-                          onChange={(e) => {
-                            const clean = e.target.value.replace(/[^0-9]/g, "")
-                            setEditNik(clean)
-                            if (clean.length >= 12) {
-                              const ex = extractDobFromNik(clean)
-                              if (ex) setEditDob(ex)
-                            } else setEditDob("")
-                          }} 
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Nomor KK</Label>
-                        <Input name="noKK" defaultValue={viewingActor.noKK} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Jenis Kelamin</Label>
-                        <select name="gender" defaultValue={viewingActor.gender || ""} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
-                          <option value="L">Laki-Laki</option>
-                          <option value="P">Perempuan</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Tempat Lahir</Label>
-                        <Input name="pob" value={editPob} onChange={e => setEditPob(e.target.value)} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Tanggal Lahir</Label>
-                        <Input name="dob" value={editDob} readOnly className="bg-muted font-semibold" />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Nomor HP</Label>
-                        <Input name="phone" defaultValue={viewingActor.phone} />
-                      </div>
-                    </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
-                      <MapPin className="w-4 h-4" /> Alamat &amp; Domisili (Edit)
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">RT/RW</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} /></div>
-                      <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase">Alamat Lengkap</Label><Input name="address" defaultValue={viewingActor.address} /></div>
-                    </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
-                      <Building2 className="w-4 h-4" /> Informasi Usaha (Edit)
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} required /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kategori</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Koordinator</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} /></div>
-                    </div>
-                  </section>
-
-                  <div className="sticky bottom-0 bg-white dark:bg-zinc-950 p-4 border-t flex justify-end gap-2 mt-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] rounded-b-lg z-10">
-                    <Button type="button" variant="outline" onClick={() => setIsEditMode(false)} className="font-bold">Batal</Button>
-                    <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"><Save className="w-4 h-4 mr-2" /> Simpan Perubahan</Button>
-                  </div>
-                </form>
-              ) : (
-                <div className="grid gap-6 py-4">
-                  {/* Card Data Rekening Teratas */}
-                  <section className="space-y-3">
-                    <div className="flex items-center gap-2 text-emerald-700 font-black text-sm uppercase border-b pb-1">
-                      <CreditCard className="w-4 h-4" /> Data Perbankan &amp; Status Rekening
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-emerald-50/70 p-4 rounded-xl border border-emerald-200">
-                      {[
-                        { label: "Nama Bank", value: viewingActor.bankName },
-                        { label: "Nomor Rekening", value: viewingActor.bankNumber, isMono: true },
-                        { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner, isUpper: true },
-                      ].map((item, i) => (
-                        <div key={i} className="space-y-1">
-                          <p className="text-[10px] font-bold text-emerald-800 uppercase">{item.label}</p>
-                          <p className={cn("text-base font-black text-emerald-950", item.isMono && "font-mono text-lg text-emerald-800", item.isUpper && "uppercase")}>
-                            {item.value || "BELUM TERISI"}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-muted/30 p-3 rounded-xl border flex items-center justify-between">
-                        <div>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Status Alur LPJ</p>
-                          <p className="text-xs font-black uppercase text-slate-800 mt-0.5">
-                            {viewingActor.lpjNominal && Number(viewingActor.lpjNominal) > 0 
-                              ? "Sudah Menyelesaikan LPJ" 
-                              : (viewingActor.readyForLPJ ? "Sedang Dalam Antrean LPJ" : "Belum Diteruskan ke LPJ")}
-                          </p>
-                        </div>
-                        <Badge className={cn(
-                          "font-black text-[10px]",
-                          viewingActor.lpjNominal && Number(viewingActor.lpjNominal) > 0 ? "bg-blue-600" : (viewingActor.readyForLPJ ? "bg-amber-500" : "bg-slate-400")
-                        )}>
-                          {viewingActor.lpjNominal && Number(viewingActor.lpjNominal) > 0 ? "SELESAI" : (viewingActor.readyForLPJ ? "MENUNGGU" : "HOLD")}
-                        </Badge>
-                      </div>
-
-                      <div className="bg-muted/30 p-3 rounded-xl border flex items-center justify-between">
-                        <div>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Nominal LPJ Terinput</p>
-                          <p className="text-xs font-black font-mono text-emerald-700 mt-0.5">
-                            Rp {Number(viewingActor.lpjNominal || 0).toLocaleString("id-ID")}
-                          </p>
-                        </div>
-                        {viewingActor.lpjNominal && Number(viewingActor.lpjNominal) > 0 ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                        ) : (
-                          <Clock className="w-5 h-5 text-amber-500" />
-                        )}
-                      </div>
-                    </div>
-                  </section>
-
-                  {/* Informasi Pribadi */}
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
-                      <User className="w-4 h-4" /> Informasi Pribadi Pelaku Usaha
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
-                      {[
-                        { label: "Nama Lengkap", value: viewingActor.fullName },
-                        { label: "NIK", value: viewingActor.nik },
-                        { label: "Nomor KK", value: viewingActor.noKK },
-                        { label: "Jenis Kelamin", value: viewingActor.gender },
-                        { label: "Tempat Lahir", value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob },
-                        { label: "Tanggal Lahir", value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob },
-                        { label: "Usia", value: calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")) },
-                        { label: "Nomor HP", value: viewingActor.phone, isPhone: true },
-                      ].map((item, i) => (
-                        <div key={i} className="space-y-1">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                          {(item as any).isPhone && item.value ? (
-                            <a href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`} target="_blank" rel="noreferrer" className="text-sm font-bold text-green-600 hover:underline flex items-center gap-1">
-                              {item.value}
-                            </a>
-                          ) : (
-                            <p className="text-sm font-bold">{item.value || "-"}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-
-                  {/* Alamat & Domisili */}
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
-                      <MapPin className="w-4 h-4" /> Alamat &amp; Domisili
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
-                      {[
-                        { label: "Kecamatan", value: viewingActor.kecamatan },
-                        { label: "Kelurahan", value: viewingActor.kelurahan },
-                        { label: "RT/RW", value: viewingActor.rtRw },
-                        { label: "Alamat Lengkap", value: viewingActor.address, fullWidth: true },
-                      ].map((item, i) => (
-                        <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                          <p className="text-sm font-bold">{item.value || "-"}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-
-                  {/* Usaha */}
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
-                      <Building2 className="w-4 h-4" /> Informasi Usaha &amp; Pengusul
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
-                      {[
-                        { label: "Nama Usaha", value: viewingActor.businessName },
-                        { label: "Kategori Usaha", value: viewingActor.businessCategory },
-                        { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                        { label: "Pengusul / Koordinator", value: viewingActor.coordinator },
-                        { label: "Petugas Survey", value: viewingActor.petugasSurvey || "-" },
-                      ].map((item: any, i: number) => (
-                        <div key={i} className="space-y-1">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                          <p className="text-sm font-bold">{item.value || "-"}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-
-                  {/* Audit Info */}
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
-                      <History className="w-4 h-4" /> Informasi Pendaftaran &amp; Sistem
-                    </div>
-                    <div className="bg-slate-50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border">
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Terakhir</p>
-                        <p className="capitalize text-primary">{viewingActor.status?.replace("_", " ")}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Input</p>
-                        <p>{viewingActor.createdBy || "System"}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Waktu Pendaftaran</p>
-                        <p>{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString("id-ID") : "-"}</p>
-                      </div>
-                    </div>
-                  </section>
-                </div>
-              )}
-            </div>
-          )}
+            )
+          })()}
         </DialogContent>
       </Dialog>
 
