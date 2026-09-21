@@ -12,7 +12,7 @@ import { GlobalStatsAutoSync } from '@/components/GlobalStatsAutoSync';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref, onValue, set, update, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
-import { User as UserIcon, LayoutGrid, Home, LogOut, Check, X as XIcon, AlertCircle, MonitorOff, Loader2 } from 'lucide-react'
+import { User as UserIcon, LayoutGrid, Home, LogOut, Check, X as XIcon, AlertCircle, MonitorOff, Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
 import { useActiveEvent } from '@/hooks/use-active-event';
@@ -243,7 +243,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       case '/hasil-verifikasi': return 'Hasil Verifikasi';
       case '/messages': return 'Pesan Chat';
       case '/verifikasi-dinas-berkas': return 'Verifikasi Dinas';
-      default: return '';
+      default: return path ? path.replace(/^\//, '').replace(/[-_]/g, ' ') : '';
     }
   };
 
@@ -294,17 +294,6 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0 ml-auto">
                   {user ? (
                     <>
-                      {!isRootPage && !isKoordinator && (
-                        <button
-                          onClick={() => router.push('/')}
-                          className="flex items-center gap-1.5 md:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-widest transition-all shadow-sm active:scale-95 bg-primary text-white shadow-primary/20 hover:bg-primary/90 shrink-0"
-                        >
-                          <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                          <span className="hidden sm:inline">Kembali ke Menu</span>
-                        </button>
-                      )}
-
-                      <div className="hidden sm:flex h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
 
                       <div className="hidden sm:flex items-center gap-2">
                         <RealtimeClock 
@@ -454,6 +443,24 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 isRootPage ? "p-3 sm:p-4 lg:p-4 min-h-full pb-6 lg:pr-[20.5rem] xl:pr-[21rem] 2xl:pr-[21.5rem]" : 
                 "p-3 sm:p-4 lg:p-4 min-h-full pb-32 sm:pb-28 md:pb-20 lg:pr-[20.5rem] xl:pr-[21rem] 2xl:pr-[21.5rem]"
               )}>
+                {!isRootPage && !isKoordinator && !isLoginPage && !isPortalSurveyPage && !isLayarInformasiPage && (
+                  <div className="mb-3.5 flex items-center justify-between gap-3 print:hidden">
+                    <button
+                      onClick={() => router.push('/')}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-slate-900/90 hover:bg-white dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow transition-all group active:scale-95 text-xs font-bold"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5 text-primary group-hover:-translate-x-1 transition-transform" />
+                      <span>Kembali ke Menu</span>
+                    </button>
+                    {currentTitle && (
+                      <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 font-semibold select-none">
+                        <span>Sistem Navigasi</span>
+                        <span>/</span>
+                        <span className="text-slate-700 dark:text-slate-200 font-bold uppercase">{currentTitle}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {children}
 
                 {/* Safe Area Spacer for Mobile Bottom Navigation */}
