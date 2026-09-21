@@ -80,7 +80,7 @@ function getBankTheme(rawBankName?: string): BankTheme {
       return {
         code: "BRI",
         badge: "bg-blue-600 text-white font-black",
-        border: "border-blue-200 dark:border-blue-900/60",
+        border: "border-blue-300 dark:border-blue-800",
         hoverBorder: "hover:border-blue-500 dark:hover:border-blue-400",
         bgGlow: "bg-gradient-to-b from-blue-50/40 via-white to-white dark:from-blue-950/20 dark:via-slate-900 dark:to-slate-950",
         textNum: "text-blue-700 dark:text-blue-300",
@@ -94,7 +94,7 @@ function getBankTheme(rawBankName?: string): BankTheme {
       return {
         code: "BNI",
         badge: "bg-orange-600 text-white font-black",
-        border: "border-orange-200 dark:border-orange-900/60",
+        border: "border-orange-300 dark:border-orange-800",
         hoverBorder: "hover:border-orange-500 dark:hover:border-orange-400",
         bgGlow: "bg-gradient-to-b from-orange-50/40 via-white to-white dark:from-orange-950/20 dark:via-slate-900 dark:to-slate-950",
         textNum: "text-orange-700 dark:text-orange-300",
@@ -108,7 +108,7 @@ function getBankTheme(rawBankName?: string): BankTheme {
       return {
         code: "BCA",
         badge: "bg-indigo-600 text-white font-black",
-        border: "border-indigo-200 dark:border-indigo-900/60",
+        border: "border-indigo-300 dark:border-indigo-800",
         hoverBorder: "hover:border-indigo-500 dark:hover:border-indigo-400",
         bgGlow: "bg-gradient-to-b from-indigo-50/40 via-white to-white dark:from-indigo-950/20 dark:via-slate-900 dark:to-slate-950",
         textNum: "text-indigo-700 dark:text-indigo-300",
@@ -122,7 +122,7 @@ function getBankTheme(rawBankName?: string): BankTheme {
       return {
         code: "BRK",
         badge: "bg-rose-600 text-white font-black",
-        border: "border-rose-200 dark:border-rose-900/60",
+        border: "border-rose-300 dark:border-rose-800",
         hoverBorder: "hover:border-rose-500 dark:hover:border-rose-400",
         bgGlow: "bg-gradient-to-b from-rose-50/40 via-white to-white dark:from-rose-950/20 dark:via-slate-900 dark:to-slate-950",
         textNum: "text-rose-700 dark:text-rose-300",
@@ -136,7 +136,7 @@ function getBankTheme(rawBankName?: string): BankTheme {
       return {
         code: "MANDIRI",
         badge: "bg-blue-900 text-amber-300 font-black",
-        border: "border-blue-300 dark:border-blue-900/60",
+        border: "border-blue-400 dark:border-blue-800",
         hoverBorder: "hover:border-blue-700 dark:hover:border-blue-400",
         bgGlow: "bg-gradient-to-b from-blue-900/[0.05] via-white to-white dark:from-blue-950/30 dark:via-slate-900 dark:to-slate-950",
         textNum: "text-blue-950 dark:text-blue-200",
@@ -150,7 +150,7 @@ function getBankTheme(rawBankName?: string): BankTheme {
       return {
         code: "BSI",
         badge: "bg-teal-600 text-white font-black",
-        border: "border-teal-200 dark:border-teal-900/60",
+        border: "border-teal-300 dark:border-teal-800",
         hoverBorder: "hover:border-teal-500 dark:hover:border-teal-400",
         bgGlow: "bg-gradient-to-b from-teal-50/40 via-white to-white dark:from-teal-950/20 dark:via-slate-900 dark:to-slate-950",
         textNum: "text-teal-700 dark:text-teal-300",
@@ -164,7 +164,7 @@ function getBankTheme(rawBankName?: string): BankTheme {
       return {
         code: "BTN",
         badge: "bg-cyan-700 text-white font-black",
-        border: "border-cyan-200 dark:border-cyan-900/60",
+        border: "border-cyan-300 dark:border-cyan-800",
         hoverBorder: "hover:border-cyan-500 dark:hover:border-cyan-400",
         bgGlow: "bg-gradient-to-b from-cyan-50/40 via-white to-white dark:from-cyan-950/20 dark:via-slate-900 dark:to-slate-950",
         textNum: "text-cyan-800 dark:text-cyan-300",
@@ -178,7 +178,7 @@ function getBankTheme(rawBankName?: string): BankTheme {
       return {
         code: "BUKOPIN",
         badge: "bg-amber-500 text-slate-950 font-black",
-        border: "border-amber-200 dark:border-amber-900/60",
+        border: "border-amber-300 dark:border-amber-800",
         hoverBorder: "hover:border-amber-500 dark:hover:border-amber-400",
         bgGlow: "bg-gradient-to-b from-amber-50/40 via-white to-white dark:from-amber-950/20 dark:via-slate-900 dark:to-slate-950",
         textNum: "text-amber-800 dark:text-amber-300",
@@ -192,7 +192,7 @@ function getBankTheme(rawBankName?: string): BankTheme {
       return {
         code: "MUAMALAT",
         badge: "bg-purple-700 text-white font-black",
-        border: "border-purple-200 dark:border-purple-900/60",
+        border: "border-purple-300 dark:border-purple-800",
         hoverBorder: "hover:border-purple-500 dark:hover:border-purple-400",
         bgGlow: "bg-gradient-to-b from-purple-50/40 via-white to-white dark:from-purple-950/20 dark:via-slate-900 dark:to-slate-950",
         textNum: "text-purple-800 dark:text-purple-300",
@@ -206,7 +206,7 @@ function getBankTheme(rawBankName?: string): BankTheme {
       return {
         code: "PANIN",
         badge: "bg-red-600 text-white font-black",
-        border: "border-red-200 dark:border-red-900/60",
+        border: "border-red-300 dark:border-red-800",
         hoverBorder: "hover:border-red-500 dark:hover:border-red-400",
         bgGlow: "bg-gradient-to-b from-red-50/40 via-white to-white dark:from-red-950/20 dark:via-slate-900 dark:to-slate-950",
         textNum: "text-red-700 dark:text-red-300",
@@ -220,7 +220,7 @@ function getBankTheme(rawBankName?: string): BankTheme {
       return {
         code: "DANAMON",
         badge: "bg-orange-700 text-white font-black",
-        border: "border-orange-300 dark:border-orange-900/60",
+        border: "border-orange-400 dark:border-orange-800",
         hoverBorder: "hover:border-orange-600 dark:hover:border-orange-400",
         bgGlow: "bg-gradient-to-b from-orange-50/40 via-white to-white dark:from-orange-950/20 dark:via-slate-900 dark:to-slate-950",
         textNum: "text-orange-800 dark:text-orange-300",
@@ -234,7 +234,7 @@ function getBankTheme(rawBankName?: string): BankTheme {
       return {
         code: norm || "BANK",
         badge: "bg-emerald-600 text-white font-black",
-        border: "border-emerald-200 dark:border-emerald-900/60",
+        border: "border-emerald-300 dark:border-emerald-800",
         hoverBorder: "hover:border-emerald-500 dark:hover:border-emerald-400",
         bgGlow: "bg-gradient-to-b from-emerald-50/40 via-white to-white dark:from-emerald-950/20 dark:via-slate-900 dark:to-slate-950",
         textNum: "text-emerald-700 dark:text-emerald-300",
@@ -1029,18 +1029,18 @@ function DataRekeningContent() {
                   <Card
                     key={actor.id}
                     className={cn(
-                      "cursor-pointer hover:shadow-md transition-all border rounded-2xl overflow-hidden active:scale-[0.99]",
+                      "cursor-pointer hover:shadow-md transition-all border-2 rounded-2xl overflow-hidden active:scale-[0.99] bg-white dark:bg-slate-900 shadow-xs",
                       theme.border,
                       theme.bgGlow
                     )}
                     onClick={() => setViewingActor(actor)}
                   >
                     {/* Top colored accent indicator bar */}
-                    <div className={cn("h-1 w-full shrink-0", theme.topStripe)} />
+                    <div className={cn("h-1.5 w-full shrink-0", theme.topStripe)} />
 
-                    <CardContent className="p-4 space-y-3">
+                    <CardContent className="p-4 space-y-2.5">
                       {/* Top row: #index, Bank Name, Status Badge */}
-                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2.5">
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                             #{idx + 1}
@@ -1065,7 +1065,7 @@ function DataRekeningContent() {
                       </div>
 
                       {/* Main Account Info */}
-                      <div>
+                      <div className="pb-2.5 border-b border-slate-200 dark:border-slate-800 space-y-0.5">
                         <div className={cn("font-mono font-black text-xl tracking-wider select-all", theme.textNum)}>
                           {actor.bankNumber || "-"}
                         </div>
@@ -1076,7 +1076,7 @@ function DataRekeningContent() {
                       </div>
 
                       {/* Metadata Grid */}
-                      <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50/80 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                      <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50/80 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
                         <div>
                           <div className="text-[10px] text-slate-400 font-semibold uppercase">Pelaku Usaha</div>
                           <div className="text-slate-800 dark:text-slate-200 font-bold truncate">{actor.fullName}</div>
@@ -1096,20 +1096,22 @@ function DataRekeningContent() {
                       </div>
 
                       {/* Detail Button */}
-                      <button
-                        type="button"
-                        className={cn(
-                          "w-full font-bold text-xs rounded-xl h-8.5 shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer",
-                          theme.btn
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setViewingActor(actor)
-                        }}
-                      >
-                        <CreditCard className="w-3.5 h-3.5 shrink-0" />
-                        <span>DETAIL REKENING</span>
-                      </button>
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                        <button
+                          type="button"
+                          className={cn(
+                            "w-full font-bold text-xs rounded-xl h-8.5 shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                            theme.btn
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setViewingActor(actor)
+                          }}
+                        >
+                          <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                          <span>DETAIL REKENING</span>
+                        </button>
+                      </div>
                     </CardContent>
                   </Card>
                 )
@@ -1127,7 +1129,7 @@ function DataRekeningContent() {
                   <Card
                     key={actor.id}
                     className={cn(
-                      "cursor-pointer hover:shadow-lg transition-all duration-200 group border rounded-2xl overflow-hidden flex flex-col justify-between hover:-translate-y-1",
+                      "cursor-pointer hover:shadow-lg transition-all duration-200 group border-2 rounded-2xl overflow-hidden flex flex-col justify-between hover:-translate-y-1 bg-white dark:bg-slate-900 shadow-xs",
                       theme.border,
                       theme.hoverBorder,
                       theme.bgGlow
@@ -1135,12 +1137,12 @@ function DataRekeningContent() {
                     onClick={() => setViewingActor(actor)}
                   >
                     {/* Top colored accent indicator bar */}
-                    <div className={cn("h-1 w-full shrink-0", theme.topStripe)} />
+                    <div className={cn("h-1.5 w-full shrink-0", theme.topStripe)} />
 
-                    <CardContent className="p-3.5 flex flex-col gap-2 flex-1 justify-between">
-                      <div className="space-y-2">
+                    <CardContent className="p-3.5 flex flex-col gap-2.5 flex-1 justify-between">
+                      <div className="space-y-2.5">
                         {/* Header: Bank Badge & Status */}
-                        <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center justify-between gap-1.5 border-b border-slate-200 dark:border-slate-800 pb-2">
                           <span className={cn(
                             "text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider shadow-2xs",
                             theme.badge
@@ -1163,7 +1165,7 @@ function DataRekeningContent() {
                         </div>
 
                         {/* Owner Name & Account Number */}
-                        <div className="space-y-0.5 pt-0.5">
+                        <div className="space-y-0.5 pt-0.5 pb-2 border-b border-slate-200 dark:border-slate-800">
                           <h4 
                             className="text-xs font-black uppercase text-slate-900 dark:text-slate-100 line-clamp-1 leading-snug tracking-tight group-hover:text-primary transition-colors" 
                             title={actor.bankOwner || actor.fullName}
@@ -1176,7 +1178,7 @@ function DataRekeningContent() {
                         </div>
 
                         {/* Details Box */}
-                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[10px] space-y-1">
+                        <div className="space-y-1 text-[10px] py-0.5">
                           <div className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300 truncate" title={actor.businessName}>
                             <Store className="w-3 h-3 text-slate-400 shrink-0" />
                             <span className="truncate uppercase">{actor.businessName || "-"}</span>
@@ -1192,20 +1194,22 @@ function DataRekeningContent() {
                       </div>
 
                       {/* Detail Button with Bank Color */}
-                      <button 
-                        type="button"
-                        className={cn(
-                          "w-full mt-3 rounded-xl py-1.5 px-3 font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md cursor-pointer",
-                          theme.btn
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setViewingActor(actor)
-                        }}
-                      >
-                        <CreditCard className="w-3 h-3 shrink-0" />
-                        <span>DETAIL REKENING</span>
-                      </button>
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-800 mt-auto">
+                        <button 
+                          type="button"
+                          className={cn(
+                            "w-full rounded-xl py-1.5 px-3 font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md cursor-pointer",
+                            theme.btn
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setViewingActor(actor)
+                          }}
+                        >
+                          <CreditCard className="w-3 h-3 shrink-0" />
+                          <span>DETAIL REKENING</span>
+                        </button>
+                      </div>
                     </CardContent>
                   </Card>
                 )
