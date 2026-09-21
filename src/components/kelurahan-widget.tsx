@@ -41,21 +41,21 @@ export function KelurahanWidget({ className }: KelurahanWidgetProps) {
       )}
     >
       {/* Header */}
-      <div className="p-3.5 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+      <div className="p-2.5 px-3 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-            <MapPin className="w-3.5 h-3.5" />
+          <div className="w-5 h-5 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+            <MapPin className="w-3 h-3" />
           </div>
           <div>
-            <h3 className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider leading-tight">
+            <h3 className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider leading-tight">
               Sebaran Kelurahan
             </h3>
-            <p className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-tight">
+            <p className="text-[8.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-tight">
               Kota Tanjungpinang
             </p>
           </div>
         </div>
-        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
+        <span className="text-[9.5px] font-black px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60">
           {kelurahanStats.length} Kel
         </span>
       </div>
@@ -63,22 +63,27 @@ export function KelurahanWidget({ className }: KelurahanWidgetProps) {
       {/* Table Content */}
       <div className="flex-1 min-h-0 flex flex-col">
         {isLoading ? (
-          <div className="p-6 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs">
-            <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <span className="font-bold text-[10px] uppercase tracking-wider">Memuat Data...</span>
+          <div className="p-4 flex flex-col items-center justify-center gap-2 text-slate-400 text-xs">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <span className="font-bold text-[9px] uppercase tracking-wider">Memuat Data...</span>
           </div>
         ) : kelurahanStats.length === 0 ? (
-          <div className="p-6 text-center text-slate-400 text-xs font-medium">
+          <div className="p-4 text-center text-slate-400 text-xs font-medium">
             Belum ada data sebaran
           </div>
         ) : (
-          <div className="max-h-[160px] 2xl:max-h-[220px] overflow-y-auto custom-scrollbar">
-            <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur-sm z-10 text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/50 dark:border-slate-800/50">
+          <div className="max-h-[110px] sm:max-h-[120px] 2xl:max-h-[180px] overflow-y-auto custom-scrollbar">
+            <table className="w-full table-fixed text-left border-collapse">
+              <colgroup>
+                <col className="w-7" />
+                <col className="w-auto" />
+                <col className="w-12" />
+              </colgroup>
+              <thead className="sticky top-0 bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur-sm z-10 text-[8.5px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/50 dark:border-slate-800/50">
                 <tr>
-                  <th className="py-1.5 px-2 text-center w-8">No</th>
-                  <th className="py-1.5 px-2">Kelurahan</th>
-                  <th className="py-1.5 px-2 text-center w-16">Jumlah</th>
+                  <th className="py-1 px-1 text-center">No</th>
+                  <th className="py-1 px-2">Kelurahan</th>
+                  <th className="py-1 px-1 text-center">Jumlah</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
@@ -87,14 +92,14 @@ export function KelurahanWidget({ className }: KelurahanWidgetProps) {
                     key={item.name}
                     className="hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors group"
                   >
-                    <td className="py-1.5 px-2 text-center text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                    <td className="py-1 px-1 text-center text-[9.5px] font-bold text-slate-400 dark:text-slate-500">
                       {idx + 1}
                     </td>
-                    <td className="py-1.5 px-2 font-bold text-[11px] text-slate-700 dark:text-slate-200 uppercase group-hover:text-primary transition-colors truncate max-w-[130px]" title={item.name}>
+                    <td className="py-1 px-2 font-bold text-[10px] sm:text-[10.5px] text-slate-700 dark:text-slate-200 uppercase group-hover:text-primary transition-colors truncate" title={item.name}>
                       {item.name}
                     </td>
-                    <td className="py-1.5 px-2 text-center">
-                      <span className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black px-2 py-0.5 rounded-md min-w-[2rem] text-[10px] border border-slate-200 dark:border-slate-700 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
+                    <td className="py-1 px-1 text-center">
+                      <span className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black px-1 py-0.5 rounded-md min-w-[1.6rem] text-[9.5px] border border-slate-200 dark:border-slate-700 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
                         {item.count}
                       </span>
                     </td>
@@ -107,11 +112,11 @@ export function KelurahanWidget({ className }: KelurahanWidgetProps) {
       </div>
 
       {/* Footer */}
-      <div className="p-3 bg-slate-100/80 dark:bg-slate-800/80 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
-        <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+      <div className="p-2 px-3 bg-slate-100/80 dark:bg-slate-800/80 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between">
+        <span className="text-[9.5px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-wider">
           Total Tersebar
         </span>
-        <span className="text-xs font-black text-primary drop-shadow-sm">
+        <span className="text-[11px] font-black text-primary drop-shadow-sm">
           {totalTersebar.toLocaleString('id-ID')} Data
         </span>
       </div>
