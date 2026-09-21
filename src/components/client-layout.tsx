@@ -382,7 +382,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
             {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (!isCekDataPage || (user && !isCekDataPage)) && (!isPendaftaranPage || (user && !isPendaftaranPage)) && (
-              <div className="absolute top-4 right-4 md:top-6 md:right-8 z-50 pointer-events-none">
+              <div className="absolute top-4 right-3 sm:right-4 lg:right-6 z-50 pointer-events-none">
                 <div className="pointer-events-auto flex flex-col items-end gap-3 max-h-[calc(100dvh-5.5rem)] overflow-y-auto no-scrollbar pb-6 pr-1">
                   <div className="hidden lg:flex flex-col gap-3">
                     <WeatherWidget className="w-72" />
@@ -452,8 +452,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 isLayarInformasiPage ? "p-0 min-h-full lg:h-full lg:max-h-full flex-1 flex flex-col overflow-y-auto lg:overflow-hidden" :
                 isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-7xl mx-auto" :
                 isPendaftaranPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-5xl mx-auto" :
-                isRootPage ? "p-3 sm:p-4 md:p-8 min-h-full pb-6 md:pb-20 lg:pr-[20rem] 2xl:pr-[22rem]" : 
-                "p-3 sm:p-4 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 lg:pr-[20rem] 2xl:pr-[22rem]"
+                isRootPage ? "p-3 sm:p-4 md:p-8 min-h-full pb-6 md:pb-20 lg:pr-[24rem] xl:pr-[25rem] 2xl:pr-[26rem]" : 
+                "p-3 sm:p-4 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 lg:pr-[24rem] xl:pr-[25rem] 2xl:pr-[26rem]"
               )}>
                 {children}
 
