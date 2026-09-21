@@ -480,17 +480,17 @@ export function WeatherWidget({ className }: { className?: string }) {
       </div>
 
       {/* Footer */}
-      <div className="weather-footer flex-col items-start gap-1">
+      <div className="weather-footer flex-col items-start gap-1 w-full overflow-hidden">
         <div className="flex items-center justify-between w-full">
-          <span>Diperbarui: {weather.lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':')} WIB</span>
-          <button onClick={fetchWeather} className="weather-refresh-btn" title="Perbarui Sekarang">
+          <span className="truncate">Diperbarui: {weather.lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':')} WIB</span>
+          <button onClick={fetchWeather} className="weather-refresh-btn shrink-0" title="Perbarui Sekarang">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <path d="M1 4v6h6M23 20v-6h-6" />
               <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
             </svg>
           </button>
         </div>
-        <div className="text-[7.5px] font-medium text-slate-400/90 tracking-tight">
+        <div className="text-[7.5px] font-medium text-slate-400/90 tracking-tight truncate w-full">
           Sumber Data: <span className="font-bold text-slate-500">Open-Meteo API</span> (Model BMKG & High-Res Global Data)
         </div>
       </div>
