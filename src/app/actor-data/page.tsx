@@ -1872,39 +1872,59 @@ function ActorDataContent() {
               ))
             ) : coordinatorStats.filter(stat => stat.count > 0).map((stat) => {
               const quotaPercent = stat.quota > 0 ? Math.min(100, Math.round((stat.count / stat.quota) * 100)) : 0;
+              const themeColor = stat.isFull ? '#10b981' : '#6366f1';
               return (
                 <div 
                   key={stat.name}
                   onClick={() => router.push(`/actor-data?coordinator=${encodeURIComponent(stat.name)}`)}
-                  className={cn(
-                    "group relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-300 ease-out overflow-hidden cursor-pointer active:scale-95 min-h-[165px] border shadow-sm hover:shadow-xl hover:-translate-y-1.5 animate-in fade-in slide-in-from-bottom-3",
-                    "bg-white dark:bg-slate-900",
-                    stat.isFull 
-                      ? "border-emerald-200/90 dark:border-emerald-900/40 hover:border-emerald-400 dark:hover:border-emerald-700 hover:shadow-emerald-500/10" 
-                      : "border-slate-200/90 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-700 hover:shadow-indigo-500/10"
-                  )}
+                  style={{
+                    borderColor: `${themeColor}50`,
+                    boxShadow: `0 4px 18px -2px ${themeColor}20`
+                  }}
+                  className="group relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-300 ease-out overflow-hidden cursor-pointer active:scale-95 min-h-[165px] border-2 bg-white dark:bg-slate-900 hover:shadow-xl hover:-translate-y-1.5 animate-in fade-in slide-in-from-bottom-3"
                 >
                   {/* Glowing Top Accent Stripe */}
                   <div 
-                    className={cn(
-                      "absolute top-0 left-0 right-0 h-1.5 transition-all duration-300",
-                      stat.isFull 
-                        ? "bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600" 
-                        : "bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500"
-                    )} 
+                    className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 group-hover:h-2 z-10"
+                    style={{
+                      background: stat.isFull 
+                        ? "linear-gradient(90deg, #10b981, #34d399, #10b981)" 
+                        : "linear-gradient(90deg, #3b82f6, #6366f1, #8b5cf6)"
+                    }}
                   />
 
+                  {/* Colorful Gradient Wash Overlay */}
+                  <div 
+                    className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-60 group-hover:opacity-100"
+                    style={{ 
+                      background: `linear-gradient(145deg, transparent 35%, ${themeColor}15 80%, ${themeColor}25 100%)` 
+                    }}
+                  />
+
+                  {/* Ambient Soft Glow Orb */}
+                  <div 
+                    className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl transition-all duration-700 pointer-events-none opacity-25 group-hover:opacity-50 group-hover:scale-150"
+                    style={{ backgroundColor: themeColor }} 
+                  />
+
+                  {/* Large Decorative Watermark Icon (Bottom-Right) */}
+                  <div 
+                    className="absolute -bottom-2.5 -right-2.5 pointer-events-none transition-all duration-500 ease-out opacity-[0.08] dark:opacity-[0.14] group-hover:opacity-[0.24] group-hover:scale-125 group-hover:-rotate-12"
+                    style={{ color: themeColor }}
+                  >
+                    <User className="w-24 h-24 stroke-[1.5]" />
+                  </div>
+
                   {/* Top Row: Avatar & Status Badge */}
-                  <div className="flex items-center justify-between gap-2 pt-1">
+                  <div className="relative z-10 flex items-center justify-between gap-2 pt-1">
                     <div 
-                      className={cn(
-                        "w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-sm shrink-0",
-                        stat.isFull 
-                          ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60" 
-                          : "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60"
-                      )}
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-md shrink-0 text-white"
+                      style={{ 
+                        backgroundColor: themeColor,
+                        boxShadow: `0 6px 14px -3px ${themeColor}60`
+                      }}
                     >
-                      <User className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
 
                     {stat.isFull ? (
@@ -1912,7 +1932,14 @@ function ActorDataContent() {
                         <CheckCircle2 className="w-3 h-3" /> Penuh
                       </span>
                     ) : stat.quota > 0 ? (
-                      <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/80 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800 shrink-0">
+                      <span 
+                        className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-xs shrink-0"
+                        style={{
+                          backgroundColor: `${themeColor}15`,
+                          borderColor: `${themeColor}35`,
+                          color: themeColor
+                        }}
+                      >
                         Sisa {stat.remaining}
                       </span>
                     ) : (
@@ -1923,15 +1950,21 @@ function ActorDataContent() {
                   </div>
 
                   {/* Middle: Coordinator Name & Berkas Count */}
-                  <div className="space-y-1.5 my-2">
-                    <h3 
-                      className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1 group-hover:text-primary transition-colors"
-                      title={stat.name}
-                    >
-                      {stat.name}
-                    </h3>
+                  <div className="relative z-10 space-y-1.5 my-2">
+                    <div className="flex items-center gap-1.5">
+                      <span 
+                        className="w-1.5 h-1.5 rounded-full shrink-0 transition-transform duration-300 group-hover:scale-150" 
+                        style={{ backgroundColor: themeColor }} 
+                      />
+                      <h3 
+                        className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1 group-hover:text-primary transition-colors"
+                        title={stat.name}
+                      >
+                        {stat.name}
+                      </h3>
+                    </div>
                     
-                    <div className="flex items-baseline gap-1.5">
+                    <div className="flex items-baseline gap-1.5 pl-3">
                       <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
                         {stat.count}
                       </span>
@@ -1942,7 +1975,7 @@ function ActorDataContent() {
 
                     {/* Mini Progress Bar when quota > 0 */}
                     {stat.quota > 0 && (
-                      <div className="space-y-1 pt-1">
+                      <div className="space-y-1 pt-1 pl-3">
                         <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                           <div 
                             className={cn(
@@ -1961,18 +1994,27 @@ function ActorDataContent() {
                   </div>
 
                   {/* Bottom Action Cue */}
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] sm:text-[11px] font-bold text-primary group-hover:text-primary/90">
-                    <span>Lihat Berkas</span>
-                    <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-
-                  {/* Ambient Glow in background */}
                   <div 
-                    className={cn(
-                      "absolute -bottom-8 -right-8 w-24 h-24 rounded-full blur-2xl transition-all duration-700 pointer-events-none group-hover:scale-150",
-                      stat.isFull ? "bg-emerald-500/10" : "bg-indigo-500/10"
-                    )} 
-                  />
+                    className="relative z-10 pt-2 border-t flex items-center justify-between text-[10px] sm:text-[11px] font-bold transition-colors"
+                    style={{ borderColor: `${themeColor}25` }}
+                  >
+                    <span 
+                      className="font-bold transition-colors"
+                      style={{ color: themeColor }}
+                    >
+                      Lihat Berkas
+                    </span>
+                    <div 
+                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all duration-300 group-hover:translate-x-1 shadow-xs"
+                      style={{ 
+                        backgroundColor: themeColor,
+                        color: '#ffffff',
+                        boxShadow: `0 4px 10px -2px ${themeColor}50`
+                      }}
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </div>
+                  </div>
                 </div>
               );
             })}

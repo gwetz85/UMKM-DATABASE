@@ -842,39 +842,81 @@ function HasilVerifikasiContent() {
                 <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full" />
               </div>
             ))
-          ) : coordinatorStats.filter(stat => stat.count > 0).map((stat) => (
+          ) : coordinatorStats.filter(stat => stat.count > 0).map((stat) => {
+            const themeColor = '#0d9488';
+            return (
             <div
               key={stat.name}
               onClick={() => router.push(`/hasil-verifikasi?coordinator=${encodeURIComponent(stat.name)}`)}
-              className={cn(
-                "group relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-300 ease-out overflow-hidden cursor-pointer active:scale-95 min-h-[165px] border shadow-sm hover:shadow-xl hover:-translate-y-1.5 animate-in fade-in slide-in-from-bottom-3",
-                "bg-white dark:bg-slate-900 border-emerald-200/90 dark:border-emerald-900/40 hover:border-emerald-400 dark:hover:border-emerald-700 hover:shadow-emerald-500/10"
-              )}
+              style={{
+                borderColor: `${themeColor}50`,
+                boxShadow: `0 4px 18px -2px ${themeColor}20`
+              }}
+              className="group relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-300 ease-out overflow-hidden cursor-pointer active:scale-95 min-h-[165px] border-2 bg-white dark:bg-slate-900 hover:shadow-xl hover:-translate-y-1.5 animate-in fade-in slide-in-from-bottom-3"
             >
               {/* Glowing Top Accent Stripe */}
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 transition-all duration-300" />
+              <div 
+                className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 group-hover:h-2 z-10"
+                style={{
+                  background: "linear-gradient(90deg, #0d9488, #14b8a6, #2dd4bf)"
+                }}
+              />
+
+              {/* Colorful Gradient Wash Overlay */}
+              <div 
+                className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-60 group-hover:opacity-100"
+                style={{ 
+                  background: `linear-gradient(145deg, transparent 35%, ${themeColor}15 80%, ${themeColor}25 100%)` 
+                }}
+              />
+
+              {/* Ambient Soft Glow Orb */}
+              <div 
+                className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl transition-all duration-700 pointer-events-none opacity-25 group-hover:opacity-50 group-hover:scale-150"
+                style={{ backgroundColor: themeColor }} 
+              />
+
+              {/* Large Decorative Watermark Icon (Bottom-Right) */}
+              <div 
+                className="absolute -bottom-2.5 -right-2.5 pointer-events-none transition-all duration-500 ease-out opacity-[0.08] dark:opacity-[0.14] group-hover:opacity-[0.24] group-hover:scale-125 group-hover:-rotate-12"
+                style={{ color: themeColor }}
+              >
+                <CheckCircle2 className="w-24 h-24 stroke-[1.5]" />
+              </div>
 
               {/* Top Row: Avatar & Status Badge */}
-              <div className="flex items-center justify-between gap-2 pt-1">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-sm shrink-0 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
-                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
+              <div className="relative z-10 flex items-center justify-between gap-2 pt-1">
+                <div 
+                  className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-md shrink-0 text-white"
+                  style={{ 
+                    backgroundColor: themeColor,
+                    boxShadow: `0 6px 14px -3px ${themeColor}60`
+                  }}
+                >
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
 
-                <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 dark:bg-teal-950/80 dark:text-teal-300 border border-teal-200 dark:border-teal-800 shrink-0">
                   Lolos Dinas
                 </span>
               </div>
 
               {/* Middle: Coordinator Name & Berkas Count */}
-              <div className="space-y-1.5 my-2">
-                <h3
-                  className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1 group-hover:text-primary transition-colors"
-                  title={stat.name}
-                >
-                  {stat.name}
-                </h3>
+              <div className="relative z-10 space-y-1.5 my-2">
+                <div className="flex items-center gap-1.5">
+                  <span 
+                    className="w-1.5 h-1.5 rounded-full shrink-0 transition-transform duration-300 group-hover:scale-150" 
+                    style={{ backgroundColor: themeColor }} 
+                  />
+                  <h3
+                    className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1 group-hover:text-primary transition-colors"
+                    title={stat.name}
+                  >
+                    {stat.name}
+                  </h3>
+                </div>
 
-                <div className="flex items-baseline gap-1.5">
+                <div className="flex items-baseline gap-1.5 pl-3">
                   <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
                     {stat.count}
                   </span>
@@ -885,15 +927,29 @@ function HasilVerifikasiContent() {
               </div>
 
               {/* Bottom Action Cue */}
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] sm:text-[11px] font-bold text-emerald-600 group-hover:text-emerald-700">
-                <span>Lihat Data Lolos</span>
-                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              <div 
+                className="relative z-10 pt-2 border-t flex items-center justify-between text-[10px] sm:text-[11px] font-bold transition-colors"
+                style={{ borderColor: `${themeColor}25` }}
+              >
+                <span 
+                  className="font-bold transition-colors"
+                  style={{ color: themeColor }}
+                >
+                  Lihat Data Lolos
+                </span>
+                <div 
+                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all duration-300 group-hover:translate-x-1 shadow-xs"
+                  style={{ 
+                    backgroundColor: themeColor,
+                    color: '#ffffff',
+                    boxShadow: `0 4px 10px -2px ${themeColor}50`
+                  }}
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </div>
               </div>
-
-              {/* Ambient Glow in background */}
-              <div className="absolute -bottom-8 -right-8 w-24 h-24 rounded-full blur-2xl transition-all duration-700 pointer-events-none group-hover:scale-150 bg-emerald-500/10" />
             </div>
-          ))}
+          )})}
 
           {!isKuotaLoading && coordinatorStats.filter(stat => stat.count > 0).length === 0 && (
             <div className="col-span-full py-16 text-center flex flex-col items-center gap-4 bg-white/60 dark:bg-slate-900/60 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">

@@ -238,22 +238,62 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               "grid gap-2.5 sm:gap-3",
               selectedItem?.items?.length > 6 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
             )}>
-              {selectedItem?.items?.map((sub: any, idx: number) => (
-                <button
-                  key={sub.name}
-                  onClick={() => handleNavigate(sub.href)}
-                  style={{ animationDelay: `${idx * 40}ms` }}
-                  className="group flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 hover:bg-primary text-slate-700 dark:text-slate-200 hover:text-white transition-all duration-300 border border-slate-200/80 dark:border-slate-700/80 hover:border-primary shadow-sm hover:shadow-xl hover:-translate-y-0.5 active:scale-95 animate-in fade-in"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-700 flex items-center justify-center group-hover:bg-white/20 transition-colors shadow-sm shrink-0">
-                      <Building2 className="w-4 h-4 text-primary group-hover:text-white" />
+              {selectedItem?.items?.map((sub: any, idx: number) => {
+                const itemColor = selectedItem?.color || '#2563eb'
+                return (
+                  <button
+                    key={sub.name}
+                    onClick={() => handleNavigate(sub.href)}
+                    style={{ 
+                      animationDelay: `${idx * 30}ms`,
+                      borderColor: `${itemColor}45`,
+                      boxShadow: `0 4px 14px -2px ${itemColor}18`
+                    }}
+                    className="group relative flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900 transition-all duration-300 border-2 overflow-hidden hover:-translate-y-0.5 hover:shadow-lg active:scale-95 animate-in fade-in"
+                  >
+                    {/* Gradient wash overlay */}
+                    <div 
+                      className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-40 group-hover:opacity-80"
+                      style={{ 
+                        background: `linear-gradient(135deg, transparent 40%, ${itemColor}18 100%)` 
+                      }}
+                    />
+
+                    {/* Watermark Icon */}
+                    <div 
+                      className="absolute -bottom-2 -right-2 pointer-events-none transition-all duration-500 ease-out opacity-[0.08] dark:opacity-[0.14] group-hover:opacity-[0.22] group-hover:scale-125 group-hover:-rotate-6"
+                      style={{ color: itemColor }}
+                    >
+                      <Building2 className="w-16 h-16 stroke-[1.5]" />
                     </div>
-                    <span className="font-black uppercase tracking-tight text-xs sm:text-sm text-left truncate">{sub.name}</span>
-                  </div>
-                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all shrink-0" />
-                </button>
-              ))}
+
+                    <div className="relative z-10 flex items-center gap-3 min-w-0">
+                      <div 
+                        className="w-9 h-9 rounded-xl flex items-center justify-center transition-transform duration-300 group-hover:scale-110 shadow-sm shrink-0"
+                        style={{ 
+                          backgroundColor: itemColor,
+                          color: '#ffffff'
+                        }}
+                      >
+                        <Building2 className="w-4.5 h-4.5 text-white" />
+                      </div>
+                      <span className="font-black uppercase tracking-tight text-xs sm:text-sm text-slate-800 dark:text-white group-hover:text-primary transition-colors text-left truncate">
+                        {sub.name}
+                      </span>
+                    </div>
+
+                    <div 
+                      className="relative z-10 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 group-hover:translate-x-1 shadow-xs shrink-0"
+                      style={{ 
+                        backgroundColor: `${itemColor}20`,
+                        color: itemColor
+                      }}
+                    >
+                      <ArrowRight className="w-3 h-3 stroke-[2.5]" />
+                    </div>
+                  </button>
+                )
+              })}
             </div>
 
             <button 
