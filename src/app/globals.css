@@ -1008,6 +1008,59 @@
   color: #ffffff !important;
 }
 
+/* 3. Universal Black / Dark Background Text Rule:
+   Ensure whatever has a black or dark background in dark mode has pure white text */
+.dark [class*="bg-black"],
+.dark [class*="dark:bg-black"],
+.dark [class*="bg-slate-950"],
+.dark [class*="dark:bg-slate-950"],
+.dark [class*="bg-zinc-950"],
+.dark [class*="dark:bg-zinc-950"],
+.dark [class*="bg-neutral-950"],
+.dark [class*="dark:bg-neutral-950"] {
+  color: #ffffff !important;
+}
+
+.dark [class*="bg-black"] *:not([class*="text-emerald-"]):not([class*="text-amber-"]):not([class*="text-red-"]):not([class*="text-blue-"]):not([class*="text-teal-"]):not([class*="text-cyan-"]):not([class*="text-indigo-"]):not([class*="text-purple-"]):not([class*="text-fuchsia-"]):not([class*="text-green-"]):not([class*="text-yellow-"]):not([class*="text-muted-foreground"]):not(.text-slate-400):not(.text-slate-500):not(.text-gray-400):not(.text-gray-500),
+.dark [class*="dark:bg-black"] *:not([class*="text-emerald-"]):not([class*="text-amber-"]):not([class*="text-red-"]):not([class*="text-blue-"]):not([class*="text-teal-"]):not([class*="text-cyan-"]):not([class*="text-indigo-"]):not([class*="text-purple-"]):not([class*="text-fuchsia-"]):not([class*="text-green-"]):not([class*="text-yellow-"]):not([class*="text-muted-foreground"]):not(.text-slate-400):not(.text-slate-500):not(.text-gray-400):not(.text-gray-500),
+.dark [class*="dark:bg-slate-950"] *:not([class*="text-emerald-"]):not([class*="text-amber-"]):not([class*="text-red-"]):not([class*="text-blue-"]):not([class*="text-teal-"]):not([class*="text-cyan-"]):not([class*="text-indigo-"]):not([class*="text-purple-"]):not([class*="text-fuchsia-"]):not([class*="text-green-"]):not([class*="text-yellow-"]):not([class*="text-muted-foreground"]):not(.text-slate-400):not(.text-slate-500):not(.text-gray-400):not(.text-gray-500),
+.dark [class*="bg-slate-950"] *:not([class*="text-emerald-"]):not([class*="text-amber-"]):not([class*="text-red-"]):not([class*="text-blue-"]):not([class*="text-teal-"]):not([class*="text-cyan-"]):not([class*="text-indigo-"]):not([class*="text-purple-"]):not([class*="text-fuchsia-"]):not([class*="text-green-"]):not([class*="text-yellow-"]):not([class*="text-muted-foreground"]):not(.text-slate-400):not(.text-slate-500):not(.text-gray-400):not(.text-gray-500) {
+  color: #ffffff;
+}
+
+/* 4. Badges, tags, and pills with light background switch to black background & white text in Dark Mode */
+.dark span[class*="bg-slate-100"]:not([class*="dark:bg-"]):not([class*="print:"]),
+.dark span[class*="bg-slate-200"]:not([class*="dark:bg-"]):not([class*="print:"]),
+.dark span[class*="bg-gray-100"]:not([class*="dark:bg-"]):not([class*="print:"]),
+.dark span[class*="bg-gray-200"]:not([class*="dark:bg-"]):not([class*="print:"]),
+.dark [class*="rounded-full"][class*="bg-slate-100"]:not([class*="dark:bg-"]):not([class*="print:"]),
+.dark [class*="rounded-full"][class*="bg-slate-200"]:not([class*="dark:bg-"]):not([class*="print:"]),
+.dark [class*="rounded-full"][class*="bg-gray-100"]:not([class*="dark:bg-"]):not([class*="print:"]),
+.dark [class*="rounded-full"][class*="bg-gray-200"]:not([class*="dark:bg-"]):not([class*="print:"]),
+.dark [class*="rounded-md"][class*="bg-slate-100"]:not([class*="dark:bg-"]):not([class*="print:"]),
+.dark [class*="rounded-md"][class*="bg-slate-200"]:not([class*="dark:bg-"]):not([class*="print:"]),
+.dark [class*="rounded-md"][class*="bg-gray-100"]:not([class*="dark:bg-"]):not([class*="print:"]),
+.dark [class*="rounded-md"][class*="bg-gray-200"]:not([class*="dark:bg-"]):not([class*="print:"]),
+.dark [class*="rounded-lg"][class*="bg-slate-100"]:not([class*="dark:bg-"]):not([class*="print:"]):not(button):not([role="dialog"]),
+.dark [class*="rounded-lg"][class*="bg-slate-200"]:not([class*="dark:bg-"]):not([class*="print:"]):not(button):not([role="dialog"]),
+.dark [class*="badge"][class*="bg-slate-100"]:not([class*="dark:bg-"]),
+.dark [class*="badge"][class*="bg-slate-200"]:not([class*="dark:bg-"]) {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #334155 !important;
+}
+
+.dark span[class*="bg-slate-100"]:not([class*="dark:bg-"]):not([class*="print:"]) *,
+.dark span[class*="bg-slate-200"]:not([class*="dark:bg-"]):not([class*="print:"]) *,
+.dark [class*="rounded-full"][class*="bg-slate-100"]:not([class*="dark:bg-"]):not([class*="print:"]) *,
+.dark [class*="rounded-full"][class*="bg-slate-200"]:not([class*="dark:bg-"]):not([class*="print:"]) *,
+.dark [class*="rounded-md"][class*="bg-slate-100"]:not([class*="dark:bg-"]):not([class*="print:"]) *,
+.dark [class*="rounded-md"][class*="bg-slate-200"]:not([class*="dark:bg-"]):not([class*="print:"]) *,
+.dark [class*="rounded-lg"][class*="bg-slate-100"]:not([class*="dark:bg-"]):not([class*="print:"]):not(button):not([role="dialog"]) *,
+.dark [class*="rounded-lg"][class*="bg-slate-200"]:not([class*="dark:bg-"]):not([class*="print:"]):not(button):not([role="dialog"]) * {
+  color: #ffffff !important;
+}
+
 
 /* ==========================================
    DARK MODE DATA DETAIL BOXES & MODALS
@@ -1025,12 +1078,14 @@
   color: #94a3b8 !important;
 }
 
-.dark .bg-red-50 {
-  background-color: rgba(69, 10, 10, 0.45) !important;
-  border-color: rgba(153, 27, 27, 0.6) !important;
+.dark .bg-red-50,
+.dark .bg-red-100 {
+  background-color: rgba(69, 10, 10, 0.6) !important;
+  border-color: rgba(153, 27, 27, 0.7) !important;
 }
 
-.dark .text-red-700 {
+.dark .text-red-700,
+.dark .text-red-800 {
   color: #fca5a5 !important;
 }
 
@@ -1039,20 +1094,71 @@
 }
 
 .dark .bg-emerald-50,
-.dark .bg-green-50 {
-  background-color: rgba(6, 78, 59, 0.4) !important;
-  border-color: rgba(5, 150, 105, 0.5) !important;
+.dark .bg-emerald-100,
+.dark .bg-green-50,
+.dark .bg-green-100 {
+  background-color: rgba(6, 78, 59, 0.6) !important;
+  border-color: rgba(5, 150, 105, 0.7) !important;
+}
+.dark .text-emerald-800,
+.dark .text-emerald-700 {
+  color: #a7f3d0 !important;
 }
 
-.dark .bg-blue-50 {
-  background-color: rgba(30, 58, 138, 0.4) !important;
-  border-color: rgba(37, 99, 235, 0.5) !important;
+.dark .bg-blue-50,
+.dark .bg-blue-100 {
+  background-color: rgba(30, 58, 138, 0.6) !important;
+  border-color: rgba(37, 99, 235, 0.7) !important;
+}
+.dark .text-blue-800,
+.dark .text-blue-700 {
+  color: #bfdbfe !important;
 }
 
 .dark .bg-amber-50,
-.dark .bg-yellow-50 {
-  background-color: rgba(120, 53, 15, 0.4) !important;
-  border-color: rgba(217, 119, 6, 0.5) !important;
+.dark .bg-amber-100,
+.dark .bg-yellow-50,
+.dark .bg-yellow-100 {
+  background-color: rgba(120, 53, 15, 0.6) !important;
+  border-color: rgba(217, 119, 6, 0.7) !important;
+}
+.dark .text-amber-800,
+.dark .text-amber-700 {
+  color: #fde68a !important;
+}
+
+.dark .bg-teal-50,
+.dark .bg-teal-100 {
+  background-color: rgba(19, 78, 74, 0.6) !important;
+  border-color: rgba(20, 184, 166, 0.7) !important;
+}
+.dark .text-teal-800,
+.dark .text-teal-700 {
+  color: #99f6e4 !important;
+}
+
+.dark .bg-indigo-50,
+.dark .bg-indigo-100 {
+  background-color: rgba(49, 46, 129, 0.6) !important;
+  border-color: rgba(99, 102, 241, 0.7) !important;
+}
+.dark .text-indigo-800,
+.dark .text-indigo-700 {
+  color: #c7d2fe !important;
+}
+
+.dark .bg-fuchsia-50,
+.dark .bg-fuchsia-100,
+.dark .bg-purple-50,
+.dark .bg-purple-100 {
+  background-color: rgba(88, 28, 135, 0.6) !important;
+  border-color: rgba(168, 85, 247, 0.7) !important;
+}
+.dark .text-fuchsia-800,
+.dark .text-fuchsia-700,
+.dark .text-purple-800,
+.dark .text-purple-700 {
+  color: #f0abfc !important;
 }
 
 .dark [role="dialog"] .space-y-1 p.text-sm.font-bold,

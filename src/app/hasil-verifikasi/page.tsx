@@ -1110,16 +1110,16 @@ function HasilVerifikasiContent() {
                         <div className="flex items-center gap-2">
                           {(viewingActor as any).surveyData.dtks?.masuk ? (
                             <>
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                              <span className="text-xs font-bold text-emerald-700">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
                                 Terdaftar DTKS
                                 {(viewingActor as any).surveyData.dtks?.jenis ? ` — ${(viewingActor as any).surveyData.dtks.jenis}` : ""}
                               </span>
                             </>
                           ) : (
                             <>
-                              <XCircle className="w-4 h-4 text-slate-400" />
-                              <span className="text-xs font-bold text-slate-500">Tidak Terdaftar DTKS</span>
+                              <XCircle className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                              <span className="text-xs font-bold text-slate-500 dark:text-slate-300">Tidak Terdaftar DTKS</span>
                             </>
                           )}
                         </div>
@@ -1133,8 +1133,8 @@ function HasilVerifikasiContent() {
                         {(viewingActor as any).surveyData.hibah?.pernah ? (
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-amber-500" />
-                              <span className="text-xs font-bold text-amber-700">Pernah menerima bantuan</span>
+                              <CheckCircle2 className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+                              <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Pernah menerima bantuan</span>
                             </div>
                             <div className="grid grid-cols-2 gap-2 pl-6">
                               {(viewingActor as any).surveyData.hibah?.dariMana && (

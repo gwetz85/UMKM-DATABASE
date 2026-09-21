@@ -2935,7 +2935,7 @@ function ActorDataContent() {
                     <div className="min-w-0">
                       <DialogTitle className="text-sm md:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight flex flex-wrap items-center gap-1.5 md:gap-2">
                         <span>Form Survey Lengkap</span>
-                        <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100 border-teal-200 text-[9px] md:text-[10px] font-black uppercase px-2 py-0.5 whitespace-nowrap">
+                        <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100 border-teal-200 text-[9px] md:text-[10px] font-black uppercase px-2 py-0.5 whitespace-nowrap dark:bg-teal-950 dark:text-teal-200 dark:border-teal-800">
                           Dinas UKM
                         </Badge>
                       </DialogTitle>
@@ -2956,10 +2956,10 @@ function ActorDataContent() {
                   <div className="flex items-center gap-2 shrink-0">
                     <Badge variant="outline" className={cn(
                       "font-black text-[10px] md:text-xs uppercase px-2.5 py-1 rounded-lg border",
-                      actor.status === 'finish' ? "bg-emerald-50 text-emerald-700 border-emerald-300" :
-                      actor.status === 'verified_dinas' ? "bg-blue-50 text-blue-700 border-blue-300" :
-                      actor.status === 'lpj_pending' ? "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-300" :
-                      "bg-slate-100 text-slate-700 border-slate-300"
+                      actor.status === 'finish' ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800" :
+                      actor.status === 'verified_dinas' ? "bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800" :
+                      actor.status === 'lpj_pending' ? "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-300 dark:bg-fuchsia-950 dark:text-fuchsia-300 dark:border-fuchsia-800" :
+                      "bg-slate-100 text-slate-700 border-slate-300 dark:bg-black dark:text-white dark:border-slate-700"
                     )}>
                       {actor.status.replace(/_/g, ' ')}
                     </Badge>
@@ -3029,7 +3029,7 @@ function ActorDataContent() {
                           <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400 font-black text-xs uppercase tracking-wide">
                             <User className="w-4 h-4" /> Identitas Pelaku Usaha
                           </div>
-                          <Badge variant="outline" className="text-[9px] font-bold bg-blue-50 text-blue-700 border-blue-200">
+                          <Badge variant="outline" className="text-[9px] font-bold bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800">
                             DATA KTP
                           </Badge>
                         </div>
@@ -3091,10 +3091,10 @@ function ActorDataContent() {
                               {actor.address || "-"} RT/RW {actor.rtRw || "-"}
                             </p>
                             <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase flex-wrap">
-                              <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-600">
+                              <span className="bg-slate-100 dark:bg-black text-slate-700 dark:text-white px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800">
                                 Kel. {actor.kelurahan || "-"}
                               </span>
-                              <span className="bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-600">
+                              <span className="bg-slate-100 dark:bg-black text-slate-700 dark:text-white px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800">
                                 Kec. {actor.kecamatan || "-"}
                               </span>
                             </div>
@@ -3108,14 +3108,14 @@ function ActorDataContent() {
                           <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-400 font-black text-xs uppercase tracking-wide">
                             <Building2 className="w-4 h-4" /> Informasi Usaha (Pendaftaran)
                           </div>
-                          <Badge variant="outline" className="text-[9px] font-bold bg-indigo-50 text-indigo-700 border-indigo-200">
+                          <Badge variant="outline" className="text-[9px] font-bold bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800">
                             DATABASE
                           </Badge>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <Field label="Nama Usaha" value={<span className="text-primary font-black uppercase">{actor.businessName || "-"}</span>} className="sm:col-span-2" />
-                          <Field label="Kategori Usaha" value={<Badge variant="secondary" className="font-bold text-[10px] uppercase">{actor.businessCategory || "-"}</Badge>} />
+                          <Field label="Kategori Usaha" value={<Badge variant="secondary" className="font-bold text-[10px] uppercase dark:bg-black dark:text-white dark:border dark:border-slate-800">{actor.businessCategory || "-"}</Badge>} />
                           <Field label="Koordinator Pengusul" value={<span className="font-bold uppercase text-slate-700 dark:text-slate-300">{actor.coordinator || "-"}</span>} />
                           <Field label="Lokasi Tempat Usaha" value={<span className="uppercase">{actor.businessLocation || "-"}</span>} className="sm:col-span-2" />
                           <Field 
@@ -3237,8 +3237,10 @@ function ActorDataContent() {
                           <div className="space-y-0.5">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Terdaftar di DTKS</p>
                             <Badge className={cn(
-                              "text-xs font-black uppercase px-2.5 py-0.5 mt-0.5",
-                              sd.dtks?.masuk ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-slate-100 text-slate-700 border-slate-200"
+                              "text-xs font-black uppercase px-2.5 py-0.5 mt-0.5 border",
+                              sd.dtks?.masuk 
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-700" 
+                                : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-black dark:text-white dark:border-slate-700"
                             )}>
                               {sd.dtks?.masuk === undefined ? "-" : sd.dtks.masuk ? "Ya (Terdaftar DTKS)" : "Tidak Terdaftar"}
                             </Badge>
@@ -3278,8 +3280,10 @@ function ActorDataContent() {
                           <div className="space-y-0.5">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pernah Menerima Hibah</p>
                             <Badge className={cn(
-                              "text-xs font-black uppercase px-2.5 py-0.5 mt-0.5",
-                              sd.hibah?.pernah ? "bg-amber-100 text-amber-800 border-amber-300" : "bg-slate-100 text-slate-700 border-slate-200"
+                              "text-xs font-black uppercase px-2.5 py-0.5 mt-0.5 border",
+                              sd.hibah?.pernah 
+                                ? "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-700" 
+                                : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-black dark:text-white dark:border-slate-700"
                             )}>
                               {sd.hibah?.pernah === undefined ? "-" : sd.hibah.pernah ? "Pernah Menerima" : "Belum Pernah"}
                             </Badge>
@@ -3358,7 +3362,7 @@ function ActorDataContent() {
                       setSurveyViewActor(null)
                       setSurveyPhotoUrl(null)
                     }} 
-                    className="font-bold px-6 rounded-xl hover:bg-slate-100"
+                    className="font-bold px-6 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 dark:text-white dark:border-slate-700"
                   >
                     Tutup
                   </Button>
