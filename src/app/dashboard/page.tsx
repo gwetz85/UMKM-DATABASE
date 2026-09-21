@@ -54,6 +54,27 @@ const getInitials = (name?: string) => {
   return (clean[0][0] + clean[1][0]).toUpperCase()
 }
 
+const formatDateTimeParts = (isoString?: string | null) => {
+  if (!isoString) return { date: "-", time: "-" }
+  try {
+    const d = new Date(isoString)
+    if (isNaN(d.getTime())) return { date: "-", time: "-" }
+    const date = d.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+    const time = d.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).replace(/\./g, ':') + ' WIB'
+    return { date, time }
+  } catch {
+    return { date: "-", time: "-" }
+  }
+}
+
 export default function DashboardStatsPage() {
   const { user, isUserLoading, userProfile } = useUser()
   const database = useDatabase()
@@ -798,87 +819,105 @@ export default function DashboardStatsPage() {
                 </Button>
               </CardHeader>
 
-              <CardContent className="p-0 flex-1 flex flex-col justify-between">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader className="bg-slate-50/90 dark:bg-slate-800/80 border-b">
-                      <TableRow>
-                        <TableHead className="w-[40px] text-center font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">No</TableHead>
-                        <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">Pelaku Usaha</TableHead>
-                        <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">Usaha / Wilayah</TableHead>
-                        <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">Waktu Masuk</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+              <CardContent className="p-0 flex-1 flex flex-col justify-between overflow-hidden">
+                <div className="w-full overflow-hidden">
+                  <table className="w-full table-fixed text-left border-collapse">
+                    <colgroup>
+                      <col className="w-8 md:w-9" />
+                      <col className="w-[38%]" />
+                      <col className="w-[34%]" />
+                      <col className="w-[28%] min-w-[90px]" />
+                    </colgroup>
+                    <thead>
+                      <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800">
+                        <th className="w-8 md:w-9 text-center font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-1">
+                          No
+                        </th>
+                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-2">
+                          Pelaku Usaha
+                        </th>
+                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-2">
+                          Usaha / Wilayah
+                        </th>
+                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-2 text-left">
+                          Waktu Masuk
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                       {isVerifiedDinasLoading ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-8">
+                        <tr>
+                          <td colSpan={4} className="text-center py-8">
                             <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
                               <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
                               Memuat data Verifikasi Dinas...
                             </div>
-                          </TableCell>
-                        </TableRow>
+                          </td>
+                        </tr>
                       ) : latestVerifikasiDinas.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
+                        <tr>
+                          <td colSpan={4} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
                             Belum ada data pada menu Verifikasi Dinas.
-                          </TableCell>
-                        </TableRow>
+                          </td>
+                        </tr>
                       ) : (
                         latestVerifikasiDinas.map((actor, idx) => {
                           const masukTime = actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt
+                          const dt = formatDateTimeParts(masukTime)
                           return (
-                            <TableRow 
+                            <tr 
                               key={actor.id} 
                               onClick={() => setDetailActor(actor)}
                               className="hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-colors cursor-pointer group"
                             >
-                              <TableCell className="text-center font-bold text-slate-500 text-xs py-2.5">
+                              <td className="text-center py-2 px-1">
                                 <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 inline-flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
                                   {idx + 1}
                                 </span>
-                              </TableCell>
-                              <TableCell className="py-2.5">
-                                <div className="flex items-center gap-2.5">
-                                  <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-black text-[10px] flex items-center justify-center shrink-0 border border-indigo-200/50">
+                              </td>
+                              <td className="py-2 px-2 min-w-0">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className="w-6 h-6 md:w-7 md:h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-black text-[9px] md:text-[10px] flex items-center justify-center shrink-0 border border-indigo-200/50">
                                     {getInitials(actor.fullName)}
                                   </div>
-                                  <div className="flex flex-col min-w-0">
-                                    <span className="font-black text-slate-800 dark:text-slate-100 text-xs uppercase group-hover:text-indigo-600 transition-colors truncate max-w-[150px]">
+                                  <div className="flex flex-col min-w-0 flex-1">
+                                    <span className="font-black text-slate-800 dark:text-slate-100 text-[11px] md:text-xs uppercase group-hover:text-indigo-600 transition-colors truncate block" title={actor.fullName}>
                                       {actor.fullName || "-"}
                                     </span>
-                                    <span className="text-[10px] font-mono text-slate-500">
+                                    <span className="text-[9px] md:text-[10px] font-mono text-slate-500 truncate block">
                                       {actor.nik || "-"}
                                     </span>
                                   </div>
                                 </div>
-                              </TableCell>
-                              <TableCell className="py-2.5">
-                                <div className="flex flex-col">
-                                  <span className="font-bold text-slate-700 dark:text-slate-200 text-xs uppercase truncate max-w-[140px]" title={actor.businessName}>
+                              </td>
+                              <td className="py-2 px-2 min-w-0">
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-bold text-slate-700 dark:text-slate-200 text-[11px] md:text-xs uppercase truncate block" title={actor.businessName}>
                                     {actor.businessName || "-"}
                                   </span>
-                                  <span className="text-[10px] text-slate-500 uppercase truncate max-w-[140px] flex items-center gap-1">
+                                  <span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate flex items-center gap-1 mt-0.5">
                                     <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                                    {actor.kelurahan || actor.coordinator || "-"}
+                                    <span className="truncate">{actor.kelurahan || actor.coordinator || "-"}</span>
                                   </span>
                                 </div>
-                              </TableCell>
-                              <TableCell className="py-2.5">
-                                <div className="flex items-center gap-1.5 text-indigo-900 dark:text-indigo-300">
-                                  <Clock className="w-3 h-3 text-indigo-500 shrink-0" />
-                                  <span className="text-[10px] md:text-[11px] font-bold whitespace-nowrap">
-                                    {formatDateTimeIndo(masukTime)}
+                              </td>
+                              <td className="py-2 px-2">
+                                <div className="flex flex-col text-left">
+                                  <span className="text-[10px] md:text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight whitespace-nowrap">
+                                    {dt.date}
+                                  </span>
+                                  <span className="text-[9px] md:text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 mt-0.5 leading-tight whitespace-nowrap">
+                                    <Clock className="w-2.5 h-2.5 shrink-0" />
+                                    {dt.time}
                                   </span>
                                 </div>
-                              </TableCell>
-                            </TableRow>
+                              </td>
+                            </tr>
                           )
                         })
                       )}
-                    </TableBody>
-                  </Table>
+                    </tbody>
+                  </table>
                 </div>
 
                 <div className="p-2.5 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 dark:text-slate-400 px-4">
@@ -924,87 +963,105 @@ export default function DashboardStatsPage() {
                 </Button>
               </CardHeader>
 
-              <CardContent className="p-0 flex-1 flex flex-col justify-between">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader className="bg-slate-50/90 dark:bg-slate-800/80 border-b">
-                      <TableRow>
-                        <TableHead className="w-[40px] text-center font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">No</TableHead>
-                        <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">Pelaku Usaha</TableHead>
-                        <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">Usaha / Wilayah</TableHead>
-                        <TableHead className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5">Waktu Masuk</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+              <CardContent className="p-0 flex-1 flex flex-col justify-between overflow-hidden">
+                <div className="w-full overflow-hidden">
+                  <table className="w-full table-fixed text-left border-collapse">
+                    <colgroup>
+                      <col className="w-8 md:w-9" />
+                      <col className="w-[38%]" />
+                      <col className="w-[34%]" />
+                      <col className="w-[28%] min-w-[90px]" />
+                    </colgroup>
+                    <thead>
+                      <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800">
+                        <th className="w-8 md:w-9 text-center font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-1">
+                          No
+                        </th>
+                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-2">
+                          Pelaku Usaha
+                        </th>
+                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-2">
+                          Usaha / Wilayah
+                        </th>
+                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-2 text-left">
+                          Waktu Masuk
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                       {isVerifiedDinasLoading ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-8">
+                        <tr>
+                          <td colSpan={4} className="text-center py-8">
                             <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
                               <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
                               Memuat data Hasil Verifikasi...
                             </div>
-                          </TableCell>
-                        </TableRow>
+                          </td>
+                        </tr>
                       ) : latestHasilVerifikasi.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
+                        <tr>
+                          <td colSpan={4} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
                             Belum ada data pada menu Hasil Verifikasi.
-                          </TableCell>
-                        </TableRow>
+                          </td>
+                        </tr>
                       ) : (
                         latestHasilVerifikasi.map((actor, idx) => {
                           const masukTime = actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt
+                          const dt = formatDateTimeParts(masukTime)
                           return (
-                            <TableRow 
+                            <tr 
                               key={actor.id} 
                               onClick={() => setDetailActor(actor)}
                               className="hover:bg-teal-50/50 dark:hover:bg-teal-950/30 transition-colors cursor-pointer group"
                             >
-                              <TableCell className="text-center font-bold text-slate-500 text-xs py-2.5">
+                              <td className="text-center py-2 px-1">
                                 <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 inline-flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-slate-300">
                                   {idx + 1}
                                 </span>
-                              </TableCell>
-                              <TableCell className="py-2.5">
-                                <div className="flex items-center gap-2.5">
-                                  <div className="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-black text-[10px] flex items-center justify-center shrink-0 border border-teal-200/50">
+                              </td>
+                              <td className="py-2 px-2 min-w-0">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className="w-6 h-6 md:w-7 md:h-7 rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-black text-[9px] md:text-[10px] flex items-center justify-center shrink-0 border border-teal-200/50">
                                     {getInitials(actor.fullName)}
                                   </div>
-                                  <div className="flex flex-col min-w-0">
-                                    <span className="font-black text-slate-800 dark:text-slate-100 text-xs uppercase group-hover:text-teal-600 transition-colors truncate max-w-[150px]">
+                                  <div className="flex flex-col min-w-0 flex-1">
+                                    <span className="font-black text-slate-800 dark:text-slate-100 text-[11px] md:text-xs uppercase group-hover:text-teal-600 transition-colors truncate block" title={actor.fullName}>
                                       {actor.fullName || "-"}
                                     </span>
-                                    <span className="text-[10px] font-mono text-slate-500">
+                                    <span className="text-[9px] md:text-[10px] font-mono text-slate-500 truncate block">
                                       {actor.nik || "-"}
                                     </span>
                                   </div>
                                 </div>
-                              </TableCell>
-                              <TableCell className="py-2.5">
-                                <div className="flex flex-col">
-                                  <span className="font-bold text-slate-700 dark:text-slate-200 text-xs uppercase truncate max-w-[140px]" title={actor.businessName}>
+                              </td>
+                              <td className="py-2 px-2 min-w-0">
+                                <div className="flex flex-col min-w-0">
+                                  <span className="font-bold text-slate-700 dark:text-slate-200 text-[11px] md:text-xs uppercase truncate block" title={actor.businessName}>
                                     {actor.businessName || "-"}
                                   </span>
-                                  <span className="text-[10px] text-slate-500 uppercase truncate max-w-[140px] flex items-center gap-1">
+                                  <span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate flex items-center gap-1 mt-0.5">
                                     <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                                    {actor.kelurahan || actor.coordinator || "-"}
+                                    <span className="truncate">{actor.kelurahan || actor.coordinator || "-"}</span>
                                   </span>
                                 </div>
-                              </TableCell>
-                              <TableCell className="py-2.5">
-                                <div className="flex items-center gap-1.5 text-teal-900 dark:text-teal-300">
-                                  <Clock className="w-3 h-3 text-teal-500 shrink-0" />
-                                  <span className="text-[10px] md:text-[11px] font-bold whitespace-nowrap">
-                                    {formatDateTimeIndo(masukTime)}
+                              </td>
+                              <td className="py-2 px-2">
+                                <div className="flex flex-col text-left">
+                                  <span className="text-[10px] md:text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight whitespace-nowrap">
+                                    {dt.date}
+                                  </span>
+                                  <span className="text-[9px] md:text-[10px] font-semibold text-teal-600 dark:text-teal-400 flex items-center gap-1 mt-0.5 leading-tight whitespace-nowrap">
+                                    <Clock className="w-2.5 h-2.5 shrink-0" />
+                                    {dt.time}
                                   </span>
                                 </div>
-                              </TableCell>
-                            </TableRow>
+                              </td>
+                            </tr>
                           )
                         })
                       )}
-                    </TableBody>
-                  </Table>
+                    </tbody>
+                  </table>
                 </div>
 
                 <div className="p-2.5 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 dark:text-slate-400 px-4">
@@ -1019,6 +1076,8 @@ export default function DashboardStatsPage() {
                   </Button>
                 </div>
               </CardContent>
+
+
             </Card>
           </div>
         </div>
@@ -1049,18 +1108,18 @@ export default function DashboardStatsPage() {
                 <Table>
                   <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[40px] text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] py-2.5">No</TableHead>
-                      <TableHead className="font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] min-w-[140px] py-2.5">Nama Usulan</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] py-2.5">Target Kuota</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] py-2.5">Tercapai</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] py-2.5">Sisa Kuota</TableHead>
-                      <TableHead className="font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] min-w-[130px] py-2.5">Progress Capaian</TableHead>
+                      <TableHead className="w-[40px] text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] px-2 py-2.5">No</TableHead>
+                      <TableHead className="font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] min-w-[140px] px-3 py-2.5">Nama Usulan</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] px-2 py-2.5">Target Kuota</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] px-2 py-2.5">Tercapai</TableHead>
+                      <TableHead className="text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] px-2 py-2.5">Sisa Kuota</TableHead>
+                      <TableHead className="font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] min-w-[130px] px-3 py-2.5">Progress Capaian</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isKuotaLoading ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8">
+                        <TableCell colSpan={6} className="text-center py-8 px-2">
                           <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
                             <Loader2 className="w-4 h-4 animate-spin text-primary" />
                             Memuat data kuota...
@@ -1069,7 +1128,7 @@ export default function DashboardStatsPage() {
                       </TableRow>
                     ) : combinedKuotaData.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
+                        <TableCell colSpan={6} className="text-center py-8 px-2 text-muted-foreground italic font-medium text-xs">
                           Belum ada data target kuota yang didaftarkan.
                         </TableCell>
                       </TableRow>
@@ -1078,19 +1137,19 @@ export default function DashboardStatsPage() {
                         const percentAchieved = item.quota > 0 ? Math.min(100, Math.round((item.achieved / item.quota) * 100)) : 0
                         return (
                           <TableRow key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                            <TableCell className="text-center font-bold text-slate-600 dark:text-slate-400 text-xs py-2.5">{index + 1}</TableCell>
-                            <TableCell className="font-black text-primary text-xs tracking-tight py-2.5">{item.name}</TableCell>
-                            <TableCell className="text-center py-2.5">
+                            <TableCell className="text-center font-bold text-slate-600 dark:text-slate-400 text-xs px-2 py-2.5">{index + 1}</TableCell>
+                            <TableCell className="font-black text-primary text-xs tracking-tight px-3 py-2.5">{item.name}</TableCell>
+                            <TableCell className="text-center px-2 py-2.5">
                               <span className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border border-slate-200 dark:border-slate-700">
                                 {item.quota}
                               </span>
                             </TableCell>
-                            <TableCell className="text-center py-2.5">
+                            <TableCell className="text-center px-2 py-2.5">
                               <span className="inline-flex items-center justify-center bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border border-emerald-200 dark:border-emerald-800">
                                 {item.achieved}
                               </span>
                             </TableCell>
-                            <TableCell className="text-center py-2.5">
+                            <TableCell className="text-center px-2 py-2.5">
                               <span className={cn(
                                 "inline-flex items-center justify-center font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border",
                                 item.remaining <= 0 
@@ -1100,7 +1159,7 @@ export default function DashboardStatsPage() {
                                 {item.remaining}
                               </span>
                             </TableCell>
-                            <TableCell className="py-2.5">
+                            <TableCell className="px-3 py-2.5">
                               <div className="flex items-center gap-2">
                                 <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
                                   <div 
@@ -1124,19 +1183,19 @@ export default function DashboardStatsPage() {
                   {!isKuotaLoading && combinedKuotaData.length > 0 && (
                     <TableFooter>
                       <TableRow className="bg-primary/5 border-t-2 border-primary/20">
-                        <TableCell colSpan={2} className="font-black text-slate-800 dark:text-slate-100 uppercase text-right text-xs py-2.5">
+                        <TableCell colSpan={2} className="font-black text-slate-800 dark:text-slate-100 uppercase text-right text-xs px-3 py-2.5">
                           Total Kuota Data
                         </TableCell>
-                        <TableCell className="text-center font-black text-slate-700 dark:text-slate-200 text-sm py-2.5">
+                        <TableCell className="text-center font-black text-slate-700 dark:text-slate-200 text-sm px-2 py-2.5">
                           {totalKuotaDashboard}
                         </TableCell>
-                        <TableCell className="text-center font-black text-emerald-600 dark:text-emerald-400 text-sm py-2.5">
+                        <TableCell className="text-center font-black text-emerald-600 dark:text-emerald-400 text-sm px-2 py-2.5">
                           {totalAchievedDashboard}
                         </TableCell>
-                        <TableCell className="text-center font-black text-primary text-sm py-2.5">
+                        <TableCell className="text-center font-black text-primary text-sm px-2 py-2.5">
                           {totalKuotaDashboard - totalAchievedDashboard}
                         </TableCell>
-                        <TableCell className="py-2.5">
+                        <TableCell className="px-3 py-2.5">
                           <span className="text-[11px] font-black text-primary font-mono">
                             {totalKuotaDashboard > 0 ? ((totalAchievedDashboard / totalKuotaDashboard) * 100).toFixed(1) : 0}% Tercapai
                           </span>
