@@ -69,7 +69,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
         </div>
 
         {/* Modules Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3 pb-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 sm:gap-4 pb-1">
           {navigation.map((item: any, index: number) => (
             <div
               key={item.name}
@@ -83,9 +83,8 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               }}
               style={{ animationDelay: `${index * 20}ms` }}
               className={cn(
-                "group relative flex flex-col justify-between p-3 sm:p-3.5 rounded-2xl transition-all duration-300 ease-out overflow-hidden shadow-sm hover:shadow-xl border border-slate-200/90 dark:border-slate-800 cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-2",
-                "bg-white/95 dark:bg-slate-900/95 hover:-translate-y-1",
-                "min-h-[110px] sm:min-h-[118px] md:min-h-[124px]"
+                "group relative flex flex-col justify-between p-3.5 sm:p-4 rounded-2xl transition-all duration-300 ease-out overflow-hidden shadow-sm hover:shadow-xl border border-slate-200/90 dark:border-slate-800 cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-2",
+                "bg-white/95 dark:bg-slate-900/95 hover:-translate-y-1.5 aspect-square"
               )}
             >
               {/* Top Accent Stripe */}
@@ -97,24 +96,24 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               {/* Top Bar: Icon with theme color, Badges on right */}
               <div className="relative z-10 flex items-start justify-between w-full pt-0.5">
                 <div 
-                  className="p-1.5 sm:p-2 rounded-xl transition-transform duration-300 group-hover:scale-110 shadow-md flex items-center justify-center shrink-0"
+                  className="p-2 sm:p-2.5 rounded-2xl transition-transform duration-300 group-hover:scale-110 shadow-md flex items-center justify-center shrink-0"
                   style={{ backgroundColor: item.color, color: '#ffffff' }}
                 >
-                  <item.icon className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
+                  <item.icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
 
                 {/* Badges */}
                 <div className="flex flex-col items-end gap-1">
                   {item.badge !== undefined && (
-                    <div className="flex items-center gap-1 px-1.5 py-0.5 bg-rose-500 text-white rounded-full shadow-sm animate-pulse">
-                      <span className="w-1 h-1 bg-white rounded-full" />
-                      <span className="text-[8.5px] font-black uppercase tracking-wider">{item.badge}</span>
+                    <div className="flex items-center gap-1 px-2 py-0.5 bg-rose-500 text-white rounded-full shadow-sm animate-pulse">
+                      <span className="w-1.5 h-1.5 bg-white rounded-full" />
+                      <span className="text-[9px] font-black uppercase tracking-wider">{item.badge}</span>
                     </div>
                   )}
 
                   {item.items && item.items.length > 0 && (
-                    <div className="flex items-center gap-0.5 text-[8px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
-                      <ChevronRight className="w-2 h-2" />
+                    <div className="flex items-center gap-1 text-[8px] sm:text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
+                      <ChevronRight className="w-2.5 h-2.5" />
                       <span>Sub-Menu</span>
                     </div>
                   )}
@@ -122,21 +121,25 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               </div>
 
               {/* Title & Description Section */}
-              <div className="relative z-10 flex flex-col justify-end mt-2 space-y-0.5">
-                <div className="text-xs font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight group-hover:text-primary transition-colors line-clamp-1">
+              <div className="relative z-10 flex flex-col justify-center my-auto space-y-1 py-1">
+                <div className="text-xs sm:text-[13px] font-black text-slate-900 dark:text-white leading-snug uppercase tracking-tight group-hover:text-primary transition-colors line-clamp-2">
                   {item.name}
                 </div>
                 {item.description && (
-                  <p className="text-[9.5px] font-medium text-slate-500 dark:text-slate-400 line-clamp-1">
+                  <p className="text-[10px] sm:text-[10.5px] font-medium text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                     {item.description}
                   </p>
                 )}
               </div>
 
-              {/* Subtle Hover Action Footer */}
-              <div className="relative z-10 pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[8.5px] font-bold text-slate-400 dark:text-slate-500 uppercase mt-1.5">
-                <span>{item.items && item.items.length > 0 ? "Pilih Opsi" : "Buka Modul"}</span>
-                <ArrowRight className="w-2.5 h-2.5 text-primary group-hover:translate-x-1 transition-transform" />
+              {/* Action Footer */}
+              <div className="relative z-10 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[9px] sm:text-[9.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                <span className="group-hover:text-primary transition-colors">
+                  {item.items && item.items.length > 0 ? "Pilih Opsi" : "Buka Modul"}
+                </span>
+                <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white transition-colors">
+                  <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
+                </div>
               </div>
             </div>
           ))}
