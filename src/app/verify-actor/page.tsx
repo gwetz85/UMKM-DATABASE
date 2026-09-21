@@ -24,6 +24,9 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Switch } from "@/components/ui/switch"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 
+// Global guard to prevent duplicate triggers when VerificationTimer is mounted in both Mobile and Desktop views
+const processingActors = new Set<string>();
+
 function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, actor, dataReady }: { 
   actorId: string, 
   createdAt: string, 
@@ -75,12 +78,16 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
        // Don't return, let the timer run to move it to manual after 24h
     }
 
-
     const createdAtTimestamp = new Date(createdAt).getTime()
     const validCreatedAt = isNaN(createdAtTimestamp) ? Date.now() : createdAtTimestamp
     const targetTime = validCreatedAt + (targetMins * 60000)
     
     const triggerProcess = () => {
+      // Guard: Hindari eksekusi ganda jika actorId sedang diproses atau sudah diproses oleh instance timer lain (misal Desktop & Mobile)
+      if (processingActors.has(actorId)) return;
+      if (actor.status && !['pending', 'hold', 'lengkapi_data'].includes(actor.status)) return;
+      processingActors.add(actorId);
+
       if (isAdmin && database) {
         const oldStatus = actor.status || 'pending';
         let newStatus = '';
@@ -110,7 +117,13 @@ function VerificationTimer({ actorId, createdAt, matches, database, isAdmin, act
 
         if (newStatus && oldStatus !== newStatus) {
           import("@/lib/stats-service").then(({ updateStatsOnStatusChange }) => {
-            updateStatsOnStatusChange(database, oldStatus, newStatus, actor).catch(e => console.error(e));
+            updateStatsOnStatusChange(database, oldStatus, newStatus, actor).catch(e => {
+              console.error(e);
+              processingActors.delete(actorId);
+            });
+          }).catch(err => {
+            console.error(err);
+            processingActors.delete(actorId);
           });
         }
       }
