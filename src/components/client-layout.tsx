@@ -260,7 +260,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
           {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
             <>
-              <header className="sticky top-0 z-50 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 h-14 sm:h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 shrink-0 print:hidden shadow-sm gap-2 sm:gap-3 md:gap-4">
+              <header className="sticky top-0 z-50 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 h-14 sm:h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 shrink-0 print:hidden shadow-sm gap-2 sm:gap-3 md:gap-4 relative">
                 <div className="flex items-center gap-2 sm:gap-3 md:gap-5 shrink-0">
                   <Link href={user ? "/" : "/cek-data"} className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
                     <span className="text-xl sm:text-2xl md:text-3xl font-black tracking-tighter leading-none text-primary">
@@ -271,23 +271,26 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     </span>
                   </Link>
 
-                  <div className="hidden md:flex h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
-
                   {currentTitle && (
-                    <h1 className="hidden 2xl:block text-xl md:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight uppercase max-w-[200px] truncate">
-                      {currentTitle}
-                    </h1>
+                    <>
+                      <div className="hidden 2xl:flex h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+                      <h1 className="hidden 2xl:block text-xl md:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight uppercase max-w-[200px] truncate">
+                        {currentTitle}
+                      </h1>
+                    </>
                   )}
                 </div>
 
                 {activeEvent && !isCekDataPage && !isPendaftaranPage && (
-                  <div className="hidden lg:flex items-center justify-center flex-1 min-w-0 px-2 py-1 animate-in fade-in zoom-in duration-1000">
-                    <EventCountdown 
-                      targetDate={activeEvent.endDate || activeEvent.date} 
-                      startDate={activeEvent.startDate} 
-                      title={activeEvent.description}
-                      size="sm" 
-                    />
+                  <div className="hidden lg:flex items-center justify-center absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-none z-10 animate-in fade-in zoom-in duration-1000">
+                    <div className="pointer-events-auto">
+                      <EventCountdown 
+                        targetDate={activeEvent.endDate || activeEvent.date} 
+                        startDate={activeEvent.startDate} 
+                        title={activeEvent.description}
+                        size="sm" 
+                      />
+                    </div>
                   </div>
                 )}
 
