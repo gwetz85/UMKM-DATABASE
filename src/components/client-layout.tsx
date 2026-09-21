@@ -438,7 +438,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             )}
 
             <main className={cn(
-              "flex-1 bg-transparent print:bg-white relative z-0 isolate flex flex-col",
+              "flex-1 bg-transparent print:bg-white relative z-0 isolate flex flex-col custom-scrollbar",
               isLoginPage ? "overflow-hidden" : isPortalSurveyPage ? "overflow-y-auto overflow-x-hidden" : isLayarInformasiPage ? "overflow-y-auto lg:overflow-hidden" : "overflow-y-auto"
             )}>
               <div key={pathname} className={cn(
