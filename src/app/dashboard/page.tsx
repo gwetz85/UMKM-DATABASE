@@ -645,7 +645,7 @@ export default function DashboardStatsPage() {
                 {/* Visual proportion progress bar if percentage exists */}
                 {stat.percentage !== null ? (
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[9px] md:text-[10px] font-bold text-slate-500">
+                    <div className="flex items-center justify-between text-[9px] md:text-[10px] font-bold text-slate-500 dark:text-slate-400">
                       <span>Proporsi / Capaian</span>
                       <span className="font-mono font-black text-slate-700 dark:text-slate-200">{stat.percentage}%</span>
                     </div>
@@ -660,7 +660,7 @@ export default function DashboardStatsPage() {
                   <div className="h-2" />
                 )}
 
-                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800 text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800 text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase">
                   <span className="flex items-center gap-1 truncate">
                     <TrendingUp className="w-2.5 h-2.5 text-slate-400 shrink-0" />
                     {stat.detail}
@@ -688,7 +688,7 @@ export default function DashboardStatsPage() {
             </div>
             <div className="self-start sm:self-auto flex items-center gap-2">
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-xs">
-                <span className="text-slate-500 font-bold uppercase text-[10px]">Total Terverifikasi:</span>
+                <span className="text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px]">Total Terverifikasi:</span>
                 <strong className="text-emerald-600 dark:text-emerald-400 font-black text-sm">{statsValues.verified.toLocaleString('id-ID')}</strong>
               </div>
             </div>
@@ -1223,7 +1223,7 @@ export default function DashboardStatsPage() {
               <DialogTitle className="text-xl font-black uppercase text-primary flex items-center gap-2">
                 DATA: {selectedFilter?.name}
               </DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 font-medium">
+              <DialogDescription className="text-xs text-slate-500 dark:text-slate-300 font-medium">
                 Menampilkan total <strong>{filteredModalData.length}</strong> data pelaku usaha.
               </DialogDescription>
             </div>
@@ -1239,7 +1239,7 @@ export default function DashboardStatsPage() {
             )}
           </DialogHeader>
 
-          <div className="flex-1 overflow-auto rounded-xl border">
+          <div className="flex-1 overflow-auto rounded-xl border border-slate-200 dark:border-slate-800">
             {isModalLoading ? (
               <div className="p-8 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
             ) : filteredModalData.length === 0 ? (
@@ -1248,12 +1248,12 @@ export default function DashboardStatsPage() {
               </div>
             ) : (
               <Table>
-                <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
+                <TableHeader className="bg-slate-50 dark:bg-slate-800/90 sticky top-0 z-10 shadow-sm border-b border-slate-200 dark:border-slate-800">
                   <TableRow>
-                    <TableHead className="w-[50px] text-center font-black text-slate-800 text-xs">No</TableHead>
-                    <TableHead className="font-black text-slate-800 text-xs">Nama Lengkap</TableHead>
-                    <TableHead className="font-black text-slate-800 text-xs">NIK</TableHead>
-                    <TableHead className="font-black text-slate-800 text-xs text-center">Status</TableHead>
+                    <TableHead className="w-[50px] text-center font-black text-slate-800 dark:text-slate-200 text-xs">No</TableHead>
+                    <TableHead className="font-black text-slate-800 dark:text-slate-200 text-xs">Nama Lengkap</TableHead>
+                    <TableHead className="font-black text-slate-800 dark:text-slate-200 text-xs">NIK</TableHead>
+                    <TableHead className="font-black text-slate-800 dark:text-slate-200 text-xs text-center">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1264,39 +1264,39 @@ export default function DashboardStatsPage() {
                     return (
                       <React.Fragment key={d.id}>
                         <TableRow 
-                          className="cursor-pointer hover:bg-slate-100 transition-colors"
+                          className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
                           onClick={() => setExpandedActorId(prev => prev === d.id ? null : d.id)}
                         >
-                          <TableCell className="text-center font-bold text-slate-600 text-xs">{i + 1}</TableCell>
-                          <TableCell className="font-black text-slate-800 text-xs uppercase">{d.fullName || "-"}</TableCell>
-                          <TableCell className="font-mono text-slate-600 text-xs">{d.nik || "-"}</TableCell>
+                          <TableCell className="text-center font-bold text-slate-600 dark:text-slate-300 text-xs">{i + 1}</TableCell>
+                          <TableCell className="font-black text-slate-800 dark:text-slate-100 text-xs uppercase">{d.fullName || "-"}</TableCell>
+                          <TableCell className="font-mono text-slate-600 dark:text-slate-300 text-xs">{d.nik || "-"}</TableCell>
                           <TableCell className="text-center">
                             {isCancelDinas ? (
-                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-rose-100 text-rose-700 border-rose-300">
+                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">
                                 CANCEL DINAS
                               </span>
                             ) : isRejectedAdmin ? (
-                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-orange-100 text-orange-700 border-orange-300">
+                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-950/60 dark:text-orange-300 dark:border-orange-800">
                                 DITOLAK ADMIN
                               </span>
                             ) : (d.status === 'lpj_pending' || d.status === 'verified_actor') ? (
-                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300">
+                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300 dark:bg-fuchsia-950/60 dark:text-fuchsia-300 dark:border-fuchsia-800">
                                 {d.status === 'verified_actor' ? 'SURVEY (ANTREAN)' : 'SURVEY DINAS'}
                               </span>
                             ) : d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && !d.berkasDinasVerified ? (
-                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-indigo-100 text-indigo-700 border-indigo-300">
+                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800">
                                 VERIFIKASI BERKAS
                               </span>
                             ) : d.status === 'verified_dinas' && d.hasilVerifikasiDinas === 'Lolos' && d.berkasDinasVerified ? (
-                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-teal-100 text-teal-700 border-teal-300">
+                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-teal-100 text-teal-700 border-teal-300 dark:bg-teal-950/60 dark:text-teal-300 dark:border-teal-800">
                                 HASIL VERIFIKASI
                               </span>
                             ) : d.status === 'finish' ? (
-                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-300">
+                              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full border bg-sky-100 text-sky-700 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800">
                                 SELESAI
                               </span>
                             ) : (
-                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border bg-slate-100 text-slate-600">
+                              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700">
                                 {(d.status || "PENDING").replace(/_/g, " ")}
                               </span>
                             )}
@@ -1304,34 +1304,34 @@ export default function DashboardStatsPage() {
                         </TableRow>
 
                         {expandedActorId === d.id && (
-                          <TableRow className="bg-slate-50 hover:bg-slate-50">
-                            <TableCell colSpan={4} className="p-0 border-b">
+                          <TableRow className="bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-50 dark:hover:bg-slate-800/60">
+                            <TableCell colSpan={4} className="p-0 border-b border-slate-200 dark:border-slate-800">
                               <div className="p-4 animate-in slide-in-from-top-2 duration-200">
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
                                   <div>
                                     <p className="font-bold text-slate-400 mb-1">USAHA</p>
                                     <p className="font-black text-primary uppercase">{d.businessName || "-"}</p>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase">{d.businessCategory || "-"}</p>
+                                    <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">{d.businessCategory || "-"}</p>
                                   </div>
                                   <div>
                                     <p className="font-bold text-slate-400 mb-1">NO. HP</p>
-                                    <p className="font-bold text-slate-700">{d.phone || "-"}</p>
+                                    <p className="font-bold text-slate-700 dark:text-slate-200">{d.phone || "-"}</p>
                                   </div>
                                   <div>
                                     <p className="font-bold text-slate-400 mb-1">GENDER</p>
-                                    <p className="font-bold text-slate-700 uppercase">{d.gender || "-"}</p>
+                                    <p className="font-bold text-slate-700 dark:text-slate-200 uppercase">{d.gender || "-"}</p>
                                   </div>
                                   <div>
                                     <p className="font-bold text-slate-400 mb-1">KOORDINATOR</p>
-                                    <p className="font-bold text-slate-700 uppercase">{d.coordinator || "-"}</p>
+                                    <p className="font-bold text-slate-700 dark:text-slate-200 uppercase">{d.coordinator || "-"}</p>
                                   </div>
                                   <div>
                                     <p className="font-bold text-slate-400 mb-1">PETUGAS SURVEY</p>
-                                    <p className="font-bold text-slate-700 uppercase">{d.petugasSurvey || d.createdBy || "-"}</p>
+                                    <p className="font-bold text-slate-700 dark:text-slate-200 uppercase">{d.petugasSurvey || d.createdBy || "-"}</p>
                                   </div>
                                   <div>
                                     <p className="font-bold text-slate-400 mb-1">VERIFIKATOR DINAS</p>
-                                    <p className="font-bold text-slate-700 uppercase">{d.verifikatorDinas || (d as any).berkasDinasVerifiedBy || "-"}</p>
+                                    <p className="font-bold text-slate-700 dark:text-slate-200 uppercase">{d.verifikatorDinas || (d as any).berkasDinasVerifiedBy || "-"}</p>
                                   </div>
 
                                   {(isCancelDinas || isRejectedAdmin) && (
@@ -1393,19 +1393,19 @@ export default function DashboardStatsPage() {
 
               <div className="space-y-4 py-3 text-xs">
                 {/* Informasi Masuk Menu */}
-                <div className="bg-slate-50 border rounded-xl p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <p className="text-[10px] font-bold text-slate-400 uppercase">Waktu Masuk Verifikasi Dinas</p>
-                    <p className="font-bold text-indigo-900 flex items-center gap-1.5 mt-0.5">
-                      <Clock className="w-3.5 h-3.5 text-indigo-600" />
+                    <p className="font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5 mt-0.5">
+                      <Clock className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                       {formatDateTimeIndo(detailActor.verifiedDinasAt || (detailActor.surveyData as any)?.tanggalSurvey || detailActor.createdAt)}
                     </p>
                   </div>
                   {detailActor.berkasDinasVerified && (
                     <div>
                       <p className="text-[10px] font-bold text-slate-400 uppercase">Waktu Lolos Hasil Verifikasi</p>
-                      <p className="font-bold text-teal-900 flex items-center gap-1.5 mt-0.5">
-                        <Clock className="w-3.5 h-3.5 text-teal-600" />
+                      <p className="font-bold text-teal-900 dark:text-teal-300 flex items-center gap-1.5 mt-0.5">
+                        <Clock className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
                         {formatDateTimeIndo(detailActor.berkasDinasVerifiedAt || detailActor.verifiedDinasAt || detailActor.createdAt)}
                       </p>
                     </div>
@@ -1413,18 +1413,18 @@ export default function DashboardStatsPage() {
                 </div>
 
                 {/* Profil & Usaha */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-white border rounded-xl p-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-xl p-3">
                   <div>
                     <p className="font-bold text-slate-400 text-[10px] uppercase">NAMA LENGKAP</p>
-                    <p className="font-black text-slate-800 uppercase">{detailActor.fullName || "-"}</p>
+                    <p className="font-black text-slate-800 dark:text-slate-100 uppercase">{detailActor.fullName || "-"}</p>
                   </div>
                   <div>
                     <p className="font-bold text-slate-400 text-[10px] uppercase">NIK</p>
-                    <p className="font-mono font-bold text-slate-700">{detailActor.nik || "-"}</p>
+                    <p className="font-mono font-bold text-slate-700 dark:text-slate-200">{detailActor.nik || "-"}</p>
                   </div>
                   <div>
                     <p className="font-bold text-slate-400 text-[10px] uppercase">NO. KK</p>
-                    <p className="font-mono font-bold text-slate-700">{detailActor.noKK || "-"}</p>
+                    <p className="font-mono font-bold text-slate-700 dark:text-slate-200">{detailActor.noKK || "-"}</p>
                   </div>
                   <div>
                     <p className="font-bold text-slate-400 text-[10px] uppercase">NAMA USAHA</p>
@@ -1432,27 +1432,27 @@ export default function DashboardStatsPage() {
                   </div>
                   <div>
                     <p className="font-bold text-slate-400 text-[10px] uppercase">KATEGORI USAHA</p>
-                    <p className="font-bold text-slate-700 uppercase">{detailActor.businessCategory || "-"}</p>
+                    <p className="font-bold text-slate-700 dark:text-slate-200 uppercase">{detailActor.businessCategory || "-"}</p>
                   </div>
                   <div>
                     <p className="font-bold text-slate-400 text-[10px] uppercase">NO. HP</p>
-                    <p className="font-bold text-slate-700">{detailActor.phone || "-"}</p>
+                    <p className="font-bold text-slate-700 dark:text-slate-200">{detailActor.phone || "-"}</p>
                   </div>
                   <div>
                     <p className="font-bold text-slate-400 text-[10px] uppercase">KOORDINATOR</p>
-                    <p className="font-bold text-slate-700 uppercase">{detailActor.coordinator || "-"}</p>
+                    <p className="font-bold text-slate-700 dark:text-slate-200 uppercase">{detailActor.coordinator || "-"}</p>
                   </div>
                   <div>
                     <p className="font-bold text-slate-400 text-[10px] uppercase">PETUGAS SURVEY</p>
-                    <p className="font-bold text-slate-700 uppercase">{detailActor.petugasSurvey || detailActor.createdBy || "-"}</p>
+                    <p className="font-bold text-slate-700 dark:text-slate-200 uppercase">{detailActor.petugasSurvey || detailActor.createdBy || "-"}</p>
                   </div>
                   <div>
                     <p className="font-bold text-slate-400 text-[10px] uppercase">VERIFIKATOR DINAS</p>
-                    <p className="font-bold text-slate-700 uppercase">{detailActor.verifikatorDinas || (detailActor as any).berkasDinasVerifiedBy || "-"}</p>
+                    <p className="font-bold text-slate-700 dark:text-slate-200 uppercase">{detailActor.verifikatorDinas || (detailActor as any).berkasDinasVerifiedBy || "-"}</p>
                   </div>
-                  <div className="col-span-2 sm:col-span-3 border-t pt-2 mt-1">
+                  <div className="col-span-2 sm:col-span-3 border-t border-slate-200 dark:border-slate-700 pt-2 mt-1">
                     <p className="font-bold text-slate-400 text-[10px] uppercase">ALAMAT LENGKAP</p>
-                    <p className="font-bold text-slate-700 uppercase">
+                    <p className="font-bold text-slate-700 dark:text-slate-200 uppercase">
                       {detailActor.address || "-"} RT/RW {detailActor.rtRw || "-"} Kel. {detailActor.kelurahan || "-"}, Kec. {detailActor.kecamatan || "-"}
                     </p>
                   </div>

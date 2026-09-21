@@ -12,7 +12,7 @@ import { GlobalStatsAutoSync } from '@/components/GlobalStatsAutoSync';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref, onValue, set, update, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
-import { User as UserIcon, LayoutGrid, Home, LogOut, Check, X as XIcon, AlertCircle, MonitorOff, Loader2, ArrowLeft } from 'lucide-react'
+import { User as UserIcon, LayoutGrid, Home, LogOut, Check, X as XIcon, AlertCircle, MonitorOff, Loader2, ArrowLeft, Moon, Sun } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
 import { useActiveEvent } from '@/hooks/use-active-event';
@@ -35,6 +35,43 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const database = useDatabase();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = React.useState(false);
   const [isDisplaced, setIsDisplaced] = React.useState(false); // True when another device took over the session
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
+
+  React.useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  const handleToggleTheme = () => {
+    playSound('click');
+    const newDark = !isDarkMode;
+    setIsDarkMode(newDark);
+    const root = document.documentElement;
+    if (newDark) {
+      root.classList.add('dark');
+      document.body?.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+      document.body?.classList.remove('dark');
+    }
+
+    try {
+      const savedTheme = localStorage.getItem('simpu-theme');
+      const themeData = savedTheme ? JSON.parse(savedTheme) : {};
+      themeData.mode = newDark ? 'dark' : 'light';
+      localStorage.setItem('simpu-theme', JSON.stringify(themeData));
+      if (profile?.role === 'admin' && database) {
+        update(ref(database, 'chats/__system_settings/theme'), { mode: themeData.mode }).catch(() => {});
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const isKoordinator = profile?.role === 'koordinator'
   const { playSound } = useSoundEffect();
@@ -308,6 +345,19 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       </div>
 
                       <button
+                        onClick={handleToggleTheme}
+                        className="flex w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-xl sm:rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-amber-400 items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-90 border border-slate-200 dark:border-slate-700 shadow-sm shrink-0"
+                        title={isDarkMode ? "Ganti ke Mode Terang (Light Mode)" : "Ganti ke Mode Gelap (Dark Mode)"}
+                        aria-label="Toggle Dark Mode"
+                      >
+                        {isDarkMode ? (
+                          <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 transition-transform hover:rotate-45" />
+                        ) : (
+                          <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 transition-transform hover:-rotate-12" />
+                        )}
+                      </button>
+
+                      <button
                         onClick={() => setIsLogoutDialogOpen(true)}
                         className="flex w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-xl sm:rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 items-center justify-center hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all active:scale-90 border border-rose-200/80 dark:border-rose-900/40 shadow-sm group shrink-0"
                         title="Logout / Keluar"
@@ -382,35 +432,35 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       <div className="p-2.5 px-3 border-b border-slate-300/50 dark:border-slate-800/50">
                         <div className="flex flex-col gap-1.5">
                           <div className="flex items-center justify-between w-full">
-                            <span className="text-[10.5px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Aplikasi</span>
+                            <span className="text-[10.5px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Aplikasi</span>
                             <div className="flex items-center gap-1.5">
                               <span className="text-[11px] font-black text-blue-700 dark:text-blue-400 uppercase drop-shadow-sm">{systemConfig?.appName || 'SIMPU'}</span>
-                              <span className="text-[9px] font-black text-slate-800 dark:text-slate-200 bg-slate-200/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">{systemConfig?.version || '8.2.5 PRO'}</span>
+                              <span className="text-[9px] font-black text-slate-800 dark:text-slate-100 bg-slate-200/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">{systemConfig?.version || '8.2.5 PRO'}</span>
                             </div>
                           </div>
                           <div className="flex items-center justify-between w-full">
-                            <span className="text-[10.5px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Pengguna</span>
-                            <span className="text-[11px] font-black text-slate-900 dark:text-slate-100 truncate max-w-[130px] text-right uppercase drop-shadow-sm">
+                            <span className="text-[10.5px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Pengguna</span>
+                            <span className="text-[11px] font-black text-slate-900 dark:text-white truncate max-w-[130px] text-right uppercase drop-shadow-sm">
                               {profile?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}
                             </span>
                           </div>
                           <div className="flex items-center justify-between w-full pt-1 border-t border-slate-200/50 dark:border-slate-800/50">
-                            <span className="text-[10.5px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Data Pembanding</span>
-                            <span className="text-[11px] font-black text-indigo-700 dark:text-indigo-400 uppercase drop-shadow-sm">
+                            <span className="text-[10.5px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Data Pembanding</span>
+                            <span className="text-[11px] font-black text-indigo-700 dark:text-indigo-300 uppercase drop-shadow-sm">
                               {systemConfig?.totalPembanding || '0 Data'}
                             </span>
                           </div>
                         </div>
                       </div>
                       <div className="p-2 px-3 bg-slate-100/80 dark:bg-slate-800/80 flex items-center justify-between gap-2">
-                        <span className="text-[9.5px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
+                        <span className="text-[9.5px] font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5 shrink-0">
                           <div className="w-1.5 h-1.5 bg-blue-600 rounded-full shadow-sm"></div>
                           Admin
                         </span>
                         <div className="flex items-center gap-1.5 overflow-hidden">
                           <a 
                             href={`mailto:${systemConfig?.adminEmail || 'simputeam@gmail.com'}`} 
-                            className="text-[9.5px] font-bold text-slate-600 dark:text-slate-400 hover:text-blue-700 dark:hover:text-blue-400 transition-colors truncate max-w-[120px]" 
+                            className="text-[9.5px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-400 transition-colors truncate max-w-[120px]" 
                             title={systemConfig?.adminEmail || 'simputeam@gmail.com'}
                           >
                             {systemConfig?.adminEmail || 'simputeam@gmail.com'}
@@ -487,15 +537,15 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       {/* Single-device displaced overlay — shown when another device took over this session */}
       {isDisplaced && (
         <div className="fixed inset-0 z-[9999] bg-slate-950/95 backdrop-blur-2xl flex items-center justify-center animate-in fade-in duration-500">
-          <div className="bg-white rounded-3xl p-10 max-w-sm w-full mx-4 text-center space-y-6 shadow-2xl animate-in zoom-in-95 duration-500">
-            <div className="w-20 h-20 rounded-full bg-rose-100 flex items-center justify-center mx-auto border-2 border-rose-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-10 max-w-sm w-full mx-4 text-center space-y-6 shadow-2xl animate-in zoom-in-95 duration-500">
+            <div className="w-20 h-20 rounded-full bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center mx-auto border-2 border-rose-200 dark:border-rose-900">
               <MonitorOff className="w-10 h-10 text-rose-500" />
             </div>
             <div className="space-y-3">
-              <h2 className="text-base font-black text-slate-900 uppercase tracking-tight leading-tight">
+              <h2 className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight leading-tight">
                 User Sudah Digunakan<br />di Perangkat Lain
               </h2>
-              <p className="text-sm text-slate-500 leading-relaxed">
+              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                 Akun ini sedang digunakan di perangkat lain. Silakan klik tombol di bawah untuk kembali ke halaman login.
               </p>
             </div>

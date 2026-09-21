@@ -19,7 +19,7 @@ export function OfficeHoursTimer({
   return (
     <div 
       onClick={onClick}
-      className={`flex items-center gap-3 ${large ? "px-6 py-4 rounded-3xl" : "px-3 py-1.5 md:px-4 md:py-2 rounded-2xl"} border transition-all duration-300 shadow-lg bg-white/95 backdrop-blur-md ${status.colorClass.split(' ').filter(c => !c.startsWith('bg-')).join(' ')} ${onClick ? "cursor-pointer hover:scale-105 active:scale-95" : ""}`}
+      className={`flex items-center gap-3 ${large ? "px-6 py-4 rounded-3xl" : "px-3 py-1.5 md:px-4 md:py-2 rounded-2xl"} border border-slate-200 dark:border-slate-700 transition-all duration-300 shadow-lg bg-white/95 dark:bg-slate-800/90 backdrop-blur-md ${status.colorClass.split(' ').filter(c => !c.startsWith('bg-')).join(' ')} ${onClick ? "cursor-pointer hover:scale-105 active:scale-95" : ""}`}
     >
       <div className={`flex flex-col ${large ? "items-center" : "items-start md:items-end"}`}>
         <div className="flex items-center gap-1.5 shrink-0">

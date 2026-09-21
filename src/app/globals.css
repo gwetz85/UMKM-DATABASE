@@ -145,6 +145,110 @@
   }
 }
 
+/* ==========================================================================
+   DARK MODE TYPOGRAPHY & CONTRAST ENHANCEMENTS
+   Ensures crystal-clear readability for text across all pages in Dark Mode
+   ========================================================================== */
+
+.dark {
+  color-scheme: dark;
+}
+
+/* Ensure strong base contrast */
+.dark body {
+  color: #f1f5f9;
+}
+
+/* Clear contrast for headings */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #f8fafc;
+}
+
+/* Intelligent text elevation for un-themed dark text classes in dark mode */
+.dark .text-black:not([class*="dark:text-"]) {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-950:not([class*="dark:text-"]),
+.dark .text-gray-950:not([class*="dark:text-"]),
+.dark .text-slate-900:not([class*="dark:text-"]),
+.dark .text-gray-900:not([class*="dark:text-"]) {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-800:not([class*="dark:text-"]),
+.dark .text-gray-800:not([class*="dark:text-"]) {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-700:not([class*="dark:text-"]),
+.dark .text-gray-700:not([class*="dark:text-"]) {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-600:not([class*="dark:text-"]),
+.dark .text-gray-600:not([class*="dark:text-"]) {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-500:not([class*="dark:text-"]),
+.dark .text-gray-500:not([class*="dark:text-"]) {
+  color: #94a3b8 !important;
+}
+
+/* Dark saturated colors in dark mode */
+.dark .text-indigo-950:not([class*="dark:text-"]),
+.dark .text-indigo-900:not([class*="dark:text-"]) {
+  color: #c7d2fe !important;
+}
+.dark .text-indigo-800:not([class*="dark:text-"]) {
+  color: #a5b4fc !important;
+}
+
+.dark .text-teal-950:not([class*="dark:text-"]),
+.dark .text-teal-900:not([class*="dark:text-"]) {
+  color: #99f6e4 !important;
+}
+.dark .text-teal-800:not([class*="dark:text-"]) {
+  color: #5eead4 !important;
+}
+
+.dark .text-blue-950:not([class*="dark:text-"]),
+.dark .text-blue-900:not([class*="dark:text-"]) {
+  color: #bfdbfe !important;
+}
+.dark .text-blue-800:not([class*="dark:text-"]) {
+  color: #93c5fd !important;
+}
+
+.dark .text-emerald-950:not([class*="dark:text-"]),
+.dark .text-emerald-900:not([class*="dark:text-"]) {
+  color: #a7f3d0 !important;
+}
+.dark .text-emerald-800:not([class*="dark:text-"]) {
+  color: #6ee7b7 !important;
+}
+
+/* Form controls & inputs placeholder contrast in Dark Mode */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.85;
+}
+
+.dark input.bg-white,
+.dark textarea.bg-white,
+.dark select.bg-white {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
 /* Mobile Touch & Safe Area Utilities */
 .touch-scroll {
   -webkit-overflow-scrolling: touch;

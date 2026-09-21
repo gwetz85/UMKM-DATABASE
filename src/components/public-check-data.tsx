@@ -75,7 +75,7 @@ export function PublicCheckData() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl border mb-6">
+      <div className="bg-slate-50 dark:bg-slate-800/80 p-4 sm:p-6 rounded-2xl border dark:border-slate-700 mb-6">
         <h3 className="font-black text-primary uppercase text-center mb-6 text-lg tracking-wider">Cek Data Pelaku Usaha</h3>
         
         {/* Method Selection */}
@@ -85,7 +85,7 @@ export function PublicCheckData() {
             onClick={() => setSearchMethod('nik')}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase transition-all duration-300",
-              searchMethod === 'nik' ? "bg-primary text-white shadow-lg scale-105" : "bg-white text-slate-400 border hover:bg-slate-100"
+              searchMethod === 'nik' ? "bg-primary text-white shadow-lg scale-105" : "bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 border dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600"
             )}
           >
             <CreditCard className="w-3.5 h-3.5" />
@@ -96,7 +96,7 @@ export function PublicCheckData() {
             onClick={() => setSearchMethod('kk')}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase transition-all duration-300",
-              searchMethod === 'kk' ? "bg-primary text-white shadow-lg scale-105" : "bg-white text-slate-400 border hover:bg-slate-100"
+              searchMethod === 'kk' ? "bg-primary text-white shadow-lg scale-105" : "bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 border dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600"
             )}
           >
             <Database className="w-3.5 h-3.5" />
@@ -111,7 +111,7 @@ export function PublicCheckData() {
             }}
             className={cn(
               "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase transition-all duration-300",
-              searchMethod === 'nama' ? "bg-primary text-white shadow-lg scale-105" : "bg-white text-slate-400 border hover:bg-slate-100"
+              searchMethod === 'nama' ? "bg-primary text-white shadow-lg scale-105" : "bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 border dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600"
             )}
           >
             <User className="w-3.5 h-3.5" />
@@ -127,7 +127,7 @@ export function PublicCheckData() {
               "Masukkan Nama Lengkap..."
             }
             className={cn(
-              "flex-1 h-12 bg-white text-center sm:text-left shadow-inner",
+              "flex-1 h-12 bg-white dark:bg-slate-900 text-center sm:text-left shadow-inner dark:border-slate-700 dark:text-white",
               searchMethod !== 'nama' ? "font-mono tracking-wider" : "font-sans font-bold"
             )}
             value={inputValue}
@@ -138,7 +138,7 @@ export function PublicCheckData() {
             type="button"
             variant="outline"
             onClick={() => setIsScannerOpen(true)}
-            className="h-12 border-teal-500/50 bg-teal-50/80 hover:bg-teal-100 text-teal-800 font-bold px-4 gap-2"
+            className="h-12 border-teal-500/50 bg-teal-50/80 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 text-teal-800 dark:text-teal-200 font-bold px-4 gap-2"
             title="Scan NIK KTP atau Nomor KK dengan kamera"
           >
             <Camera className="w-4 h-4 text-teal-600" />
@@ -162,7 +162,7 @@ export function PublicCheckData() {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
            {searchResults && searchResults.length > 0 ? (
              <div className="space-y-4">
-               <Alert className="bg-emerald-50/90 border-emerald-200 text-emerald-900 rounded-xl">
+               <Alert className="bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 rounded-xl">
                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                  <AlertTitle className="font-black uppercase">DATA DITEMUKAN</AlertTitle>
                  <AlertDescription className="font-medium text-xs">
@@ -172,7 +172,7 @@ export function PublicCheckData() {
                
                <div className="grid gap-4">
                  {searchResults.map((res, idx) => (
-                   <div key={idx} className="bg-white border rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                   <div key={idx} className="bg-white dark:bg-slate-800/90 border dark:border-slate-700 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                       <div className={cn("absolute top-0 left-0 w-1 h-full", String(res._source || '').includes('BLACKLIST') ? "bg-red-500" : "bg-emerald-500")} />
                       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
                          <div>
@@ -190,30 +190,30 @@ export function PublicCheckData() {
                                {(res._displayStatus || res.status || "TERDAFTAR").replace(/_/g, " ")}
                              </span>
                            </div>
-                           <h4 className="font-black text-slate-800 uppercase text-lg">{res._displayName || res.nama || res.fullName || "-"}</h4>
-                           <div className="text-xs font-mono font-bold text-slate-500 mt-1">NIK: {res._displayNik || res.nik || "-"}</div>
+                           <h4 className="font-black text-slate-800 dark:text-white uppercase text-lg">{res._displayName || res.nama || res.fullName || "-"}</h4>
+                           <div className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 mt-1">NIK: {res._displayNik || res.nik || "-"}</div>
                          </div>
                          <div className="text-left sm:text-right mt-2 sm:mt-0">
                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Usaha</div>
                            <div className="font-black text-primary uppercase text-sm">{res._displayBusiness || res.businessName || res.usaha || "-"}</div>
                          </div>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t dark:border-slate-700">
                         <div>
                           <div className="text-[9px] font-bold text-slate-400 uppercase">Kategori</div>
-                          <div className="text-xs font-bold uppercase">{res.businessCategory || res.kategori || "-"}</div>
+                          <div className="text-xs font-bold uppercase dark:text-slate-200">{res.businessCategory || res.kategori || "-"}</div>
                         </div>
                         <div>
                           <div className="text-[9px] font-bold text-slate-400 uppercase">Tahun</div>
-                          <div className="text-xs font-bold uppercase">{res._displayYear || res.tahunPengajuan || "-"}</div>
+                          <div className="text-xs font-bold uppercase dark:text-slate-200">{res._displayYear || res.tahunPengajuan || "-"}</div>
                         </div>
                         <div>
                           <div className="text-[9px] font-bold text-slate-400 uppercase">Kelurahan</div>
-                          <div className="text-xs font-bold uppercase">{res._displayKelurahan || res.kelurahan || "-"}</div>
+                          <div className="text-xs font-bold uppercase dark:text-slate-200">{res._displayKelurahan || res.kelurahan || "-"}</div>
                         </div>
                         <div>
                           <div className="text-[9px] font-bold text-slate-400 uppercase">Nominal</div>
-                          <div className="text-xs font-bold uppercase">{formatCurrency(res._displayNominal || res.lpjNominal || res.nominal || 0)}</div>
+                          <div className="text-xs font-bold uppercase dark:text-slate-200">{formatCurrency(res._displayNominal || res.lpjNominal || res.nominal || 0)}</div>
                         </div>
                       </div>
                    </div>
@@ -221,7 +221,7 @@ export function PublicCheckData() {
                </div>
              </div>
            ) : (
-             <Alert className="bg-red-50/90 border-red-200 text-red-900 rounded-xl">
+             <Alert className="bg-red-50/90 dark:bg-red-950/40 border-red-200 dark:border-red-800 text-red-900 dark:text-red-200 rounded-xl">
                <XCircle className="w-5 h-5 text-red-600" />
                <AlertTitle className="font-black uppercase">TIDAK DITEMUKAN</AlertTitle>
                <AlertDescription className="font-medium text-xs">

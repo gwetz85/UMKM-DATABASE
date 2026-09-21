@@ -68,7 +68,7 @@ export function MobileBottomNav() {
                     ? 'text-primary font-bold'
                     : item.active
                     ? 'text-primary font-bold'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100'
                 )}
               >
                 <div
@@ -176,7 +176,7 @@ export function MobileBottomNav() {
                 'flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all duration-200 min-w-[56px]',
                 item.active
                   ? 'text-primary font-bold'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100'
               )}
             >
               <div

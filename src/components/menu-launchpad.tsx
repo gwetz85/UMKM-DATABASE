@@ -126,18 +126,18 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
                   {item.name}
                 </div>
                 {item.description && (
-                  <p className="text-[10px] sm:text-[10.5px] font-medium text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                  <p className="text-[10px] sm:text-[10.5px] font-medium text-slate-500 dark:text-slate-300 line-clamp-2 leading-relaxed">
                     {item.description}
                   </p>
                 )}
               </div>
 
               {/* Action Footer */}
-              <div className="relative z-10 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[9px] sm:text-[9.5px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              <div className="relative z-10 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[9px] sm:text-[9.5px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-wider">
                 <span className="group-hover:text-primary transition-colors">
                   {item.items && item.items.length > 0 ? "Pilih Opsi" : "Buka Modul"}
                 </span>
-                <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-primary group-hover:text-white transition-colors">
+                <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-300 group-hover:bg-primary group-hover:text-white transition-colors">
                   <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </div>
@@ -167,7 +167,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
                   <DialogTitle className="text-xl sm:text-2xl font-black uppercase tracking-tight text-slate-900 dark:text-white">
                     {selectedItem?.name}
                   </DialogTitle>
-                  <DialogDescription className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-0.5">
+                  <DialogDescription className="text-xs font-semibold text-slate-500 dark:text-slate-300 uppercase tracking-widest mt-0.5">
                     Pilih sub-menu untuk melanjutkan
                   </DialogDescription>
                 </div>
@@ -185,7 +185,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
                   key={sub.name}
                   onClick={() => handleNavigate(sub.href)}
                   style={{ animationDelay: `${idx * 40}ms` }}
-                  className="group flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 hover:bg-primary text-slate-700 dark:text-slate-200 hover:text-white transition-all duration-300 border border-slate-200/80 dark:border-slate-700/80 hover:border-primary shadow-sm hover:shadow-xl hover:-translate-y-0.5 active:scale-95 animate-in fade-in"
+                  className="group flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 hover:bg-primary text-slate-700 dark:text-slate-200 hover:text-white transition-all duration-300 border border-slate-200/80 dark:border-slate-700/80 hover:border-primary shadow-sm hover:shadow-xl hover:-translate-y-0.5 active:scale-95 animate-in fade-in"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-700 flex items-center justify-center group-hover:bg-white/20 transition-colors shadow-sm shrink-0">
@@ -200,7 +200,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
 
             <button 
               onClick={() => setSelectedItem(null)}
-              className="w-full mt-6 py-2.5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 hover:text-primary transition-colors border-t border-slate-100 dark:border-slate-800"
+              className="w-full mt-6 py-2.5 text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors border-t border-slate-100 dark:border-slate-800"
             >
               Tutup Menu
             </button>
