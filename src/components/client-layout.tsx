@@ -383,7 +383,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
             {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (!isCekDataPage || (user && !isCekDataPage)) && (!isPendaftaranPage || (user && !isPendaftaranPage)) && (
               <div className="absolute top-4 right-3 sm:right-4 lg:right-6 z-50 pointer-events-none">
-                <div className="pointer-events-auto flex flex-col items-end gap-3 max-h-[calc(100dvh-5.5rem)] overflow-y-auto no-scrollbar pb-6 pr-1 w-72">
+                <div className="pointer-events-auto flex flex-col items-end gap-2.5 w-72 overflow-hidden select-none">
                   <div className="hidden lg:flex flex-col gap-3 w-full">
                     <WeatherWidget className="w-full" />
                     <div className="w-full bg-white/80 dark:bg-slate-900/85 backdrop-blur-md rounded-2xl border border-white/60 dark:border-slate-800/80 shadow-lg overflow-hidden flex flex-col transition-all hover:shadow-xl hover:bg-white dark:hover:bg-slate-900">

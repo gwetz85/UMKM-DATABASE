@@ -72,7 +72,7 @@ export function KelurahanWidget({ className }: KelurahanWidgetProps) {
             Belum ada data sebaran
           </div>
         ) : (
-          <div className="max-h-[230px] overflow-y-auto custom-scrollbar">
+          <div className="max-h-[160px] 2xl:max-h-[220px] overflow-y-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 bg-slate-100/90 dark:bg-slate-800/90 backdrop-blur-sm z-10 text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/50 dark:border-slate-800/50">
                 <tr>

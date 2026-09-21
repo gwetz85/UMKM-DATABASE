@@ -283,6 +283,15 @@
   animation: blink 1s step-start infinite;
 }
 
+/* Hide Scrollbar Utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* Custom Scrollbar Utility */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
