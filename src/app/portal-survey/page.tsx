@@ -71,6 +71,7 @@ import {
   FileEdit,
   PenTool,
   Trash2,
+  Image as ImageIcon,
   Edit
 } from "lucide-react"
 import { SignaturePadDialog } from "@/components/signature-pad-dialog"
@@ -96,6 +97,7 @@ export default function PortalSurveyPage() {
   
   const fileInputRef = useRef<HTMLInputElement>(null)
   const surveyPhotoInputRef = useRef<HTMLInputElement>(null)
+  const surveyGalleryInputRef = useRef<HTMLInputElement>(null)
 
   // Realtime clock states
   const [currentDateTime, setCurrentDateTime] = useState<{ date: string; time: string }>({
@@ -145,6 +147,7 @@ export default function PortalSurveyPage() {
   const [cancelPhotoProof, setCancelPhotoProof] = useState<string | null>(null)
   const [isSubmittingCancel, setIsSubmittingCancel] = useState<boolean>(false)
   const cancelFileInputRef = useRef<HTMLInputElement>(null)
+  const cancelGalleryInputRef = useRef<HTMLInputElement>(null)
 
   // Format Rupiah Helper
   const formatRupiah = (value: string) => {
@@ -1214,13 +1217,22 @@ export default function PortalSurveyPage() {
         className="hidden" 
       />
 
-      {/* Hidden File Input for Survey Photo (supports mobile camera) */}
+      {/* Hidden File Input for Survey Photo Camera (supports mobile camera directly) */}
       <input 
         type="file" 
         ref={surveyPhotoInputRef} 
         onChange={handleSurveyPhotoUpload} 
         accept="image/*" 
         capture="environment"
+        className="hidden" 
+      />
+
+      {/* Hidden File Input for Survey Photo Gallery (allows choosing from smartphone gallery) */}
+      <input 
+        type="file" 
+        ref={surveyGalleryInputRef} 
+        onChange={handleSurveyPhotoUpload} 
+        accept="image/*" 
         className="hidden" 
       />
 
@@ -2290,18 +2302,30 @@ export default function PortalSurveyPage() {
 
               {/* Upload Foto Survey */}
               <div className="bg-white p-3 rounded-xl border border-slate-200/80 space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-1 flex-wrap">
                   <span className="text-[11px] font-bold text-slate-700">Foto Survey Tempat Usaha:</span>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => surveyPhotoInputRef.current?.click()}
-                    className="h-8 rounded-xl text-xs font-bold border-blue-300 text-blue-700 hover:bg-blue-50"
-                  >
-                    <Camera className="w-3.5 h-3.5 mr-1" />
-                    Ambil / Upload Foto
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => surveyGalleryInputRef.current?.click()}
+                      className="h-7 px-2.5 rounded-lg text-xs font-bold border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5 mr-1" />
+                      Galeri
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => surveyPhotoInputRef.current?.click()}
+                      className="h-7 px-2.5 rounded-lg text-xs font-bold border-amber-300 text-amber-700 hover:bg-amber-50"
+                    >
+                      <Camera className="w-3.5 h-3.5 mr-1" />
+                      Kamera
+                    </Button>
+                  </div>
                 </div>
 
                 {surveyPhotoPreview ? (
@@ -2320,13 +2344,28 @@ export default function PortalSurveyPage() {
                     </button>
                   </div>
                 ) : (
-                  <div 
-                    onClick={() => surveyPhotoInputRef.current?.click()}
-                    className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-center cursor-pointer hover:border-blue-400 transition-colors"
-                  >
-                    <Camera className="w-8 h-8 mx-auto text-slate-300 mb-1" />
-                    <p className="text-xs text-slate-500 font-semibold">Klik untuk mengambil foto survei lapangan</p>
-                    <p className="text-[10px] text-slate-400">Bisa menggunakan kamera HP langsung (auto kompres max 1MB)</p>
+                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-3.5 text-center space-y-2">
+                    <div className="flex items-center justify-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => surveyGalleryInputRef.current?.click()}
+                        className="h-8 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        <ImageIcon className="w-3.5 h-3.5 mr-1.5" />
+                        Pilih dari Galeri HP
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => surveyPhotoInputRef.current?.click()}
+                        className="h-8 px-3 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white"
+                      >
+                        <Camera className="w-3.5 h-3.5 mr-1.5" />
+                        Ambil Foto Kamera
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-slate-400">Bisa memilih foto dari galeri HP atau langsung memotret dengan kamera (auto kompres max 1MB)</p>
                   </div>
                 )}
               </div>
@@ -2715,12 +2754,21 @@ export default function PortalSurveyPage() {
               {/* Optional Photo Proof */}
               <div className="space-y-1.5 pt-1">
                 <Label className="text-[11px] font-bold text-slate-700">Foto Bukti Lapangan (Opsional):</Label>
+                {/* Input Kamera */}
                 <input 
                   type="file"
                   ref={cancelFileInputRef}
                   onChange={handleCancelPhotoUpload}
                   accept="image/*"
                   capture="environment"
+                  className="hidden"
+                />
+                {/* Input Galeri */}
+                <input 
+                  type="file"
+                  ref={cancelGalleryInputRef}
+                  onChange={handleCancelPhotoUpload}
+                  accept="image/*"
                   className="hidden"
                 />
 
@@ -2736,15 +2784,26 @@ export default function PortalSurveyPage() {
                     </button>
                   </div>
                 ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => cancelFileInputRef.current?.click()}
-                    className="w-full py-3 h-auto rounded-xl border-dashed border-slate-300 text-slate-600 hover:bg-slate-50 flex items-center justify-center gap-2 text-xs"
-                  >
-                    <Camera className="w-4 h-4 text-slate-400" />
-                    <span>Ambil Foto Rumah / Toko Tutup</span>
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => cancelGalleryInputRef.current?.click()}
+                      className="py-2.5 h-auto rounded-xl border-dashed border-emerald-300 text-emerald-700 hover:bg-emerald-50 flex items-center justify-center gap-1.5 text-xs font-bold"
+                    >
+                      <ImageIcon className="w-4 h-4 text-emerald-600" />
+                      <span>Galeri HP</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => cancelFileInputRef.current?.click()}
+                      className="py-2.5 h-auto rounded-xl border-dashed border-amber-300 text-amber-700 hover:bg-amber-50 flex items-center justify-center gap-1.5 text-xs font-bold"
+                    >
+                      <Camera className="w-4 h-4 text-amber-600" />
+                      <span>Kamera HP</span>
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>

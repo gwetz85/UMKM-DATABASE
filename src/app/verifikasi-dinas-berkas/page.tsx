@@ -54,6 +54,7 @@ import {
   UserX,
   RotateCcw,
   Clock,
+  Image as ImageIcon,
   X
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -2022,24 +2023,40 @@ export default function VerifikasiDinasBerkasPage() {
                           )}
                           {isAdmin && (
                             <div className="w-full mt-1">
-                              <label htmlFor={`admin-photo-upload-${verifyingActor.id}`} className="w-full cursor-pointer">
-                                <div className={`flex items-center justify-center gap-2 w-full py-2 px-3 rounded-lg border-2 border-dashed text-xs font-bold transition-colors ${adminPhotoUploading ? 'border-slate-200 text-slate-400 cursor-not-allowed' : 'border-amber-400 text-amber-600 hover:bg-amber-50'}`}>
-                                  {adminPhotoUploading ? (
-                                    <><span className="animate-spin">⏳</span> Mengupload foto...</>
-                                  ) : (
-                                    <><span>📷</span> {(verifyingPhoto || getCleanSurveyPhoto(verifyingActor)) ? 'Ganti Foto Survey' : 'Upload Foto Survey'}</>
-                                  )}
-                                </div>
-                                <input
-                                  id={`admin-photo-upload-${verifyingActor.id}`}
-                                  type="file"
-                                  accept="image/*"
-                                  capture="environment"
-                                  className="hidden"
-                                  disabled={adminPhotoUploading}
-                                  onChange={(e) => handleAdminPhotoUpload(e, verifyingActor.id, verifyingActor.fullName)}
-                                />
-                              </label>
+                              <div className="grid grid-cols-2 gap-2 w-full">
+                                {/* Galeri Smartphone */}
+                                <label htmlFor={`admin-photo-gallery-${verifyingActor.id}`} className="cursor-pointer">
+                                  <div className={`flex items-center justify-center gap-1.5 w-full py-2 px-2 rounded-lg border-2 border-dashed text-xs font-bold transition-colors ${adminPhotoUploading ? 'border-slate-200 text-slate-400 cursor-not-allowed' : 'border-emerald-400 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-700 dark:text-emerald-300'}`}>
+                                    <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+                                    <span>Galeri HP</span>
+                                  </div>
+                                  <input
+                                    id={`admin-photo-gallery-${verifyingActor.id}`}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    disabled={adminPhotoUploading}
+                                    onChange={(e) => handleAdminPhotoUpload(e, verifyingActor.id, verifyingActor.fullName)}
+                                  />
+                                </label>
+
+                                {/* Kamera Smartphone */}
+                                <label htmlFor={`admin-photo-camera-${verifyingActor.id}`} className="cursor-pointer">
+                                  <div className={`flex items-center justify-center gap-1.5 w-full py-2 px-2 rounded-lg border-2 border-dashed text-xs font-bold transition-colors ${adminPhotoUploading ? 'border-slate-200 text-slate-400 cursor-not-allowed' : 'border-amber-400 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-300'}`}>
+                                    <Camera className="w-3.5 h-3.5 shrink-0" />
+                                    <span>Kamera HP</span>
+                                  </div>
+                                  <input
+                                    id={`admin-photo-camera-${verifyingActor.id}`}
+                                    type="file"
+                                    accept="image/*"
+                                    capture="environment"
+                                    className="hidden"
+                                    disabled={adminPhotoUploading}
+                                    onChange={(e) => handleAdminPhotoUpload(e, verifyingActor.id, verifyingActor.fullName)}
+                                  />
+                                </label>
+                              </div>
                               <p className="text-[9px] text-slate-400 text-center mt-1">Foto akan dikompres otomatis maksimal 1MB</p>
                             </div>
                           )}
@@ -2763,27 +2780,51 @@ export default function VerifikasiDinasBerkasPage() {
               </div>
 
               {/* Tombol Pilih File / Kamera */}
-              <div>
-                <label htmlFor="modal-photo-upload-input" className="cursor-pointer block">
-                  <div className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl border-2 border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs shadow-sm transition-all">
-                    <Camera className="w-4 h-4 text-amber-600" />
-                    <span>{photoEditPreview ? "Pilih / Ambil Foto Lain" : "Pilih dari Galeri / Ambil Foto Kamera"}</span>
-                  </div>
-                  <input
-                    id="modal-photo-upload-input"
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) {
-                        compressImageFile(file, (b64) => setPhotoEditPreview(b64))
-                      }
-                      e.target.value = ''
-                    }}
-                  />
-                </label>
+              <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* 1. Pilih dari Galeri HP (Tanpa capture agar membuka galeri / album foto smartphone di mobile) */}
+                  <label htmlFor="modal-photo-gallery-input-vdb" className="cursor-pointer block">
+                    <div className="flex items-center justify-center gap-2 w-full py-3 px-3 rounded-xl border-2 border-emerald-500/80 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-700 font-bold text-xs shadow-sm transition-all text-center">
+                      <ImageIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span>{photoEditPreview ? "Ganti dari Galeri HP" : "Pilih dari Galeri HP"}</span>
+                    </div>
+                    <input
+                      id="modal-photo-gallery-input-vdb"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          compressImageFile(file, (b64) => setPhotoEditPreview(b64))
+                        }
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+
+                  {/* 2. Ambil Foto Kamera HP (Dengan capture="environment" untuk langsung membuka kamera) */}
+                  <label htmlFor="modal-photo-camera-input-vdb" className="cursor-pointer block">
+                    <div className="flex items-center justify-center gap-2 w-full py-3 px-3 rounded-xl border-2 border-amber-500/80 bg-amber-50 hover:bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-700 font-bold text-xs shadow-sm transition-all text-center">
+                      <Camera className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <span>{photoEditPreview ? "Foto Ulang Kamera" : "Ambil Foto Kamera"}</span>
+                    </div>
+                    <input
+                      id="modal-photo-camera-input-vdb"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          compressImageFile(file, (b64) => setPhotoEditPreview(b64))
+                        }
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                </div>
                 <p className="text-[10px] text-slate-400 text-center mt-1.5">
                   ✅ Otomatis dikompresi kualitas tinggi dengan ukuran maksimal 1MB
                 </p>

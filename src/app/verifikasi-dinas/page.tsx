@@ -3208,27 +3208,51 @@ export default function VerifikasiDinasPage() {
               </div>
 
               {/* Tombol Pilih File / Kamera */}
-              <div>
-                <label htmlFor="modal-photo-upload-input-vd" className="cursor-pointer block">
-                  <div className="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-xl border-2 border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold text-xs shadow-sm transition-all">
-                    <Camera className="w-4 h-4 text-amber-600" />
-                    <span>{photoEditPreview ? "Pilih / Ambil Foto Lain" : "Pilih dari Galeri / Ambil Foto Kamera"}</span>
-                  </div>
-                  <input
-                    id="modal-photo-upload-input-vd"
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) {
-                        compressImageFile(file, (b64) => setPhotoEditPreview(b64))
-                      }
-                      e.target.value = ''
-                    }}
-                  />
-                </label>
+              <div className="space-y-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {/* 1. Pilih dari Galeri HP (Tanpa capture agar membuka galeri / album foto smartphone di mobile) */}
+                  <label htmlFor="modal-photo-gallery-input-vd" className="cursor-pointer block">
+                    <div className="flex items-center justify-center gap-2 w-full py-3 px-3 rounded-xl border-2 border-emerald-500/80 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-700 font-bold text-xs shadow-sm transition-all text-center">
+                      <ImageIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span>{photoEditPreview ? "Ganti dari Galeri HP" : "Pilih dari Galeri HP"}</span>
+                    </div>
+                    <input
+                      id="modal-photo-gallery-input-vd"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          compressImageFile(file, (b64) => setPhotoEditPreview(b64))
+                        }
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+
+                  {/* 2. Ambil Foto Kamera HP (Dengan capture="environment" untuk langsung membuka kamera) */}
+                  <label htmlFor="modal-photo-camera-input-vd" className="cursor-pointer block">
+                    <div className="flex items-center justify-center gap-2 w-full py-3 px-3 rounded-xl border-2 border-amber-500/80 bg-amber-50 hover:bg-amber-100 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 dark:border-amber-700 font-bold text-xs shadow-sm transition-all text-center">
+                      <Camera className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <span>{photoEditPreview ? "Foto Ulang Kamera" : "Ambil Foto Kamera"}</span>
+                    </div>
+                    <input
+                      id="modal-photo-camera-input-vd"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          compressImageFile(file, (b64) => setPhotoEditPreview(b64))
+                        }
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                </div>
                 <p className="text-[10px] text-slate-400 text-center mt-1.5">
                   ✅ Otomatis dikompresi kualitas tinggi dengan ukuran maksimal 1MB
                 </p>
