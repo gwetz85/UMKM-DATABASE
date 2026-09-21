@@ -2980,18 +2980,31 @@ function ActorDataContent() {
                       </section>
 
                       {/* 4. DATA PERBANKAN CARD */}
-                      <section className="relative overflow-hidden rounded-2xl border-2 border-amber-500/30 dark:border-amber-500/40 bg-gradient-to-br from-amber-500/[0.06] via-white to-yellow-500/[0.04] dark:from-amber-950/20 dark:via-slate-900 dark:to-yellow-950/20 p-4 sm:p-5 shadow-[0_6px_30px_rgba(245,158,11,0.08)] space-y-4">
-                        <CreditCard className="absolute -right-3 -bottom-3 w-36 h-36 text-amber-500/[0.05] dark:text-amber-400/[0.04] pointer-events-none" />
-                        <div className="relative z-10 flex items-center justify-between border-b border-amber-200/80 dark:border-amber-900/50 pb-3">
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-amber-500/30 dark:border-amber-500/40 bg-gradient-to-br from-amber-500/[0.07] via-white to-yellow-500/[0.05] dark:from-amber-950/25 dark:via-slate-900 dark:to-yellow-950/25 p-4 sm:p-5 shadow-[0_6px_30px_rgba(245,158,11,0.08)] space-y-4">
+                        <CreditCard className="absolute -right-3 -bottom-3 w-40 h-40 text-amber-500/[0.05] dark:text-amber-400/[0.04] pointer-events-none" />
+                        
+                        {/* Header Section */}
+                        <div className="relative z-10 flex flex-wrap items-center justify-between gap-3 border-b border-amber-200/80 dark:border-amber-900/50 pb-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center font-black shadow-md shadow-amber-500/25">
-                              <CreditCard className="w-4 h-4" />
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center font-black shadow-md shadow-amber-500/25">
+                              <CreditCard className="w-5 h-5" />
                             </div>
                             <div>
-                              <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
-                                Data Perbankan
-                              </h4>
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Rekening bank untuk pencairan dana bantuan</p>
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                                  Data Perbankan
+                                </h4>
+                                {viewingActor.bankNumber ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" /> Siap Salur
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300">
+                                    Belum Terisi
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Rekening bank untuk penyaluran dana bantuan</p>
                             </div>
                           </div>
                           {isAdmin && (
@@ -2999,17 +3012,18 @@ function ActorDataContent() {
                               size="sm"
                               variant="outline"
                               onClick={() => setEditingBankMode(true)}
-                              className="h-8 text-xs font-bold text-amber-700 hover:text-amber-800 border-amber-300 hover:bg-amber-50 rounded-xl"
+                              className="h-8 text-xs font-bold text-amber-800 hover:text-amber-900 border-amber-300 hover:bg-amber-100/70 bg-white/80 dark:bg-slate-800 dark:text-amber-300 dark:border-amber-700 rounded-xl shadow-2xs transition-all cursor-pointer"
                             >
-                              <CreditCard className="w-3.5 h-3.5 mr-1" /> Ubah Rekening
+                              <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Ubah Rekening
                             </Button>
                           )}
                         </div>
 
-                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* 3 Prominent Cards */}
+                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-3.5">
                           {/* Nama Bank */}
-                          <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/15 via-amber-50/50 to-white dark:from-amber-950/40 dark:via-slate-900 dark:to-slate-950 border-2 border-amber-300/80 dark:border-amber-800/80 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[90px]">
-                            <div className="flex items-center gap-2 mb-1.5">
+                          <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/10 via-amber-50/40 to-white dark:from-amber-950/30 dark:via-slate-900 dark:to-slate-950 border-2 border-amber-300/90 dark:border-amber-800/80 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between min-h-[115px]">
+                            <div className="flex items-center gap-2 mb-2">
                               <div className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
                                 <Building2 className="w-3.5 h-3.5" />
                               </div>
@@ -3017,16 +3031,21 @@ function ActorDataContent() {
                                 Nama Bank
                               </p>
                             </div>
-                            <div>
-                              <span className="inline-flex items-center px-3 py-1 rounded-xl text-xs font-black uppercase bg-amber-500 text-white shadow-xs shadow-amber-500/20">
-                                {viewingActor.bankName || "BELUM TERISI"}
-                              </span>
+                            <div className="mt-auto pt-1 space-y-1">
+                              <div>
+                                <span className="inline-flex items-center px-4 py-1.5 rounded-xl text-base sm:text-lg font-black uppercase tracking-wider bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm shadow-amber-500/25 border border-amber-400">
+                                  {viewingActor.bankName || "BELUM TERISI"}
+                                </span>
+                              </div>
+                              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide pt-0.5">
+                                Bank Penyalur Resmi
+                              </p>
                             </div>
                           </div>
 
                           {/* Nomor Rekening */}
-                          <div className="relative overflow-hidden bg-gradient-to-br from-orange-500/15 via-orange-50/50 to-white dark:from-orange-950/40 dark:via-slate-900 dark:to-slate-950 border-2 border-orange-300/80 dark:border-orange-800/80 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[90px]">
-                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <div className="relative overflow-hidden bg-gradient-to-br from-orange-500/10 via-orange-50/40 to-white dark:from-orange-950/30 dark:via-slate-900 dark:to-slate-950 border-2 border-orange-300/90 dark:border-orange-800/80 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between min-h-[115px]">
+                            <div className="flex items-center justify-between gap-2 mb-2">
                               <div className="flex items-center gap-2">
                                 <div className="w-6 h-6 rounded-lg bg-orange-600 text-white flex items-center justify-center shadow-xs">
                                   <CreditCard className="w-3.5 h-3.5" />
@@ -3039,21 +3058,27 @@ function ActorDataContent() {
                                 <button
                                   type="button"
                                   onClick={() => handleCopyText(viewingActor.bankNumber || '', 'Nomor Rekening')}
-                                  className="text-slate-400 hover:text-primary p-1 rounded-md bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 shadow-2xs hover:scale-105 active:scale-95 transition-all"
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-orange-800 dark:text-orange-300 bg-orange-100 hover:bg-orange-200 dark:bg-orange-900/50 dark:hover:bg-orange-800/60 px-2 py-0.5 rounded-md border border-orange-300/80 dark:border-orange-700 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
                                   title="Salin Nomor Rekening"
                                 >
                                   <Copy className="w-3 h-3" />
+                                  <span>Salin</span>
                                 </button>
                               )}
                             </div>
-                            <p className="text-sm font-black font-mono text-orange-950 dark:text-orange-100 tracking-wider">
-                              {viewingActor.bankNumber || "BELUM TERISI"}
-                            </p>
+                            <div className="mt-auto pt-1 space-y-0.5">
+                              <p className="text-xl sm:text-2xl font-black font-mono text-orange-950 dark:text-orange-100 tracking-[0.08em] sm:tracking-[0.12em] select-all leading-tight break-all">
+                                {viewingActor.bankNumber || "BELUM TERISI"}
+                              </p>
+                              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                                Rekening Penerima Bantuan
+                              </p>
+                            </div>
                           </div>
 
                           {/* Nama Pemilik Rekening */}
-                          <div className="relative overflow-hidden bg-gradient-to-br from-yellow-500/15 via-yellow-50/50 to-white dark:from-yellow-950/40 dark:via-slate-900 dark:to-slate-950 border-2 border-yellow-300/80 dark:border-yellow-800/80 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[90px]">
-                            <div className="flex items-center gap-2 mb-1.5">
+                          <div className="relative overflow-hidden bg-gradient-to-br from-yellow-500/10 via-yellow-50/40 to-white dark:from-yellow-950/30 dark:via-slate-900 dark:to-slate-950 border-2 border-yellow-300/90 dark:border-yellow-800/80 rounded-2xl p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between min-h-[115px]">
+                            <div className="flex items-center gap-2 mb-2">
                               <div className="w-6 h-6 rounded-lg bg-yellow-600 text-white flex items-center justify-center shadow-xs">
                                 <User className="w-3.5 h-3.5" />
                               </div>
@@ -3061,9 +3086,33 @@ function ActorDataContent() {
                                 Pemilik Rekening
                               </p>
                             </div>
-                            <p className="text-xs sm:text-sm font-black uppercase text-yellow-950 dark:text-yellow-100">
-                              {viewingActor.bankOwner || "BELUM TERISI"}
-                            </p>
+                            <div className="mt-auto pt-1 space-y-1">
+                              <p className="text-base sm:text-lg font-black uppercase text-yellow-950 dark:text-yellow-100 tracking-tight leading-snug break-words">
+                                {viewingActor.bankOwner || "BELUM TERISI"}
+                              </p>
+                              <div>
+                                {(() => {
+                                  const isOwnerMatch = viewingActor.bankOwner && viewingActor.fullName && 
+                                    viewingActor.bankOwner.trim().toLowerCase() === viewingActor.fullName.trim().toLowerCase();
+                                  if (isOwnerMatch) {
+                                    return (
+                                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-300/80 dark:border-emerald-800">
+                                        <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                        Sesuai Data Pelaku
+                                      </span>
+                                    );
+                                  }
+                                  if (viewingActor.bankOwner) {
+                                    return (
+                                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                                        Atas Nama Rekening
+                                      </p>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </section>
