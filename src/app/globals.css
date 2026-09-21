@@ -69,8 +69,45 @@
   * {
     @apply border-border;
   }
+  /* Auto-Adaptive Resolution Scaling (Menyesuaikan Resolusi Layar) */
   html {
-    font-size: 16px;
+    font-size: 15px;
+  }
+
+  /* Ultra-Wide / 2K / 4K Monitor (> 1920px) */
+  @media screen and (min-width: 1921px) {
+    html {
+      font-size: 16.5px;
+    }
+  }
+
+  /* Standard Desktop Full HD (1601px - 1920px) */
+  @media screen and (min-width: 1601px) and (max-width: 1920px) {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  /* Layar Laptop Standar & Windows Scaling (1024px - 1600px, e.g. 1366x768, 1280x800, 1080p skala 125%/150%) */
+  /* Otomatis proporsional ~81% (setara zoom 80%), pas dan tidak sesak tanpa memotong tinggi layar */
+  @media screen and (min-width: 1024px) and (max-width: 1600px) {
+    html {
+      font-size: 13px;
+    }
+  }
+
+  /* Tablet & Laptop Mini (769px - 1023px) */
+  @media screen and (min-width: 769px) and (max-width: 1023px) {
+    html {
+      font-size: 12.5px;
+    }
+  }
+
+  /* Smartphone / Mobile (<= 768px) */
+  @media screen and (max-width: 768px) {
+    html {
+      font-size: 14px;
+    }
   }
   body {
     @apply text-foreground font-body antialiased;
