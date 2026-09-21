@@ -1447,7 +1447,7 @@ function ActorDataContent() {
                         {/* Top Section */}
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-3 min-w-0 flex-1">
-                            <span className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold text-sm sm:text-base flex items-center justify-center shrink-0">
+                            <span className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white font-extrabold text-sm sm:text-base flex items-center justify-center shrink-0">
                               {globalIndexMap.get(actor.id) || index + 1}
                             </span>
                             <div className="min-w-0 flex-1">
@@ -1614,7 +1614,7 @@ function ActorDataContent() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-start gap-3 min-w-0 flex-1">
                             {/* Circle Index Badge */}
-                            <span className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold text-sm sm:text-base flex items-center justify-center shrink-0">
+                            <span className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white font-extrabold text-sm sm:text-base flex items-center justify-center shrink-0">
                               {globalIndexMap.get(actor.id) || index + 1}
                             </span>
 
@@ -1916,7 +1916,7 @@ function ActorDataContent() {
                         Sisa {stat.remaining}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 shrink-0">
+                      <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-slate-600 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 shrink-0">
                         Aktif
                       </span>
                     )}

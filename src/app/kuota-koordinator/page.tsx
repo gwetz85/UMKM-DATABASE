@@ -665,11 +665,11 @@ export default function KuotaKorlapDewanAktifPage() {
                             <span className="text-slate-300">-</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-center font-black text-slate-800">
-                           <span className="inline-flex items-center justify-center bg-slate-100 text-slate-600 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200">
-                              {item.quota}
-                           </span>
-                        </TableCell>
+                         <TableCell className="text-center font-black text-slate-800 dark:text-white">
+                            <span className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-white font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200 dark:border-slate-700">
+                               {item.quota}
+                            </span>
+                         </TableCell>
                         <TableCell className="text-center">
                            <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
                               {item.achieved}

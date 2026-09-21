@@ -1148,7 +1148,7 @@ export default function BpjsPage() {
                               <p className="text-[11px] text-muted-foreground uppercase">{actor.kelurahan || "-"}</p>
                             </div>
                           </div>
-                          <span className="font-mono text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md shrink-0">
+                          <span className="font-mono text-xs font-bold text-slate-600 dark:text-white bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md shrink-0">
                             {actor.nik}
                           </span>
                         </div>

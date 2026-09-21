@@ -733,7 +733,7 @@ export default function UserManagementPage() {
                                 </span>
                               )}
                               {u.pangkat && (
-                                <span className="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded">
+                                <span className="text-slate-600 dark:text-white bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
                                   {u.pangkat}
                                 </span>
                               )}
@@ -762,7 +762,7 @@ export default function UserManagementPage() {
                               <UserCheck className="w-3 h-3" /> USULAN
                             </Badge>
                           ) : u.role === 'petugas' ? (
-                            <Badge variant="secondary" className="text-slate-600 bg-slate-100 font-black uppercase text-[9px] gap-1">
+                            <Badge variant="secondary" className="text-slate-600 dark:text-white bg-slate-100 dark:bg-slate-800 font-black uppercase text-[9px] gap-1">
                               <UserCheck className="w-3 h-3" /> Petugas Survey
                             </Badge>
                           ) : u.role === 'dinas' ? (

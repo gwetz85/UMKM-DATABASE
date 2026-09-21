@@ -99,7 +99,7 @@ export function KelurahanWidget({ className }: KelurahanWidgetProps) {
                       {item.name}
                     </td>
                     <td className="px-1 text-center w-[48px] align-middle">
-                      <span className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-black px-1.5 py-0.5 rounded-md min-w-[1.7rem] text-[9.5px] border border-slate-200 dark:border-slate-700 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
+                      <span className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-white font-black px-1.5 py-0.5 rounded-md min-w-[1.7rem] text-[9.5px] border border-slate-200 dark:border-slate-700 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
                         {item.count}
                       </span>
                     </td>

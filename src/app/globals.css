@@ -863,6 +863,152 @@
   color: #1e293b !important;
 }
 
+/* ==========================================================================
+   ENSURE WHITE TEXT FOR BLACK / DARK BACKGROUND ELEMENTS IN DARK MODE
+   (Pills, Badges, Circles, Chips, Buttons, Numbers, and Table Cell Badges)
+   ========================================================================== */
+
+/* 1. Inside Table Cells (Overrides .dark table td forced dark text) */
+.dark table td [class*="bg-slate-800"],
+.dark table td [class*="dark:bg-slate-800"],
+.dark table td [class*="bg-slate-900"],
+.dark table td [class*="dark:bg-slate-900"],
+.dark table td [class*="bg-slate-950"],
+.dark table td [class*="dark:bg-slate-950"],
+.dark table td [class*="bg-black"],
+.dark table td [class*="dark:bg-black"],
+.dark table td [class*="bg-gray-800"],
+.dark table td [class*="dark:bg-gray-800"],
+.dark table td [class*="bg-gray-900"],
+.dark table td [class*="dark:bg-gray-900"],
+.dark table td [class*="bg-zinc-800"],
+.dark table td [class*="dark:bg-zinc-800"],
+.dark table td [class*="bg-zinc-900"],
+.dark table td [class*="dark:bg-zinc-900"],
+.dark table td .bg-primary,
+.dark table td [class*="bg-primary"],
+.dark table td .bg-secondary,
+.dark table td [class*="bg-secondary"] {
+  color: #ffffff !important;
+}
+
+.dark table td [class*="bg-slate-800"] *,
+.dark table td [class*="dark:bg-slate-800"] *,
+.dark table td [class*="bg-slate-900"] *,
+.dark table td [class*="dark:bg-slate-900"] *,
+.dark table td [class*="bg-slate-950"] *,
+.dark table td [class*="dark:bg-slate-950"] *,
+.dark table td [class*="bg-black"] *,
+.dark table td [class*="dark:bg-black"] *,
+.dark table td [class*="bg-gray-800"] *,
+.dark table td [class*="dark:bg-gray-800"] *,
+.dark table td [class*="bg-gray-900"] *,
+.dark table td [class*="dark:bg-gray-900"] *,
+.dark table td [class*="bg-zinc-800"] *,
+.dark table td [class*="dark:bg-zinc-800"] *,
+.dark table td [class*="bg-zinc-900"] *,
+.dark table td [class*="dark:bg-zinc-900"] *,
+.dark table td .bg-primary *,
+.dark table td [class*="bg-primary"] *,
+.dark table td .bg-secondary *,
+.dark table td [class*="bg-secondary"] * {
+  color: #ffffff !important;
+}
+
+/* 2. Universal Global Coverage for all Badges, Pills, Chips, Circles, Buttons with dark/black background in Dark Mode */
+.dark span[class*="bg-slate-800"],
+.dark span[class*="dark:bg-slate-800"],
+.dark span[class*="bg-slate-900"],
+.dark span[class*="dark:bg-slate-900"],
+.dark span[class*="bg-slate-950"],
+.dark span[class*="dark:bg-slate-950"],
+.dark span[class*="bg-black"],
+.dark span[class*="dark:bg-black"],
+.dark span[class*="bg-gray-800"],
+.dark span[class*="dark:bg-gray-800"],
+.dark span[class*="bg-gray-900"],
+.dark span[class*="dark:bg-gray-900"],
+.dark span[class*="bg-zinc-800"],
+.dark span[class*="dark:bg-zinc-800"],
+.dark span[class*="bg-zinc-900"],
+.dark span[class*="dark:bg-zinc-900"],
+.dark [class*="rounded-full"][class*="bg-slate-800"],
+.dark [class*="rounded-full"][class*="dark:bg-slate-800"],
+.dark [class*="rounded-full"][class*="bg-slate-900"],
+.dark [class*="rounded-full"][class*="dark:bg-slate-900"],
+.dark [class*="rounded-full"][class*="bg-slate-950"],
+.dark [class*="rounded-full"][class*="dark:bg-slate-950"],
+.dark [class*="rounded-full"][class*="bg-black"],
+.dark [class*="rounded-full"][class*="dark:bg-black"],
+.dark [class*="rounded-full"][class*="bg-gray-800"],
+.dark [class*="rounded-full"][class*="dark:bg-gray-800"],
+.dark [class*="rounded-full"][class*="bg-gray-900"],
+.dark [class*="rounded-full"][class*="dark:bg-gray-900"],
+.dark [class*="rounded-full"][class*="bg-zinc-800"],
+.dark [class*="rounded-full"][class*="dark:bg-zinc-800"],
+.dark [class*="rounded-full"][class*="bg-zinc-900"],
+.dark [class*="rounded-full"][class*="dark:bg-zinc-900"],
+.dark [class*="rounded-md"][class*="bg-slate-800"],
+.dark [class*="rounded-md"][class*="dark:bg-slate-800"],
+.dark [class*="rounded-md"][class*="bg-slate-900"],
+.dark [class*="rounded-md"][class*="dark:bg-slate-900"],
+.dark [class*="rounded-md"][class*="bg-black"],
+.dark [class*="rounded-md"][class*="dark:bg-black"],
+.dark [class*="rounded-lg"][class*="bg-slate-800"],
+.dark [class*="rounded-lg"][class*="dark:bg-slate-800"],
+.dark [class*="rounded-lg"][class*="bg-slate-900"],
+.dark [class*="rounded-lg"][class*="dark:bg-slate-900"],
+.dark [class*="rounded-lg"][class*="bg-black"],
+.dark [class*="rounded-lg"][class*="dark:bg-black"],
+.dark button[class*="bg-slate-800"],
+.dark button[class*="dark:bg-slate-800"],
+.dark button[class*="bg-slate-900"],
+.dark button[class*="dark:bg-slate-900"],
+.dark button[class*="bg-slate-950"],
+.dark button[class*="dark:bg-slate-950"],
+.dark button[class*="bg-black"],
+.dark button[class*="dark:bg-black"],
+.dark button[class*="bg-gray-800"],
+.dark button[class*="dark:bg-gray-800"],
+.dark button[class*="bg-gray-900"],
+.dark button[class*="dark:bg-gray-900"],
+.dark button[class*="bg-zinc-800"],
+.dark button[class*="dark:bg-zinc-800"],
+.dark button[class*="bg-zinc-900"],
+.dark button[class*="dark:bg-zinc-900"] {
+  color: #ffffff !important;
+}
+
+.dark span[class*="bg-slate-800"] *,
+.dark span[class*="dark:bg-slate-800"] *,
+.dark span[class*="bg-slate-900"] *,
+.dark span[class*="dark:bg-slate-900"] *,
+.dark span[class*="bg-black"] *,
+.dark span[class*="dark:bg-black"] *,
+.dark [class*="rounded-full"][class*="bg-slate-800"] *,
+.dark [class*="rounded-full"][class*="dark:bg-slate-800"] *,
+.dark [class*="rounded-full"][class*="bg-slate-900"] *,
+.dark [class*="rounded-full"][class*="dark:bg-slate-900"] *,
+.dark [class*="rounded-full"][class*="bg-black"] *,
+.dark [class*="rounded-full"][class*="dark:bg-black"] *,
+.dark [class*="rounded-md"][class*="bg-slate-800"] *,
+.dark [class*="rounded-md"][class*="dark:bg-slate-800"] *,
+.dark [class*="rounded-md"][class*="bg-black"] *,
+.dark [class*="rounded-md"][class*="dark:bg-black"] *,
+.dark [class*="rounded-lg"][class*="bg-slate-800"] *,
+.dark [class*="rounded-lg"][class*="dark:bg-slate-800"] *,
+.dark [class*="rounded-lg"][class*="bg-black"] *,
+.dark [class*="rounded-lg"][class*="dark:bg-black"] *,
+.dark button[class*="bg-slate-800"] *,
+.dark button[class*="dark:bg-slate-800"] *,
+.dark button[class*="bg-slate-900"] *,
+.dark button[class*="dark:bg-slate-900"] *,
+.dark button[class*="bg-black"] *,
+.dark button[class*="dark:bg-black"] * {
+  color: #ffffff !important;
+}
+
+
 /* ==========================================
    DARK MODE DATA DETAIL BOXES & MODALS
    ========================================== */
