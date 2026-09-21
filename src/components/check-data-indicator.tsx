@@ -241,35 +241,43 @@ export function CheckDataIndicator({
                   </div>
 
                   {/* Card Body Content */}
-                  <div className="p-4 space-y-3.5">
+                  <div className="p-4 sm:p-5 space-y-4">
                     {/* Primary Identity & Business Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-                      {/* Left: Nama Lengkap */}
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                          <User className="w-3 h-3 text-slate-400" />
-                          Nama Penerima (Data Pembanding)
-                        </span>
-                        <p className={`text-sm font-extrabold uppercase tracking-tight ${
-                          isBlacklist ? "text-rose-700 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"
-                        }`}>
-                          {data.nama || "-"}
-                        </p>
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 pb-3.5 border-b border-slate-100 dark:border-slate-800">
+                      {/* Left: Nama Lengkap & ID Chips (Col 7) */}
+                      <div className="md:col-span-7 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-black text-sm text-white shadow-xs shrink-0 ${
+                            isBlacklist ? "bg-gradient-to-br from-rose-600 to-red-700" : "bg-gradient-to-br from-slate-800 to-slate-950 dark:from-slate-700 dark:to-slate-900"
+                          }`}>
+                            {data.nama ? data.nama.split(" ").filter(Boolean).slice(0, 2).map((n: string) => n[0]).join("").toUpperCase() : "U"}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                              Nama Penerima (Data Pembanding)
+                            </span>
+                            <h4 className={`text-base sm:text-lg font-black uppercase tracking-tight leading-snug truncate ${
+                              isBlacklist ? "text-rose-700 dark:text-rose-400" : "text-slate-900 dark:text-slate-100"
+                            }`} title={data.nama || "-"}>
+                              {data.nama || "-"}
+                            </h4>
+                          </div>
+                        </div>
                         
                         {/* KK & NIK Chips */}
-                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
                           {data.nik && (
                             <span 
                               onClick={(e) => handleCopy(data.nik, `nik-${idx}`, e)}
-                              className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200/80 px-2 py-0.5 rounded cursor-pointer border border-slate-200 dark:border-slate-700/80 transition-colors"
-                              title="Salin NIK"
+                              className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-100/90 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 px-2.5 py-1 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 transition-all shadow-2xs group"
+                              title="Klik untuk menyalin NIK"
                             >
-                              <span className="text-[9px] font-sans font-bold text-slate-400 uppercase">NIK</span>
-                              {data.nik}
+                              <span className="text-[9px] font-sans font-black text-sky-600 dark:text-sky-400 uppercase tracking-wider">NIK</span>
+                              <span>{data.nik}</span>
                               {copiedKey === `nik-${idx}` ? (
-                                <Check className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                                <Check className="w-3 h-3 text-emerald-600 shrink-0" />
                               ) : (
-                                <Copy className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                <Copy className="w-3 h-3 text-slate-400 group-hover:text-slate-600 shrink-0" />
                               )}
                             </span>
                           )}
@@ -277,110 +285,139 @@ export function CheckDataIndicator({
                           {data.noKK && (
                             <span 
                               onClick={(e) => handleCopy(data.noKK, `kk-${idx}`, e)}
-                              className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200/80 px-2 py-0.5 rounded cursor-pointer border border-slate-200 dark:border-slate-700/80 transition-colors"
-                              title="Salin No. KK"
+                              className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-100/90 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 px-2.5 py-1 rounded-lg cursor-pointer border border-slate-200 dark:border-slate-700 transition-all shadow-2xs group"
+                              title="Klik untuk menyalin No. KK"
                             >
-                              <span className="text-[9px] font-sans font-bold text-slate-400 uppercase">KK</span>
-                              {data.noKK}
+                              <span className="text-[9px] font-sans font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider">KK</span>
+                              <span>{data.noKK}</span>
                               {copiedKey === `kk-${idx}` ? (
-                                <Check className="w-2.5 h-2.5 text-emerald-600 shrink-0" />
+                                <Check className="w-3 h-3 text-emerald-600 shrink-0" />
                               ) : (
-                                <Copy className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                <Copy className="w-3 h-3 text-slate-400 group-hover:text-slate-600 shrink-0" />
                               )}
                             </span>
                           )}
                         </div>
                       </div>
 
-                      {/* Right: Sektor Usaha */}
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                          <Store className="w-3 h-3 text-slate-400" />
-                          Sektor Usaha
-                        </span>
-                        <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 w-full">
-                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-tight">
-                            {data.usaha || "-"}
+                      {/* Right: Sektor Usaha (Col 5) */}
+                      <div className="md:col-span-5 flex flex-col justify-center">
+                        <div className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-gradient-to-br from-amber-50/30 via-white to-slate-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 p-3 space-y-1 shadow-2xs">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                            <Store className="w-3.5 h-3.5 text-amber-500" />
+                            Sektor Usaha Terdaftar
                           </span>
+                          <p className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-900 dark:text-slate-100 line-clamp-2">
+                            {data.usaha || "-"}
+                          </p>
                         </div>
                       </div>
                     </div>
 
                     {/* Address Strip */}
-                    <div className="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800">
-                      <MapPin className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                      <div className="text-xs space-y-0.5">
-                        <div className="font-semibold text-slate-800 dark:text-slate-200 uppercase">
+                    <div className="flex items-start gap-3 bg-slate-50/90 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-200/80 dark:border-slate-800">
+                      <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                          Lokasi & Wilayah Bantuan
+                        </span>
+                        <p className="text-xs sm:text-sm font-black uppercase text-slate-800 dark:text-slate-200 tracking-tight">
                           {data.alamat || "Alamat tidak dicatat"}
-                        </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                          Kelurahan: <span className="font-semibold text-slate-700 dark:text-slate-300">{data.kelurahan || "-"}</span>
-                          <span className="mx-1.5 opacity-40">•</span>
-                          Kecamatan: <span className="font-semibold text-slate-700 dark:text-slate-300">{data.kecamatan || "-"}</span>
+                        </p>
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs pt-0.5">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                            Kel. <span className="uppercase font-extrabold text-slate-800 dark:text-slate-100">{data.kelurahan || "-"}</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                            Kec. <span className="uppercase font-extrabold text-slate-800 dark:text-slate-100">{data.kecamatan || "-"}</span>
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     {/* Stat / Program Metrics Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-0.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-0.5">
                       {/* Nominal */}
-                      <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-1">
-                        <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          <Banknote className="w-3 h-3 text-emerald-500" />
+                      <div className="p-3 rounded-xl bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-900/50 space-y-1">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                          <Banknote className="w-3.5 h-3.5" />
                           Nominal
                         </div>
-                        <div className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
+                        <div className="text-sm sm:text-base font-black text-emerald-700 dark:text-emerald-300 tracking-tight">
                           {formatCurrency(data.nominal)}
                         </div>
                       </div>
 
                       {/* Tahun */}
-                      <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-1">
-                        <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          <Calendar className="w-3 h-3 text-blue-500" />
+                      <div className="p-3 rounded-xl bg-blue-500/5 dark:bg-blue-950/20 border border-blue-200/80 dark:border-blue-900/50 space-y-1">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">
+                          <Calendar className="w-3.5 h-3.5" />
                           Tahun
                         </div>
-                        <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                          {data.tahunPengajuan || "-"}
+                        <div className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100">
+                          {(() => {
+                            const raw = String(data.tahunPengajuan || "-");
+                            return raw.replace(/^tahun\s*/i, "");
+                          })()}
                         </div>
                       </div>
 
                       {/* Status */}
-                      <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-1">
-                        <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          <Layers className="w-3 h-3 text-slate-400" />
+                      <div className="p-3 rounded-xl bg-indigo-500/5 dark:bg-indigo-950/20 border border-indigo-200/80 dark:border-indigo-900/50 space-y-1">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-400">
+                          <Layers className="w-3.5 h-3.5" />
                           Status
                         </div>
-                        <div className={`text-xs font-bold ${
-                          isBlacklist ? "text-rose-600 dark:text-rose-400" : "text-blue-600 dark:text-blue-400"
-                        }`}>
-                          {data.status || "-"}
+                        <div>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-black uppercase ${
+                            isBlacklist 
+                              ? "bg-rose-100 text-rose-800 border border-rose-200 dark:bg-rose-950/70 dark:text-rose-300" 
+                              : "bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950/70 dark:text-blue-300"
+                          }`}>
+                            {data.status || "-"}
+                          </span>
                         </div>
                       </div>
 
                       {/* Koordinator */}
-                      <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-1">
-                        <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          <Users className="w-3 h-3 text-purple-500" />
+                      <div className="p-3 rounded-xl bg-purple-500/5 dark:bg-purple-950/20 border border-purple-200/80 dark:border-purple-900/50 space-y-1">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-400">
+                          <Users className="w-3.5 h-3.5" />
                           Koordinator
                         </div>
-                        <div className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate" title={data.coordinator || "-"}>
+                        <div className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-200 truncate" title={data.coordinator || "-"}>
                           {data.coordinator || "-"}
                         </div>
                       </div>
                     </div>
 
                     {/* LPJ Status Banner */}
-                    <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-300/60 dark:border-amber-900/50">
-                      <div className="flex items-center gap-2 text-xs">
-                        <FileCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                        <span className="text-[11px] font-bold uppercase tracking-wide text-amber-800 dark:text-amber-300">
-                          Status LPJ:
+                    <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-300/80 dark:border-amber-900/50">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-md bg-amber-500 text-white flex items-center justify-center shrink-0">
+                          <FileCheck className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-[11px] font-black uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                          Status Laporan Pertanggungjawaban (LPJ):
                         </span>
                       </div>
-                      <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
-                        {data.statusLpj || "-"}
-                      </span>
+                      <div>
+                        {(() => {
+                          const lpj = String(data.statusLpj || "-").toUpperCase();
+                          const isWarning = lpj.includes("TIDAK DITEMUKAN") || lpj.includes("BELUM") || lpj === "-";
+                          return (
+                            <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-black uppercase shadow-2xs ${
+                              isWarning
+                                ? "bg-amber-100 text-amber-950 border border-amber-300 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-800"
+                                : "bg-emerald-100 text-emerald-950 border border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800"
+                            }`}>
+                              {data.statusLpj || "-"}
+                            </span>
+                          );
+                        })()}
+                      </div>
                     </div>
 
                   </div>
