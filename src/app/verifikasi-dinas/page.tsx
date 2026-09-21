@@ -1621,17 +1621,56 @@ export default function VerifikasiDinasPage() {
                 {groupActors.map((actor) => {
                   const coordPhone = kuotaMap.get((actor.coordinator || "").toUpperCase().trim()) || "";
                   const actorProg = verifyingActor?.id === actor.id ? surveyProgress : (actor.surveyProgress || 0);
+                  const isNeedsRevision = Boolean(actor.dikembalikanKePetugasReason || (actor.hasilVerifikasiDinas === 'Dikembalikan' && actor.keteranganDinas));
+                  const isComplete = actorProg >= 100;
+                  const cardTheme = isNeedsRevision ? '#ea580c' : isComplete ? '#059669' : '#c026d3';
 
                   return (
-                    <Card key={actor.id} className="group relative overflow-hidden border-slate-200/60 hover:border-primary/50 hover:shadow-2xl transition-all duration-500 rounded-[2rem] bg-white/80 backdrop-blur-sm">
-                      <CardContent className="p-6">
+                    <Card 
+                      key={actor.id} 
+                      style={{
+                        borderColor: `${cardTheme}45`,
+                        boxShadow: `0 4px 20px -2px ${cardTheme}20`
+                      }}
+                      className="group relative overflow-hidden border-2 hover:shadow-2xl transition-all duration-300 ease-out rounded-[2rem] bg-white dark:bg-slate-900 hover:-translate-y-1.5 flex flex-col justify-between"
+                    >
+                      {/* Glowing Top Accent Stripe */}
+                      <div 
+                        className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 group-hover:h-2 z-10"
+                        style={{ background: `linear-gradient(90deg, ${cardTheme}, ${cardTheme}dd, ${cardTheme}aa)` }} 
+                      />
+
+                      {/* Colorful Gradient Wash Overlay */}
+                      <div 
+                        className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-60 group-hover:opacity-100"
+                        style={{ background: `linear-gradient(145deg, transparent 35%, ${cardTheme}10 80%, ${cardTheme}20 100%)` }}
+                      />
+
+                      {/* Ambient Soft Glow Orb */}
+                      <div 
+                        className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl transition-all duration-700 pointer-events-none opacity-20 group-hover:opacity-45 group-hover:scale-150"
+                        style={{ backgroundColor: cardTheme }}
+                      />
+
+                      {/* Large Decorative Watermark Icon (Bottom-Right) */}
+                      <div 
+                        className="absolute -bottom-3 -right-3 pointer-events-none transition-all duration-500 ease-out opacity-[0.07] dark:opacity-[0.14] group-hover:opacity-[0.22] group-hover:scale-125 group-hover:-rotate-12"
+                        style={{ color: cardTheme }}
+                      >
+                        <ClipboardCheck className="w-28 h-28 stroke-[1.5]" />
+                      </div>
+
+                      <CardContent className="p-6 relative z-10 flex flex-col justify-between h-full">
                         <div className="flex flex-col h-full gap-4">
                           <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors duration-500">
+                            <div 
+                              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white shadow-md transition-all duration-300 group-hover:scale-105"
+                              style={{ backgroundColor: cardTheme }}
+                            >
                               <User className="w-6 h-6" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <h3 className="font-black text-slate-800 uppercase text-sm truncate" title={actor.fullName}>
+                              <h3 className="font-black text-slate-800 dark:text-slate-100 uppercase text-sm truncate" title={actor.fullName}>
                                 {actor.fullName}
                               </h3>
                               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -1697,23 +1736,26 @@ export default function VerifikasiDinasPage() {
                             </div>
                           )}
 
-                          <div className="grid grid-cols-2 gap-3 py-4 border-y border-slate-100">
+                          <div className="grid grid-cols-2 gap-3 py-4 border-y border-slate-100 dark:border-slate-800">
                             <div className="space-y-1">
                               <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Usaha</span>
-                              <p className="text-[11px] font-black text-slate-700 truncate uppercase">{actor.businessName}</p>
+                              <p className="text-[11px] font-black text-slate-700 dark:text-slate-200 truncate uppercase">{actor.businessName}</p>
                             </div>
                             <div className="space-y-1">
                               <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Kategori</span>
                               <div className="flex">
-                                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 uppercase">
+                                <span 
+                                  className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase"
+                                  style={{ backgroundColor: `${cardTheme}15`, color: cardTheme }}
+                                >
                                   {actor.businessCategory}
                                 </span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-slate-100">
-                            <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                          <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <div className="grid grid-cols-2 gap-2 bg-slate-50/90 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                               <div className="flex flex-col min-w-0">
                                 <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">USULAN</span>
                                 <div className="flex items-center gap-1 min-w-0">

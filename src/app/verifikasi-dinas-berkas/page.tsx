@@ -1628,18 +1628,54 @@ export default function VerifikasiDinasBerkasPage() {
                     {displayedGroupActors.map((actor) => {
                     const actorPejabat = getActorPejabat(actor)
                     const vDinas = actorPejabat?.verifikator || (actor.verifikatorDinas ? { nama: actor.verifikatorDinas } : null)
+                    const cardTheme = '#9333ea'
 
                     return (
-                      <Card key={actor.id} className="group relative overflow-hidden border-slate-200/60 hover:border-primary/50 hover:shadow-2xl transition-all duration-500 rounded-[2rem] bg-white/80 backdrop-blur-sm">
-                        
-                        <CardContent className="p-6">
+                      <Card 
+                        key={actor.id} 
+                        style={{
+                          borderColor: `${cardTheme}45`,
+                          boxShadow: `0 4px 20px -2px ${cardTheme}20`
+                        }}
+                        className="group relative overflow-hidden border-2 hover:shadow-2xl transition-all duration-300 ease-out rounded-[2rem] bg-white dark:bg-slate-900 hover:-translate-y-1.5 flex flex-col justify-between"
+                      >
+                        {/* Glowing Top Accent Stripe */}
+                        <div 
+                          className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 group-hover:h-2 z-10"
+                          style={{ background: `linear-gradient(90deg, ${cardTheme}, ${cardTheme}dd, ${cardTheme}aa)` }} 
+                        />
+
+                        {/* Colorful Gradient Wash Overlay */}
+                        <div 
+                          className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-60 group-hover:opacity-100"
+                          style={{ background: `linear-gradient(145deg, transparent 35%, ${cardTheme}10 80%, ${cardTheme}20 100%)` }}
+                        />
+
+                        {/* Ambient Soft Glow Orb */}
+                        <div 
+                          className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl transition-all duration-700 pointer-events-none opacity-20 group-hover:opacity-45 group-hover:scale-150"
+                          style={{ backgroundColor: cardTheme }}
+                        />
+
+                        {/* Large Decorative Watermark Icon (Bottom-Right) */}
+                        <div 
+                          className="absolute -bottom-3 -right-3 pointer-events-none transition-all duration-500 ease-out opacity-[0.07] dark:opacity-[0.14] group-hover:opacity-[0.22] group-hover:scale-125 group-hover:-rotate-12"
+                          style={{ color: cardTheme }}
+                        >
+                          <ClipboardCheck className="w-28 h-28 stroke-[1.5]" />
+                        </div>
+
+                        <CardContent className="p-6 relative z-10 flex flex-col justify-between h-full">
                           <div className="flex flex-col h-full gap-4">
                             <div className="flex items-start gap-4">
-                              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-colors duration-500">
+                              <div 
+                                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white shadow-md transition-all duration-300 group-hover:scale-105"
+                                style={{ backgroundColor: cardTheme }}
+                              >
                                 <User className="w-6 h-6" />
                               </div>
                               <div className="min-w-0">
-                                <h3 className="font-black text-slate-800 uppercase text-sm truncate" title={actor.fullName || actor.surveyData?.namaPemilik}>
+                                <h3 className="font-black text-slate-800 dark:text-slate-100 uppercase text-sm truncate" title={actor.fullName || actor.surveyData?.namaPemilik}>
                                   {actor.fullName || actor.surveyData?.namaPemilik}
                                 </h3>
                                 <p className="text-[10px] font-mono text-slate-500 mt-0.5 tracking-tighter">
@@ -1648,20 +1684,20 @@ export default function VerifikasiDinasBerkasPage() {
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3 py-3 border-y border-slate-100">
+                            <div className="grid grid-cols-2 gap-3 py-3 border-y border-slate-100 dark:border-slate-800">
                               <div className="space-y-0.5">
                                 <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Usaha</span>
-                                <p className="text-[11px] font-black text-slate-700 truncate uppercase">{actor.businessName || actor.surveyData?.namaUsaha}</p>
+                                <p className="text-[11px] font-black text-slate-700 dark:text-slate-200 truncate uppercase">{actor.businessName || actor.surveyData?.namaUsaha}</p>
                               </div>
                               <div className="space-y-0.5">
                                 <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Kelurahan</span>
-                                <p className="text-[11px] font-bold text-slate-600 truncate uppercase">{actor.kelurahan || "-"}</p>
+                                <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300 truncate uppercase">{actor.kelurahan || "-"}</p>
                               </div>
                             </div>
 
                             {/* Section Info Aktor (USULAN, PETUGAS SURVEY, & VERIFIKATOR DINAS) */}
                             <div className="flex flex-col gap-2 mt-1">
-                              <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                              <div className="grid grid-cols-2 gap-2 bg-slate-50/90 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                                 {(() => {
                                   const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (actor.coordinator || "").toUpperCase().trim());
                                   const coordPhone = found?.phone || found?.noHp || found?.hp || "";
@@ -1739,18 +1775,18 @@ export default function VerifikasiDinasBerkasPage() {
                               </div>
 
                               {/* Badge Info Verifikator Dinas pada Kartu */}
-                              <div className="bg-purple-50/70 border border-purple-100 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-2">
+                              <div className="bg-purple-50/70 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-900/50 rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-1.5 min-w-0">
                                   <BadgeCheck className="w-3.5 h-3.5 text-purple-600 shrink-0" />
                                   <div className="min-w-0">
                                     <p className="text-[8px] font-bold text-purple-600 uppercase tracking-tight">Verifikator Dinas</p>
-                                    <p className="text-[10px] font-black text-purple-950 truncate uppercase" title={vDinas?.nama || displayName}>
+                                    <p className="text-[10px] font-black text-purple-950 dark:text-purple-200 truncate uppercase" title={vDinas?.nama || displayName}>
                                       {vDinas?.nama || displayName}
                                     </p>
                                   </div>
                                 </div>
                                 {(vDinas as any)?.nipppk && (
-                                  <span className="text-[9px] font-mono font-bold text-purple-700 bg-white px-1.5 py-0.5 rounded border border-purple-200 shrink-0">
+                                  <span className="text-[9px] font-mono font-bold text-purple-700 dark:text-purple-300 bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-800 shrink-0">
                                     NIP: {(vDinas as any).nipppk}
                                   </span>
                                 )}
