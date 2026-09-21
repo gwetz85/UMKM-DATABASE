@@ -2155,7 +2155,7 @@ function ActorDataContent() {
                 {/* ── STICKY MODAL HEADER (ELEGANT 2-TIER LAYOUT) ── */}
                 <div className="relative z-20 p-4 sm:p-5 pb-3.5 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md space-y-3 shrink-0">
                   {/* TIER 1: Profile Avatar & Identity Row */}
-                  <div className="flex items-center gap-3.5">
+                  <div className="flex items-center gap-3.5 pr-10 sm:pr-12">
                     <div className={cn("w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center font-black text-white text-base sm:text-xl shadow-md shrink-0 bg-gradient-to-br", heroGradient)}>
                       {initials}
                     </div>
