@@ -81,23 +81,55 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
                   handleNavigate(item.href)
                 }
               }}
-              style={{ animationDelay: `${index * 20}ms` }}
+              style={{ 
+                animationDelay: `${index * 20}ms`,
+                borderColor: `${item.color}50`,
+                boxShadow: `0 4px 18px -2px ${item.color}20`
+              }}
               className={cn(
-                "group relative flex flex-col justify-between p-3.5 sm:p-4 rounded-2xl transition-all duration-300 ease-out overflow-hidden shadow-xs hover:shadow-xl border-2 border-slate-300 hover:border-slate-400 dark:border-slate-700 dark:hover:border-slate-500 cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-2",
-                "bg-white dark:bg-slate-900 hover:-translate-y-1.5 aspect-square"
+                "group relative flex flex-col justify-between p-3.5 sm:p-4 rounded-2xl transition-all duration-300 ease-out overflow-hidden border-2 cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-2",
+                "bg-white dark:bg-slate-900 hover:-translate-y-1.5 hover:shadow-xl aspect-square"
               )}
             >
-              {/* Top Accent Stripe */}
+              {/* Top Accent Gradient Stripe */}
               <div 
-                className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 group-hover:h-2"
+                className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 group-hover:h-2 z-10"
+                style={{ 
+                  background: `linear-gradient(90deg, ${item.color}, ${item.color}dd, ${item.color})` 
+                }} 
+              />
+
+              {/* Colorful Gradient Wash Overlay */}
+              <div 
+                className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-60 group-hover:opacity-100"
+                style={{ 
+                  background: `linear-gradient(145deg, transparent 35%, ${item.color}15 80%, ${item.color}25 100%)` 
+                }}
+              />
+
+              {/* Ambient Soft Glow Orb */}
+              <div 
+                className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl transition-all duration-700 pointer-events-none opacity-25 group-hover:opacity-50 group-hover:scale-150"
                 style={{ backgroundColor: item.color }} 
               />
+
+              {/* Large Decorative Watermark Icon (Bottom-Right) */}
+              <div 
+                className="absolute -bottom-2.5 -right-2.5 pointer-events-none transition-all duration-500 ease-out opacity-[0.08] dark:opacity-[0.14] group-hover:opacity-[0.24] group-hover:scale-125 group-hover:-rotate-12"
+                style={{ color: item.color }}
+              >
+                <item.icon className="w-20 h-20 sm:w-24 sm:h-24 stroke-[1.5]" />
+              </div>
 
               {/* Top Bar: Icon with theme color, Badges on right */}
               <div className="relative z-10 flex items-start justify-between w-full pt-0.5">
                 <div 
-                  className="p-2 sm:p-2.5 rounded-2xl transition-transform duration-300 group-hover:scale-110 shadow-md flex items-center justify-center shrink-0"
-                  style={{ backgroundColor: item.color, color: '#ffffff' }}
+                  className="p-2 sm:p-2.5 rounded-2xl transition-all duration-300 group-hover:scale-110 shadow-md flex items-center justify-center shrink-0"
+                  style={{ 
+                    backgroundColor: item.color, 
+                    color: '#ffffff',
+                    boxShadow: `0 8px 16px -4px ${item.color}60`
+                  }}
                 >
                   <item.icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
@@ -112,7 +144,14 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
                   )}
 
                   {item.items && item.items.length > 0 && (
-                    <div className="flex items-center gap-1 text-[8px] sm:text-[9px] font-black text-slate-600 dark:text-white uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
+                    <div 
+                      className="flex items-center gap-1 text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-xs"
+                      style={{ 
+                        backgroundColor: `${item.color}15`,
+                        borderColor: `${item.color}35`,
+                        color: item.color
+                      }}
+                    >
                       <ChevronRight className="w-2.5 h-2.5" />
                       <span>Sub-Menu</span>
                     </div>
@@ -122,23 +161,42 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
 
               {/* Title & Description Section */}
               <div className="relative z-10 flex flex-col justify-center my-auto space-y-1 py-1">
-                <div className="text-xs sm:text-[13px] font-black text-slate-900 dark:text-white leading-snug uppercase tracking-tight group-hover:text-primary transition-colors line-clamp-2">
-                  {item.name}
+                <div className="flex items-start gap-1.5">
+                  <span 
+                    className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 transition-transform duration-300 group-hover:scale-150" 
+                    style={{ backgroundColor: item.color }} 
+                  />
+                  <div className="text-xs sm:text-[13px] font-black text-slate-900 dark:text-white leading-snug uppercase tracking-tight group-hover:text-primary transition-colors line-clamp-2">
+                    {item.name}
+                  </div>
                 </div>
                 {item.description && (
-                  <p className="text-[10px] sm:text-[10.5px] font-medium text-slate-500 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                  <p className="text-[10px] sm:text-[10.5px] font-medium text-slate-500 dark:text-slate-300 line-clamp-2 leading-relaxed pl-3">
                     {item.description}
                   </p>
                 )}
               </div>
 
               {/* Action Footer */}
-              <div className="relative z-10 pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[9px] sm:text-[9.5px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-wider">
-                <span className="group-hover:text-primary transition-colors">
+              <div 
+                className="relative z-10 pt-2 border-t flex items-center justify-between text-[9px] sm:text-[10px] font-black uppercase tracking-wider"
+                style={{ borderColor: `${item.color}25` }}
+              >
+                <span 
+                  className="transition-colors font-bold"
+                  style={{ color: item.color }}
+                >
                   {item.items && item.items.length > 0 ? "Pilih Opsi" : "Buka Modul"}
                 </span>
-                <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-white group-hover:bg-primary group-hover:text-white transition-colors">
-                  <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
+                <div 
+                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all duration-300 group-hover:translate-x-1 shadow-xs"
+                  style={{ 
+                    backgroundColor: item.color,
+                    color: '#ffffff',
+                    boxShadow: `0 4px 10px -2px ${item.color}50`
+                  }}
+                >
+                  <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-[2.5]" />
                 </div>
               </div>
             </div>
