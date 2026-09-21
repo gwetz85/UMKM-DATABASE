@@ -2152,32 +2152,35 @@ function ActorDataContent() {
                   style={{ background: `linear-gradient(90deg, ${heroAccentColor}, #8b5cf6, ${heroAccentColor})` }} 
                 />
 
-                {/* ── STICKY MODAL HEADER ── */}
-                <div className="relative z-20 flex flex-col md:flex-row md:items-center justify-between p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md gap-4 shrink-0">
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className={cn("w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center font-black text-white text-base sm:text-lg shadow-md shrink-0 bg-gradient-to-br", heroGradient)}>
+                {/* ── STICKY MODAL HEADER (ELEGANT 2-TIER LAYOUT) ── */}
+                <div className="relative z-20 p-4 sm:p-5 pb-3.5 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md space-y-3 shrink-0">
+                  {/* TIER 1: Profile Avatar & Identity Row */}
+                  <div className="flex items-center gap-3.5">
+                    <div className={cn("w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center font-black text-white text-base sm:text-xl shadow-md shrink-0 bg-gradient-to-br", heroGradient)}>
                       {initials}
                     </div>
-                    <div className="min-w-0 space-y-1">
+                    <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <DialogTitle className="text-base sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
+                        <DialogTitle className="text-base sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
                           {isEditMode ? `Edit: ${viewingActor.fullName}` : viewingActor.fullName}
                         </DialogTitle>
-                        <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-black uppercase border shrink-0", heroBgSoft)}>
+                        <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border shadow-2xs shrink-0", heroBgSoft)}>
                           {isFemale ? "Perempuan" : "Laki-laki"}
                         </span>
                         {cleanAge && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
                             {cleanAge} Tahun
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
+
+                      {/* Info Chips Row */}
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs pt-0.5">
                         {viewingActor.registrationCode && (
                           <button
                             type="button"
                             onClick={() => handleCopyText(viewingActor.registrationCode || '', 'Reg ID')}
-                            className="inline-flex items-center gap-1 font-mono font-bold text-[11px] text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded border border-sky-200 dark:border-sky-800 hover:bg-sky-100 transition-colors"
+                            className="inline-flex items-center gap-1 font-mono font-bold text-[11px] text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-lg border border-sky-200 dark:border-sky-800 hover:bg-sky-100 hover:border-sky-300 transition-all shadow-2xs"
                             title="Klik untuk menyalin Reg ID"
                           >
                             <span>REG: {viewingActor.registrationCode}</span>
@@ -2188,7 +2191,7 @@ function ActorDataContent() {
                           <button
                             type="button"
                             onClick={() => handleCopyText(viewingActor.nik || '', 'NIK')}
-                            className="inline-flex items-center gap-1 font-mono font-bold text-[11px] text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition-colors"
+                            className="inline-flex items-center gap-1 font-mono font-bold text-[11px] text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-200 hover:border-slate-300 transition-all shadow-2xs"
                             title="Klik untuk menyalin NIK"
                           >
                             <span>NIK: {viewingActor.nik}</span>
@@ -2200,88 +2203,108 @@ function ActorDataContent() {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2 items-center shrink-0">
-                    {!isEditMode && viewingActor && !isKoordinator && !isInspektorat && (
-                      <Button 
-                        size="sm" 
-                        onClick={() => handlePrintForm(viewingActor)}
-                        className="font-bold bg-primary hover:bg-primary/90 text-white shadow-xs rounded-xl text-xs h-8 sm:h-9"
-                      >
-                        <Printer className="w-3.5 h-3.5 mr-1.5" /> Cetak Formulir
-                      </Button>
-                    )}
-                    {!isEditMode && isAdmin && viewingActor && (viewingActor as any).surveyData && (
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          if (database && viewingActor?.id && !(viewingActor as any).surveyData?.fotoSurveyUrl) {
-                            get(ref(database, `businessActors/${viewingActor.id}`)).then(snap => {
-                              if (snap.exists()) {
-                                const full = { ...snap.val(), id: snap.key } as BusinessActor;
-                                setViewingActor(full);
-                                setSurveyViewActor(full);
-                              } else {
-                                setSurveyViewActor(viewingActor);
-                              }
-                            }).catch(() => setSurveyViewActor(viewingActor));
-                          } else {
-                            setSurveyViewActor(viewingActor);
-                          }
-                        }}
-                        className="font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs rounded-xl text-xs h-8 sm:h-9"
-                      >
-                        <ClipboardList className="w-3.5 h-3.5 mr-1.5" /> Lihat Form Survey
-                      </Button>
-                    )}
-                    {!isAdmin && !isMonitoring && !isKoordinator && !isEditMode && viewingActor.status === 'verified_actor' && (
-                      <Button 
-                        size="sm" 
-                        onClick={() => setEditingBankMode(true)}
-                        className="font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-xs rounded-xl text-xs h-8 sm:h-9"
-                      >
-                        <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Input Rekening
-                      </Button>
-                    )}
-                    {isAdmin && !isEditMode && (
-                      <Button 
-                        size="sm" 
-                        onClick={() => setEditingDriveMode(true)}
-                        className="font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl text-xs h-8 sm:h-9"
-                      >
-                        <Folder className="w-3.5 h-3.5 mr-1.5" /> Link Drive
-                      </Button>
-                    )}
-                    {isAdmin && !isEditMode && viewingActor && (
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleSingleLanjutDinas(viewingActor)}
-                        className="font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-xs rounded-xl text-xs h-8 sm:h-9"
-                        title="Push Data Susulan ke Verifikasi Dinas"
-                      >
-                        <Send className="w-3.5 h-3.5 mr-1.5" /> Lanjut Dinas
-                      </Button>
-                    )}
-                    {isAdmin && (
-                      <Button 
-                        variant={isEditMode ? "outline" : "default"} 
-                        size="sm" 
-                        onClick={() => setIsEditMode(!isEditMode)}
-                        className={cn("font-bold shadow-xs rounded-xl text-xs h-8 sm:h-9", isEditMode ? "border-amber-500 text-amber-600 hover:bg-amber-50" : "bg-primary")}
-                      >
-                        {isEditMode ? "Batal Edit" : <><Edit3 className="w-3.5 h-3.5 mr-1.5"/> Edit Data</>}
-                      </Button>
-                    )}
-                    {isAdmin && !isEditMode && (
-                      <>
-                        <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 hover:bg-amber-50 font-bold shadow-xs rounded-xl text-xs h-8 sm:h-9 px-2.5" title="Kembalikan ke antrean awal (Pending)">
-                          <RotateCcw className="w-3.5 h-3.5 mr-1 md:mr-0" /> <span className="md:hidden">Revert</span>
+                  {/* TIER 2: Dedicated Action Command Bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                      {!isEditMode && viewingActor && !isKoordinator && !isInspektorat && (
+                        <Button 
+                          size="sm" 
+                          onClick={() => handlePrintForm(viewingActor)}
+                          className="font-bold bg-primary hover:bg-primary/90 text-white shadow-xs rounded-xl text-xs h-8 px-3"
+                        >
+                          <Printer className="w-3.5 h-3.5 mr-1.5" /> Cetak Formulir
                         </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="font-bold shadow-xs rounded-xl text-xs h-8 sm:h-9 px-2.5" title="Hapus Permanen">
-                          <Trash2 className="w-3.5 h-3.5 mr-1 md:mr-0" /> <span className="md:hidden">Delete</span>
+                      )}
+                      {!isEditMode && isAdmin && viewingActor && (viewingActor as any).surveyData && (
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            if (database && viewingActor?.id && !(viewingActor as any).surveyData?.fotoSurveyUrl) {
+                              get(ref(database, `businessActors/${viewingActor.id}`)).then(snap => {
+                                if (snap.exists()) {
+                                  const full = { ...snap.val(), id: snap.key } as BusinessActor;
+                                  setViewingActor(full);
+                                  setSurveyViewActor(full);
+                                } else {
+                                  setSurveyViewActor(viewingActor);
+                                }
+                              }).catch(() => setSurveyViewActor(viewingActor));
+                            } else {
+                              setSurveyViewActor(viewingActor);
+                            }
+                          }}
+                          className="font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs rounded-xl text-xs h-8 px-3"
+                        >
+                          <ClipboardList className="w-3.5 h-3.5 mr-1.5" /> Lihat Form Survey
                         </Button>
-                      </>
-                    )}
+                      )}
+                      {!isAdmin && !isMonitoring && !isKoordinator && !isEditMode && viewingActor.status === 'verified_actor' && (
+                        <Button 
+                          size="sm" 
+                          onClick={() => setEditingBankMode(true)}
+                          className="font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-xs rounded-xl text-xs h-8 px-3"
+                        >
+                          <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Input Rekening
+                        </Button>
+                      )}
+                      {isAdmin && !isEditMode && (
+                        <Button 
+                          size="sm" 
+                          onClick={() => setEditingDriveMode(true)}
+                          className="font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl text-xs h-8 px-3"
+                        >
+                          <Folder className="w-3.5 h-3.5 mr-1.5" /> Link Drive
+                        </Button>
+                      )}
+                      {isAdmin && !isEditMode && viewingActor && (
+                        <Button 
+                          size="sm" 
+                          onClick={() => handleSingleLanjutDinas(viewingActor)}
+                          className="font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-xs rounded-xl text-xs h-8 px-3"
+                          title="Push Data Susulan ke Verifikasi Dinas"
+                        >
+                          <Send className="w-3.5 h-3.5 mr-1.5" /> Lanjut Dinas
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Secondary Administrative Actions */}
+                    <div className="flex items-center gap-1.5">
+                      {isAdmin && (
+                        <Button 
+                          variant={isEditMode ? "outline" : "default"} 
+                          size="sm" 
+                          onClick={() => setIsEditMode(!isEditMode)}
+                          className={cn("font-bold shadow-xs rounded-xl text-xs h-8 px-3", isEditMode ? "border-amber-500 text-amber-600 hover:bg-amber-50" : "bg-primary")}
+                        >
+                          {isEditMode ? "Batal Edit" : <><Edit3 className="w-3.5 h-3.5 mr-1.5"/> Edit Data</>}
+                        </Button>
+                      )}
+                      {isAdmin && !isEditMode && (
+                        <>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} 
+                            className="border-amber-500 text-amber-600 hover:bg-amber-50 font-bold shadow-xs rounded-xl text-xs h-8 px-2.5" 
+                            title="Kembalikan ke antrean awal (Pending)"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 mr-1 sm:mr-0" />
+                            <span className="sm:hidden text-[11px]">Revert</span>
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive" 
+                            onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} 
+                            className="font-bold shadow-xs rounded-xl text-xs h-8 px-2.5" 
+                            title="Hapus Permanen"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-1 sm:mr-0" />
+                            <span className="sm:hidden text-[11px]">Delete</span>
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
