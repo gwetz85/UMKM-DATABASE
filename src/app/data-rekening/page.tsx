@@ -571,7 +571,7 @@ function DataRekeningContent() {
   }
 
   return (
-    <div className="p-4 md:p-8 space-y-6 pb-24 md:pb-8">
+    <div className="p-0 space-y-4 pb-20">
       {/* Top Header & Search / Filters */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">

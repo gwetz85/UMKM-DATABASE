@@ -42,26 +42,26 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
   }
 
   return (
-    <div className={cn("w-full max-w-7xl mx-auto p-2 sm:p-4 md:p-6 animate-in fade-in zoom-in duration-500 flex flex-col", className)}>
+    <div className={cn("w-full max-w-none p-0 animate-in fade-in zoom-in duration-300 flex flex-col", className)}>
       {/* Modern Frosted Canvas Container */}
-      <div className="bg-white/85 dark:bg-slate-900/90 backdrop-blur-xl border border-white/80 dark:border-slate-800 rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl shadow-slate-300/40 dark:shadow-none space-y-6">
+      <div className="bg-white/85 dark:bg-slate-900/90 backdrop-blur-xl border border-white/80 dark:border-slate-800 rounded-3xl p-4 sm:p-5 lg:p-6 shadow-xl shadow-slate-300/30 dark:shadow-none space-y-4">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-3 border-b border-slate-200/80 dark:border-slate-800">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] md:text-xs font-black uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] font-black uppercase tracking-wider">
+              <Sparkles className="w-3 h-3 text-primary" />
               Pusat Navigasi Sistem SIMPU
             </div>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">
               Sistem Navigasi Modul
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 font-medium text-xs sm:text-sm">
+            <p className="text-slate-500 dark:text-slate-400 font-medium text-xs">
               Pilih modul kerja untuk mengakses database, alur verifikasi dinas, atau statistik.
             </p>
           </div>
           {userProfile && (
             <div className="flex items-center gap-2 self-start sm:self-auto">
-              <span className="text-[11px] font-black text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-xl uppercase tracking-wider shadow-sm">
+              <span className="text-[10px] font-black text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-xl uppercase tracking-wider shadow-sm">
                 Role: {userProfile.role || 'Staff'}
               </span>
             </div>
@@ -69,7 +69,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
         </div>
 
         {/* Modules Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-4 pb-2">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3 pb-1">
           {navigation.map((item: any, index: number) => (
             <div
               key={item.name}
@@ -81,11 +81,11 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
                   handleNavigate(item.href)
                 }
               }}
-              style={{ animationDelay: `${index * 25}ms` }}
+              style={{ animationDelay: `${index * 20}ms` }}
               className={cn(
-                "group relative flex flex-col justify-between p-3.5 sm:p-4 rounded-2xl md:rounded-3xl transition-all duration-300 ease-out overflow-hidden shadow-sm hover:shadow-xl border border-slate-200/90 dark:border-slate-800 cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-2",
-                "bg-white/95 dark:bg-slate-900/95 hover:-translate-y-1.5",
-                "min-h-[140px] sm:min-h-[150px] md:min-h-[160px]"
+                "group relative flex flex-col justify-between p-3 sm:p-3.5 rounded-2xl transition-all duration-300 ease-out overflow-hidden shadow-sm hover:shadow-xl border border-slate-200/90 dark:border-slate-800 cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-2",
+                "bg-white/95 dark:bg-slate-900/95 hover:-translate-y-1",
+                "min-h-[110px] sm:min-h-[118px] md:min-h-[124px]"
               )}
             >
               {/* Top Accent Stripe */}
@@ -95,26 +95,26 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               />
 
               {/* Top Bar: Icon with theme color, Badges on right */}
-              <div className="relative z-10 flex items-start justify-between w-full pt-1">
+              <div className="relative z-10 flex items-start justify-between w-full pt-0.5">
                 <div 
-                  className="p-2 sm:p-2.5 rounded-xl md:rounded-2xl transition-transform duration-300 group-hover:scale-110 shadow-md flex items-center justify-center shrink-0"
+                  className="p-1.5 sm:p-2 rounded-xl transition-transform duration-300 group-hover:scale-110 shadow-md flex items-center justify-center shrink-0"
                   style={{ backgroundColor: item.color, color: '#ffffff' }}
                 >
-                  <item.icon className="w-5 h-5 md:w-5.5 md:h-5.5 text-white" />
+                  <item.icon className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white" />
                 </div>
 
                 {/* Badges */}
                 <div className="flex flex-col items-end gap-1">
                   {item.badge !== undefined && (
-                    <div className="flex items-center gap-1 px-2 py-0.5 bg-rose-500 text-white rounded-full shadow-sm animate-pulse">
-                      <span className="w-1.5 h-1.5 bg-white rounded-full" />
-                      <span className="text-[9px] md:text-[10px] font-black uppercase tracking-wider">{item.badge}</span>
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 bg-rose-500 text-white rounded-full shadow-sm animate-pulse">
+                      <span className="w-1 h-1 bg-white rounded-full" />
+                      <span className="text-[8.5px] font-black uppercase tracking-wider">{item.badge}</span>
                     </div>
                   )}
 
                   {item.items && item.items.length > 0 && (
-                    <div className="flex items-center gap-0.5 text-[8px] md:text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
-                      <ChevronRight className="w-2.5 h-2.5" />
+                    <div className="flex items-center gap-0.5 text-[8px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
+                      <ChevronRight className="w-2 h-2" />
                       <span>Sub-Menu</span>
                     </div>
                   )}
@@ -122,21 +122,21 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               </div>
 
               {/* Title & Description Section */}
-              <div className="relative z-10 flex flex-col justify-end mt-3 space-y-0.5">
-                <div className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight group-hover:text-primary transition-colors line-clamp-2">
+              <div className="relative z-10 flex flex-col justify-end mt-2 space-y-0.5">
+                <div className="text-xs font-black text-slate-900 dark:text-white leading-tight uppercase tracking-tight group-hover:text-primary transition-colors line-clamp-1">
                   {item.name}
                 </div>
                 {item.description && (
-                  <p className="text-[10px] md:text-[11px] font-medium text-slate-500 dark:text-slate-400 line-clamp-1">
+                  <p className="text-[9.5px] font-medium text-slate-500 dark:text-slate-400 line-clamp-1">
                     {item.description}
                   </p>
                 )}
               </div>
 
               {/* Subtle Hover Action Footer */}
-              <div className="relative z-10 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase mt-2">
+              <div className="relative z-10 pt-1.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[8.5px] font-bold text-slate-400 dark:text-slate-500 uppercase mt-1.5">
                 <span>{item.items && item.items.length > 0 ? "Pilih Opsi" : "Buka Modul"}</span>
-                <ArrowRight className="w-3 h-3 text-primary group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-2.5 h-2.5 text-primary group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
           ))}
