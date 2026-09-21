@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { MessageNotification } from './MessageNotification';
 import { RealtimeClock } from './realtime-clock';
 import { WeatherWidget } from './weather-widget';
+import { SystemInfoWidget } from './system-info-widget';
 import { KelurahanWidget } from './kelurahan-widget';
 import { MobileBottomNav } from './mobile-bottom-nav';
 
@@ -426,56 +427,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (!isCekDataPage || (user && !isCekDataPage)) && (!isPendaftaranPage || (user && !isPendaftaranPage)) && (
               <div className="hidden lg:block absolute top-4 bottom-2 right-3 sm:right-4 lg:right-6 z-50 pointer-events-none">
                 <div className="pointer-events-auto flex flex-col items-end w-72 h-full overflow-hidden select-none">
-                  <div className="flex flex-col gap-2 w-full h-full">
+                  <div className="flex flex-col gap-2.5 w-full h-full">
                     <WeatherWidget className="w-full shrink-0" />
-                    <div className="w-full shrink-0 bg-white/80 dark:bg-slate-900/85 backdrop-blur-md rounded-2xl border border-white/60 dark:border-slate-800/80 shadow-lg overflow-hidden flex flex-col transition-all hover:shadow-xl hover:bg-white dark:hover:bg-slate-900">
-                      <div className="p-2.5 px-3 border-b border-slate-300/50 dark:border-slate-800/50">
-                        <div className="flex flex-col gap-1.5">
-                          <div className="flex items-center justify-between w-full">
-                            <span className="text-[10.5px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Aplikasi</span>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[11px] font-black text-blue-700 dark:text-blue-400 uppercase drop-shadow-sm">{systemConfig?.appName || 'SIMPU'}</span>
-                              <span className="text-[9px] font-black text-slate-800 dark:text-slate-100 bg-slate-200/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm">{systemConfig?.version || '8.2.5 PRO'}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center justify-between w-full">
-                            <span className="text-[10.5px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Pengguna</span>
-                            <span className="text-[11px] font-black text-slate-900 dark:text-white truncate max-w-[130px] text-right uppercase drop-shadow-sm">
-                              {profile?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between w-full pt-1 border-t border-slate-200/50 dark:border-slate-800/50">
-                            <span className="text-[10.5px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Data Pembanding</span>
-                            <span className="text-[11px] font-black text-indigo-700 dark:text-indigo-300 uppercase drop-shadow-sm">
-                              {systemConfig?.totalPembanding || '0 Data'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-2 px-3 bg-slate-100/80 dark:bg-slate-800/80 flex items-center justify-between gap-2">
-                        <span className="text-[9.5px] font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5 shrink-0">
-                          <div className="w-1.5 h-1.5 bg-blue-600 rounded-full shadow-sm"></div>
-                          Admin
-                        </span>
-                        <div className="flex items-center gap-1.5 overflow-hidden">
-                          <a 
-                            href={`mailto:${systemConfig?.adminEmail || 'simputeam@gmail.com'}`} 
-                            className="text-[9.5px] font-bold text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-400 transition-colors truncate max-w-[120px]" 
-                            title={systemConfig?.adminEmail || 'simputeam@gmail.com'}
-                          >
-                            {systemConfig?.adminEmail || 'simputeam@gmail.com'}
-                          </a>
-                          <a 
-                            href={systemConfig?.adminWhatsapp ? (systemConfig.adminWhatsapp.startsWith('http') ? systemConfig.adminWhatsapp : `https://${systemConfig.adminWhatsapp}`) : 'https://wa.me/62817319885'} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-[9px] font-black text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded transition-all shrink-0"
-                          >
-                            WA
-                          </a>
-                        </div>
-                      </div>
-                    </div>
+                    <SystemInfoWidget 
+                      systemConfig={systemConfig} 
+                      profile={profile} 
+                      user={user} 
+                      className="w-full shrink-0" 
+                    />
                     <KelurahanWidget className="w-full flex-1 min-h-0" />
                   </div>
                 </div>
