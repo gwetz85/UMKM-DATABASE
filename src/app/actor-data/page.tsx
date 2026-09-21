@@ -2141,7 +2141,8 @@ function ActorDataContent() {
               .map((n: string) => n[0])
               .join("")
               .toUpperCase();
-            const ageVal = calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || ""));
+            const rawAge = calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || ""));
+            const cleanAge = rawAge && rawAge !== '-' ? rawAge.replace(/[^0-9]/g, '') : '';
 
             return (
               <div className="flex flex-col h-full max-h-[92vh] overflow-hidden">
@@ -2165,9 +2166,9 @@ function ActorDataContent() {
                         <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-black uppercase border shrink-0", heroBgSoft)}>
                           {isFemale ? "Perempuan" : "Laki-laki"}
                         </span>
-                        {ageVal && (
+                        {cleanAge && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
-                            {ageVal} Thn
+                            {cleanAge} Tahun
                           </span>
                         )}
                       </div>
@@ -2472,72 +2473,168 @@ function ActorDataContent() {
                   ) : (
                     <div className="space-y-6">
                       {/* 1. INFORMASI PRIBADI CARD */}
-                      <section className="relative overflow-hidden rounded-2xl border-2 border-sky-500/25 dark:border-sky-500/30 bg-gradient-to-br from-sky-50/50 via-white to-indigo-50/30 dark:from-sky-950/20 dark:via-slate-900 dark:to-indigo-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(2,132,199,0.05)] space-y-4">
-                        <User className="absolute -right-3 -bottom-3 w-32 h-32 text-sky-500/[0.04] dark:text-sky-400/[0.03] pointer-events-none" />
-                        <div className="relative z-10 flex items-center justify-between border-b border-sky-100 dark:border-sky-900/40 pb-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center font-black">
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-sky-500/30 dark:border-sky-500/40 bg-gradient-to-br from-sky-500/[0.06] via-white to-indigo-500/[0.04] dark:from-sky-950/30 dark:via-slate-900 dark:to-indigo-950/20 p-4 sm:p-5 shadow-[0_6px_30px_rgba(2,132,199,0.08)] space-y-4">
+                        <User className="absolute -right-3 -bottom-3 w-36 h-36 text-sky-500/[0.05] dark:text-sky-400/[0.04] pointer-events-none" />
+                        <div className="relative z-10 flex items-center justify-between border-b border-sky-200/80 dark:border-sky-900/50 pb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center font-black shadow-md shadow-sky-500/25">
                               <User className="w-4 h-4" />
                             </div>
                             <div>
                               <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                                 Informasi Pribadi
                               </h4>
-                              <p className="text-[10px] text-slate-400 font-semibold">Identitas resmi KTP & kependudukan</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Identitas resmi KTP & data kependudukan</p>
                             </div>
                           </div>
                           <VerificationBadge actor={viewingActor} />
                         </div>
 
-                        {/* Grid Mini Info Cards */}
+                        {/* Grid Mini Info Cards - Vibrant & Colorful */}
                         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                           {[
-                            { label: "Reg ID", value: viewingActor.registrationCode, icon: ClipboardCheck, iconColor: "text-sky-500", isMono: true, isCopyable: true },
-                            { label: "Nama Lengkap", value: viewingActor.fullName, icon: User, iconColor: "text-indigo-500", isBold: true },
-                            { label: "NIK", value: viewingActor.nik, icon: CreditCard, iconColor: "text-blue-500", isMono: true, isCopyable: true },
-                            { label: "Nomor KK", value: viewingActor.noKK, icon: Users, iconColor: "text-purple-500", isMono: true, isCopyable: true },
+                            { 
+                              label: "Reg ID", 
+                              value: viewingActor.registrationCode, 
+                              icon: ClipboardCheck, 
+                              cardBg: "from-sky-500/15 via-sky-50/50 to-white dark:from-sky-950/40 dark:via-slate-900 dark:to-slate-950",
+                              borderColor: "border-sky-300/80 dark:border-sky-800/80 hover:border-sky-400",
+                              iconBg: "bg-sky-500 text-white shadow-sky-500/25",
+                              labelColor: "text-sky-800 dark:text-sky-300",
+                              isMono: true, 
+                              isCopyable: true 
+                            },
+                            { 
+                              label: "Nama Lengkap", 
+                              value: viewingActor.fullName, 
+                              icon: User, 
+                              cardBg: "from-blue-500/15 via-blue-50/50 to-white dark:from-blue-950/40 dark:via-slate-900 dark:to-slate-950",
+                              borderColor: "border-blue-300/80 dark:border-blue-800/80 hover:border-blue-400",
+                              iconBg: "bg-blue-600 text-white shadow-blue-500/25",
+                              labelColor: "text-blue-800 dark:text-blue-300",
+                              isBold: true 
+                            },
+                            { 
+                              label: "NIK", 
+                              value: viewingActor.nik, 
+                              icon: CreditCard, 
+                              cardBg: "from-indigo-500/15 via-indigo-50/50 to-white dark:from-indigo-950/40 dark:via-slate-900 dark:to-slate-950",
+                              borderColor: "border-indigo-300/80 dark:border-indigo-800/80 hover:border-indigo-400",
+                              iconBg: "bg-indigo-600 text-white shadow-indigo-500/25",
+                              labelColor: "text-indigo-800 dark:text-indigo-300",
+                              isMono: true, 
+                              isCopyable: true 
+                            },
+                            { 
+                              label: "Nomor KK", 
+                              value: viewingActor.noKK, 
+                              icon: Users, 
+                              cardBg: "from-purple-500/15 via-purple-50/50 to-white dark:from-purple-950/40 dark:via-slate-900 dark:to-slate-950",
+                              borderColor: "border-purple-300/80 dark:border-purple-800/80 hover:border-purple-400",
+                              iconBg: "bg-purple-600 text-white shadow-purple-500/25",
+                              labelColor: "text-purple-800 dark:text-purple-300",
+                              isMono: true, 
+                              isCopyable: true 
+                            },
                             { 
                               label: "Jenis Kelamin", 
                               value: normalizeGender(viewingActor.gender) || viewingActor.gender, 
                               icon: UserCheck, 
-                              iconColor: isFemale ? "text-rose-500" : "text-sky-500",
+                              cardBg: isFemale 
+                                ? "from-rose-500/15 via-rose-50/50 to-white dark:from-rose-950/40 dark:via-slate-900 dark:to-slate-950" 
+                                : "from-cyan-500/15 via-cyan-50/50 to-white dark:from-cyan-950/40 dark:via-slate-900 dark:to-slate-950",
+                              borderColor: isFemale 
+                                ? "border-rose-300/80 dark:border-rose-800/80 hover:border-rose-400" 
+                                : "border-cyan-300/80 dark:border-cyan-800/80 hover:border-cyan-400",
+                              iconBg: isFemale ? "bg-rose-500 text-white shadow-rose-500/25" : "bg-cyan-600 text-white shadow-cyan-500/25",
+                              labelColor: isFemale ? "text-rose-800 dark:text-rose-300" : "text-cyan-800 dark:text-cyan-300",
                               isGenderBadge: true 
                             },
-                            { label: "Tempat Lahir", value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob, icon: MapPin, iconColor: "text-emerald-500" },
-                            { label: "Tanggal Lahir", value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob, icon: Calendar, iconColor: "text-amber-500" },
+                            { 
+                              label: "Tempat Lahir", 
+                              value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob, 
+                              icon: MapPin, 
+                              cardBg: "from-teal-500/15 via-teal-50/50 to-white dark:from-teal-950/40 dark:via-slate-900 dark:to-slate-950",
+                              borderColor: "border-teal-300/80 dark:border-teal-800/80 hover:border-teal-400",
+                              iconBg: "bg-teal-600 text-white shadow-teal-500/25",
+                              labelColor: "text-teal-800 dark:text-teal-300" 
+                            },
+                            { 
+                              label: "Tanggal Lahir", 
+                              value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob, 
+                              icon: Calendar, 
+                              cardBg: "from-amber-500/15 via-amber-50/50 to-white dark:from-amber-950/40 dark:via-slate-900 dark:to-slate-950",
+                              borderColor: "border-amber-300/80 dark:border-amber-800/80 hover:border-amber-400",
+                              iconBg: "bg-amber-500 text-white shadow-amber-500/25",
+                              labelColor: "text-amber-800 dark:text-amber-300",
+                              isDate: true
+                            },
                             { 
                               label: "Usia", 
-                              value: calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")) ? `${calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || ""))} Tahun` : "-", 
+                              value: cleanAge ? `${cleanAge} Tahun` : "-", 
                               icon: Sparkles, 
-                              iconColor: "text-amber-500" 
+                              cardBg: "from-emerald-500/15 via-emerald-50/50 to-white dark:from-emerald-950/40 dark:via-slate-900 dark:to-slate-950",
+                              borderColor: "border-emerald-300/80 dark:border-emerald-800/80 hover:border-emerald-400",
+                              iconBg: "bg-emerald-600 text-white shadow-emerald-500/25",
+                              labelColor: "text-emerald-800 dark:text-emerald-300",
+                              isAge: true
                             },
-                            { label: "Nomor HP", value: viewingActor.phone, icon: Phone, iconColor: "text-emerald-600", isPhone: true }
+                            { 
+                              label: "Nomor HP", 
+                              value: viewingActor.phone, 
+                              icon: Phone, 
+                              cardBg: "from-emerald-500/20 via-green-50/60 to-white dark:from-emerald-950/50 dark:via-slate-900 dark:to-slate-950",
+                              borderColor: "border-emerald-400/90 dark:border-emerald-800 hover:border-emerald-500",
+                              iconBg: "bg-emerald-600 text-white shadow-emerald-500/30",
+                              labelColor: "text-emerald-800 dark:text-emerald-300",
+                              isPhone: true 
+                            }
                           ].map((item, i) => (
                             <div 
                               key={i} 
-                              className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3 shadow-2xs hover:border-sky-300 dark:hover:border-sky-700 transition-all flex flex-col justify-between"
+                              className={cn(
+                                "relative overflow-hidden bg-gradient-to-br border-2 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[90px]",
+                                item.cardBg,
+                                item.borderColor
+                              )}
                             >
-                              <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
-                                <item.icon className={cn("w-3 h-3", item.iconColor)} />
-                                {item.label}
-                              </p>
+                              <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <div className="flex items-center gap-2">
+                                  <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shadow-xs shrink-0", item.iconBg)}>
+                                    <item.icon className="w-3.5 h-3.5" />
+                                  </div>
+                                  <p className={cn("text-[10px] font-black uppercase tracking-wider", item.labelColor)}>
+                                    {item.label}
+                                  </p>
+                                </div>
+                                {(item as any).isCopyable && item.value && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyText(item.value || '', item.label)}
+                                    className="text-slate-400 hover:text-primary p-1 rounded-md bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 shadow-2xs hover:scale-105 active:scale-95 transition-all"
+                                    title={`Salin ${item.label}`}
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
 
                               {(item as any).isPhone && item.value ? (
-                                <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                                <div className="flex items-center justify-between gap-1.5 pt-1">
                                   <a
                                     href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-colors"
+                                    className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-800 dark:text-emerald-300 hover:text-emerald-900 bg-white/95 dark:bg-emerald-950/70 px-2.5 py-1 rounded-xl border border-emerald-300 dark:border-emerald-700 shadow-xs hover:shadow transition-all group"
                                     title="Hubungi via WhatsApp"
                                   >
-                                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/20" />
+                                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/30 group-hover:scale-110 transition-transform" />
                                     <span>{item.value}</span>
                                   </a>
                                   <button
                                     type="button"
                                     onClick={() => handleCopyText(item.value || '', 'No HP')}
-                                    className="text-slate-400 hover:text-primary p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                    className="text-slate-400 hover:text-primary p-1 rounded-md bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 shadow-2xs hover:scale-105 active:scale-95 transition-all"
                                     title="Salin No HP"
                                   >
                                     <Copy className="w-3 h-3" />
@@ -2546,33 +2643,27 @@ function ActorDataContent() {
                               ) : (item as any).isGenderBadge && item.value ? (
                                 <div className="pt-0.5">
                                   <span className={cn(
-                                    "inline-flex items-center gap-1 text-xs font-black uppercase px-2.5 py-0.5 rounded-lg border",
+                                    "inline-flex items-center gap-1.5 text-xs font-black uppercase px-3 py-1 rounded-xl border shadow-xs",
                                     isFemale 
-                                      ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300"
-                                      : "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:border-sky-900 dark:text-sky-300"
+                                      ? "bg-rose-500 text-white border-rose-600 shadow-rose-500/20"
+                                      : "bg-cyan-600 text-white border-cyan-700 shadow-cyan-600/20"
                                   )}>
-                                    <span className={cn("w-1.5 h-1.5 rounded-full", isFemale ? "bg-rose-500" : "bg-sky-500")} />
+                                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
                                     {item.value}
                                   </span>
                                 </div>
                               ) : (item as any).isCopyable && item.value ? (
-                                <div className="flex items-center justify-between gap-1 pt-0.5">
-                                  <span className="text-xs font-black font-mono text-slate-900 dark:text-slate-100 tracking-tight">
-                                    {item.value}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleCopyText(item.value || '', item.label)}
-                                    className="text-slate-400 hover:text-primary p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                                    title={`Salin ${item.label}`}
-                                  >
-                                    <Copy className="w-3 h-3" />
-                                  </button>
-                                </div>
+                                <p className="text-xs sm:text-sm font-black font-mono text-slate-900 dark:text-slate-100 tracking-tight pt-0.5">
+                                  {item.value}
+                                </p>
+                              ) : (item as any).isAge ? (
+                                <p className="text-xs sm:text-sm font-black text-emerald-900 dark:text-emerald-300 pt-0.5">
+                                  {item.value}
+                                </p>
                               ) : (
                                 <p className={cn(
-                                  "text-xs font-bold text-slate-900 dark:text-slate-100 pt-0.5",
-                                  item.isBold && "uppercase font-black text-primary"
+                                  "text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 pt-0.5 uppercase",
+                                  item.isBold && "text-blue-900 dark:text-blue-300"
                                 )}>
                                   {item.value || "-"}
                                 </p>
@@ -2581,9 +2672,15 @@ function ActorDataContent() {
                           ))}
                         </div>
 
-                        {/* Check Data Indicator Container */}
+                        {/* Check Data Indicator Container - Styled Card Header */}
                         <div className="relative z-10 pt-2">
-                          <div className="bg-white/95 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-xl p-3 shadow-2xs">
+                          <div className="bg-white/95 dark:bg-slate-900/90 border-2 border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                              <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <ShieldCheck className="w-4 h-4 text-primary" /> Status Cek Data Master (2023 - 2025 & Blacklist)
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Verifikasi NIK Otomatis</span>
+                            </div>
                             <CheckDataIndicator 
                               actor={viewingActor} 
                               data2023={activeDetailData.data2023}
@@ -2596,45 +2693,86 @@ function ActorDataContent() {
                       </section>
 
                       {/* 2. ALAMAT & DOMISILI CARD */}
-                      <section className="relative overflow-hidden rounded-2xl border-2 border-emerald-500/25 dark:border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 dark:from-emerald-950/20 dark:via-slate-900 dark:to-teal-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(16,185,129,0.05)] space-y-4">
-                        <MapPin className="absolute -right-3 -bottom-3 w-32 h-32 text-emerald-500/[0.04] dark:text-emerald-400/[0.03] pointer-events-none" />
-                        <div className="relative z-10 flex items-center justify-between border-b border-emerald-100 dark:border-emerald-900/40 pb-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black">
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-emerald-500/30 dark:border-emerald-500/40 bg-gradient-to-br from-emerald-500/[0.06] via-white to-teal-500/[0.04] dark:from-emerald-950/20 dark:via-slate-900 dark:to-teal-950/20 p-4 sm:p-5 shadow-[0_6px_30px_rgba(16,185,129,0.08)] space-y-4">
+                        <MapPin className="absolute -right-3 -bottom-3 w-36 h-36 text-emerald-500/[0.05] dark:text-emerald-400/[0.04] pointer-events-none" />
+                        <div className="relative z-10 flex items-center justify-between border-b border-emerald-200/80 dark:border-emerald-900/50 pb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-black shadow-md shadow-emerald-500/25">
                               <MapPin className="w-4 h-4" />
                             </div>
                             <div>
                               <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                                 Alamat & Domisili
                               </h4>
-                              <p className="text-[10px] text-slate-400 font-semibold">Wilayah kelurahan, kecamatan, dan alamat rumah</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Wilayah kelurahan, kecamatan, dan tempat tinggal</p>
                             </div>
                           </div>
                         </div>
 
                         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                           {[
-                            { label: "Kecamatan", value: viewingActor.kecamatan, icon: Building2 },
-                            { label: "Kelurahan", value: viewingActor.kelurahan, icon: MapPin },
-                            { label: "RT / RW", value: viewingActor.rtRw, icon: Navigation },
+                            { 
+                              label: "Kecamatan", 
+                              value: viewingActor.kecamatan, 
+                              icon: Building2,
+                              cardBg: "from-cyan-500/15 via-cyan-50/50 to-white dark:from-cyan-950/40 dark:via-slate-900 dark:to-slate-950",
+                              borderColor: "border-cyan-300/80 dark:border-cyan-800/80 hover:border-cyan-400",
+                              iconBg: "bg-cyan-600 text-white shadow-cyan-500/25",
+                              labelColor: "text-cyan-800 dark:text-cyan-300"
+                            },
+                            { 
+                              label: "Kelurahan", 
+                              value: viewingActor.kelurahan, 
+                              icon: MapPin,
+                              cardBg: "from-teal-500/15 via-teal-50/50 to-white dark:from-teal-950/40 dark:via-slate-900 dark:to-slate-950",
+                              borderColor: "border-teal-300/80 dark:border-teal-800/80 hover:border-teal-400",
+                              iconBg: "bg-teal-600 text-white shadow-teal-500/25",
+                              labelColor: "text-teal-800 dark:text-teal-300"
+                            },
+                            { 
+                              label: "RT / RW", 
+                              value: viewingActor.rtRw, 
+                              icon: Navigation,
+                              cardBg: "from-emerald-500/15 via-emerald-50/50 to-white dark:from-emerald-950/40 dark:via-slate-900 dark:to-slate-950",
+                              borderColor: "border-emerald-300/80 dark:border-emerald-800/80 hover:border-emerald-400",
+                              iconBg: "bg-emerald-600 text-white shadow-emerald-500/25",
+                              labelColor: "text-emerald-800 dark:text-emerald-300"
+                            },
                           ].map((item, i) => (
-                            <div key={i} className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3 shadow-2xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all">
-                              <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
-                                <item.icon className="w-3 h-3 text-emerald-600" />
-                                {item.label}
+                            <div 
+                              key={i} 
+                              className={cn(
+                                "relative overflow-hidden bg-gradient-to-br border-2 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[90px]",
+                                item.cardBg,
+                                item.borderColor
+                              )}
+                            >
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <div className={cn("w-6 h-6 rounded-lg flex items-center justify-center shadow-xs shrink-0", item.iconBg)}>
+                                  <item.icon className="w-3.5 h-3.5" />
+                                </div>
+                                <p className={cn("text-[10px] font-black uppercase tracking-wider", item.labelColor)}>
+                                  {item.label}
+                                </p>
+                              </div>
+                              <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase pt-0.5">
+                                {item.value || "-"}
                               </p>
-                              <p className="text-xs font-bold text-slate-900 dark:text-slate-100 pt-0.5">{item.value || "-"}</p>
                             </div>
                           ))}
 
                           {/* Full Width Alamat Lengkap with Maps Action */}
-                          <div className="sm:col-span-2 md:col-span-3 bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div className="space-y-0.5">
-                              <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 flex items-center gap-1.5">
-                                <MapPin className="w-3 h-3 text-emerald-600" />
-                                Alamat Lengkap
-                              </p>
-                              <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase leading-relaxed">
+                          <div className="sm:col-span-2 md:col-span-3 relative overflow-hidden bg-gradient-to-br from-emerald-500/15 via-teal-50/40 to-white dark:from-emerald-950/40 dark:via-slate-900 dark:to-slate-950 border-2 border-emerald-300/90 dark:border-emerald-800/80 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                                  <MapPin className="w-3.5 h-3.5" />
+                                </div>
+                                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                                  Alamat Lengkap
+                                </p>
+                              </div>
+                              <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase leading-relaxed pl-8">
                                 {viewingActor.address || "-"}
                               </p>
                             </div>
@@ -2642,7 +2780,7 @@ function ActorDataContent() {
                               href={getActorMapUrl(viewingActor)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors shrink-0"
+                              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs hover:shadow transition-all shrink-0 active:scale-95"
                               title="Buka lokasi di Google Maps"
                             >
                               <ExternalLink className="w-3.5 h-3.5" /> Buka di Maps
@@ -2652,18 +2790,18 @@ function ActorDataContent() {
                       </section>
 
                       {/* 3. INFORMASI USAHA CARD */}
-                      <section className="relative overflow-hidden rounded-2xl border-2 border-purple-500/25 dark:border-purple-500/30 bg-gradient-to-br from-purple-50/50 via-white to-fuchsia-50/30 dark:from-purple-950/20 dark:via-slate-900 dark:to-fuchsia-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(168,85,247,0.05)] space-y-4">
-                        <Store className="absolute -right-3 -bottom-3 w-32 h-32 text-purple-500/[0.04] dark:text-purple-400/[0.03] pointer-events-none" />
-                        <div className="relative z-10 flex items-center justify-between border-b border-purple-100 dark:border-purple-900/40 pb-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-black">
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-purple-500/30 dark:border-purple-500/40 bg-gradient-to-br from-purple-500/[0.06] via-white to-fuchsia-500/[0.04] dark:from-purple-950/20 dark:via-slate-900 dark:to-fuchsia-950/20 p-4 sm:p-5 shadow-[0_6px_30px_rgba(168,85,247,0.08)] space-y-4">
+                        <Store className="absolute -right-3 -bottom-3 w-36 h-36 text-purple-500/[0.05] dark:text-purple-400/[0.04] pointer-events-none" />
+                        <div className="relative z-10 flex items-center justify-between border-b border-purple-200/80 dark:border-purple-900/50 pb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white flex items-center justify-center font-black shadow-md shadow-purple-500/25">
                               <Store className="w-4 h-4" />
                             </div>
                             <div>
                               <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                                 Informasi Usaha
                               </h4>
-                              <p className="text-[10px] text-slate-400 font-semibold">Profil bisnis, usulan koordinator, & penugasan survei</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Profil bisnis, usulan koordinator, & penugasan survei</p>
                             </div>
                           </div>
                         </div>
@@ -2687,31 +2825,48 @@ function ActorDataContent() {
                             return (
                               <>
                                 {/* Nama Usaha */}
-                                <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-purple-300 dark:hover:border-purple-700 transition-all">
-                                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
-                                    <Store className="w-3 h-3 text-purple-600" /> Nama Usaha
-                                  </p>
-                                  <p className="text-sm font-black text-purple-700 dark:text-purple-300 uppercase">
+                                <div className="relative overflow-hidden bg-gradient-to-br from-purple-500/15 via-purple-50/50 to-white dark:from-purple-950/40 dark:via-slate-900 dark:to-slate-950 border-2 border-purple-300/80 dark:border-purple-800/80 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[90px]">
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <div className="w-6 h-6 rounded-lg bg-purple-600 text-white flex items-center justify-center shadow-xs">
+                                      <Store className="w-3.5 h-3.5" />
+                                    </div>
+                                    <p className="text-[10px] font-black uppercase tracking-wider text-purple-800 dark:text-purple-300">
+                                      Nama Usaha
+                                    </p>
+                                  </div>
+                                  <p className="text-sm sm:text-base font-black text-purple-950 dark:text-purple-100 uppercase tracking-tight">
                                     {viewingActor.businessName || "-"}
                                   </p>
                                 </div>
 
                                 {/* Kategori Usaha */}
-                                <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-purple-300 dark:hover:border-purple-700 transition-all">
-                                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
-                                    <Sparkles className="w-3 h-3 text-purple-600" /> Kategori Usaha
-                                  </p>
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-black uppercase bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                                    {viewingActor.businessCategory || "-"}
-                                  </span>
+                                <div className="relative overflow-hidden bg-gradient-to-br from-fuchsia-500/15 via-fuchsia-50/50 to-white dark:from-fuchsia-950/40 dark:via-slate-900 dark:to-slate-950 border-2 border-fuchsia-300/80 dark:border-fuchsia-800/80 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[90px]">
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <div className="w-6 h-6 rounded-lg bg-fuchsia-600 text-white flex items-center justify-center shadow-xs">
+                                      <Sparkles className="w-3.5 h-3.5" />
+                                    </div>
+                                    <p className="text-[10px] font-black uppercase tracking-wider text-fuchsia-800 dark:text-fuchsia-300">
+                                      Kategori Usaha
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black uppercase bg-fuchsia-600 text-white shadow-xs shadow-fuchsia-500/20">
+                                      {viewingActor.businessCategory || "-"}
+                                    </span>
+                                  </div>
                                 </div>
 
                                 {/* Lokasi Usaha */}
-                                <div className="md:col-span-2 bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-purple-300 dark:hover:border-purple-700 transition-all">
-                                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
-                                    <MapPin className="w-3 h-3 text-purple-600" /> Lokasi Usaha
-                                  </p>
-                                  <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">
+                                <div className="md:col-span-2 relative overflow-hidden bg-gradient-to-br from-indigo-500/15 via-indigo-50/50 to-white dark:from-indigo-950/40 dark:via-slate-900 dark:to-slate-950 border-2 border-indigo-300/80 dark:border-indigo-800/80 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all space-y-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-xs">
+                                      <MapPin className="w-3.5 h-3.5" />
+                                    </div>
+                                    <p className="text-[10px] font-black uppercase tracking-wider text-indigo-800 dark:text-indigo-300">
+                                      Lokasi Usaha
+                                    </p>
+                                  </div>
+                                  <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase pl-8">
                                     {viewingActor.businessLocation || viewingActor.address || "-"}
                                   </p>
                                 </div>
@@ -2719,23 +2874,28 @@ function ActorDataContent() {
                                 {!isInspektorat && (
                                   <>
                                     {/* Usulan / Koordinator */}
-                                    <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-purple-300 dark:hover:border-purple-700 transition-all space-y-1">
-                                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 flex items-center gap-1.5">
-                                        <Users className="w-3 h-3 text-indigo-600" /> Usulan / Koordinator
-                                      </p>
-                                      <p className="text-xs font-black uppercase text-indigo-700 dark:text-indigo-300">
+                                    <div className="relative overflow-hidden bg-gradient-to-br from-blue-500/15 via-blue-50/50 to-white dark:from-blue-950/40 dark:via-slate-900 dark:to-slate-950 border-2 border-blue-300/80 dark:border-blue-800/80 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all space-y-1.5">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-xs">
+                                          <Users className="w-3.5 h-3.5" />
+                                        </div>
+                                        <p className="text-[10px] font-black uppercase tracking-wider text-blue-800 dark:text-blue-300">
+                                          Usulan / Koordinator
+                                        </p>
+                                      </div>
+                                      <p className="text-xs sm:text-sm font-black uppercase text-blue-900 dark:text-blue-100 pl-8">
                                         {viewingActor.coordinator || "-"}
                                       </p>
                                       {coordPhone && (
-                                        <div className="pt-1">
+                                        <div className="pl-8 pt-0.5">
                                           <a
                                             href={getWaLink(coordPhone)}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+                                            className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-800 dark:text-emerald-300 hover:text-emerald-900 bg-white/95 dark:bg-emerald-950/70 px-2.5 py-1 rounded-xl border border-emerald-300 dark:border-emerald-700 shadow-xs hover:shadow transition-all group"
                                             title="Chat WA Koordinator"
                                           >
-                                            <MessageCircle className="w-3 h-3 text-emerald-600" />
+                                            <MessageCircle className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/30 group-hover:scale-110 transition-transform" />
                                             <span>WA: {coordPhone}</span>
                                           </a>
                                         </div>
@@ -2743,29 +2903,34 @@ function ActorDataContent() {
                                     </div>
 
                                     {/* Petugas Survey */}
-                                    <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-purple-300 dark:hover:border-purple-700 transition-all space-y-2">
-                                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 flex items-center gap-1.5">
-                                        <UserCheck className="w-3 h-3 text-emerald-600" /> Petugas Survey
-                                      </p>
-                                      <div>
+                                    <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500/15 via-teal-50/50 to-white dark:from-emerald-950/40 dark:via-slate-900 dark:to-slate-950 border-2 border-emerald-300/80 dark:border-emerald-800/80 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all space-y-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                                          <UserCheck className="w-3.5 h-3.5" />
+                                        </div>
+                                        <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                                          Petugas Survey
+                                        </p>
+                                      </div>
+                                      <div className="pl-8">
                                         {isBelumAdaPetugas ? (
-                                          <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900">
+                                          <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-3 py-1 rounded-xl border border-rose-200 dark:border-rose-900">
                                             <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
                                             <span>BELUM ADA</span>
                                           </div>
                                         ) : (
-                                          <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                          <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-300 uppercase bg-emerald-100/70 dark:bg-emerald-950/60 px-3 py-1 rounded-xl border border-emerald-300 dark:border-emerald-800">
                                             <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                                             <span>{canonicalPetugas}</span>
                                           </div>
                                         )}
                                       </div>
                                       {isAdmin && (
-                                        <div className="pt-1">
+                                        <div className="pl-8 pt-0.5">
                                           <select
                                             value={!isBelumAdaPetugas ? canonicalPetugas : "BELUM ADA"}
                                             onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value)}
-                                            className="text-[11px] font-bold h-8 rounded-lg border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-xs text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[240px]"
+                                            className="text-[11px] font-bold h-8 rounded-xl border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-xs text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[240px]"
                                             title="Admin: Ganti Petugas Survey secara langsung"
                                           >
                                             <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
@@ -2792,18 +2957,18 @@ function ActorDataContent() {
                       </section>
 
                       {/* 4. DATA PERBANKAN CARD */}
-                      <section className="relative overflow-hidden rounded-2xl border-2 border-amber-500/25 dark:border-amber-500/30 bg-gradient-to-br from-amber-50/50 via-white to-yellow-50/30 dark:from-amber-950/20 dark:via-slate-900 dark:to-yellow-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(245,158,11,0.05)] space-y-4">
-                        <CreditCard className="absolute -right-3 -bottom-3 w-32 h-32 text-amber-500/[0.04] dark:text-amber-400/[0.03] pointer-events-none" />
-                        <div className="relative z-10 flex items-center justify-between border-b border-amber-100 dark:border-amber-900/40 pb-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black">
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-amber-500/30 dark:border-amber-500/40 bg-gradient-to-br from-amber-500/[0.06] via-white to-yellow-500/[0.04] dark:from-amber-950/20 dark:via-slate-900 dark:to-yellow-950/20 p-4 sm:p-5 shadow-[0_6px_30px_rgba(245,158,11,0.08)] space-y-4">
+                        <CreditCard className="absolute -right-3 -bottom-3 w-36 h-36 text-amber-500/[0.05] dark:text-amber-400/[0.04] pointer-events-none" />
+                        <div className="relative z-10 flex items-center justify-between border-b border-amber-200/80 dark:border-amber-900/50 pb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center font-black shadow-md shadow-amber-500/25">
                               <CreditCard className="w-4 h-4" />
                             </div>
                             <div>
                               <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                                 Data Perbankan
                               </h4>
-                              <p className="text-[10px] text-slate-400 font-semibold">Rekening bank untuk pencairan dana bantuan</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Rekening bank untuk pencairan dana bantuan</p>
                             </div>
                           </div>
                           {isAdmin && (
@@ -2820,43 +2985,60 @@ function ActorDataContent() {
 
                         <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-3">
                           {/* Nama Bank */}
-                          <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-amber-300 dark:hover:border-amber-700 transition-all">
-                            <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
-                              <Building2 className="w-3 h-3 text-amber-600" /> Nama Bank
-                            </p>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-black uppercase bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                              {viewingActor.bankName || "BELUM TERISI"}
-                            </span>
+                          <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/15 via-amber-50/50 to-white dark:from-amber-950/40 dark:via-slate-900 dark:to-slate-950 border-2 border-amber-300/80 dark:border-amber-800/80 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[90px]">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <div className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center shadow-xs">
+                                <Building2 className="w-3.5 h-3.5" />
+                              </div>
+                              <p className="text-[10px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                                Nama Bank
+                              </p>
+                            </div>
+                            <div>
+                              <span className="inline-flex items-center px-3 py-1 rounded-xl text-xs font-black uppercase bg-amber-500 text-white shadow-xs shadow-amber-500/20">
+                                {viewingActor.bankName || "BELUM TERISI"}
+                              </span>
+                            </div>
                           </div>
 
                           {/* Nomor Rekening */}
-                          <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-amber-300 dark:hover:border-amber-700 transition-all flex flex-col justify-between">
-                            <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
-                              <CreditCard className="w-3 h-3 text-amber-600" /> Nomor Rekening
-                            </p>
-                            <div className="flex items-center justify-between gap-1">
-                              <p className="text-sm font-black font-mono text-primary tracking-wide">
-                                {viewingActor.bankNumber || "BELUM TERISI"}
-                              </p>
+                          <div className="relative overflow-hidden bg-gradient-to-br from-orange-500/15 via-orange-50/50 to-white dark:from-orange-950/40 dark:via-slate-900 dark:to-slate-950 border-2 border-orange-300/80 dark:border-orange-800/80 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[90px]">
+                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-lg bg-orange-600 text-white flex items-center justify-center shadow-xs">
+                                  <CreditCard className="w-3.5 h-3.5" />
+                                </div>
+                                <p className="text-[10px] font-black uppercase tracking-wider text-orange-800 dark:text-orange-300">
+                                  Nomor Rekening
+                                </p>
+                              </div>
                               {viewingActor.bankNumber && (
                                 <button
                                   type="button"
                                   onClick={() => handleCopyText(viewingActor.bankNumber || '', 'Nomor Rekening')}
-                                  className="text-slate-400 hover:text-primary p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                  className="text-slate-400 hover:text-primary p-1 rounded-md bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 shadow-2xs hover:scale-105 active:scale-95 transition-all"
                                   title="Salin Nomor Rekening"
                                 >
                                   <Copy className="w-3 h-3" />
                                 </button>
                               )}
                             </div>
+                            <p className="text-sm font-black font-mono text-orange-950 dark:text-orange-100 tracking-wider">
+                              {viewingActor.bankNumber || "BELUM TERISI"}
+                            </p>
                           </div>
 
                           {/* Nama Pemilik Rekening */}
-                          <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-amber-300 dark:hover:border-amber-700 transition-all">
-                            <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
-                              <User className="w-3 h-3 text-amber-600" /> Pemilik Rekening
-                            </p>
-                            <p className="text-xs font-black uppercase text-slate-900 dark:text-slate-100">
+                          <div className="relative overflow-hidden bg-gradient-to-br from-yellow-500/15 via-yellow-50/50 to-white dark:from-yellow-950/40 dark:via-slate-900 dark:to-slate-950 border-2 border-yellow-300/80 dark:border-yellow-800/80 rounded-2xl p-3.5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[90px]">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <div className="w-6 h-6 rounded-lg bg-yellow-600 text-white flex items-center justify-center shadow-xs">
+                                <User className="w-3.5 h-3.5" />
+                              </div>
+                              <p className="text-[10px] font-black uppercase tracking-wider text-yellow-800 dark:text-yellow-300">
+                                Pemilik Rekening
+                              </p>
+                            </div>
+                            <p className="text-xs sm:text-sm font-black uppercase text-yellow-950 dark:text-yellow-100">
                               {viewingActor.bankOwner || "BELUM TERISI"}
                             </p>
                           </div>
