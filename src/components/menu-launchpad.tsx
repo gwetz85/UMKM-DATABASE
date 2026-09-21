@@ -83,8 +83,8 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               }}
               style={{ animationDelay: `${index * 20}ms` }}
               className={cn(
-                "group relative flex flex-col justify-between p-3.5 sm:p-4 rounded-2xl transition-all duration-300 ease-out overflow-hidden shadow-sm hover:shadow-xl border border-slate-200/90 dark:border-slate-800 cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-2",
-                "bg-white/95 dark:bg-slate-900/95 hover:-translate-y-1.5 aspect-square"
+                "group relative flex flex-col justify-between p-3.5 sm:p-4 rounded-2xl transition-all duration-300 ease-out overflow-hidden shadow-xs hover:shadow-xl border-2 border-slate-300 hover:border-slate-400 dark:border-slate-700 dark:hover:border-slate-500 cursor-pointer active:scale-95 animate-in fade-in slide-in-from-bottom-2",
+                "bg-white dark:bg-slate-900 hover:-translate-y-1.5 aspect-square"
               )}
             >
               {/* Top Accent Stripe */}
@@ -133,7 +133,7 @@ export function MenuLaunchpad({ onSelect, className }: MenuLaunchpadProps) {
               </div>
 
               {/* Action Footer */}
-              <div className="relative z-10 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[9px] sm:text-[9.5px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-wider">
+              <div className="relative z-10 pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[9px] sm:text-[9.5px] font-black text-slate-400 dark:text-slate-300 uppercase tracking-wider">
                 <span className="group-hover:text-primary transition-colors">
                   {item.items && item.items.length > 0 ? "Pilih Opsi" : "Buka Modul"}
                 </span>
