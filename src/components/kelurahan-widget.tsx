@@ -72,7 +72,7 @@ export function KelurahanWidget({ className }: KelurahanWidgetProps) {
             Belum ada data sebaran
           </div>
         ) : (
-          <div className="h-[148px] max-h-[148px] 2xl:h-[188px] 2xl:max-h-[188px] overflow-y-auto overflow-x-hidden custom-scrollbar select-none">
+          <div className="h-[168px] max-h-[168px] overflow-y-auto overflow-x-hidden custom-scrollbar select-none">
             <table className="w-full table-fixed text-left border-collapse">
               <colgroup>
                 <col className="w-[34px]" />
@@ -80,25 +80,25 @@ export function KelurahanWidget({ className }: KelurahanWidgetProps) {
                 <col className="w-[48px]" />
               </colgroup>
               <thead className="sticky top-0 bg-slate-100/95 dark:bg-slate-800/95 backdrop-blur-sm z-10 text-[8.5px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200/60 dark:border-slate-800/60">
-                <tr>
-                  <th className="py-1.5 px-1 text-center w-[34px]">No</th>
-                  <th className="py-1.5 px-2">Kelurahan</th>
-                  <th className="py-1.5 px-1 text-center w-[48px]">Jumlah</th>
+                <tr className="h-7">
+                  <th className="px-1 text-center w-[34px] align-middle">No</th>
+                  <th className="px-2 align-middle">Kelurahan</th>
+                  <th className="px-1 text-center w-[48px] align-middle">Jumlah</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
                 {kelurahanStats.map((item, idx) => (
                   <tr
                     key={item.name}
-                    className="hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors group"
+                    className="h-7 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors group"
                   >
-                    <td className="py-1.5 px-1 text-center text-[9.5px] font-bold text-slate-400 dark:text-slate-500 w-[34px]">
+                    <td className="px-1 text-center text-[9.5px] font-bold text-slate-400 dark:text-slate-500 w-[34px] align-middle">
                       {idx + 1}
                     </td>
-                    <td className="py-1.5 px-2 font-bold text-[10.5px] text-slate-700 dark:text-slate-200 uppercase group-hover:text-primary transition-colors truncate" title={item.name}>
+                    <td className="px-2 font-bold text-[10.5px] text-slate-700 dark:text-slate-200 uppercase group-hover:text-primary transition-colors truncate align-middle" title={item.name}>
                       {item.name}
                     </td>
-                    <td className="py-1.5 px-1 text-center w-[48px]">
+                    <td className="px-1 text-center w-[48px] align-middle">
                       <span className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black px-1.5 py-0.5 rounded-md min-w-[1.7rem] text-[9.5px] border border-slate-200 dark:border-slate-700 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-all">
                         {item.count}
                       </span>
