@@ -2124,701 +2124,1023 @@ function ActorDataContent() {
           setEditingDriveMode(false)
         }
       }}>
-        <DialogContent className="w-[96vw] max-w-4xl max-h-[90vh] p-4 sm:p-6 overflow-y-auto">
-          {viewingActor && !editingBankMode && !editingDriveMode && (
-            <div className="flex flex-col gap-2 relative">
-              <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b gap-4">
-                <div>
-                  <DialogTitle className="text-xl md:text-2xl font-black text-primary uppercase">
-                    {isEditMode ? "Edit Data Pelaku Usaha" : "Detail Pelaku Usaha"}
-                  </DialogTitle>
-                  <p className="text-xs text-muted-foreground font-medium mt-0.5">Informasi data registrasi dan hasil verifikasi</p>
-                </div>
-                <div className="flex flex-wrap gap-2 items-center">
-                  {!isEditMode && viewingActor && !isKoordinator && !isInspektorat && (
-                    <Button 
-                      size="sm" 
-                      onClick={() => handlePrintForm(viewingActor)}
-                      className="font-bold bg-primary hover:bg-primary/90 text-white shadow-xs"
-                    >
-                      <Printer className="w-4 h-4 mr-1.5" /> Cetak Formulir
-                    </Button>
-                  )}
-                  {!isEditMode && isAdmin && viewingActor && (viewingActor as any).surveyData && (
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        if (database && viewingActor?.id && !(viewingActor as any).surveyData?.fotoSurveyUrl) {
-                          get(ref(database, `businessActors/${viewingActor.id}`)).then(snap => {
-                            if (snap.exists()) {
-                              const full = { ...snap.val(), id: snap.key } as BusinessActor;
-                              setViewingActor(full);
-                              setSurveyViewActor(full);
-                            } else {
-                              setSurveyViewActor(viewingActor);
-                            }
-                          }).catch(() => setSurveyViewActor(viewingActor));
-                        } else {
-                          setSurveyViewActor(viewingActor);
-                        }
-                      }}
-                      className="font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs"
-                    >
-                      <ClipboardList className="w-4 h-4 mr-1.5" /> Lihat Form Survey
-                    </Button>
-                  )}
-                  {!isAdmin && !isMonitoring && !isKoordinator && !isEditMode && viewingActor.status === 'verified_actor' && (
-                    <Button 
-                      size="sm" 
-                      onClick={() => setEditingBankMode(true)}
-                      className="font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-xs"
-                    >
-                      <CreditCard className="w-4 h-4 mr-1.5" /> Input Rekening
-                    </Button>
-                  )}
-                  {isAdmin && !isEditMode && (
-                    <Button 
-                      size="sm" 
-                      onClick={() => setEditingDriveMode(true)}
-                      className="font-bold bg-blue-500 hover:bg-blue-600 text-white shadow-xs"
-                    >
-                      <Folder className="w-4 h-4 mr-1.5" /> Link Drive
-                    </Button>
-                  )}
-                  {isAdmin && !isEditMode && viewingActor && (
-                    <Button 
-                      size="sm" 
-                      onClick={() => handleSingleLanjutDinas(viewingActor)}
-                      className="font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-xs"
-                      title="Push Data Susulan ke Verifikasi Dinas"
-                    >
-                      <Send className="w-4 h-4 mr-1.5" /> Lanjut Dinas (Susulan)
-                    </Button>
-                  )}
-                  {isAdmin && (
-                    <Button 
-                      variant={isEditMode ? "outline" : "default"} 
-                      size="sm" 
-                      onClick={() => setIsEditMode(!isEditMode)}
-                      className={cn("font-bold shadow-xs", isEditMode ? "border-amber-500 text-amber-600" : "bg-primary")}
-                    >
-                      {isEditMode ? "Batal Edit" : <><Edit3 className="w-4 h-4 mr-1.5"/> Edit Semua Data</>}
-                    </Button>
-                  )}
-                  {isAdmin && !isEditMode && (
-                    <>
-                      <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 font-bold shadow-xs" title="Kembalikan ke antrean awal (Pending)">
-                        <RotateCcw className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Revert</span>
-                      </Button>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="font-bold shadow-xs" title="Hapus Permanen">
-                        <Trash2 className="w-4 h-4 mr-1 md:mr-0" /> <span className="md:hidden">Delete</span>
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
+        <DialogContent className="w-[96vw] max-w-5xl max-h-[92vh] p-0 overflow-hidden flex flex-col rounded-2xl sm:rounded-3xl border-2 border-slate-200/90 dark:border-slate-800 shadow-2xl bg-white dark:bg-slate-950">
+          {viewingActor && !editingBankMode && !editingDriveMode && (() => {
+            const isFemale = normalizeGender(viewingActor.gender) === 'Perempuan';
+            const heroAccentColor = isFemale ? '#e11d48' : '#0284c7';
+            const heroGradient = isFemale 
+              ? 'from-rose-500 via-pink-600 to-rose-700' 
+              : 'from-sky-500 via-blue-600 to-indigo-600';
+            const heroBgSoft = isFemale
+              ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300'
+              : 'bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-900 text-sky-700 dark:text-sky-300';
+            const initials = (viewingActor.fullName || "U")
+              .split(" ")
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((n: string) => n[0])
+              .join("")
+              .toUpperCase();
+            const ageVal = calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || ""));
 
-              {isEditMode ? (
-                <form onSubmit={handleSaveFullEdit} className="grid gap-6 py-4">
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi (Edit)</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Lengkap</Label><Input name="fullName" defaultValue={viewingActor.fullName} required /></div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">NIK</Label>
-                        <Input 
-                          name="nik" 
-                          value={editNik} 
-                          required 
-                          onChange={(e) => {
-                            const cleanNik = e.target.value.replace(/[^0-9]/g, "");
-                            setEditNik(cleanNik);
-                            if (cleanNik.length >= 12) {
-                              const extracted = extractDobFromNik(cleanNik);
-                              if (extracted) {
-                                setEditDob(extracted);
-                              }
-                            } else {
-                              setEditDob("");
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor KK</Label><Input name="noKK" defaultValue={viewingActor.noKK} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Jenis Kelamin</Label>
-                        <select name="gender" defaultValue={normalizeGender(viewingActor.gender || "")} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-                          <option value="Laki-laki">Laki-laki</option>
-                          <option value="Perempuan">Perempuan</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Tempat Lahir</Label>
-                        <Input 
-                          name="pob" 
-                          value={editPob} 
-                          onChange={(e) => setEditPob(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase">Tanggal Lahir</Label>
-                        <Input 
-                          name="dob" 
-                          value={editDob} 
-                          onChange={(e) => setEditDob(e.target.value)}
-                          placeholder="DD-MM-YYYY"
-                          className="font-semibold"
-                        />
-                      </div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor HP</Label><Input name="phone" defaultValue={viewingActor.phone} /></div>
+            return (
+              <div className="flex flex-col h-full max-h-[92vh] overflow-hidden">
+                {/* ── TOP ACCENT GRADIENT STRIPE ── */}
+                <div 
+                  className="h-1.5 w-full shrink-0" 
+                  style={{ background: `linear-gradient(90deg, ${heroAccentColor}, #8b5cf6, ${heroAccentColor})` }} 
+                />
+
+                {/* ── STICKY MODAL HEADER ── */}
+                <div className="relative z-20 flex flex-col md:flex-row md:items-center justify-between p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md gap-4 shrink-0">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className={cn("w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center font-black text-white text-base sm:text-lg shadow-md shrink-0 bg-gradient-to-br", heroGradient)}>
+                      {initials}
                     </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili (Edit)</div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">RT/RW</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} /></div>
-                      <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase">Alamat Lengkap</Label><Input name="address" defaultValue={viewingActor.address} /></div>
-                    </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha (Edit)</div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} required /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kategori</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase flex items-center justify-between">
-                          <span>Koordinator</span>
-                          {isAdmin && <span className="text-[10px] text-muted-foreground font-normal">Pilih nama atau pindah data</span>}
-                        </Label>
-                        {isAdmin ? (() => {
-                          const currentCoord = normalizeCoordinator(viewingActor.coordinator ? viewingActor.coordinator.toUpperCase().trim() : "");
-                          return (
-                            <select 
-                              name="coordinator" 
-                              defaultValue={currentCoord}
-                              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
-                              required
-                            >
-                              <option value="" disabled>-- PILIH KOORDINATOR --</option>
-                              {/* Jika koordinator saat ini tidak ada di daftar kuota atau kuotanya penuh, tetap tampilkan opsi saat ini */}
-                              {currentCoord && !availableCoordinators.some(c => c.nameUpper === currentCoord && c.remaining > 0) && (
-                                <option value={currentCoord} className="font-bold text-amber-600">
-                                  🟡 {currentCoord} (Saat Ini)
-                                </option>
-                              )}
-                              {availableCoordinators
-                                .filter(c => c.remaining > 0 || (currentCoord && c.nameUpper === currentCoord))
-                                .map((c) => {
-                                  const isCurrent = currentCoord && c.nameUpper === currentCoord;
-                                  return (
-                                    <option key={c.id || c.nameUpper} value={c.nameUpper}>
-                                      🟢 {c.nameUpper} {isCurrent ? `(Saat Ini - Sisa: ${c.remaining})` : `(Sisa Kuota: ${c.remaining})`}
-                                    </option>
-                                  );
-                                })}
-                            </select>
-                          );
-                        })() : (
-                          <>
-                            <input type="hidden" name="coordinator" value={normalizeCoordinator(viewingActor.coordinator) || ""} />
-                            <div className="inline-flex items-center gap-1.5 text-xs font-black text-primary uppercase bg-primary/5 px-2.5 py-1.5 rounded-lg border border-primary/20 h-9 w-full">
-                              <span>{normalizeCoordinator(viewingActor.coordinator) || "-"}</span>
-                            </div>
-                          </>
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <DialogTitle className="text-base sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight truncate">
+                          {isEditMode ? `Edit: ${viewingActor.fullName}` : viewingActor.fullName}
+                        </DialogTitle>
+                        <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-black uppercase border shrink-0", heroBgSoft)}>
+                          {isFemale ? "Perempuan" : "Laki-laki"}
+                        </span>
+                        {ageVal && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+                            {ageVal} Thn
+                          </span>
                         )}
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs font-bold uppercase flex items-center justify-between">
-                          <span>Petugas Survey</span>
-                          {isAdmin && <span className="text-[10px] text-muted-foreground font-normal">Pilih nama atau BELUM ADA</span>}
-                        </Label>
-                        {(() => {
-                          const canonicalPetugas = resolveSurveyorCanonicalName(viewingActor.petugasSurvey, systemUsersRaw)
-                          const isBelumAda = canonicalPetugas === "BELUM ADA"
-
-                          return isAdmin ? (
-                            <select 
-                              name="petugasSurvey" 
-                              defaultValue={canonicalPetugas}
-                              className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
-                            >
-                              <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
-                              {!isBelumAda && !surveyorOptions.includes(canonicalPetugas) && (
-                                <option value={canonicalPetugas}>
-                                  🟢 {canonicalPetugas} (Saat Ini)
-                                </option>
-                              )}
-                              {surveyorOptions.map((name: string) => (
-                                <option key={name} value={name}>
-                                  🟢 {name}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <>
-                              {/* Hidden input agar nilai tidak berubah saat form disimpan oleh non-Admin */}
-                              <input type="hidden" name="petugasSurvey" value={canonicalPetugas} />
-                              {!isBelumAda ? (
-                                <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 h-9 w-full">
-                                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                                  <span>{canonicalPetugas}</span>
-                                </div>
-                              ) : (
-                                <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900 h-9 w-full">
-                                  <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
-                                  <span>BELUM ADA</span>
-                                </div>
-                              )}
-                            </>
-                          )
-                        })()}
-                      </div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Link Google Drive</Label><Input name="googleDriveLink" defaultValue={viewingActor.googleDriveLink || ""} placeholder="Link folder Google Drive (opsional)" /></div>
-                    </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><CreditCard className="w-4 h-4" /> Data Perbankan (Edit)</div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Bank</Label><Input name="bankName" defaultValue={viewingActor.bankName} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor Rekening</Label><Input name="bankNumber" defaultValue={viewingActor.bankNumber} /></div>
-                      <div className="space-y-1"><Label className="text-xs font-bold uppercase">Pemilik Rekening</Label><Input name="bankOwner" defaultValue={viewingActor.bankOwner} className="uppercase" /></div>
-                    </div>
-                  </section>
-
-                  <div className="sticky bottom-0 bg-white dark:bg-zinc-950 p-4 border-t flex justify-end gap-2 mt-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] rounded-b-lg">
-                    <Button type="button" variant="outline" onClick={() => setIsEditMode(false)} className="font-bold">Batal</Button>
-                    <Button type="submit" className="bg-primary font-bold"><Save className="w-4 h-4 mr-2" /> Simpan Perubahan</Button>
-                  </div>
-                </form>
-              ) : (
-                <div className="grid gap-6 py-4">
-                  {/* 1. INFORMASI PRIBADI */}
-                  <section className="space-y-4">
-                    <div className="flex items-center justify-between border-b pb-1">
-                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
-                        <User className="w-4 h-4" /> Informasi Pribadi
-                      </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        {viewingActor.registrationCode && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(viewingActor.registrationCode || '', 'Reg ID')}
+                            className="inline-flex items-center gap-1 font-mono font-bold text-[11px] text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/50 px-2 py-0.5 rounded border border-sky-200 dark:border-sky-800 hover:bg-sky-100 transition-colors"
+                            title="Klik untuk menyalin Reg ID"
+                          >
+                            <span>REG: {viewingActor.registrationCode}</span>
+                            <Copy className="w-3 h-3 text-sky-500" />
+                          </button>
+                        )}
+                        {viewingActor.nik && (
+                          <button
+                            type="button"
+                            onClick={() => handleCopyText(viewingActor.nik || '', 'NIK')}
+                            className="inline-flex items-center gap-1 font-mono font-bold text-[11px] text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition-colors"
+                            title="Klik untuk menyalin NIK"
+                          >
+                            <span>NIK: {viewingActor.nik}</span>
+                            <Copy className="w-3 h-3 text-slate-400" />
+                          </button>
+                        )}
                         <VerificationBadge actor={viewingActor} />
                       </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
-                      {[
-                        { label: "Reg ID", value: viewingActor.registrationCode, isCopyable: true },
-                        { label: "Nama Lengkap", value: viewingActor.fullName },
-                        { label: "NIK", value: viewingActor.nik, isCopyable: true },
-                        { label: "Nomor KK", value: viewingActor.noKK, isCopyable: true },
-                        { label: "Jenis Kelamin", value: normalizeGender(viewingActor.gender) || viewingActor.gender },
-                        { label: "Tempat Lahir", value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob },
-                        { label: "Tanggal Lahir", value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob },
-                        { label: "Usia", value: calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")) },
-                        { label: "Nomor HP", value: viewingActor.phone, isPhone: true }
-                      ].map((item, i) => (
-                        <div key={i} className="space-y-1">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                          {(item as any).isPhone && item.value ? (
-                            <div className="flex items-center gap-2">
-                              <a
-                                href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-sm font-bold text-green-600 hover:text-green-700 hover:underline flex items-center gap-1"
-                              >
-                                {item.value}
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => handleCopyText(item.value || '', 'No HP')}
-                                className="text-slate-400 hover:text-primary p-0.5"
-                                title="Salin No HP"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ) : (item as any).isCopyable && item.value ? (
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">{item.value}</p>
-                              <button
-                                type="button"
-                                onClick={() => handleCopyText(item.value || '', item.label)}
-                                className="text-slate-400 hover:text-primary p-0.5"
-                                title={`Salin ${item.label}`}
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{item.value || "-"}</p>
-                          )}
-                        </div>
-                      ))}
-                      <div className="sm:col-span-2 md:col-span-3 pt-2 border-t">
-                        <CheckDataIndicator 
-                          actor={viewingActor} 
-                          data2023={activeDetailData.data2023}
-                          data2024={activeDetailData.data2024}
-                          data2025={activeDetailData.data2025}
-                          dataBlacklist={activeDetailData.dataBlacklist}
-                        />
-                      </div>
-                    </div>
-                  </section>
+                  </div>
 
-                  {/* 2. ALAMAT & DOMISILI */}
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
-                      <MapPin className="w-4 h-4" /> Alamat & Domisili
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
-                      {[
-                        { label: "Kecamatan", value: viewingActor.kecamatan },
-                        { label: "Kelurahan", value: viewingActor.kelurahan },
-                        { label: "RT/RW", value: viewingActor.rtRw },
-                        { label: "Alamat Lengkap", value: viewingActor.address, fullWidth: true }
-                      ].map((item, i) => (
-                        <div key={i} className={item.fullWidth ? "sm:col-span-2 md:col-span-3 space-y-1" : "space-y-1"}>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                          <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{item.value || "-"}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-
-                  {/* 3. INFORMASI USAHA */}
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
-                      <Building2 className="w-4 h-4" /> Informasi Usaha
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl">
-                      {(() => {
-                        const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim());
-                        const coordPhone = found?.phone || found?.noHp || found?.hp || "";
-                        
-                        const getWaLink = (phoneStr: string) => {
-                          if (!phoneStr) return "#";
-                          let clean = phoneStr.replace(/\D/g, "");
-                          if (clean.startsWith("0")) clean = "62" + clean.slice(1);
-                          else if (!clean.startsWith("62")) clean = "62" + clean;
-                          return `https://wa.me/${clean}`;
-                        };
-
-                        const canonicalPetugas = resolveSurveyorCanonicalName(viewingActor.petugasSurvey, systemUsersRaw);
-                        const isBelumAdaPetugas = canonicalPetugas === "BELUM ADA";
-
-                        return [
-                          { label: "Nama Usaha", value: viewingActor.businessName },
-                          { label: "Kategori Usaha", value: viewingActor.businessCategory },
-                          { label: "Lokasi Usaha", value: viewingActor.businessLocation || viewingActor.address },
-                          ...(!isInspektorat ? [
-                            { label: "USULAN / KOORDINATOR", value: viewingActor.coordinator },
-                            { label: "NO. HP USULAN", value: coordPhone, isPhone: true },
-                            { 
-                              label: "PETUGAS SURVEY", 
-                              value: canonicalPetugas !== "BELUM ADA" ? canonicalPetugas : "BELUM ADA",
-                              isPetugasField: true,
-                              isBelumAda: isBelumAdaPetugas
-                            }
-                          ] : [])
-                        ].map((item: any, i: number) => (
-                          <div key={i} className="space-y-1">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                            {item.isPetugasField ? (
-                              <div className="space-y-1.5">
-                                {item.isBelumAda ? (
-                                  <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900">
-                                    <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
-                                    <span>BELUM ADA</span>
-                                  </div>
-                                ) : (
-                                  <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                                    <span>{item.value}</span>
-                                  </div>
-                                )}
-                                {isAdmin && (
-                                  <div className="pt-0.5">
-                                    <select
-                                      value={!item.isBelumAda ? canonicalPetugas : "BELUM ADA"}
-                                      onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value)}
-                                      className="text-[11px] font-bold h-7 rounded border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-xs text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[220px]"
-                                      title="Admin: Ganti Petugas Survey secara langsung"
-                                    >
-                                      <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
-                                      {!item.isBelumAda && !surveyorOptions.includes(canonicalPetugas) && (
-                                        <option value={canonicalPetugas}>
-                                          🟢 {canonicalPetugas} (Saat Ini)
-                                        </option>
-                                      )}
-                                      {surveyorOptions.map((name: string) => (
-                                        <option key={name} value={name}>
-                                          🟢 {name}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                )}
-                              </div>
-                            ) : item.isPhone && item.value ? (
-                              <a
-                                href={getWaLink(item.value)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-600 hover:text-emerald-700 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 shadow-xs transition-all active:scale-95 w-fit"
-                                title="Klik untuk membuka obrolan WhatsApp"
-                              >
-                                <MessageCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
-                                <span>{item.value}</span>
-                              </a>
-                            ) : (
-                              <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{item.value || "-"}</p>
-                            )}
-                          </div>
-                        ));
-                      })()}
-                    </div>
-                  </section>
-
-                  {/* 4. DATA PERBANKAN */}
-                  <section className="space-y-4">
-                    <div className="flex items-center justify-between border-b pb-1">
-                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
-                        <CreditCard className="w-4 h-4" /> Data Perbankan
-                      </div>
-                      {isAdmin && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setEditingBankMode(true)}
-                          className="h-7 text-xs font-bold text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                        >
-                          <CreditCard className="w-3.5 h-3.5 mr-1" /> Ubah Rekening
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 items-center shrink-0">
+                    {!isEditMode && viewingActor && !isKoordinator && !isInspektorat && (
+                      <Button 
+                        size="sm" 
+                        onClick={() => handlePrintForm(viewingActor)}
+                        className="font-bold bg-primary hover:bg-primary/90 text-white shadow-xs rounded-xl text-xs h-8 sm:h-9"
+                      >
+                        <Printer className="w-3.5 h-3.5 mr-1.5" /> Cetak Formulir
+                      </Button>
+                    )}
+                    {!isEditMode && isAdmin && viewingActor && (viewingActor as any).surveyData && (
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (database && viewingActor?.id && !(viewingActor as any).surveyData?.fotoSurveyUrl) {
+                            get(ref(database, `businessActors/${viewingActor.id}`)).then(snap => {
+                              if (snap.exists()) {
+                                const full = { ...snap.val(), id: snap.key } as BusinessActor;
+                                setViewingActor(full);
+                                setSurveyViewActor(full);
+                              } else {
+                                setSurveyViewActor(viewingActor);
+                              }
+                            }).catch(() => setSurveyViewActor(viewingActor));
+                          } else {
+                            setSurveyViewActor(viewingActor);
+                          }
+                        }}
+                        className="font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs rounded-xl text-xs h-8 sm:h-9"
+                      >
+                        <ClipboardList className="w-3.5 h-3.5 mr-1.5" /> Lihat Form Survey
+                      </Button>
+                    )}
+                    {!isAdmin && !isMonitoring && !isKoordinator && !isEditMode && viewingActor.status === 'verified_actor' && (
+                      <Button 
+                        size="sm" 
+                        onClick={() => setEditingBankMode(true)}
+                        className="font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-xs rounded-xl text-xs h-8 sm:h-9"
+                      >
+                        <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Input Rekening
+                      </Button>
+                    )}
+                    {isAdmin && !isEditMode && (
+                      <Button 
+                        size="sm" 
+                        onClick={() => setEditingDriveMode(true)}
+                        className="font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl text-xs h-8 sm:h-9"
+                      >
+                        <Folder className="w-3.5 h-3.5 mr-1.5" /> Link Drive
+                      </Button>
+                    )}
+                    {isAdmin && !isEditMode && viewingActor && (
+                      <Button 
+                        size="sm" 
+                        onClick={() => handleSingleLanjutDinas(viewingActor)}
+                        className="font-bold bg-purple-600 hover:bg-purple-700 text-white shadow-xs rounded-xl text-xs h-8 sm:h-9"
+                        title="Push Data Susulan ke Verifikasi Dinas"
+                      >
+                        <Send className="w-3.5 h-3.5 mr-1.5" /> Lanjut Dinas
+                      </Button>
+                    )}
+                    {isAdmin && (
+                      <Button 
+                        variant={isEditMode ? "outline" : "default"} 
+                        size="sm" 
+                        onClick={() => setIsEditMode(!isEditMode)}
+                        className={cn("font-bold shadow-xs rounded-xl text-xs h-8 sm:h-9", isEditMode ? "border-amber-500 text-amber-600 hover:bg-amber-50" : "bg-primary")}
+                      >
+                        {isEditMode ? "Batal Edit" : <><Edit3 className="w-3.5 h-3.5 mr-1.5"/> Edit Data</>}
+                      </Button>
+                    )}
+                    {isAdmin && !isEditMode && (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} className="border-amber-500 text-amber-600 hover:bg-amber-50 font-bold shadow-xs rounded-xl text-xs h-8 sm:h-9 px-2.5" title="Kembalikan ke antrean awal (Pending)">
+                          <RotateCcw className="w-3.5 h-3.5 mr-1 md:mr-0" /> <span className="md:hidden">Revert</span>
                         </Button>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl">
-                      {[
-                        { label: "Nama Bank", value: viewingActor.bankName },
-                        { label: "Nomor Rekening", value: viewingActor.bankNumber, isCopyable: true },
-                        { label: "Nama Pemilik Rekening", value: viewingActor.bankOwner }
-                      ].map((item, i) => (
-                        <div key={i} className="space-y-1">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-black text-primary">{item.value || "BELUM TERISI"}</p>
-                            {item.isCopyable && item.value && (
-                              <button
-                                type="button"
-                                onClick={() => handleCopyText(item.value || '', 'Nomor Rekening')}
-                                className="text-slate-400 hover:text-primary p-0.5"
-                                title="Salin Nomor Rekening"
-                              >
-                                <Copy className="w-3.5 h-3.5" />
-                              </button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} className="font-bold shadow-xs rounded-xl text-xs h-8 sm:h-9 px-2.5" title="Hapus Permanen">
+                          <Trash2 className="w-3.5 h-3.5 mr-1 md:mr-0" /> <span className="md:hidden">Delete</span>
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* ── SCROLLABLE BODY CONTENT ── */}
+                <div className="p-4 sm:p-6 space-y-6 overflow-y-auto max-h-[calc(92vh-115px)]">
+                  {isEditMode ? (
+                    <form onSubmit={handleSaveFullEdit} className="space-y-6">
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-sky-500/20 dark:border-sky-500/30 bg-gradient-to-br from-sky-50/40 via-white to-indigo-50/20 dark:from-sky-950/20 dark:via-slate-900 dark:to-indigo-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(2,132,199,0.04)] space-y-4">
+                        <div className="flex items-center gap-2 text-sky-700 dark:text-sky-400 font-black text-xs sm:text-sm uppercase border-b border-sky-100 dark:border-sky-900/50 pb-2">
+                          <User className="w-4 h-4" /> Informasi Pribadi (Edit)
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Lengkap</Label><Input name="fullName" defaultValue={viewingActor.fullName} required /></div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold uppercase">NIK</Label>
+                            <Input 
+                              name="nik" 
+                              value={editNik} 
+                              required 
+                              onChange={(e) => {
+                                const cleanNik = e.target.value.replace(/[^0-9]/g, "");
+                                setEditNik(cleanNik);
+                                if (cleanNik.length >= 12) {
+                                  const extracted = extractDobFromNik(cleanNik);
+                                  if (extracted) {
+                                    setEditDob(extracted);
+                                  }
+                                } else {
+                                  setEditDob("");
+                                }
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor KK</Label><Input name="noKK" defaultValue={viewingActor.noKK} /></div>
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Jenis Kelamin</Label>
+                            <select name="gender" defaultValue={normalizeGender(viewingActor.gender || "")} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+                              <option value="Laki-laki">Laki-laki</option>
+                              <option value="Perempuan">Perempuan</option>
+                            </select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold uppercase">Tempat Lahir</Label>
+                            <Input 
+                              name="pob" 
+                              value={editPob} 
+                              onChange={(e) => setEditPob(e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold uppercase">Tanggal Lahir</Label>
+                            <Input 
+                              name="dob" 
+                              value={editDob} 
+                              onChange={(e) => setEditDob(e.target.value)}
+                              placeholder="DD-MM-YYYY"
+                              className="font-semibold"
+                            />
+                          </div>
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor HP</Label><Input name="phone" defaultValue={viewingActor.phone} /></div>
+                        </div>
+                      </section>
+
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-emerald-500/20 dark:border-emerald-500/30 bg-gradient-to-br from-emerald-50/40 via-white to-teal-50/20 dark:from-emerald-950/20 dark:via-slate-900 dark:to-teal-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(16,185,129,0.04)] space-y-4">
+                        <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-black text-xs sm:text-sm uppercase border-b border-emerald-100 dark:border-emerald-900/50 pb-2">
+                          <MapPin className="w-4 h-4" /> Alamat & Domisili (Edit)
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kecamatan</Label><Input name="kecamatan" defaultValue={viewingActor.kecamatan} /></div>
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kelurahan</Label><Input name="kelurahan" defaultValue={viewingActor.kelurahan} /></div>
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">RT/RW</Label><Input name="rtRw" defaultValue={viewingActor.rtRw} /></div>
+                          <div className="space-y-1 md:col-span-3"><Label className="text-xs font-bold uppercase">Alamat Lengkap</Label><Input name="address" defaultValue={viewingActor.address} /></div>
+                        </div>
+                      </section>
+
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-purple-500/20 dark:border-purple-500/30 bg-gradient-to-br from-purple-50/40 via-white to-fuchsia-50/20 dark:from-purple-950/20 dark:via-slate-900 dark:to-fuchsia-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(168,85,247,0.04)] space-y-4">
+                        <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400 font-black text-xs sm:text-sm uppercase border-b border-purple-100 dark:border-purple-900/50 pb-2">
+                          <Building2 className="w-4 h-4" /> Informasi Usaha (Edit)
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} required /></div>
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Kategori</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} /></div>
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} /></div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold uppercase flex items-center justify-between">
+                              <span>Koordinator</span>
+                              {isAdmin && <span className="text-[10px] text-muted-foreground font-normal">Pilih nama atau pindah data</span>}
+                            </Label>
+                            {isAdmin ? (() => {
+                              const currentCoord = normalizeCoordinator(viewingActor.coordinator ? viewingActor.coordinator.toUpperCase().trim() : "");
+                              return (
+                                <select 
+                                  name="coordinator" 
+                                  defaultValue={currentCoord}
+                                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
+                                  required
+                                >
+                                  <option value="" disabled>-- PILIH KOORDINATOR --</option>
+                                  {currentCoord && !availableCoordinators.some(c => c.nameUpper === currentCoord && c.remaining > 0) && (
+                                    <option value={currentCoord} className="font-bold text-amber-600">
+                                      🟡 {currentCoord} (Saat Ini)
+                                    </option>
+                                  )}
+                                  {availableCoordinators
+                                    .filter(c => c.remaining > 0 || (currentCoord && c.nameUpper === currentCoord))
+                                    .map((c) => {
+                                      const isCurrent = currentCoord && c.nameUpper === currentCoord;
+                                      return (
+                                        <option key={c.id || c.nameUpper} value={c.nameUpper}>
+                                          🟢 {c.nameUpper} {isCurrent ? `(Saat Ini - Sisa: ${c.remaining})` : `(Sisa Kuota: ${c.remaining})`}
+                                        </option>
+                                      );
+                                    })}
+                                </select>
+                              );
+                            })() : (
+                              <>
+                                <input type="hidden" name="coordinator" value={normalizeCoordinator(viewingActor.coordinator) || ""} />
+                                <div className="inline-flex items-center gap-1.5 text-xs font-black text-primary uppercase bg-primary/5 px-2.5 py-1.5 rounded-lg border border-primary/20 h-9 w-full">
+                                  <span>{normalizeCoordinator(viewingActor.coordinator) || "-"}</span>
+                                </div>
+                              </>
                             )}
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold uppercase flex items-center justify-between">
+                              <span>Petugas Survey</span>
+                              {isAdmin && <span className="text-[10px] text-muted-foreground font-normal">Pilih nama atau BELUM ADA</span>}
+                            </Label>
+                            {(() => {
+                              const canonicalPetugas = resolveSurveyorCanonicalName(viewingActor.petugasSurvey, systemUsersRaw)
+                              const isBelumAda = canonicalPetugas === "BELUM ADA"
 
-                  {/* 5. DATA TITIK LOKASI VERIFIKASI */}
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
-                      <MapPin className="w-4 h-4" /> Data Titik Lokasi Verifikasi
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {(viewingActor as any).verificationLocation && (
-                        <div className="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800">
-                          <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Sumber: Verifikasi Admin</p>
-                          <p className="text-xs font-mono text-emerald-800 dark:text-emerald-200 font-semibold">{(viewingActor as any).verificationLocation.lat}, {(viewingActor as any).verificationLocation.lon}</p>
-                          <a href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocation.lat},${(viewingActor as any).verificationLocation.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 font-bold hover:underline mt-2 inline-block">Lihat di Peta</a>
+                              return isAdmin ? (
+                                <select 
+                                  name="petugasSurvey" 
+                                  defaultValue={canonicalPetugas}
+                                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring font-bold"
+                                >
+                                  <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
+                                  {!isBelumAda && !surveyorOptions.includes(canonicalPetugas) && (
+                                    <option value={canonicalPetugas}>
+                                      🟢 {canonicalPetugas} (Saat Ini)
+                                    </option>
+                                  )}
+                                  {surveyorOptions.map((name: string) => (
+                                    <option key={name} value={name}>
+                                      🟢 {name}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <>
+                                  <input type="hidden" name="petugasSurvey" value={canonicalPetugas} />
+                                  {!isBelumAda ? (
+                                    <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 h-9 w-full">
+                                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                      <span>{canonicalPetugas}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900 h-9 w-full">
+                                      <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                      <span>BELUM ADA</span>
+                                    </div>
+                                  )}
+                                </>
+                              )
+                            })()}
+                          </div>
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Link Google Drive</Label><Input name="googleDriveLink" defaultValue={viewingActor.googleDriveLink || ""} placeholder="Link folder Google Drive (opsional)" /></div>
                         </div>
-                      )}
-                      {(viewingActor as any).verificationBypass?.isBypassed && (
-                        <div className="bg-amber-50 dark:bg-amber-950/40 p-4 rounded-xl border border-amber-100 dark:border-amber-800">
-                          <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase mb-1">Sumber: Verifikasi Admin (Bypass)</p>
-                          <p className="text-xs text-amber-800 dark:text-amber-200 font-medium mb-2">Alasan: {(viewingActor as any).verificationBypass.reason}</p>
-                          {(viewingActor as any).verificationBypass.fileBase64 && (
-                            <a href={(viewingActor as any).verificationBypass.fileBase64} target="_blank" rel="noreferrer" className="text-[10px] font-bold bg-amber-200 text-amber-800 px-3 py-1 rounded shadow-xs hover:bg-amber-300 transition-colors inline-block mt-1">Lihat Bukti Lampiran</a>
-                          )}
-                        </div>
-                      )}
-                      {(viewingActor as any).verificationLocationDinas && (
-                        <div className="bg-indigo-50 dark:bg-indigo-950/40 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800">
-                          <p className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase mb-1">Sumber: Verifikasi Dinas</p>
-                          <p className="text-xs font-mono text-indigo-800 dark:text-indigo-200 font-semibold">{(viewingActor as any).verificationLocationDinas.lat}, {(viewingActor as any).verificationLocationDinas.lon}</p>
-                          <a href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocationDinas.lat},${(viewingActor as any).verificationLocationDinas.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 font-bold hover:underline mt-2 inline-block">Lihat di Peta</a>
-                        </div>
-                      )}
-                      {!(viewingActor as any).verificationLocation && !(viewingActor as any).verificationLocationDinas && !(viewingActor as any).verificationBypass?.isBypassed && (
-                        <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800 col-span-full">
-                          <p className="text-xs font-medium text-slate-500 text-center">Belum ada titik lokasi yang direkam.</p>
-                        </div>
-                      )}
-                    </div>
-                  </section>
+                      </section>
 
-                  {/* HASIL VERIFIKASI BPJS */}
-                  <section className="space-y-4">
-                    <div className="flex items-center justify-between border-b pb-1">
-                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase">
-                        <ShieldCheck className="w-4 h-4 text-emerald-600" /> Hasil Verifikasi BPJS Ketenagakerjaan
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-amber-500/20 dark:border-amber-500/30 bg-gradient-to-br from-amber-50/40 via-white to-yellow-50/20 dark:from-amber-950/20 dark:via-slate-900 dark:to-yellow-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(245,158,11,0.04)] space-y-4">
+                        <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-black text-xs sm:text-sm uppercase border-b border-amber-100 dark:border-amber-900/50 pb-2">
+                          <CreditCard className="w-4 h-4" /> Data Perbankan (Edit)
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nama Bank</Label><Input name="bankName" defaultValue={viewingActor.bankName} /></div>
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Nomor Rekening</Label><Input name="bankNumber" defaultValue={viewingActor.bankNumber} /></div>
+                          <div className="space-y-1"><Label className="text-xs font-bold uppercase">Pemilik Rekening</Label><Input name="bankOwner" defaultValue={viewingActor.bankOwner} className="uppercase" /></div>
+                        </div>
+                      </section>
+
+                      <div className="sticky bottom-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2 -mx-4 sm:-mx-6 -mb-4 sm:-mb-6 rounded-b-2xl shadow-[0_-8px_20px_rgba(0,0,0,0.08)]">
+                        <Button type="button" variant="outline" onClick={() => setIsEditMode(false)} className="font-bold rounded-xl">Batal</Button>
+                        <Button type="submit" className="bg-primary font-bold rounded-xl"><Save className="w-4 h-4 mr-2" /> Simpan Perubahan</Button>
                       </div>
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setViewingActor(null)
-                            router.push('/settings#bpjs')
-                          }}
-                          className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-1"
-                        >
-                          Data Pembanding BPJS <ChevronRight className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-
-                    {(() => {
-                      const bpjsInfo = getActorBpjsStatus(viewingActor)
-                      if (!bpjsInfo.hasMatch) {
-                        return (
-                          <div className="bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div className="text-xs text-slate-500 font-medium">
-                              Belum ada catatan hasil verifikasi BPJS untuk pelaku usaha ini.
+                    </form>
+                  ) : (
+                    <div className="space-y-6">
+                      {/* 1. INFORMASI PRIBADI CARD */}
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-sky-500/25 dark:border-sky-500/30 bg-gradient-to-br from-sky-50/50 via-white to-indigo-50/30 dark:from-sky-950/20 dark:via-slate-900 dark:to-indigo-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(2,132,199,0.05)] space-y-4">
+                        <User className="absolute -right-3 -bottom-3 w-32 h-32 text-sky-500/[0.04] dark:text-sky-400/[0.03] pointer-events-none" />
+                        <div className="relative z-10 flex items-center justify-between border-b border-sky-100 dark:border-sky-900/40 pb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center font-black">
+                              <User className="w-4 h-4" />
                             </div>
-                            {isAdmin && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  setViewingActor(null)
-                                  router.push('/settings#bpjs')
-                                }}
-                                className="shrink-0 font-bold border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 h-8 rounded-lg text-xs"
-                              >
-                                <ShieldCheck className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Upload Data BPJS di Pengaturan
-                              </Button>
-                            )}
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                                Informasi Pribadi
+                              </h4>
+                              <p className="text-[10px] text-slate-400 font-semibold">Identitas resmi KTP & kependudukan</p>
+                            </div>
                           </div>
-                        )
-                      }
+                          <VerificationBadge actor={viewingActor} />
+                        </div>
 
-                      const badgeBg = 
-                        bpjsInfo.type === 'verified'
-                          ? "bg-emerald-600 text-white shadow-xs"
-                          : bpjsInfo.type === 'duplicate'
-                          ? "bg-amber-500 text-white shadow-xs"
-                          : "bg-rose-600 text-white shadow-xs"
-
-                      const containerBg = 
-                        bpjsInfo.type === 'verified'
-                          ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
-                          : bpjsInfo.type === 'duplicate'
-                          ? "bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800"
-                          : "bg-rose-50/80 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800"
-
-                      const btnBorder =
-                        bpjsInfo.type === 'verified'
-                          ? "border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300"
-                          : bpjsInfo.type === 'duplicate'
-                          ? "border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-300"
-                          : "border-rose-300 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:text-rose-300"
-
-                      const sourceFile = bpjsInfo.bpjsItem?.fileName || bpjsInfo.bpjsItem?.sumberFile || (viewingActor as any).bpjsSourceFile || 'Sheet Hasil Verifikasi BPJS'
-                      const checkedAt = (viewingActor as any).bpjsCheckedAt || bpjsInfo.bpjsItem?.uploadedAt
-
-                      return (
-                        <div className={cn("p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4", containerBg)}>
-                          <div className="space-y-1.5 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className={cn("text-xs font-black px-2.5 py-1 rounded-lg uppercase tracking-wider", badgeBg)}>
-                                {bpjsInfo.badgeLabel}
-                              </span>
-                              {bpjsInfo.statusCode && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-                                  Kode Status: {bpjsInfo.statusCode}
-                                </span>
-                              )}
-                            </div>
-                            {bpjsInfo.note && (
-                              <p className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                                Keterangan: {bpjsInfo.note}
+                        {/* Grid Mini Info Cards */}
+                        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                          {[
+                            { label: "Reg ID", value: viewingActor.registrationCode, icon: ClipboardCheck, iconColor: "text-sky-500", isMono: true, isCopyable: true },
+                            { label: "Nama Lengkap", value: viewingActor.fullName, icon: User, iconColor: "text-indigo-500", isBold: true },
+                            { label: "NIK", value: viewingActor.nik, icon: CreditCard, iconColor: "text-blue-500", isMono: true, isCopyable: true },
+                            { label: "Nomor KK", value: viewingActor.noKK, icon: Users, iconColor: "text-purple-500", isMono: true, isCopyable: true },
+                            { 
+                              label: "Jenis Kelamin", 
+                              value: normalizeGender(viewingActor.gender) || viewingActor.gender, 
+                              icon: UserCheck, 
+                              iconColor: isFemale ? "text-rose-500" : "text-sky-500",
+                              isGenderBadge: true 
+                            },
+                            { label: "Tempat Lahir", value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob, icon: MapPin, iconColor: "text-emerald-500" },
+                            { label: "Tanggal Lahir", value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob, icon: Calendar, iconColor: "text-amber-500" },
+                            { 
+                              label: "Usia", 
+                              value: calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || "")) ? `${calculateAge(viewingActor.dob || parsePobDob(viewingActor.pobDob).dob || extractDobFromNik(viewingActor.nik || ""))} Tahun` : "-", 
+                              icon: Sparkles, 
+                              iconColor: "text-amber-500" 
+                            },
+                            { label: "Nomor HP", value: viewingActor.phone, icon: Phone, iconColor: "text-emerald-600", isPhone: true }
+                          ].map((item, i) => (
+                            <div 
+                              key={i} 
+                              className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3 shadow-2xs hover:border-sky-300 dark:hover:border-sky-700 transition-all flex flex-col justify-between"
+                            >
+                              <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+                                <item.icon className={cn("w-3 h-3", item.iconColor)} />
+                                {item.label}
                               </p>
-                            )}
-                            <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
-                              {sourceFile && (
-                                <span>File Acuan: <strong className="text-slate-700 dark:text-slate-300 font-mono">{sourceFile}</strong></span>
-                              )}
-                              {checkedAt && (
-                                <span>Waktu Cek: <strong className="text-slate-700 dark:text-slate-300">{new Date(checkedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong></span>
+
+                              {(item as any).isPhone && item.value ? (
+                                <div className="flex items-center justify-between gap-1.5 pt-0.5">
+                                  <a
+                                    href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-colors"
+                                    title="Hubungi via WhatsApp"
+                                  >
+                                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/20" />
+                                    <span>{item.value}</span>
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyText(item.value || '', 'No HP')}
+                                    className="text-slate-400 hover:text-primary p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                    title="Salin No HP"
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ) : (item as any).isGenderBadge && item.value ? (
+                                <div className="pt-0.5">
+                                  <span className={cn(
+                                    "inline-flex items-center gap-1 text-xs font-black uppercase px-2.5 py-0.5 rounded-lg border",
+                                    isFemale 
+                                      ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300"
+                                      : "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:border-sky-900 dark:text-sky-300"
+                                  )}>
+                                    <span className={cn("w-1.5 h-1.5 rounded-full", isFemale ? "bg-rose-500" : "bg-sky-500")} />
+                                    {item.value}
+                                  </span>
+                                </div>
+                              ) : (item as any).isCopyable && item.value ? (
+                                <div className="flex items-center justify-between gap-1 pt-0.5">
+                                  <span className="text-xs font-black font-mono text-slate-900 dark:text-slate-100 tracking-tight">
+                                    {item.value}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyText(item.value || '', item.label)}
+                                    className="text-slate-400 hover:text-primary p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                    title={`Salin ${item.label}`}
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <p className={cn(
+                                  "text-xs font-bold text-slate-900 dark:text-slate-100 pt-0.5",
+                                  item.isBold && "uppercase font-black text-primary"
+                                )}>
+                                  {item.value || "-"}
+                                </p>
                               )}
                             </div>
-                          </div>
+                          ))}
+                        </div>
 
+                        {/* Check Data Indicator Container */}
+                        <div className="relative z-10 pt-2">
+                          <div className="bg-white/95 dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-xl p-3 shadow-2xs">
+                            <CheckDataIndicator 
+                              actor={viewingActor} 
+                              data2023={activeDetailData.data2023}
+                              data2024={activeDetailData.data2024}
+                              data2025={activeDetailData.data2025}
+                              dataBlacklist={activeDetailData.dataBlacklist}
+                            />
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* 2. ALAMAT & DOMISILI CARD */}
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-emerald-500/25 dark:border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 dark:from-emerald-950/20 dark:via-slate-900 dark:to-teal-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(16,185,129,0.05)] space-y-4">
+                        <MapPin className="absolute -right-3 -bottom-3 w-32 h-32 text-emerald-500/[0.04] dark:text-emerald-400/[0.03] pointer-events-none" />
+                        <div className="relative z-10 flex items-center justify-between border-b border-emerald-100 dark:border-emerald-900/40 pb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black">
+                              <MapPin className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                                Alamat & Domisili
+                              </h4>
+                              <p className="text-[10px] text-slate-400 font-semibold">Wilayah kelurahan, kecamatan, dan alamat rumah</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                          {[
+                            { label: "Kecamatan", value: viewingActor.kecamatan, icon: Building2 },
+                            { label: "Kelurahan", value: viewingActor.kelurahan, icon: MapPin },
+                            { label: "RT / RW", value: viewingActor.rtRw, icon: Navigation },
+                          ].map((item, i) => (
+                            <div key={i} className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3 shadow-2xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all">
+                              <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+                                <item.icon className="w-3 h-3 text-emerald-600" />
+                                {item.label}
+                              </p>
+                              <p className="text-xs font-bold text-slate-900 dark:text-slate-100 pt-0.5">{item.value || "-"}</p>
+                            </div>
+                          ))}
+
+                          {/* Full Width Alamat Lengkap with Maps Action */}
+                          <div className="sm:col-span-2 md:col-span-3 bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="space-y-0.5">
+                              <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 flex items-center gap-1.5">
+                                <MapPin className="w-3 h-3 text-emerald-600" />
+                                Alamat Lengkap
+                              </p>
+                              <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase leading-relaxed">
+                                {viewingActor.address || "-"}
+                              </p>
+                            </div>
+                            <a
+                              href={getActorMapUrl(viewingActor)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors shrink-0"
+                              title="Buka lokasi di Google Maps"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" /> Buka di Maps
+                            </a>
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* 3. INFORMASI USAHA CARD */}
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-purple-500/25 dark:border-purple-500/30 bg-gradient-to-br from-purple-50/50 via-white to-fuchsia-50/30 dark:from-purple-950/20 dark:via-slate-900 dark:to-fuchsia-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(168,85,247,0.05)] space-y-4">
+                        <Store className="absolute -right-3 -bottom-3 w-32 h-32 text-purple-500/[0.04] dark:text-purple-400/[0.03] pointer-events-none" />
+                        <div className="relative z-10 flex items-center justify-between border-b border-purple-100 dark:border-purple-900/40 pb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-black">
+                              <Store className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                                Informasi Usaha
+                              </h4>
+                              <p className="text-[10px] text-slate-400 font-semibold">Profil bisnis, usulan koordinator, & penugasan survei</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(() => {
+                            const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim());
+                            const coordPhone = found?.phone || found?.noHp || found?.hp || "";
+                            
+                            const getWaLink = (phoneStr: string) => {
+                              if (!phoneStr) return "#";
+                              let clean = phoneStr.replace(/\D/g, "");
+                              if (clean.startsWith("0")) clean = "62" + clean.slice(1);
+                              else if (!clean.startsWith("62")) clean = "62" + clean;
+                              return `https://wa.me/${clean}`;
+                            };
+
+                            const canonicalPetugas = resolveSurveyorCanonicalName(viewingActor.petugasSurvey, systemUsersRaw);
+                            const isBelumAdaPetugas = canonicalPetugas === "BELUM ADA";
+
+                            return (
+                              <>
+                                {/* Nama Usaha */}
+                                <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-purple-300 dark:hover:border-purple-700 transition-all">
+                                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+                                    <Store className="w-3 h-3 text-purple-600" /> Nama Usaha
+                                  </p>
+                                  <p className="text-sm font-black text-purple-700 dark:text-purple-300 uppercase">
+                                    {viewingActor.businessName || "-"}
+                                  </p>
+                                </div>
+
+                                {/* Kategori Usaha */}
+                                <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-purple-300 dark:hover:border-purple-700 transition-all">
+                                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+                                    <Sparkles className="w-3 h-3 text-purple-600" /> Kategori Usaha
+                                  </p>
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-xs font-black uppercase bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                    {viewingActor.businessCategory || "-"}
+                                  </span>
+                                </div>
+
+                                {/* Lokasi Usaha */}
+                                <div className="md:col-span-2 bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-purple-300 dark:hover:border-purple-700 transition-all">
+                                  <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+                                    <MapPin className="w-3 h-3 text-purple-600" /> Lokasi Usaha
+                                  </p>
+                                  <p className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase">
+                                    {viewingActor.businessLocation || viewingActor.address || "-"}
+                                  </p>
+                                </div>
+
+                                {!isInspektorat && (
+                                  <>
+                                    {/* Usulan / Koordinator */}
+                                    <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-purple-300 dark:hover:border-purple-700 transition-all space-y-1">
+                                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 flex items-center gap-1.5">
+                                        <Users className="w-3 h-3 text-indigo-600" /> Usulan / Koordinator
+                                      </p>
+                                      <p className="text-xs font-black uppercase text-indigo-700 dark:text-indigo-300">
+                                        {viewingActor.coordinator || "-"}
+                                      </p>
+                                      {coordPhone && (
+                                        <div className="pt-1">
+                                          <a
+                                            href={getWaLink(coordPhone)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline"
+                                            title="Chat WA Koordinator"
+                                          >
+                                            <MessageCircle className="w-3 h-3 text-emerald-600" />
+                                            <span>WA: {coordPhone}</span>
+                                          </a>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Petugas Survey */}
+                                    <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-purple-300 dark:hover:border-purple-700 transition-all space-y-2">
+                                      <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 flex items-center gap-1.5">
+                                        <UserCheck className="w-3 h-3 text-emerald-600" /> Petugas Survey
+                                      </p>
+                                      <div>
+                                        {isBelumAdaPetugas ? (
+                                          <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900">
+                                            <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                            <span>BELUM ADA</span>
+                                          </div>
+                                        ) : (
+                                          <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                            <span>{canonicalPetugas}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                      {isAdmin && (
+                                        <div className="pt-1">
+                                          <select
+                                            value={!isBelumAdaPetugas ? canonicalPetugas : "BELUM ADA"}
+                                            onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value)}
+                                            className="text-[11px] font-bold h-8 rounded-lg border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-xs text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[240px]"
+                                            title="Admin: Ganti Petugas Survey secara langsung"
+                                          >
+                                            <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
+                                            {!isBelumAdaPetugas && !surveyorOptions.includes(canonicalPetugas) && (
+                                              <option value={canonicalPetugas}>
+                                                🟢 {canonicalPetugas} (Saat Ini)
+                                              </option>
+                                            )}
+                                            {surveyorOptions.map((name: string) => (
+                                              <option key={name} value={name}>
+                                                🟢 {name}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </section>
+
+                      {/* 4. DATA PERBANKAN CARD */}
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-amber-500/25 dark:border-amber-500/30 bg-gradient-to-br from-amber-50/50 via-white to-yellow-50/30 dark:from-amber-950/20 dark:via-slate-900 dark:to-yellow-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(245,158,11,0.05)] space-y-4">
+                        <CreditCard className="absolute -right-3 -bottom-3 w-32 h-32 text-amber-500/[0.04] dark:text-amber-400/[0.03] pointer-events-none" />
+                        <div className="relative z-10 flex items-center justify-between border-b border-amber-100 dark:border-amber-900/40 pb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black">
+                              <CreditCard className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                                Data Perbankan
+                              </h4>
+                              <p className="text-[10px] text-slate-400 font-semibold">Rekening bank untuk pencairan dana bantuan</p>
+                            </div>
+                          </div>
                           {isAdmin && (
                             <Button
                               size="sm"
                               variant="outline"
+                              onClick={() => setEditingBankMode(true)}
+                              className="h-8 text-xs font-bold text-amber-700 hover:text-amber-800 border-amber-300 hover:bg-amber-50 rounded-xl"
+                            >
+                              <CreditCard className="w-3.5 h-3.5 mr-1" /> Ubah Rekening
+                            </Button>
+                          )}
+                        </div>
+
+                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {/* Nama Bank */}
+                          <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-amber-300 dark:hover:border-amber-700 transition-all">
+                            <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+                              <Building2 className="w-3 h-3 text-amber-600" /> Nama Bank
+                            </p>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-black uppercase bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                              {viewingActor.bankName || "BELUM TERISI"}
+                            </span>
+                          </div>
+
+                          {/* Nomor Rekening */}
+                          <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-amber-300 dark:hover:border-amber-700 transition-all flex flex-col justify-between">
+                            <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+                              <CreditCard className="w-3 h-3 text-amber-600" /> Nomor Rekening
+                            </p>
+                            <div className="flex items-center justify-between gap-1">
+                              <p className="text-sm font-black font-mono text-primary tracking-wide">
+                                {viewingActor.bankNumber || "BELUM TERISI"}
+                              </p>
+                              {viewingActor.bankNumber && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyText(viewingActor.bankNumber || '', 'Nomor Rekening')}
+                                  className="text-slate-400 hover:text-primary p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                  title="Salin Nomor Rekening"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Nama Pemilik Rekening */}
+                          <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs border border-slate-200/80 dark:border-slate-700/70 rounded-xl p-3.5 shadow-2xs hover:border-amber-300 dark:hover:border-amber-700 transition-all">
+                            <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+                              <User className="w-3 h-3 text-amber-600" /> Pemilik Rekening
+                            </p>
+                            <p className="text-xs font-black uppercase text-slate-900 dark:text-slate-100">
+                              {viewingActor.bankOwner || "BELUM TERISI"}
+                            </p>
+                          </div>
+                        </div>
+                      </section>
+
+                      {/* 5. DATA TITIK LOKASI VERIFIKASI CARD */}
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-teal-500/25 dark:border-teal-500/30 bg-gradient-to-br from-teal-50/50 via-white to-cyan-50/30 dark:from-teal-950/20 dark:via-slate-900 dark:to-cyan-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(20,184,166,0.05)] space-y-4">
+                        <Navigation className="absolute -right-3 -bottom-3 w-32 h-32 text-teal-500/[0.04] dark:text-teal-400/[0.03] pointer-events-none" />
+                        <div className="relative z-10 flex items-center justify-between border-b border-teal-100 dark:border-teal-900/40 pb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-black">
+                              <Navigation className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                                Data Titik Lokasi Verifikasi
+                              </h4>
+                              <p className="text-[10px] text-slate-400 font-semibold">Koordinat GPS lapangan yang terekam sistem</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {(viewingActor as any).verificationLocation && (
+                            <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs p-4 rounded-xl border border-emerald-200 dark:border-emerald-800/70 shadow-2xs space-y-2">
+                              <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                                Sumber: Verifikasi Admin
+                              </span>
+                              <p className="text-xs font-mono text-slate-800 dark:text-slate-200 font-bold">
+                                {(viewingActor as any).verificationLocation.lat}, {(viewingActor as any).verificationLocation.lon}
+                              </p>
+                              <a 
+                                href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocation.lat},${(viewingActor as any).verificationLocation.lon}`} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" /> Lihat di Google Maps
+                              </a>
+                            </div>
+                          )}
+
+                          {(viewingActor as any).verificationBypass?.isBypassed && (
+                            <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs p-4 rounded-xl border border-amber-200 dark:border-amber-800/70 shadow-2xs space-y-2">
+                              <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-amber-700 dark:text-amber-400 uppercase bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                                Sumber: Verifikasi Admin (Bypass)
+                              </span>
+                              <p className="text-xs text-amber-900 dark:text-amber-200 font-medium">
+                                Alasan: {(viewingActor as any).verificationBypass.reason}
+                              </p>
+                              {(viewingActor as any).verificationBypass.fileBase64 && (
+                                <a 
+                                  href={(viewingActor as any).verificationBypass.fileBase64} 
+                                  target="_blank" 
+                                  rel="noreferrer" 
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-800 shadow-2xs hover:bg-amber-200 transition-colors"
+                                >
+                                  Lihat Bukti Lampiran
+                                </a>
+                              )}
+                            </div>
+                          )}
+
+                          {(viewingActor as any).verificationLocationDinas && (
+                            <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/70 shadow-2xs space-y-2">
+                              <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
+                                Sumber: Verifikasi Dinas
+                              </span>
+                              <p className="text-xs font-mono text-indigo-900 dark:text-indigo-200 font-bold">
+                                {(viewingActor as any).verificationLocationDinas.lat}, {(viewingActor as any).verificationLocationDinas.lon}
+                              </p>
+                              <a 
+                                href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocationDinas.lat},${(viewingActor as any).verificationLocationDinas.lon}`} 
+                                target="_blank" 
+                                rel="noreferrer" 
+                                className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" /> Lihat di Google Maps
+                              </a>
+                            </div>
+                          )}
+
+                          {!(viewingActor as any).verificationLocation && !(viewingActor as any).verificationLocationDinas && !(viewingActor as any).verificationBypass?.isBypassed && (
+                            <div className="bg-white/90 dark:bg-slate-800/80 backdrop-blur-xs p-4 rounded-xl border border-slate-200 dark:border-slate-800 col-span-full text-center">
+                              <p className="text-xs font-medium text-slate-500">Belum ada titik lokasi yang direkam.</p>
+                            </div>
+                          )}
+                        </div>
+                      </section>
+
+                      {/* 6. HASIL VERIFIKASI BPJS CARD */}
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-emerald-500/25 dark:border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 dark:from-emerald-950/20 dark:via-slate-900 dark:to-teal-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(16,185,129,0.05)] space-y-4">
+                        <ShieldCheck className="absolute -right-3 -bottom-3 w-32 h-32 text-emerald-500/[0.04] dark:text-emerald-400/[0.03] pointer-events-none" />
+                        <div className="relative z-10 flex items-center justify-between border-b border-emerald-100 dark:border-emerald-900/40 pb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black">
+                              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                                Hasil Verifikasi BPJS Ketenagakerjaan
+                              </h4>
+                              <p className="text-[10px] text-slate-400 font-semibold">Pencocokan data master kepesertaan BPJS</p>
+                            </div>
+                          </div>
+                          {isAdmin && (
+                            <button
+                              type="button"
                               onClick={() => {
                                 setViewingActor(null)
                                 router.push('/settings#bpjs')
                               }}
-                              className={cn("shrink-0 font-bold h-9 rounded-xl text-xs", btnBorder)}
+                              className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-1"
                             >
-                              Update di Pengaturan
-                            </Button>
+                              Data Pembanding BPJS <ChevronRight className="w-3 h-3" />
+                            </button>
                           )}
                         </div>
-                      )
-                    })()}
-                  </section>
 
-                  {/* 6. BERKAS TAMBAHAN (GOOGLE DRIVE) */}
-                  {viewingActor.googleDriveLink && (
-                    <section className="space-y-4">
-                      <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Folder className="w-4 h-4" /> Berkas Tambahan (Google Drive)</div>
-                      <div className="bg-blue-50 dark:bg-blue-950/40 p-4 rounded-xl border border-blue-100 dark:border-blue-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                          <p className="text-xs font-bold text-blue-800 dark:text-blue-200 uppercase">Folder Google Drive Pelaku Usaha</p>
-                          <p className="text-[10px] font-medium text-blue-600 dark:text-blue-400 mt-1">Berisi foto, video, dokumen usulan, atau file lainnya</p>
+                        {(() => {
+                          const bpjsInfo = getActorBpjsStatus(viewingActor)
+                          if (!bpjsInfo.hasMatch) {
+                            return (
+                              <div className="relative z-10 bg-white/90 dark:bg-slate-800/80 p-4 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                <div className="text-xs text-slate-500 font-medium">
+                                  Belum ada catatan hasil verifikasi BPJS untuk pelaku usaha ini.
+                                </div>
+                                {isAdmin && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setViewingActor(null)
+                                      router.push('/settings#bpjs')
+                                    }}
+                                    className="shrink-0 font-bold border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 h-8 rounded-lg text-xs"
+                                  >
+                                    <ShieldCheck className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Upload Data BPJS di Pengaturan
+                                  </Button>
+                                )}
+                              </div>
+                            )
+                          }
+
+                          const badgeBg = 
+                            bpjsInfo.type === 'verified'
+                              ? "bg-emerald-600 text-white shadow-xs"
+                              : bpjsInfo.type === 'duplicate'
+                              ? "bg-amber-500 text-white shadow-xs"
+                              : "bg-rose-600 text-white shadow-xs"
+
+                          const containerBg = 
+                            bpjsInfo.type === 'verified'
+                              ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+                              : bpjsInfo.type === 'duplicate'
+                              ? "bg-amber-50/80 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800"
+                              : "bg-rose-50/80 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800"
+
+                          const btnBorder =
+                            bpjsInfo.type === 'verified'
+                              ? "border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300"
+                              : bpjsInfo.type === 'duplicate'
+                              ? "border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-300"
+                              : "border-rose-300 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:text-rose-300"
+
+                          const sourceFile = bpjsInfo.bpjsItem?.fileName || bpjsInfo.bpjsItem?.sumberFile || (viewingActor as any).bpjsSourceFile || 'Sheet Hasil Verifikasi BPJS'
+                          const checkedAt = (viewingActor as any).bpjsCheckedAt || bpjsInfo.bpjsItem?.uploadedAt
+
+                          return (
+                            <div className={cn("relative z-10 p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4", containerBg)}>
+                              <div className="space-y-1.5 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className={cn("text-xs font-black px-2.5 py-1 rounded-lg uppercase tracking-wider", badgeBg)}>
+                                    {bpjsInfo.badgeLabel}
+                                  </span>
+                                  {bpjsInfo.statusCode && (
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                                      Kode Status: {bpjsInfo.statusCode}
+                                    </span>
+                                  )}
+                                </div>
+                                {bpjsInfo.note && (
+                                  <p className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                                    Keterangan: {bpjsInfo.note}
+                                  </p>
+                                )}
+                                <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+                                  {sourceFile && (
+                                    <span>File Acuan: <strong className="text-slate-700 dark:text-slate-300 font-mono">{sourceFile}</strong></span>
+                                  )}
+                                  {checkedAt && (
+                                    <span>Waktu Cek: <strong className="text-slate-700 dark:text-slate-300">{new Date(checkedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong></span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {isAdmin && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setViewingActor(null)
+                                    router.push('/settings#bpjs')
+                                  }}
+                                  className={cn("shrink-0 font-bold h-9 rounded-xl text-xs", btnBorder)}
+                                >
+                                  Update di Pengaturan
+                                </Button>
+                              )}
+                            </div>
+                          )
+                        })()}
+                      </section>
+
+                      {/* 7. BERKAS TAMBAHAN (GOOGLE DRIVE) CARD */}
+                      {viewingActor.googleDriveLink && (
+                        <section className="relative overflow-hidden rounded-2xl border-2 border-blue-500/25 dark:border-blue-500/30 bg-gradient-to-br from-blue-50/50 via-white to-indigo-50/30 dark:from-blue-950/20 dark:via-slate-900 dark:to-indigo-950/20 p-4 sm:p-5 shadow-[0_4px_25px_rgba(59,130,246,0.05)] space-y-4">
+                          <Folder className="absolute -right-3 -bottom-3 w-32 h-32 text-blue-500/[0.04] dark:text-blue-400/[0.03] pointer-events-none" />
+                          <div className="relative z-10 flex items-center justify-between border-b border-blue-100 dark:border-blue-900/40 pb-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-black">
+                                <Folder className="w-4 h-4" />
+                              </div>
+                              <div>
+                                <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                                  Berkas Tambahan (Google Drive)
+                                </h4>
+                                <p className="text-[10px] text-slate-400 font-semibold">Foto, video, dokumen usulan, atau file lainnya</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="relative z-10 bg-white/90 dark:bg-slate-800/80 p-4 rounded-xl border border-blue-100 dark:border-blue-900 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                              <p className="text-xs font-bold text-blue-800 dark:text-blue-200 uppercase">Folder Google Drive Pelaku Usaha</p>
+                              <p className="text-[10px] font-medium text-blue-600 dark:text-blue-400 mt-0.5">Tersambung ke cloud storage</p>
+                            </div>
+                            <a href={viewingActor.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold px-4 py-2 rounded-xl text-xs shadow-xs flex items-center justify-center min-w-[140px]">
+                              <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Buka Folder Drive
+                            </a>
+                          </div>
+                        </section>
+                      )}
+
+                      {/* 8. INFORMASI SISTEM & AUDIT CARD */}
+                      <section className="relative overflow-hidden rounded-2xl border-2 border-slate-300/70 dark:border-slate-800 bg-gradient-to-br from-slate-50/60 via-white to-slate-100/40 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 p-4 sm:p-5 space-y-4">
+                        <History className="absolute -right-3 -bottom-3 w-32 h-32 text-slate-400/[0.04] dark:text-slate-500/[0.04] pointer-events-none" />
+                        <div className="relative z-10 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center font-black">
+                              <History className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                                Informasi Sistem & Audit
+                              </h4>
+                              <p className="text-[10px] text-slate-400 font-semibold">Riwayat alur status dan waktu input database</p>
+                            </div>
+                          </div>
                         </div>
-                        <a href={viewingActor.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold px-4 py-2.5 rounded-lg text-xs shadow-xs flex items-center justify-center min-w-[140px]">
-                          Buka Folder Drive
-                        </a>
-                      </div>
-                    </section>
-                  )}
-
-                  {/* 7. INFORMASI SISTEM & AUDIT */}
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Informasi Sistem & Audit</div>
-                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl text-xs font-bold grid grid-cols-1 md:grid-cols-3 gap-4 border border-slate-200 dark:border-slate-800">
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Status Alur Sistem</p>
-                        <p className="capitalize text-primary">{(viewingActor.status || "").replace('_', ' ')}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Input</p>
-                        <p className="text-slate-800 dark:text-slate-200">{viewingActor.createdBy || "System"}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase">Waktu Pendaftaran</p>
-                        <p className="text-slate-800 dark:text-slate-200">{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
-                      </div>
+                        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="bg-white/90 dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/70 shadow-2xs">
+                            <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Status Alur Sistem</p>
+                            <p className="text-xs font-black uppercase text-primary pt-0.5">{(viewingActor.status || "").replace('_', ' ')}</p>
+                          </div>
+                          <div className="bg-white/90 dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/70 shadow-2xs">
+                            <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Petugas Input</p>
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 pt-0.5">{viewingActor.createdBy || "System"}</p>
+                          </div>
+                          <div className="bg-white/90 dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/70 shadow-2xs">
+                            <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Waktu Pendaftaran</p>
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 pt-0.5">{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
+                          </div>
+                        </div>
+                      </section>
                     </div>
-                  </section>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            );
+          })()}
 
           {viewingActor && editingBankMode && (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 p-4 sm:p-6 overflow-y-auto max-h-[92vh]">
               <div className="border-b pb-2 flex justify-between items-center">
                 <DialogTitle className="text-xl font-black text-amber-600 flex items-center gap-2">
                   <CreditCard className="w-5 h-5"/> INPUT REKENING
@@ -2993,7 +3315,7 @@ function ActorDataContent() {
           )}
 
           {viewingActor && editingDriveMode && (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 p-4 sm:p-6 overflow-y-auto max-h-[92vh]">
               <div className="border-b pb-2 flex justify-between items-center">
                 <DialogTitle className="text-xl font-black text-blue-600 flex items-center gap-2">
                   <Folder className="w-5 h-5"/> INPUT LINK GOOGLE DRIVE
