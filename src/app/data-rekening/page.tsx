@@ -29,7 +29,8 @@ import {
   MessageCircle,
   Clock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Store
 } from "lucide-react"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -56,6 +57,194 @@ function normalizeBankName(bankName?: string): string {
   if (upper.includes("TABUNGAN NEGARA") || upper.includes("BTN")) return "BTN"
   const matched = BANK_LIST.find(b => upper.includes(b))
   return matched || upper
+}
+
+interface BankTheme {
+  code: string;
+  badge: string;
+  border: string;
+  hoverBorder: string;
+  bgGlow: string;
+  textNum: string;
+  btn: string;
+  topStripe: string;
+  filterActive: string;
+  filterHover: string;
+  percentageBadge: string;
+}
+
+function getBankTheme(rawBankName?: string): BankTheme {
+  const norm = normalizeBankName(rawBankName)
+  switch (norm) {
+    case "BRI":
+      return {
+        code: "BRI",
+        badge: "bg-blue-600 text-white font-black",
+        border: "border-blue-200 dark:border-blue-900/60",
+        hoverBorder: "hover:border-blue-500 dark:hover:border-blue-400",
+        bgGlow: "bg-gradient-to-b from-blue-50/40 via-white to-white dark:from-blue-950/20 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-blue-700 dark:text-blue-300",
+        btn: "bg-blue-600 hover:bg-blue-700 text-white shadow-xs shadow-blue-500/20",
+        topStripe: "bg-blue-600",
+        filterActive: "bg-blue-600 text-white border-blue-600 shadow-sm ring-2 ring-blue-500/25",
+        filterHover: "hover:border-blue-400 hover:bg-blue-50/40",
+        percentageBadge: "bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-200",
+      }
+    case "BNI":
+      return {
+        code: "BNI",
+        badge: "bg-orange-600 text-white font-black",
+        border: "border-orange-200 dark:border-orange-900/60",
+        hoverBorder: "hover:border-orange-500 dark:hover:border-orange-400",
+        bgGlow: "bg-gradient-to-b from-orange-50/40 via-white to-white dark:from-orange-950/20 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-orange-700 dark:text-orange-300",
+        btn: "bg-orange-600 hover:bg-orange-700 text-white shadow-xs shadow-orange-500/20",
+        topStripe: "bg-orange-600",
+        filterActive: "bg-orange-600 text-white border-orange-600 shadow-sm ring-2 ring-orange-500/25",
+        filterHover: "hover:border-orange-400 hover:bg-orange-50/40",
+        percentageBadge: "bg-orange-100 text-orange-800 dark:bg-orange-950/80 dark:text-orange-200",
+      }
+    case "BCA":
+      return {
+        code: "BCA",
+        badge: "bg-indigo-600 text-white font-black",
+        border: "border-indigo-200 dark:border-indigo-900/60",
+        hoverBorder: "hover:border-indigo-500 dark:hover:border-indigo-400",
+        bgGlow: "bg-gradient-to-b from-indigo-50/40 via-white to-white dark:from-indigo-950/20 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-indigo-700 dark:text-indigo-300",
+        btn: "bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs shadow-indigo-500/20",
+        topStripe: "bg-indigo-600",
+        filterActive: "bg-indigo-600 text-white border-indigo-600 shadow-sm ring-2 ring-indigo-500/25",
+        filterHover: "hover:border-indigo-400 hover:bg-indigo-50/40",
+        percentageBadge: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950/80 dark:text-indigo-200",
+      }
+    case "BRK":
+      return {
+        code: "BRK",
+        badge: "bg-rose-600 text-white font-black",
+        border: "border-rose-200 dark:border-rose-900/60",
+        hoverBorder: "hover:border-rose-500 dark:hover:border-rose-400",
+        bgGlow: "bg-gradient-to-b from-rose-50/40 via-white to-white dark:from-rose-950/20 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-rose-700 dark:text-rose-300",
+        btn: "bg-rose-600 hover:bg-rose-700 text-white shadow-xs shadow-rose-500/20",
+        topStripe: "bg-rose-600",
+        filterActive: "bg-rose-600 text-white border-rose-600 shadow-sm ring-2 ring-rose-500/25",
+        filterHover: "hover:border-rose-400 hover:bg-rose-50/40",
+        percentageBadge: "bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-200",
+      }
+    case "MANDIRI":
+      return {
+        code: "MANDIRI",
+        badge: "bg-blue-900 text-amber-300 font-black",
+        border: "border-blue-300 dark:border-blue-900/60",
+        hoverBorder: "hover:border-blue-700 dark:hover:border-blue-400",
+        bgGlow: "bg-gradient-to-b from-blue-900/[0.05] via-white to-white dark:from-blue-950/30 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-blue-950 dark:text-blue-200",
+        btn: "bg-blue-900 hover:bg-blue-950 text-amber-300 font-black shadow-xs shadow-blue-900/20",
+        topStripe: "bg-blue-900",
+        filterActive: "bg-blue-900 text-amber-300 border-blue-900 shadow-sm ring-2 ring-blue-700/25",
+        filterHover: "hover:border-blue-600 hover:bg-blue-50/40",
+        percentageBadge: "bg-blue-100 text-blue-900 dark:bg-blue-950/80 dark:text-blue-200",
+      }
+    case "BSI":
+      return {
+        code: "BSI",
+        badge: "bg-teal-600 text-white font-black",
+        border: "border-teal-200 dark:border-teal-900/60",
+        hoverBorder: "hover:border-teal-500 dark:hover:border-teal-400",
+        bgGlow: "bg-gradient-to-b from-teal-50/40 via-white to-white dark:from-teal-950/20 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-teal-700 dark:text-teal-300",
+        btn: "bg-teal-600 hover:bg-teal-700 text-white shadow-xs shadow-teal-500/20",
+        topStripe: "bg-teal-600",
+        filterActive: "bg-teal-600 text-white border-teal-600 shadow-sm ring-2 ring-teal-500/25",
+        filterHover: "hover:border-teal-400 hover:bg-teal-50/40",
+        percentageBadge: "bg-teal-100 text-teal-800 dark:bg-teal-950/80 dark:text-teal-200",
+      }
+    case "BTN":
+      return {
+        code: "BTN",
+        badge: "bg-cyan-700 text-white font-black",
+        border: "border-cyan-200 dark:border-cyan-900/60",
+        hoverBorder: "hover:border-cyan-500 dark:hover:border-cyan-400",
+        bgGlow: "bg-gradient-to-b from-cyan-50/40 via-white to-white dark:from-cyan-950/20 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-cyan-800 dark:text-cyan-300",
+        btn: "bg-cyan-700 hover:bg-cyan-800 text-white shadow-xs shadow-cyan-500/20",
+        topStripe: "bg-cyan-700",
+        filterActive: "bg-cyan-700 text-white border-cyan-700 shadow-sm ring-2 ring-cyan-500/25",
+        filterHover: "hover:border-cyan-400 hover:bg-cyan-50/40",
+        percentageBadge: "bg-cyan-100 text-cyan-800 dark:bg-cyan-950/80 dark:text-cyan-200",
+      }
+    case "BUKOPIN":
+      return {
+        code: "BUKOPIN",
+        badge: "bg-amber-500 text-slate-950 font-black",
+        border: "border-amber-200 dark:border-amber-900/60",
+        hoverBorder: "hover:border-amber-500 dark:hover:border-amber-400",
+        bgGlow: "bg-gradient-to-b from-amber-50/40 via-white to-white dark:from-amber-950/20 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-amber-800 dark:text-amber-300",
+        btn: "bg-amber-500 hover:bg-amber-600 text-slate-950 font-black shadow-xs shadow-amber-500/20",
+        topStripe: "bg-amber-500",
+        filterActive: "bg-amber-500 text-slate-950 border-amber-500 shadow-sm ring-2 ring-amber-400/25",
+        filterHover: "hover:border-amber-400 hover:bg-amber-50/40",
+        percentageBadge: "bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-200",
+      }
+    case "MUAMALAT":
+      return {
+        code: "MUAMALAT",
+        badge: "bg-purple-700 text-white font-black",
+        border: "border-purple-200 dark:border-purple-900/60",
+        hoverBorder: "hover:border-purple-500 dark:hover:border-purple-400",
+        bgGlow: "bg-gradient-to-b from-purple-50/40 via-white to-white dark:from-purple-950/20 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-purple-800 dark:text-purple-300",
+        btn: "bg-purple-700 hover:bg-purple-800 text-white shadow-xs shadow-purple-500/20",
+        topStripe: "bg-purple-700",
+        filterActive: "bg-purple-700 text-white border-purple-700 shadow-sm ring-2 ring-purple-500/25",
+        filterHover: "hover:border-purple-400 hover:bg-purple-50/40",
+        percentageBadge: "bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-200",
+      }
+    case "PANIN":
+      return {
+        code: "PANIN",
+        badge: "bg-red-600 text-white font-black",
+        border: "border-red-200 dark:border-red-900/60",
+        hoverBorder: "hover:border-red-500 dark:hover:border-red-400",
+        bgGlow: "bg-gradient-to-b from-red-50/40 via-white to-white dark:from-red-950/20 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-red-700 dark:text-red-300",
+        btn: "bg-red-600 hover:bg-red-700 text-white shadow-xs shadow-red-500/20",
+        topStripe: "bg-red-600",
+        filterActive: "bg-red-600 text-white border-red-600 shadow-sm ring-2 ring-red-500/25",
+        filterHover: "hover:border-red-400 hover:bg-red-50/40",
+        percentageBadge: "bg-red-100 text-red-800 dark:bg-red-950/80 dark:text-red-200",
+      }
+    case "DANAMON":
+      return {
+        code: "DANAMON",
+        badge: "bg-orange-700 text-white font-black",
+        border: "border-orange-300 dark:border-orange-900/60",
+        hoverBorder: "hover:border-orange-600 dark:hover:border-orange-400",
+        bgGlow: "bg-gradient-to-b from-orange-50/40 via-white to-white dark:from-orange-950/20 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-orange-800 dark:text-orange-300",
+        btn: "bg-orange-700 hover:bg-orange-800 text-white shadow-xs shadow-orange-700/20",
+        topStripe: "bg-orange-700",
+        filterActive: "bg-orange-700 text-white border-orange-700 shadow-sm ring-2 ring-orange-600/25",
+        filterHover: "hover:border-orange-400 hover:bg-orange-50/40",
+        percentageBadge: "bg-orange-100 text-orange-900 dark:bg-orange-950/80 dark:text-orange-200",
+      }
+    default:
+      return {
+        code: norm || "BANK",
+        badge: "bg-emerald-600 text-white font-black",
+        border: "border-emerald-200 dark:border-emerald-900/60",
+        hoverBorder: "hover:border-emerald-500 dark:hover:border-emerald-400",
+        bgGlow: "bg-gradient-to-b from-emerald-50/40 via-white to-white dark:from-emerald-950/20 dark:via-slate-900 dark:to-slate-950",
+        textNum: "text-emerald-700 dark:text-emerald-300",
+        btn: "bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs shadow-emerald-500/20",
+        topStripe: "bg-emerald-600",
+        filterActive: "bg-emerald-600 text-white border-emerald-600 shadow-sm ring-2 ring-emerald-500/25",
+        filterHover: "hover:border-emerald-400 hover:bg-emerald-50/40",
+        percentageBadge: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-200",
+      }
+  }
 }
 
 export default function DataRekeningPage() {
@@ -707,20 +896,22 @@ function DataRekeningContent() {
               </button>
               {bankStats.map(({ bank, count }) => {
                 const isSelected = selectedBank.toUpperCase() === bank.toUpperCase()
+                const theme = getBankTheme(bank)
+
                 return (
                   <button
                     key={bank}
                     type="button"
                     onClick={() => setSelectedBank(isSelected ? "" : bank)}
                     className={cn(
-                      "px-3 py-1.5 rounded-xl border text-xs font-bold shrink-0 transition-all flex items-center gap-1.5",
+                      "px-3 py-1.5 rounded-xl border text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs",
                       isSelected
-                        ? "bg-emerald-700 text-white border-emerald-700 shadow-sm"
-                        : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                        ? theme.filterActive
+                        : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
                     )}
                   >
                     <span>{bank}</span>
-                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-black", isSelected ? "bg-emerald-800 text-white" : "bg-slate-100 text-slate-600")}>
+                    <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-black", isSelected ? "bg-black/25 text-white" : theme.percentageBadge)}>
                       {count}
                     </span>
                   </button>
@@ -730,18 +921,18 @@ function DataRekeningContent() {
           </div>
 
           {/* Desktop: Grid bank cards */}
-          <div className="hidden md:block bg-slate-50/70 border border-slate-200/80 rounded-2xl p-4">
+          <div className="hidden md:block bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-emerald-600" />
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-700">
+                <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   Data Rekening Per Bank
                 </span>
-                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-full">
                   {bankStats.length} Bank Terdata
                 </span>
                 {selectedBank && (
-                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                  <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded">
                     Filter: Bank {selectedBank}
                   </span>
                 )}
@@ -750,7 +941,7 @@ function DataRekeningContent() {
                 <button
                   type="button"
                   onClick={() => setSelectedBank("")}
-                  className="text-xs text-emerald-700 hover:text-emerald-800 font-bold hover:underline"
+                  className="text-xs text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 font-bold hover:underline cursor-pointer"
                 >
                   Reset Filter (Tampilkan Semua Bank)
                 </button>
@@ -761,6 +952,7 @@ function DataRekeningContent() {
               {bankStats.map(({ bank, count }) => {
                 const isSelected = selectedBank.toUpperCase() === bank.toUpperCase()
                 const percentage = statsSummary.total > 0 ? Math.round((count / statsSummary.total) * 100) : 0
+                const theme = getBankTheme(bank)
 
                 return (
                   <button
@@ -769,38 +961,41 @@ function DataRekeningContent() {
                     onClick={() => setSelectedBank(isSelected ? "" : bank)}
                     title={`Klik untuk filter Bank ${bank}`}
                     className={cn(
-                      "p-2.5 rounded-xl border text-left transition-all duration-150 flex flex-col justify-between cursor-pointer",
+                      "relative overflow-hidden p-3 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between cursor-pointer shadow-2xs hover:shadow-md hover:-translate-y-0.5",
                       isSelected
-                        ? "bg-emerald-700 text-white border-emerald-700 shadow-sm ring-2 ring-emerald-500/20"
-                        : "bg-white border-slate-200 hover:border-emerald-400 hover:bg-emerald-50/30 text-slate-800"
+                        ? theme.filterActive
+                        : cn("bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200", theme.filterHover)
                     )}
                   >
-                    <div className="flex items-center justify-between gap-1 w-full">
+                    {/* Top colored accent line */}
+                    <div className={cn("absolute top-0 left-0 right-0 h-1", isSelected ? "bg-white/40" : theme.topStripe)} />
+
+                    <div className="flex items-center justify-between gap-1 w-full pt-1">
                       <span className={cn(
                         "text-xs font-black uppercase tracking-tight truncate",
-                        isSelected ? "text-white" : "text-slate-700"
+                        isSelected ? "text-white" : "text-slate-800 dark:text-slate-100"
                       )}>
                         {bank}
                       </span>
                       <span className={cn(
-                        "text-[9px] font-bold px-1.5 py-0.5 rounded",
+                        "text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-2xs",
                         isSelected
-                          ? "bg-emerald-800 text-white"
-                          : "bg-slate-100 text-slate-500"
+                          ? "bg-black/25 text-white"
+                          : theme.percentageBadge
                       )}>
                         {percentage}%
                       </span>
                     </div>
-                    <div className="mt-2 flex items-baseline justify-between w-full">
+                    <div className="mt-2.5 flex items-baseline justify-between w-full">
                       <span className={cn(
-                        "text-xl font-black leading-none",
-                        isSelected ? "text-white" : "text-slate-900"
+                        "text-xl sm:text-2xl font-black leading-none tracking-tight",
+                        isSelected ? "text-white" : "text-slate-900 dark:text-white"
                       )}>
                         {count.toLocaleString("id-ID")}
                       </span>
                       <span className={cn(
-                        "text-[10px] font-semibold",
-                        isSelected ? "text-emerald-100" : "text-muted-foreground"
+                        "text-[10px] font-bold uppercase",
+                        isSelected ? "text-white/80" : "text-slate-400 dark:text-slate-500"
                       )}>
                         Rekening
                       </span>
@@ -828,34 +1023,42 @@ function DataRekeningContent() {
               {actors?.slice(0, pageLimit).map((actor, idx) => {
                 const hasLpj = !!actor.lpjNominal && Number(actor.lpjNominal) > 0
                 const isLpjWaiting = actor.readyForLPJ && !hasLpj
+                const theme = getBankTheme(actor.bankName)
 
                 return (
                   <Card
                     key={actor.id}
-                    className="cursor-pointer hover:shadow-md transition-all border-slate-200 bg-white shadow-sm rounded-2xl overflow-hidden active:scale-[0.99]"
+                    className={cn(
+                      "cursor-pointer hover:shadow-md transition-all border rounded-2xl overflow-hidden active:scale-[0.99]",
+                      theme.border,
+                      theme.bgGlow
+                    )}
                     onClick={() => setViewingActor(actor)}
                   >
+                    {/* Top colored accent indicator bar */}
+                    <div className={cn("h-1 w-full shrink-0", theme.topStripe)} />
+
                     <CardContent className="p-4 space-y-3">
                       {/* Top row: #index, Bank Name, Status Badge */}
-                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                          <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                             #{idx + 1}
                           </span>
-                          <span className="text-xs font-black px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 uppercase tracking-tight">
+                          <span className={cn("text-xs font-black px-2.5 py-0.5 rounded-lg uppercase tracking-tight shadow-2xs", theme.badge)}>
                             {actor.bankName || "BANK"}
                           </span>
                         </div>
                         {hasLpj ? (
-                          <span className="text-[9px] font-black text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 uppercase">
+                          <span className="text-[9px] font-black text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800 uppercase">
                             SELESAI LPJ
                           </span>
                         ) : isLpjWaiting ? (
-                          <span className="text-[9px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 uppercase">
+                          <span className="text-[9px] font-black text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 uppercase">
                             PROSES LPJ
                           </span>
                         ) : (
-                          <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full uppercase">
+                          <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full uppercase">
                             TERCATAT
                           </span>
                         )}
@@ -863,46 +1066,50 @@ function DataRekeningContent() {
 
                       {/* Main Account Info */}
                       <div>
-                        <div className="font-mono font-black text-lg text-emerald-700 tracking-wider">
+                        <div className={cn("font-mono font-black text-xl tracking-wider select-all", theme.textNum)}>
                           {actor.bankNumber || "-"}
                         </div>
-                        <div className="text-xs font-bold uppercase text-slate-900 mt-0.5 flex items-center gap-1.5">
+                        <div className="text-xs font-bold uppercase text-slate-900 dark:text-slate-100 mt-0.5 flex items-center gap-1.5">
                           <CreditCard className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span className="truncate">{actor.bankOwner || actor.fullName}</span>
                         </div>
                       </div>
 
                       {/* Metadata Grid */}
-                      <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                      <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50/80 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                         <div>
                           <div className="text-[10px] text-slate-400 font-semibold uppercase">Pelaku Usaha</div>
-                          <div className="text-slate-800 font-bold truncate">{actor.fullName}</div>
+                          <div className="text-slate-800 dark:text-slate-200 font-bold truncate">{actor.fullName}</div>
                         </div>
                         <div>
                           <div className="text-[10px] text-slate-400 font-semibold uppercase">NIK</div>
-                          <div className="font-mono text-slate-700 font-medium truncate">{actor.nik || "-"}</div>
+                          <div className="font-mono text-slate-700 dark:text-slate-300 font-medium truncate">{actor.nik || "-"}</div>
                         </div>
                         <div>
                           <div className="text-[10px] text-slate-400 font-semibold uppercase">Usaha</div>
-                          <div className="text-slate-700 font-medium truncate">{actor.businessName || "-"}</div>
+                          <div className="text-slate-700 dark:text-slate-300 font-medium truncate">{actor.businessName || "-"}</div>
                         </div>
                         <div>
                           <div className="text-[10px] text-slate-400 font-semibold uppercase">Koordinator</div>
-                          <div className="text-slate-700 font-medium truncate">{normalizeCoordinator(actor.coordinator) || "-"}</div>
+                          <div className="text-slate-700 dark:text-slate-300 font-medium truncate">{normalizeCoordinator(actor.coordinator) || "-"}</div>
                         </div>
                       </div>
 
                       {/* Detail Button */}
-                      <Button
-                        size="sm"
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl h-8 shadow-sm"
+                      <button
+                        type="button"
+                        className={cn(
+                          "w-full font-bold text-xs rounded-xl h-8.5 shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                          theme.btn
+                        )}
                         onClick={(e) => {
                           e.stopPropagation()
                           setViewingActor(actor)
                         }}
                       >
-                        DETAIL REKENING
-                      </Button>
+                        <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                        <span>DETAIL REKENING</span>
+                      </button>
                     </CardContent>
                   </Card>
                 )
@@ -910,61 +1117,95 @@ function DataRekeningContent() {
             </div>
 
             {/* Desktop Cards Grid */}
-            <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-3.5">
               {actors?.slice(0, pageLimit).map(actor => {
                 const hasLpj = !!actor.lpjNominal && Number(actor.lpjNominal) > 0
                 const isLpjWaiting = actor.readyForLPJ && !hasLpj
+                const theme = getBankTheme(actor.bankName)
 
                 return (
                   <Card
                     key={actor.id}
-                    className="cursor-pointer hover:shadow-lg hover:border-emerald-400 transition-all group border-emerald-100"
+                    className={cn(
+                      "cursor-pointer hover:shadow-lg transition-all duration-200 group border rounded-2xl overflow-hidden flex flex-col justify-between hover:-translate-y-1",
+                      theme.border,
+                      theme.hoverBorder,
+                      theme.bgGlow
+                    )}
                     onClick={() => setViewingActor(actor)}
                   >
-                    <CardContent className="p-3 flex flex-col gap-1.5 h-full">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 uppercase tracking-tighter">
+                    {/* Top colored accent indicator bar */}
+                    <div className={cn("h-1 w-full shrink-0", theme.topStripe)} />
+
+                    <CardContent className="p-3.5 flex flex-col gap-2 flex-1 justify-between">
+                      <div className="space-y-2">
+                        {/* Header: Bank Badge & Status */}
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span className={cn(
+                            "text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider shadow-2xs",
+                            theme.badge
+                          )}>
                             {actor.bankName || "BANK"}
                           </span>
                           {hasLpj ? (
-                            <span className="text-[8px] font-black text-blue-700 bg-blue-50 px-1 py-0.5 rounded border border-blue-200">
+                            <span className="text-[8px] font-black text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 px-1.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800 uppercase tracking-tighter">
                               SELESAI LPJ
                             </span>
                           ) : isLpjWaiting ? (
-                            <span className="text-[8px] font-black text-amber-700 bg-amber-50 px-1 py-0.5 rounded border border-amber-200">
+                            <span className="text-[8px] font-black text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 px-1.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 uppercase tracking-tighter">
                               PROSES LPJ
                             </span>
                           ) : (
-                            <span className="text-[8px] font-bold text-slate-500 bg-slate-100 px-1 py-0.5 rounded">
+                            <span className="text-[8px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full uppercase tracking-tighter">
                               TERCATAT
                             </span>
                           )}
                         </div>
 
-                        <p className="text-[11px] font-black uppercase line-clamp-1 leading-tight text-emerald-950 group-hover:text-emerald-700" title={actor.bankOwner || actor.fullName}>
-                          {actor.bankOwner || actor.fullName}
-                        </p>
-                        <p className="text-[11px] font-mono font-bold text-emerald-700 tracking-wider">
-                          {actor.bankNumber || "-"}
-                        </p>
+                        {/* Owner Name & Account Number */}
+                        <div className="space-y-0.5 pt-0.5">
+                          <h4 
+                            className="text-xs font-black uppercase text-slate-900 dark:text-slate-100 line-clamp-1 leading-snug tracking-tight group-hover:text-primary transition-colors" 
+                            title={actor.bankOwner || actor.fullName}
+                          >
+                            {actor.bankOwner || actor.fullName}
+                          </h4>
+                          <div className={cn("font-mono font-black text-sm tracking-wider select-all", theme.textNum)}>
+                            {actor.bankNumber || "-"}
+                          </div>
+                        </div>
 
-                        <div className="mt-1.5 pt-1.5 border-t border-slate-100 text-[9px] text-muted-foreground space-y-0.5">
-                          <p className="line-clamp-1 font-semibold uppercase text-slate-700" title={actor.businessName}>
-                            {actor.businessName || "-"}
-                          </p>
-                          <p className="line-clamp-1 flex items-center gap-1" title={actor.fullName}>
-                            <User className="w-2.5 h-2.5 shrink-0" /> {actor.fullName}
-                          </p>
-                          <p className="font-mono text-[8.5px]">
+                        {/* Details Box */}
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[10px] space-y-1">
+                          <div className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300 truncate" title={actor.businessName}>
+                            <Store className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate uppercase">{actor.businessName || "-"}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 truncate" title={actor.fullName}>
+                            <User className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate uppercase">{actor.fullName}</span>
+                          </div>
+                          <div className="text-[9px] font-mono text-slate-400 dark:text-slate-500 truncate">
                             NIK: {actor.nik || "-"}
-                          </p>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="text-[9px] font-black uppercase bg-emerald-600 text-white w-full justify-center shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
-                        DETAIL REKENING
-                      </div>
+                      {/* Detail Button with Bank Color */}
+                      <button 
+                        type="button"
+                        className={cn(
+                          "w-full mt-3 rounded-xl py-1.5 px-3 font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-xs group-hover:shadow-md cursor-pointer",
+                          theme.btn
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setViewingActor(actor)
+                        }}
+                      >
+                        <CreditCard className="w-3 h-3 shrink-0" />
+                        <span>DETAIL REKENING</span>
+                      </button>
                     </CardContent>
                   </Card>
                 )
