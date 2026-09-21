@@ -1442,12 +1442,49 @@ function ActorDataContent() {
                   {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => {
                     const isFemale = normalizeGender(actor.gender) === 'Perempuan';
                     const actorAge = calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""));
+                    const cardTheme = isFemale ? '#e11d48' : '#0284c7';
                     return (
-                      <div key={actor.id} className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
+                      <div 
+                        key={actor.id} 
+                        style={{
+                          borderColor: `${cardTheme}45`,
+                          boxShadow: `0 4px 20px -2px ${cardTheme}20`
+                        }}
+                        className="group relative overflow-hidden border-2 hover:shadow-2xl transition-all duration-300 ease-out rounded-3xl p-5 bg-white dark:bg-slate-900 hover:-translate-y-1.5 flex flex-col justify-between"
+                      >
+                        {/* Glowing Top Accent Stripe */}
+                        <div 
+                          className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 group-hover:h-2 z-10"
+                          style={{ background: `linear-gradient(90deg, ${cardTheme}, ${cardTheme}dd, ${cardTheme}aa)` }} 
+                        />
+
+                        {/* Colorful Gradient Wash Overlay */}
+                        <div 
+                          className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-60 group-hover:opacity-100"
+                          style={{ background: `linear-gradient(145deg, transparent 35%, ${cardTheme}0d 80%, ${cardTheme}18 100%)` }}
+                        />
+
+                        {/* Ambient Soft Glow Orb */}
+                        <div 
+                          className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl transition-all duration-700 pointer-events-none opacity-20 group-hover:opacity-40 group-hover:scale-150"
+                          style={{ backgroundColor: cardTheme }}
+                        />
+
+                        {/* Large Decorative Watermark Icon (Bottom-Right) */}
+                        <div 
+                          className="absolute -bottom-3 -right-3 pointer-events-none transition-all duration-500 ease-out opacity-[0.06] dark:opacity-[0.12] group-hover:opacity-[0.20] group-hover:scale-125 group-hover:-rotate-12"
+                          style={{ color: cardTheme }}
+                        >
+                          <Users className="w-28 h-28 stroke-[1.5]" />
+                        </div>
+
                         {/* Top Section */}
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="relative z-10 flex items-start justify-between gap-3">
                           <div className="flex items-start gap-3 min-w-0 flex-1">
-                            <span className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white font-extrabold text-sm sm:text-base flex items-center justify-center shrink-0">
+                            <span 
+                              className="w-10 h-10 rounded-full text-white font-extrabold text-sm sm:text-base flex items-center justify-center shrink-0 shadow-md transition-all duration-300 group-hover:scale-105"
+                              style={{ backgroundColor: cardTheme }}
+                            >
                               {globalIndexMap.get(actor.id) || index + 1}
                             </span>
                             <div className="min-w-0 flex-1">
@@ -1530,12 +1567,18 @@ function ActorDataContent() {
                         </div>
 
                         {/* Middle Info Container */}
-                        <div className="bg-[#f8fafc] dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 my-3.5 space-y-2">
+                        <div className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 my-3.5 space-y-2 relative z-10 backdrop-blur-xs">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-extrabold text-sm sm:text-[15px] text-[#1d63c6] dark:text-blue-400 uppercase tracking-tight truncate">
+                            <span 
+                              className="font-extrabold text-sm sm:text-[15px] uppercase tracking-tight truncate"
+                              style={{ color: cardTheme }}
+                            >
                               {actor.businessName || 'Nama Usaha Belum Diisi'}
                             </span>
-                            <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0">
+                            <span 
+                              className="text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0"
+                              style={{ backgroundColor: `${cardTheme}15`, color: cardTheme }}
+                            >
                               {actor.businessCategory || '-'}
                             </span>
                           </div>
@@ -1605,16 +1648,50 @@ function ActorDataContent() {
                   {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => {
                     const isFemale = normalizeGender(actor.gender) === 'Perempuan';
                     const actorAge = calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""));
+                    const cardTheme = isFemale ? '#e11d48' : '#0284c7';
                     return (
                       <div
                         key={actor.id}
-                        className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
+                        style={{
+                          borderColor: `${cardTheme}45`,
+                          boxShadow: `0 4px 20px -2px ${cardTheme}20`
+                        }}
+                        className="group relative overflow-hidden border-2 hover:shadow-2xl transition-all duration-300 ease-out rounded-3xl p-5 bg-white dark:bg-slate-900 hover:-translate-y-1.5 flex flex-col justify-between"
                       >
+                        {/* Glowing Top Accent Stripe */}
+                        <div 
+                          className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 group-hover:h-2 z-10"
+                          style={{ background: `linear-gradient(90deg, ${cardTheme}, ${cardTheme}dd, ${cardTheme}aa)` }} 
+                        />
+
+                        {/* Colorful Gradient Wash Overlay */}
+                        <div 
+                          className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-60 group-hover:opacity-100"
+                          style={{ background: `linear-gradient(145deg, transparent 35%, ${cardTheme}0d 80%, ${cardTheme}18 100%)` }}
+                        />
+
+                        {/* Ambient Soft Glow Orb */}
+                        <div 
+                          className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl transition-all duration-700 pointer-events-none opacity-20 group-hover:opacity-40 group-hover:scale-150"
+                          style={{ backgroundColor: cardTheme }}
+                        />
+
+                        {/* Large Decorative Watermark Icon (Bottom-Right) */}
+                        <div 
+                          className="absolute -bottom-3 -right-3 pointer-events-none transition-all duration-500 ease-out opacity-[0.06] dark:opacity-[0.12] group-hover:opacity-[0.20] group-hover:scale-125 group-hover:-rotate-12"
+                          style={{ color: cardTheme }}
+                        >
+                          <Users className="w-28 h-28 stroke-[1.5]" />
+                        </div>
+
                         {/* Top Section */}
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="relative z-10 flex items-start justify-between gap-3">
                           <div className="flex items-start gap-3 min-w-0 flex-1">
                             {/* Circle Index Badge */}
-                            <span className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white font-extrabold text-sm sm:text-base flex items-center justify-center shrink-0">
+                            <span 
+                              className="w-10 h-10 rounded-full text-white font-extrabold text-sm sm:text-base flex items-center justify-center shrink-0 shadow-md transition-all duration-300 group-hover:scale-105"
+                              style={{ backgroundColor: cardTheme }}
+                            >
                               {globalIndexMap.get(actor.id) || index + 1}
                             </span>
 
@@ -1706,12 +1783,18 @@ function ActorDataContent() {
                         </div>
 
                         {/* Middle Info Container */}
-                        <div className="bg-[#f8fafc] dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 my-3.5 space-y-2">
+                        <div className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-4 my-3.5 space-y-2 relative z-10 backdrop-blur-xs">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-extrabold text-sm sm:text-[15px] text-[#1d63c6] dark:text-blue-400 uppercase tracking-tight truncate">
+                            <span 
+                              className="font-extrabold text-sm sm:text-[15px] uppercase tracking-tight truncate"
+                              style={{ color: cardTheme }}
+                            >
                               {actor.businessName || 'Nama Usaha Belum Diisi'}
                             </span>
-                            <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0">
+                            <span 
+                              className="text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0"
+                              style={{ backgroundColor: `${cardTheme}15`, color: cardTheme }}
+                            >
                               {actor.businessCategory || '-'}
                             </span>
                           </div>
@@ -1731,11 +1814,12 @@ function ActorDataContent() {
                         </div>
 
                         {/* Action Buttons Row */}
-                        <div className="flex items-center gap-2 sm:gap-2.5 pt-0.5">
+                        <div className="flex items-center gap-2 sm:gap-2.5 pt-0.5 relative z-10">
                           {/* Lihat Detail */}
                           <Button
                             size="sm"
-                            className="flex-1 h-11 rounded-2xl font-black text-xs sm:text-sm bg-[#1d63c6] hover:bg-[#1550a2] text-white shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                            style={{ backgroundColor: cardTheme }}
+                            className="flex-1 h-11 rounded-2xl font-black text-xs sm:text-sm text-white shadow-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98] hover:opacity-95"
                             onClick={() => {
                               setViewingActor(actor);
                               setIsEditMode(false);
