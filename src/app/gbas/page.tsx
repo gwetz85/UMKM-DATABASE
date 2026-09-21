@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useDeferredValue } from "react"
 import { useMemoFirebase, useList, useUser, useDatabase, useObject, updateDocumentNonBlocking, sanitizeForFirebase } from "@/firebase"
 import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -37,8 +36,6 @@ import {
   Award,
   Layers,
   Sparkles,
-  LayoutGrid,
-  List,
   RotateCcw,
   Undo2,
   AlertCircle
@@ -65,7 +62,6 @@ export default function GBASPage() {
   const [kelurahanFilter, setKelurahanFilter] = useState<string>("ALL")
   const [verifikatorFilter, setVerifikatorFilter] = useState<string>("ALL")
   const [petugasFilter, setPetugasFilter] = useState<string>("ALL")
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table')
   const [pageLimit, setPageLimit] = useState(50)
 
   useEffect(() => {
@@ -800,30 +796,6 @@ export default function GBASPage() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`h-7 px-2.5 rounded-lg text-xs font-bold ${viewMode === 'table' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                onClick={() => setViewMode('table')}
-                title="Tampilan Tabel"
-              >
-                <List className="w-3.5 h-3.5 mr-1" />
-                Tabel
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`h-7 px-2.5 rounded-lg text-xs font-bold ${viewMode === 'grid' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
-                onClick={() => setViewMode('grid')}
-                title="Tampilan Kartu"
-              >
-                <LayoutGrid className="w-3.5 h-3.5 mr-1" />
-                Kartu
-              </Button>
-            </div>
-
             {selectedIds.length > 0 && (
               <Button
                 variant="outline"
@@ -1144,11 +1116,18 @@ export default function GBASPage() {
         </Card>
 
         {/* CONTROLLER HEADER LIST */}
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-700">
-              Menampilkan {filteredActors.length} Berita Acara Survey
-            </span>
+        <div className="flex items-center justify-between px-1 flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <Checkbox
+                checked={filteredActors.length > 0 && selectedIds.length === filteredActors.length}
+                onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                aria-label="Pilih Semua"
+              />
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Pilih Semua ({filteredActors.length})
+              </span>
+            </label>
             {selectedIds.length > 0 && (
               <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200 text-[10px] font-bold">
                 {selectedIds.length} dipilih
@@ -1176,369 +1155,19 @@ export default function GBASPage() {
         </div>
 
         {/* ───────────────────────────────────────────────────────────────────────────── */}
-        {/* TAMPILAN TABEL RESPONSIVE DENGAN STICKY ACTION COLUMN */}
+        {/* TAMPILAN KARTU PELAKU USAHA */}
         {/* ───────────────────────────────────────────────────────────────────────────── */}
-        {viewMode === 'table' ? (
-          <Card className="border-slate-200 shadow-sm bg-white dark:bg-slate-900 overflow-hidden rounded-2xl">
-            {/* Mobile Card View */}
-            <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-              {isDataLoading ? (
-                <div className="py-20 flex flex-col items-center justify-center gap-2 text-slate-400">
-                  <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-                  <span className="text-xs font-semibold">Memuat data Berita Acara Survey...</span>
-                </div>
-              ) : filteredActors.length === 0 ? (
-                <div className="py-16 text-center space-y-2">
-                  <ClipboardCheck className="w-8 h-8 text-slate-300 mx-auto" />
-                  <span className="text-sm font-bold text-slate-700 block">Tidak ada Berita Acara Survey ditemukan</span>
-                  <p className="text-xs text-slate-400">Coba sesuaikan kata kunci pencarian atau filter yang dipilih.</p>
-                </div>
-              ) : (
-                filteredActors.slice(0, pageLimit).map((actor, idx) => {
-                  const stage = getActorMenuStage(actor)
-                  const survey = actor.surveyData
-                  const pejabats = survey?.pejabatData || actor.pejabatData
-                  const vNama = pejabats?.verifikator?.nama || (actor as any).verifikatorDinas || (actor as any).verifiedDinasBy || "-"
-                  const vNip = pejabats?.verifikator?.nipppk || ""
-                  const pNama = pejabats?.petugas?.nama || actor.petugasSurvey || actor.createdBy || "-"
-                  const pNip = pejabats?.petugas?.nipppk || ""
-                  const isSelected = selectedIds.includes(actor.id)
-                  const isGeneratingThis = generatingPdfId === actor.id
-
-                  return (
-                    <div key={actor.id} className={`p-4 space-y-3 ${isSelected ? 'bg-indigo-50/50 dark:bg-indigo-950/20' : ''}`}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          <Checkbox
-                            checked={isSelected}
-                            onCheckedChange={() => handleToggleSelect(actor.id)}
-                            aria-label={`Pilih ${actor.fullName}`}
-                            className="shrink-0"
-                          />
-                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 font-black text-[11px] shrink-0">
-                            {idx + 1}
-                          </span>
-                          <div>
-                            <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 leading-tight">
-                              {actor.fullName}
-                            </h4>
-                            <span className="font-mono text-[11px] text-muted-foreground">{actor.nik || "-"}</span>
-                          </div>
-                        </div>
-                        <Badge className={`text-[9px] font-bold border shrink-0 ${stage.badgeClass}`}>
-                          {stage.label}
-                        </Badge>
-                      </div>
-
-                      <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 space-y-1.5 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground font-medium">Usaha:</span>
-                          <span className="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">
-                            {actor.businessName || survey?.namaUsaha || "-"}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground font-medium">Kategori:</span>
-                          <span className="font-semibold text-indigo-600 dark:text-indigo-400">
-                            {actor.businessCategory || survey?.bidangUsaha || "-"}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground font-medium">Wilayah:</span>
-                          <span className="text-slate-700 dark:text-slate-300">
-                            {actor.kelurahan || "-"}, {actor.kecamatan || "-"}
-                          </span>
-                        </div>
-                        {survey?.tanggalSurvey && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground font-medium">Tgl Survey:</span>
-                            <span className="text-slate-700 dark:text-slate-300">
-                              {formatTanggalIndonesia(survey.tanggalSurvey).fullText}
-                            </span>
-                          </div>
-                        )}
-                        <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
-                          <span className="text-muted-foreground font-medium">Petugas Survey:</span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate max-w-[180px]">
-                            {pNama} {pNip && `(${pNip})`}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground font-medium">Verifikator:</span>
-                          <span className="font-semibold text-indigo-700 dark:text-indigo-300 truncate max-w-[180px]">
-                            {vNama} {vNip && `(${vNip})`}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Action buttons */}
-                      <div className="flex items-center justify-end gap-1 pt-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 px-2.5 text-xs text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 border-indigo-200 rounded-xl gap-1"
-                          onClick={() => handleOpenPrintModal(actor)}
-                          disabled={isGeneratingThis}
-                        >
-                          {isGeneratingThis ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
-                          PDF
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 px-2.5 text-xs text-slate-700 hover:bg-slate-100 rounded-xl gap-1"
-                          onClick={() => setViewingActor(actor)}
-                        >
-                          <Eye className="w-3.5 h-3.5" /> Detail
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 px-2.5 text-xs text-amber-600 hover:bg-amber-50 border-amber-200 rounded-xl gap-1"
-                          onClick={() => handleOpenEditPejabat(actor)}
-                        >
-                          <Edit className="w-3.5 h-3.5" /> Koreksi
-                        </Button>
-                        {isAdmin && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-8 px-2 text-xs text-rose-600 hover:bg-rose-50 border-rose-200 rounded-xl gap-1"
-                            title="Kembalikan ke Verifikator Dinas"
-                            onClick={() => {
-                              setReturnVerifikatorActor(actor)
-                              setReturnVerifikatorReason("")
-                            }}
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-
-            {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto w-full">
-              <Table className="w-full min-w-[1200px]">
-                <TableHeader className="bg-slate-100/80">
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-10 text-center px-3">
-                      <Checkbox
-                        checked={filteredActors.length > 0 && selectedIds.length === filteredActors.length}
-                        onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                        aria-label="Pilih Semua"
-                      />
-                    </TableHead>
-                    <TableHead className="w-12 text-center text-[11px] font-bold text-slate-600 uppercase">No</TableHead>
-                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase min-w-[190px]">Pelaku Usaha & NIK</TableHead>
-                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase min-w-[180px]">Usaha & Alamat</TableHead>
-                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase min-w-[130px]">Wilayah</TableHead>
-                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase min-w-[140px]">Tgl Survey</TableHead>
-                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase min-w-[160px]">Petugas Survey</TableHead>
-                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase min-w-[160px]">Verifikator Dinas</TableHead>
-                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase text-center min-w-[130px]">Posisi Status</TableHead>
-                    {/* Sticky Header untuk Aksi agar TIDAK PERNAH TERPOTONG */}
-                    <TableHead className="text-[11px] font-bold text-slate-600 uppercase text-center w-32 sticky right-0 bg-slate-100 z-20 shadow-[-4px_0_8px_rgba(0,0,0,0.06)]">
-                      Aksi
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {isDataLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={10} className="h-48 text-center">
-                        <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
-                          <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-                          <span className="text-xs font-semibold">Memuat data Berita Acara Survey...</span>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredActors.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={10} className="h-48 text-center">
-                        <div className="flex flex-col items-center justify-center gap-2 text-slate-400">
-                          <ClipboardCheck className="w-8 h-8 text-slate-300" />
-                          <span className="text-sm font-bold text-slate-700">Tidak ada Berita Acara Survey ditemukan</span>
-                          <p className="text-xs text-slate-400">Coba sesuaikan kata kunci pencarian atau filter yang dipilih.</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredActors.slice(0, pageLimit).map((actor, idx) => {
-                      const stage = getActorMenuStage(actor)
-                      const survey = actor.surveyData
-                      const pejabats = survey?.pejabatData || actor.pejabatData
-                      const vNama = pejabats?.verifikator?.nama || (actor as any).verifikatorDinas || (actor as any).verifiedDinasBy || "-"
-                      const vNip = pejabats?.verifikator?.nipppk || ""
-                      const pNama = pejabats?.petugas?.nama || actor.petugasSurvey || actor.createdBy || "-"
-                      const pNip = pejabats?.petugas?.nipppk || ""
-                      const isSelected = selectedIds.includes(actor.id)
-                      const isGeneratingThis = generatingPdfId === actor.id
-
-                      return (
-                        <TableRow 
-                          key={actor.id} 
-                          className={`group hover:bg-indigo-50/40 transition-colors ${isSelected ? 'bg-indigo-50/60' : ''}`}
-                        >
-                          <TableCell className="text-center px-3">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => handleToggleSelect(actor.id)}
-                              aria-label={`Pilih ${actor.fullName}`}
-                            />
-                          </TableCell>
-                          <TableCell className="text-center font-mono text-xs text-slate-500">{idx + 1}</TableCell>
-                          
-                          {/* Pelaku Usaha */}
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-bold text-xs text-slate-900 whitespace-nowrap">{actor.fullName}</span>
-                              <span className="text-[11px] font-mono text-slate-500 tracking-tight">{actor.nik || "-"}</span>
-                              {actor.phone && (
-                                <a
-                                  href={`https://wa.me/${actor.phone.replace(/\D/g, "").replace(/^0/, "62")}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-[10px] text-emerald-600 hover:text-emerald-700 flex items-center gap-1 font-medium mt-0.5"
-                                >
-                                  <Phone className="w-2.5 h-2.5" />
-                                  {actor.phone}
-                                </a>
-                              )}
-                            </div>
-                          </TableCell>
-
-                          {/* Usaha */}
-                          <TableCell>
-                            <div className="flex flex-col max-w-[220px]">
-                              <span className="font-bold text-xs text-slate-800 truncate">{actor.businessName || survey?.namaUsaha || "-"}</span>
-                              <span className="text-[10px] text-indigo-600 font-semibold truncate">{actor.businessCategory || survey?.bidangUsaha || "-"}</span>
-                              <span className="text-[10px] text-slate-400 truncate mt-0.5">{actor.address || survey?.alamatRumah || "-"}</span>
-                            </div>
-                          </TableCell>
-
-                          {/* Wilayah */}
-                          <TableCell>
-                            <div className="flex flex-col text-xs">
-                              <span className="font-medium text-slate-700 whitespace-nowrap">{actor.kelurahan || "-"}</span>
-                              <span className="text-[10px] text-slate-400 whitespace-nowrap">{actor.kecamatan || "-"}</span>
-                            </div>
-                          </TableCell>
-
-                          {/* Tanggal Survey */}
-                          <TableCell>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-700 font-medium whitespace-nowrap">
-                              <Calendar className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                              <span>
-                                {survey?.tanggalSurvey ? formatTanggalIndonesia(survey.tanggalSurvey).fullText : "-"}
-                              </span>
-                            </div>
-                          </TableCell>
-
-                          {/* Petugas Survey */}
-                          <TableCell>
-                            <div className="flex flex-col max-w-[160px]">
-                              <span className="font-semibold text-xs text-slate-800 truncate" title={pNama}>{pNama}</span>
-                              {pNip && <span className="text-[10px] font-mono text-slate-500 truncate">NIP: {pNip}</span>}
-                            </div>
-                          </TableCell>
-
-                          {/* Verifikator Dinas */}
-                          <TableCell>
-                            <div className="flex flex-col max-w-[160px]">
-                              <span className="font-semibold text-xs text-slate-800 truncate" title={vNama}>{vNama}</span>
-                              {vNip && <span className="text-[10px] font-mono text-indigo-600 truncate">NIP: {vNip}</span>}
-                            </div>
-                          </TableCell>
-
-                          {/* Posisi Status */}
-                          <TableCell className="text-center whitespace-nowrap">
-                            <Badge className={`text-[10px] font-bold border ${stage.badgeClass}`}>
-                              {stage.label}
-                            </Badge>
-                          </TableCell>
-
-                          {/* Aksi - STICKY AGAR SELALU TERLIHAT */}
-                          <TableCell className="text-center sticky right-0 bg-white group-hover:bg-indigo-50/80 transition-colors z-10 shadow-[-4px_0_8px_rgba(0,0,0,0.06)] px-2">
-                            <div className="flex items-center justify-center gap-1">
-                              {/* Download Berita Acara PDF */}
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-100 rounded-lg shadow-sm"
-                                title="Download Berita Acara Survey (PDF)"
-                                onClick={() => handleOpenPrintModal(actor)}
-                                disabled={isGeneratingThis}
-                              >
-                                {isGeneratingThis ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <FileDown className="w-4 h-4" />
-                                )}
-                              </Button>
-
-                              {/* View Detail Survey */}
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
-                                title="Lihat Detail Data Survey"
-                                onClick={() => setViewingActor(actor)}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-
-                              {/* Edit Pejabat / Tanggal Survey */}
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-amber-600 hover:text-amber-800 hover:bg-amber-100 rounded-lg"
-                                title="Koreksi Data Pejabat & Tanggal Survey"
-                                onClick={() => handleOpenEditPejabat(actor)}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-
-                              {/* Kembali ke Verifikator Dinas — tersedia untuk semua data di GBAS */}
-                              {isAdmin && (
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-8 w-8 text-rose-600 hover:text-rose-800 hover:bg-rose-100 rounded-lg shadow-sm"
-                                  title="Kembalikan ke Verifikator Dinas (Reset Rekening)"
-                                  onClick={() => {
-                                    setReturnVerifikatorActor(actor)
-                                    setReturnVerifikatorReason("")
-                                  }}
-                                >
-                                  <RotateCcw className="w-4 h-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-            {filteredActors.length > pageLimit && (
-              <div className="p-4 flex justify-center border-t bg-slate-50">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setPageLimit(prev => prev + 50)} 
-                  className="font-bold border-indigo-600 text-indigo-700 hover:bg-indigo-50 text-xs"
-                >
-                  Tampilkan Lebih Banyak Data (+50)
-                </Button>
-              </div>
-            )}
-          </Card>
+        {isDataLoading ? (
+          <div className="py-20 flex flex-col items-center justify-center gap-2 text-slate-400">
+            <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+            <span className="text-xs font-semibold">Memuat data Berita Acara Survey...</span>
+          </div>
+        ) : filteredActors.length === 0 ? (
+          <div className="py-16 text-center space-y-2 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+            <ClipboardCheck className="w-8 h-8 text-slate-300 mx-auto" />
+            <span className="text-sm font-bold text-slate-700 dark:text-slate-200 block">Tidak ada Berita Acara Survey ditemukan</span>
+            <p className="text-xs text-slate-400">Coba sesuaikan kata kunci pencarian atau filter yang dipilih.</p>
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
