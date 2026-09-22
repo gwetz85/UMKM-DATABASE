@@ -72,7 +72,9 @@ import {
   PenTool,
   Trash2,
   Image as ImageIcon,
-  Edit
+  Edit,
+  MessageCircle,
+  Users
 } from "lucide-react"
 import { SignaturePadDialog } from "@/components/signature-pad-dialog"
 
@@ -345,6 +347,43 @@ export default function PortalSurveyPage() {
     if (!rawActorsList) return []
     return rawActorsList
   }, [rawActorsList])
+
+  // Koordinator kuotas for quick WhatsApp coordination
+  const kuotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
+  const { data: kuotaData } = useList<any>(kuotaRef)
+
+  const getCoordinatorPhone = (actor: BusinessActor) => {
+    if (!actor.coordinator) return ""
+    const actorCoord = actor.coordinator.trim().toUpperCase()
+    const found = kuotaData?.find((q: any) => {
+      const qName = (q.name || q.coordinator || "").trim().toUpperCase()
+      return qName === actorCoord
+    })
+    return found?.phone || found?.noHp || found?.hp || ""
+  }
+
+  const handleOpenWhatsAppCoordinator = (actor: BusinessActor) => {
+    const coordName = actor.coordinator?.trim() || "Koordinator"
+    const coordPhone = getCoordinatorPhone(actor)
+
+    if (!coordPhone || coordPhone.trim() === "" || coordPhone === "-") {
+      toast({
+        variant: "destructive",
+        title: "Nomor WhatsApp Koordinator Belum Tersedia",
+        description: `Nomor WhatsApp untuk koordinator "${coordName}" belum terdaftar di database kuota koordinator.`
+      })
+      return
+    }
+
+    let clean = coordPhone.replace(/\D/g, "")
+    if (clean.startsWith("0")) clean = "62" + clean.slice(1)
+    else if (!clean.startsWith("62")) clean = "62" + clean
+
+    const namaPetugas = userProfile?.fullName || pejabatForm.petugasNama || "Petugas Survey"
+    const message = `Halo Bapak/Ibu ${coordName}, perkenalkan saya ${namaPetugas} (Petugas Survey Lapangan DKUKM).\n\nSaya ingin berkoordinasi terkait survey lapangan calon penerima bantuan UMKM usulan Bapak/Ibu:\n- Nama Pelaku Usaha: ${actor.fullName}\n- Usaha: ${actor.businessName || "-"}\n- Alamat: Kel. ${actor.kelurahan || "-"}, ${actor.kecamatan || "-"}\n\nMohon informasi/bantuan petunjuk lokasi atau nomor kontak terbaru pelaku usaha tersebut. Terima kasih.`
+
+    window.open(`https://wa.me/${clean}?text=${encodeURIComponent(message)}`, "_blank")
+  }
 
   // =========================================================================
   // RULE USER: Menu 2 HANYA menampilkan data yang BELUM disurvey / MASIH DRAFT!
@@ -1724,71 +1763,98 @@ export default function PortalSurveyPage() {
                         )}
                       </div>
 
-                      <div className="text-[10px] text-slate-500 bg-slate-50 p-2 rounded-xl flex justify-between items-center">
-                        <span className="truncate max-w-[200px]">📍 Kel. {actor.kelurahan || "-"}, {actor.kecamatan || "-"}</span>
-                        <span className="font-mono">{actor.phone || "-"}</span>
+                      <div className="text-[10px] text-slate-500 bg-slate-50 p-2 rounded-xl flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+                        <span className="truncate max-w-[220px]">📍 Kel. {actor.kelurahan || "-"}, {actor.kecamatan || "-"}</span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {actor.coordinator && (
+                            <span className="text-[9.5px] font-bold text-teal-700 bg-teal-50 border border-teal-200/80 px-1.5 py-0.5 rounded-md truncate max-w-[140px]" title={`Koordinator: ${actor.coordinator}`}>
+                              Koord: {actor.coordinator}
+                            </span>
+                          )}
+                          <span className="font-mono">{actor.phone || "-"}</span>
+                        </div>
                       </div>
 
-                      {/* Tombol aksi tersusun rapi di bagian bawah: Hubungi WA, Cancell, Mulai Survey Lapangan, Download BA */}
-                      <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-100">
-                        {/* 1. Hubungi WA */}
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={() => handleOpenWhatsApp(actor)}
-                          disabled={!actor.phone || actor.phone.trim() === "" || actor.phone === "-"}
-                          className="h-8 px-2 rounded-xl text-[11px] font-semibold border-emerald-300 text-emerald-700 bg-emerald-50/40 hover:bg-emerald-100/60 w-full justify-center disabled:opacity-40 transition-all"
-                        >
-                          <Phone className="w-3.5 h-3.5 mr-1 text-emerald-600 shrink-0" />
-                          <span className="truncate">Hubungi WA</span>
-                        </Button>
+                      {/* Tombol aksi tersusun rapi di bagian bawah: Hubungi WA, Hubungi Koordinator, Cancell, Mulai Survey Lapangan, Download BA */}
+                      <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                        {/* Baris 1: Hubungi WA, Hubungi Koordinator, Cancell */}
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {/* 1. Hubungi WA */}
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleOpenWhatsApp(actor)}
+                            disabled={!actor.phone || actor.phone.trim() === "" || actor.phone === "-"}
+                            className="h-8 px-1 sm:px-2 rounded-xl text-[10.5px] font-semibold border-emerald-300 text-emerald-700 bg-emerald-50/40 hover:bg-emerald-100/60 w-full justify-center disabled:opacity-40 transition-all"
+                            title={actor.phone ? `Hubungi WhatsApp Pelaku: ${actor.phone}` : "Nomor HP pelaku tidak tersedia"}
+                          >
+                            <Phone className="w-3.5 h-3.5 mr-1 text-emerald-600 shrink-0" />
+                            <span className="truncate">Hubungi WA</span>
+                          </Button>
 
-                        {/* 2. Cancell */}
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => {
-                            setCancelTargetActor(actor)
-                            setCancelReasonPreset("Usaha Tutup / Tidak Beroperasi")
-                            setCustomCancelReason("")
-                            setCancelPhotoProof(null)
-                          }}
-                          className="h-8 px-2 rounded-xl text-[11px] font-semibold border-rose-200 text-rose-600 bg-rose-50/40 hover:bg-rose-100/60 w-full justify-center transition-all"
-                        >
-                          <Ban className="w-3.5 h-3.5 mr-1 text-rose-500 shrink-0" />
-                          <span className="truncate">Cancell</span>
-                        </Button>
+                          {/* 2. Hubungi Koordinator (DIANTARA HUBUNGI WA DAN CANCELL) */}
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleOpenWhatsAppCoordinator(actor)}
+                            className="h-8 px-1 sm:px-2 rounded-xl text-[10.5px] font-semibold border-teal-300 text-teal-700 bg-teal-50/40 hover:bg-teal-100/60 w-full justify-center transition-all"
+                            title={actor.coordinator ? `Hubungi WhatsApp Koordinator: ${actor.coordinator}` : "Hubungi Koordinator"}
+                          >
+                            <MessageCircle className="w-3.5 h-3.5 mr-1 text-teal-600 shrink-0" />
+                            <span className="truncate">Hubungi Koordinator</span>
+                          </Button>
 
-                        {/* 3. Mulai Survey Lapangan */}
-                        <Button 
-                          size="sm" 
-                          onClick={() => openInPortalSurvey(actor)}
-                          className="h-8 px-2 rounded-xl text-[11px] font-bold shadow-xs bg-orange-600 hover:bg-orange-700 text-white w-full justify-center transition-all"
-                        >
-                          <Store className="w-3.5 h-3.5 mr-1 shrink-0" />
-                          <span className="truncate">Mulai Survey Lapangan</span>
-                        </Button>
+                          {/* 3. Cancell */}
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setCancelTargetActor(actor)
+                              setCancelReasonPreset("Usaha Tutup / Tidak Beroperasi")
+                              setCustomCancelReason("")
+                              setCancelPhotoProof(null)
+                            }}
+                            className="h-8 px-1 sm:px-2 rounded-xl text-[10.5px] font-semibold border-rose-200 text-rose-600 bg-rose-50/40 hover:bg-rose-100/60 w-full justify-center transition-all"
+                            title="Batalkan / Cancel Survey Pelaku Usaha Ini"
+                          >
+                            <Ban className="w-3.5 h-3.5 mr-1 text-rose-500 shrink-0" />
+                            <span className="truncate">Cancell</span>
+                          </Button>
+                        </div>
 
-                        {/* 4. Download BA */}
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          disabled={generatingPdfId === actor.id}
-                          onClick={() => handlePrintBeritaAcara(actor)}
-                          className="h-8 px-2 rounded-xl text-[11px] font-bold border-blue-200 text-blue-700 bg-blue-50/40 hover:bg-blue-100/60 w-full justify-center transition-all"
-                        >
-                          {generatingPdfId === actor.id ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin text-blue-600 shrink-0" />
-                              <span className="truncate">Mengunduh...</span>
-                            </>
-                          ) : (
-                            <>
-                              <FileDown className="w-3.5 h-3.5 mr-1 text-blue-600 shrink-0" />
-                              <span className="truncate">Download BA</span>
-                            </>
-                          )}
-                        </Button>
+                        {/* Baris 2: Mulai Survey Lapangan & Download BA */}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {/* 4. Mulai Survey Lapangan */}
+                          <Button 
+                            size="sm" 
+                            onClick={() => openInPortalSurvey(actor)}
+                            className="h-8 px-2 rounded-xl text-[11px] font-bold shadow-xs bg-orange-600 hover:bg-orange-700 text-white w-full justify-center transition-all"
+                          >
+                            <Store className="w-3.5 h-3.5 mr-1 shrink-0" />
+                            <span className="truncate">Mulai Survey Lapangan</span>
+                          </Button>
+
+                          {/* 5. Download BA */}
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            disabled={generatingPdfId === actor.id}
+                            onClick={() => handlePrintBeritaAcara(actor)}
+                            className="h-8 px-2 rounded-xl text-[11px] font-bold border-blue-200 text-blue-700 bg-blue-50/40 hover:bg-blue-100/60 w-full justify-center transition-all"
+                          >
+                            {generatingPdfId === actor.id ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin text-blue-600 shrink-0" />
+                                <span className="truncate">Mengunduh...</span>
+                              </>
+                            ) : (
+                              <>
+                                <FileDown className="w-3.5 h-3.5 mr-1 text-blue-600 shrink-0" />
+                                <span className="truncate">Download BA</span>
+                              </>
+                            )}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )
