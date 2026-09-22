@@ -647,175 +647,209 @@ function HasilVerifikasiContent() {
               <p className="font-bold uppercase tracking-widest text-xs">Belum ada data hasil verifikasi Dinas yang lolos</p>
             </Card>
           ) : (
-            <div className="bg-white border rounded-2xl overflow-hidden shadow-sm">
-              {/* Mobile Card List (md:hidden) */}
-              <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-                {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
-                  <div 
-                    key={actor.id}
-                    onClick={() => setViewingActor(actor)}
-                    className="p-3.5 space-y-2.5 bg-white dark:bg-slate-900 active:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    {/* Row 1: Nomor, Nama & Status */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2">
-                        <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md shrink-0 mt-0.5">
-                          #{globalIndexMap.get(actor.id) || index + 1}
-                        </span>
-                        <div>
-                          <span className={cn(
-                            "font-black uppercase text-sm leading-tight block",
-                            normalizeGender(actor.gender) === 'Perempuan' ? "text-red-600" : "text-blue-600"
-                          )}>
-                            {actor.fullName}
-                          </span>
-                          <span className="text-[10px] font-mono text-slate-500 uppercase">
-                            NIK: {actor.nik}
+            <div className="space-y-6">
+              {/* Responsive Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+                {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => {
+                  const isFemale = normalizeGender(actor.gender) === 'Perempuan';
+                  const cardTheme = isFemale ? '#e11d48' : '#0284c7';
+                  const actorAge = calculateAge(actor.dob || (actor.pobDob ? parsePobDob(actor.pobDob).dob : "") || extractDobFromNik(actor.nik || ""));
+
+                  return (
+                    <div
+                      key={actor.id}
+                      onClick={() => setViewingActor(actor)}
+                      className="group relative overflow-hidden border-2 hover:shadow-2xl transition-all duration-300 ease-out rounded-3xl p-5 bg-white dark:bg-slate-900 hover:-translate-y-1.5 flex flex-col justify-between cursor-pointer"
+                      style={{
+                        borderColor: `${cardTheme}35`,
+                        boxShadow: `0 4px 20px -2px ${cardTheme}15`
+                      }}
+                    >
+                      {/* Glowing Top Accent Stripe */}
+                      <div 
+                        className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 group-hover:h-2 z-10"
+                        style={{ background: `linear-gradient(90deg, ${cardTheme}, ${cardTheme}dd, ${cardTheme}aa)` }} 
+                      />
+
+                      {/* Colorful Gradient Wash Overlay */}
+                      <div 
+                        className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-40 group-hover:opacity-80"
+                        style={{ background: `linear-gradient(145deg, transparent 35%, ${cardTheme}08 80%, ${cardTheme}15 100%)` }}
+                      />
+
+                      {/* Ambient Soft Glow Orb */}
+                      <div 
+                        className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl transition-all duration-700 pointer-events-none opacity-15 group-hover:opacity-30 group-hover:scale-150"
+                        style={{ backgroundColor: cardTheme }}
+                      />
+
+                      {/* Decorative Watermark Icon (Bottom-Right) */}
+                      <div 
+                        className="absolute -bottom-3 -right-3 pointer-events-none transition-all duration-500 ease-out opacity-[0.05] dark:opacity-[0.10] group-hover:opacity-[0.18] group-hover:scale-125 group-hover:-rotate-12"
+                        style={{ color: cardTheme }}
+                      >
+                        <ShieldCheck className="w-28 h-28 stroke-[1.2]" />
+                      </div>
+
+                      {/* Content Layer */}
+                      <div className="relative z-10 space-y-3.5">
+                        {/* Top Row: Circular Index Badge, Name & Status */}
+                        <div className="flex items-start justify-between gap-2.5">
+                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                            {/* Circular Index Badge */}
+                            <span 
+                              className="w-10 h-10 rounded-2xl text-white font-extrabold text-sm sm:text-base flex items-center justify-center shrink-0 shadow-md transition-all duration-300 group-hover:scale-105"
+                              style={{ backgroundColor: cardTheme }}
+                            >
+                              {globalIndexMap.get(actor.id) || index + 1}
+                            </span>
+
+                            <div className="min-w-0 flex-1">
+                              {/* Full Name */}
+                              <h3
+                                className="font-extrabold text-base sm:text-[17px] tracking-tight truncate leading-tight uppercase"
+                                style={{ color: cardTheme }}
+                              >
+                                {actor.fullName}
+                              </h3>
+
+                              {/* NIK & Age Badge */}
+                              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                <span className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 font-mono tracking-tight">
+                                  {actor.nik || '-'}
+                                </span>
+                                {actorAge ? (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                    {actorAge} Thn
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Keputusan Badge */}
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider border shadow-2xs bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 shrink-0">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                            <span>LOLOS</span>
                           </span>
                         </div>
-                      </div>
-                      <span className="text-[9px] font-black px-2 py-0.5 rounded-full uppercase border bg-emerald-50 text-emerald-700 border-emerald-200 shrink-0">
-                        LOLOS
-                      </span>
-                    </div>
 
-                    {/* Row 2: Informasi Usaha & Koordinator */}
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                      <div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Usaha</span>
-                        <span className="font-bold text-slate-700 dark:text-slate-200 uppercase truncate block" title={actor.businessName}>
-                          {actor.businessName || "-"}
-                        </span>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase truncate block">
-                          {actor.businessCategory || "-"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Koordinator</span>
-                        <span className="font-bold text-slate-700 dark:text-slate-200 uppercase truncate block" title={actor.coordinator}>
-                          {actor.coordinator || "-"}
-                        </span>
-                        {actor.verifiedDinasAt && (
-                          <span className="text-[9px] text-slate-400 font-mono block mt-0.5">
-                            {new Date(actor.verifiedDinasAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                          </span>
+                        {/* Middle Container: Informasi Usaha */}
+                        <div className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-3.5 space-y-2 relative z-10 backdrop-blur-xs">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="space-y-0.5 min-w-0">
+                              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Nama Usaha</span>
+                              <h4 
+                                className="font-black text-sm sm:text-[15px] uppercase tracking-tight truncate"
+                                style={{ color: cardTheme }}
+                              >
+                                {actor.businessName || 'Nama Usaha Belum Diisi'}
+                              </h4>
+                            </div>
+                            <span className={cn(
+                              "text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider border shadow-2xs shrink-0",
+                              actor.businessCategory === 'Kuliner' 
+                                ? "border-amber-300 text-amber-800 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800" 
+                                : "border-blue-300 text-blue-800 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800"
+                            )}>
+                              {actor.businessCategory || '-'}
+                            </span>
+                          </div>
+
+                          {/* Alamat / Lokasi Usaha */}
+                          {(actor.businessLocation || actor.address) && (
+                            <div className="flex items-start gap-1.5 text-xs text-slate-600 dark:text-slate-400 pt-0.5">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                              <span className="font-medium line-clamp-1 uppercase tracking-tight">
+                                {actor.businessLocation || actor.address}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Koordinator & Waktu Verifikasi Dinas */}
+                          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                            <div>
+                              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Koordinator</span>
+                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase truncate block" title={actor.coordinator}>
+                                {actor.coordinator || '-'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Waktu Verifikasi</span>
+                              <div className="text-xs text-slate-700 dark:text-slate-300">
+                                <span className="font-bold">
+                                  {actor.verifiedDinasAt ? new Date(actor.verifiedDinasAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : "-"}
+                                </span>
+                                {actor.verifiedDinasBy && (
+                                  <span className="text-[10px] text-slate-400 block truncate">
+                                    Oleh: {actor.verifiedDinasBy}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Status Rekening Bank */}
+                        {actor.bankNumber ? (
+                          <div className="bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-900/40 rounded-xl px-3 py-2 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <CreditCard className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                              <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 truncate">
+                                {actor.bankName || "Bank"} • <span className="font-mono">{actor.bankNumber}</span>
+                              </span>
+                            </div>
+                            <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-full shrink-0">
+                              Tersimpan
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="bg-amber-50/60 dark:bg-amber-950/20 border border-dashed border-amber-200/70 dark:border-amber-900/40 rounded-xl px-3 py-1.5 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 text-xs font-semibold">
+                              <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                              <span>Rekening Belum Diisi</span>
+                            </div>
+                            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-md">
+                              Menunggu
+                            </span>
+                          </div>
                         )}
                       </div>
+
+                      {/* Action Buttons Row */}
+                      <div className="flex items-center gap-2 sm:gap-2.5 pt-3 mt-3 border-t border-slate-100 dark:border-slate-800/80 relative z-10" onClick={(e) => e.stopPropagation()}>
+                        {/* Lihat Detail */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1 h-10 rounded-xl font-bold text-xs text-blue-700 bg-blue-50/70 hover:bg-blue-100 border-blue-200 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300 flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-2xs cursor-pointer"
+                          onClick={() => setViewingActor(actor)}
+                          title="Lihat Detail Lengkap"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Detail</span>
+                        </Button>
+
+                        {/* Input / Edit Rekening */}
+                        <Button
+                          size="sm"
+                          onClick={() => setInputtingBankActor(actor)}
+                          className="flex-1 h-10 rounded-xl font-black text-xs text-white bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-sm shadow-amber-500/20 flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer"
+                          title="Input Rekening & Teruskan"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" />
+                          <span>{actor.bankNumber ? "Edit Rekening" : "Input Rekening"}</span>
+                        </Button>
+                      </div>
                     </div>
-
-                    {/* Row 3: Action Buttons */}
-                    <div className="flex items-center justify-end gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setViewingActor(actor)}
-                        className="h-8 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200 rounded-lg gap-1.5"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Detail</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => setInputtingBankActor(actor)}
-                        className="bg-amber-500 hover:bg-amber-600 text-white font-bold h-8 text-xs rounded-lg px-3 shadow-sm gap-1.5"
-                      >
-                        <CreditCard className="w-3.5 h-3.5" />
-                        <span>Input Rekening</span>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Desktop Table View (hidden md:block) */}
-              <div className="hidden md:block max-h-[calc(100vh-280px)] overflow-auto">
-                <Table>
-                  <TableHeader className="bg-slate-50 border-b sticky top-0 z-10">
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[50px] font-black uppercase text-[10px] text-center text-slate-500">No</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] text-slate-500">Pelaku Usaha</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] text-slate-500">Informasi Usaha</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] text-center text-slate-500">Keputusan</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] text-slate-500">Waktu Verifikasi</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] text-slate-500">Koordinator</TableHead>
-                      <TableHead className="font-black uppercase text-[10px] text-right text-slate-500 pr-6">Aksi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {currentDataToDisplay.slice(0, pageLimit).map((actor, index) => (
-                      <TableRow key={actor.id} className="hover:bg-slate-50/50 transition-colors group">
-                        <TableCell className="text-center font-bold text-slate-400 text-xs">
-                          {globalIndexMap.get(actor.id) || index + 1}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className={cn(
-                              "font-black uppercase text-sm leading-tight",
-                              normalizeGender(actor.gender) === 'Perempuan' ? "text-red-600" : "text-blue-600"
-                            )}>
-                              {actor.fullName}
-                            </span>
-                            <span className="text-[10px] font-mono text-slate-500 uppercase">{actor.nik}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-bold text-slate-700 text-[11px] uppercase">{actor.businessName}</span>
-                            <span className="text-[9px] text-slate-400 uppercase font-bold">{actor.businessCategory}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <span className="text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase border bg-emerald-50 text-emerald-700 border-emerald-200">
-                            LOLOS
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col text-[10px] text-slate-500">
-                            <span className="font-bold text-slate-700">
-                              {actor.verifiedDinasAt ? new Date(actor.verifiedDinasAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : "-"}
-                            </span>
-                            <span>Oleh: {actor.verifiedDinasBy || "Dinas"}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-xs font-bold text-slate-600 uppercase">
-                            {actor.coordinator || "-"}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right pr-6">
-                          <div className="flex justify-end gap-2">
-                            {/* Viewer Dialog Button */}
-                            <Button
-                              size="icon"
-                              variant="outline"
-                              onClick={() => setViewingActor(actor)}
-                              className="h-8 w-8 text-blue-600 bg-blue-50 hover:bg-blue-100 hover:text-blue-700 rounded-full border-transparent transition-all"
-                              title="Lihat Detail"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-
-                            {/* Input Bank Action Button */}
-                            <Button
-                              size="sm"
-                              onClick={() => setInputtingBankActor(actor)}
-                              className="bg-amber-500 hover:bg-amber-600 text-white font-bold h-8 rounded-full px-3 shadow-sm"
-                              title="Input Rekening & Teruskan"
-                            >
-                              <CreditCard className="w-4 h-4 mr-1.5" /> Input Rekening
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                  );
+                })}
               </div>
 
               {currentDataToDisplay.length > pageLimit && (
-                <div className="p-4 flex justify-center border-t bg-slate-50">
-                  <Button variant="outline" onClick={() => setPageLimit(prev => prev + 50)} className="font-bold border-primary text-primary hover:bg-primary/10">
-                    <RefreshCw className="w-4 h-4 mr-2" /> Tampilkan Lebih Banyak Data
+                <div className="p-6 flex justify-center bg-white dark:bg-slate-900 border-2 rounded-2xl shadow-xs">
+                  <Button variant="outline" onClick={() => setPageLimit(prev => prev + 50)} className="font-bold border-primary text-primary hover:bg-primary/10 rounded-xl h-11 px-6">
+                    <RefreshCw className="w-4 h-4 mr-2" /> Tampilkan Lebih Banyak Data ({currentDataToDisplay.length - pageLimit} data tersisa)
                   </Button>
                 </div>
               )}
