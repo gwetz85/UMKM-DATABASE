@@ -555,296 +555,259 @@ function RejectedContent() {
         </div>
       </div>
 
-      {/* Main Table / Cards Container */}
+      {/* Main Cards Container */}
       <div className={cn(
-        "border-2 rounded-2xl md:rounded-3xl overflow-hidden shadow-xs bg-white dark:bg-slate-900 transition-all",
+        "border-2 rounded-2xl md:rounded-3xl overflow-hidden shadow-xs bg-slate-50/50 dark:bg-slate-950/40 transition-all",
         activeTab === 'dinas' ? "border-orange-200 dark:border-orange-900/60" : "border-red-200 dark:border-red-900/60"
       )}>
         {/* Colored Top Stripe Indicator */}
         <div className={cn("h-1.5 w-full shrink-0", activeTab === 'dinas' ? "bg-orange-600" : "bg-red-600")} />
 
         {(activeTab === 'pendataan' ? isLoading : isLoadingDinas) ? (
-          <div className="p-6 space-y-4">
-            <div className="flex gap-4 border-b pb-4">
-              {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-5 flex-1 rounded-lg" />)}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5 p-4 sm:p-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="flex gap-4 pt-2">
-                {[...Array(6)].map((_, j) => <Skeleton key={j} className="h-10 flex-1 rounded-xl" />)}
+              <div key={i} className="border-2 rounded-3xl p-5 bg-white dark:bg-slate-900 space-y-4">
+                <div className="flex justify-between items-center">
+                  <Skeleton className="w-10 h-10 rounded-xl" />
+                  <Skeleton className="w-20 h-5 rounded-full" />
+                </div>
+                <Skeleton className="h-6 w-3/4 rounded-lg" />
+                <Skeleton className="h-20 w-full rounded-2xl" />
+                <div className="flex gap-2 pt-2">
+                  <Skeleton className="h-9 flex-1 rounded-xl" />
+                  <Skeleton className="h-9 flex-1 rounded-xl" />
+                </div>
               </div>
             ))}
           </div>
         ) : activeTab === 'pendataan' ? (
-          /* ===== TAB PENDATAAN ===== */
-          <>
-            {/* Mobile Card List (md:hidden) */}
-            <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-              {actors && actors.length > 0 ? (
-                actors.map((actor, index) => (
-                  <div 
+          /* ===== TAB PENDATAAN CARDS ===== */
+          <div className="p-4 sm:p-6">
+            {actors && actors.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+                {actors.map((actor, index) => (
+                  <div
                     key={actor.id}
                     onClick={() => handleOpenDetail(actor)}
-                    className="p-4 space-y-3 bg-white dark:bg-slate-900 active:bg-red-50/40 transition-colors cursor-pointer"
+                    className="group relative overflow-hidden border-2 border-red-200/70 hover:border-red-500/80 dark:border-red-900/40 dark:hover:border-red-700 rounded-3xl p-5 bg-white dark:bg-slate-900 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer"
+                    style={{
+                      boxShadow: '0 4px 20px -2px rgba(220, 38, 38, 0.08)'
+                    }}
                   >
-                    {/* Row 1: Nomor, Nama Usaha & Kategori */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2.5">
-                        <span className="w-6 h-6 rounded-lg bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 text-[11px] font-black inline-flex items-center justify-center shrink-0 mt-0.5">
-                          {index + 1}
-                        </span>
-                        <div>
-                          <span className="font-black text-slate-900 dark:text-white text-sm uppercase leading-tight block">
-                            {actor.businessName || "NAMA USAHA KOSONG"}
-                          </span>
-                          {actor.businessLocation && (
-                            <span className="text-[10px] text-slate-400 font-medium line-clamp-1">
-                              {actor.businessLocation}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <span className={cn(
-                        "inline-flex items-center px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border shrink-0",
-                        actor.businessCategory === 'Kuliner' 
-                          ? "border-amber-300 text-amber-800 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800" 
-                          : "border-blue-300 text-blue-800 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800"
-                      )}>
-                        {actor.businessCategory || "-"}
-                      </span>
+                    {/* Glowing Top Accent Stripe */}
+                    <div className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 group-hover:h-2 z-10 bg-gradient-to-r from-red-600 via-rose-500 to-amber-500" />
+
+                    {/* Colorful Gradient Wash Overlay */}
+                    <div className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-40 group-hover:opacity-100 bg-gradient-to-br from-transparent via-red-500/[0.03] to-red-500/[0.08]" />
+
+                    {/* Ambient Soft Glow Orb */}
+                    <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl transition-all duration-700 pointer-events-none opacity-15 group-hover:opacity-35 bg-red-500" />
+
+                    {/* Decorative Watermark Icon (Bottom-Right) */}
+                    <div className="absolute -bottom-3 -right-3 pointer-events-none transition-all duration-500 ease-out opacity-[0.05] dark:opacity-[0.10] group-hover:opacity-[0.18] group-hover:scale-125 group-hover:-rotate-12 text-red-600">
+                      <Ban className="w-28 h-28 stroke-[1.2]" />
                     </div>
 
-                    {/* Row 2: Pelaku Usaha & Koordinator */}
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                      <div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Pelaku Usaha</span>
-                        <span className="font-black text-slate-800 dark:text-slate-200 uppercase truncate block">{actor.fullName}</span>
-                        <span className="text-[10px] text-slate-500 font-mono font-bold block">{actor.nik}</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Usulan Koordinator</span>
-                        <span className="font-bold text-slate-700 dark:text-slate-300 uppercase truncate block">{normalizeCoordinator(actor.coordinator) || "-"}</span>
-                      </div>
-                    </div>
-
-                    {/* Row 3: Alasan Penolakan */}
-                    <div className="bg-red-50/80 dark:bg-red-950/40 border border-red-200/80 dark:border-red-900/40 rounded-xl p-3 flex items-start gap-2.5">
-                      <Ban className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                      <div className="flex-1 space-y-0.5">
-                        <span className="text-[10px] font-black text-red-700 dark:text-red-300 uppercase tracking-wider block">Alasan Penolakan:</span>
-                        <p className="text-xs italic font-bold text-red-800 dark:text-red-400 leading-snug">
-                          "{actor.rejectionReason || actor.keteranganDinas || "Tidak ada alasan spesifik."}"
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Row 4: Action Buttons */}
-                    <div className="flex items-center justify-end gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="h-8.5 text-xs font-bold border-blue-200 text-blue-700 bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300 rounded-xl gap-1.5 cursor-pointer"
-                        onClick={() => handlePrintActorForm(actor)}
-                      >
-                        <Printer className="w-3.5 h-3.5" />
-                        <span>Cetak Form</span>
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="h-8.5 text-xs font-black bg-red-600 hover:bg-red-700 text-white rounded-xl gap-1.5 shadow-2xs cursor-pointer"
-                        onClick={() => handleOpenDetail(actor)}
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Lihat Detail</span>
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="p-12 text-center text-muted-foreground flex flex-col items-center gap-3">
-                  <Ban className="w-12 h-12 text-red-400/40" />
-                  <p className="text-xs font-black uppercase tracking-wider text-slate-500">Tidak Ada Data Ditolak (Pendataan)</p>
-                </div>
-              )}
-            </div>
-
-            {/* Desktop Table View (hidden md:block) */}
-            <div className="hidden md:block overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-slate-50/90 dark:bg-slate-850/90 border-b border-slate-200 dark:border-slate-800">
-                  <TableRow className="hover:bg-transparent border-none">
-                    <TableHead className="w-[60px] font-black text-slate-600 dark:text-slate-300 text-center uppercase text-[11px] py-3.5">#</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] py-3.5">Nama Usaha</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] py-3.5">Pelaku Usaha</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] text-center py-3.5">Kategori</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] py-3.5">USULAN</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] py-3.5">Alasan Penolakan</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] text-right py-3.5 pr-6">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                  {actors && actors.length > 0 ? (
-                    actors.map((actor, index) => (
-                      <TableRow
-                        key={actor.id}
-                        className="cursor-pointer hover:bg-red-50/30 dark:hover:bg-red-950/20 transition-colors group"
-                        onClick={() => handleOpenDetail(actor)}
-                      >
-                        <TableCell className="text-center py-3.5">
-                          <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs inline-flex items-center justify-center">
+                    {/* Content Layer */}
+                    <div className="relative z-10 space-y-3.5">
+                      {/* Top Row: Circular Index Badge, Category Badge */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 text-white font-black text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-xs transition-transform duration-300 group-hover:scale-105">
                             {index + 1}
                           </span>
-                        </TableCell>
-                        <TableCell className="py-3.5">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-black text-slate-900 dark:text-white uppercase text-sm leading-snug tracking-tight">
-                              {actor.businessName || "NAMA USAHA KOSONG"}
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block leading-none">
+                              Pelaku Usaha
                             </span>
-                            {actor.businessLocation && (
-                              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 truncate max-w-[220px]">
-                                {actor.businessLocation}
-                              </span>
-                            )}
+                            <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white uppercase truncate tracking-tight mt-0.5">
+                              {actor.fullName || "-"}
+                            </h3>
                           </div>
-                        </TableCell>
-                        <TableCell className="py-3.5">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-bold text-slate-800 dark:text-slate-200 text-xs uppercase">
-                              {actor.fullName}
-                            </span>
-                            <span className="text-[11px] font-bold text-slate-500 font-mono tracking-wide">
+                        </div>
+
+                        <span className={cn(
+                          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-2xs shrink-0",
+                          actor.businessCategory === 'Kuliner' 
+                            ? "border-amber-300 text-amber-800 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800" 
+                            : "border-blue-300 text-blue-800 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800"
+                        )}>
+                          {actor.businessCategory || "-"}
+                        </span>
+                      </div>
+
+                      {/* Middle Section: Business Info Container */}
+                      <div className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-3.5 space-y-2 backdrop-blur-xs">
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Nama Usaha</span>
+                          <h4 className="font-black text-sm text-red-700 dark:text-red-400 uppercase tracking-tight line-clamp-1">
+                            {actor.businessName || "NAMA USAHA KOSONG"}
+                          </h4>
+                        </div>
+
+                        {/* NIK & Usulan Pills */}
+                        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">NIK</span>
+                            <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 tracking-tight block truncate">
                               {actor.nik || "-"}
                             </span>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-center py-3.5">
-                          <span className={cn(
-                            "inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border shadow-2xs",
-                            actor.businessCategory === 'Kuliner' 
-                              ? "border-amber-300 text-amber-800 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800" 
-                              : "border-blue-300 text-blue-800 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800"
-                          )}>
-                            {actor.businessCategory || "-"}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-3.5">
-                          <span className="inline-flex items-center text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
-                            {normalizeCoordinator(actor.coordinator) || "-"}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-3.5">
-                          <div className="flex items-start gap-1.5 p-2 rounded-xl bg-red-50/80 dark:bg-red-950/40 border border-red-200/80 dark:border-red-900/40 max-w-[260px]">
-                            <Ban className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
-                            <p className="text-xs font-bold text-red-800 dark:text-red-300 leading-snug line-clamp-2 italic" title={actor.rejectionReason || actor.keteranganDinas}>
-                              "{actor.rejectionReason || actor.keteranganDinas || "Tidak ada alasan spesifik."}"
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right py-3.5 pr-6" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex justify-end items-center gap-1.5">
-                            <Button 
-                              size="sm"
-                              variant="outline" 
-                              className="h-8 px-2.5 text-xs font-bold border-blue-200 text-blue-700 bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300 rounded-xl gap-1.5 cursor-pointer shadow-2xs" 
-                              onClick={() => handlePrintActorForm(actor)} 
-                              title="Cetak Form Pembatalan"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                              <span className="hidden xl:inline">Cetak</span>
-                            </Button>
-                            <Button 
-                              size="sm"
-                              className="h-8 px-3 text-xs font-black bg-red-600 hover:bg-red-700 text-white rounded-xl gap-1.5 cursor-pointer shadow-2xs" 
-                              onClick={() => handleOpenDetail(actor)}
-                              title="Lihat Detail Lengkap"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                              <span>Detail</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={7} className="h-48 text-center">
-                        <div className="flex flex-col items-center justify-center text-muted-foreground gap-3">
-                          <Ban className="w-12 h-12 text-red-400/30" />
-                          <p className="font-black text-xs uppercase tracking-widest text-slate-400">Tidak Ada Data Ditolak (Pendataan)</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </>
-        ) : (
-          /* ===== TAB DINAS ===== */
-          <>
-            {/* Mobile Card List for Tab Dinas (md:hidden) */}
-            <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-              {actorsDinas && actorsDinas.length > 0 ? (
-                actorsDinas.map((actor, index) => (
-                  <div 
-                    key={actor.id}
-                    onClick={() => handleOpenDetail(actor)}
-                    className="p-4 space-y-3 bg-white dark:bg-slate-900 active:bg-orange-50/40 transition-colors cursor-pointer"
-                  >
-                    {/* Row 1: Nomor, Nama Usaha & Kategori */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2.5">
-                        <span className="w-6 h-6 rounded-lg bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 text-[11px] font-black inline-flex items-center justify-center shrink-0 mt-0.5">
-                          {index + 1}
-                        </span>
-                        <div>
-                          <span className="font-black text-slate-900 dark:text-white text-sm uppercase leading-tight block">
-                            {actor.businessName || "NAMA USAHA KOSONG"}
-                          </span>
-                          {actor.businessLocation && (
-                            <span className="text-[10px] text-slate-400 font-medium line-clamp-1">
-                              {actor.businessLocation}
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Usulan</span>
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase block truncate" title={actor.coordinator}>
+                              {normalizeCoordinator(actor.coordinator) || "-"}
                             </span>
-                          )}
+                          </div>
                         </div>
-                      </div>
-                      <span className={cn(
-                        "inline-flex items-center px-2.5 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border shrink-0",
-                        actor.businessCategory === 'Kuliner' 
-                          ? "border-amber-300 text-amber-800 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800" 
-                          : "border-blue-300 text-blue-800 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800"
-                      )}>
-                        {actor.businessCategory || "-"}
-                      </span>
-                    </div>
 
-                    {/* Row 2: Pelaku Usaha & Koordinator */}
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-850 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                      <div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Pelaku Usaha</span>
-                        <span className="font-black text-slate-800 dark:text-slate-200 uppercase truncate block">{actor.fullName}</span>
-                        <span className="text-[10px] text-slate-500 font-mono font-bold block">{actor.nik}</span>
+                        {(actor.businessLocation || actor.address) && (
+                          <div className="flex items-start gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 pt-0.5">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                            <span className="line-clamp-1 uppercase font-medium">
+                              {actor.businessLocation || actor.address}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Usulan Koordinator</span>
-                        <span className="font-bold text-slate-700 dark:text-slate-300 uppercase truncate block">{normalizeCoordinator(actor.coordinator) || "-"}</span>
-                      </div>
-                    </div>
 
-                    {/* Row 3: Alasan Cancel Dinas & Dibatalkan Oleh */}
-                    <div className="bg-orange-50/80 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-900/40 rounded-xl p-3 space-y-2">
-                      <div className="flex items-start gap-2.5">
-                        <ShieldAlert className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
-                        <div className="flex-1 space-y-0.5">
-                          <span className="text-[10px] font-black text-orange-700 dark:text-orange-300 uppercase tracking-wider block">Alasan Cancel Dinas:</span>
-                          <p className="text-xs italic font-bold text-orange-800 dark:text-orange-400 leading-snug">
-                            "{(actor as any).alasanCancelDinas || actor.keteranganDinas || "Tidak ada alasan spesifik."}"
+                      {/* Rejection Reason Hero Box */}
+                      <div className="bg-red-50/90 dark:bg-red-950/40 border border-red-200/80 dark:border-red-900/50 rounded-2xl p-3 flex items-start gap-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-red-100 dark:bg-red-900/60 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0 mt-0.5">
+                          <Ban className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-0.5">
+                          <span className="text-[10px] font-black text-red-700 dark:text-red-400 uppercase tracking-wider block">
+                            Alasan Penolakan:
+                          </span>
+                          <p className="text-xs italic font-bold text-red-900 dark:text-red-300 leading-snug line-clamp-2" title={actor.rejectionReason || actor.keteranganDinas}>
+                            "{actor.rejectionReason || actor.keteranganDinas || "Tidak ada alasan spesifik."}"
                           </p>
                         </div>
                       </div>
-                      {Boolean((actor as any).cancelDinasBy) && (
-                        <div className="text-[10px] text-slate-500 pt-2 border-t border-orange-200/60 dark:border-orange-900/40 flex items-center justify-between">
-                          <span className="font-semibold">Dibatalkan Oleh:</span>
-                          <span className="font-bold uppercase text-slate-800 dark:text-slate-200">
+                    </div>
+
+                    {/* Card Actions Footer */}
+                    <div className="relative z-10 flex items-center gap-2 pt-3 mt-3 border-t border-slate-100 dark:border-slate-800/80" onClick={(e) => e.stopPropagation()}>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1 h-9 text-xs font-bold border-blue-200 text-blue-700 bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300 rounded-xl gap-1.5 shadow-2xs cursor-pointer transition-all active:scale-95" 
+                        onClick={() => handlePrintActorForm(actor)} 
+                        title="Cetak Form Pembatalan"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Cetak</span>
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        className="flex-1 h-9 text-xs font-black bg-red-600 hover:bg-red-700 text-white rounded-xl gap-1.5 shadow-xs cursor-pointer transition-all active:scale-95" 
+                        onClick={() => handleOpenDetail(actor)} 
+                        title="Lihat Detail Lengkap"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Detail</span>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-16 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
+                <div className="w-16 h-16 rounded-3xl bg-red-50 dark:bg-red-950/50 flex items-center justify-center border border-red-200 dark:border-red-900/60">
+                  <Ban className="w-8 h-8 text-red-500/60" />
+                </div>
+                <div className="space-y-1">
+                  <p className="font-black text-sm uppercase tracking-wider text-slate-700 dark:text-slate-300">Tidak Ada Data Ditolak (Pendataan)</p>
+                  <p className="text-xs text-slate-400">Tidak ada pelaku usaha yang berstatus ditolak atau dibatalkan pendataan.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ===== TAB DINAS CARDS ===== */
+          <div className="p-4 sm:p-6">
+            {actorsDinas && actorsDinas.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
+                {actorsDinas.map((actor, index) => (
+                  <div
+                    key={actor.id}
+                    onClick={() => { setViewingActor(actor); setIsEditMode(false); }}
+                    className="group relative overflow-hidden border-2 border-orange-200/70 hover:border-orange-500/80 dark:border-orange-900/40 dark:hover:border-orange-700 rounded-3xl p-5 bg-white dark:bg-slate-900 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 flex flex-col justify-between cursor-pointer"
+                    style={{
+                      boxShadow: '0 4px 20px -2px rgba(234, 88, 12, 0.08)'
+                    }}
+                  >
+                    {/* Glowing Top Accent Stripe */}
+                    <div className="absolute top-0 left-0 right-0 h-1.5 transition-all duration-300 group-hover:h-2 z-10 bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500" />
+
+                    {/* Colorful Gradient Wash Overlay */}
+                    <div className="absolute inset-0 pointer-events-none transition-opacity duration-300 opacity-40 group-hover:opacity-100 bg-gradient-to-br from-transparent via-orange-500/[0.03] to-orange-500/[0.08]" />
+
+                    {/* Ambient Soft Glow Orb */}
+                    <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl transition-all duration-700 pointer-events-none opacity-15 group-hover:opacity-35 bg-orange-500" />
+
+                    {/* Decorative Watermark Icon (Bottom-Right) */}
+                    <div className="absolute -bottom-3 -right-3 pointer-events-none transition-all duration-500 ease-out opacity-[0.05] dark:opacity-[0.10] group-hover:opacity-[0.18] group-hover:scale-125 group-hover:-rotate-12 text-orange-600">
+                      <ShieldAlert className="w-28 h-28 stroke-[1.2]" />
+                    </div>
+
+                    {/* Content Layer */}
+                    <div className="relative z-10 space-y-3.5">
+                      {/* Top Row: Circular Index Badge, Category Badge */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 text-white font-black text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-xs transition-transform duration-300 group-hover:scale-105">
+                            {index + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block leading-none">
+                              Pelaku Usaha
+                            </span>
+                            <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white uppercase truncate tracking-tight mt-0.5">
+                              {actor.fullName || "-"}
+                            </h3>
+                          </div>
+                        </div>
+
+                        <span className={cn(
+                          "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border shadow-2xs shrink-0",
+                          actor.businessCategory === 'Kuliner' 
+                            ? "border-amber-300 text-amber-800 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800" 
+                            : "border-blue-300 text-blue-800 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800"
+                        )}>
+                          {actor.businessCategory || "-"}
+                        </span>
+                      </div>
+
+                      {/* Middle Section: Business Info Container */}
+                      <div className="bg-slate-50/90 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 rounded-2xl p-3.5 space-y-2 backdrop-blur-xs">
+                        <div className="space-y-0.5">
+                          <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Nama Usaha</span>
+                          <h4 className="font-black text-sm text-orange-700 dark:text-orange-400 uppercase tracking-tight line-clamp-1">
+                            {actor.businessName || "NAMA USAHA KOSONG"}
+                          </h4>
+                        </div>
+
+                        {/* NIK, Usulan & Dibatalkan Oleh */}
+                        <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">NIK</span>
+                            <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 tracking-tight block truncate">
+                              {actor.nik || "-"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Usulan</span>
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase block truncate" title={actor.coordinator}>
+                              {normalizeCoordinator(actor.coordinator) || "-"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800 text-[11px]">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Dibatalkan Oleh:</span>
+                          <span className="font-bold text-slate-700 dark:text-slate-300 uppercase truncate">
                             {(() => {
                               const raw = ((actor as any).cancelDinasBy || "").trim()
                               if (!raw || raw === '-') return "-"
@@ -853,187 +816,90 @@ function RejectedContent() {
                             })()}
                           </span>
                         </div>
-                      )}
+
+                        {(actor.businessLocation || actor.address) && (
+                          <div className="flex items-start gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 pt-0.5">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                            <span className="line-clamp-1 uppercase font-medium">
+                              {actor.businessLocation || actor.address}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Cancel Dinas Reason Hero Box */}
+                      <div className="bg-orange-50/90 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-900/50 rounded-2xl p-3 flex items-start gap-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-orange-100 dark:bg-orange-900/60 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0 mt-0.5">
+                          <ShieldAlert className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-0.5">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[10px] font-black text-orange-700 dark:text-orange-400 uppercase tracking-wider block">
+                              Alasan Cancel Dinas:
+                            </span>
+                            {Boolean((actor as any).cancelDinasPhotoUrl || (actor as any).fotoCancelDinas) && (
+                              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-900/60 px-1.5 py-0.5 rounded">
+                                <Camera className="w-2.5 h-2.5" /> Ada Foto
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs italic font-bold text-orange-900 dark:text-orange-300 leading-snug line-clamp-2" title={(actor as any).alasanCancelDinas || actor.keteranganDinas}>
+                            "{(actor as any).alasanCancelDinas || actor.keteranganDinas || "Tidak ada alasan spesifik."}"
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Row 4: Action Buttons */}
-                    <div className="flex items-center justify-end gap-2 pt-1 flex-wrap" onClick={(e) => e.stopPropagation()}>
+                    {/* Card Actions Footer */}
+                    <div className="relative z-10 flex items-center gap-2 pt-3 mt-3 border-t border-slate-100 dark:border-slate-800/80" onClick={(e) => e.stopPropagation()}>
                       {(isAdmin || isDinas) && (
                         <Button 
                           size="sm" 
                           variant="outline" 
-                          className="h-8.5 text-xs font-bold border-emerald-300 text-emerald-700 hover:bg-emerald-50 rounded-xl gap-1.5 cursor-pointer"
-                          onClick={() => handleRestoreDinasToSurvey(actor)}
+                          className="h-9 px-2.5 text-xs font-bold border-emerald-300 text-emerald-700 bg-emerald-50/70 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300 rounded-xl gap-1 shadow-2xs cursor-pointer transition-all active:scale-95" 
+                          onClick={() => handleRestoreDinasToSurvey(actor)} 
                           title="Kembalikan ke Petugas Survey"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
-                          <span>Kembalikan</span>
+                          <span>Survey</span>
                         </Button>
                       )}
                       <Button 
                         size="sm" 
                         variant="outline" 
-                        className="h-8.5 text-xs font-bold border-orange-300 text-orange-700 hover:bg-orange-50 rounded-xl gap-1.5 cursor-pointer"
-                        onClick={() => handlePrintCancelDinas(actor)}
+                        className="flex-1 h-9 text-xs font-bold border-orange-300 text-orange-700 bg-orange-50/70 hover:bg-orange-100 dark:bg-orange-950/40 dark:border-orange-800 dark:text-orange-300 rounded-xl gap-1.5 shadow-2xs cursor-pointer transition-all active:scale-95" 
+                        onClick={() => handlePrintCancelDinas(actor)} 
+                        title="Cetak Form Pembatalan Dinas"
                         disabled={isGeneratingPdf}
                       >
                         <Printer className="w-3.5 h-3.5" />
-                        <span>Cetak Form</span>
+                        <span>Cetak</span>
                       </Button>
                       <Button 
                         size="sm" 
-                        className="h-8.5 text-xs font-black bg-orange-600 hover:bg-orange-700 text-white rounded-xl gap-1.5 shadow-2xs cursor-pointer"
-                        onClick={() => { setViewingActor(actor); setIsEditMode(false); }}
+                        className="flex-1 h-9 text-xs font-black bg-orange-600 hover:bg-orange-700 text-white rounded-xl gap-1.5 shadow-xs cursor-pointer transition-all active:scale-95" 
+                        onClick={() => { setViewingActor(actor); setIsEditMode(false); }} 
+                        title="Lihat Detail Lengkap"
                       >
                         <Eye className="w-3.5 h-3.5" />
-                        <span>Lihat Detail</span>
+                        <span>Detail</span>
                       </Button>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="p-12 text-center text-muted-foreground flex flex-col items-center gap-3">
-                  <ShieldAlert className="w-12 h-12 text-orange-400/40" />
-                  <p className="text-xs font-black uppercase tracking-wider text-slate-500">Tidak Ada Data Cancel dari Dinas</p>
+                ))}
+              </div>
+            ) : (
+              <div className="p-16 text-center text-muted-foreground flex flex-col items-center justify-center gap-3">
+                <div className="w-16 h-16 rounded-3xl bg-orange-50 dark:bg-orange-950/50 flex items-center justify-center border border-orange-200 dark:border-orange-900/60">
+                  <ShieldAlert className="w-8 h-8 text-orange-500/60" />
                 </div>
-              )}
-            </div>
-
-            {/* Desktop Table View (hidden md:block) */}
-            <div className="hidden md:block overflow-x-auto">
-              <Table>
-                <TableHeader className="bg-slate-50/90 dark:bg-slate-850/90 border-b border-slate-200 dark:border-slate-800">
-                  <TableRow className="hover:bg-transparent border-none">
-                    <TableHead className="w-[60px] font-black text-slate-600 dark:text-slate-300 text-center uppercase text-[11px] py-3.5">#</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] py-3.5">Nama Usaha</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] py-3.5">Pelaku Usaha</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] text-center py-3.5">Kategori</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] py-3.5">USULAN</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] py-3.5">Alasan Cancel Dinas</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] py-3.5">Dibatalkan Oleh</TableHead>
-                    <TableHead className="font-black text-slate-700 dark:text-slate-200 uppercase text-[11px] text-right py-3.5 pr-6">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                  {actorsDinas && actorsDinas.length > 0 ? (
-                    actorsDinas.map((actor, index) => (
-                      <TableRow
-                        key={actor.id}
-                        className="cursor-pointer hover:bg-orange-50/30 dark:hover:bg-orange-950/20 transition-colors group"
-                        onClick={() => handleOpenDetail(actor)}
-                      >
-                        <TableCell className="text-center py-3.5">
-                          <span className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black text-xs inline-flex items-center justify-center">
-                            {index + 1}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-3.5">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-black text-slate-900 dark:text-white uppercase text-sm leading-snug tracking-tight">
-                              {actor.businessName || "NAMA USAHA KOSONG"}
-                            </span>
-                            {actor.businessLocation && (
-                              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 truncate max-w-[220px]">
-                                {actor.businessLocation}
-                              </span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-3.5">
-                          <div className="flex flex-col gap-0.5">
-                            <span className="font-bold text-slate-800 dark:text-slate-200 text-xs uppercase">
-                              {actor.fullName}
-                            </span>
-                            <span className="text-[11px] font-bold text-slate-500 font-mono tracking-wide">
-                              {actor.nik || "-"}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center py-3.5">
-                          <span className={cn(
-                            "inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border shadow-2xs",
-                            actor.businessCategory === 'Kuliner' 
-                              ? "border-amber-300 text-amber-800 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800" 
-                              : "border-blue-300 text-blue-800 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800"
-                          )}>
-                            {actor.businessCategory || "-"}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-3.5">
-                          <span className="inline-flex items-center text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
-                            {normalizeCoordinator(actor.coordinator) || "-"}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-3.5">
-                          <div className="flex items-start gap-1.5 p-2 rounded-xl bg-orange-50/80 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-900/40 max-w-[260px]">
-                            <ShieldAlert className="w-3.5 h-3.5 text-orange-600 shrink-0 mt-0.5" />
-                            <p className="text-xs font-bold text-orange-800 dark:text-orange-300 leading-snug line-clamp-2 italic" title={(actor as any).alasanCancelDinas || actor.keteranganDinas}>
-                              "{(actor as any).alasanCancelDinas || actor.keteranganDinas || "Tidak ada alasan spesifik."}"
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-3.5">
-                          <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                            {(() => {
-                              const raw = ((actor as any).cancelDinasBy || "").trim()
-                              if (!raw || raw === '-') return "-"
-                              if (!raw.includes('@')) return raw
-                              return raw.split('@')[0].replace(/_/g, ' ').toUpperCase()
-                            })()}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right py-3.5 pr-6" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex justify-end items-center gap-1.5">
-                            {(isAdmin || isDinas) && (
-                              <Button 
-                                size="sm"
-                                variant="outline" 
-                                className="h-8 px-2.5 text-xs font-bold border-emerald-300 text-emerald-700 bg-emerald-50/70 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300 rounded-xl gap-1.5 cursor-pointer shadow-2xs" 
-                                onClick={() => handleRestoreDinasToSurvey(actor)} 
-                                title="Kembalikan ke Petugas Survey"
-                              >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                                <span className="hidden xl:inline">Kembalikan</span>
-                              </Button>
-                            )}
-                            <Button 
-                              size="sm"
-                              variant="outline" 
-                              className="h-8 px-2.5 text-xs font-bold border-orange-300 text-orange-700 bg-orange-50/70 hover:bg-orange-100 dark:bg-orange-950/40 dark:border-orange-800 dark:text-orange-300 rounded-xl gap-1.5 cursor-pointer shadow-2xs" 
-                              onClick={() => handlePrintCancelDinas(actor)} 
-                              title="Cetak Form Pembatalan Dinas (A4)"
-                              disabled={isGeneratingPdf}
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                              <span className="hidden xl:inline">Cetak</span>
-                            </Button>
-                            <Button 
-                              size="sm"
-                              className="h-8 px-3 text-xs font-black bg-orange-600 hover:bg-orange-700 text-white rounded-xl gap-1.5 cursor-pointer shadow-2xs" 
-                              onClick={() => { setViewingActor(actor); setIsEditMode(false); }}
-                              title="Lihat Detail Lengkap"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                              <span>Detail</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} className="h-48 text-center">
-                        <div className="flex flex-col items-center justify-center text-muted-foreground gap-3">
-                          <ShieldAlert className="w-12 h-12 text-orange-400/30" />
-                          <p className="font-black text-xs uppercase tracking-widest text-slate-400">Tidak Ada Data Cancel dari Dinas</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </>
+                <div className="space-y-1">
+                  <p className="font-black text-sm uppercase tracking-wider text-slate-700 dark:text-slate-300">Tidak Ada Data Cancel dari Dinas</p>
+                  <p className="text-xs text-slate-400">Tidak ada pelaku usaha yang berstatus dibatalkan oleh Dinas.</p>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
