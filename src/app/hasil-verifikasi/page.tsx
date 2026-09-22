@@ -39,7 +39,13 @@ import {
   Users,
   ChevronRight,
   X,
-  ShieldCheck
+  ShieldCheck,
+  Copy,
+  Check,
+  Phone,
+  Store,
+  ExternalLink,
+  Calendar
 } from "lucide-react"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { BusinessActor } from "../lib/types"
@@ -74,6 +80,21 @@ function HasilVerifikasiContent() {
   const [pageLimit, setPageLimit] = useState(50)
 
   const [viewingActor, setViewingActor] = useState<BusinessActor | null>(null)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
+
+  const handleCopy = (text: string, label: string) => {
+    if (!text) return
+    navigator.clipboard.writeText(text)
+    setCopiedKey(label)
+    toast({
+      title: "Tersalin ke Clipboard",
+      description: `${label}: ${text}`,
+    })
+    setTimeout(() => {
+      setCopiedKey(null)
+    }, 2000)
+  }
+
   const [inputtingBankActor, setInputtingBankActor] = useState<BusinessActor | null>(null)
   const [isSubmittingBank, setIsSubmittingBank] = useState(false)
 
@@ -999,165 +1020,427 @@ function HasilVerifikasiContent() {
 
       {/* ─── MODAL DETAIL PELAKU USAHA ─── */}
       <Dialog open={!!viewingActor} onOpenChange={(open) => !open && setViewingActor(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto p-0 border-0 rounded-2xl shadow-2xl bg-white dark:bg-slate-950 overflow-hidden">
           {viewingActor && (
             <>
-              <DialogHeader>
-                <DialogTitle className="text-xl md:text-2xl font-black text-primary uppercase flex items-center gap-2">
-                  <FileText className="w-6 h-6" /> Data Hasil Verifikasi
-                </DialogTitle>
-                <DialogDescription className="sr-only">Rincian data pelaku usaha purna verifikasi dinas.</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-6 py-4">
-                {/* Hasil Card */}
-                <section>
-                  <Card className="border-emerald-200 bg-emerald-50/50">
-                    <CardContent className="p-4">
-                      <h3 className="font-black text-sm uppercase mb-2 text-emerald-700">
-                        Keputusan Dinas: {viewingActor.hasilVerifikasiDinas || "Lolos"}
-                      </h3>
-                      <div className="space-y-1 mt-3">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Keterangan / Alasan</p>
-                        <p className="text-sm font-medium">{viewingActor.keteranganDinas || (viewingActor as any).surveyData?.hasilSurvey || "Data lolos verifikasi dinas."}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </section>
+              {/* Top Accent Stripe */}
+              <div className="h-1.5 w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
 
-                <section className="space-y-4">
-                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
-                    {(() => {
-                      const parsed = parsePobDob(viewingActor.pobDob || "")
-                      return [
-                        { label: "Nama Lengkap", value: viewingActor.fullName },
-                        { label: "NIK", value: viewingActor.nik },
-                        { label: "Nomor KK", value: viewingActor.noKK },
-                        { label: "Jenis Kelamin", value: viewingActor.gender },
-                        { label: "Tempat Lahir", value: viewingActor.pob || parsed.pob || "-" },
-                        { label: "Tanggal Lahir", value: viewingActor.dob || parsed.dob || "-" },
-                        { label: "Nomor HP", value: viewingActor.phone, isPhone: true }
-                      ]
-                    })().map((item, i) => (
-                      <div key={i} className="space-y-1">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                        {(item as any).isPhone && item.value ? (
-                          <a
-                            href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs font-bold text-green-600 hover:text-green-700 hover:underline flex items-center gap-1"
-                          >
-                            {item.value}
-                          </a>
-                        ) : (
-                          <p className="text-xs font-bold">{item.value || "-"}</p>
-                        )}
-                      </div>
-                    ))}
+              {/* Dialog Header */}
+              <div className="p-5 sm:p-6 pb-4 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                    <FileText className="w-5 h-5" />
                   </div>
-                </section>
+                  <div>
+                    <DialogTitle className="text-lg sm:text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                      Data Hasil Verifikasi
+                    </DialogTitle>
+                    <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+                      Rincian lengkap data pelaku usaha yang telah lolos verifikasi dinas
+                    </DialogDescription>
+                  </div>
+                </div>
 
-                <section className="space-y-4">
-                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Alamat & Domisili</div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
-                    {[
-                      { label: "Kecamatan", value: viewingActor.kecamatan },
-                      { label: "Kelurahan", value: viewingActor.kelurahan },
-                      { label: "RT/RW", value: viewingActor.rtRw },
-                      { label: "Alamat Lengkap", value: viewingActor.address, fullWidth: true }
-                    ].map((item, i) => (
-                      <div key={i} className={item.fullWidth ? "md:col-span-3 space-y-1" : "space-y-1"}>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                        <p className="text-xs font-bold">{item.value || "-"}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Lolos Verifikasi Dinas
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                    {viewingActor.businessCategory || "UMKM"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-5 sm:p-6 space-y-5">
+                {/* HERO: KEPUTUSAN DINAS */}
+                <section className="relative overflow-hidden rounded-2xl p-5 border-2 shadow-xs transition-all bg-gradient-to-br from-emerald-50/90 via-teal-50/30 to-white dark:from-emerald-950/30 dark:via-slate-900 dark:to-slate-950 border-emerald-200 dark:border-emerald-800/60">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center font-bold shadow-xs shrink-0 bg-emerald-500 text-white">
+                        <ShieldCheck className="w-4 h-4" />
                       </div>
-                    ))}
-                  </div>
-                </section>
-
-                <section className="space-y-4">
-                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
-                    {(() => {
-                      const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim());
-                      const coordPhone = found?.phone || found?.noHp || found?.hp || "";
-
-                      const getWaLink = (phoneStr: string) => {
-                        if (!phoneStr) return "#";
-                        let clean = phoneStr.replace(/\D/g, "");
-                        if (clean.startsWith("0")) clean = "62" + clean;
-                        else if (!clean.startsWith("62")) clean = "62" + clean;
-                        return `https://wa.me/${clean}`;
-                      };
-
-                      const isBelumAdaPetugas = !(viewingActor as any).petugasSurvey || (viewingActor as any).petugasSurvey.trim() === "" || (viewingActor as any).petugasSurvey.trim() === "-" || (viewingActor as any).petugasSurvey.toUpperCase().trim() === "BELUM ADA";
-
-                      return [
-                        { label: "Usaha", value: viewingActor.businessName },
-                        { label: "Kategori Usaha", value: viewingActor.businessCategory },
-                        { label: "Lokasi Usaha", value: viewingActor.businessLocation },
-                        { label: "USULAN", value: viewingActor.coordinator },
-                        { label: "NO. HP USULAN", value: coordPhone, isPhone: true },
-                        { 
-                          label: "PETUGAS SURVEY", 
-                          value: (viewingActor as any).petugasSurvey,
-                          isPetugasField: true,
-                          isBelumAda: isBelumAdaPetugas
-                        }
-                      ].map((item: any, i: number) => (
-                        <div key={i} className="space-y-1">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                          {item.isPetugasField ? (
-                            <div>
-                              {item.isBelumAda ? (
-                                <div className="inline-flex items-center gap-1.5 text-xs font-black text-rose-500 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-rose-200 dark:border-rose-900">
-                                  <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
-                                  <span>BELUM ADA</span>
-                                </div>
-                              ) : (
-                                <div className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                                  <span>{item.value}</span>
-                                </div>
-                              )}
-                            </div>
-                          ) : item.isPhone && item.value ? (
-                            <a
-                              href={getWaLink(item.value)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 shadow-sm transition-all active:scale-95 w-fit"
-                              title="Klik untuk membuka obrolan WhatsApp"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-600/20" />
-                              <span>{item.value}</span>
-                            </a>
-                          ) : (
-                            <p className="text-xs font-bold">{item.value || "-"}</p>
-                          )}
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </section>
-
-                {/* ─── HASIL SURVEY SECTION ─── */}
-                {(viewingActor as any).surveyData && (
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1">
-                      <ClipboardList className="w-4 h-4" /> Hasil Survey
+                      <div>
+                        <span className="text-xs font-black uppercase tracking-wider block text-emerald-700 dark:text-emerald-400">
+                          Keputusan Dinas: {viewingActor.hasilVerifikasiDinas || "Lolos"}
+                        </span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                          Hasil telaah berkas dan verifikasi lapangan dinas
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Kesimpulan / Hasil Survey */}
+                    {(viewingActor.berkasDinasVerifiedBy || viewingActor.verifikatorDinas) && (
+                      <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border shadow-2xs bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800">
+                        Diverifikasi oleh: {viewingActor.berkasDinasVerifiedBy || viewingActor.verifikatorDinas}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="p-4 rounded-xl border backdrop-blur-xs bg-white/90 dark:bg-slate-900/90 border-emerald-100 dark:border-emerald-900/40">
+                    <p className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-1">
+                      Keterangan / Alasan Verifikasi:
+                    </p>
+                    <p className="text-sm sm:text-base font-bold leading-relaxed italic text-emerald-950 dark:text-emerald-100">
+                      "{viewingActor.keteranganDinas || (viewingActor as any).surveyData?.hasilSurvey || "Data lolos verifikasi dinas dan memenuhi persyaratan bantuan UMKM."}"
+                    </p>
+                  </div>
+                </section>
+
+                {/* INFORMASI PRIBADI & IDENTITAS */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-xs uppercase tracking-wider pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                    <div className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                      <User className="w-3.5 h-3.5" />
+                    </div>
+                    <span>Informasi Pribadi & Identitas</span>
+                  </div>
+                  {(() => {
+                    const parsed = parsePobDob(viewingActor.pobDob || "")
+                    const pob = viewingActor.pob || parsed.pob || ""
+                    const dob = viewingActor.dob || parsed.dob || ""
+                    const actorAge = calculateAge(dob || extractDobFromNik(viewingActor.nik || ""))
+                    const isFemale = normalizeGender(viewingActor.gender) === 'Perempuan'
+                    const genderText = normalizeGender(viewingActor.gender) || '-'
+                    const waNumber = viewingActor.phone ? String(viewingActor.phone).replace(/\D/g, "").replace(/^0/, "62") : ""
+
+                    return (
+                      <div className="space-y-3">
+                        {/* Profile Header Bar */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "w-11 h-11 rounded-xl flex items-center justify-center font-black text-base text-white shadow-xs shrink-0",
+                              isFemale ? "bg-gradient-to-br from-rose-500 to-pink-600" : "bg-gradient-to-br from-blue-500 to-indigo-600"
+                            )}>
+                              {(viewingActor.fullName || "U").charAt(0).toUpperCase()}
+                            </div>
+                            <div className="space-y-1">
+                              <h3 className="text-base font-black uppercase tracking-tight leading-tight" style={{ color: isFemale ? '#e11d48' : '#0284c7' }}>
+                                {viewingActor.fullName || "-"}
+                              </h3>
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                                  {genderText}
+                                </span>
+                                {actorAge ? (
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                                    {actorAge} Tahun
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Phone / WA Action */}
+                          {waNumber ? (
+                            <a
+                              href={`https://wa.me/${waNumber}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold shadow-xs transition-colors"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              <span>Hubungi WhatsApp</span>
+                              <span className="text-[10px] opacity-90">({viewingActor.phone})</span>
+                            </a>
+                          ) : (
+                            <span className="text-xs text-slate-400 font-medium">No. HP tidak tersedia</span>
+                          )}
+                        </div>
+
+                        {/* Cards for NIK, KK, TTL */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {/* NIK Card */}
+                          <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 relative group">
+                            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
+                              Nomor Induk Kependudukan (NIK)
+                            </span>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-mono font-bold text-sm text-slate-900 dark:text-white tracking-wider">
+                                {viewingActor.nik || "-"}
+                              </span>
+                              {viewingActor.nik && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopy(viewingActor.nik, "NIK")}
+                                  className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                  title="Salin NIK"
+                                >
+                                  {copiedKey === "NIK" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* KK Card */}
+                          <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 relative group">
+                            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
+                              Nomor Kartu Keluarga (KK)
+                            </span>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-mono font-bold text-sm text-slate-900 dark:text-white tracking-wider">
+                                {viewingActor.noKK || "-"}
+                              </span>
+                              {viewingActor.noKK && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopy(viewingActor.noKK, "KK")}
+                                  className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                  title="Salin No KK"
+                                >
+                                  {copiedKey === "KK" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* TTL Card */}
+                          <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-1">
+                              Tempat & Tanggal Lahir
+                            </span>
+                            <div className="flex items-center gap-1.5 text-slate-900 dark:text-white text-xs font-bold">
+                              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <span>{[pob, dob].filter(Boolean).join(", ") || "-"}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </section>
+
+                {/* ALAMAT & DOMISILI */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-xs uppercase tracking-wider pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                    <div className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <MapPin className="w-3.5 h-3.5" />
+                    </div>
+                    <span>Alamat & Domisili</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Region Badges */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-0.5">Kecamatan</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white uppercase">{viewingActor.kecamatan || "-"}</span>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-0.5">Kelurahan</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white uppercase">{viewingActor.kelurahan || "-"}</span>
+                      </div>
+                      <div className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
+                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-0.5">RT / RW</span>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">{viewingActor.rtRw || "-"}</span>
+                      </div>
+                    </div>
+
+                    {/* Full Address Card */}
+                    <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Alamat Lengkap</span>
+                        <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 uppercase leading-relaxed">
+                          {viewingActor.address || "-"}
+                        </p>
+                      </div>
+                      {viewingActor.address && (
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(viewingActor.address, "Alamat")}
+                          className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
+                          title="Salin Alamat"
+                        >
+                          {copiedKey === "Alamat" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </section>
+
+                {/* INFORMASI USAHA & PENGUSUL */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-xs uppercase tracking-wider pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                    <div className="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                      <Store className="w-3.5 h-3.5" />
+                    </div>
+                    <span>Informasi Usaha & Pengusul</span>
+                  </div>
+
+                  {(() => {
+                    const found = kuotaData?.find((q: any) => (q.name || q.coordinator || "").toUpperCase().trim() === (viewingActor.coordinator || "").toUpperCase().trim())
+                    const coordPhone = found?.phone || found?.noHp || found?.hp || ""
+                    const coordWaLink = coordPhone ? `https://wa.me/${coordPhone.replace(/\D/g, "").replace(/^0/, "62")}` : ""
+                    const isBelumAdaPetugas = !(viewingActor as any).petugasSurvey || (viewingActor as any).petugasSurvey.trim() === "" || (viewingActor as any).petugasSurvey.trim() === "-" || (viewingActor as any).petugasSurvey.toUpperCase().trim() === "BELUM ADA"
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* Business Name Card */}
+                        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Nama Usaha</span>
+                          <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase leading-tight">
+                            {viewingActor.businessName || "-"}
+                          </h4>
+                        </div>
+
+                        {/* Category Card */}
+                        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Kategori Usaha</span>
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black uppercase bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                            {viewingActor.businessCategory || "Bukan Kuliner"}
+                          </div>
+                        </div>
+
+                        {/* Business Location Card */}
+                        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Lokasi Usaha</span>
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase leading-snug">
+                            {viewingActor.businessLocation || "-"}
+                          </p>
+                        </div>
+
+                        {/* Coordinator / Usulan Card */}
+                        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Koordinator / Pengusul</span>
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-xs font-black text-slate-900 dark:text-white uppercase">
+                              {viewingActor.coordinator || "-"}
+                            </span>
+                            {coordWaLink && (
+                              <a
+                                href={coordWaLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:text-emerald-800 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800 shadow-2xs transition-colors"
+                                title="WhatsApp Koordinator"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5" />
+                                <span>{coordPhone}</span>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Surveyor Badge Card */}
+                        <div className="md:col-span-2 p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Petugas Survey Lapangan</span>
+                          {isBelumAdaPetugas ? (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-black text-rose-600 uppercase bg-rose-50 dark:bg-rose-950/40 px-3 py-1 rounded-lg border border-rose-200 dark:border-rose-900">
+                              <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                              BELUM ADA
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-3 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                              {(viewingActor as any).petugasSurvey}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </section>
+
+                {/* INFORMASI REKENING BANK */}
+                {viewingActor.bankNumber || viewingActor.bankName ? (
+                  <section className="space-y-3">
+                    <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-xs uppercase tracking-wider pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                      <div className="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <CreditCard className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Informasi Rekening Bank</span>
+                    </div>
+                    <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500 text-white font-black text-xs flex items-center justify-center shadow-xs shrink-0">
+                          {viewingActor.bankName || "BANK"}
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-sm sm:text-base text-slate-900 dark:text-white tracking-wider">
+                              {viewingActor.bankNumber || "-"}
+                            </span>
+                            {viewingActor.bankNumber && (
+                              <button
+                                type="button"
+                                onClick={() => handleCopy(viewingActor.bankNumber!, "No. Rekening")}
+                                className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500"
+                                title="Salin No. Rekening"
+                              >
+                                {copiedKey === "No. Rekening" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase">
+                            a.n. {viewingActor.bankOwner || viewingActor.fullName}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const actor = viewingActor
+                          setViewingActor(null)
+                          setInputtingBankActor(actor)
+                        }}
+                        className="text-xs font-bold border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-400"
+                      >
+                        <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Ubah Rekening
+                      </Button>
+                    </div>
+                  </section>
+                ) : (
+                  <section className="space-y-3">
+                    <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-xs uppercase tracking-wider pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                      <div className="w-6 h-6 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <CreditCard className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Informasi Rekening Bank</span>
+                    </div>
+                    <div className="p-4 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-dashed border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                      <div className="space-y-0.5 text-center sm:text-left">
+                        <p className="text-xs font-bold text-amber-900 dark:text-amber-300">Belum ada nomor rekening bank tersimpan</p>
+                        <p className="text-[11px] text-amber-700 dark:text-amber-400">Silakan input data rekening untuk keperluan pencairan bantuan.</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const actor = viewingActor
+                          setViewingActor(null)
+                          setInputtingBankActor(actor)
+                        }}
+                        className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-xs"
+                      >
+                        <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Input Rekening
+                      </Button>
+                    </div>
+                  </section>
+                )}
+
+                {/* HASIL SURVEY LAPANGAN */}
+                {(viewingActor as any).surveyData && (
+                  <section className="space-y-3">
+                    <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-xs uppercase tracking-wider pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                        <ClipboardList className="w-3.5 h-3.5" />
+                      </div>
+                      <span>Hasil Survey Lapangan</span>
+                    </div>
+
+                    {/* Kesimpulan */}
                     {(viewingActor as any).surveyData?.hasilSurvey && (
-                      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                        <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Kesimpulan / Hasil Survey</p>
-                        <p className="text-sm font-semibold text-blue-900 break-words leading-relaxed">{(viewingActor as any).surveyData.hasilSurvey}</p>
+                      <div className="p-4 rounded-xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/60 space-y-1">
+                        <p className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-wider">Kesimpulan / Catatan Petugas Survey</p>
+                        <p className="text-xs sm:text-sm font-semibold text-blue-950 dark:text-blue-100 break-words leading-relaxed italic">
+                          "{(viewingActor as any).surveyData.hasilSurvey}"
+                        </p>
                       </div>
                     )}
 
-                    {/* Grid data survey */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
+                    {/* Grid survey metrics */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                       {[
                         { label: "Status Perkawinan", value: (viewingActor as any).surveyData?.status },
                         { label: "Email", value: (viewingActor as any).surveyData?.email },
@@ -1167,25 +1450,23 @@ function HasilVerifikasiContent() {
                         { label: "Tahun Berdiri", value: (viewingActor as any).surveyData?.tahunBerdiri },
                         { label: "Modal Usaha", value: (viewingActor as any).surveyData?.modalUsaha },
                         { label: "Omset per Bulan", value: (viewingActor as any).surveyData?.omset },
-                        { label: "Rencana Penggunaan Modal", value: (viewingActor as any).surveyData?.rencanaPenggunaan },
+                        { label: "Rencana Penggunaan", value: (viewingActor as any).surveyData?.rencanaPenggunaan },
                         { label: "Tanggal Survey", value: (viewingActor as any).surveyData?.tanggalSurvey },
-                      ].map((item, i) => (
-                        item.value ? (
-                          <div key={i} className="space-y-1">
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
-                            <p className="text-xs font-bold">{item.value}</p>
-                          </div>
-                        ) : null
+                      ].filter(i => i.value).map((item, i) => (
+                        <div key={i} className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-0.5">
+                          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">{item.label}</span>
+                          <span className="text-xs font-bold text-slate-900 dark:text-white block">{item.value}</span>
+                        </div>
                       ))}
                     </div>
 
-                    {/* Izin Usaha */}
+                    {/* Izin Usaha chips */}
                     {Array.isArray((viewingActor as any).surveyData?.izin) && (viewingActor as any).surveyData.izin.length > 0 && (
-                      <div className="bg-muted/30 p-4 rounded-xl border space-y-2">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Izin Usaha</p>
-                        <div className="flex flex-wrap gap-2">
+                      <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                        <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Izin Usaha Dimiliki</span>
+                        <div className="flex flex-wrap gap-1.5">
                           {(viewingActor as any).surveyData.izin.map((iz: string, idx: number) => (
-                            <span key={idx} className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                            <span key={idx} className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                               {iz}
                             </span>
                           ))}
@@ -1193,84 +1474,76 @@ function HasilVerifikasiContent() {
                       </div>
                     )}
 
-                    {/* DTKS */}
-                    {(viewingActor as any).surveyData?.dtks !== undefined && (
-                      <div className="bg-muted/30 p-4 rounded-xl border space-y-2">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Status DTKS</p>
-                        <div className="flex items-center gap-2">
-                          {(viewingActor as any).surveyData.dtks?.masuk ? (
-                            <>
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                                Terdaftar DTKS
-                                {(viewingActor as any).surveyData.dtks?.jenis ? ` — ${(viewingActor as any).surveyData.dtks.jenis}` : ""}
-                              </span>
-                            </>
+                    {/* DTKS & Hibah cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* DTKS */}
+                      {(viewingActor as any).surveyData?.dtks !== undefined && (
+                        <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-1.5">
+                          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Status DTKS</span>
+                          <div className="flex items-center gap-2">
+                            {(viewingActor as any).surveyData.dtks?.masuk ? (
+                              <>
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                                  Terdaftar DTKS {(viewingActor as any).surveyData.dtks?.jenis ? `(${(viewingActor as any).surveyData.dtks.jenis})` : ""}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <XCircle className="w-4 h-4 text-slate-400 shrink-0" />
+                                <span className="text-xs font-bold text-slate-500">Tidak Terdaftar DTKS</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Hibah */}
+                      {(viewingActor as any).surveyData?.hibah !== undefined && (
+                        <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-1.5">
+                          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Riwayat Bantuan / Hibah</span>
+                          {(viewingActor as any).surveyData.hibah?.pernah ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-bold text-xs">
+                                <CheckCircle2 className="w-4 h-4 text-amber-500 shrink-0" />
+                                <span>Pernah menerima bantuan</span>
+                              </div>
+                              <div className="text-[11px] text-slate-600 dark:text-slate-300 pl-6 space-x-2">
+                                {(viewingActor as any).surveyData.hibah?.dariMana && <span>Dari: <b>{(viewingActor as any).surveyData.hibah.dariMana}</b></span>}
+                                {(viewingActor as any).surveyData.hibah?.tahun && <span>Tahun: <b>{(viewingActor as any).surveyData.hibah.tahun}</b></span>}
+                              </div>
+                            </div>
                           ) : (
-                            <>
-                              <XCircle className="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                              <span className="text-xs font-bold text-slate-500 dark:text-slate-300">Tidak Terdaftar DTKS</span>
-                            </>
+                            <div className="flex items-center gap-2 text-slate-500 font-bold text-xs">
+                              <XCircle className="w-4 h-4 text-slate-400 shrink-0" />
+                              <span>Belum pernah menerima bantuan</span>
+                            </div>
                           )}
                         </div>
-                      </div>
-                    )}
-
-                    {/* Pernah Hibah */}
-                    {(viewingActor as any).surveyData?.hibah !== undefined && (
-                      <div className="bg-muted/30 p-4 rounded-xl border space-y-2">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Riwayat Bantuan / Hibah</p>
-                        {(viewingActor as any).surveyData.hibah?.pernah ? (
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-amber-500 dark:text-amber-400" />
-                              <span className="text-xs font-bold text-amber-700 dark:text-amber-300">Pernah menerima bantuan</span>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2 pl-6">
-                              {(viewingActor as any).surveyData.hibah?.dariMana && (
-                                <div className="space-y-0.5">
-                                  <p className="text-[9px] text-muted-foreground font-bold uppercase">Dari</p>
-                                  <p className="text-xs font-bold">{(viewingActor as any).surveyData.hibah.dariMana}</p>
-                                </div>
-                              )}
-                              {(viewingActor as any).surveyData.hibah?.tahun && (
-                                <div className="space-y-0.5">
-                                  <p className="text-[9px] text-muted-foreground font-bold uppercase">Tahun</p>
-                                  <p className="text-xs font-bold">{(viewingActor as any).surveyData.hibah.tahun}</p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <XCircle className="w-4 h-4 text-slate-400" />
-                            <span className="text-xs font-bold text-slate-500">Belum pernah menerima bantuan</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     {/* Foto Survey */}
                     {Boolean(
                       (viewingActor as any).surveyData?.fotoSurveyUrl &&
                       (viewingActor as any).surveyData.fotoSurveyUrl !== (viewingActor as any).comparisonPhotoUrl
                     ) && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Camera className="w-3.5 h-3.5 text-primary" />
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Foto Survey Lapangan</p>
+                      <div className="p-3.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-2">
+                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                          <Camera className="w-4 h-4 text-primary" />
+                          <span className="text-[10px] font-black uppercase tracking-wider">Dokumentasi Lapangan Petugas Survey</span>
                         </div>
                         <a
                           href={(viewingActor as any).surveyData.fotoSurveyUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="block"
+                          className="block overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 w-fit max-w-sm hover:opacity-95 transition-opacity"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={(viewingActor as any).surveyData.fotoSurveyUrl}
                             alt="Foto Survey"
-                            className="w-full max-w-xs rounded-xl border shadow-md object-cover hover:opacity-90 transition-opacity cursor-zoom-in"
+                            className="w-full h-48 object-cover cursor-zoom-in"
                           />
                         </a>
                       </div>
@@ -1280,23 +1553,23 @@ function HasilVerifikasiContent() {
                     {((viewingActor as any).surveyData?.pejabatData || (viewingActor as any).pejabatData) && (() => {
                       const pejabat = (viewingActor as any).surveyData?.pejabatData || (viewingActor as any).pejabatData
                       return (
-                        <div className="bg-slate-50 border rounded-xl p-4 space-y-3">
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Data Pejabat</p>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                          <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Data Petugas & Verifikator</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {pejabat?.petugas?.nama && (
-                              <div className="space-y-1">
-                                <p className="text-[9px] font-bold text-muted-foreground uppercase">Petugas Survey</p>
-                                <p className="text-xs font-black">{pejabat.petugas.nama}</p>
-                                {pejabat.petugas.nipppk && <p className="text-[9px] text-slate-500 font-mono">{pejabat.petugas.nipppk}</p>}
-                                {pejabat.petugas.jabatan && <p className="text-[9px] text-slate-500">{pejabat.petugas.jabatan}</p>}
+                              <div className="space-y-0.5">
+                                <p className="text-[9px] font-bold text-slate-500 uppercase">Petugas Survey</p>
+                                <p className="text-xs font-black text-slate-900 dark:text-white">{pejabat.petugas.nama}</p>
+                                {pejabat.petugas.nipppk && <p className="text-[10px] text-slate-500 font-mono">NIP/PPPK: {pejabat.petugas.nipppk}</p>}
+                                {pejabat.petugas.jabatan && <p className="text-[10px] text-slate-500">{pejabat.petugas.jabatan}</p>}
                               </div>
                             )}
                             {pejabat?.verifikator?.nama && (
-                              <div className="space-y-1">
-                                <p className="text-[9px] font-bold text-muted-foreground uppercase">Verifikator</p>
-                                <p className="text-xs font-black">{pejabat.verifikator.nama}</p>
-                                {pejabat.verifikator.nipppk && <p className="text-[9px] text-slate-500 font-mono">{pejabat.verifikator.nipppk}</p>}
-                                {pejabat.verifikator.jabatan && <p className="text-[9px] text-slate-500">{pejabat.verifikator.jabatan}</p>}
+                              <div className="space-y-0.5">
+                                <p className="text-[9px] font-bold text-slate-500 uppercase">Verifikator</p>
+                                <p className="text-xs font-black text-slate-900 dark:text-white">{pejabat.verifikator.nama}</p>
+                                {pejabat.verifikator.nipppk && <p className="text-[10px] text-slate-500 font-mono">NIP/PPPK: {pejabat.verifikator.nipppk}</p>}
+                                {pejabat.verifikator.jabatan && <p className="text-[10px] text-slate-500">{pejabat.verifikator.jabatan}</p>}
                               </div>
                             )}
                           </div>
@@ -1306,66 +1579,118 @@ function HasilVerifikasiContent() {
                   </section>
                 )}
 
-                <section className="space-y-4">
-                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><MapPin className="w-4 h-4" /> Data Titik Lokasi Verifikasi</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* TITIK LOKASI VERIFIKASI */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-xs uppercase tracking-wider pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                    <div className="w-6 h-6 rounded-lg bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+                      <MapPin className="w-3.5 h-3.5" />
+                    </div>
+                    <span>Data Titik Lokasi Verifikasi</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(viewingActor as any).verificationLocation && (
-                      <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                        <p className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Sumber: Verifikasi Admin</p>
-                        <p className="text-xs font-mono text-emerald-800 font-semibold">{(viewingActor as any).verificationLocation.lat}, {(viewingActor as any).verificationLocation.lon}</p>
-                        <a href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocation.lat},${(viewingActor as any).verificationLocation.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline mt-2 inline-block">Lihat di Peta</a>
+                      <div className="p-4 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 flex flex-col justify-between space-y-2">
+                        <div>
+                          <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider block">Sumber: Verifikasi Admin</span>
+                          <p className="text-xs font-mono font-bold text-emerald-900 dark:text-emerald-300 mt-1">
+                            {(viewingActor as any).verificationLocation.lat}, {(viewingActor as any).verificationLocation.lon}
+                          </p>
+                        </div>
+                        <a
+                          href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocation.lat},${(viewingActor as any).verificationLocation.lon}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 hover:underline"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" /> Buka di Google Maps
+                        </a>
                       </div>
                     )}
+
                     {(viewingActor as any).verificationLocationDinas && (
-                      <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                        <p className="text-[10px] font-bold text-indigo-600 uppercase mb-1">Sumber: Verifikasi Dinas</p>
-                        <p className="text-xs font-mono text-indigo-800 font-semibold">{(viewingActor as any).verificationLocationDinas.lat}, {(viewingActor as any).verificationLocationDinas.lon}</p>
-                        <a href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocationDinas.lat},${(viewingActor as any).verificationLocationDinas.lon}`} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 font-bold hover:underline mt-2 inline-block">Lihat di Peta</a>
+                      <div className="p-4 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/60 flex flex-col justify-between space-y-2">
+                        <div>
+                          <span className="text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-wider block">Sumber: Verifikasi Dinas</span>
+                          <p className="text-xs font-mono font-bold text-indigo-900 dark:text-indigo-300 mt-1">
+                            {(viewingActor as any).verificationLocationDinas.lat}, {(viewingActor as any).verificationLocationDinas.lon}
+                          </p>
+                        </div>
+                        <a
+                          href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocationDinas.lat},${(viewingActor as any).verificationLocationDinas.lon}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-bold text-indigo-700 hover:text-indigo-800 dark:text-indigo-400 hover:underline"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" /> Buka di Google Maps
+                        </a>
                       </div>
                     )}
+
                     {!(viewingActor as any).verificationLocation && !(viewingActor as any).verificationLocationDinas && (
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 col-span-full">
-                        <p className="text-xs font-medium text-slate-500 text-center">Belum ada titik lokasi yang direkam.</p>
+                      <div className="p-4 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-dashed border-slate-200 dark:border-slate-800 col-span-full text-center">
+                        <p className="text-xs font-medium text-slate-500">Belum ada titik koordinat lokasi yang direkam.</p>
                       </div>
                     )}
                   </div>
                 </section>
 
-                <section className="space-y-4">
-                  <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><History className="w-4 h-4" /> Audit Sistem & Verifikasi</div>
-                  <div className="bg-slate-50 p-4 rounded-xl text-[10px] font-bold grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 border">
-                    <div className="space-y-1">
-                      <p className="text-muted-foreground uppercase">Status</p>
-                      <p className="text-primary">{viewingActor.status.toUpperCase()}</p>
+                {/* AUDIT SISTEM & VERIFIKASI */}
+                <section className="space-y-3">
+                  <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-xs uppercase tracking-wider pb-1 border-b border-slate-200/80 dark:border-slate-800">
+                    <div className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center">
+                      <History className="w-3.5 h-3.5" />
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-muted-foreground uppercase">Diinput Oleh</p>
-                      <p>{viewingActor.createdBy || "System"}</p>
+                    <span>Audit Sistem & Riwayat Verifikasi</span>
+                  </div>
+                  <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Status</span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        {viewingActor.status.toUpperCase()}
+                      </span>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-muted-foreground uppercase">Waktu Input</p>
-                      <p>{viewingActor.createdAt ? formatDateTimeIndo(viewingActor.createdAt) : "-"}</p>
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Diinput Oleh</span>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{viewingActor.createdBy || "System"}</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-muted-foreground uppercase">Waktu Lolos Verifikasi</p>
-                      <p className="text-emerald-700 font-black">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Waktu Input</span>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{viewingActor.createdAt ? formatDateTimeIndo(viewingActor.createdAt) : "-"}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Waktu Lolos</span>
+                      <p className="text-xs font-black text-emerald-700 dark:text-emerald-400">
                         {viewingActor.berkasDinasVerifiedAt
                           ? formatDateTimeIndo(viewingActor.berkasDinasVerifiedAt)
                           : (viewingActor.verifiedDinasAt ? formatDateTimeIndo(viewingActor.verifiedDinasAt) : "-")}
                       </p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-muted-foreground uppercase">Petugas Verifikator</p>
-                      <p className="text-slate-800 font-bold">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Verifikator</span>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
                         {viewingActor.berkasDinasVerifiedBy || viewingActor.verifikatorDinas || "-"}
                       </p>
                     </div>
                   </div>
                 </section>
               </div>
-              <DialogFooter className="flex-col sm:flex-row items-center justify-end gap-2 border-t pt-4">
-                <Button variant="ghost" onClick={() => setViewingActor(null)}>Tutup</Button>
-              </DialogFooter>
+
+              {/* Modal Footer */}
+              <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium text-center sm:text-left">
+                  Terverifikasi di sistem SIMPU DKUKM Kota Tanjungpinang
+                </p>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setViewingActor(null)}
+                    className="w-full sm:w-auto font-bold rounded-xl"
+                  >
+                    Tutup Rincian
+                  </Button>
+                </div>
+              </div>
             </>
           )}
         </DialogContent>
