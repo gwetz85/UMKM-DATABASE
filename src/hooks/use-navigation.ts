@@ -22,7 +22,8 @@ import {
   UserCheck,
   Info,
   FileDown,
-  Tv
+  Tv,
+  Store
 } from "lucide-react"
 import { useUser, useObject, useMemoFirebase, useList, useDatabase } from "@/firebase"
 import { ref } from "firebase/database"
@@ -109,6 +110,14 @@ export function useNavigation() {
       show: (isAdmin || isStaff) && !isDinas && !isVerifikatorDinas,
       color: "#0891b2",
       description: "Verifikasi Data Massal"
+    },
+    {
+      name: "CEK USAHA",
+      href: "/cek-usaha",
+      icon: Store,
+      show: isAdmin, // KHUSUS ADMINISTRATOR
+      color: "#0284c7",
+      description: "Pengecekan Pelaku Usaha Berdasarkan Usaha"
     },
     {
       name: "Input Data",

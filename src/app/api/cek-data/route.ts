@@ -221,6 +221,19 @@ export async function GET(req: NextRequest) {
         return phoneDigits.includes(qTrim) || (qTrim.length >= 5 && queryDigits.includes(phoneDigits.slice(-5)));
       }
 
+      if (type === 'usaha') {
+        const usahaStr = String(
+          item._displayBusiness ||
+          item.businessName ||
+          item.usaha ||
+          item.businessCategory ||
+          item.surveyData?.namaUsaha ||
+          item.surveyData?.jenisUsaha ||
+          ''
+        ).toLowerCase();
+        return usahaStr.includes(queryLower);
+      }
+
       return false;
     });
 
