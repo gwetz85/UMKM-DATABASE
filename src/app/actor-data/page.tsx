@@ -2168,16 +2168,16 @@ function ActorDataContent() {
                           {isEditMode ? `Edit: ${viewingActor.fullName}` : viewingActor.fullName}
                         </DialogTitle>
                         <span className={cn(
-                          "px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border inline-flex items-center gap-1.5 shrink-0 shadow-2xs",
+                          "px-3 py-1 rounded-full text-xs font-black uppercase border inline-flex items-center gap-1.5 shrink-0 shadow-2xs",
                           isFemale 
-                            ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
-                            : "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900"
+                            ? "bg-rose-100 text-rose-900 border-rose-300 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-700"
+                            : "bg-sky-100 text-sky-900 border-sky-300 dark:bg-sky-950/60 dark:text-sky-200 dark:border-sky-700"
                         )}>
-                          <span className={cn("w-1.5 h-1.5 rounded-full animate-pulse", isFemale ? "bg-rose-500" : "bg-sky-500")} />
+                          <span className={cn("w-2 h-2 rounded-full animate-pulse", isFemale ? "bg-rose-600" : "bg-sky-600")} />
                           {isFemale ? "Perempuan" : "Laki-laki"}
                         </span>
                         {cleanAge && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+                          <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-950 dark:text-emerald-200 shrink-0 shadow-2xs">
                             {cleanAge} Tahun
                           </span>
                         )}
@@ -2189,15 +2189,15 @@ function ActorDataContent() {
                           <button
                             type="button"
                             onClick={() => handleCopyText(viewingActor.registrationCode || '', 'Reg ID')}
-                            className="inline-flex items-center gap-1.5 font-mono font-bold text-[11px] text-slate-700 dark:text-slate-200 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/80 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 transition-all shadow-2xs group cursor-pointer"
+                            className="inline-flex items-center gap-1.5 font-mono font-bold text-xs text-sky-950 dark:text-sky-100 bg-sky-100/90 dark:bg-sky-950/60 hover:bg-sky-200 dark:hover:bg-sky-900/80 px-2.5 py-1 rounded-lg border border-sky-300 dark:border-sky-700 transition-all shadow-2xs group cursor-pointer"
                             title="Klik untuk menyalin Reg ID"
                           >
-                            <span className="text-slate-400 group-hover:text-primary">REG:</span>
-                            <span className="font-extrabold">{viewingActor.registrationCode}</span>
+                            <span className="text-sky-700 dark:text-sky-300 font-black">REG:</span>
+                            <span className="font-black">{viewingActor.registrationCode}</span>
                             {copiedField === 'Reg ID' ? (
-                              <Check className="w-3 h-3 text-emerald-500" />
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
                             ) : (
-                              <Copy className="w-3 h-3 text-slate-400 group-hover:text-primary transition-colors" />
+                              <Copy className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 group-hover:text-primary transition-colors" />
                             )}
                           </button>
                         )}
@@ -2205,15 +2205,15 @@ function ActorDataContent() {
                           <button
                             type="button"
                             onClick={() => handleCopyText(viewingActor.nik || '', 'NIK')}
-                            className="inline-flex items-center gap-1.5 font-mono font-bold text-[11px] text-slate-700 dark:text-slate-200 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/80 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 transition-all shadow-2xs group cursor-pointer"
+                            className="inline-flex items-center gap-1.5 font-mono font-bold text-xs text-indigo-950 dark:text-indigo-100 bg-indigo-100/90 dark:bg-indigo-950/60 hover:bg-indigo-200 dark:hover:bg-indigo-900/80 px-2.5 py-1 rounded-lg border border-indigo-300 dark:border-indigo-700 transition-all shadow-2xs group cursor-pointer"
                             title="Klik untuk menyalin NIK"
                           >
-                            <span className="text-slate-400 group-hover:text-primary">NIK:</span>
-                            <span className="font-extrabold">{viewingActor.nik}</span>
+                            <span className="text-indigo-700 dark:text-indigo-300 font-black">NIK:</span>
+                            <span className="font-black">{viewingActor.nik}</span>
                             {copiedField === 'NIK' ? (
-                              <Check className="w-3 h-3 text-emerald-500" />
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
                             ) : (
-                              <Copy className="w-3 h-3 text-slate-400 group-hover:text-primary transition-colors" />
+                              <Copy className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 group-hover:text-primary transition-colors" />
                             )}
                           </button>
                         )}
@@ -2229,7 +2229,7 @@ function ActorDataContent() {
                         <Button 
                           size="sm" 
                           onClick={() => handlePrintForm(viewingActor)}
-                          className="font-bold bg-primary hover:bg-primary/90 text-white shadow-xs rounded-xl text-xs h-8 px-3.5 transition-all cursor-pointer"
+                          className="font-black bg-blue-600 hover:bg-blue-700 text-white shadow-xs rounded-xl text-xs h-8 px-3.5 transition-all cursor-pointer"
                         >
                           <Printer className="w-3.5 h-3.5 mr-1.5" /> Cetak Formulir
                         </Button>
@@ -2252,37 +2252,37 @@ function ActorDataContent() {
                               setSurveyViewActor(viewingActor);
                             }
                           }}
-                          className="font-bold bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/80 hover:bg-teal-100 dark:hover:bg-teal-900/50 shadow-2xs rounded-xl text-xs h-8 px-3 transition-all cursor-pointer"
+                          className="font-black bg-teal-600 hover:bg-teal-700 text-white shadow-xs rounded-xl text-xs h-8 px-3 transition-all cursor-pointer"
                         >
-                          <ClipboardList className="w-3.5 h-3.5 mr-1.5 text-teal-600 dark:text-teal-400" /> Lihat Form Survey
+                          <ClipboardList className="w-3.5 h-3.5 mr-1.5" /> Lihat Form Survey
                         </Button>
                       )}
                       {!isAdmin && !isMonitoring && !isKoordinator && !isEditMode && viewingActor.status === 'verified_actor' && (
                         <Button 
                           size="sm" 
                           onClick={() => setEditingBankMode(true)}
-                          className="font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800 rounded-xl text-xs h-8 px-3 transition-all cursor-pointer"
+                          className="font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs h-8 px-3 transition-all cursor-pointer shadow-xs"
                         >
-                          <CreditCard className="w-3.5 h-3.5 mr-1.5 text-amber-600" /> Input Rekening
+                          <CreditCard className="w-3.5 h-3.5 mr-1.5" /> Input Rekening
                         </Button>
                       )}
                       {isAdmin && !isEditMode && (
                         <Button 
                           size="sm" 
                           onClick={() => setEditingDriveMode(true)}
-                          className="font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-200/80 dark:hover:bg-slate-700 shadow-2xs rounded-xl text-xs h-8 px-3 transition-all cursor-pointer"
+                          className="font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900 shadow-2xs rounded-xl text-xs h-8 px-3 transition-all cursor-pointer"
                         >
-                          <Folder className="w-3.5 h-3.5 mr-1.5 text-blue-500" /> Link Drive
+                          <Folder className="w-3.5 h-3.5 mr-1.5 text-blue-600 dark:text-blue-400" /> Link Drive
                         </Button>
                       )}
                       {isAdmin && !isEditMode && viewingActor && (
                         <Button 
                           size="sm" 
                           onClick={() => handleSingleLanjutDinas(viewingActor)}
-                          className="font-bold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 shadow-2xs rounded-xl text-xs h-8 px-3 transition-all cursor-pointer"
+                          className="font-black bg-purple-600 hover:bg-purple-700 text-white shadow-xs rounded-xl text-xs h-8 px-3.5 transition-all cursor-pointer"
                           title="Push Data Susulan ke Verifikasi Dinas"
                         >
-                          <Send className="w-3.5 h-3.5 mr-1.5 text-purple-600 dark:text-purple-400" /> Lanjut Dinas
+                          <Send className="w-3.5 h-3.5 mr-1.5" /> Lanjut Dinas
                         </Button>
                       )}
                     </div>
@@ -2297,11 +2297,11 @@ function ActorDataContent() {
                           className={cn(
                             "font-bold rounded-xl text-xs h-8 px-3 shadow-2xs transition-all cursor-pointer", 
                             isEditMode 
-                              ? "border-amber-500 text-amber-600 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100" 
-                              : "border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                              ? "border-amber-500 text-amber-700 bg-amber-100 dark:bg-amber-950/60 hover:bg-amber-200" 
+                              : "border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
                           )}
                         >
-                          {isEditMode ? "Batal Edit" : <><Edit3 className="w-3.5 h-3.5 mr-1.5 text-slate-500 dark:text-slate-400"/> Edit Data</>}
+                          {isEditMode ? "Batal Edit" : <><Edit3 className="w-3.5 h-3.5 mr-1.5 text-slate-600 dark:text-slate-300"/> Edit Data</>}
                         </Button>
                       )}
                       {isAdmin && !isEditMode && (
@@ -2310,20 +2310,20 @@ function ActorDataContent() {
                             size="sm" 
                             variant="outline" 
                             onClick={() => handleRevert(viewingActor.id, viewingActor.fullName)} 
-                            className="border-amber-200 dark:border-amber-800/80 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 font-bold shadow-2xs rounded-xl text-xs h-8 px-2.5 cursor-pointer" 
+                            className="border-amber-300 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 font-bold shadow-2xs rounded-xl text-xs h-8 px-2.5 cursor-pointer" 
                             title="Kembalikan ke antrean awal (Pending)"
                           >
-                            <RotateCcw className="w-3.5 h-3.5 mr-1 sm:mr-0" />
+                            <RotateCcw className="w-3.5 h-3.5 mr-1 sm:mr-0 text-amber-600" />
                             <span className="sm:hidden text-[11px]">Revert</span>
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline" 
                             onClick={() => handleDelete(viewingActor.id, viewingActor.fullName)} 
-                            className="border-rose-200 dark:border-rose-800/80 text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-bold shadow-2xs rounded-xl text-xs h-8 px-2.5 cursor-pointer" 
+                            className="border-rose-300 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60 font-bold shadow-2xs rounded-xl text-xs h-8 px-2.5 cursor-pointer" 
                             title="Hapus Permanen"
                           >
-                            <Trash2 className="w-3.5 h-3.5 mr-1 sm:mr-0" />
+                            <Trash2 className="w-3.5 h-3.5 mr-1 sm:mr-0 text-rose-600" />
                             <span className="sm:hidden text-[11px]">Delete</span>
                           </Button>
                         </>
@@ -2442,20 +2442,20 @@ function ActorDataContent() {
                       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4 sm:p-5 space-y-4">
                         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-xs">
                               <User className="w-4 h-4" />
                             </div>
                             <div>
                               <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
                                 Informasi Pribadi & Identitas
                               </h4>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Identitas resmi kependudukan sesuai KTP & Kartu Keluarga</p>
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Identitas resmi kependudukan sesuai KTP & Kartu Keluarga</p>
                             </div>
                           </div>
                           <VerificationBadge actor={viewingActor} />
                         </div>
 
-                        {/* Bento Grid 9 Tiles */}
+                        {/* Bento Grid 9 Tiles with Distinct Vibrant Colors & High Contrast */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                           {[
                             { 
@@ -2463,66 +2463,104 @@ function ActorDataContent() {
                               value: viewingActor.registrationCode, 
                               icon: ClipboardCheck, 
                               isMono: true, 
-                              isCopyable: true 
+                              isCopyable: true,
+                              tileBg: "bg-sky-50/90 dark:bg-sky-950/40 border-sky-200/90 dark:border-sky-800/80 hover:bg-sky-100/70",
+                              badgeBg: "bg-sky-500 text-white",
+                              labelColor: "text-sky-950 dark:text-sky-200",
+                              copyBtnColor: "text-sky-600 hover:text-sky-800 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/50"
                             },
                             { 
                               label: "Nama Lengkap", 
                               value: viewingActor.fullName, 
                               icon: User, 
-                              isBold: true 
+                              isBold: true,
+                              tileBg: "bg-blue-50/90 dark:bg-blue-950/40 border-blue-200/90 dark:border-blue-800/80 hover:bg-blue-100/70",
+                              badgeBg: "bg-blue-600 text-white",
+                              labelColor: "text-blue-950 dark:text-blue-200"
                             },
                             { 
                               label: "NIK", 
                               value: viewingActor.nik, 
                               icon: CreditCard, 
                               isMono: true, 
-                              isCopyable: true 
+                              isCopyable: true,
+                              tileBg: "bg-indigo-50/90 dark:bg-indigo-950/40 border-indigo-200/90 dark:border-indigo-800/80 hover:bg-indigo-100/70",
+                              badgeBg: "bg-indigo-600 text-white",
+                              labelColor: "text-indigo-950 dark:text-indigo-200",
+                              copyBtnColor: "text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
                             },
                             { 
                               label: "Nomor KK", 
                               value: viewingActor.noKK, 
                               icon: Users, 
                               isMono: true, 
-                              isCopyable: true 
+                              isCopyable: true,
+                              tileBg: "bg-purple-50/90 dark:bg-purple-950/40 border-purple-200/90 dark:border-purple-800/80 hover:bg-purple-100/70",
+                              badgeBg: "bg-purple-600 text-white",
+                              labelColor: "text-purple-950 dark:text-purple-200",
+                              copyBtnColor: "text-purple-600 hover:text-purple-800 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/50"
                             },
                             { 
                               label: "Jenis Kelamin", 
                               value: normalizeGender(viewingActor.gender) || viewingActor.gender, 
                               icon: UserCheck, 
-                              isGenderBadge: true 
+                              isGenderBadge: true,
+                              tileBg: isFemale
+                                ? "bg-rose-50/90 dark:bg-rose-950/40 border-rose-200/90 dark:border-rose-800/80 hover:bg-rose-100/70"
+                                : "bg-sky-50/90 dark:bg-sky-950/40 border-sky-200/90 dark:border-sky-800/80 hover:bg-sky-100/70",
+                              badgeBg: isFemale ? "bg-rose-500 text-white" : "bg-sky-600 text-white",
+                              labelColor: isFemale ? "text-rose-950 dark:text-rose-200" : "text-sky-950 dark:text-sky-200"
                             },
                             { 
                               label: "Tempat Lahir", 
                               value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob, 
                               icon: MapPin, 
+                              tileBg: "bg-amber-50/90 dark:bg-amber-950/40 border-amber-200/90 dark:border-amber-800/80 hover:bg-amber-100/70",
+                              badgeBg: "bg-amber-600 text-white",
+                              labelColor: "text-amber-950 dark:text-amber-200"
                             },
                             { 
                               label: "Tanggal Lahir", 
                               value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob, 
                               icon: Calendar, 
-                              isDate: true
+                              isDate: true,
+                              tileBg: "bg-teal-50/90 dark:bg-teal-950/40 border-teal-200/90 dark:border-teal-800/80 hover:bg-teal-100/70",
+                              badgeBg: "bg-teal-600 text-white",
+                              labelColor: "text-teal-950 dark:text-teal-200"
                             },
                             { 
                               label: "Usia", 
                               value: cleanAge ? `${cleanAge} Tahun` : "-", 
                               icon: Sparkles, 
-                              isAge: true
+                              isAge: true,
+                              tileBg: "bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-200/90 dark:border-emerald-800/80 hover:bg-emerald-100/70",
+                              badgeBg: "bg-emerald-600 text-white",
+                              labelColor: "text-emerald-950 dark:text-emerald-200"
                             },
                             { 
                               label: "Nomor HP / WhatsApp", 
                               value: viewingActor.phone, 
                               icon: Phone, 
-                              isPhone: true 
+                              isPhone: true,
+                              tileBg: "bg-green-50/90 dark:bg-green-950/40 border-green-200/90 dark:border-green-800/80 hover:bg-green-100/70",
+                              badgeBg: "bg-emerald-600 text-white",
+                              labelColor: "text-green-950 dark:text-green-200",
+                              copyBtnColor: "text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
                             }
                           ].map((item, i) => (
                             <div 
                               key={i} 
-                              className="bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3 transition-colors flex flex-col justify-between min-h-[78px]"
+                              className={cn(
+                                "border rounded-xl p-3 sm:p-3.5 transition-all flex flex-col justify-between min-h-[82px] shadow-2xs",
+                                item.tileBg
+                              )}
                             >
                               <div className="flex items-center justify-between gap-1 mb-1">
-                                <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
-                                  <item.icon className="w-3.5 h-3.5" />
-                                  <span className="text-[10px] font-bold uppercase tracking-wider">
+                                <div className="flex items-center gap-2">
+                                  <div className={cn("w-6 h-6 rounded-md flex items-center justify-center shrink-0 shadow-2xs", item.badgeBg)}>
+                                    <item.icon className="w-3.5 h-3.5" />
+                                  </div>
+                                  <span className={cn("text-[11px] font-black uppercase tracking-wider", item.labelColor)}>
                                     {item.label}
                                   </span>
                                 </div>
@@ -2530,67 +2568,65 @@ function ActorDataContent() {
                                   <button
                                     type="button"
                                     onClick={() => handleCopyText(item.value || '', item.label)}
-                                    className="text-slate-400 hover:text-primary p-0.5 rounded transition-colors cursor-pointer"
+                                    className={cn("p-1 rounded-md transition-colors cursor-pointer", (item as any).copyBtnColor || "text-slate-500 hover:text-primary")}
                                     title={`Salin ${item.label}`}
                                   >
                                     {copiedField === item.label ? (
-                                      <Check className="w-3 h-3 text-emerald-500" />
+                                      <Check className="w-3.5 h-3.5 text-emerald-600" />
                                     ) : (
-                                      <Copy className="w-3 h-3" />
+                                      <Copy className="w-3.5 h-3.5" />
                                     )}
                                   </button>
                                 )}
                               </div>
 
                               {(item as any).isPhone && item.value ? (
-                                <div className="flex items-center justify-between gap-2 pt-0.5">
+                                <div className="flex items-center justify-between gap-2 pt-1">
                                   <a
                                     href={`https://wa.me/${String(item.value).replace(/\D/g, "").replace(/^0/, "62")}`}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:text-emerald-800 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 rounded-lg border border-emerald-300/60 dark:border-emerald-800/60 transition-colors group"
+                                    className="inline-flex items-center gap-1.5 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-xl shadow-xs transition-colors group cursor-pointer"
                                     title="Hubungi via WhatsApp"
                                   >
-                                    <MessageCircle className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/30 group-hover:scale-110 transition-transform" />
+                                    <MessageCircle className="w-3.5 h-3.5 text-white fill-white/20 group-hover:scale-110 transition-transform" />
                                     <span>{item.value}</span>
                                   </a>
                                   <button
                                     type="button"
                                     onClick={() => handleCopyText(item.value || '', 'No HP')}
-                                    className="text-slate-400 hover:text-primary p-1 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                                    className="text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 p-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors cursor-pointer"
                                     title="Salin No HP"
                                   >
                                     {copiedField === 'No HP' ? (
-                                      <Check className="w-3 h-3 text-emerald-500" />
+                                      <Check className="w-3.5 h-3.5 text-emerald-600" />
                                     ) : (
-                                      <Copy className="w-3 h-3" />
+                                      <Copy className="w-3.5 h-3.5" />
                                     )}
                                   </button>
                                 </div>
                               ) : (item as any).isGenderBadge && item.value ? (
-                                <div className="pt-0.5">
+                                <div className="pt-1">
                                   <span className={cn(
-                                    "inline-flex items-center gap-1.5 text-xs font-bold uppercase px-2.5 py-0.5 rounded-full border shadow-2xs",
-                                    isFemale 
-                                      ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900"
-                                      : "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900"
+                                    "inline-flex items-center gap-1.5 text-xs sm:text-sm font-black uppercase px-3 py-1 rounded-full shadow-2xs text-white",
+                                    isFemale ? "bg-rose-600" : "bg-sky-600"
                                   )}>
-                                    <span className={cn("w-1.5 h-1.5 rounded-full", isFemale ? "bg-rose-500" : "bg-sky-500")} />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                                     {item.value}
                                   </span>
                                 </div>
                               ) : (item as any).isCopyable && item.value ? (
-                                <p className="text-xs sm:text-sm font-black font-mono text-slate-800 dark:text-slate-100 tracking-tight pt-0.5">
+                                <p className="text-sm sm:text-base font-black font-mono text-slate-950 dark:text-white tracking-tight pt-1">
                                   {item.value}
                                 </p>
                               ) : (item as any).isAge ? (
-                                <p className="text-xs sm:text-sm font-black text-emerald-700 dark:text-emerald-400 pt-0.5">
+                                <p className="text-sm sm:text-base font-black text-emerald-900 dark:text-emerald-300 pt-1">
                                   {item.value}
                                 </p>
                               ) : (
                                 <p className={cn(
-                                  "text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 pt-0.5 uppercase",
-                                  item.isBold && "text-slate-900 dark:text-white font-black"
+                                  "text-sm sm:text-base font-black text-slate-950 dark:text-white pt-1 uppercase",
+                                  item.isBold && "text-blue-950 dark:text-white"
                                 )}>
                                   {item.value || "-"}
                                 </p>
@@ -2600,16 +2636,16 @@ function ActorDataContent() {
                         </div>
 
                         {/* Status Cek Data Master Strip */}
-                        <div className="bg-slate-50/90 dark:bg-slate-800/40 border border-slate-200/90 dark:border-slate-800 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="bg-indigo-50/80 dark:bg-indigo-950/30 border border-indigo-200/90 dark:border-indigo-800/80 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                            <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
                               <ShieldCheck className="w-4 h-4" />
                             </div>
                             <div>
-                              <p className="text-xs font-bold uppercase tracking-wide text-slate-800 dark:text-slate-200">
+                              <p className="text-xs sm:text-sm font-black uppercase tracking-wide text-indigo-950 dark:text-indigo-200">
                                 Status Cek Data Master (2023 - 2025 & Blacklist)
                               </p>
-                              <p className="text-[10px] text-slate-400 font-medium">Pengecekan NIK otomatis ke riwayat basis data bantuan</p>
+                              <p className="text-[11px] text-indigo-900/80 dark:text-indigo-300 font-semibold">Pengecekan NIK otomatis ke riwayat basis data bantuan</p>
                             </div>
                           </div>
                           <div className="shrink-0">
@@ -2628,47 +2664,76 @@ function ActorDataContent() {
                       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4 sm:p-5 space-y-4">
                         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                            <div className="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold shadow-xs">
                               <MapPin className="w-4 h-4" />
                             </div>
                             <div>
                               <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
                                 Alamat & Wilayah Domisili
                               </h4>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Wilayah administratif kependudukan & titik tempat tinggal</p>
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Wilayah administratif kependudukan & titik tempat tinggal</p>
                             </div>
                           </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                          {[
-                            { label: "Kecamatan", value: viewingActor.kecamatan, icon: Building2 },
-                            { label: "Kelurahan", value: viewingActor.kelurahan, icon: MapPin },
-                            { label: "RT / RW", value: viewingActor.rtRw, icon: Navigation },
-                          ].map((item, i) => (
-                            <div 
-                              key={i} 
-                              className="bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3 transition-colors flex flex-col justify-between min-h-[72px]"
-                            >
-                              <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 mb-1">
-                                <item.icon className="w-3.5 h-3.5" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">
-                                  {item.label}
-                                </span>
+                          {/* Kecamatan */}
+                          <div className="bg-cyan-50/90 dark:bg-cyan-950/40 border border-cyan-200/90 dark:border-cyan-800/80 hover:bg-cyan-100/70 rounded-xl p-3 sm:p-3.5 flex flex-col justify-between min-h-[78px] transition-all shadow-2xs">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-6 h-6 rounded-md bg-cyan-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                <Building2 className="w-3.5 h-3.5" />
                               </div>
-                              <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 uppercase pt-0.5">
-                                {item.value || "-"}
-                              </p>
+                              <span className="text-[11px] font-black uppercase tracking-wider text-cyan-950 dark:text-cyan-200">
+                                Kecamatan
+                              </span>
                             </div>
-                          ))}
+                            <p className="text-sm sm:text-base font-black text-slate-950 dark:text-white uppercase pt-1">
+                              {viewingActor.kecamatan || "-"}
+                            </p>
+                          </div>
+
+                          {/* Kelurahan */}
+                          <div className="bg-teal-50/90 dark:bg-teal-950/40 border border-teal-200/90 dark:border-teal-800/80 hover:bg-teal-100/70 rounded-xl p-3 sm:p-3.5 flex flex-col justify-between min-h-[78px] transition-all shadow-2xs">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-6 h-6 rounded-md bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                <MapPin className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="text-[11px] font-black uppercase tracking-wider text-teal-950 dark:text-teal-200">
+                                Kelurahan
+                              </span>
+                            </div>
+                            <p className="text-sm sm:text-base font-black text-slate-950 dark:text-white uppercase pt-1">
+                              {viewingActor.kelurahan || "-"}
+                            </p>
+                          </div>
+
+                          {/* RT / RW */}
+                          <div className="bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/80 hover:bg-emerald-100/70 rounded-xl p-3 sm:p-3.5 flex flex-col justify-between min-h-[78px] transition-all shadow-2xs">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                <Navigation className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="text-[11px] font-black uppercase tracking-wider text-emerald-950 dark:text-emerald-200">
+                                RT / RW
+                              </span>
+                            </div>
+                            <p className="text-sm sm:text-base font-black font-mono text-slate-950 dark:text-white uppercase pt-1">
+                              {viewingActor.rtRw || "-"}
+                            </p>
+                          </div>
 
                           {/* Full Width Alamat Lengkap with Maps Action */}
-                          <div className="sm:col-span-2 md:col-span-3 bg-slate-50/90 dark:bg-slate-800/50 border border-slate-200/90 dark:border-slate-800 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="sm:col-span-2 md:col-span-3 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/90 dark:border-emerald-800/80 rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                             <div className="space-y-1">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                                <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> Alamat Lengkap
-                              </span>
-                              <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 uppercase leading-relaxed">
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                  <MapPin className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-950 dark:text-emerald-200">
+                                  Alamat Lengkap
+                                </span>
+                              </div>
+                              <p className="text-sm sm:text-base font-black text-slate-950 dark:text-white uppercase leading-relaxed">
                                 {viewingActor.address || "-"}
                               </p>
                             </div>
@@ -2676,10 +2741,10 @@ function ActorDataContent() {
                               href={getActorMapUrl(viewingActor)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition-all shrink-0 active:scale-95 cursor-pointer"
+                              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-all shrink-0 active:scale-95 cursor-pointer"
                               title="Buka lokasi di Google Maps"
                             >
-                              <ExternalLink className="w-3.5 h-3.5" /> Buka di Maps
+                              <ExternalLink className="w-4 h-4" /> Buka di Maps
                             </a>
                           </div>
                         </div>
@@ -2689,14 +2754,14 @@ function ActorDataContent() {
                       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4 sm:p-5 space-y-4">
                         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
+                            <div className="w-8 h-8 rounded-xl bg-purple-600 text-white flex items-center justify-center font-bold shadow-xs">
                               <Store className="w-4 h-4" />
                             </div>
                             <div>
                               <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
                                 Profil Usaha & Tim Survei
                               </h4>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Informasi unit bisnis, usulan koordinator, & penugasan survei</p>
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Informasi unit bisnis, usulan koordinator, & penugasan survei</p>
                             </div>
                           </div>
                         </div>
@@ -2720,36 +2785,48 @@ function ActorDataContent() {
                             return (
                               <>
                                 {/* Nama Usaha */}
-                                <div className="bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3.5 transition-colors flex flex-col justify-between min-h-[80px]">
-                                  <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 mb-1">
-                                    <Store className="w-3.5 h-3.5" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider">Nama Usaha</span>
+                                <div className="bg-violet-50/90 dark:bg-violet-950/40 border border-violet-200/90 dark:border-violet-800/80 hover:bg-violet-100/70 rounded-xl p-3.5 sm:p-4 transition-all flex flex-col justify-between min-h-[84px] shadow-2xs">
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <div className="w-6 h-6 rounded-md bg-violet-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                      <Store className="w-3.5 h-3.5" />
+                                    </div>
+                                    <span className="text-[11px] font-black uppercase tracking-wider text-violet-950 dark:text-violet-200">
+                                      Nama Usaha
+                                    </span>
                                   </div>
-                                  <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                  <p className="text-base sm:text-lg font-black text-violet-950 dark:text-white uppercase tracking-tight">
                                     {viewingActor.businessName || "-"}
                                   </p>
                                 </div>
 
                                 {/* Kategori Usaha */}
-                                <div className="bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3.5 transition-colors flex flex-col justify-between min-h-[80px]">
-                                  <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 mb-1">
-                                    <Sparkles className="w-3.5 h-3.5" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider">Kategori Usaha</span>
+                                <div className="bg-fuchsia-50/90 dark:bg-fuchsia-950/40 border border-fuchsia-200/90 dark:border-fuchsia-800/80 hover:bg-fuchsia-100/70 rounded-xl p-3.5 sm:p-4 transition-all flex flex-col justify-between min-h-[84px] shadow-2xs">
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <div className="w-6 h-6 rounded-md bg-fuchsia-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                      <Sparkles className="w-3.5 h-3.5" />
+                                    </div>
+                                    <span className="text-[11px] font-black uppercase tracking-wider text-fuchsia-950 dark:text-fuchsia-200">
+                                      Kategori Usaha
+                                    </span>
                                   </div>
                                   <div>
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold uppercase bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/70">
+                                    <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs sm:text-sm font-black uppercase bg-fuchsia-600 text-white shadow-2xs">
                                       {viewingActor.businessCategory || "-"}
                                     </span>
                                   </div>
                                 </div>
 
                                 {/* Lokasi Usaha */}
-                                <div className="md:col-span-2 bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3.5 transition-colors space-y-1">
-                                  <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500 mb-1">
-                                    <MapPin className="w-3.5 h-3.5" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider">Lokasi Usaha</span>
+                                <div className="md:col-span-2 bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200/90 dark:border-blue-800/80 hover:bg-blue-100/70 rounded-xl p-3.5 sm:p-4 transition-all space-y-1.5 shadow-2xs">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <div className="w-6 h-6 rounded-md bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                      <MapPin className="w-3.5 h-3.5" />
+                                    </div>
+                                    <span className="text-[11px] font-black uppercase tracking-wider text-blue-950 dark:text-blue-200">
+                                      Lokasi Usaha
+                                    </span>
                                   </div>
-                                  <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 uppercase">
+                                  <p className="text-sm sm:text-base font-bold text-slate-950 dark:text-white uppercase leading-relaxed">
                                     {viewingActor.businessLocation || viewingActor.address || "-"}
                                   </p>
                                 </div>
@@ -2757,14 +2834,16 @@ function ActorDataContent() {
                                 {!isInspektorat && (
                                   <>
                                     {/* Usulan / Koordinator */}
-                                    <div className="bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3.5 transition-colors space-y-2">
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
+                                    <div className="bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/80 hover:bg-amber-100/70 rounded-xl p-3.5 sm:p-4 transition-all space-y-2 shadow-2xs">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 rounded-md bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
                                           <Users className="w-3.5 h-3.5" />
-                                          <span className="text-[10px] font-bold uppercase tracking-wider">Usulan / Koordinator</span>
                                         </div>
+                                        <span className="text-[11px] font-black uppercase tracking-wider text-amber-950 dark:text-amber-200">
+                                          Usulan / Koordinator
+                                        </span>
                                       </div>
-                                      <p className="text-xs sm:text-sm font-black uppercase text-slate-900 dark:text-white">
+                                      <p className="text-sm sm:text-base font-black uppercase text-slate-950 dark:text-white">
                                         {viewingActor.coordinator || "-"}
                                       </p>
                                       {coordPhone && (
@@ -2773,10 +2852,10 @@ function ActorDataContent() {
                                             href={getWaLink(coordPhone)}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:text-emerald-800 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-300/60 dark:border-emerald-800/60 transition-colors group cursor-pointer"
+                                            className="inline-flex items-center gap-1.5 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-xl shadow-xs transition-colors group cursor-pointer"
                                             title="Chat WA Koordinator"
                                           >
-                                            <MessageCircle className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600/30 group-hover:scale-110 transition-transform" />
+                                            <MessageCircle className="w-3.5 h-3.5 text-white fill-white/20 group-hover:scale-110 transition-transform" />
                                             <span>WA: {coordPhone}</span>
                                           </a>
                                         </div>
@@ -2784,20 +2863,24 @@ function ActorDataContent() {
                                     </div>
 
                                     {/* Petugas Survey */}
-                                    <div className="bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 dark:hover:bg-slate-800/70 border border-slate-100 dark:border-slate-800/80 rounded-xl p-3.5 transition-colors space-y-2">
-                                      <div className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
-                                        <UserCheck className="w-3.5 h-3.5" />
-                                        <span className="text-[10px] font-bold uppercase tracking-wider">Petugas Survey</span>
+                                    <div className="bg-indigo-50/90 dark:bg-indigo-950/40 border border-indigo-200/90 dark:border-indigo-800/80 hover:bg-indigo-100/70 rounded-xl p-3.5 sm:p-4 transition-all space-y-2.5 shadow-2xs">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 rounded-md bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                                          <UserCheck className="w-3.5 h-3.5" />
+                                        </div>
+                                        <span className="text-[11px] font-black uppercase tracking-wider text-indigo-950 dark:text-indigo-200">
+                                          Petugas Survey
+                                        </span>
                                       </div>
                                       <div>
                                         {isBelumAdaPetugas ? (
-                                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 uppercase bg-rose-50 dark:bg-rose-950/40 px-2.5 py-0.5 rounded-lg border border-rose-200 dark:border-rose-900">
-                                            <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0 animate-pulse" />
+                                          <span className="inline-flex items-center gap-1.5 text-xs font-black text-white uppercase bg-rose-600 px-3 py-1 rounded-xl shadow-2xs">
+                                            <span className="w-2 h-2 rounded-full bg-white shrink-0 animate-pulse" />
                                             <span>BELUM ADA</span>
                                           </span>
                                         ) : (
-                                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                                            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                          <span className="inline-flex items-center gap-1.5 text-xs font-black text-white uppercase bg-emerald-600 px-3 py-1 rounded-xl shadow-2xs">
+                                            <span className="w-2 h-2 rounded-full bg-white shrink-0" />
                                             <span>{canonicalPetugas}</span>
                                           </span>
                                         )}
@@ -2807,7 +2890,7 @@ function ActorDataContent() {
                                           <select
                                             value={!isBelumAdaPetugas ? canonicalPetugas : "BELUM ADA"}
                                             onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value)}
-                                            className="text-[11px] font-bold h-8 rounded-xl border border-slate-300 dark:border-slate-700 bg-background px-2 py-0.5 shadow-2xs text-primary cursor-pointer hover:border-primary transition-all w-full max-w-[240px]"
+                                            className="text-xs font-bold h-8 rounded-xl border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-800 px-2.5 py-0.5 shadow-2xs text-indigo-950 dark:text-indigo-200 cursor-pointer hover:border-indigo-500 transition-all w-full max-w-[260px]"
                                             title="Admin: Ganti Petugas Survey secara langsung"
                                           >
                                             <option value="BELUM ADA" className="text-rose-600 font-bold">🔴 BELUM ADA (Hanya Admin)</option>
@@ -2943,44 +3026,44 @@ function ActorDataContent() {
                       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4 sm:p-5 space-y-4">
                         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
+                            <div className="w-8 h-8 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold shadow-xs">
                               <Navigation className="w-4 h-4" />
                             </div>
                             <div>
                               <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
                                 Data Titik Lokasi Verifikasi
                               </h4>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Koordinat GPS lapangan yang terekam sistem verifikasi</p>
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Koordinat GPS lapangan yang terekam sistem verifikasi</p>
                             </div>
                           </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {(viewingActor as any).verificationLocation && (
-                            <div className="bg-slate-50/80 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-2">
-                              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                            <div className="bg-emerald-50/80 dark:bg-emerald-950/40 p-4 rounded-xl border border-emerald-200/90 dark:border-emerald-800/80 space-y-2.5 shadow-2xs">
+                              <span className="inline-flex items-center gap-1.5 text-xs font-black text-white uppercase bg-emerald-600 px-3 py-1 rounded-lg shadow-2xs">
                                 Sumber: Verifikasi Admin
                               </span>
-                              <p className="text-xs font-mono text-slate-800 dark:text-slate-200 font-bold">
+                              <p className="text-sm font-mono text-emerald-950 dark:text-emerald-100 font-black">
                                 {(viewingActor as any).verificationLocation.lat}, {(viewingActor as any).verificationLocation.lon}
                               </p>
                               <a 
                                 href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocation.lat},${(viewingActor as any).verificationLocation.lon}`} 
                                 target="_blank" 
                                 rel="noreferrer" 
-                                className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline"
+                                className="inline-flex items-center gap-1.5 text-xs text-emerald-800 dark:text-emerald-300 font-bold hover:underline"
                               >
-                                <ExternalLink className="w-3.5 h-3.5" /> Lihat di Google Maps
+                                <ExternalLink className="w-3.5 h-3.5 text-emerald-600" /> Lihat di Google Maps
                               </a>
                             </div>
                           )}
 
                           {(viewingActor as any).verificationBypass?.isBypassed && (
-                            <div className="bg-slate-50/80 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-2">
-                              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">
+                            <div className="bg-amber-50/80 dark:bg-amber-950/40 p-4 rounded-xl border border-amber-200/90 dark:border-amber-800/80 space-y-2.5 shadow-2xs">
+                              <span className="inline-flex items-center gap-1.5 text-xs font-black text-white uppercase bg-amber-600 px-3 py-1 rounded-lg shadow-2xs">
                                 Sumber: Verifikasi Admin (Bypass)
                               </span>
-                              <p className="text-xs text-amber-900 dark:text-amber-200 font-medium">
+                              <p className="text-xs text-amber-950 dark:text-amber-100 font-bold">
                                 Alasan: {(viewingActor as any).verificationBypass.reason}
                               </p>
                               {(viewingActor as any).verificationBypass.fileBase64 && (
@@ -2988,7 +3071,7 @@ function ActorDataContent() {
                                   href={(viewingActor as any).verificationBypass.fileBase64} 
                                   target="_blank" 
                                   rel="noreferrer" 
-                                  className="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-800 shadow-2xs hover:bg-amber-200 transition-colors"
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-600 text-white px-3 py-1.5 rounded-lg shadow-2xs hover:bg-amber-700 transition-colors"
                                 >
                                   Lihat Bukti Lampiran
                                 </a>
@@ -2997,20 +3080,20 @@ function ActorDataContent() {
                           )}
 
                           {(viewingActor as any).verificationLocationDinas && (
-                            <div className="bg-slate-50/80 dark:bg-slate-800/40 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-2">
-                              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-400 uppercase bg-indigo-50 dark:bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-200 dark:border-indigo-800">
+                            <div className="bg-indigo-50/80 dark:bg-indigo-950/40 p-4 rounded-xl border border-indigo-200/90 dark:border-indigo-800/80 space-y-2.5 shadow-2xs">
+                              <span className="inline-flex items-center gap-1.5 text-xs font-black text-white uppercase bg-indigo-600 px-3 py-1 rounded-lg shadow-2xs">
                                 Sumber: Verifikasi Dinas
                               </span>
-                              <p className="text-xs font-mono text-indigo-900 dark:text-indigo-200 font-bold">
+                              <p className="text-sm font-mono text-indigo-950 dark:text-indigo-100 font-black">
                                 {(viewingActor as any).verificationLocationDinas.lat}, {(viewingActor as any).verificationLocationDinas.lon}
                               </p>
                               <a 
                                 href={`https://www.google.com/maps?q=${(viewingActor as any).verificationLocationDinas.lat},${(viewingActor as any).verificationLocationDinas.lon}`} 
                                 target="_blank" 
                                 rel="noreferrer" 
-                                className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline"
+                                className="inline-flex items-center gap-1.5 text-xs text-indigo-800 dark:text-indigo-300 font-bold hover:underline"
                               >
-                                <ExternalLink className="w-3.5 h-3.5" /> Lihat di Google Maps
+                                <ExternalLink className="w-3.5 h-3.5 text-indigo-600" /> Lihat di Google Maps
                               </a>
                             </div>
                           )}
@@ -3027,14 +3110,14 @@ function ActorDataContent() {
                       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4 sm:p-5 space-y-4">
                         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-                              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-xs">
+                              <ShieldCheck className="w-4 h-4" />
                             </div>
                             <div>
                               <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
                                 Hasil Verifikasi BPJS Ketenagakerjaan
                               </h4>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Pencocokan data master kepesertaan BPJS</p>
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Pencocokan data master kepesertaan BPJS</p>
                             </div>
                           </div>
                           {isAdmin && (
@@ -3044,9 +3127,9 @@ function ActorDataContent() {
                                 setViewingActor(null)
                                 router.push('/settings#bpjs')
                               }}
-                              className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-1 cursor-pointer"
+                              className="text-xs font-black text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
                             >
-                              Data Pembanding BPJS <ChevronRight className="w-3 h-3" />
+                              Data Pembanding BPJS <ChevronRight className="w-3.5 h-3.5" />
                             </button>
                           )}
                         </div>
@@ -3055,8 +3138,8 @@ function ActorDataContent() {
                           const bpjsInfo = getActorBpjsStatus(viewingActor)
                           if (!bpjsInfo.hasMatch) {
                             return (
-                              <div className="bg-slate-50/80 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div className="text-xs text-slate-500 font-medium">
+                              <div className="bg-slate-50/80 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                                <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">
                                   Belum ada catatan hasil verifikasi BPJS untuk pelaku usaha ini.
                                 </div>
                                 {isAdmin && (
@@ -3067,7 +3150,7 @@ function ActorDataContent() {
                                       setViewingActor(null)
                                       router.push('/settings#bpjs')
                                     }}
-                                    className="shrink-0 font-bold border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 h-8 rounded-xl text-xs cursor-pointer"
+                                    className="shrink-0 font-bold border-slate-300 text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 h-8 rounded-xl text-xs cursor-pointer shadow-2xs"
                                   >
                                     <ShieldCheck className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Upload Data BPJS di Pengaturan
                                   </Button>
@@ -3085,45 +3168,45 @@ function ActorDataContent() {
 
                           const containerBg = 
                             bpjsInfo.type === 'verified'
-                              ? "bg-emerald-50/60 dark:bg-emerald-950/30 border-emerald-200/80 dark:border-emerald-800/60"
+                              ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200/90 dark:border-emerald-800/80"
                               : bpjsInfo.type === 'duplicate'
-                              ? "bg-amber-50/60 dark:bg-amber-950/30 border-amber-200/80 dark:border-amber-800/60"
-                              : "bg-rose-50/60 dark:bg-rose-950/30 border-rose-200/80 dark:border-rose-800/60"
+                              ? "bg-amber-50/80 dark:bg-amber-950/40 border-amber-200/90 dark:border-amber-800/80"
+                              : "bg-rose-50/80 dark:bg-rose-950/40 border-rose-200/90 dark:border-rose-800/80"
 
                           const btnBorder =
                             bpjsInfo.type === 'verified'
-                              ? "border-emerald-300 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300"
+                              ? "border-emerald-300 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-300"
                               : bpjsInfo.type === 'duplicate'
-                              ? "border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-300"
-                              : "border-rose-300 text-rose-700 hover:bg-rose-100 dark:border-rose-800 dark:text-rose-300"
+                              ? "border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-300"
+                              : "border-rose-300 text-rose-800 hover:bg-rose-100 dark:border-rose-800 dark:text-rose-300"
 
                           const sourceFile = bpjsInfo.bpjsItem?.fileName || bpjsInfo.bpjsItem?.sumberFile || (viewingActor as any).bpjsSourceFile || 'Sheet Hasil Verifikasi BPJS'
                           const checkedAt = (viewingActor as any).bpjsCheckedAt || bpjsInfo.bpjsItem?.uploadedAt
 
                           return (
-                            <div className={cn("p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4", containerBg)}>
+                            <div className={cn("p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs", containerBg)}>
                               <div className="space-y-1.5 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className={cn("text-xs font-black px-2.5 py-1 rounded-lg uppercase tracking-wider", badgeBg)}>
                                     {bpjsInfo.badgeLabel}
                                   </span>
                                   {bpjsInfo.statusCode && (
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-white/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                                    <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 shadow-2xs">
                                       Kode Status: {bpjsInfo.statusCode}
                                     </span>
                                   )}
                                 </div>
                                 {bpjsInfo.note && (
-                                  <p className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                                  <p className="text-xs font-bold text-slate-800 dark:text-slate-100">
                                     Keterangan: {bpjsInfo.note}
                                   </p>
                                 )}
-                                <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+                                <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-600 dark:text-slate-300 pt-0.5">
                                   {sourceFile && (
-                                    <span>File Acuan: <strong className="text-slate-700 dark:text-slate-300 font-mono">{sourceFile}</strong></span>
+                                    <span>File Acuan: <strong className="text-slate-900 dark:text-white font-mono">{sourceFile}</strong></span>
                                   )}
                                   {checkedAt && (
-                                    <span>Waktu Cek: <strong className="text-slate-700 dark:text-slate-300">{new Date(checkedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong></span>
+                                    <span>Waktu Cek: <strong className="text-slate-900 dark:text-white">{new Date(checkedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong></span>
                                   )}
                                 </div>
                               </div>
@@ -3136,7 +3219,7 @@ function ActorDataContent() {
                                     setViewingActor(null)
                                     router.push('/settings#bpjs')
                                   }}
-                                  className={cn("shrink-0 font-bold h-8 rounded-xl text-xs cursor-pointer", btnBorder)}
+                                  className={cn("shrink-0 font-bold h-8 rounded-xl text-xs cursor-pointer shadow-2xs", btnBorder)}
                                 >
                                   Update di Pengaturan
                                 </Button>
@@ -3151,23 +3234,23 @@ function ActorDataContent() {
                         <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4 sm:p-5 space-y-3.5">
                           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                              <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-xs">
                                 <Folder className="w-4 h-4" />
                               </div>
                               <div>
                                 <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
                                   Berkas Tambahan (Google Drive)
                                 </h4>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Foto, video, dokumen usulan, atau file lainnya</p>
+                                <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Foto, video, dokumen usulan, atau file lainnya</p>
                               </div>
                             </div>
                           </div>
-                          <div className="bg-slate-50/80 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="bg-blue-50/80 dark:bg-blue-950/40 p-4 rounded-xl border border-blue-200/90 dark:border-blue-800/80 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
                             <div>
-                              <p className="text-xs font-bold text-slate-900 dark:text-white uppercase">Folder Google Drive Pelaku Usaha</p>
-                              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mt-0.5">Tersambung ke penyimpanan Google Drive</p>
+                              <p className="text-xs sm:text-sm font-black text-blue-950 dark:text-white uppercase">Folder Google Drive Pelaku Usaha</p>
+                              <p className="text-[11px] font-semibold text-blue-800/80 dark:text-blue-300 mt-0.5">Tersambung ke penyimpanan Google Drive</p>
                             </div>
-                            <a href={viewingActor.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-bold px-4 py-2 rounded-xl text-xs shadow-2xs flex items-center justify-center min-w-[140px] cursor-pointer">
+                            <a href={viewingActor.googleDriveLink} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-black px-4 py-2 rounded-xl text-xs shadow-xs flex items-center justify-center min-w-[140px] cursor-pointer">
                               <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Buka Folder Drive
                             </a>
                           </div>
@@ -3178,29 +3261,29 @@ function ActorDataContent() {
                       <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-4 sm:p-5 space-y-3.5">
                         <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-slate-500/10 text-slate-600 dark:text-slate-400 flex items-center justify-center font-bold">
+                            <div className="w-8 h-8 rounded-xl bg-slate-700 text-white flex items-center justify-center font-bold shadow-xs">
                               <History className="w-4 h-4" />
                             </div>
                             <div>
                               <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
                                 Informasi Sistem & Audit
                               </h4>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Riwayat alur status dan waktu input database</p>
+                              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Riwayat alur status dan waktu input database</p>
                             </div>
                           </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          <div className="bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/80">
-                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Status Alur Sistem</p>
-                            <p className="text-xs font-black uppercase text-primary pt-0.5">{(viewingActor.status || "").replace('_', ' ')}</p>
+                          <div className="bg-slate-50/90 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-700/80 shadow-2xs space-y-1">
+                            <p className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Status Alur Sistem</p>
+                            <p className="text-xs sm:text-sm font-black uppercase text-primary pt-0.5">{(viewingActor.status || "").replace('_', ' ')}</p>
                           </div>
-                          <div className="bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/80">
-                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Petugas Input</p>
-                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 pt-0.5">{viewingActor.createdBy || "System"}</p>
+                          <div className="bg-slate-50/90 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-700/80 shadow-2xs space-y-1">
+                            <p className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Petugas Input</p>
+                            <p className="text-xs sm:text-sm font-black text-slate-950 dark:text-white pt-0.5">{viewingActor.createdBy || "System"}</p>
                           </div>
-                          <div className="bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/80">
-                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Waktu Pendaftaran</p>
-                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 pt-0.5">{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
+                          <div className="bg-slate-50/90 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-700/80 shadow-2xs space-y-1">
+                            <p className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Waktu Pendaftaran</p>
+                            <p className="text-xs sm:text-sm font-black text-slate-950 dark:text-white pt-0.5">{viewingActor.createdAt ? new Date(viewingActor.createdAt).toLocaleString('id-ID') : "-"}</p>
                           </div>
                         </div>
                       </section>
