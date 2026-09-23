@@ -46,6 +46,7 @@ export function useNavigation() {
   const isVerifikatorDinas = userProfile?.role === 'verifikator_dinas'
   const isInspektorat = userProfile?.role === 'inspektorat'
   const isStaff = userProfile?.role === 'staff'
+  const isSurveyor = userProfile?.role === 'surveyor'
   
   // Real-time unread count
   const chatsRef = useMemoFirebase(() => {
