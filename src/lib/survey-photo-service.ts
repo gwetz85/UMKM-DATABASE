@@ -118,7 +118,7 @@ export async function getSurveyPhoto(
 }
 
 /**
- * Save a survey photo to the decoupled 'settings/survey_photos' node and mark 'hasSurveyPhoto: true'
+ * Save a survey photo to businessActors and mark 'hasSurveyPhoto: true'
  */
 export async function saveSurveyPhoto(
   database: Database | null | undefined,
@@ -131,20 +131,24 @@ export async function saveSurveyPhoto(
   // 1. Cache in memory
   photoMemoryCache.set(actorId, base64Photo);
 
-  // 2. Save to settings/survey_photos node
-  const photoRef = ref(db, `settings/survey_photos/${actorId}/fotoSurveyUrl`);
-  await set(photoRef, base64Photo);
-
-  // 3. Mark hasSurveyPhoto on businessActors node
+  // 2. Primary storage: Save directly to businessActors/${actorId}
   const actorRef = ref(db, `businessActors/${actorId}`);
   await update(actorRef, {
     hasSurveyPhoto: true,
+    photoSurveyUrl: base64Photo,
     "surveyData/hasPhoto": true,
+    "surveyData/fotoSurveyUrl": base64Photo,
   });
+
+  // 3. Best-effort cache in settings/survey_photos (safely caught)
+  try {
+    const photoRef = ref(db, `settings/survey_photos/${actorId}/fotoSurveyUrl`);
+    await set(photoRef, base64Photo);
+  } catch {}
 }
 
 /**
- * Delete a survey photo from 'settings/survey_photos', legacy nodes, and mark 'hasSurveyPhoto: false'
+ * Delete a survey photo from businessActors and legacy nodes safely
  */
 export async function deleteSurveyPhoto(
   database: Database | null | undefined,
@@ -156,15 +160,30 @@ export async function deleteSurveyPhoto(
   // 1. Remove from memory cache
   photoMemoryCache.delete(actorId);
 
-  // 2. Remove photo references across all possible nodes atomically
-  const updates: Record<string, any> = {
-    [`settings/survey_photos/${actorId}`]: null,
-    [`survey_photos/${actorId}`]: null,
-    [`businessActors/${actorId}/hasSurveyPhoto`]: false,
-    [`businessActors/${actorId}/photoSurveyUrl`]: null,
-    [`businessActors/${actorId}/surveyData/hasPhoto`]: false,
-    [`businessActors/${actorId}/surveyData/fotoSurveyUrl`]: null,
-  };
+  // 2. Primary update: clear survey photo directly on the businessActors node
+  const actorRef = ref(db, `businessActors/${actorId}`);
+  await update(actorRef, {
+    hasSurveyPhoto: false,
+    photoSurveyUrl: null,
+    "surveyData/hasPhoto": false,
+    "surveyData/fotoSurveyUrl": null,
+  });
 
-  await update(ref(db), updates);
+  // Direct clear on child reference as fallback
+  try {
+    const directPhotoRef = ref(db, `businessActors/${actorId}/surveyData/fotoSurveyUrl`);
+    await set(directPhotoRef, null);
+  } catch {}
+
+  // 3. Optional best-effort cleanup for decoupled/legacy nodes
+  // Wrapped in safe try/catch so rule restrictions on these paths will never block deletion
+  try {
+    const settingsPhotoRef = ref(db, `settings/survey_photos/${actorId}`);
+    await set(settingsPhotoRef, null);
+  } catch {}
+
+  try {
+    const surveyPhotoRef = ref(db, `survey_photos/${actorId}`);
+    await set(surveyPhotoRef, null);
+  } catch {}
 }
