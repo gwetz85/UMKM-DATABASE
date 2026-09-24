@@ -142,3 +142,29 @@ export async function saveSurveyPhoto(
     "surveyData/hasPhoto": true,
   });
 }
+
+/**
+ * Delete a survey photo from 'settings/survey_photos', legacy nodes, and mark 'hasSurveyPhoto: false'
+ */
+export async function deleteSurveyPhoto(
+  database: Database | null | undefined,
+  actorId: string
+): Promise<void> {
+  const db = getDb(database);
+  if (!db || !actorId) return;
+
+  // 1. Remove from memory cache
+  photoMemoryCache.delete(actorId);
+
+  // 2. Remove photo references across all possible nodes atomically
+  const updates: Record<string, any> = {
+    [`settings/survey_photos/${actorId}`]: null,
+    [`survey_photos/${actorId}`]: null,
+    [`businessActors/${actorId}/hasSurveyPhoto`]: false,
+    [`businessActors/${actorId}/photoSurveyUrl`]: null,
+    [`businessActors/${actorId}/surveyData/hasPhoto`]: false,
+    [`businessActors/${actorId}/surveyData/fotoSurveyUrl`]: null,
+  };
+
+  await update(ref(db), updates);
+}

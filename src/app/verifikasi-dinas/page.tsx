@@ -56,6 +56,8 @@ import { SignaturePadDialog } from "@/components/signature-pad-dialog"
 import { generateBeritaAcaraPDF, formatTanggalIndonesia } from "@/lib/generate-berita-acara-pdf"
 import { ensureVerifikatorUser } from "@/lib/verifikator-service"
 import { resolveSurveyorCanonicalName, buildSurveyorMaps } from "@/lib/surveyor-utils"
+import { ConfirmDialog } from "@/components/confirm-dialog"
+import { deleteSurveyPhoto } from "@/lib/survey-photo-service"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export default function VerifikasiDinasPage() {
@@ -124,6 +126,10 @@ export default function VerifikasiDinasPage() {
   const [photoEditActor, setPhotoEditActor] = useState<BusinessActor | null>(null)
   const [photoEditPreview, setPhotoEditPreview] = useState<string | null>(null)
   const [isSavingPhoto, setIsSavingPhoto] = useState(false)
+  
+  // Admin Hapus Foto Survey Dinas State
+  const [photoDeleteTarget, setPhotoDeleteTarget] = useState<BusinessActor | null>(null)
+  const [isDeletingPhoto, setIsDeletingPhoto] = useState(false)
   
   // Format rupiah
   const formatRupiah = (value: string) => {
@@ -335,6 +341,80 @@ export default function VerifikasiDinasPage() {
       })
     } finally {
       setIsSavingPhoto(false)
+    }
+  }
+
+  // Hapus foto survey dinas (Khusus Administrator)
+  const handleConfirmDeleteSurveyPhoto = async () => {
+    if (!photoDeleteTarget || !database) return
+    setIsDeletingPhoto(true)
+    try {
+      const actorId = photoDeleteTarget.id
+      await deleteSurveyPhoto(database, actorId)
+
+      // Update state viewingActor jika sedang dibuka
+      if (viewingActor && viewingActor.id === actorId) {
+        setViewingActor(prev => prev ? ({
+          ...prev,
+          hasSurveyPhoto: false,
+          photoSurveyUrl: undefined,
+          surveyData: {
+            ...(prev.surveyData || ({} as any)),
+            fotoSurveyUrl: undefined,
+            hasPhoto: false
+          }
+        }) : null)
+      }
+
+      // Update state verifyingActor jika sedang dibuka
+      if (verifyingActor && verifyingActor.id === actorId) {
+        setPhotoPreview(null)
+        setSurveyData(prev => ({
+          ...prev,
+          fotoSurveyUrl: undefined,
+          hasPhoto: false
+        }))
+        setVerifyingActor(prev => prev ? ({
+          ...prev,
+          hasSurveyPhoto: false,
+          photoSurveyUrl: undefined,
+          surveyData: {
+            ...(prev.surveyData || ({} as any)),
+            fotoSurveyUrl: undefined,
+            hasPhoto: false
+          }
+        }) : null)
+      }
+
+      // Jika modal edit foto sedang terbuka untuk actor yang sama
+      if (photoEditActor && photoEditActor.id === actorId) {
+        setPhotoEditPreview(null)
+        setPhotoEditActor(null)
+      }
+
+      logActivity({
+        query: `ADMIN HAPUS FOTO SURVEY: ${photoDeleteTarget.fullName}`,
+        results: 'Berhasil',
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'HAPUS FOTO ADMIN',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+
+      toast({
+        title: '✅ Foto Survey Berhasil Dihapus',
+        description: `Foto survey untuk ${photoDeleteTarget.fullName} telah dihapus dari sistem.`
+      })
+      setPhotoDeleteTarget(null)
+    } catch (err: any) {
+      console.error(err)
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Menghapus Foto',
+        description: err?.message || 'Terjadi kesalahan saat menghapus foto survey.'
+      })
+    } finally {
+      setIsDeletingPhoto(false)
     }
   }
 
@@ -2159,19 +2239,36 @@ export default function VerifikasiDinasPage() {
                             <p className="text-[10px] text-slate-400 font-medium">Belum ada</p>
                           </div>
                         )}
-                        {doc.label === "Foto Survey Dinas" && (isAdmin || isDinas || isPetugas) && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setPhotoEditActor(viewingActor);
-                              setPhotoEditPreview(getCleanSurveyPhoto(viewingActor));
-                            }}
-                            className="w-full text-[10px] h-7 bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 font-bold gap-1 mt-1"
-                          >
-                            <Camera className="w-3 h-3" /> {doc.url ? 'Ganti Foto Survey' : 'Upload Foto Survey'}
-                          </Button>
+                        {doc.label === "Foto Survey Dinas" && (
+                          <div className="space-y-1.5 mt-1">
+                            {(isAdmin || isDinas || isPetugas) && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setPhotoEditActor(viewingActor);
+                                  setPhotoEditPreview(getCleanSurveyPhoto(viewingActor));
+                                }}
+                                className="w-full text-[10px] h-7 bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100 font-bold gap-1"
+                              >
+                                <Camera className="w-3 h-3" /> {doc.url ? 'Ganti Foto Survey' : 'Upload Foto Survey'}
+                              </Button>
+                            )}
+                            {isAdmin && doc.url && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setPhotoDeleteTarget(viewingActor)}
+                                disabled={isDeletingPhoto}
+                                className="w-full text-[10px] h-7 bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100 font-bold gap-1 transition-colors"
+                                title="Hapus Foto Survey Dinas (Khusus Administrator)"
+                              >
+                                <Trash2 className="w-3 h-3" /> Hapus Foto Survey
+                              </Button>
+                            )}
+                          </div>
                         )}
                       </div>
                     ))}
@@ -3302,24 +3399,38 @@ export default function VerifikasiDinasPage() {
             </div>
           )}
 
-          <DialogFooter className="flex-col sm:flex-row items-center justify-end gap-2 pt-3 border-t">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => { setPhotoEditActor(null); setPhotoEditPreview(null); }}
-              disabled={isSavingPhoto}
-            >
-              Batal
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSavePhotoModal}
-              disabled={isSavingPhoto || !photoEditPreview}
-              className="bg-amber-600 hover:bg-amber-700 text-white font-bold gap-2 min-w-[140px]"
-            >
-              {isSavingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-              Simpan Foto
-            </Button>
+          <DialogFooter className="flex-col sm:flex-row items-center justify-between gap-2 pt-3 border-t">
+            {isAdmin && (photoEditPreview || (photoEditActor && getCleanSurveyPhoto(photoEditActor))) ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPhotoDeleteTarget(photoEditActor)}
+                disabled={isSavingPhoto || isDeletingPhoto}
+                className="text-xs h-9 bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100 font-bold gap-1.5 w-full sm:w-auto"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Hapus Foto Survey
+              </Button>
+            ) : <div />}
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => { setPhotoEditActor(null); setPhotoEditPreview(null); }}
+                disabled={isSavingPhoto || isDeletingPhoto}
+              >
+                Batal
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSavePhotoModal}
+                disabled={isSavingPhoto || !photoEditPreview || isDeletingPhoto}
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold gap-2 min-w-[140px]"
+              >
+                {isSavingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                Simpan Foto
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -3526,6 +3637,20 @@ export default function VerifikasiDinasPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog Konfirmasi Hapus Foto Survey Dinas (Admin Only) */}
+      <ConfirmDialog
+        open={!!photoDeleteTarget}
+        onOpenChange={(open) => !open && setPhotoDeleteTarget(null)}
+        title="Hapus Foto Survey Dinas?"
+        description={`Apakah Anda yakin ingin menghapus foto survey dinas untuk pelaku usaha "${photoDeleteTarget?.fullName}"? Tindakan ini khusus Administrator dan foto yang dihapus tidak dapat dipulihkan.`}
+        confirmText={isDeletingPhoto ? "Menghapus..." : "Ya, Hapus Foto"}
+        cancelText="Batal"
+        variant="destructive"
+        icon={<Trash2 className="w-8 h-8 text-rose-500" />}
+        onConfirm={handleConfirmDeleteSurveyPhoto}
+        isLoading={isDeletingPhoto}
+      />
     </div>
   )
 }
