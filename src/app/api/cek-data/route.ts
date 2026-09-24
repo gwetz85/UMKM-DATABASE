@@ -226,12 +226,25 @@ export async function GET(req: NextRequest) {
           item._displayBusiness ||
           item.businessName ||
           item.usaha ||
-          item.businessCategory ||
           item.surveyData?.namaUsaha ||
           item.surveyData?.jenisUsaha ||
           ''
         ).toLowerCase();
-        return usahaStr.includes(queryLower);
+        const catStr = String(item.businessCategory || item.kategoriUsaha || '').toLowerCase();
+
+        if (queryLower === 'kuliner') {
+          if (item._sourceType === 'actors') {
+            return item.businessCategory === 'Kuliner';
+          }
+          return /\b(kuliner|makan|makanan|minum|minuman|kue|roti|kedai|warung makan|katering|catering|gorengan|keripik|kerupuk|peyek|snack|mie|bakso|jajan|kopi|cafe|soto|sate|pempek|tahu|tempe|nasi)\b/i.test(usahaStr);
+        }
+
+        let catMatch = false;
+        if (catStr !== 'bukan kuliner' && catStr.includes(queryLower)) {
+          catMatch = true;
+        }
+
+        return usahaStr.includes(queryLower) || catMatch;
       }
 
       return false;

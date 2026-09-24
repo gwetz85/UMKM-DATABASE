@@ -186,6 +186,99 @@ async function getUsahaCombinedDataset(): Promise<any[]> {
   return combined;
 }
 
+function isUsahaMatch(item: any, q: string): boolean {
+  if (!q || q === '*' || q === 'all') return true;
+  const qLower = q.toLowerCase().trim();
+
+  const usahaStr = String(item._displayBusiness || '').toLowerCase();
+  const rawCat = String(item._businessCategory || '').trim();
+  const catLower = rawCat.toLowerCase();
+  const deskripsi = String(item._raw?.surveyData?.deskripsiUsaha || '').toLowerCase();
+  const jenis = String(item._raw?.surveyData?.jenisUsaha || '').toLowerCase();
+
+  // 1. KULINER / MAKANAN
+  if (qLower === 'kuliner' || qLower === 'makanan' || qLower === 'kuliner / makanan') {
+    // If it's a SIMPU actor with explicit category:
+    if (item._sourceType === 'actors') {
+      return rawCat === 'Kuliner';
+    }
+
+    // For Sheet Pembanding (2025, 2024, 2023):
+    // Match only if the usaha text is actually culinary/food related
+    const isFood = /\b(kuliner|makan|makanan|minum|minuman|kue|roti|kedai makan|warung makan|katering|catering|gorengan|keripik|kerupuk|peyek|snack|mie|bakso|jajan|jajanan|kopi|cafe|kafe|resto|restoran|soto|sate|pempek|seafood|otak|tahu|tempe|nasi|es\b|jus\b|bolu|donat)\b/i.test(usahaStr);
+    
+    // Explicitly exclude non-food grocery/services
+    const isExcluded = /\b(kelontong|runcit|sembako|bengkel|jahit|boat|penambang|elektronik|laundry|salon|pangkas|toko pakaian|teralis|bangunan)\b/i.test(usahaStr);
+
+    return isFood && !isExcluded;
+  }
+
+  // 2. WARUNG / SEMBAKO
+  if (qLower === 'warung' || qLower === 'sembako' || qLower === 'kelontong' || qLower === 'warung / sembako') {
+    return /\b(warung|sembako|kelontong|runcit|kios|toko)\b/i.test(usahaStr) ||
+           /\b(warung|sembako|kelontong|runcit)\b/i.test(deskripsi) ||
+           /\b(warung|sembako|kelontong|runcit)\b/i.test(jenis);
+  }
+
+  // 3. KUE & ROTI
+  if (qLower === 'kue' || qLower === 'roti' || qLower === 'kue & roti') {
+    return /\b(kue|roti|bakery|cake|pastry|bolu|donat|kering|basah|keripik|kerupuk|peyek)\b/i.test(usahaStr) ||
+           /\b(kue|roti)\b/i.test(deskripsi);
+  }
+
+  // 4. JAHIT / PAKAIAN
+  if (qLower === 'jahit' || qLower === 'pakaian' || qLower === 'konveksi' || qLower === 'jahit / pakaian') {
+    return /\b(jahit|pakaian|konveksi|tailor|taylor|busana|bordir|baju|tekstil|kain)\b/i.test(usahaStr) ||
+           /\b(jahit|pakaian|konveksi)\b/i.test(deskripsi) ||
+           /\b(jahit|pakaian|konveksi)\b/i.test(jenis);
+  }
+
+  // 5. BENGKEL / OTOMOTIF
+  if (qLower === 'bengkel' || qLower === 'otomotif' || qLower === 'bengkel / otomotif') {
+    return /\b(bengkel|motor|mobil|otomotif|las|tambal ban|servis|service|sparepart|onderdil)\b/i.test(usahaStr) ||
+           /\b(bengkel|motor|mobil)\b/i.test(deskripsi);
+  }
+
+  // 6. LAUNDRY
+  if (qLower === 'laundry' || qLower === 'cuci') {
+    return /\b(laundry|cuci|binatu)\b/i.test(usahaStr);
+  }
+
+  // 7. SALON & PANGKAS
+  if (qLower === 'salon' || qLower === 'pangkas' || qLower === 'salon & pangkas') {
+    return /\b(salon|pangkas|cukur|barber|rambut|rias|make up)\b/i.test(usahaStr);
+  }
+
+  // 8. PERTANIAN & IKAN
+  if (qLower === 'ikan' || qLower === 'pertanian' || qLower === 'pertanian & ikan') {
+    return /\b(ikan|perikanan|nelayan|tani|pertanian|ternak|kebun|sayur|bibit|tambak|kolam|hidroponik)\b/i.test(usahaStr);
+  }
+
+  // 9. MINUMAN & KOPI
+  if (qLower === 'kopi' || qLower === 'minuman' || qLower === 'minuman & kopi') {
+    return /\b(kopi|minuman|kedai kopi|cafe|kafe|jus|teh|boba|es\b)\b/i.test(usahaStr);
+  }
+
+  // 10. BOAT & PENAMBANG
+  if (qLower === 'boat' || qLower === 'penambang' || qLower === 'boat / penambang') {
+    return /\b(boat|penambang|pompong|sampan|speedboat|perahu)\b/i.test(usahaStr);
+  }
+
+  // 11. General / Custom search:
+  // If category is 'Bukan Kuliner', do NOT match 'kuliner'
+  let catMatch = false;
+  if (catLower !== 'bukan kuliner' && catLower.includes(qLower)) {
+    catMatch = true;
+  }
+
+  return (
+    usahaStr.includes(qLower) ||
+    catMatch ||
+    deskripsi.includes(qLower) ||
+    jenis.includes(qLower)
+  );
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -198,24 +291,11 @@ export async function GET(req: NextRequest) {
     }
 
     const allData = await getUsahaCombinedDataset();
-    const queryLower = query.toLowerCase();
 
-    // 1. Filter by query Usaha (and optionally by name if query matches)
+    // 1. Filter by query Usaha
     const matchingData = allData.filter((item) => {
-      // If query provided, check usaha fields
-      if (query && query !== '*' && query !== 'all') {
-        const usahaStr = String(item._displayBusiness || '').toLowerCase();
-        const catStr = String(item._businessCategory || '').toLowerCase();
-        const deskripsiStr = String(item._raw?.surveyData?.deskripsiUsaha || '').toLowerCase();
-        const jenisStr = String(item._raw?.surveyData?.jenisUsaha || '').toLowerCase();
-
-        const matchUsaha =
-          usahaStr.includes(queryLower) ||
-          catStr.includes(queryLower) ||
-          deskripsiStr.includes(queryLower) ||
-          jenisStr.includes(queryLower);
-
-        if (!matchUsaha) return false;
+      if (!isUsahaMatch(item, query)) {
+        return false;
       }
 
       // Filter by source

@@ -73,6 +73,7 @@ const POPULAR_USAHA_TAGS = [
   { label: "Kelontong / Kios", value: "kelontong" },
   { label: "Pertanian & Ikan", value: "ikan" },
   { label: "Minuman & Kopi", value: "kopi" },
+  { label: "Boat / Penambang", value: "boat" },
 ]
 
 export default function CekUsahaPage() {
@@ -327,10 +328,26 @@ export default function CekUsahaPage() {
   // Highlight matching search term helper
   const highlightMatch = (text: string, query: string) => {
     if (!query || !text) return text
-    const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"))
+    const cleanQ = query.trim()
+    if (!cleanQ) return text
+
+    let regexPattern = cleanQ.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    if (cleanQ.toLowerCase() === 'kuliner') {
+      regexPattern = `${regexPattern}|makan(?:an)?|minum(?:an)?|kue|roti|gorengan|mie|bakso|kopi|snack|resto|catering|katering`
+    } else if (cleanQ.toLowerCase() === 'warung') {
+      regexPattern = `${regexPattern}|kelontong|sembako|runcit|kios|toko`
+    } else if (cleanQ.toLowerCase() === 'jahit') {
+      regexPattern = `${regexPattern}|pakaian|konveksi|tailor|taylor|busana|bordir`
+    } else if (cleanQ.toLowerCase() === 'bengkel') {
+      regexPattern = `${regexPattern}|motor|mobil|otomotif|las|tambal ban|servis`
+    } else if (cleanQ.toLowerCase() === 'boat') {
+      regexPattern = `${regexPattern}|penambang|pompong|sampan|perahu`
+    }
+
+    const parts = text.split(new RegExp(`(${regexPattern})`, "gi"))
     return parts.map((part, i) =>
-      part.toLowerCase() === query.toLowerCase() ? (
-        <span key={i} className="bg-amber-200 text-amber-900 font-bold px-1 rounded">
+      new RegExp(`^(${regexPattern})$`, "i").test(part) ? (
+        <span key={i} className="bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 font-bold px-1 rounded">
           {part}
         </span>
       ) : (
