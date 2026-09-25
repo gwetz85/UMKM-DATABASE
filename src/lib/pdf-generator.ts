@@ -510,10 +510,17 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   const margin = 16;
   const contentWidth = pageWidth - margin * 2;
 
-  const dateStr = `Tanjungpinang , .....................................................`;
+  const now = new Date();
+  const bulanNames = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+  const bulan = bulanNames[now.getMonth()];
+  const tahun = now.getFullYear();
+  const dateStr = `Tanjungpinang , .................... ${bulan} ${tahun}`;
 
-  const materaiWidth = 24;
-  const materaiHeight = 22;
+  const materaiWidth = 20;
+  const materaiHeight = 27;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HALAMAN 1 : KUITANSI (UKURAN & PROPORSI 100% PERSIS DOKUMEN CETAKAN ASLI)
@@ -648,15 +655,15 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   doc.text('Penerima Dana Bantuan', kRightColCenter, kMiddleSplitY + 36, { align: 'center' });
 
   // Kotak Materai di area tanda tangan kanan
-  const kMateraiX = kRightColCenter - 28;
-  const kMateraiY = kMiddleSplitY + 43;
+  const kMateraiX = kRightColCenter - materaiWidth;
+  const kMateraiY = kMiddleSplitY + 42;
   doc.setDrawColor(180);
   doc.setLineWidth(0.3);
   doc.rect(kMateraiX, kMateraiY, materaiWidth, materaiHeight);
   doc.setFontSize(6);
   doc.setTextColor(150);
-  doc.text('MATERAI', kMateraiX + materaiWidth / 2, kMateraiY + materaiHeight / 2 - 1, { align: 'center' });
-  doc.text('TEMPEL', kMateraiX + materaiWidth / 2, kMateraiY + materaiHeight / 2 + 3, { align: 'center' });
+  doc.text('MATERAI', kMateraiX + materaiWidth / 2, kMateraiY + materaiHeight / 2 - 1.5, { align: 'center' });
+  doc.text('TEMPEL', kMateraiX + materaiWidth / 2, kMateraiY + materaiHeight / 2 + 2.5, { align: 'center' });
 
   // Nama Pelaku Usaha Terpusat di kolom kanan sejajar dengan nama Ketua Yayasan di kiri
   doc.setTextColor(0);
@@ -807,8 +814,8 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   doc.rect(spMateraiX, y, materaiWidth, materaiHeight);
   doc.setFontSize(6);
   doc.setTextColor(150);
-  doc.text('MATERAI', spMateraiX + materaiWidth / 2, y + materaiHeight / 2 - 1, { align: 'center' });
-  doc.text('TEMPEL', spMateraiX + materaiWidth / 2, y + materaiHeight / 2 + 3, { align: 'center' });
+  doc.text('MATERAI', spMateraiX + materaiWidth / 2, y + materaiHeight / 2 - 1.5, { align: 'center' });
+  doc.text('TEMPEL', spMateraiX + materaiWidth / 2, y + materaiHeight / 2 + 2.5, { align: 'center' });
 
   // 4. Nama Pelaku Usaha
   y += materaiHeight + 5.0;
