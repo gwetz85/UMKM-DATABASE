@@ -874,13 +874,13 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   doc.text('PENGGUNAAN BANTUAN DANA PERMODALAN', pageWidth / 2, lpjY, { align: 'center' });
   lpjY += 4.5;
   doc.text('PENGEMBANGAN USAHA', pageWidth / 2, lpjY, { align: 'center' });
-  lpjY += 9.0;
+  lpjY += 14.0;
 
   // 2. Salam Pembuka
   doc.setFont('times', 'normal');
   doc.setFontSize(10.5);
   doc.text('Dengan Hormat,', lpjMarginX, lpjY);
-  lpjY += 6.0;
+  lpjY += 6.5;
 
   // 3. Paragraf Pembuka (4 baris persis seperti di contoh berkas asli, Yayasan Tunas Bangsa Kepri tebal)
   const p1Line1 = [
