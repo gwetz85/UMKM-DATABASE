@@ -827,43 +827,104 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   // ═══════════════════════════════════════════════════════════════════════════
   doc.addPage();
 
-  let lpjY = 22;
+  const lpjMarginX = 22;
+  const lpjContentWidth = pageWidth - lpjMarginX * 2; // 166 mm
 
-  // 1. Header Judul
+  // Helper untuk menggambar baris teks rata kanan-kiri (justified) dengan dukungan multi font-style (bold/italic)
+  const drawLpjJustifiedLine = (
+    words: { text: string; fontStyle?: 'normal' | 'bold' | 'italic' }[],
+    isLastLine: boolean = false,
+    fontSize: number = 10.5
+  ) => {
+    doc.setFontSize(fontSize);
+    let totalWordsW = 0;
+    words.forEach(w => {
+      doc.setFont('times', w.fontStyle || 'normal');
+      totalWordsW += doc.getTextWidth(w.text);
+    });
+
+    if (isLastLine) {
+      let curX = lpjMarginX;
+      words.forEach(w => {
+        doc.setFont('times', w.fontStyle || 'normal');
+        doc.text(w.text, curX, lpjY);
+        curX += doc.getTextWidth(w.text) + doc.getTextWidth(' ');
+      });
+      return;
+    }
+
+    const numGaps = words.length - 1;
+    const gapW = numGaps > 0 ? (lpjContentWidth - totalWordsW) / numGaps : 0;
+    let curX = lpjMarginX;
+    words.forEach(w => {
+      doc.setFont('times', w.fontStyle || 'normal');
+      doc.text(w.text, curX, lpjY);
+      curX += doc.getTextWidth(w.text) + gapW;
+    });
+  };
+
+  let lpjY = 24;
+
+  // 1. Header Judul (Sesuai contoh berkas asli)
   doc.setFont('times', 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(0);
   doc.text('LAPORAN', pageWidth / 2, lpjY, { align: 'center' });
-  lpjY += 5.2;
+  lpjY += 4.5;
   doc.text('PENGGUNAAN BANTUAN DANA PERMODALAN', pageWidth / 2, lpjY, { align: 'center' });
-  lpjY += 5.2;
+  lpjY += 4.5;
   doc.text('PENGEMBANGAN USAHA', pageWidth / 2, lpjY, { align: 'center' });
-  lpjY += 11;
+  lpjY += 9.0;
 
   // 2. Salam Pembuka
   doc.setFont('times', 'normal');
-  doc.setFontSize(10);
-  doc.text('Dengan Hormat,', margin, lpjY);
+  doc.setFontSize(10.5);
+  doc.text('Dengan Hormat,', lpjMarginX, lpjY);
+  lpjY += 6.0;
+
+  // 3. Paragraf Pembuka (4 baris persis seperti di contoh berkas asli, Yayasan Tunas Bangsa Kepri tebal)
+  const p1Line1 = [
+    { text: 'Sehubungan' }, { text: 'dengan' }, { text: 'Pemberian' }, { text: 'dana' },
+    { text: 'bantuan' }, { text: 'modal' }, { text: 'usaha' }, { text: 'dari' },
+    { text: 'Yayasan', fontStyle: 'bold' as const }, { text: 'Tunas', fontStyle: 'bold' as const },
+    { text: 'Bangsa', fontStyle: 'bold' as const }, { text: 'Kepri', fontStyle: 'bold' as const }
+  ];
+
+  const p1Line2 = [
+    'sebesar', 'Rp.', '1.000.000,-', '(Satu', 'Juta', 'Rupiah),',
+    'saya', 'sebagai', 'pelaku', 'usaha', 'mikro', 'kecil', 'menengah'
+  ].map(text => ({ text }));
+
+  const p1Line3 = [
+    'penerima', 'bantuan', 'tersebut', 'telah', 'memanfaatkan', '/',
+    'menggunakan', 'dana', 'tersebut', 'untuk', 'memajukan', '/'
+  ].map(text => ({ text }));
+
+  const p1Line4 = [
+    'mengembangkan', 'usaha', 'yang', 'telah', 'saya', 'jalani', 'selama', 'ini,'
+  ].map(text => ({ text }));
+
+  const lpjParaLh = 5.0;
+  drawLpjJustifiedLine(p1Line1, false, 10.5);
+  lpjY += lpjParaLh;
+  drawLpjJustifiedLine(p1Line2, false, 10.5);
+  lpjY += lpjParaLh;
+  drawLpjJustifiedLine(p1Line3, false, 10.5);
+  lpjY += lpjParaLh;
+  drawLpjJustifiedLine(p1Line4, true, 10.5);
+  lpjY += 7.0;
+
+  // 4. Kalimat Pengantar
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10.5);
+  doc.text('Bersama ini saya sampaikan rincian Laporan pengunaan dana sebagai berikut:', lpjMarginX, lpjY);
   lpjY += 6.5;
 
-  // 3. Paragraf Pembuka
-  const p1Text = 'Sehubungan dengan Pemberian dana bantuan modal usaha dari Yayasan Tunas Bangsa Kepri sebesar Rp. 1.000.000,- (Satu Juta Rupiah), saya sebagai pelaku usaha mikro kecil menengah penerima bantuan tersebut telah memanfaatkan / menggunakan dana tersebut untuk memajukan / mengembangkan usaha yang telah saya jalani selama ini,';
-  const p1Lines = doc.splitTextToSize(p1Text, contentWidth);
-  doc.text(p1Text, margin, lpjY, {
-    align: 'justify',
-    maxWidth: contentWidth,
-    lineHeightFactor: 1.3,
-  });
-  lpjY += p1Lines.length * 4.8 + 4.5;
-
-  doc.text('Bersama ini saya sampaikan rincian Laporan pengunaan dana sebagai berikut:', margin, lpjY);
-  lpjY += 6.5;
-
-  // 4. Data Pelaku Usaha (dengan Nomor Ponsel di bawah NIK otomatis ter-generate)
-  const idLabelX = margin + 12;
-  const idColonX = margin + 40;
+  // 5. Data Pelaku Usaha (dengan Nomor Ponsel di bawah NIK otomatis ter-generate)
+  const idLabelX = lpjMarginX + 12;
+  const idColonX = lpjMarginX + 42;
   const idValX = idColonX + 3;
-  const maxValW = pageWidth - margin - idValX;
+  const maxValW = pageWidth - lpjMarginX - idValX;
 
   const drawIdRow = (label: string, value: string) => {
     doc.setFont('times', 'normal');
@@ -883,7 +944,7 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
 
   lpjY += 3.5;
 
-  // 5. Pengeluaran
+  // 6. Pengeluaran
   doc.setFont('times', 'normal');
   doc.setFontSize(10);
   doc.text('Pengeluaran', idLabelX, lpjY);
@@ -891,12 +952,12 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   doc.text('Rincian Pengeluaran :', idLabelX, lpjY);
   lpjY += 5.5;
 
-  // 6. Rincian Pengeluaran 1-10
+  // 7. Tabel Rincian Pengeluaran 1-10
   const numX = idLabelX;
   const descStartX = numX + 8;
-  const rpX = 140;
+  const rpX = lpjMarginX + lpjContentWidth - 45;
   const amountStartX = rpX + 7;
-  const amountEndX = pageWidth - margin;
+  const amountEndX = lpjMarginX + lpjContentWidth;
 
   const createDots = (pixelWidth: number) => {
     const dotW = doc.getTextWidth('.');
@@ -914,37 +975,50 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
     doc.text(descDots, descStartX, lpjY);
     doc.text('Rp.', rpX, lpjY);
     doc.text(amountDots, amountStartX, lpjY);
-    lpjY += 5.2;
+    lpjY += 5.0;
   }
 
   // Garis Pembatas Bawah Tabel
   lpjY += 0.5;
   doc.setDrawColor(0);
   doc.setLineWidth(0.4);
-  doc.line(margin, lpjY, pageWidth - margin, lpjY);
-  lpjY += 5.5;
+  doc.line(lpjMarginX, lpjY, lpjMarginX + lpjContentWidth, lpjY);
+  lpjY += 5.2;
 
   // Baris TOTAL
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
   doc.text('TOTAL', (idLabelX + rpX) / 2, lpjY, { align: 'center' });
   doc.text('Rp.', rpX, lpjY);
+  lpjY += 8.5;
+
+  // 8. Paragraf Penutup (persis seperti di contoh berkas dengan italic)
+  const pCloseLine1 = [
+    { text: 'Demikian' }, { text: 'disampaikan' }, { text: 'laporan' }, { text: 'ini' },
+    { text: 'dengan' }, { text: 'Melampirkan' },
+    { text: 'fotocopi', fontStyle: 'italic' as const },
+    { text: 'Nota', fontStyle: 'italic' as const },
+    { text: 'Pembelian', fontStyle: 'italic' as const },
+    { text: 'yang', fontStyle: 'italic' as const },
+    { text: 'Sah,', fontStyle: 'italic' as const }
+  ];
+
+  const pCloseLine2 = [
+    'saya', 'sampaikan', 'dengan', 'sebenar-benarnya,', 'atas', 'bantuan',
+    'yang', 'telah', 'diberikan', 'saya', 'ucapkan'
+  ].map(text => ({ text }));
+
+  const pCloseLine3 = [{ text: 'terima' }, { text: 'kasih.' }];
+
+  drawLpjJustifiedLine(pCloseLine1, false, 10.5);
+  lpjY += lpjParaLh;
+  drawLpjJustifiedLine(pCloseLine2, false, 10.5);
+  lpjY += lpjParaLh;
+  drawLpjJustifiedLine(pCloseLine3, true, 10.5);
   lpjY += 9.0;
 
-  // 7. Paragraf Penutup
-  doc.setFont('times', 'normal');
-  doc.setFontSize(10);
-  const pCloseText = 'Demikian disampaikan laporan ini dengan Melampirkan fotocopi Nota Pembelian yang Sah, saya sampaikan dengan sebenar-benarnya, atas bantuan yang telah diberikan saya ucapkan terima kasih.';
-  const pCloseLines = doc.splitTextToSize(pCloseText, contentWidth);
-  doc.text(pCloseText, margin, lpjY, {
-    align: 'justify',
-    maxWidth: contentWidth,
-    lineHeightFactor: 1.3,
-  });
-  lpjY += pCloseLines.length * 4.8 + 8.0;
-
-  // 8. Tanda Tangan (Format tanggal mengikuti Halaman 1 dan 2)
-  const lpjSigCenterX = pageWidth - margin - 38; // x = 156
+  // 9. Tanda Tangan
+  const lpjSigCenterX = lpjMarginX + lpjContentWidth - 36;
 
   doc.setFont('times', 'normal');
   doc.setFontSize(10);
