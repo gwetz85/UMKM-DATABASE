@@ -517,7 +517,7 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   ];
   const bulan = bulanNames[now.getMonth()];
   const tahun = now.getFullYear();
-  const dateStr = `Tanjungpinang , .................... ${bulan} ${tahun}`;
+  const dateStr = `Tanjungpinang , ...... ${bulan} ${tahun}`;
 
   const materaiWidth = 20;
   const materaiHeight = 27;
@@ -794,12 +794,10 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   doc.setFont('times', 'normal');
   doc.setFontSize(10);
 
-  const spDateWidth = doc.getTextWidth(dateStr);
-  const spDateStartX = pageWidth - margin - spDateWidth;
-  const spDateCenterX = spDateStartX + (spDateWidth / 2);
+  const spDateCenterX = pageWidth - margin - 38; // x = 156
 
   // 1. Tanggal
-  doc.text(dateStr, spDateStartX, y);
+  doc.text(dateStr, spDateCenterX, y, { align: 'center' });
   y += 5.0;
 
   // 2. Teks "Penerima Dana Bantuan"
@@ -823,6 +821,146 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
   doc.text((actor.fullName || '-').toUpperCase(), spDateCenterX, y, { align: 'center' });
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HALAMAN 3 : LAPORAN PENGGUNAAN BANTUAN DANA PERMODALAN PENGEMBANGAN USAHA
+  // ═══════════════════════════════════════════════════════════════════════════
+  doc.addPage();
+
+  let lpjY = 22;
+
+  // 1. Header Judul
+  doc.setFont('times', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(0);
+  doc.text('LAPORAN', pageWidth / 2, lpjY, { align: 'center' });
+  lpjY += 5.2;
+  doc.text('PENGGUNAAN BANTUAN DANA PERMODALAN', pageWidth / 2, lpjY, { align: 'center' });
+  lpjY += 5.2;
+  doc.text('PENGEMBANGAN USAHA', pageWidth / 2, lpjY, { align: 'center' });
+  lpjY += 11;
+
+  // 2. Salam Pembuka
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10);
+  doc.text('Dengan Hormat,', margin, lpjY);
+  lpjY += 6.5;
+
+  // 3. Paragraf Pembuka
+  const p1Text = 'Sehubungan dengan Pemberian dana bantuan modal usaha dari Yayasan Tunas Bangsa Kepri sebesar Rp. 1.000.000,- (Satu Juta Rupiah), saya sebagai pelaku usaha mikro kecil menengah penerima bantuan tersebut telah memanfaatkan / menggunakan dana tersebut untuk memajukan / mengembangkan usaha yang telah saya jalani selama ini,';
+  const p1Lines = doc.splitTextToSize(p1Text, contentWidth);
+  doc.text(p1Text, margin, lpjY, {
+    align: 'justify',
+    maxWidth: contentWidth,
+    lineHeightFactor: 1.3,
+  });
+  lpjY += p1Lines.length * 4.8 + 4.5;
+
+  doc.text('Bersama ini saya sampaikan rincian Laporan pengunaan dana sebagai berikut:', margin, lpjY);
+  lpjY += 6.5;
+
+  // 4. Data Pelaku Usaha (dengan Nomor Ponsel di bawah NIK otomatis ter-generate)
+  const idLabelX = margin + 12;
+  const idColonX = margin + 40;
+  const idValX = idColonX + 3;
+  const maxValW = pageWidth - margin - idValX;
+
+  const drawIdRow = (label: string, value: string) => {
+    doc.setFont('times', 'normal');
+    doc.setFontSize(10);
+    doc.text(label, idLabelX, lpjY);
+    doc.text(':', idColonX, lpjY);
+    const lines = doc.splitTextToSize(value || '-', maxValW);
+    doc.text(lines, idValX, lpjY);
+    lpjY += lines.length * 4.6 + 0.8;
+  };
+
+  drawIdRow('Nama', (actor.fullName || '-').toUpperCase());
+  drawIdRow('NIK', actor.nik || '-');
+  drawIdRow('Nomor Ponsel', actor.phone || '-');
+  drawIdRow('Usaha', (actor.businessName || actor.businessCategory || '-').toUpperCase());
+  drawIdRow('Alamat Usaha', (actor.businessLocation || actor.address || '-').toUpperCase());
+
+  lpjY += 3.5;
+
+  // 5. Pengeluaran
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10);
+  doc.text('Pengeluaran', idLabelX, lpjY);
+  lpjY += 5.0;
+  doc.text('Rincian Pengeluaran :', idLabelX, lpjY);
+  lpjY += 5.5;
+
+  // 6. Rincian Pengeluaran 1-10
+  const numX = idLabelX;
+  const descStartX = numX + 8;
+  const rpX = 140;
+  const amountStartX = rpX + 7;
+  const amountEndX = pageWidth - margin;
+
+  const createDots = (pixelWidth: number) => {
+    const dotW = doc.getTextWidth('.');
+    const count = Math.floor(pixelWidth / dotW);
+    return '.'.repeat(count);
+  };
+
+  const descDots = createDots(rpX - 3 - descStartX);
+  const amountDots = createDots(amountEndX - amountStartX);
+
+  for (let i = 1; i <= 10; i++) {
+    doc.setFont('times', 'normal');
+    doc.setFontSize(10);
+    doc.text(`${i}.`, numX, lpjY);
+    doc.text(descDots, descStartX, lpjY);
+    doc.text('Rp.', rpX, lpjY);
+    doc.text(amountDots, amountStartX, lpjY);
+    lpjY += 5.2;
+  }
+
+  // Garis Pembatas Bawah Tabel
+  lpjY += 0.5;
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.4);
+  doc.line(margin, lpjY, pageWidth - margin, lpjY);
+  lpjY += 5.5;
+
+  // Baris TOTAL
+  doc.setFont('times', 'bold');
+  doc.setFontSize(10);
+  doc.text('TOTAL', (idLabelX + rpX) / 2, lpjY, { align: 'center' });
+  doc.text('Rp.', rpX, lpjY);
+  lpjY += 9.0;
+
+  // 7. Paragraf Penutup
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10);
+  const pCloseText = 'Demikian disampaikan laporan ini dengan Melampirkan fotocopi Nota Pembelian yang Sah, saya sampaikan dengan sebenar-benarnya, atas bantuan yang telah diberikan saya ucapkan terima kasih.';
+  const pCloseLines = doc.splitTextToSize(pCloseText, contentWidth);
+  doc.text(pCloseText, margin, lpjY, {
+    align: 'justify',
+    maxWidth: contentWidth,
+    lineHeightFactor: 1.3,
+  });
+  lpjY += pCloseLines.length * 4.8 + 8.0;
+
+  // 8. Tanda Tangan (Format tanggal mengikuti Halaman 1 dan 2)
+  const lpjSigCenterX = pageWidth - margin - 38; // x = 156
+
+  doc.setFont('times', 'normal');
+  doc.setFontSize(10);
+  doc.text(dateStr, lpjSigCenterX, lpjY, { align: 'center' });
+  lpjY += 5.5;
+
+  doc.text('Hormat saya,', lpjSigCenterX, lpjY, { align: 'center' });
+  lpjY += 28.0;
+
+  const actorName = (actor.fullName || '-').toUpperCase();
+  doc.setFont('times', 'bold');
+  doc.setFontSize(10);
+  doc.text(actorName, lpjSigCenterX, lpjY, { align: 'center' });
+  const nameW = Math.max(doc.getTextWidth(actorName), 50);
+  doc.setLineWidth(0.4);
+  doc.line(lpjSigCenterX - nameW / 2, lpjY + 1.5, lpjSigCenterX + nameW / 2, lpjY + 1.5);
 
 };
 

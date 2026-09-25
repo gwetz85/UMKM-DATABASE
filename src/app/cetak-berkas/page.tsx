@@ -135,7 +135,7 @@ function CetakBerkasContent() {
       })
       toast({
         title: "Berhasil Dicetak",
-        description: `Berkas Pencairan (Surat Pernyataan & Kuitansi) untuk ${actor.fullName} sedang diunduh.`,
+        description: `Berkas Pencairan (Kuitansi, Surat Pernyataan & Laporan Penggunaan Dana) untuk ${actor.fullName} sedang diunduh.`,
       })
     } catch (err) {
       console.error("Print error:", err)
@@ -202,7 +202,7 @@ function CetakBerkasContent() {
             </h1>
           </div>
           <p className="text-xs md:text-sm text-slate-500 font-semibold ml-10">
-            Cetak Berkas Pencairan (Surat Pernyataan & Kuitansi) untuk pelaku usaha yang telah selesai dan memiliki rekening bank.
+            Cetak Berkas Pencairan (Kuitansi, Surat Pernyataan & Laporan Penggunaan Dana) untuk pelaku usaha yang telah selesai dan memiliki rekening bank.
           </p>
         </div>
 
@@ -567,7 +567,7 @@ function CetakBerkasContent() {
                   Cetak Berkas per Koordinator
                 </DialogTitle>
                 <DialogDescription className="text-xs text-slate-600 mt-1">
-                  Pilih koordinator di bawah untuk langsung mengunduh seluruh berkas pencairan (Kuitansi & Surat Pernyataan) dalam 1 dokumen PDF siap cetak.
+                  Pilih koordinator di bawah untuk langsung mengunduh seluruh berkas pencairan (Kuitansi, Surat Pernyataan & Laporan Penggunaan Dana) dalam 1 dokumen PDF siap cetak.
                 </DialogDescription>
               </div>
             </div>
