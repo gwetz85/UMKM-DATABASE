@@ -975,22 +975,24 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
     doc.text(descDots, descStartX, lpjY);
     doc.text('Rp.', rpX, lpjY);
     doc.text(amountDots, amountStartX, lpjY);
-    lpjY += 5.0;
+    if (i < 10) {
+      lpjY += 7.5;
+    }
   }
 
   // Garis Pembatas Bawah Tabel
-  lpjY += 0.5;
+  lpjY += 4.5;
   doc.setDrawColor(0);
   doc.setLineWidth(0.4);
   doc.line(lpjMarginX, lpjY, lpjMarginX + lpjContentWidth, lpjY);
-  lpjY += 5.2;
+  lpjY += 6.5;
 
   // Baris TOTAL
   doc.setFont('times', 'bold');
   doc.setFontSize(10);
   doc.text('TOTAL', (idLabelX + rpX) / 2, lpjY, { align: 'center' });
   doc.text('Rp.', rpX, lpjY);
-  lpjY += 8.5;
+  lpjY += 9.5;
 
   // 8. Paragraf Penutup (persis seperti di contoh berkas dengan italic)
   const pCloseLine1 = [
@@ -1026,7 +1028,7 @@ export const renderSuratPernyataanPages = (doc: jsPDF, actor: BusinessActor, isF
   lpjY += 5.5;
 
   doc.text('Hormat saya,', lpjSigCenterX, lpjY, { align: 'center' });
-  lpjY += 28.0;
+  lpjY += 26.0;
 
   const actorName = (actor.fullName || '-').toUpperCase();
   doc.setFont('times', 'bold');
