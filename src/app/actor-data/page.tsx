@@ -3980,13 +3980,10 @@ function ActorDataContent() {
       {showFullPhotoDialog && surveyPhotoUrl && (
         <Dialog open={showFullPhotoDialog} onOpenChange={setShowFullPhotoDialog}>
           <DialogContent className="max-w-4xl max-h-[92vh] p-3 flex flex-col items-center justify-center bg-black/95 border-slate-800 text-white rounded-2xl overflow-hidden">
-            <div className="w-full flex justify-between items-center px-3 py-1.5 border-b border-white/10 mb-2">
-              <span className="text-xs font-black uppercase tracking-wider flex items-center gap-2 text-teal-300">
-                <Camera className="w-4 h-4 text-teal-400" /> Foto Survey Lapangan &mdash; {surveyViewActor?.fullName}
+            <div className="w-full flex items-center px-3 py-1.5 border-b border-white/10 mb-2 pr-12">
+              <span className="text-xs font-black uppercase tracking-wider flex items-center gap-2 text-teal-300 truncate">
+                <Camera className="w-4 h-4 text-teal-400 shrink-0" /> Foto Survey Lapangan &mdash; {surveyViewActor?.fullName}
               </span>
-              <Button size="sm" variant="ghost" className="h-7 text-white hover:bg-white/10 rounded-lg" onClick={() => setShowFullPhotoDialog(false)}>
-                <X className="w-4 h-4" />
-              </Button>
             </div>
             <div className="flex-1 flex items-center justify-center overflow-hidden w-full p-2">
               <img
