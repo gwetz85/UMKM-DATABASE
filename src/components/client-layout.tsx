@@ -427,7 +427,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
             {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (!isCekDataPage || (user && !isCekDataPage)) && (!isPendaftaranPage || (user && !isPendaftaranPage)) && (
               <div className="hidden lg:block absolute top-4 bottom-2 right-3 sm:right-4 lg:right-6 z-50 pointer-events-none">
                 <div className="pointer-events-auto flex flex-col items-end w-72 h-full overflow-hidden select-none">
-                  <div className="flex flex-col gap-2.5 w-full h-full">
+                  <div className="flex flex-col gap-2.5 w-full h-full overflow-y-auto no-scrollbar pb-2">
                     <WeatherWidget className="w-full shrink-0" />
                     <SystemInfoWidget 
                       systemConfig={systemConfig} 
@@ -435,7 +435,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       user={user} 
                       className="w-full shrink-0" 
                     />
-                    <KelurahanWidget className="w-full flex-1 min-h-0" />
+                    <KelurahanWidget className="w-full flex-1 min-h-[180px]" />
                   </div>
                 </div>
               </div>

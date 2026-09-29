@@ -406,50 +406,50 @@ function WeatherIcon({ icon, className }: { icon: string; className?: string }) 
 function AirFlowAnimation({ tier }: { tier: AqiTier }) {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-xl">
-      <svg className="w-full h-full opacity-60 dark:opacity-40" viewBox="0 0 260 50" fill="none" preserveAspectRatio="none">
+      <svg className="w-full h-full opacity-40 dark:opacity-25" viewBox="0 0 260 36" fill="none" preserveAspectRatio="none">
         {/* Streamline 1 */}
         <path
-          d="M-20 14 C 40 4, 90 26, 160 14 C 210 6, 240 20, 290 10"
-          stroke={tier.accentHex}
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          className="animate-air-flow-fast"
-          opacity="0.85"
-        />
-        {/* Streamline 2 */}
-        <path
-          d="M-20 28 C 50 36, 110 16, 175 30 C 220 38, 250 24, 290 26"
+          d="M-20 10 C 40 3, 90 18, 160 10 C 210 4, 240 16, 290 8"
           stroke={tier.accentHex}
           strokeWidth="1.2"
           strokeLinecap="round"
-          className="animate-air-flow-medium"
-          opacity="0.65"
+          className="animate-air-flow-fast"
+          opacity="0.8"
         />
-        {/* Streamline 3 */}
+        {/* Streamline 2 */}
         <path
-          d="M-20 42 C 60 48, 130 36, 190 42 C 230 46, 260 34, 290 38"
+          d="M-20 20 C 50 26, 110 12, 175 22 C 220 28, 250 16, 290 20"
           stroke={tier.accentHex}
           strokeWidth="1"
           strokeLinecap="round"
+          className="animate-air-flow-medium"
+          opacity="0.6"
+        />
+        {/* Streamline 3 */}
+        <path
+          d="M-20 28 C 60 32, 130 22, 190 26 C 230 30, 260 22, 290 26"
+          stroke={tier.accentHex}
+          strokeWidth="0.8"
+          strokeLinecap="round"
           className="animate-air-flow-slow"
-          opacity="0.45"
+          opacity="0.4"
         />
       </svg>
       {/* Drifting Floating Air Particles */}
       <div 
-        className="absolute top-2 left-6 w-1.5 h-1.5 rounded-full animate-air-particle-1"
+        className="absolute top-1.5 left-6 w-1 h-1 rounded-full animate-air-particle-1"
         style={{ backgroundColor: tier.accentHex }}
       />
       <div 
-        className="absolute top-6 left-20 w-1 h-1 rounded-full animate-air-particle-2"
+        className="absolute top-4 left-24 w-1 h-1 rounded-full animate-air-particle-2"
         style={{ backgroundColor: tier.accentHex }}
       />
       <div 
-        className="absolute bottom-3 left-36 w-1.5 h-1.5 rounded-full animate-air-particle-3"
+        className="absolute bottom-1.5 left-40 w-1.5 h-1.5 rounded-full animate-air-particle-3"
         style={{ backgroundColor: tier.accentHex }}
       />
       <div 
-        className="absolute top-4 right-12 w-1 h-1 rounded-full animate-air-particle-4"
+        className="absolute top-2 right-12 w-1 h-1 rounded-full animate-air-particle-4"
         style={{ backgroundColor: tier.accentHex }}
       />
     </div>
@@ -459,7 +459,6 @@ function AirFlowAnimation({ tier }: { tier: AqiTier }) {
 export function WeatherWidget({ className }: { className?: string }) {
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [airQuality, setAirQuality] = useState<AirQualityData | null>(null)
-  const [showAirDetails, setShowAirDetails] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -549,21 +548,21 @@ export function WeatherWidget({ className }: { className?: string }) {
 
   if (isLoading) {
     return (
-      <div className={cn("w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/70 dark:border-slate-800/80 p-5 shadow-lg flex flex-col items-center justify-center gap-3 min-h-[220px]", className)}>
-        <div className="w-10 h-10 rounded-full border-3 border-primary/20 border-t-primary animate-spin" />
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Memuat Cuaca & Kualitas Udara...</span>
+      <div className={cn("w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/70 dark:border-slate-800/80 p-4 shadow-lg flex flex-col items-center justify-center gap-2.5 min-h-[180px]", className)}>
+        <div className="w-8 h-8 rounded-full border-3 border-primary/20 border-t-primary animate-spin" />
+        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-widest">Memuat Cuaca...</span>
       </div>
     )
   }
 
   if (error || !weather) {
     return (
-      <div className={cn("w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/70 dark:border-slate-800/80 p-5 shadow-lg flex flex-col items-center justify-center gap-2.5 text-center min-h-[160px]", className)}>
-        <AlertCircle className="w-6 h-6 text-rose-500" />
+      <div className={cn("w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/70 dark:border-slate-800/80 p-4 shadow-lg flex flex-col items-center justify-center gap-2 text-center min-h-[140px]", className)}>
+        <AlertCircle className="w-5 h-5 text-rose-500" />
         <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{error || 'Data tidak tersedia'}</span>
         <button 
           onClick={() => fetchWeather(true)} 
-          className="text-[10px] font-black uppercase tracking-wider text-primary px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-all"
+          className="text-[9px] font-black uppercase tracking-wider text-primary px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-all"
         >
           Coba Lagi
         </button>
@@ -589,47 +588,47 @@ export function WeatherWidget({ className }: { className?: string }) {
         ['--aqi-rgb' as any]: tier.rgbValues
       }}
     >
-      {/* Dynamic Ambient Breathing Aura driven by Air Quality Color */}
+      {/* Subtle Dynamic Ambient Breathing Aura */}
       <div 
         className={cn(
-          "absolute -top-12 -right-12 w-48 h-48 rounded-full blur-3xl pointer-events-none transition-all duration-1000 animate-ambient-breathe",
+          "absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl pointer-events-none transition-all duration-1000 opacity-20 animate-ambient-breathe",
           tier.ambientAura
         )} 
       />
       <div 
         className={cn(
-          "absolute -bottom-14 -left-14 w-44 h-44 rounded-full blur-3xl pointer-events-none transition-all duration-1000 animate-ambient-breathe",
+          "absolute -bottom-10 -left-10 w-28 h-28 rounded-full blur-2xl pointer-events-none transition-all duration-1000 opacity-15 animate-ambient-breathe",
           tier.ambientAura2
         )} 
       />
 
       {/* Location & Live Status Header */}
       <div className={cn(
-        "p-3 pb-2 flex items-center justify-between border-b border-slate-100/80 dark:border-slate-800/70 transition-colors duration-500 relative z-10",
+        "p-2.5 pb-2 flex items-center justify-between border-b border-slate-100/80 dark:border-slate-800/70 transition-colors duration-500 relative z-10",
         tier.headerBg
       )}>
         <div className="flex items-center gap-2">
           <div 
-            className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all duration-500 shadow-2xs"
+            className="w-5.5 h-5.5 rounded-lg flex items-center justify-center shrink-0 transition-all duration-500 shadow-2xs"
             style={{
               backgroundColor: `${tier.accentHex}18`,
               color: tier.accentHex
             }}
           >
-            <MapPin className="w-3.5 h-3.5" />
+            <MapPin className="w-3 h-3" />
           </div>
           <div>
-            <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight block leading-none">
+            <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight block leading-none">
               {CITY_NAME}
             </span>
-            <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block leading-tight mt-0.5">
+            <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block leading-tight mt-0.5">
               {PROVINCE}, Indonesia
             </span>
           </div>
         </div>
 
         <div 
-          className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[8px] font-bold uppercase tracking-wider transition-all duration-500 shadow-2xs"
+          className="flex items-center gap-1 px-2 py-0.5 rounded-full border text-[8px] font-bold uppercase tracking-wider transition-all duration-500 shadow-2xs"
           style={{
             backgroundColor: `${tier.accentHex}14`,
             borderColor: `${tier.accentHex}40`,
@@ -653,29 +652,32 @@ export function WeatherWidget({ className }: { className?: string }) {
       </div>
 
       {/* Main Weather Hero Display */}
-      <div className="px-4 py-2.5 flex items-center justify-between relative overflow-hidden bg-gradient-to-b from-transparent via-slate-50/30 to-transparent dark:via-slate-800/20 z-10">
-        <div className="flex items-center gap-3">
-          <div className="w-13 h-13 relative flex items-center justify-center shrink-0 drop-shadow-md">
+      <div className="px-3.5 py-2 flex items-center justify-between relative overflow-hidden bg-gradient-to-b from-transparent via-slate-50/20 to-transparent dark:via-slate-800/10 z-10">
+        <div className="flex items-center gap-2.5">
+          <div 
+            className="w-12 h-12 relative flex items-center justify-center shrink-0 drop-shadow-md"
+            style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px', maxWidth: '48px', maxHeight: '48px' }}
+          >
             <div 
-              className="absolute inset-0 rounded-full blur-md opacity-30 transition-colors duration-700" 
+              className="absolute inset-0 rounded-full blur-md opacity-20 transition-colors duration-700 pointer-events-none" 
               style={{ backgroundColor: tier.accentHex }}
             />
             <WeatherIcon icon={desc.icon} className="w-full h-full relative z-10" />
           </div>
           <div className="flex flex-col">
             <div className="flex items-baseline">
-              <span className="text-3.5xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
+              <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
                 {weather.temperature}
               </span>
               <span 
-                className="text-2xl font-black leading-none ml-0.5 transition-colors duration-500"
+                className="text-xl font-black leading-none ml-0.5 transition-colors duration-500"
                 style={{ color: tier.accentHex }}
               >
                 °
               </span>
             </div>
-            <div className="flex items-center gap-1 mt-1">
-              <span className={cn("text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-2xs", desc.color)}>
+            <div className="flex items-center gap-1 mt-0.5">
+              <span className={cn("text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-2xs", desc.color)}>
                 {desc.label}
               </span>
             </div>
@@ -683,12 +685,12 @@ export function WeatherWidget({ className }: { className?: string }) {
         </div>
 
         <div className="flex flex-col items-end justify-center text-right pl-2">
-          <div className="flex items-center gap-1 text-[9.5px] font-bold text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-1 text-[9px] font-bold text-slate-500 dark:text-slate-400">
             <Thermometer className="w-3 h-3 text-amber-500 shrink-0" />
             <span>Terasa {weather.feelsLike}°C</span>
           </div>
           {weather.precipitation > 0 && (
-            <div className="flex items-center gap-1 text-[8.5px] font-bold text-blue-600 dark:text-blue-400 mt-1">
+            <div className="flex items-center gap-1 text-[8px] font-bold text-blue-600 dark:text-blue-400 mt-0.5">
               <CloudRain className="w-2.5 h-2.5" />
               <span>{weather.precipitation} mm</span>
             </div>
@@ -699,38 +701,51 @@ export function WeatherWidget({ className }: { className?: string }) {
       {/* Air Quality (Kualitas Udara) Showcase Card with Animation & Live Color */}
       <div 
         className={cn(
-          "mx-3 mb-2 p-2.5 rounded-xl border relative overflow-hidden transition-all duration-500 backdrop-blur-md z-10",
-          "bg-white/75 dark:bg-slate-800/70 shadow-2xs",
-          tier.borderBadge
+          "mx-2.5 mb-2 px-2.5 py-1.5 rounded-xl border relative overflow-hidden transition-all duration-500 backdrop-blur-md z-10 flex items-center justify-between gap-2 shadow-2xs",
+          tier.borderBadge,
+          tier.bgColor
         )}
       >
         {/* Animated Aerodynamic Air Currents & Floating Particulates */}
         <AirFlowAnimation tier={tier} />
 
-        {/* Card Header: Wind/Air title & Live Status Pill */}
-        <div className="flex items-center justify-between relative z-10 mb-1.5">
-          <div className="flex items-center gap-1.5">
-            <div 
-              className={cn(
-                "w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors shadow-2xs",
-                tier.bgColor,
-                tier.color
-              )}
-            >
-              <Wind className="w-3 h-3 animate-weather-float" />
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-[10px] font-black uppercase tracking-tight text-slate-800 dark:text-slate-200">
-                Kualitas Udara
-              </span>
-              <span className="text-[8px] font-extrabold text-slate-400 dark:text-slate-500">
-                (AQI)
-              </span>
-            </div>
+        {/* Left: Animated Wind/Leaf icon + Status Pill */}
+        <div className="relative z-10 flex items-center gap-2 min-w-0">
+          <div 
+            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border shadow-2xs animate-aqi-pulse-ring"
+            style={{ 
+              borderColor: `${tier.accentHex}40`,
+              backgroundColor: `${tier.accentHex}18`,
+              color: tier.accentHex 
+            }}
+          >
+            <Wind className="w-3.5 h-3.5 animate-weather-float" />
           </div>
+          <div className="flex flex-col min-w-0 leading-tight">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-black uppercase tracking-tight text-slate-800 dark:text-slate-100 truncate">
+                Udara {tier.label}
+              </span>
+              <span 
+                className="text-[7.5px] font-black px-1.5 py-0.2 rounded-full border shadow-2xs shrink-0"
+                style={{ 
+                  backgroundColor: `${tier.accentHex}20`,
+                  color: tier.accentHex,
+                  borderColor: `${tier.accentHex}50`
+                }}
+              >
+                AQI {aqiValue}
+              </span>
+            </div>
+            <span className="text-[7.5px] font-semibold text-slate-500 dark:text-slate-400 truncate mt-0.5">
+              PM2.5: {airQuality?.pm25 ?? 18.5} µg/m³ • {tier.shortAdvice}
+            </span>
+          </div>
+        </div>
 
-          {/* Live Status Pill with pulsing beacon */}
-          <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border shadow-2xs", tier.badgeClass)}>
+        {/* Right: Live Beacon & Mini Spectrum Bar */}
+        <div className="relative z-10 flex flex-col items-end shrink-0 pl-1">
+          <div className="flex items-center gap-1">
             <span className="relative flex h-1.5 w-1.5">
               <span 
                 className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
@@ -741,135 +756,46 @@ export function WeatherWidget({ className }: { className?: string }) {
                 style={{ backgroundColor: tier.accentHex }}
               />
             </span>
-            <span>{tier.category}</span>
+            <span className="text-[7.5px] font-black uppercase tracking-wider" style={{ color: tier.accentHex }}>
+              {tier.category}
+            </span>
           </div>
-        </div>
-
-        {/* Score & Metrics Row */}
-        <div className="relative z-10 flex items-center justify-between gap-2">
-          {/* Circular AQI Badge with breathing glow pulse */}
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div 
-              className="w-10 h-10 rounded-full flex flex-col items-center justify-center border-2 shadow-xs relative shrink-0 transition-transform duration-300 animate-aqi-pulse-ring"
-              style={{ 
-                borderColor: tier.accentHex,
-                backgroundColor: `${tier.accentHex}16` 
-              }}
-            >
-              <span 
-                className="text-sm font-black leading-none tracking-tight"
-                style={{ color: tier.accentHex }}
-              >
-                {aqiValue}
-              </span>
-              <span className="text-[6.5px] font-extrabold uppercase tracking-tighter text-slate-400 dark:text-slate-400 leading-none mt-0.5">
-                AQI US
-              </span>
-            </div>
-
-            {/* Labels and Pollutant Info */}
-            <div className="flex flex-col min-w-0">
-              <div className="flex items-baseline gap-1.5">
-                <span className={cn("text-xs font-black tracking-tight", tier.color)}>
-                  {tier.label}
-                </span>
-                <span className="text-[8.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">
-                  PM2.5: <span className="font-bold text-slate-700 dark:text-slate-200">{airQuality?.pm25 ?? 18.5} µg</span>
-                </span>
-              </div>
-              <p className="text-[8px] font-medium text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
-                {tier.shortAdvice}
-              </p>
-            </div>
-          </div>
-
-          {/* Toggle Detail Button */}
-          <button
-            onClick={() => setShowAirDetails(prev => !prev)}
-            className="shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors flex items-center gap-0.5 text-[8px] font-bold"
-            title="Lihat Detail Kualitas Udara"
-          >
-            <span>{showAirDetails ? "Tutup" : "Info"}</span>
-            {showAirDetails ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
-          </button>
-        </div>
-
-        {/* Multi-tier animated AQI Spectrum Bar */}
-        <div className="relative z-10 mt-2">
-          <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700/60 relative overflow-hidden shadow-inner">
-            {/* 6-Color Spectrum gradient */}
+          {/* Mini Gradient Bar with Shimmer */}
+          <div className="w-14 h-1 rounded-full bg-slate-200 dark:bg-slate-700/60 relative overflow-hidden mt-1 shadow-inner">
             <div 
               className="absolute inset-0 rounded-full"
               style={{
-                background: 'linear-gradient(to right, #10B981 0%, #10B981 16.6%, #F59E0B 16.6%, #F59E0B 33.3%, #F97316 33.3%, #F97316 50%, #EF4444 50%, #EF4444 66.6%, #A855F7 66.6%, #A855F7 83.3%, #881337 83.3%, #881337 100%)'
+                background: 'linear-gradient(to right, #10B981, #F59E0B, #F97316, #EF4444, #A855F7, #881337)'
               }}
             />
-            {/* Shimmer sweep animation */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-aqi-shimmer pointer-events-none" />
-          </div>
-
-          {/* Animated glowing pointer marker */}
-          <div 
-            className="absolute -top-0.5 -translate-x-1/2 transition-all duration-1000 flex flex-col items-center pointer-events-none"
-            style={{ 
-              left: `${meterPos}%` 
-            }}
-          >
+            {/* Pointer Indicator */}
             <div 
-              className="w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 shadow-md flex items-center justify-center ring-1 ring-black/15"
-              style={{ backgroundColor: tier.accentHex }}
-            >
-              <div className="w-0.5 h-0.5 rounded-full bg-white animate-ping" />
-            </div>
-          </div>
-
-          {/* Scale range labels */}
-          <div className="flex justify-between items-center text-[7px] font-bold text-slate-400 dark:text-slate-500 mt-1 px-0.5">
-            <span>0 (Baik)</span>
-            <span>50</span>
-            <span>100</span>
-            <span>150</span>
-            <span>200</span>
-            <span>300+</span>
+              className="absolute -top-0.5 w-1.5 h-2 -translate-x-1/2 rounded-full border border-white dark:border-slate-900 shadow-sm"
+              style={{ 
+                left: `${meterPos}%`,
+                backgroundColor: tier.accentHex 
+              }}
+            />
           </div>
         </div>
-
-        {/* Collapsible Detailed Metrics */}
-        {showAirDetails && (
-          <div className="relative z-10 mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-            <div className="grid grid-cols-2 gap-1 text-[8.5px]">
-              <div className="flex items-center justify-between p-1 rounded-md bg-slate-100/70 dark:bg-slate-900/60 px-1.5">
-                <span className="text-slate-400 font-bold">PM10</span>
-                <span className="font-black text-slate-700 dark:text-slate-200">{airQuality?.pm10 ?? 24} µg/m³</span>
-              </div>
-              <div className="flex items-center justify-between p-1 rounded-md bg-slate-100/70 dark:bg-slate-900/60 px-1.5">
-                <span className="text-slate-400 font-bold">AQI Eropa</span>
-                <span className="font-black text-slate-700 dark:text-slate-200">{airQuality?.europeanAqi ?? 45} EAQI</span>
-              </div>
-            </div>
-            <div className="p-1.5 rounded-md bg-slate-100/80 dark:bg-slate-900/70 text-[8px] text-slate-600 dark:text-slate-300 leading-relaxed flex items-start gap-1">
-              <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0 mt-0.5" />
-              <span>{tier.detailedAdvice}</span>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Modern Bento Weather Stats Grid */}
-      <div className="grid grid-cols-2 gap-1.5 px-3 pb-2.5 relative z-10">
+      <div className="grid grid-cols-2 gap-1 px-2.5 pb-2 relative z-10">
         {/* Kelembaban */}
         <div className={cn(
-          "flex items-center gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
+          "flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
           tier.statBorderHover
         )}>
-          <div className="w-6 h-6 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
-            <Droplets className="w-3.5 h-3.5" />
+          <div className="w-5.5 h-5.5 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
+            <Droplets className="w-3 h-3" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-[11px] font-black text-slate-800 dark:text-slate-100">
+            <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100">
               {weather.humidity}%
             </span>
-            <span className="text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
+            <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
               Kelembaban
             </span>
           </div>
@@ -877,17 +803,17 @@ export function WeatherWidget({ className }: { className?: string }) {
 
         {/* Angin */}
         <div className={cn(
-          "flex items-center gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
+          "flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
           tier.statBorderHover
         )}>
-          <div className="w-6 h-6 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
-            <Wind className="w-3.5 h-3.5" />
+          <div className="w-5.5 h-5.5 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+            <Wind className="w-3 h-3" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate">
-              {weather.windSpeed} km/h <span className="text-[8.5px] font-bold text-cyan-600 dark:text-cyan-400">({windDir})</span>
+            <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100 truncate">
+              {weather.windSpeed} km/h <span className="text-[8px] font-bold text-cyan-600 dark:text-cyan-400">({windDir})</span>
             </span>
-            <span className="text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
+            <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
               Angin
             </span>
           </div>
@@ -895,17 +821,17 @@ export function WeatherWidget({ className }: { className?: string }) {
 
         {/* Tekanan */}
         <div className={cn(
-          "flex items-center gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
+          "flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
           tier.statBorderHover
         )}>
-          <div className="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-            <Gauge className="w-3.5 h-3.5" />
+          <div className="w-5.5 h-5.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <Gauge className="w-3 h-3" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-[11px] font-black text-slate-800 dark:text-slate-100">
+            <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100">
               {weather.pressure} hPa
             </span>
-            <span className="text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
+            <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
               Tekanan
             </span>
           </div>
@@ -913,17 +839,17 @@ export function WeatherWidget({ className }: { className?: string }) {
 
         {/* Awan */}
         <div className={cn(
-          "flex items-center gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
+          "flex items-center gap-1.5 p-1.5 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
           tier.statBorderHover
         )}>
-          <div className="w-6 h-6 rounded-lg bg-slate-500/10 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
-            <Cloud className="w-3.5 h-3.5" />
+          <div className="w-5.5 h-5.5 rounded-lg bg-slate-500/10 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
+            <Cloud className="w-3 h-3" />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
-            <span className="text-[11px] font-black text-slate-800 dark:text-slate-100">
+            <span className="text-[10.5px] font-black text-slate-800 dark:text-slate-100">
               {weather.cloudCover}%
             </span>
-            <span className="text-[8px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
+            <span className="text-[7.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
               Awan
             </span>
           </div>
@@ -931,7 +857,7 @@ export function WeatherWidget({ className }: { className?: string }) {
       </div>
 
       {/* Footer & Source */}
-      <div className="px-3 py-2 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[8px] font-bold text-slate-400 uppercase tracking-wider relative z-10">
+      <div className="px-2.5 py-1.5 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[7.5px] font-bold text-slate-400 uppercase tracking-wider relative z-10">
         <div className="flex items-center gap-1 truncate">
           <span>Diperbarui:</span>
           <span className="text-slate-600 dark:text-slate-300 font-black">
@@ -945,7 +871,7 @@ export function WeatherWidget({ className }: { className?: string }) {
           className="p-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700 text-slate-400 hover:text-primary transition-all active:scale-90 shrink-0" 
           title="Perbarui Cuaca & Kualitas Udara"
         >
-          <RefreshCw className={cn("w-3 h-3", isRefreshing && "animate-spin text-primary")} />
+          <RefreshCw className={cn("w-2.5 h-2.5", isRefreshing && "animate-spin text-primary")} />
         </button>
       </div>
     </div>
