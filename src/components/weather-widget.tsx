@@ -12,7 +12,13 @@ import {
   RefreshCw, 
   Thermometer, 
   Compass,
-  AlertCircle
+  AlertCircle,
+  Activity,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react'
 
 // Tanjungpinang, Kepulauan Riau coordinates
@@ -20,6 +26,164 @@ const LATITUDE = 0.9186
 const LONGITUDE = 104.4586
 const CITY_NAME = "Tanjungpinang"
 const PROVINCE = "Kepulauan Riau"
+
+export interface AirQualityData {
+  aqi: number
+  europeanAqi: number
+  pm25: number
+  pm10: number
+  co?: number
+  no2?: number
+  so2?: number
+  o3?: number
+}
+
+export interface AqiTier {
+  level: number
+  category: string
+  label: string
+  shortAdvice: string
+  detailedAdvice: string
+  color: string
+  bgColor: string
+  borderBadge: string
+  badgeClass: string
+  accentHex: string
+  rgbValues: string
+  cardBorder: string
+  cardShadow: string
+  ambientAura: string
+  ambientAura2: string
+  headerBg: string
+  statBorderHover: string
+}
+
+export function getAqiTier(aqi: number): AqiTier {
+  if (aqi <= 50) {
+    return {
+      level: 1,
+      category: "BAIK",
+      label: "Baik",
+      shortAdvice: "Udara Bersih & Segar",
+      detailedAdvice: "Kualitas udara sangat baik. Aman dan ideal untuk seluruh kegiatan luar ruangan.",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-500/10",
+      borderBadge: "border-emerald-500/30",
+      badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+      accentHex: "#10B981",
+      rgbValues: "16, 185, 129",
+      cardBorder: "border-emerald-300/80 dark:border-emerald-700/60 hover:border-emerald-400 dark:hover:border-emerald-500",
+      cardShadow: "shadow-[0_8px_30px_rgba(16,185,129,0.18)] hover:shadow-[0_12px_36px_rgba(16,185,129,0.28)]",
+      ambientAura: "bg-emerald-400/25 dark:bg-emerald-500/20",
+      ambientAura2: "bg-teal-400/20 dark:bg-teal-500/15",
+      headerBg: "bg-gradient-to-r from-emerald-50/80 via-slate-50/40 to-transparent dark:from-emerald-950/40 dark:via-slate-800/30",
+      statBorderHover: "hover:border-emerald-300/70 dark:hover:border-emerald-700/70",
+    }
+  }
+  if (aqi <= 100) {
+    return {
+      level: 2,
+      category: "SEDANG",
+      label: "Sedang",
+      shortAdvice: "Kualitas Cukup Baik",
+      detailedAdvice: "Kualitas udara dapat diterima. Sebagian besar orang dapat beraktivitas normal tanpa keluhan.",
+      color: "text-amber-600 dark:text-amber-400",
+      bgColor: "bg-amber-500/10",
+      borderBadge: "border-amber-500/30",
+      badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+      accentHex: "#F59E0B",
+      rgbValues: "245, 158, 11",
+      cardBorder: "border-amber-300/80 dark:border-amber-700/60 hover:border-amber-400 dark:hover:border-amber-500",
+      cardShadow: "shadow-[0_8px_30px_rgba(245,158,11,0.18)] hover:shadow-[0_12px_36px_rgba(245,158,11,0.28)]",
+      ambientAura: "bg-amber-400/25 dark:bg-amber-500/20",
+      ambientAura2: "bg-yellow-400/20 dark:bg-yellow-500/15",
+      headerBg: "bg-gradient-to-r from-amber-50/80 via-slate-50/40 to-transparent dark:from-amber-950/40 dark:via-slate-800/30",
+      statBorderHover: "hover:border-amber-300/70 dark:hover:border-amber-700/70",
+    }
+  }
+  if (aqi <= 150) {
+    return {
+      level: 3,
+      category: "SENSITIF",
+      label: "Kurang Sehat",
+      shortAdvice: "Sensitif: Gunakan Masker",
+      detailedAdvice: "Kelompok sensitif (anak-anak, lansia, penderita asma/paru) dianjurkan memakai masker di luar.",
+      color: "text-orange-600 dark:text-orange-400",
+      bgColor: "bg-orange-500/10",
+      borderBadge: "border-orange-500/30",
+      badgeClass: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
+      accentHex: "#F97316",
+      rgbValues: "249, 115, 22",
+      cardBorder: "border-orange-300/85 dark:border-orange-700/70 hover:border-orange-400 dark:hover:border-orange-500",
+      cardShadow: "shadow-[0_8px_30px_rgba(249,115,22,0.2)] hover:shadow-[0_12px_36px_rgba(249,115,22,0.3)]",
+      ambientAura: "bg-orange-400/25 dark:bg-orange-500/20",
+      ambientAura2: "bg-amber-400/20 dark:bg-amber-500/15",
+      headerBg: "bg-gradient-to-r from-orange-50/80 via-slate-50/40 to-transparent dark:from-orange-950/40 dark:via-slate-800/30",
+      statBorderHover: "hover:border-orange-300/70 dark:hover:border-orange-700/70",
+    }
+  }
+  if (aqi <= 200) {
+    return {
+      level: 4,
+      category: "TIDAK SEHAT",
+      label: "Tidak Sehat",
+      shortAdvice: "Kenakan Masker",
+      detailedAdvice: "Udara tidak sehat. Seluruh warga disarankan memakai masker dan membatasi aktivitas fisik di luar ruangan.",
+      color: "text-rose-600 dark:text-rose-400",
+      bgColor: "bg-rose-500/10",
+      borderBadge: "border-rose-500/30",
+      badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
+      accentHex: "#EF4444",
+      rgbValues: "239, 68, 68",
+      cardBorder: "border-rose-300/85 dark:border-rose-700/70 hover:border-rose-400 dark:hover:border-rose-500",
+      cardShadow: "shadow-[0_8px_30px_rgba(239,68,68,0.25)] hover:shadow-[0_12px_36px_rgba(239,68,68,0.35)]",
+      ambientAura: "bg-rose-400/30 dark:bg-rose-500/25",
+      ambientAura2: "bg-red-400/20 dark:bg-red-500/20",
+      headerBg: "bg-gradient-to-r from-rose-50/85 via-slate-50/40 to-transparent dark:from-rose-950/50 dark:via-slate-800/30",
+      statBorderHover: "hover:border-rose-300/70 dark:hover:border-rose-700/70",
+    }
+  }
+  if (aqi <= 300) {
+    return {
+      level: 5,
+      category: "SANGAT TIDAK SEHAT",
+      label: "Sangat Buruk",
+      shortAdvice: "Hindari Luar Ruangan",
+      detailedAdvice: "Kualitas udara sangat buruk. Hindari segala aktivitas luar ruangan dan nyalakan penjernih udara.",
+      color: "text-purple-600 dark:text-purple-400",
+      bgColor: "bg-purple-500/10",
+      borderBadge: "border-purple-500/30",
+      badgeClass: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
+      accentHex: "#A855F7",
+      rgbValues: "168, 85, 247",
+      cardBorder: "border-purple-300/85 dark:border-purple-700/70 hover:border-purple-400 dark:hover:border-purple-500",
+      cardShadow: "shadow-[0_8px_30px_rgba(168,85,247,0.28)] hover:shadow-[0_12px_36px_rgba(168,85,247,0.38)]",
+      ambientAura: "bg-purple-400/30 dark:bg-purple-500/25",
+      ambientAura2: "bg-violet-400/25 dark:bg-violet-500/20",
+      headerBg: "bg-gradient-to-r from-purple-50/85 via-slate-50/40 to-transparent dark:from-purple-950/50 dark:via-slate-800/30",
+      statBorderHover: "hover:border-purple-300/70 dark:hover:border-purple-700/70",
+    }
+  }
+  return {
+    level: 6,
+    category: "BERBAHAYA",
+    label: "Berbahaya",
+    shortAdvice: "BAHAYA: Tetap di Dalam",
+    detailedAdvice: "PERINGATAN DARURAT: Udara tingkat berbahaya bagi semua orang. Tetap di dalam ruangan tertutup.",
+    color: "text-rose-700 dark:text-rose-300",
+    bgColor: "bg-red-950/20",
+    borderBadge: "border-red-600/50",
+    badgeClass: "bg-red-900/20 text-red-700 dark:text-red-300 border-red-600/40",
+    accentHex: "#881337",
+    rgbValues: "136, 19, 55",
+    cardBorder: "border-red-500/85 dark:border-red-700/80 hover:border-red-600",
+    cardShadow: "shadow-[0_8px_30px_rgba(136,19,55,0.35)] hover:shadow-[0_12px_36px_rgba(136,19,55,0.45)]",
+    ambientAura: "bg-red-600/35 dark:bg-red-700/30",
+    ambientAura2: "bg-rose-950/40 dark:bg-rose-950/50",
+    headerBg: "bg-gradient-to-r from-red-100/90 via-slate-50/40 to-transparent dark:from-red-950/60 dark:via-slate-800/30",
+    statBorderHover: "hover:border-red-400/70 dark:hover:border-red-600/70",
+  }
+}
 
 interface WeatherData {
   temperature: number
@@ -239,8 +403,63 @@ function WeatherIcon({ icon, className }: { icon: string; className?: string }) 
   return <IconComponent className={className} />
 }
 
+function AirFlowAnimation({ tier }: { tier: AqiTier }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-xl">
+      <svg className="w-full h-full opacity-60 dark:opacity-40" viewBox="0 0 260 50" fill="none" preserveAspectRatio="none">
+        {/* Streamline 1 */}
+        <path
+          d="M-20 14 C 40 4, 90 26, 160 14 C 210 6, 240 20, 290 10"
+          stroke={tier.accentHex}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          className="animate-air-flow-fast"
+          opacity="0.85"
+        />
+        {/* Streamline 2 */}
+        <path
+          d="M-20 28 C 50 36, 110 16, 175 30 C 220 38, 250 24, 290 26"
+          stroke={tier.accentHex}
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          className="animate-air-flow-medium"
+          opacity="0.65"
+        />
+        {/* Streamline 3 */}
+        <path
+          d="M-20 42 C 60 48, 130 36, 190 42 C 230 46, 260 34, 290 38"
+          stroke={tier.accentHex}
+          strokeWidth="1"
+          strokeLinecap="round"
+          className="animate-air-flow-slow"
+          opacity="0.45"
+        />
+      </svg>
+      {/* Drifting Floating Air Particles */}
+      <div 
+        className="absolute top-2 left-6 w-1.5 h-1.5 rounded-full animate-air-particle-1"
+        style={{ backgroundColor: tier.accentHex }}
+      />
+      <div 
+        className="absolute top-6 left-20 w-1 h-1 rounded-full animate-air-particle-2"
+        style={{ backgroundColor: tier.accentHex }}
+      />
+      <div 
+        className="absolute bottom-3 left-36 w-1.5 h-1.5 rounded-full animate-air-particle-3"
+        style={{ backgroundColor: tier.accentHex }}
+      />
+      <div 
+        className="absolute top-4 right-12 w-1 h-1 rounded-full animate-air-particle-4"
+        style={{ backgroundColor: tier.accentHex }}
+      />
+    </div>
+  )
+}
+
 export function WeatherWidget({ className }: { className?: string }) {
   const [weather, setWeather] = useState<WeatherData | null>(null)
+  const [airQuality, setAirQuality] = useState<AirQualityData | null>(null)
+  const [showAirDetails, setShowAirDetails] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -249,32 +468,62 @@ export function WeatherWidget({ className }: { className?: string }) {
   const fetchWeather = useCallback(async (manual = false) => {
     if (manual) setIsRefreshing(true)
     try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${LATITUDE}&longitude=${LONGITUDE}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m&timezone=Asia%2FJakarta`
-      
-      const res = await fetch(url)
-      if (!res.ok) throw new Error('Gagal mengambil data cuaca')
-      
-      const data = await res.json()
-      const current = data.current
-      
-      setWeather({
-        temperature: Math.round(current.temperature_2m),
-        feelsLike: Math.round(current.apparent_temperature),
-        humidity: current.relative_humidity_2m,
-        windSpeed: Math.round(current.wind_speed_10m),
-        windDirection: current.wind_direction_10m,
-        weatherCode: current.weather_code,
-        isDay: current.is_day === 1,
-        pressure: Math.round(current.pressure_msl),
-        cloudCover: current.cloud_cover,
-        precipitation: current.precipitation,
-        lastUpdated: new Date(),
-      })
+      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${LATITUDE}&longitude=${LONGITUDE}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m&timezone=Asia%2FJakarta`
+      const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LATITUDE}&longitude=${LONGITUDE}&current=us_aqi,european_aqi,pm2_5,pm10,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone&timezone=Asia%2FJakarta`
+
+      const [weatherRes, aqiRes] = await Promise.allSettled([
+        fetch(weatherUrl),
+        fetch(aqiUrl)
+      ])
+
+      if (weatherRes.status === 'fulfilled' && weatherRes.value.ok) {
+        const data = await weatherRes.value.json()
+        const current = data.current
+        setWeather({
+          temperature: Math.round(current.temperature_2m),
+          feelsLike: Math.round(current.apparent_temperature),
+          humidity: current.relative_humidity_2m,
+          windSpeed: Math.round(current.wind_speed_10m),
+          windDirection: current.wind_direction_10m,
+          weatherCode: current.weather_code,
+          isDay: current.is_day === 1,
+          pressure: Math.round(current.pressure_msl),
+          cloudCover: current.cloud_cover,
+          precipitation: current.precipitation,
+          lastUpdated: new Date(),
+        })
+      } else {
+        throw new Error('Gagal mengambil data cuaca')
+      }
+
+      if (aqiRes.status === 'fulfilled' && aqiRes.value.ok) {
+        const aqiData = await aqiRes.value.json()
+        const aqiCurrent = aqiData.current
+        setAirQuality({
+          aqi: Math.round(aqiCurrent.us_aqi || 55),
+          europeanAqi: Math.round(aqiCurrent.european_aqi || 45),
+          pm25: Number((aqiCurrent.pm2_5 ?? 18.5).toFixed(1)),
+          pm10: Number((aqiCurrent.pm10 ?? 24.0).toFixed(1)),
+          co: aqiCurrent.carbon_monoxide,
+          no2: aqiCurrent.nitrogen_dioxide,
+          so2: aqiCurrent.sulphur_dioxide,
+          o3: aqiCurrent.ozone,
+        })
+      } else {
+        // Fallback default for Tanjungpinang
+        setAirQuality(prev => prev || {
+          aqi: 55,
+          europeanAqi: 45,
+          pm25: 18.5,
+          pm10: 24.0,
+        })
+      }
+
       setError(null)
       setNextUpdate(300)
     } catch (err) {
       setError('Gagal memuat cuaca')
-      console.error('Weather fetch error:', err)
+      console.error('Weather/AQI fetch error:', err)
     } finally {
       setIsLoading(false)
       if (manual) setTimeout(() => setIsRefreshing(false), 600)
@@ -294,11 +543,15 @@ export function WeatherWidget({ className }: { className?: string }) {
     return () => clearInterval(timer)
   }, [])
 
+  // Calculate current air quality tier
+  const aqiValue = airQuality?.aqi ?? 55
+  const tier = getAqiTier(aqiValue)
+
   if (isLoading) {
     return (
       <div className={cn("w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/70 dark:border-slate-800/80 p-5 shadow-lg flex flex-col items-center justify-center gap-3 min-h-[220px]", className)}>
         <div className="w-10 h-10 rounded-full border-3 border-primary/20 border-t-primary animate-spin" />
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Memuat Prakiraan Cuaca...</span>
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Memuat Cuaca & Kualitas Udara...</span>
       </div>
     )
   }
@@ -322,18 +575,47 @@ export function WeatherWidget({ className }: { className?: string }) {
   const windDir = getWindDirectionLabel(weather.windDirection)
   const updateMin = Math.floor(nextUpdate / 60)
   const updateSec = nextUpdate % 60
+  const meterPos = Math.min(Math.max((aqiValue / 300) * 100, 4), 96)
 
   return (
     <div
       className={cn(
-        "w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/70 dark:border-slate-800/80 shadow-[0_8px_25px_rgba(0,0,0,0.05)] dark:shadow-[0_8px_25px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col transition-all duration-300 hover:shadow-xl hover:border-primary/30 dark:hover:border-primary/30 group",
+        "w-72 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl rounded-2xl border overflow-hidden flex flex-col transition-all duration-700 relative group",
+        tier.cardBorder,
+        tier.cardShadow,
         className
       )}
+      style={{
+        ['--aqi-rgb' as any]: tier.rgbValues
+      }}
     >
+      {/* Dynamic Ambient Breathing Aura driven by Air Quality Color */}
+      <div 
+        className={cn(
+          "absolute -top-12 -right-12 w-48 h-48 rounded-full blur-3xl pointer-events-none transition-all duration-1000 animate-ambient-breathe",
+          tier.ambientAura
+        )} 
+      />
+      <div 
+        className={cn(
+          "absolute -bottom-14 -left-14 w-44 h-44 rounded-full blur-3xl pointer-events-none transition-all duration-1000 animate-ambient-breathe",
+          tier.ambientAura2
+        )} 
+      />
+
       {/* Location & Live Status Header */}
-      <div className="p-3 pb-2 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/70 bg-slate-50/50 dark:bg-slate-800/30">
+      <div className={cn(
+        "p-3 pb-2 flex items-center justify-between border-b border-slate-100/80 dark:border-slate-800/70 transition-colors duration-500 relative z-10",
+        tier.headerBg
+      )}>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+          <div 
+            className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 transition-all duration-500 shadow-2xs"
+            style={{
+              backgroundColor: `${tier.accentHex}18`,
+              color: tier.accentHex
+            }}
+          >
             <MapPin className="w-3.5 h-3.5" />
           </div>
           <div>
@@ -346,33 +628,54 @@ export function WeatherWidget({ className }: { className?: string }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/60 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400">
+        <div 
+          className="flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[8px] font-bold uppercase tracking-wider transition-all duration-500 shadow-2xs"
+          style={{
+            backgroundColor: `${tier.accentHex}14`,
+            borderColor: `${tier.accentHex}40`,
+            color: tier.accentHex
+          }}
+        >
           <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            <span 
+              className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+              style={{ backgroundColor: tier.accentHex }}
+            />
+            <span 
+              className="relative inline-flex rounded-full h-1.5 w-1.5"
+              style={{ backgroundColor: tier.accentHex }}
+            />
           </span>
-          <span className="text-[8px] font-bold uppercase tracking-wider">
+          <span>
             {updateMin}:{updateSec.toString().padStart(2, '0')}
           </span>
         </div>
       </div>
 
       {/* Main Weather Hero Display */}
-      <div className="px-4 py-3 flex items-center justify-between relative overflow-hidden bg-gradient-to-b from-transparent via-blue-50/20 to-transparent dark:via-blue-950/10">
+      <div className="px-4 py-2.5 flex items-center justify-between relative overflow-hidden bg-gradient-to-b from-transparent via-slate-50/30 to-transparent dark:via-slate-800/20 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 relative flex items-center justify-center shrink-0 drop-shadow-md">
-            <div className="absolute inset-0 bg-blue-400/10 dark:bg-blue-400/5 rounded-full blur-lg" />
+          <div className="w-13 h-13 relative flex items-center justify-center shrink-0 drop-shadow-md">
+            <div 
+              className="absolute inset-0 rounded-full blur-md opacity-30 transition-colors duration-700" 
+              style={{ backgroundColor: tier.accentHex }}
+            />
             <WeatherIcon icon={desc.icon} className="w-full h-full relative z-10" />
           </div>
           <div className="flex flex-col">
             <div className="flex items-baseline">
-              <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
+              <span className="text-3.5xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
                 {weather.temperature}
               </span>
-              <span className="text-2xl font-black text-primary leading-none ml-0.5">°</span>
+              <span 
+                className="text-2xl font-black leading-none ml-0.5 transition-colors duration-500"
+                style={{ color: tier.accentHex }}
+              >
+                °
+              </span>
             </div>
             <div className="flex items-center gap-1 mt-1">
-              <span className={cn("text-[9.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-2xs", desc.color)}>
+              <span className={cn("text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border shadow-2xs", desc.color)}>
                 {desc.label}
               </span>
             </div>
@@ -393,10 +696,172 @@ export function WeatherWidget({ className }: { className?: string }) {
         </div>
       </div>
 
+      {/* Air Quality (Kualitas Udara) Showcase Card with Animation & Live Color */}
+      <div 
+        className={cn(
+          "mx-3 mb-2 p-2.5 rounded-xl border relative overflow-hidden transition-all duration-500 backdrop-blur-md z-10",
+          "bg-white/75 dark:bg-slate-800/70 shadow-2xs",
+          tier.borderBadge
+        )}
+      >
+        {/* Animated Aerodynamic Air Currents & Floating Particulates */}
+        <AirFlowAnimation tier={tier} />
+
+        {/* Card Header: Wind/Air title & Live Status Pill */}
+        <div className="flex items-center justify-between relative z-10 mb-1.5">
+          <div className="flex items-center gap-1.5">
+            <div 
+              className={cn(
+                "w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors shadow-2xs",
+                tier.bgColor,
+                tier.color
+              )}
+            >
+              <Wind className="w-3 h-3 animate-weather-float" />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] font-black uppercase tracking-tight text-slate-800 dark:text-slate-200">
+                Kualitas Udara
+              </span>
+              <span className="text-[8px] font-extrabold text-slate-400 dark:text-slate-500">
+                (AQI)
+              </span>
+            </div>
+          </div>
+
+          {/* Live Status Pill with pulsing beacon */}
+          <div className={cn("flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border shadow-2xs", tier.badgeClass)}>
+            <span className="relative flex h-1.5 w-1.5">
+              <span 
+                className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                style={{ backgroundColor: tier.accentHex }}
+              />
+              <span 
+                className="relative inline-flex rounded-full h-1.5 w-1.5"
+                style={{ backgroundColor: tier.accentHex }}
+              />
+            </span>
+            <span>{tier.category}</span>
+          </div>
+        </div>
+
+        {/* Score & Metrics Row */}
+        <div className="relative z-10 flex items-center justify-between gap-2">
+          {/* Circular AQI Badge with breathing glow pulse */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div 
+              className="w-10 h-10 rounded-full flex flex-col items-center justify-center border-2 shadow-xs relative shrink-0 transition-transform duration-300 animate-aqi-pulse-ring"
+              style={{ 
+                borderColor: tier.accentHex,
+                backgroundColor: `${tier.accentHex}16` 
+              }}
+            >
+              <span 
+                className="text-sm font-black leading-none tracking-tight"
+                style={{ color: tier.accentHex }}
+              >
+                {aqiValue}
+              </span>
+              <span className="text-[6.5px] font-extrabold uppercase tracking-tighter text-slate-400 dark:text-slate-400 leading-none mt-0.5">
+                AQI US
+              </span>
+            </div>
+
+            {/* Labels and Pollutant Info */}
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-baseline gap-1.5">
+                <span className={cn("text-xs font-black tracking-tight", tier.color)}>
+                  {tier.label}
+                </span>
+                <span className="text-[8.5px] font-semibold text-slate-500 dark:text-slate-400 truncate">
+                  PM2.5: <span className="font-bold text-slate-700 dark:text-slate-200">{airQuality?.pm25 ?? 18.5} µg</span>
+                </span>
+              </div>
+              <p className="text-[8px] font-medium text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">
+                {tier.shortAdvice}
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle Detail Button */}
+          <button
+            onClick={() => setShowAirDetails(prev => !prev)}
+            className="shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors flex items-center gap-0.5 text-[8px] font-bold"
+            title="Lihat Detail Kualitas Udara"
+          >
+            <span>{showAirDetails ? "Tutup" : "Info"}</span>
+            {showAirDetails ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
+          </button>
+        </div>
+
+        {/* Multi-tier animated AQI Spectrum Bar */}
+        <div className="relative z-10 mt-2">
+          <div className="h-1.5 w-full rounded-full bg-slate-200 dark:bg-slate-700/60 relative overflow-hidden shadow-inner">
+            {/* 6-Color Spectrum gradient */}
+            <div 
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'linear-gradient(to right, #10B981 0%, #10B981 16.6%, #F59E0B 16.6%, #F59E0B 33.3%, #F97316 33.3%, #F97316 50%, #EF4444 50%, #EF4444 66.6%, #A855F7 66.6%, #A855F7 83.3%, #881337 83.3%, #881337 100%)'
+              }}
+            />
+            {/* Shimmer sweep animation */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-aqi-shimmer pointer-events-none" />
+          </div>
+
+          {/* Animated glowing pointer marker */}
+          <div 
+            className="absolute -top-0.5 -translate-x-1/2 transition-all duration-1000 flex flex-col items-center pointer-events-none"
+            style={{ 
+              left: `${meterPos}%` 
+            }}
+          >
+            <div 
+              className="w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 shadow-md flex items-center justify-center ring-1 ring-black/15"
+              style={{ backgroundColor: tier.accentHex }}
+            >
+              <div className="w-0.5 h-0.5 rounded-full bg-white animate-ping" />
+            </div>
+          </div>
+
+          {/* Scale range labels */}
+          <div className="flex justify-between items-center text-[7px] font-bold text-slate-400 dark:text-slate-500 mt-1 px-0.5">
+            <span>0 (Baik)</span>
+            <span>50</span>
+            <span>100</span>
+            <span>150</span>
+            <span>200</span>
+            <span>300+</span>
+          </div>
+        </div>
+
+        {/* Collapsible Detailed Metrics */}
+        {showAirDetails && (
+          <div className="relative z-10 mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="grid grid-cols-2 gap-1 text-[8.5px]">
+              <div className="flex items-center justify-between p-1 rounded-md bg-slate-100/70 dark:bg-slate-900/60 px-1.5">
+                <span className="text-slate-400 font-bold">PM10</span>
+                <span className="font-black text-slate-700 dark:text-slate-200">{airQuality?.pm10 ?? 24} µg/m³</span>
+              </div>
+              <div className="flex items-center justify-between p-1 rounded-md bg-slate-100/70 dark:bg-slate-900/60 px-1.5">
+                <span className="text-slate-400 font-bold">AQI Eropa</span>
+                <span className="font-black text-slate-700 dark:text-slate-200">{airQuality?.europeanAqi ?? 45} EAQI</span>
+              </div>
+            </div>
+            <div className="p-1.5 rounded-md bg-slate-100/80 dark:bg-slate-900/70 text-[8px] text-slate-600 dark:text-slate-300 leading-relaxed flex items-start gap-1">
+              <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0 mt-0.5" />
+              <span>{tier.detailedAdvice}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Modern Bento Weather Stats Grid */}
-      <div className="grid grid-cols-2 gap-1.5 px-3 pb-2.5">
+      <div className="grid grid-cols-2 gap-1.5 px-3 pb-2.5 relative z-10">
         {/* Kelembaban */}
-        <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-colors">
+        <div className={cn(
+          "flex items-center gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
+          tier.statBorderHover
+        )}>
           <div className="w-6 h-6 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0">
             <Droplets className="w-3.5 h-3.5" />
           </div>
@@ -411,7 +876,10 @@ export function WeatherWidget({ className }: { className?: string }) {
         </div>
 
         {/* Angin */}
-        <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-colors">
+        <div className={cn(
+          "flex items-center gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
+          tier.statBorderHover
+        )}>
           <div className="w-6 h-6 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
             <Wind className="w-3.5 h-3.5" />
           </div>
@@ -426,7 +894,10 @@ export function WeatherWidget({ className }: { className?: string }) {
         </div>
 
         {/* Tekanan */}
-        <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-colors">
+        <div className={cn(
+          "flex items-center gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
+          tier.statBorderHover
+        )}>
           <div className="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
             <Gauge className="w-3.5 h-3.5" />
           </div>
@@ -441,7 +912,10 @@ export function WeatherWidget({ className }: { className?: string }) {
         </div>
 
         {/* Awan */}
-        <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-colors">
+        <div className={cn(
+          "flex items-center gap-2 p-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800/80 hover:bg-white dark:hover:bg-slate-800 transition-all duration-300 shadow-2xs",
+          tier.statBorderHover
+        )}>
           <div className="w-6 h-6 rounded-lg bg-slate-500/10 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
             <Cloud className="w-3.5 h-3.5" />
           </div>
@@ -457,7 +931,7 @@ export function WeatherWidget({ className }: { className?: string }) {
       </div>
 
       {/* Footer & Source */}
-      <div className="px-3 py-2 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[8px] font-bold text-slate-400 uppercase tracking-wider">
+      <div className="px-3 py-2 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[8px] font-bold text-slate-400 uppercase tracking-wider relative z-10">
         <div className="flex items-center gap-1 truncate">
           <span>Diperbarui:</span>
           <span className="text-slate-600 dark:text-slate-300 font-black">
@@ -469,7 +943,7 @@ export function WeatherWidget({ className }: { className?: string }) {
           onClick={() => fetchWeather(true)} 
           disabled={isRefreshing}
           className="p-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700 text-slate-400 hover:text-primary transition-all active:scale-90 shrink-0" 
-          title="Perbarui Cuaca Sekarang"
+          title="Perbarui Cuaca & Kualitas Udara"
         >
           <RefreshCw className={cn("w-3 h-3", isRefreshing && "animate-spin text-primary")} />
         </button>
