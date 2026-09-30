@@ -48,3 +48,12 @@ firestore-debug.log
 backup*.json
 scratch/
 last-data-check.json
+
+# local debug logs and scripts
+build.log
+tsc_output.txt
+cek-*.js
+check-*.js
+test-*.js
+fix-case.js
+o.json
