@@ -157,6 +157,9 @@ export default function UserManagementPage() {
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [resetTarget, setResetTarget] = useState<{id: string, fullName: string} | null>(null)
 
+  const [showReset2FADialog, setShowReset2FADialog] = useState(false)
+  const [reset2FATarget, setReset2FATarget] = useState<{id: string, fullName: string} | null>(null)
+
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<{id: string, fullName: string, userUid: string | null} | null>(null)
 
@@ -391,6 +394,37 @@ export default function UserManagementPage() {
     toast({ title: "Perangkat Direset", description: `Penguncian perangkat ${fullName} telah dihapus dan memiliki 24 jam untuk login kembali.` })
   }
 
+  const handleReset2FA = (id: string, fullName: string) => {
+    setReset2FATarget({ id, fullName })
+    setShowReset2FADialog(true)
+  }
+
+  const executeReset2FA = () => {
+    if (!database || !reset2FATarget) return
+    const { id, fullName } = reset2FATarget
+    setShowReset2FADialog(false)
+    setReset2FATarget(null)
+
+    const userRef = ref(database, `system_users/${id}`)
+    updateDocumentNonBlocking(userRef, {
+      twoFactorEnabled: false,
+      twoFactorSecret: null,
+      twoFactorBackupCodes: null,
+      twoFactorResetByAdminAt: new Date().toISOString()
+    })
+
+    logActivity({
+      query: `RESET 2FA: ${fullName} (${id})`,
+      results: "Berhasil",
+      device: getDeviceType(navigator.userAgent),
+      source: 'Web',
+      method: 'MANAJEMEN USER',
+      userId: user?.email || user?.uid || 'Admin'
+    })
+
+    toast({ title: "2FA Direset", description: `Verifikasi 2 langkah untuk ${fullName} berhasil dinonaktifkan.` })
+  }
+
   const isCurrentSelfAccount = (u: any) => {
     if (!u) return false
     // Akun admin utama yang sedang aktif: ID di system_users sama dengan auth UID
@@ -599,6 +633,11 @@ export default function UserManagementPage() {
                             <ShieldQuestion className="w-3 h-3" /> Menunggu Aktivasi
                           </Badge>
                         )}
+                        {u.twoFactorEnabled ? (
+                          <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 font-black uppercase text-[9px] gap-1 ml-1">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" /> 2FA
+                          </Badge>
+                        ) : null}
                       </div>
 
                       <div className="flex items-center gap-1.5">
@@ -686,6 +725,17 @@ export default function UserManagementPage() {
                           title="Reset Perangkat"
                         >
                           <RefreshCcw className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      {isAdmin && u.twoFactorEnabled && (
+                        <Button 
+                          variant="outline" 
+                          size="icon" 
+                          className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 border-emerald-300 rounded-xl"
+                          onClick={() => handleReset2FA(u.id, u.fullName)}
+                          title="Reset 2FA"
+                        >
+                          <ShieldAlert className="w-3.5 h-3.5 text-emerald-600" />
                         </Button>
                       )}
                       <Button 
@@ -786,6 +836,11 @@ export default function UserManagementPage() {
                               <ShieldQuestion className="w-3 h-3" /> Menunggu Aktivasi
                             </Badge>
                           )}
+                          {u.twoFactorEnabled ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 font-black uppercase text-[9px] gap-1 ml-1.5">
+                              <ShieldCheck className="w-3 h-3 text-emerald-600" /> 2FA
+                            </Badge>
+                          ) : null}
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1.5">
@@ -877,6 +932,17 @@ export default function UserManagementPage() {
                                 title="Reset Perangkat"
                               >
                                 <RefreshCcw className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {isAdmin && u.twoFactorEnabled && (
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 border-emerald-300"
+                                onClick={() => handleReset2FA(u.id, u.fullName)}
+                                title="Reset 2FA Pengguna"
+                              >
+                                <ShieldAlert className="w-4 h-4 text-emerald-600" />
                               </Button>
                             )}
                             <Button 
@@ -1003,6 +1069,17 @@ export default function UserManagementPage() {
         variant="default"
         icon={<RotateCcw className="w-6 h-6" />}
         confirmText="Ya, Reset"
+      />
+
+      <ConfirmDialog
+        open={showReset2FADialog}
+        onOpenChange={setShowReset2FADialog}
+        title="Reset 2FA Pengguna"
+        description={`Nonaktifkan verifikasi dua langkah (Google Authenticator) untuk ${reset2FATarget?.fullName}? Pengguna akan dapat masuk kembali hanya dengan kata sandi.`}
+        onConfirm={executeReset2FA}
+        variant="default"
+        icon={<ShieldAlert className="w-6 h-6 text-amber-600" />}
+        confirmText="Ya, Reset 2FA"
       />
 
       <ConfirmDialog
@@ -1136,6 +1213,31 @@ export default function UserManagementPage() {
                   <span className="text-xs text-slate-700 font-mono font-bold">
                     {detailUser.lastLogin ? formatDateTimeIndo(detailUser.lastLogin) : "Belum pernah login"}
                   </span>
+                </div>
+
+                <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
+                  <span className="text-muted-foreground text-xs font-semibold">Keamanan 2FA</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`font-bold text-xs px-2 py-0.5 rounded-full ${detailUser.twoFactorEnabled ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-500'}`}>
+                      {detailUser.twoFactorEnabled ? 'Aktif (Google Authenticator)' : 'Nonaktif'}
+                    </span>
+                    {isAdmin && detailUser.twoFactorEnabled && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const targetId = detailUser.id;
+                          const targetName = detailUser.fullName;
+                          setDetailUser(null);
+                          handleReset2FA(targetId, targetName);
+                        }}
+                        className="h-6 text-[10px] font-bold text-destructive border-destructive/30 hover:bg-destructive/10"
+                      >
+                        Reset 2FA
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex justify-between items-center">

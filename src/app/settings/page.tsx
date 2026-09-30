@@ -43,6 +43,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { TwoFactorSetupDialog } from "@/components/two-factor-setup-dialog"
+import { TwoFactorBackupDialog } from "@/components/two-factor-backup-dialog"
+import { ShieldCheck, Smartphone, KeyRound } from "lucide-react"
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -73,6 +76,13 @@ export default function SettingsPage() {
   const [resetSheetTarget, setResetSheetTarget] = useState<'2023' | '2024' | '2025' | 'blacklist' | 'bpjs' | null>(null)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
 
+  // 2FA States
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false)
+  const [showBackupCodes, setShowBackupCodes] = useState(false)
+  const [showDisable2FADialog, setShowDisable2FADialog] = useState(false)
+  const [disabling2FA, setDisabling2FA] = useState(false)
+  const [currentBackupCodes, setCurrentBackupCodes] = useState<string[]>([])
+
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -87,6 +97,36 @@ export default function SettingsPage() {
   }, [user, database])
   const { data: allUsersForProfile } = useList(userProfileRef)
   const userProfile = allUsersForProfile?.find((u: any) => u.uid === user?.uid)
+
+  const userTargetKey = userProfile?.id || (user?.email ? user.email.split('@')[0].toLowerCase() : '')
+  const is2FAEnabled = Boolean(userProfile?.twoFactorEnabled)
+
+  useEffect(() => {
+    if (userProfile?.twoFactorBackupCodes && Array.isArray(userProfile.twoFactorBackupCodes)) {
+      setCurrentBackupCodes(userProfile.twoFactorBackupCodes)
+    }
+  }, [userProfile?.twoFactorBackupCodes])
+
+  const executeDisable2FA = async () => {
+    if (!database || !userTargetKey) return
+    setDisabling2FA(true)
+    try {
+      const userRef = ref(database, `system_users/${userTargetKey}`)
+      await update(userRef, {
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+        twoFactorBackupCodes: null,
+        twoFactorDisabledAt: new Date().toISOString()
+      })
+      toast({ title: "2FA Dinonaktifkan", description: "Verifikasi dua langkah Google Authenticator telah dimatikan." })
+      setShowDisable2FADialog(false)
+    } catch (err: any) {
+      console.error("Gagal menonaktifkan 2FA:", err)
+      toast({ variant: "destructive", title: "Gagal", description: "Terjadi kesalahan saat mematikan 2FA." })
+    } finally {
+      setDisabling2FA(false)
+    }
+  }
 
   const isAdmin = !!adminRole || (user?.email?.toLowerCase() === 'agus@umkm.id') || userProfile?.role === 'admin'
   const isKoordinator = userProfile?.role === 'koordinator'
@@ -1072,6 +1112,90 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Two-Factor Authentication (2FA) */}
+        <Card className="border-none shadow-sm">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-primary" /> Verifikasi Dua Langkah (2FA)
+              </CardTitle>
+              {is2FAEnabled ? (
+                <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs gap-1 py-1 px-3">
+                  <ShieldCheck className="w-3.5 h-3.5" /> AKTIF
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-slate-500 border-slate-300 font-bold text-xs py-1 px-3">
+                  NONAKTIF
+                </Badge>
+              )}
+            </div>
+            <CardDescription>
+              Tingkatkan keamanan akun Anda dengan kode verifikasi 6 digit dari aplikasi Google Authenticator setiap kali login.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {is2FAEnabled ? (
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-black text-emerald-900 uppercase">Akun Terlindungi</h4>
+                    <p className="text-xs text-emerald-800 leading-relaxed font-medium">
+                      Setiap kali masuk ke SIMPU, Anda akan diminta memasukkan 6 digit kode dari aplikasi <strong>Google Authenticator</strong> atau <strong>Microsoft Authenticator</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowBackupCodes(true)}
+                    className="font-bold border-slate-300 gap-2"
+                  >
+                    <KeyRound className="w-4 h-4 text-amber-600" />
+                    Kelola Kode Cadangan ({currentBackupCodes.length})
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => setShowDisable2FADialog(true)}
+                    className="font-bold gap-2"
+                  >
+                    Nonaktifkan 2FA
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-slate-200 text-slate-700">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-slate-800">Proteksi Tambahan Saat Login</h4>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Aplikasi Authenticator menghasilkan kode verifikasi sekali pakai yang berganti setiap 30 detik tanpa memerlukan koneksi internet, SMS, ataupun pulsa.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={() => setShowTwoFactorSetup(true)}
+                  className="font-bold bg-primary hover:bg-primary/90 text-white gap-2"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  Aktifkan 2FA (Google Authenticator)
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {isAdmin && (
           <Card className="border-none shadow-sm">
             <CardHeader>
@@ -1471,6 +1595,39 @@ export default function SettingsPage() {
         variant="destructive"
         onConfirm={executeLogout}
         icon={<LogOut className="w-6 h-6" />}
+      />
+
+      {/* 2FA Dialogs */}
+      <TwoFactorSetupDialog
+        open={showTwoFactorSetup}
+        onOpenChange={setShowTwoFactorSetup}
+        userKey={userTargetKey}
+        userName={userProfile?.fullName || userTargetKey}
+        database={database}
+        onSuccess={() => {
+          // Profile list will auto-update from Firebase listener
+        }}
+      />
+
+      <TwoFactorBackupDialog
+        open={showBackupCodes}
+        onOpenChange={setShowBackupCodes}
+        userKey={userTargetKey}
+        userName={userProfile?.fullName || userTargetKey}
+        database={database}
+        backupCodes={currentBackupCodes}
+        onCodesUpdated={(newCodes) => setCurrentBackupCodes(newCodes)}
+      />
+
+      <ConfirmDialog
+        open={showDisable2FADialog}
+        onOpenChange={setShowDisable2FADialog}
+        title="Nonaktifkan Verifikasi 2 Langkah (2FA)?"
+        description="Apakah Anda yakin ingin mematikan 2FA? Akun Anda hanya akan dilindungi oleh kata sandi biasa."
+        confirmText={disabling2FA ? "Memproses..." : "Ya, Nonaktifkan"}
+        variant="destructive"
+        onConfirm={executeDisable2FA}
+        icon={<AlertTriangle className="w-6 h-6" />}
       />
     </div>
   )

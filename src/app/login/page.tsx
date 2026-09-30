@@ -25,7 +25,8 @@ import {
   Building2, 
   Code2,
   X,
-  Lock
+  Lock,
+  ShieldCheck
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -43,6 +44,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { PublicCheckData } from "@/components/public-check-data"
 import { logActivity, getDeviceType } from "@/lib/logger"
+import { verifyTotpToken, verifyAndConsumeBackupCode } from "@/lib/totp"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
@@ -61,6 +63,20 @@ export default function LoginPage() {
   const [showCheckDataModal, setShowCheckDataModal] = useState(false)
   const [showFullEvent, setShowFullEvent] = useState(false)
 
+  // 2FA States
+  const [pending2FA, setPending2FA] = useState<{
+    user: any;
+    finalUserRole: string;
+    targetUserKey: string;
+    secret: string;
+    backupCodes: string[];
+    username: string;
+    email: string;
+  } | null>(null)
+  const [otpCode, setOtpCode] = useState("")
+  const [verifying2FA, setVerifying2FA] = useState(false)
+  const [isUsingBackupCode, setIsUsingBackupCode] = useState(false)
+
   const auth = useAuth()
   const database = useDatabase()
   const router = useRouter()
@@ -70,6 +86,22 @@ export default function LoginPage() {
   // Auto redirect if already authenticated with active role
   useEffect(() => {
     if (!isUserLoading && !isProfileLoading && existingUser && existingProfile) {
+      if (existingProfile.twoFactorEnabled && existingProfile.twoFactorSecret) {
+        const passed = typeof window !== 'undefined' && sessionStorage.getItem('simpu_2fa_passed') === existingUser.uid
+        if (!passed) {
+          setPending2FA({
+            user: existingUser,
+            finalUserRole: existingProfile.role || '',
+            targetUserKey: existingProfile.id || existingProfile.username || existingUser.uid,
+            secret: existingProfile.twoFactorSecret,
+            backupCodes: existingProfile.twoFactorBackupCodes || [],
+            username: existingProfile.username || existingProfile.fullName || 'User',
+            email: existingUser.email || ''
+          })
+          return
+        }
+      }
+
       const role = existingProfile.role || ''
       if (role === 'petugas_survey' || role === 'petugas') {
         router.push("/portal-survey")
@@ -350,6 +382,47 @@ export default function LoginPage() {
         }
       }
 
+      // Pastikan HANYA mengupdate akun yang benar-benar ada di system_users.
+      let targetUserKey: string | null = null;
+      if (userNodeExists) {
+        targetUserKey = username;
+      } else if (user?.uid) {
+        const uidSnap = await get(ref(database, `system_users/${user.uid}`));
+        if (uidSnap.exists()) {
+          targetUserKey = user.uid;
+        }
+      }
+
+      // Cek apakah akun mengaktifkan Two-Factor Authentication (2FA)
+      let user2FAData: any = null;
+      if (targetUserKey && database) {
+        const tSnap = await get(ref(database, `system_users/${targetUserKey}`));
+        if (tSnap.exists()) {
+          user2FAData = tSnap.val();
+        }
+      }
+
+      if (user2FAData?.twoFactorEnabled && user2FAData?.twoFactorSecret) {
+        setPending2FA({
+          user,
+          finalUserRole,
+          targetUserKey: targetUserKey || username,
+          secret: user2FAData.twoFactorSecret,
+          backupCodes: user2FAData.twoFactorBackupCodes || [],
+          username,
+          email
+        });
+        setOtpCode("");
+        setIsUsingBackupCode(false);
+        setLoading(false);
+        return; // Hentikan di sini, user diarahkan ke verifikasi 2FA!
+      }
+
+      // Jika 2FA tidak aktif, simpan penanda sesi 2FA lolos
+      if (typeof window !== 'undefined' && user?.uid) {
+        sessionStorage.setItem('simpu_2fa_passed', user.uid);
+      }
+
       // Log Login Activity
       await logActivity({
         query: `LOGIN: ${username.toUpperCase()}`,
@@ -361,8 +434,6 @@ export default function LoginPage() {
       }, database || undefined)
 
       // Single-device login enforcement & presence update:
-      // Generate a unique session ID and store in localStorage + Firebase
-      // Admin users are exempt from single-device restriction
       const sessionId = typeof crypto !== 'undefined' && crypto.randomUUID
         ? crypto.randomUUID()
         : Math.random().toString(36).substring(2) + Date.now().toString(36)
@@ -375,18 +446,6 @@ export default function LoginPage() {
       }
       if (finalUserRole !== 'admin' && email !== 'agus@umkm.id') {
         loginUpdates.activeSessionId = sessionId
-      }
-
-      // Pastikan HANYA mengupdate akun yang benar-benar ada di system_users.
-      // JANGAN pernah membuat akun dummy baru jika username tidak terdaftar!
-      let targetUserKey: string | null = null;
-      if (userNodeExists) {
-        targetUserKey = username;
-      } else if (user?.uid) {
-        const uidSnap = await get(ref(database, `system_users/${user.uid}`));
-        if (uidSnap.exists()) {
-          targetUserKey = user.uid;
-        }
       }
 
       if (targetUserKey) {
@@ -416,6 +475,112 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleVerify2FASubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!pending2FA) return
+    setVerifying2FA(true)
+
+    try {
+      let isValid = false
+      let updatedBackupCodes = pending2FA.backupCodes
+
+      if (isUsingBackupCode) {
+        const result = verifyAndConsumeBackupCode(otpCode, pending2FA.backupCodes)
+        if (result.valid) {
+          isValid = true
+          updatedBackupCodes = result.remainingCodes
+          if (database && pending2FA.targetUserKey) {
+            await update(ref(database, `system_users/${pending2FA.targetUserKey}`), {
+              twoFactorBackupCodes: updatedBackupCodes
+            }).catch(console.error)
+          }
+        }
+      } else {
+        isValid = await verifyTotpToken(otpCode, pending2FA.secret, 1)
+      }
+
+      if (!isValid) {
+        toast({
+          variant: "destructive",
+          title: "Verifikasi Gagal",
+          description: isUsingBackupCode
+            ? "Kode cadangan tidak valid atau sudah pernah digunakan."
+            : "Kode 6 digit salah atau kedaluwarsa. Periksa aplikasi Google Authenticator Anda."
+        })
+        setVerifying2FA(false)
+        return
+      }
+
+      // Tandai sesi 2FA lolos di sessionStorage
+      if (typeof window !== 'undefined' && pending2FA.user?.uid) {
+        sessionStorage.setItem('simpu_2fa_passed', pending2FA.user.uid)
+      }
+
+      // Log Login Activity
+      await logActivity({
+        query: `LOGIN 2FA (${isUsingBackupCode ? 'KODE CADANGAN' : 'TOTP'}): ${pending2FA.username.toUpperCase()}`,
+        results: "Berhasil Masuk",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'LOGIN 2FA',
+        userId: pending2FA.username.toUpperCase()
+      }, database || undefined)
+
+      const sessionId = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : Math.random().toString(36).substring(2) + Date.now().toString(36)
+      localStorage.setItem('simpu_session_id', sessionId)
+
+      const loginUpdates: Record<string, any> = {
+        lastLogin: new Date().toISOString(),
+        isOnline: true,
+        lastSeen: Date.now()
+      }
+      if (pending2FA.finalUserRole !== 'admin' && pending2FA.email !== 'agus@umkm.id') {
+        loginUpdates.activeSessionId = sessionId
+      }
+
+      if (pending2FA.targetUserKey && database) {
+        await update(ref(database, `system_users/${pending2FA.targetUserKey}`), loginUpdates).catch(console.error)
+      }
+
+      toast({ title: "Login Berhasil", description: "Verifikasi 2FA terkonfirmasi." })
+
+      const role = pending2FA.finalUserRole
+      if (role === 'petugas_survey' || role === 'petugas') {
+        router.push("/portal-survey")
+      } else if (role === 'dinas') {
+        router.push("/verifikasi-dinas")
+      } else if (role === 'verifikator_dinas') {
+        router.push("/verifikasi-dinas-berkas")
+      } else if (role === 'koordinator') {
+        router.push("/actor-data")
+      } else {
+        router.push("/")
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Kesalahan",
+        description: error.message || "Gagal memproses verifikasi 2FA."
+      })
+    } finally {
+      setVerifying2FA(false)
+    }
+  }
+
+  const handleCancel2FA = async () => {
+    setPending2FA(null)
+    setOtpCode("")
+    setIsUsingBackupCode(false)
+    try {
+      if (auth) await signOut(auth)
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('simpu_2fa_passed')
+      }
+    } catch (e) {}
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -533,7 +698,95 @@ export default function LoginPage() {
           </button>
         ) : (
           <div className="w-full space-y-6 min-w-[280px] sm:min-w-[320px] animate-in slide-in-from-bottom-2 fade-in duration-300">
-            {isRegistered ? (
+            {pending2FA ? (
+              <div className="bg-white/95 backdrop-blur-2xl border border-white/20 rounded-[2rem] p-6 sm:p-7 shadow-2xl space-y-5 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="text-center space-y-1.5">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                    Verifikasi 2 Langkah
+                  </h2>
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    Akun @{pending2FA.username}
+                  </p>
+                </div>
+
+                <form onSubmit={handleVerify2FASubmit} className="space-y-4">
+                  {isUsingBackupCode ? (
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                        Kode Cadangan (8 Karakter):
+                      </Label>
+                      <Input
+                        type="text"
+                        placeholder="Contoh: A1B2-C3D4"
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value.toUpperCase())}
+                        className="h-12 text-center text-lg font-mono font-black tracking-widest rounded-2xl bg-white border border-slate-300 text-slate-900"
+                        autoFocus
+                        required
+                      />
+                      <p className="text-[10px] text-slate-500 italic text-center">
+                        Kode cadangan ini akan hangus setelah digunakan.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label className="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                        Kode Google Authenticator (6 Digit):
+                      </Label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        placeholder="000000"
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        className="h-12 text-center text-2xl font-mono font-black tracking-[0.3em] rounded-2xl bg-white border border-slate-300 text-slate-900"
+                        autoFocus
+                        required
+                      />
+                      <p className="text-[10px] text-slate-500 italic text-center">
+                        Masukkan 6 angka yang tertera di aplikasi Authenticator ponsel Anda.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-2 pt-1">
+                    <Button
+                      type="submit"
+                      disabled={verifying2FA || (isUsingBackupCode ? otpCode.trim().length < 8 : otpCode.length !== 6)}
+                      className="w-full h-11 bg-primary hover:bg-primary/90 text-white rounded-2xl font-black uppercase tracking-wider shadow-lg active:scale-95 transition-all"
+                    >
+                      {verifying2FA ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verifikasi & Masuk"}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => {
+                        setIsUsingBackupCode(!isUsingBackupCode)
+                        setOtpCode("")
+                      }}
+                      className="w-full h-8 text-[11px] font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 rounded-xl"
+                    >
+                      {isUsingBackupCode ? "Gunakan Kode 6 Digit Authenticator" : "Gunakan Kode Cadangan"}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleCancel2FA}
+                      className="w-full h-8 text-[11px] font-bold text-slate-400 hover:text-slate-700 hover:bg-slate-100/60 rounded-xl"
+                    >
+                      Batal & Kembali
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            ) : isRegistered ? (
             <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[2rem] p-8 shadow-2xl space-y-6 animate-in slide-in-from-bottom-4 duration-500 text-center">
               <h2 className="text-2xl font-black text-white uppercase tracking-tight">Pendaftaran Berhasil</h2>
               <div className="bg-emerald-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto border border-emerald-500/30">
