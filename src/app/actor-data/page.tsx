@@ -2261,7 +2261,7 @@ function ActorDataContent() {
                           </button>
                         )}
                         <ActorMenuBadge actor={viewingActor} asLink />
-                        <VerificationBadge actor={viewingActor} />
+                        <VerificationBadge actor={viewingActor} className="mt-0" />
                       </div>
                     </div>
                   </div>
@@ -2495,10 +2495,6 @@ function ActorDataContent() {
                               </h4>
                               <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Identitas resmi kependudukan sesuai KTP & Kartu Keluarga</p>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <ActorMenuBadge actor={viewingActor} showStage asLink />
-                            <VerificationBadge actor={viewingActor} />
                           </div>
                         </div>
 

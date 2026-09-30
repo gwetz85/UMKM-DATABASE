@@ -3,8 +3,9 @@
 import { useState } from "react"
 import { MapPin, Image as ImageIcon, FileCheck, ExternalLink } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
 
-export function VerificationBadge({ actor, hideLocation = false }: { actor: any; hideLocation?: boolean }) {
+export function VerificationBadge({ actor, hideLocation = false, className }: { actor: any; hideLocation?: boolean; className?: string }) {
   const [isImageOpen, setIsImageOpen] = useState(false)
 
   const loc = actor.verificationLocation || actor.verificationLocationDinas;
@@ -16,7 +17,7 @@ export function VerificationBadge({ actor, hideLocation = false }: { actor: any;
 
   return (
     <>
-      <div className="flex gap-1 mt-1 flex-wrap print:hidden">
+      <div className={cn("flex gap-1 mt-1 flex-wrap print:hidden", className)}>
         {hasLocation && (
           <a 
             href={`https://www.google.com/maps?q=${loc.lat},${loc.lon}`}

@@ -73,23 +73,23 @@ export function ActorMenuBadge({
     const badgeContent = (
       <>
         {renderIcon(menuInfo.iconType)}
-        <span className="uppercase tracking-tight font-extrabold whitespace-nowrap">
+        <span className="uppercase tracking-tight font-extrabold whitespace-nowrap shrink-0">
           {menuInfo.displayLabel}
         </span>
         {showStage && menuInfo.stageLabel && (
-          <span className="opacity-80 font-bold text-[9px] border-l pl-1.5 ml-0.5 border-current whitespace-nowrap">
+          <span className="opacity-80 font-bold text-[9px] border-l pl-1.5 ml-0.5 border-current truncate max-w-[200px] sm:max-w-none">
             {menuInfo.stageLabel}
           </span>
         )}
         {asLink && showExternalIcon && (
-          <ExternalLink className="w-2.5 h-2.5 opacity-60 ml-0.5" />
+          <ExternalLink className="w-2.5 h-2.5 opacity-60 ml-0.5 shrink-0" />
         )}
       </>
     )
 
     const commonClasses = cn(
-      "inline-flex items-center gap-1.5 font-black rounded-lg border shadow-xs leading-tight shrink-0 transition-all select-none",
-      compact ? "text-[9px] px-1.5 py-0.5" : "text-[10px] px-2 py-0.5",
+      "inline-flex items-center gap-1.5 font-black rounded-lg border shadow-xs leading-tight transition-all select-none max-w-full",
+      compact ? "text-[9px] px-1.5 py-0.5 shrink-0" : "text-[10px] px-2 py-0.5",
       asLink ? "hover:scale-[1.02] hover:brightness-95 dark:hover:brightness-110 cursor-pointer active:scale-95" : "",
       menuInfo.badgeColorClass,
       className
