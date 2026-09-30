@@ -542,38 +542,38 @@ export default function InputDataPage() {
   ]
 
   return (
-    <div className="max-w-4xl mx-auto space-y-3 sm:space-y-3.5 pb-12 animate-in fade-in duration-300">
+    <div className="w-full max-w-5xl lg:max-w-6xl mx-auto space-y-4 sm:space-y-5 pb-16 animate-in fade-in duration-300">
       {/* Header Bar Kompak & Stepper Terpadu (Single Slim Row) */}
-      <div className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800 rounded-2xl p-2.5 sm:px-4 sm:py-2.5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2.5 self-start sm:self-center">
-          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors rounded-xl border border-slate-200 dark:border-slate-800 p-1.5 h-8 w-8 shadow-xs shrink-0" />
+      <div className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800 rounded-2xl sm:rounded-3xl p-3 sm:px-6 sm:py-3.5 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-2.5 sm:gap-3 self-start md:self-center">
+          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 p-1.5 h-8 w-8 sm:h-9 sm:w-9 shadow-xs shrink-0" />
           <div>
-            <h1 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">
+            <h1 className="text-xs sm:text-sm md:text-base font-black text-slate-900 dark:text-white uppercase tracking-tight leading-snug">
               Formulir Pendaftaran UMKM 2026
             </h1>
-            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+            <p className="text-[11px] sm:text-xs text-slate-400 font-semibold mt-0.5">
               Yayasan Tunas Bangsa Kepulauan Riau
             </p>
           </div>
         </div>
 
         {/* Stepper Wizard Mini */}
-        <div className="flex items-center gap-1.5 sm:gap-2 self-stretch sm:self-center justify-center">
+        <div className="flex items-center gap-1.5 sm:gap-2 self-stretch md:self-center justify-center">
           {/* Step 1 Pill */}
           <button
             type="button"
             onClick={() => goToStep(1)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-[11px] sm:text-xs transition-all",
+              "flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm transition-all",
               currentStep === 1
-                ? "bg-primary text-white shadow-sm ring-2 ring-primary/20"
+                ? "bg-primary text-white shadow-sm ring-2 ring-primary/20 scale-[1.02]"
                 : currentStep > 1
                 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-400"
             )}
           >
             <span className={cn(
-              "w-4 h-4 sm:w-5 sm:h-5 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0",
+              "w-4 h-4 sm:w-5 sm:h-5 rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-black shrink-0",
               currentStep === 1 ? "bg-white/20 text-white" : currentStep > 1 ? "bg-emerald-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
             )}>
               {currentStep > 1 ? <Check className="w-3 h-3 stroke-[3]" /> : "1"}
@@ -581,7 +581,7 @@ export default function InputDataPage() {
             <span>1. Biodata</span>
           </button>
 
-          <span className="text-slate-300 dark:text-slate-700 text-[10px] sm:text-xs">&rarr;</span>
+          <span className="text-slate-300 dark:text-slate-700 text-xs sm:text-sm font-bold">&rarr;</span>
 
           {/* Step 2 Pill */}
           <button
@@ -589,9 +589,9 @@ export default function InputDataPage() {
             onClick={() => goToStep(2)}
             disabled={isFormBlocked}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-[11px] sm:text-xs transition-all",
+              "flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm transition-all",
               currentStep === 2
-                ? "bg-primary text-white shadow-sm ring-2 ring-primary/20"
+                ? "bg-primary text-white shadow-sm ring-2 ring-primary/20 scale-[1.02]"
                 : currentStep > 2
                 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
                 : isFormBlocked
@@ -600,7 +600,7 @@ export default function InputDataPage() {
             )}
           >
             <span className={cn(
-              "w-4 h-4 sm:w-5 sm:h-5 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0",
+              "w-4 h-4 sm:w-5 sm:h-5 rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-black shrink-0",
               currentStep === 2 ? "bg-white/20 text-white" : currentStep > 2 ? "bg-emerald-600 text-white" : isFormBlocked ? "bg-rose-200 text-rose-700" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
             )}>
               {currentStep > 2 ? <Check className="w-3 h-3 stroke-[3]" /> : isFormBlocked ? <Lock className="w-2.5 h-2.5 text-rose-600" /> : "2"}
@@ -608,7 +608,7 @@ export default function InputDataPage() {
             <span>2. Alamat</span>
           </button>
 
-          <span className="text-slate-300 dark:text-slate-700 text-[10px] sm:text-xs">&rarr;</span>
+          <span className="text-slate-300 dark:text-slate-700 text-xs sm:text-sm font-bold">&rarr;</span>
 
           {/* Step 3 Pill */}
           <button
@@ -616,16 +616,16 @@ export default function InputDataPage() {
             onClick={() => goToStep(3)}
             disabled={isFormBlocked}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-[11px] sm:text-xs transition-all",
+              "flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm transition-all",
               currentStep === 3
-                ? "bg-primary text-white shadow-sm ring-2 ring-primary/20"
+                ? "bg-primary text-white shadow-sm ring-2 ring-primary/20 scale-[1.02]"
                 : isFormBlocked
                 ? "bg-rose-50 text-rose-400 cursor-not-allowed border border-rose-200"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-slate-200"
             )}
           >
             <span className={cn(
-              "w-4 h-4 sm:w-5 sm:h-5 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0",
+              "w-4 h-4 sm:w-5 sm:h-5 rounded-lg flex items-center justify-center text-[10px] sm:text-xs font-black shrink-0",
               currentStep === 3 ? "bg-white/20 text-white" : isFormBlocked ? "bg-rose-200 text-rose-700" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
             )}>
               {isFormBlocked ? <Lock className="w-2.5 h-2.5 text-rose-600" /> : "3"}
@@ -658,34 +658,34 @@ export default function InputDataPage() {
             LANGKAH 1: BIODATA CALON PENERIMA
            ======================================================== */}
         <div className={cn("space-y-4", currentStep !== 1 && "hidden")}>
-          <Card className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 shadow-sm backdrop-blur-xl overflow-hidden">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 py-2.5 px-4 sm:px-5">
+          <Card className="rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 shadow-md backdrop-blur-xl overflow-hidden">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-900/40 py-3.5 sm:py-4 px-5 sm:px-7 md:px-8">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
-                    <User className="w-4 h-4" />
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                    <User className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                    <CardTitle className="text-sm sm:text-base md:text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
                       1. Biodata Calon Penerima
                     </CardTitle>
-                    <CardDescription className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                    <CardDescription className="text-xs sm:text-sm text-slate-500 font-medium">
                       Identitas calon penerima sesuai KTP elektronik dan Kartu Keluarga
                     </CardDescription>
                   </div>
                 </div>
-                <Badge variant="secondary" className="text-[10px] font-bold tracking-wider uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 border-none py-0.5 px-2">
+                <Badge variant="secondary" className="text-xs font-black tracking-wider uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 border-none py-1 px-3 rounded-xl">
                   Langkah 1 Dari 3
                 </Badge>
               </div>
             </CardHeader>
 
-            <CardContent className="p-3.5 sm:p-5 space-y-3">
-              <div className="grid gap-3 sm:gap-3.5 md:grid-cols-2">
+            <CardContent className="p-5 sm:p-7 md:p-8 space-y-4 sm:space-y-6">
+              <div className="grid gap-4 sm:gap-5 md:gap-6 md:grid-cols-2">
                 {/* Nama Lengkap */}
-                <div className="space-y-1">
-                  <Label htmlFor="fullName" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <User className="w-3 h-3 text-primary" />
+                <div className="space-y-1.5">
+                  <Label htmlFor="fullName" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-primary" />
                     Nama Lengkap <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -695,18 +695,18 @@ export default function InputDataPage() {
                     required 
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="h-10 text-xs sm:text-sm rounded-xl font-semibold tracking-wide border-slate-200 dark:border-slate-800 uppercase"
+                    className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold tracking-wide border-slate-200 dark:border-slate-800 uppercase"
                   />
                 </div>
 
                 {/* Jenis Kelamin */}
-                <div className="space-y-1">
-                  <Label htmlFor="gender" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Users className="w-3 h-3 text-primary" />
+                <div className="space-y-1.5">
+                  <Label htmlFor="gender" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-primary" />
                     Jenis Kelamin <span className="text-rose-500">*</span>
                   </Label>
                   <Select value={gender} onValueChange={setGender} required>
-                    <SelectTrigger className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800">
+                    <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800">
                       <SelectValue placeholder="Pilih Jenis Kelamin..." />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -717,14 +717,14 @@ export default function InputDataPage() {
                 </div>
 
                 {/* NIK */}
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor="nik" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <CreditCard className="w-3 h-3 text-primary" />
+                    <Label htmlFor="nik" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <CreditCard className="w-3.5 h-3.5 text-primary" />
                       Nomor Induk Kependudukan (NIK) <span className="text-rose-500">*</span>
                     </Label>
                     <span className={cn(
-                      "text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-full",
+                      "text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full",
                       nik.length === 16 ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
                     )}>
                       {nik.length} / 16 DIGIT
@@ -737,7 +737,7 @@ export default function InputDataPage() {
                     placeholder="Masukkan 16 digit NIK..." 
                     required 
                     value={nik}
-                    className="h-10 text-xs sm:text-sm rounded-xl font-mono font-bold tracking-wider border-slate-200 dark:border-slate-800"
+                    className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-mono font-bold tracking-wider border-slate-200 dark:border-slate-800"
                     onChange={(e) => {
                       const cleanNik = e.target.value.replace(/[^0-9]/g, "")
                       setNik(cleanNik)
@@ -754,10 +754,10 @@ export default function InputDataPage() {
                 </div>
 
                 {/* Nomor KK + PENGECEKKAN OTOMATIS */}
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor="noKK" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <FileText className="w-3 h-3 text-primary" />
+                    <Label htmlFor="noKK" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-primary" />
                       Nomor Kartu Keluarga (KK) <span className="text-rose-500">*</span>
                     </Label>
                     <div className="flex items-center gap-2">
@@ -768,13 +768,13 @@ export default function InputDataPage() {
                             setNoKK("")
                             setKkCheckResults([])
                           }}
-                          className="text-[10px] text-slate-400 hover:text-slate-600 flex items-center gap-0.5 font-semibold"
+                          className="text-[11px] text-slate-400 hover:text-slate-600 flex items-center gap-0.5 font-semibold"
                         >
-                          <X className="w-3 h-3" /> Bersihkan
+                          <X className="w-3.5 h-3.5" /> Bersihkan
                         </button>
                       )}
                       <span className={cn(
-                        "text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-full",
+                        "text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full",
                         noKK.length === 16 ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
                       )}>
                         {noKK.length} / 16 DIGIT
@@ -791,7 +791,7 @@ export default function InputDataPage() {
                       required 
                       value={noKK}
                       className={cn(
-                        "h-10 text-xs sm:text-sm rounded-xl font-mono font-bold tracking-wider transition-all",
+                        "h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-mono font-bold tracking-wider transition-all",
                         isFormBlocked 
                           ? "border-rose-400 bg-rose-50/50 dark:bg-rose-950/30 text-rose-900 dark:text-rose-100 focus-visible:ring-rose-400" 
                           : noKK.length === 16 && !isCheckingKk && kkCheckResults.length === 0
@@ -801,45 +801,45 @@ export default function InputDataPage() {
                       onChange={(e) => setNoKK(e.target.value.replace(/[^0-9]/g, ""))}
                     />
                     {isCheckingKk && (
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary animate-spin" />
                       </div>
                     )}
                   </div>
 
                   {noKK.length > 0 && noKK.length < 16 && (
-                    <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 pl-1">
-                      <Info className="w-3 h-3" />
+                    <p className="text-[11px] sm:text-xs text-slate-400 font-medium flex items-center gap-1 pl-1">
+                      <Info className="w-3.5 h-3.5" />
                       Wajib 16 digit angka untuk validasi otomatis.
                     </p>
                   )}
 
                   {isCheckingKk && (
-                    <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 text-xs text-blue-700 font-semibold animate-pulse">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600 shrink-0" />
+                    <div className="flex items-center gap-2.5 p-2.5 sm:p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl sm:rounded-2xl border border-blue-200 text-xs sm:text-sm text-blue-700 font-semibold animate-pulse">
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-600 shrink-0" />
                       <span>Memvalidasi Nomor KK di basis data pembanding...</span>
                     </div>
                   )}
 
                   {/* HASIL PENGECEKAN KK */}
                   {!isCheckingKk && noKK.length === 16 && (
-                    <div className="space-y-1.5 pt-1 animate-in fade-in">
+                    <div className="space-y-2 pt-1 animate-in fade-in">
                       {isFormBlocked && (
-                        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-xs space-y-2">
+                        <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-xs sm:text-sm space-y-2.5">
                           <div className="flex items-start gap-2.5">
-                            <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                            <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                             <div className="flex-1 min-w-0">
-                              <span className="font-black text-rose-800 dark:text-rose-200 uppercase text-[11px]">
+                              <span className="font-black text-rose-800 dark:text-rose-200 uppercase text-xs sm:text-sm">
                                 {isKkBlacklisted ? "DATA BLACKLIST (REJECT)" : isKkHold ? "DATA HOLD (PENGAJUAN DITAHAN)" : "SUDAH TERDAFTAR"}
                               </span>
-                              <p className="text-[11px] text-rose-700 dark:text-rose-300 mt-0.5 leading-tight font-semibold">
+                              <p className="text-xs sm:text-[13px] text-rose-700 dark:text-rose-300 mt-0.5 leading-tight font-semibold">
                                 Nomor KK ini dilarang mendaftar. Seluruh isian di bawahnya ditutup otomatis.
                               </p>
                             </div>
                           </div>
-                          <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
                             {kkCheckResults.map((res, i) => (
-                              <div key={i} className="p-2 rounded-lg bg-white/90 dark:bg-slate-900 border border-rose-200 text-[10px] space-y-0.5">
+                              <div key={i} className="p-2.5 rounded-xl bg-white/90 dark:bg-slate-900 border border-rose-200 text-xs space-y-1">
                                 <div className="flex justify-between font-bold text-rose-700">
                                   <span>{res._source}</span>
                                   <span>{res.tahunPengajuan || "-"}</span>
@@ -854,17 +854,17 @@ export default function InputDataPage() {
                       )}
 
                       {!isFormBlocked && kkHistoryResults.length > 0 && (
-                        <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 text-[11px] text-amber-800 flex items-center justify-between">
-                          <span className="font-semibold flex items-center gap-1.5">
-                            <Info className="w-3.5 h-3.5 text-amber-600" />
+                        <div className="p-3 rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 text-xs sm:text-sm text-amber-800 flex items-center justify-between">
+                          <span className="font-semibold flex items-center gap-2">
+                            <Info className="w-4 h-4 text-amber-600 shrink-0" />
                             Terdata riwayat tahun sebelumnya. Pendaftaran tetap dapat dilanjutkan.
                           </span>
                         </div>
                       )}
 
                       {!isFormBlocked && kkCheckResults.length === 0 && (
-                        <div className="flex items-center gap-2 p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-xs text-emerald-800 font-bold">
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <div className="flex items-center gap-2.5 p-3 rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-xs sm:text-sm text-emerald-800 font-bold">
+                          <Check className="w-4 h-4 text-emerald-600 shrink-0" />
                           <span>Nomor KK Bersih & Valid (Siap lanjut ke Langkah 2).</span>
                         </div>
                       )}
@@ -873,9 +873,9 @@ export default function InputDataPage() {
                 </div>
 
                 {/* Tempat Lahir */}
-                <div className="space-y-1">
-                  <Label htmlFor="pob" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <MapPin className="w-3 h-3 text-primary" />
+                <div className="space-y-1.5">
+                  <Label htmlFor="pob" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-primary" />
                     Tempat Lahir <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -886,22 +886,22 @@ export default function InputDataPage() {
                     value={pob}
                     disabled={isFormBlocked || isMonitoring || loading}
                     onChange={(e) => setPob(e.target.value)}
-                    className="h-10 text-xs sm:text-sm rounded-xl font-semibold tracking-wide border-slate-200 dark:border-slate-800 uppercase disabled:bg-slate-100"
+                    className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold tracking-wide border-slate-200 dark:border-slate-800 uppercase disabled:bg-slate-100"
                   />
                 </div>
 
                 {/* Tanggal Lahir */}
-                <div className="space-y-1">
+                <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor="dob" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <Calendar className="w-3 h-3 text-primary" />
+                    <Label htmlFor="dob" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-primary" />
                       Tanggal Lahir {isEditingDob ? "(Manual)" : "(Otomatis)"}
                     </Label>
                     {!isFormBlocked && (
                       <button
                         type="button"
                         onClick={() => setIsEditingDob(!isEditingDob)}
-                        className="text-[10px] text-primary font-bold hover:underline"
+                        className="text-xs text-primary font-bold hover:underline"
                       >
                         {isEditingDob ? "Kunci" : "Edit Manual"}
                       </button>
@@ -917,16 +917,16 @@ export default function InputDataPage() {
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
                     className={cn(
-                      "h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800",
+                      "h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800",
                       !isEditingDob && "bg-slate-50 dark:bg-slate-800/50"
                     )}
                   />
                 </div>
 
                 {/* Nomor HP */}
-                <div className="space-y-1 md:col-span-2">
-                  <Label htmlFor="phone" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Phone className="w-3 h-3 text-primary" />
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="phone" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-primary" />
                     Nomor HP / WhatsApp Aktif <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -937,20 +937,20 @@ export default function InputDataPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     disabled={isFormBlocked || isMonitoring || loading}
-                    className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800 disabled:bg-slate-100"
+                    className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800 disabled:bg-slate-100"
                   />
                 </div>
               </div>
 
               {/* Navigasi Footer Langkah 1 */}
-              <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <span className="text-[11px] text-slate-400 font-medium">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3.5 pt-4 sm:pt-6 border-t border-slate-100 dark:border-slate-800">
+                <span className="text-xs sm:text-sm text-slate-500 font-medium">
                   {isFormBlocked ? (
-                    <span className="text-rose-600 font-bold flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Langkah 2 ditutup karena KK Blacklist/Hold.
+                    <span className="text-rose-600 font-bold flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5" /> Langkah 2 ditutup karena KK Blacklist/Hold.
                     </span>
                   ) : (
-                    "Langkah 1 dari 3: Lengkapi seluruh biodata."
+                    "Langkah 1 dari 3: Lengkapi seluruh biodata pemohon."
                   )}
                 </span>
 
@@ -959,7 +959,7 @@ export default function InputDataPage() {
                   onClick={() => goToStep(2)}
                   disabled={isFormBlocked || isCheckingKk}
                   className={cn(
-                    "h-10 text-xs sm:text-sm font-bold shadow-sm rounded-xl px-5 transition-all",
+                    "h-11 sm:h-12 text-xs sm:text-sm md:text-base font-bold shadow-md rounded-xl sm:rounded-2xl px-6 sm:px-8 transition-all min-w-[220px]",
                     isFormBlocked 
                       ? "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none" 
                       : "bg-primary hover:bg-primary/95 text-white"
@@ -967,13 +967,13 @@ export default function InputDataPage() {
                 >
                   {isFormBlocked ? (
                     <>
-                      <Lock className="w-3.5 h-3.5 mr-1.5 text-rose-500" />
+                      <Lock className="w-4 h-4 mr-2 text-rose-500" />
                       <span>Langkah 2 Terkunci</span>
                     </>
                   ) : (
                     <>
                       <span>Lanjut ke Langkah 2: Alamat</span>
-                      <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                      <ArrowRight className="w-4 h-4 ml-2" />
                     </>
                   )}
                 </Button>
@@ -986,33 +986,33 @@ export default function InputDataPage() {
             LANGKAH 2: ALAMAT & LOKASI DOMISILI
            ======================================================== */}
         <div className={cn("space-y-4", currentStep !== 2 && "hidden")}>
-          <Card className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 shadow-sm backdrop-blur-xl overflow-hidden">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 py-2.5 px-4 sm:px-5">
+          <Card className="rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 shadow-md backdrop-blur-xl overflow-hidden">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-900/40 py-3.5 sm:py-4 px-5 sm:px-7 md:px-8">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-                    <MapPin className="w-4 h-4" />
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                    <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                    <CardTitle className="text-sm sm:text-base md:text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
                       2. Alamat & Lokasi Domisili
                     </CardTitle>
-                    <CardDescription className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                    <CardDescription className="text-xs sm:text-sm text-slate-500 font-medium">
                       Wilayah administrasi domisili tempat tinggal pemohon
                     </CardDescription>
                   </div>
                 </div>
-                <Badge variant="secondary" className="text-[10px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-none py-0.5 px-2">
+                <Badge variant="secondary" className="text-xs font-black tracking-wider uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-none py-1 px-3 rounded-xl">
                   Langkah 2 Dari 3
                 </Badge>
               </div>
             </CardHeader>
 
-            <CardContent className="p-3.5 sm:p-5 space-y-3">
-              <div className="grid gap-3 sm:gap-3.5 md:grid-cols-2">
-                <div className="space-y-1 md:col-span-2">
-                  <Label htmlFor="address" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <MapPin className="w-3 h-3 text-primary" />
+            <CardContent className="p-5 sm:p-7 md:p-8 space-y-4 sm:space-y-6">
+              <div className="grid gap-4 sm:gap-5 md:gap-6 md:grid-cols-2">
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="address" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-primary" />
                     Alamat Lengkap <span className="text-rose-500">*</span>
                   </Label>
                   <Textarea 
@@ -1022,12 +1022,12 @@ export default function InputDataPage() {
                     required 
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="rounded-xl min-h-[68px] text-xs sm:text-sm font-semibold border-slate-200 dark:border-slate-800"
+                    className="rounded-xl sm:rounded-2xl min-h-[85px] sm:min-h-[105px] text-sm sm:text-base font-semibold border-slate-200 dark:border-slate-800"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <Label htmlFor="rtRw" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1.5">
+                  <Label htmlFor="rtRw" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     RT / RW <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -1037,12 +1037,12 @@ export default function InputDataPage() {
                     required 
                     value={rtRw}
                     onChange={(e) => setRtRw(e.target.value)}
-                    className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800 uppercase"
+                    className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800 uppercase"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <Label htmlFor="kelurahan" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1.5">
+                  <Label htmlFor="kelurahan" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Kelurahan <span className="text-rose-500">*</span>
                   </Label>
                   <Select 
@@ -1050,19 +1050,19 @@ export default function InputDataPage() {
                     onValueChange={setKelurahan} 
                     required 
                   >
-                    <SelectTrigger className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800">
+                    <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800">
                       <SelectValue placeholder="Pilih Kelurahan..." />
                     </SelectTrigger>
-                    <SelectContent className="max-h-[260px] rounded-xl">
+                    <SelectContent className="max-h-[280px] rounded-xl">
                       {kelurahanList.map((k) => (
-                        <SelectItem key={k} value={k} className="font-semibold text-xs sm:text-sm">{k}</SelectItem>
+                        <SelectItem key={k} value={k} className="font-semibold text-xs sm:text-sm py-2">{k}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-1 md:col-span-2">
-                  <Label htmlFor="kecamatan" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="kecamatan" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Kecamatan (Otomatis Sesuai Kelurahan)
                   </Label>
                   <Input 
@@ -1071,30 +1071,30 @@ export default function InputDataPage() {
                     value={kecamatan} 
                     readOnly 
                     placeholder="Terisi otomatis saat kelurahan dipilih"
-                    className="h-10 text-xs sm:text-sm rounded-xl font-bold bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200" 
+                    className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-bold bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200" 
                   />
                 </div>
               </div>
 
               {/* Navigasi Footer Langkah 2 */}
-              <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 sm:pt-6 border-t border-slate-100 dark:border-slate-800">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => goToStep(1)}
-                  className="h-10 rounded-xl font-bold border-slate-200 dark:border-slate-800 text-xs sm:text-sm px-4"
+                  className="h-11 sm:h-12 rounded-xl sm:rounded-2xl font-bold border-slate-200 dark:border-slate-800 text-xs sm:text-sm md:text-base px-5 sm:px-6 w-full sm:w-auto"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+                  <ArrowLeft className="w-4 h-4 mr-2" />
                   <span>Kembali ke Biodata</span>
                 </Button>
 
                 <Button
                   type="button"
                   onClick={() => goToStep(3)}
-                  className="h-10 text-xs sm:text-sm font-bold shadow-sm rounded-xl bg-primary hover:bg-primary/95 text-white px-5"
+                  className="h-11 sm:h-12 text-xs sm:text-sm md:text-base font-bold shadow-md rounded-xl sm:rounded-2xl bg-primary hover:bg-primary/95 text-white px-6 sm:px-8 w-full sm:w-auto min-w-[220px]"
                 >
                   <span>Lanjut ke Langkah 3: Usaha</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                  <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
             </CardContent>
@@ -1105,48 +1105,48 @@ export default function InputDataPage() {
             LANGKAH 3: DATA USAHA & USULAN KOORDINATOR
            ======================================================== */}
         <div className={cn("space-y-4", currentStep !== 3 && "hidden")}>
-          <Card className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 shadow-sm backdrop-blur-xl overflow-hidden">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 py-2.5 px-4 sm:px-5">
+          <Card className="rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 shadow-md backdrop-blur-xl overflow-hidden">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-900/40 py-3.5 sm:py-4 px-5 sm:px-7 md:px-8">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
-                    <Store className="w-4 h-4" />
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+                    <Store className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                    <CardTitle className="text-sm sm:text-base md:text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
                       3. Data Usaha & Usulan Koordinator
                     </CardTitle>
-                    <CardDescription className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                    <CardDescription className="text-xs sm:text-sm text-slate-500 font-medium">
                       Legalitas usaha mikro dan pemilihan koordinator pengusul
                     </CardDescription>
                   </div>
                 </div>
-                <Badge variant="secondary" className="text-[10px] font-bold tracking-wider uppercase bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-none py-0.5 px-2">
+                <Badge variant="secondary" className="text-xs font-black tracking-wider uppercase bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-none py-1 px-3 rounded-xl">
                   Langkah 3 Dari 3
                 </Badge>
               </div>
             </CardHeader>
 
-            <CardContent className="p-3.5 sm:p-5 space-y-3">
-              <div className="grid gap-3 sm:gap-3.5 md:grid-cols-2">
-                <div className="space-y-1">
-                  <Label htmlFor="businessCategory" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Store className="w-3 h-3 text-primary" />
+            <CardContent className="p-5 sm:p-7 md:p-8 space-y-4 sm:space-y-6">
+              <div className="grid gap-4 sm:gap-5 md:gap-6 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="businessCategory" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Store className="w-3.5 h-3.5 text-primary" />
                     Jenis Usaha <span className="text-rose-500">*</span>
                   </Label>
                   <Select value={businessCategory} onValueChange={setBusinessCategory} required>
-                    <SelectTrigger className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800">
+                    <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800">
                       <SelectValue placeholder="Pilih Jenis Usaha..." />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="Kuliner" className="font-semibold text-xs sm:text-sm">Kuliner</SelectItem>
-                      <SelectItem value="Bukan Kuliner" className="font-semibold text-xs sm:text-sm">Bukan Kuliner</SelectItem>
+                      <SelectItem value="Kuliner" className="font-semibold text-xs sm:text-sm py-2">Kuliner</SelectItem>
+                      <SelectItem value="Bukan Kuliner" className="font-semibold text-xs sm:text-sm py-2">Bukan Kuliner</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-1">
-                  <Label htmlFor="businessName" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1.5">
+                  <Label htmlFor="businessName" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Nama Usaha / Produk <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -1156,12 +1156,12 @@ export default function InputDataPage() {
                     required 
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
-                    className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800 uppercase"
+                    className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800 uppercase"
                   />
                 </div>
 
-                <div className="space-y-1 md:col-span-2">
-                  <Label htmlFor="businessLocation" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="businessLocation" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Lokasi Tempat Usaha <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -1171,35 +1171,35 @@ export default function InputDataPage() {
                     required 
                     value={businessLocation}
                     onChange={(e) => setBusinessLocation(e.target.value)}
-                    className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800 uppercase"
+                    className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800 uppercase"
                   />
                 </div>
 
-                <div className="space-y-1 md:col-span-2">
-                  <Label htmlFor="coordinator" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                <div className="space-y-1.5 md:col-span-2">
+                  <Label htmlFor="coordinator" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center justify-between">
                     <span>USULAN (Koordinator Pendamping) <span className="text-rose-500">*</span></span>
-                    <span className="text-[9px] text-slate-400 font-semibold normal-case">Sisa Kuota Terpantau Real-time</span>
+                    <span className="text-[10px] sm:text-xs text-slate-400 font-semibold normal-case">Sisa Kuota Terpantau Real-time</span>
                   </Label>
                   <Select 
                     value={selectedCoordinator} 
                     onValueChange={setSelectedCoordinator} 
                     required 
                   >
-                    <SelectTrigger className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800">
+                    <SelectTrigger className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800">
                       <SelectValue placeholder="Pilih Usulan Koordinator..." />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl max-h-[260px]">
+                    <SelectContent className="rounded-xl max-h-[280px]">
                       {availableCoordinators.filter(c => c.remaining > 0).map((c) => (
                         <SelectItem 
                           key={c.id} 
                           value={c.name} 
-                          className="group focus:bg-primary focus:text-white data-[highlighted]:bg-primary data-[highlighted]:text-white rounded-lg my-0.5 text-xs sm:text-sm"
+                          className="group focus:bg-primary focus:text-white data-[highlighted]:bg-primary data-[highlighted]:text-white rounded-lg my-0.5 text-xs sm:text-sm py-2"
                         >
-                          <div className="flex justify-between items-center w-full min-w-[280px] sm:min-w-[320px] py-0.5">
+                          <div className="flex justify-between items-center w-full min-w-[280px] sm:min-w-[340px] py-0.5">
                             <span className="font-bold group-focus:text-white group-data-[highlighted]:text-white">
                               {c.name}
                             </span>
-                            <span className="text-[9px] sm:text-[10px] font-bold bg-primary/10 text-primary group-focus:bg-white/20 group-focus:text-white px-2 py-0.5 rounded-full whitespace-nowrap">
+                            <span className="text-[10px] sm:text-xs font-bold bg-primary/10 text-primary group-focus:bg-white/20 group-focus:text-white px-2.5 py-0.5 rounded-full whitespace-nowrap">
                               Sisa Kuota: {c.remaining}
                             </span>
                           </div>
@@ -1211,40 +1211,40 @@ export default function InputDataPage() {
               </div>
 
               {/* Rangkuman Ringkas Data Calon */}
-              <div className="p-2.5 sm:p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-1.5">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 text-primary" />
+              <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2">
+                <span className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-primary" />
                   Rangkuman Data Sebelum Disimpan:
                 </span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs sm:text-sm">
                   <div>
-                    <span className="text-slate-400 text-[9px] block">Nama Calon:</span>
+                    <span className="text-slate-400 text-[10px] sm:text-xs block">Nama Calon:</span>
                     <strong className="truncate block text-slate-800 dark:text-slate-200">{fullName || "-"}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[9px] block">NIK:</span>
+                    <span className="text-slate-400 text-[10px] sm:text-xs block">NIK:</span>
                     <span className="font-mono font-bold truncate block">{nik || "-"}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[9px] block">Kelurahan:</span>
+                    <span className="text-slate-400 text-[10px] sm:text-xs block">Kelurahan:</span>
                     <strong className="truncate block">{kelurahan || "-"}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[9px] block">Koordinator:</span>
+                    <span className="text-slate-400 text-[10px] sm:text-xs block">Koordinator:</span>
                     <strong className="truncate block text-primary">{selectedCoordinator || "-"}</strong>
                   </div>
                 </div>
               </div>
 
               {/* Navigasi Footer Langkah 3 & Submit Button */}
-              <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 sm:pt-6 border-t border-slate-100 dark:border-slate-800">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => goToStep(2)}
-                  className="h-10 sm:h-10.5 rounded-xl font-bold border-slate-200 dark:border-slate-800 text-xs sm:text-sm px-4"
+                  className="h-11 sm:h-12 rounded-xl sm:rounded-2xl font-bold border-slate-200 dark:border-slate-800 text-xs sm:text-sm md:text-base px-5 sm:px-6 w-full sm:w-auto"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+                  <ArrowLeft className="w-4 h-4 mr-2" />
                   <span>Kembali ke Alamat</span>
                 </Button>
 
@@ -1252,7 +1252,7 @@ export default function InputDataPage() {
                   type="submit" 
                   disabled={loading || isMonitoring || isFormBlocked} 
                   className={cn(
-                    "h-10 sm:h-10.5 min-w-[200px] sm:min-w-[220px] text-xs sm:text-sm font-bold shadow-sm rounded-xl transition-all",
+                    "h-11 sm:h-12 min-w-[220px] sm:min-w-[250px] text-xs sm:text-sm md:text-base font-bold shadow-md rounded-xl sm:rounded-2xl transition-all w-full sm:w-auto",
                     isFormBlocked 
                       ? "bg-slate-300 dark:bg-slate-800 text-slate-500 cursor-not-allowed shadow-none" 
                       : isMonitoring 
@@ -1262,19 +1262,19 @@ export default function InputDataPage() {
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                      <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-spin" />
                       <span>Menyimpan...</span>
                     </>
                   ) : isFormBlocked ? (
                     <>
-                      <Lock className="w-4 h-4 mr-1.5 text-rose-500" />
+                      <Lock className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-rose-500" />
                       <span>Formulir Terkunci</span>
                     </>
                   ) : isMonitoring ? (
                     <span>Akses Monitoring</span>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-1.5" />
+                      <Save className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                       <span>Simpan Data Pendaftaran</span>
                     </>
                   )}
