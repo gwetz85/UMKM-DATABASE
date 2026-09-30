@@ -24,6 +24,8 @@ import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { CheckDataIndicator } from "@/components/check-data-indicator"
 import { VerificationBadge } from "@/components/verification-badge"
+import { ActorMenuBadge } from "@/components/actor-menu-badge"
+import { getActorCurrentMenu } from "@/lib/actor-menu-status"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 
@@ -72,6 +74,7 @@ function ActorDataContent() {
   const viewId = searchParams.get('viewId')
   const [localIndex, setLocalIndex] = useState<BusinessActor[] | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [filterMenu, setFilterMenu] = useState<string>("all")
 
   const handleCopyText = (text: string, label: string) => {
     if (!text) return
@@ -108,7 +111,7 @@ function ActorDataContent() {
 
   useEffect(() => {
     setPageLimit(50)
-  }, [searchQuery, filterCoordinator])
+  }, [searchQuery, filterCoordinator, filterMenu])
 
   const adminRef = useMemoFirebase(() => {
     if (!user || !database) return null
@@ -1181,9 +1184,17 @@ function ActorDataContent() {
     });
   }, [filteredActors, database]);
 
-  const currentDataToDisplay = (isInspektorat || isKoordinator || isSearching) 
+  const rawDataToDisplay = (isInspektorat || isKoordinator || isSearching) 
     ? (filteredActors || []) 
     : (groupedActors[String(filterCoordinator || "").toUpperCase().trim()] || []);
+
+  const currentDataToDisplay = useMemo(() => {
+    if (filterMenu === "all") return rawDataToDisplay;
+    return rawDataToDisplay.filter(a => {
+      const info = getActorCurrentMenu(a);
+      return info.menuName === filterMenu || info.displayLabel === filterMenu || info.menuPath === filterMenu;
+    });
+  }, [rawDataToDisplay, filterMenu]);
 
   return (
     <div className="p-0 space-y-4">
@@ -1359,6 +1370,38 @@ function ActorDataContent() {
                 </h2>
               </div>
               <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                {/* Filter Berdasarkan Posisi Menu Berkas */}
+                <div className="flex items-center gap-1.5">
+                  <Select value={filterMenu} onValueChange={setFilterMenu}>
+                    <SelectTrigger className="h-9 w-44 sm:w-56 text-xs font-bold rounded-xl border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-800/90 shadow-2xs">
+                      <SelectValue placeholder="Filter Menu Berkas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Menu Berkas</SelectItem>
+                      <SelectItem value="Data Pelaku Usaha">Menu: Data Pelaku Usaha</SelectItem>
+                      <SelectItem value="Survey Dinas">Menu: Survey Dinas</SelectItem>
+                      <SelectItem value="Verifikasi Dinas">Menu: Verifikasi Dinas</SelectItem>
+                      <SelectItem value="Hasil Verifikasi">Menu: Hasil Verifikasi</SelectItem>
+                      <SelectItem value="Cetak Berkas">Menu: Cetak Berkas</SelectItem>
+                      <SelectItem value="LPJ">Menu: LPJ</SelectItem>
+                      <SelectItem value="Data Selesai">Menu: Data Selesai</SelectItem>
+                      <SelectItem value="Data Ditolak">Menu: Data Ditolak</SelectItem>
+                      <SelectItem value="Menu Blacklist">Menu: Blacklist</SelectItem>
+                      <SelectItem value="Verifikasi Admin">Menu: Verifikasi Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {filterMenu !== "all" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setFilterMenu("all")}
+                      className="h-9 px-2 text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                      title="Reset Filter Menu"
+                    >
+                      <X className="w-3.5 h-3.5 mr-1" /> Reset
+                    </Button>
+                  )}
+                </div>
 
 
                 {isAdmin && filterCoordinator && !isKoordinator && !isInspektorat && (
@@ -1423,6 +1466,9 @@ function ActorDataContent() {
                           <p className="text-[9px] font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-sm print:hidden">
                             Reg: {actor.registrationCode || "PROSES..."}
                           </p>
+                          <div className="flex justify-center print:hidden">
+                            <ActorMenuBadge actor={actor} compact asLink />
+                          </div>
                           <VerificationBadge actor={actor} />
                         </div>
                         <div className="text-[9px] font-black uppercase bg-primary text-white w-full justify-center print:w-auto shrink-0 mt-auto rounded-full py-0.5 px-2 flex items-center">
@@ -1551,6 +1597,9 @@ function ActorDataContent() {
 
                                   return null
                                 })()}
+
+                                {/* Posisi Menu Berkas Saat Ini */}
+                                <ActorMenuBadge actor={actor} asLink />
 
                                 <VerificationBadge actor={actor} hideLocation />
                               </div>
@@ -1765,6 +1814,9 @@ function ActorDataContent() {
 
                                   return null
                                 })()}
+
+                                {/* Posisi Menu Berkas Saat Ini */}
+                                <ActorMenuBadge actor={actor} asLink />
 
                                 <VerificationBadge actor={actor} hideLocation />
                               </div>
@@ -2217,6 +2269,7 @@ function ActorDataContent() {
                             )}
                           </button>
                         )}
+                        <ActorMenuBadge actor={viewingActor} asLink />
                         <VerificationBadge actor={viewingActor} />
                       </div>
                     </div>
@@ -2452,7 +2505,10 @@ function ActorDataContent() {
                               <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">Identitas resmi kependudukan sesuai KTP & Kartu Keluarga</p>
                             </div>
                           </div>
-                          <VerificationBadge actor={viewingActor} />
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <ActorMenuBadge actor={viewingActor} showStage asLink />
+                            <VerificationBadge actor={viewingActor} />
+                          </div>
                         </div>
 
                         {/* Bento Grid 9 Tiles with Distinct Vibrant Colors & High Contrast */}
@@ -3272,10 +3328,16 @@ function ActorDataContent() {
                             </div>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                           <div className="bg-slate-50/90 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-700/80 shadow-2xs space-y-1">
                             <p className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Status Alur Sistem</p>
                             <p className="text-xs sm:text-sm font-black uppercase text-primary pt-0.5">{(viewingActor.status || "").replace('_', ' ')}</p>
+                          </div>
+                          <div className="bg-slate-50/90 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-700/80 shadow-2xs space-y-1">
+                            <p className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Posisi Menu Berkas</p>
+                            <div className="pt-0.5">
+                              <ActorMenuBadge actor={viewingActor} showStage asLink />
+                            </div>
                           </div>
                           <div className="bg-slate-50/90 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-700/80 shadow-2xs space-y-1">
                             <p className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">Petugas Input</p>
@@ -3556,16 +3618,8 @@ function ActorDataContent() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Badge variant="outline" className={cn(
-                      "font-black text-[10px] md:text-xs uppercase px-2.5 py-1 rounded-lg border",
-                      actor.status === 'finish' ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800" :
-                      actor.status === 'verified_dinas' ? "bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800" :
-                      actor.status === 'lpj_pending' ? "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-300 dark:bg-fuchsia-950 dark:text-fuchsia-300 dark:border-fuchsia-800" :
-                      "bg-slate-100 text-slate-700 border-slate-300 dark:bg-black dark:text-white dark:border-slate-700"
-                    )}>
-                      {actor.status.replace(/_/g, ' ')}
-                    </Badge>
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    <ActorMenuBadge actor={actor} asLink />
                   </div>
                 </div>
 
