@@ -10,7 +10,7 @@ export function PwaRegister() {
     if ('caches' in window) {
       window.caches.keys().then((keys) => {
         keys.forEach((key) => {
-          if (key !== 'simpu-pwa-v3') {
+          if (key !== 'simpu-pwa-v4') {
             console.log('[PWA] Purging outdated cache storage:', key);
             window.caches.delete(key);
           }

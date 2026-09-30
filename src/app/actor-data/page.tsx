@@ -1543,6 +1543,7 @@ function ActorDataContent() {
                               )}>
                                 {actor.fullName}
                               </h3>
+                              {/* NIK & Reg Code */}
                               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                 <span className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 font-mono tracking-tight">
                                   {actor.nik || '-'}
@@ -1553,14 +1554,16 @@ function ActorDataContent() {
                                     {actor.registrationCode || '...'}
                                   </span>
                                 </div>
+                              </div>
 
-                                {/* Status Hasil Verifikasi BPJS */}
-                                {(() => {
-                                  const bpjsInfo = getActorBpjsStatus(actor)
-                                  if (!bpjsInfo.hasMatch) return null
+                              {/* Status Hasil Verifikasi BPJS */}
+                              {(() => {
+                                const bpjsInfo = getActorBpjsStatus(actor)
+                                if (!bpjsInfo.hasMatch) return null
 
-                                  if (bpjsInfo.type === 'verified') {
-                                    return (
+                                return (
+                                  <div className="mt-1.5 flex items-center">
+                                    {bpjsInfo.type === 'verified' && (
                                       <span
                                         className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
                                         title={`Hasil Verifikasi BPJS: ${bpjsInfo.note}`}
@@ -1568,11 +1571,8 @@ function ActorDataContent() {
                                         <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                         <span>{bpjsInfo.cardLabel}</span>
                                       </span>
-                                    )
-                                  }
-
-                                  if (bpjsInfo.type === 'duplicate') {
-                                    return (
+                                    )}
+                                    {bpjsInfo.type === 'duplicate' && (
                                       <span
                                         className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
                                         title={`Hasil Verifikasi BPJS: ${bpjsInfo.note}`}
@@ -1580,11 +1580,8 @@ function ActorDataContent() {
                                         <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                                         <span>{bpjsInfo.cardLabel}</span>
                                       </span>
-                                    )
-                                  }
-
-                                  if (bpjsInfo.type === 'overage' || bpjsInfo.type === 'rejected') {
-                                    return (
+                                    )}
+                                    {(bpjsInfo.type === 'overage' || bpjsInfo.type === 'rejected') && (
                                       <span
                                         className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
                                         title={`Hasil Verifikasi BPJS: ${bpjsInfo.note}`}
@@ -1592,15 +1589,14 @@ function ActorDataContent() {
                                         <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
                                         <span>{bpjsInfo.cardLabel}</span>
                                       </span>
-                                    )
-                                  }
+                                    )}
+                                  </div>
+                                )
+                              })()}
 
-                                  return null
-                                })()}
-
-                                {/* Posisi Menu Berkas Saat Ini */}
-                                <ActorMenuBadge actor={actor} asLink />
-
+                              {/* Status & Alur Posisi Menu Berkas Pelaku (Tepat di Bawah Status BPJS Ketenagakerjaan) */}
+                              <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                                <ActorMenuBadge actor={actor} asLink showStage />
                                 <VerificationBadge actor={actor} hideLocation />
                               </div>
                             </div>
@@ -1770,14 +1766,16 @@ function ActorDataContent() {
                                     {actor.registrationCode || '...'}
                                   </span>
                                 </div>
+                              </div>
 
-                                {/* Status Hasil Verifikasi BPJS */}
-                                {(() => {
-                                  const bpjsInfo = getActorBpjsStatus(actor)
-                                  if (!bpjsInfo.hasMatch) return null
+                              {/* Status Hasil Verifikasi BPJS */}
+                              {(() => {
+                                const bpjsInfo = getActorBpjsStatus(actor)
+                                if (!bpjsInfo.hasMatch) return null
 
-                                  if (bpjsInfo.type === 'verified') {
-                                    return (
+                                return (
+                                  <div className="mt-1.5 flex items-center">
+                                    {bpjsInfo.type === 'verified' && (
                                       <span
                                         className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800"
                                         title={`Hasil Verifikasi BPJS: ${bpjsInfo.note}`}
@@ -1785,11 +1783,8 @@ function ActorDataContent() {
                                         <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                         <span>{bpjsInfo.cardLabel}</span>
                                       </span>
-                                    )
-                                  }
-
-                                  if (bpjsInfo.type === 'duplicate') {
-                                    return (
+                                    )}
+                                    {bpjsInfo.type === 'duplicate' && (
                                       <span
                                         className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800"
                                         title={`Hasil Verifikasi BPJS: ${bpjsInfo.note}`}
@@ -1797,11 +1792,8 @@ function ActorDataContent() {
                                         <AlertTriangle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
                                         <span>{bpjsInfo.cardLabel}</span>
                                       </span>
-                                    )
-                                  }
-
-                                  if (bpjsInfo.type === 'overage' || bpjsInfo.type === 'rejected') {
-                                    return (
+                                    )}
+                                    {(bpjsInfo.type === 'overage' || bpjsInfo.type === 'rejected') && (
                                       <span
                                         className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-lg border shadow-2xs leading-tight shrink-0 bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800"
                                         title={`Hasil Verifikasi BPJS: ${bpjsInfo.note}`}
@@ -1809,15 +1801,14 @@ function ActorDataContent() {
                                         <XCircle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
                                         <span>{bpjsInfo.cardLabel}</span>
                                       </span>
-                                    )
-                                  }
+                                    )}
+                                  </div>
+                                )
+                              })()}
 
-                                  return null
-                                })()}
-
-                                {/* Posisi Menu Berkas Saat Ini */}
-                                <ActorMenuBadge actor={actor} asLink />
-
+                              {/* Status & Alur Posisi Menu Berkas Pelaku (Tepat di Bawah Status BPJS Ketenagakerjaan) */}
+                              <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                                <ActorMenuBadge actor={actor} asLink showStage />
                                 <VerificationBadge actor={actor} hideLocation />
                               </div>
                             </div>
