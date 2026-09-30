@@ -26,8 +26,6 @@ import {
   MapPin,
   Phone,
   Store,
-  Sparkles,
-  Building2,
   XCircle,
   X,
   Info,
@@ -550,54 +548,7 @@ export default function InputDataPage() {
 
   return (
     <div className="p-3 sm:p-6 md:p-8 max-w-4xl mx-auto space-y-6 sm:space-y-8 animate-in fade-in duration-500">
-      {/* Hero Header Modern & Kekinian */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white/95 via-slate-50/90 to-blue-50/40 dark:from-slate-900/90 dark:via-slate-900/80 dark:to-slate-950/90 backdrop-blur-xl border border-slate-200/80 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none p-6 sm:p-8">
-        {/* Accent Top Gradient Line */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500" />
-        
-        {/* Background Decorative Blur Orb */}
-        <div className="absolute -top-16 -right-16 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 font-bold px-3 py-1 rounded-full text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse" />
-                TAHUN ANGGARAN 2026
-              </Badge>
-              <Badge variant="secondary" className="font-semibold text-[11px] px-3 py-1 rounded-full tracking-wide">
-                PORTAL RESMI PENGAJUAN
-              </Badge>
-            </div>
-
-            <div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white uppercase leading-none font-headline">
-                TUNAS BANGSA <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">KEPULAUAN RIAU</span>
-              </h2>
-              <p className="text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide mt-1.5">
-                PENGAJUAN BANTUAN UMKM TAHUN 2026
-              </p>
-            </div>
-
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium max-w-xl leading-relaxed">
-              Sistem pendataan terpadu pelaku usaha mikro. Pengisian formulir dibagi menjadi 3 langkah bertahap yang praktis dan terstruktur.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 self-start md:self-center">
-            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
-                <Building2 className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Layanan</div>
-                <div className="text-xs font-black text-slate-800 dark:text-slate-100">SIMPU KEPRI</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Stepper Indikator Langkah Bertahap (Step 1, Step 2, Step 3) */}
       <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-lg shadow-slate-200/40 dark:shadow-none">
