@@ -190,7 +190,7 @@ export default function InputDataPage() {
               })
             }
           } catch (e) {
-            // Silently ignore index issues for live check
+            // Silently ignore
           }
         }
 
@@ -342,20 +342,17 @@ export default function InputDataPage() {
   const goToStep = (targetStep: number) => {
     if (targetStep === 1) {
       setCurrentStep(1)
-      window.scrollTo({ top: 120, behavior: "smooth" })
       return
     }
     if (targetStep === 2) {
       if (validateStep1()) {
         setCurrentStep(2)
-        window.scrollTo({ top: 120, behavior: "smooth" })
       }
       return
     }
     if (targetStep === 3) {
       if (validateStep1() && validateStep2()) {
         setCurrentStep(3)
-        window.scrollTo({ top: 120, behavior: "smooth" })
       }
       return
     }
@@ -374,7 +371,6 @@ export default function InputDataPage() {
       return
     }
 
-    // Pastikan seluruh langkah telah valid
     if (!validateStep1() || !validateStep2()) {
       return
     }
@@ -403,7 +399,6 @@ export default function InputDataPage() {
     try {
       const actorsRef = ref(database, 'businessActors')
       
-      // Tahap 1: Cek duplikasi NIK & noKK via indexed query dengan fallback
       const checkDuplicateByField = async (field: 'nik' | 'noKK', value: string) => {
         if (!value) return null
         try {
@@ -547,141 +542,105 @@ export default function InputDataPage() {
   ]
 
   return (
-    <div className="p-3 sm:p-6 md:p-8 max-w-4xl mx-auto space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+    <div className="max-w-4xl mx-auto space-y-3 sm:space-y-3.5 pb-12 animate-in fade-in duration-300">
+      {/* Header Bar Kompak & Stepper Terpadu (Single Slim Row) */}
+      <div className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800 rounded-2xl p-2.5 sm:px-4 sm:py-2.5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2.5 self-start sm:self-center">
+          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors rounded-xl border border-slate-200 dark:border-slate-800 p-1.5 h-8 w-8 shadow-xs shrink-0" />
+          <div>
+            <h1 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">
+              Formulir Pendaftaran UMKM 2026
+            </h1>
+            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+              Yayasan Tunas Bangsa Kepulauan Riau
+            </p>
+          </div>
+        </div>
 
-
-      {/* Stepper Indikator Langkah Bertahap (Step 1, Step 2, Step 3) */}
-      <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/90 dark:border-slate-800 rounded-3xl p-4 sm:p-5 shadow-lg shadow-slate-200/40 dark:shadow-none">
-        <div className="flex items-center justify-between max-w-2xl mx-auto relative px-2 sm:px-6">
-          {/* Garis Penghubung Latar Belakang */}
-          <div className="absolute top-1/2 left-8 sm:left-14 right-8 sm:right-14 -translate-y-1/2 h-1 bg-slate-200 dark:bg-slate-800 -z-0 rounded-full" />
-          
-          {/* Garis Progres Aktif */}
-          <div 
-            className="absolute top-1/2 left-8 sm:left-14 -translate-y-1/2 h-1 bg-gradient-to-r from-primary to-blue-500 rounded-full transition-all duration-500 -z-0"
-            style={{
-              width: currentStep === 1 ? "0%" : currentStep === 2 ? "50%" : "calc(100% - 4rem)"
-            }}
-          />
-
-          {/* Tombol Step 1 */}
+        {/* Stepper Wizard Mini */}
+        <div className="flex items-center gap-1.5 sm:gap-2 self-stretch sm:self-center justify-center">
+          {/* Step 1 Pill */}
           <button
             type="button"
             onClick={() => goToStep(1)}
-            className="relative z-10 flex flex-col items-center gap-2 group cursor-pointer focus:outline-none"
-          >
-            <div className={cn(
-              "w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm transition-all duration-300 shadow-md",
-              currentStep === 1 
-                ? "bg-primary text-white ring-4 ring-primary/20 scale-110 shadow-primary/30" 
-                : currentStep > 1 
-                ? "bg-emerald-500 text-white shadow-emerald-500/20" 
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-[11px] sm:text-xs transition-all",
+              currentStep === 1
+                ? "bg-primary text-white shadow-sm ring-2 ring-primary/20"
+                : currentStep > 1
+                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-400"
+            )}
+          >
+            <span className={cn(
+              "w-4 h-4 sm:w-5 sm:h-5 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0",
+              currentStep === 1 ? "bg-white/20 text-white" : currentStep > 1 ? "bg-emerald-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
             )}>
-              {currentStep > 1 ? <Check className="w-5 h-5 stroke-[3]" /> : "1"}
-            </div>
-            <div className="text-center">
-              <span className={cn(
-                "text-xs font-bold block tracking-tight",
-                currentStep === 1 ? "text-primary dark:text-blue-400" : currentStep > 1 ? "text-slate-700 dark:text-slate-300" : "text-slate-400"
-              )}>
-                Biodata Calon
-              </span>
-              <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline">Langkah 1</span>
-            </div>
+              {currentStep > 1 ? <Check className="w-3 h-3 stroke-[3]" /> : "1"}
+            </span>
+            <span>1. Biodata</span>
           </button>
 
-          {/* Tombol Step 2 */}
+          <span className="text-slate-300 dark:text-slate-700 text-[10px] sm:text-xs">&rarr;</span>
+
+          {/* Step 2 Pill */}
           <button
             type="button"
             onClick={() => goToStep(2)}
             disabled={isFormBlocked}
             className={cn(
-              "relative z-10 flex flex-col items-center gap-2 group focus:outline-none",
-              isFormBlocked ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+              "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-[11px] sm:text-xs transition-all",
+              currentStep === 2
+                ? "bg-primary text-white shadow-sm ring-2 ring-primary/20"
+                : currentStep > 2
+                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
+                : isFormBlocked
+                ? "bg-rose-50 text-rose-400 cursor-not-allowed border border-rose-200"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-slate-200"
             )}
           >
-            <div className={cn(
-              "w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm transition-all duration-300 shadow-md",
-              currentStep === 2 
-                ? "bg-primary text-white ring-4 ring-primary/20 scale-110 shadow-primary/30" 
-                : currentStep > 2 
-                ? "bg-emerald-500 text-white shadow-emerald-500/20" 
-                : isFormBlocked
-                ? "bg-rose-100 dark:bg-rose-950 text-rose-500 border border-rose-300"
-                : "bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-400"
+            <span className={cn(
+              "w-4 h-4 sm:w-5 sm:h-5 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0",
+              currentStep === 2 ? "bg-white/20 text-white" : currentStep > 2 ? "bg-emerald-600 text-white" : isFormBlocked ? "bg-rose-200 text-rose-700" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
             )}>
-              {currentStep > 2 ? <Check className="w-5 h-5 stroke-[3]" /> : isFormBlocked ? <Lock className="w-4 h-4 text-rose-500" /> : "2"}
-            </div>
-            <div className="text-center">
-              <span className={cn(
-                "text-xs font-bold block tracking-tight",
-                currentStep === 2 ? "text-primary dark:text-blue-400" : currentStep > 2 ? "text-slate-700 dark:text-slate-300" : "text-slate-400"
-              )}>
-                Alamat & Lokasi
-              </span>
-              <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline">Langkah 2</span>
-            </div>
+              {currentStep > 2 ? <Check className="w-3 h-3 stroke-[3]" /> : isFormBlocked ? <Lock className="w-2.5 h-2.5 text-rose-600" /> : "2"}
+            </span>
+            <span>2. Alamat</span>
           </button>
 
-          {/* Tombol Step 3 */}
+          <span className="text-slate-300 dark:text-slate-700 text-[10px] sm:text-xs">&rarr;</span>
+
+          {/* Step 3 Pill */}
           <button
             type="button"
             onClick={() => goToStep(3)}
             disabled={isFormBlocked}
             className={cn(
-              "relative z-10 flex flex-col items-center gap-2 group focus:outline-none",
-              isFormBlocked ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+              "flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl font-bold text-[11px] sm:text-xs transition-all",
+              currentStep === 3
+                ? "bg-primary text-white shadow-sm ring-2 ring-primary/20"
+                : isFormBlocked
+                ? "bg-rose-50 text-rose-400 cursor-not-allowed border border-rose-200"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-400 hover:bg-slate-200"
             )}
           >
-            <div className={cn(
-              "w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm transition-all duration-300 shadow-md",
-              currentStep === 3 
-                ? "bg-primary text-white ring-4 ring-primary/20 scale-110 shadow-primary/30" 
-                : isFormBlocked
-                ? "bg-rose-100 dark:bg-rose-950 text-rose-500 border border-rose-300"
-                : "bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-400"
+            <span className={cn(
+              "w-4 h-4 sm:w-5 sm:h-5 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0",
+              currentStep === 3 ? "bg-white/20 text-white" : isFormBlocked ? "bg-rose-200 text-rose-700" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
             )}>
-              {isFormBlocked ? <Lock className="w-4 h-4 text-rose-500" /> : "3"}
-            </div>
-            <div className="text-center">
-              <span className={cn(
-                "text-xs font-bold block tracking-tight",
-                currentStep === 3 ? "text-primary dark:text-blue-400" : "text-slate-400"
-              )}>
-                Usaha & Usulan
-              </span>
-              <span className="text-[10px] text-slate-400 font-semibold hidden sm:inline">Langkah 3</span>
-            </div>
+              {isFormBlocked ? <Lock className="w-2.5 h-2.5 text-rose-600" /> : "3"}
+            </span>
+            <span>3. Usaha</span>
           </button>
         </div>
       </div>
 
-      {/* Subheader & Monitoring Mode Alert */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <SidebarTrigger className="text-primary hover:bg-primary/10 transition-colors rounded-xl border border-slate-200 dark:border-slate-800 p-2 h-10 w-10 shadow-sm" />
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-              {currentStep === 1 && "Langkah 1: Biodata Calon Penerima"}
-              {currentStep === 2 && "Langkah 2: Alamat & Lokasi Domisili"}
-              {currentStep === 3 && "Langkah 3: Data Usaha & Usulan Koordinator"}
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-              {currentStep === 1 && "Lengkapi identitas diri pemohon sesuai KTP dan lakukan verifikasi Nomor KK."}
-              {currentStep === 2 && "Masukkan alamat domisili tempat tinggal pemohon di wilayah Kepulauan Riau."}
-              {currentStep === 3 && "Lengkapi data legalitas kegiatan usaha dan tentukan koordinator pengusul."}
-            </p>
-          </div>
+      {isMonitoring && (
+        <div className="bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 px-3 py-2 rounded-xl flex items-center gap-2 font-bold text-xs shadow-sm">
+          <span>👁️</span>
+          <span>MODE MONITORING: Akun Anda dalam mode tinjau dan tidak diizinkan menambahkan atau mengubah data.</span>
         </div>
-
-        {isMonitoring && (
-          <div className="bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 px-4 py-3 rounded-2xl flex items-center gap-3 font-bold text-xs sm:text-sm shadow-sm animate-pulse mt-2">
-            <span className="text-xl">👁️</span>
-            <span>MODE MONITORING: Akun Anda dalam mode tinjau dan tidak diizinkan menambahkan atau mengubah data.</span>
-          </div>
-        )}
-      </div>
+      )}
 
       <form 
         key={formKey} 
@@ -693,40 +652,40 @@ export default function InputDataPage() {
             else if (currentStep === 2) goToStep(3)
           }
         }}
-        className="space-y-6"
+        className="space-y-4"
       >
         {/* ========================================================
-            LANGKAH 1: BIODATA PRIBADI
+            LANGKAH 1: BIODATA CALON PENERIMA
            ======================================================== */}
-        <div className={cn("space-y-6", currentStep !== 1 && "hidden")}>
-          <Card className="rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 shadow-xl shadow-slate-200/40 dark:shadow-none overflow-hidden backdrop-blur-xl">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 pb-5">
+        <div className={cn("space-y-4", currentStep !== 1 && "hidden")}>
+          <Card className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 shadow-sm backdrop-blur-xl overflow-hidden">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 py-2.5 px-4 sm:px-5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-sm">
-                    <User className="w-5 h-5" />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                    <User className="w-4 h-4" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                    <CardTitle className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">
                       1. Biodata Calon Penerima
                     </CardTitle>
-                    <CardDescription className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                      Identitas kependudukan calon penerima sesuai KTP elektronik dan Kartu Keluarga
+                    <CardDescription className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                      Identitas calon penerima sesuai KTP elektronik dan Kartu Keluarga
                     </CardDescription>
                   </div>
                 </div>
-                <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] font-bold tracking-wider uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 border-none">
+                <Badge variant="secondary" className="text-[10px] font-bold tracking-wider uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 border-none py-0.5 px-2">
                   Langkah 1 Dari 3
                 </Badge>
               </div>
             </CardHeader>
 
-            <CardContent className="p-6 sm:p-8 space-y-6">
-              <div className="grid gap-5 md:grid-cols-2">
+            <CardContent className="p-3.5 sm:p-5 space-y-3">
+              <div className="grid gap-3 sm:gap-3.5 md:grid-cols-2">
                 {/* Nama Lengkap */}
-                <div className="space-y-2">
-                  <Label htmlFor="fullName" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-primary" />
+                <div className="space-y-1">
+                  <Label htmlFor="fullName" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <User className="w-3 h-3 text-primary" />
                     Nama Lengkap <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -736,36 +695,36 @@ export default function InputDataPage() {
                     required 
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="h-12 rounded-xl text-sm font-semibold tracking-wide border-slate-200 dark:border-slate-800 focus-visible:ring-2 focus-visible:ring-primary/20 uppercase"
+                    className="h-10 text-xs sm:text-sm rounded-xl font-semibold tracking-wide border-slate-200 dark:border-slate-800 uppercase"
                   />
                 </div>
 
                 {/* Jenis Kelamin */}
-                <div className="space-y-2">
-                  <Label htmlFor="gender" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-primary" />
+                <div className="space-y-1">
+                  <Label htmlFor="gender" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Users className="w-3 h-3 text-primary" />
                     Jenis Kelamin <span className="text-rose-500">*</span>
                   </Label>
                   <Select value={gender} onValueChange={setGender} required>
-                    <SelectTrigger className="h-12 rounded-xl text-sm font-semibold border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary/20">
+                    <SelectTrigger className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800">
                       <SelectValue placeholder="Pilih Jenis Kelamin..." />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="Laki-laki" className="font-semibold">Laki-laki</SelectItem>
-                      <SelectItem value="Perempuan" className="font-semibold">Perempuan</SelectItem>
+                      <SelectItem value="Laki-laki" className="font-semibold text-xs sm:text-sm">Laki-laki</SelectItem>
+                      <SelectItem value="Perempuan" className="font-semibold text-xs sm:text-sm">Perempuan</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* NIK */}
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor="nik" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <CreditCard className="w-3.5 h-3.5 text-primary" />
+                    <Label htmlFor="nik" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <CreditCard className="w-3 h-3 text-primary" />
                       Nomor Induk Kependudukan (NIK) <span className="text-rose-500">*</span>
                     </Label>
                     <span className={cn(
-                      "text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors",
+                      "text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-full",
                       nik.length === 16 ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
                     )}>
                       {nik.length} / 16 DIGIT
@@ -778,7 +737,7 @@ export default function InputDataPage() {
                     placeholder="Masukkan 16 digit NIK..." 
                     required 
                     value={nik}
-                    className="h-12 rounded-xl text-sm font-mono font-bold tracking-wider border-slate-200 dark:border-slate-800 focus-visible:ring-2 focus-visible:ring-primary/20"
+                    className="h-10 text-xs sm:text-sm rounded-xl font-mono font-bold tracking-wider border-slate-200 dark:border-slate-800"
                     onChange={(e) => {
                       const cleanNik = e.target.value.replace(/[^0-9]/g, "")
                       setNik(cleanNik)
@@ -795,10 +754,10 @@ export default function InputDataPage() {
                 </div>
 
                 {/* Nomor KK + PENGECEKKAN OTOMATIS */}
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor="noKK" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <FileText className="w-3.5 h-3.5 text-primary" />
+                    <Label htmlFor="noKK" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="w-3 h-3 text-primary" />
                       Nomor Kartu Keluarga (KK) <span className="text-rose-500">*</span>
                     </Label>
                     <div className="flex items-center gap-2">
@@ -809,14 +768,13 @@ export default function InputDataPage() {
                             setNoKK("")
                             setKkCheckResults([])
                           }}
-                          className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center gap-0.5 font-semibold"
-                          title="Hapus Nomor KK"
+                          className="text-[10px] text-slate-400 hover:text-slate-600 flex items-center gap-0.5 font-semibold"
                         >
                           <X className="w-3 h-3" /> Bersihkan
                         </button>
                       )}
                       <span className={cn(
-                        "text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors",
+                        "text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-full",
                         noKK.length === 16 ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-100 dark:bg-slate-800 text-slate-400"
                       )}>
                         {noKK.length} / 16 DIGIT
@@ -833,164 +791,81 @@ export default function InputDataPage() {
                       required 
                       value={noKK}
                       className={cn(
-                        "h-12 rounded-xl text-sm font-mono font-bold tracking-wider transition-all",
+                        "h-10 text-xs sm:text-sm rounded-xl font-mono font-bold tracking-wider transition-all",
                         isFormBlocked 
                           ? "border-rose-400 bg-rose-50/50 dark:bg-rose-950/30 text-rose-900 dark:text-rose-100 focus-visible:ring-rose-400" 
                           : noKK.length === 16 && !isCheckingKk && kkCheckResults.length === 0
                           ? "border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-100"
-                          : "border-slate-200 dark:border-slate-800 focus-visible:ring-2 focus-visible:ring-primary/20"
+                          : "border-slate-200 dark:border-slate-800"
                       )}
                       onChange={(e) => setNoKK(e.target.value.replace(/[^0-9]/g, ""))}
                     />
                     {isCheckingKk && (
-                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <Loader2 className="w-4 h-4 text-primary animate-spin" />
                       </div>
                     )}
                   </div>
 
-                  {/* HELPER TEXT KETIKA MASIH MENGETIK (< 16 DIGIT) */}
                   {noKK.length > 0 && noKK.length < 16 && (
-                    <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1.5 pl-1">
-                      <Info className="w-3 h-3 text-slate-400" />
-                      Masukkan 16 digit lengkap. Sistem akan otomatis memvalidasi ke basis data pembanding.
+                    <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 pl-1">
+                      <Info className="w-3 h-3" />
+                      Wajib 16 digit angka untuk validasi otomatis.
                     </p>
                   )}
 
-                  {/* LOADING CHECKER INDICATOR */}
                   {isCheckingKk && (
-                    <div className="flex items-center gap-2 p-3 bg-blue-50/80 dark:bg-blue-950/40 rounded-xl border border-blue-200/80 dark:border-blue-900/50 text-xs text-blue-700 dark:text-blue-300 font-semibold animate-pulse">
-                      <Loader2 className="w-4 h-4 animate-spin text-blue-600 shrink-0" />
-                      <span>Sedang memvalidasi Nomor KK di seluruh basis data pembanding...</span>
+                    <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 text-xs text-blue-700 font-semibold animate-pulse">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600 shrink-0" />
+                      <span>Memvalidasi Nomor KK di basis data pembanding...</span>
                     </div>
                   )}
 
-                  {/* ========================================================
-                      HASIL PENGECEKAN NOMOR KK OTOMATIS
-                     ======================================================== */}
+                  {/* HASIL PENGECEKAN KK */}
                   {!isCheckingKk && noKK.length === 16 && (
-                    <div className="space-y-2 mt-2 pt-1 animate-in fade-in slide-in-from-top-2 duration-300">
-                      {/* KASUS 1: TERDETEKSI BLACKLIST / HOLD / DUPLIKAT (FORM DITUTUP!) */}
+                    <div className="space-y-1.5 pt-1 animate-in fade-in">
                       {isFormBlocked && (
-                        <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-50 via-rose-100/70 to-red-50 dark:from-rose-950/60 dark:via-red-950/40 dark:to-rose-900/40 border-2 border-rose-400 dark:border-rose-600/80 shadow-lg shadow-rose-500/10 space-y-3">
-                          <div className="flex items-start gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-md">
-                              <ShieldAlert className="w-5 h-5 animate-pulse" />
-                            </div>
+                        <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-xs space-y-2">
+                          <div className="flex items-start gap-2.5">
+                            <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-xs font-black text-rose-800 dark:text-rose-200 uppercase tracking-tight">
-                                  PENGECEKAN KK: {isKkBlacklisted ? "DATA BLACKLIST (REJECT)" : isKkHold ? "DATA HOLD (PENGAJUAN DITAHAN)" : "SUDAH TERDAFTAR"}
-                                </span>
-                                <Badge variant="destructive" className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5">
-                                  AKSES DITUTUP
-                                </Badge>
-                              </div>
-                              <p className="text-xs font-bold text-rose-700 dark:text-rose-300 mt-1 leading-relaxed">
-                                Nomor KK ini terdeteksi dalam database {isKkBlacklisted ? "BLACKLIST" : isKkHold ? "HOLD (PENGAJUAN DITAHAN)" : "SIMPU 2026"}. Seluruh isian formulir di bawah ini <u>ditutup otomatis</u> dan tidak dapat diisi.
+                              <span className="font-black text-rose-800 dark:text-rose-200 uppercase text-[11px]">
+                                {isKkBlacklisted ? "DATA BLACKLIST (REJECT)" : isKkHold ? "DATA HOLD (PENGAJUAN DITAHAN)" : "SUDAH TERDAFTAR"}
+                              </span>
+                              <p className="text-[11px] text-rose-700 dark:text-rose-300 mt-0.5 leading-tight font-semibold">
+                                Nomor KK ini dilarang mendaftar. Seluruh isian di bawahnya ditutup otomatis.
                               </p>
                             </div>
                           </div>
-
-                          {/* Rincian Data yang Terdeteksi */}
-                          <div className="space-y-2 pt-1">
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-rose-800/80 dark:text-rose-300/80 flex items-center gap-1.5">
-                              <FileText className="w-3 h-3" />
-                              Ditemukan {kkCheckResults.length} Catatan Terkait Nomor KK ini:
-                            </div>
-                            <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                              {kkCheckResults.map((res, i) => (
-                                <div 
-                                  key={i} 
-                                  className="p-3 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-rose-300 dark:border-rose-800/70 shadow-sm text-xs space-y-1.5"
-                                >
-                                  <div className="flex items-center justify-between border-b pb-1.5 border-slate-100 dark:border-slate-800">
-                                    <span className="font-black text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
-                                      <XCircle className="w-3.5 h-3.5" />
-                                      {res._source}
-                                    </span>
-                                    <span className="text-[10px] font-bold bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 px-2 py-0.5 rounded-full">
-                                      {res.tahunPengajuan || res.createdAt?.substring(0, 4) || "-"}
-                                    </span>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-700 dark:text-slate-300 pt-0.5">
-                                    <div>
-                                      <span className="text-slate-400 font-medium">Nama:</span>
-                                      <p className="font-bold uppercase truncate">{res.nama || res.fullName || "-"}</p>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-400 font-medium">Status:</span>
-                                      <p className="font-bold uppercase truncate text-rose-600 dark:text-rose-400">{res.status || "-"}</p>
-                                    </div>
-                                    <div className="col-span-2">
-                                      <span className="text-slate-400 font-medium">Usaha / Produk:</span>
-                                      <p className="font-semibold truncate">{res.usaha || res.businessName || "-"}</p>
-                                    </div>
-                                  </div>
+                          <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                            {kkCheckResults.map((res, i) => (
+                              <div key={i} className="p-2 rounded-lg bg-white/90 dark:bg-slate-900 border border-rose-200 text-[10px] space-y-0.5">
+                                <div className="flex justify-between font-bold text-rose-700">
+                                  <span>{res._source}</span>
+                                  <span>{res.tahunPengajuan || "-"}</span>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="pt-1 flex items-center justify-between border-t border-rose-200 dark:border-rose-900/60">
-                            <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1">
-                              <Lock className="w-3 h-3" /> Isian formulir di bawah terkunci
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setNoKK("")
-                                setKkCheckResults([])
-                              }}
-                              className="text-xs font-bold text-rose-700 dark:text-rose-300 hover:underline inline-flex items-center gap-1"
-                            >
-                              Ganti / Perbaiki Nomor KK &rarr;
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* KASUS 2: DITEMUKAN RIWAYAT 2023/2024 (BUKAN BLACKLIST/HOLD) */}
-                      {!isFormBlocked && kkHistoryResults.length > 0 && (
-                        <div className="p-3.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5 uppercase text-[11px]">
-                              <Info className="w-3.5 h-3.5 text-amber-600" />
-                              Catatan Riwayat Terdaftar (Tahun Sebelumnya)
-                            </span>
-                            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-[10px] font-bold">
-                              Pengajuan 2026 Dapat Dilanjutkan
-                            </Badge>
-                          </div>
-                          <div className="space-y-1.5">
-                            {kkHistoryResults.map((res, i) => (
-                              <div key={i} className="p-2 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-amber-200/80 text-[11px] flex justify-between items-center">
-                                <div>
-                                  <span className="font-bold text-slate-800 dark:text-slate-200">{res.nama || res.fullName || "-"}</span>
-                                  <span className="text-slate-400 mx-1.5">•</span>
-                                  <span className="text-slate-600 dark:text-slate-400">{res._source}</span>
+                                <div className="text-slate-600 dark:text-slate-300">
+                                  <strong>{res.nama || res.fullName || "-"}</strong> ({res.status || "-"})
                                 </div>
-                                <span className="font-bold text-slate-500">{res.status || "Terdaftar"}</span>
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
 
-                      {/* KASUS 3: NOMOR KK BERSIH & AMAN */}
+                      {!isFormBlocked && kkHistoryResults.length > 0 && (
+                        <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 text-[11px] text-amber-800 flex items-center justify-between">
+                          <span className="font-semibold flex items-center gap-1.5">
+                            <Info className="w-3.5 h-3.5 text-amber-600" />
+                            Terdata riwayat tahun sebelumnya. Pendaftaran tetap dapat dilanjutkan.
+                          </span>
+                        </div>
+                      )}
+
                       {!isFormBlocked && kkCheckResults.length === 0 && (
-                        <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 font-bold">
-                          <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
-                            <Check className="w-3.5 h-3.5" />
-                          </div>
-                          <div>
-                            <div className="font-black text-emerald-900 dark:text-emerald-200 uppercase tracking-tight">
-                              NOMOR KK BERSIH & VALID
-                            </div>
-                            <div className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-                              Tidak ditemukan di database blacklist ataupun data hold. Isian formulir di bawah siap diisi.
-                            </div>
-                          </div>
+                        <div className="flex items-center gap-2 p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-xs text-emerald-800 font-bold">
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Nomor KK Bersih & Valid (Siap lanjut ke Langkah 2).</span>
                         </div>
                       )}
                     </div>
@@ -998,9 +873,9 @@ export default function InputDataPage() {
                 </div>
 
                 {/* Tempat Lahir */}
-                <div className="space-y-2">
-                  <Label htmlFor="pob" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-primary" />
+                <div className="space-y-1">
+                  <Label htmlFor="pob" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin className="w-3 h-3 text-primary" />
                     Tempat Lahir <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -1011,48 +886,47 @@ export default function InputDataPage() {
                     value={pob}
                     disabled={isFormBlocked || isMonitoring || loading}
                     onChange={(e) => setPob(e.target.value)}
-                    className="h-12 rounded-xl text-sm font-semibold tracking-wide border-slate-200 dark:border-slate-800 uppercase focus-visible:ring-2 focus-visible:ring-primary/20 disabled:bg-slate-100 disabled:dark:bg-slate-800/60 disabled:cursor-not-allowed"
+                    className="h-10 text-xs sm:text-sm rounded-xl font-semibold tracking-wide border-slate-200 dark:border-slate-800 uppercase disabled:bg-slate-100"
                   />
                 </div>
 
                 {/* Tanggal Lahir */}
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor="dob" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-primary" />
-                      Tanggal Lahir {isEditingDob ? "(Manual)" : "(Otomatis dari NIK)"}
+                    <Label htmlFor="dob" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="w-3 h-3 text-primary" />
+                      Tanggal Lahir {isEditingDob ? "(Manual)" : "(Otomatis)"}
                     </Label>
                     {!isFormBlocked && (
                       <button
                         type="button"
                         onClick={() => setIsEditingDob(!isEditingDob)}
-                        className="text-xs text-primary font-bold hover:underline"
+                        className="text-[10px] text-primary font-bold hover:underline"
                       >
-                        {isEditingDob ? "Kunci Otomatis" : "Edit Manual"}
+                        {isEditingDob ? "Kunci" : "Edit Manual"}
                       </button>
                     )}
                   </div>
                   <Input 
                     id="dob" 
                     name="dob" 
-                    placeholder="Terisi otomatis dari NIK (DD-MM-YYYY)" 
+                    placeholder="DD-MM-YYYY" 
                     readOnly={!isEditingDob || isFormBlocked}
                     disabled={isFormBlocked || isMonitoring || loading}
                     required 
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
                     className={cn(
-                      "h-12 rounded-xl text-sm font-semibold tracking-wide border-slate-200 dark:border-slate-800 focus-visible:ring-2 focus-visible:ring-primary/20",
-                      !isEditingDob && "bg-slate-50 dark:bg-slate-800/50",
-                      isFormBlocked && "disabled:bg-slate-100 disabled:dark:bg-slate-800/60 disabled:cursor-not-allowed"
+                      "h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800",
+                      !isEditingDob && "bg-slate-50 dark:bg-slate-800/50"
                     )}
                   />
                 </div>
 
                 {/* Nomor HP */}
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="phone" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-primary" />
+                <div className="space-y-1 md:col-span-2">
+                  <Label htmlFor="phone" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Phone className="w-3 h-3 text-primary" />
                     Nomor HP / WhatsApp Aktif <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -1063,43 +937,43 @@ export default function InputDataPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     disabled={isFormBlocked || isMonitoring || loading}
-                    className="h-12 rounded-xl text-sm font-semibold tracking-wide border-slate-200 dark:border-slate-800 focus-visible:ring-2 focus-visible:ring-primary/20 disabled:bg-slate-100 disabled:dark:bg-slate-800/60 disabled:cursor-not-allowed"
+                    className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800 disabled:bg-slate-100"
                   />
                 </div>
               </div>
 
               {/* Navigasi Footer Langkah 1 */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <div className="text-xs text-slate-500 font-medium">
+              <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <span className="text-[11px] text-slate-400 font-medium">
                   {isFormBlocked ? (
-                    <span className="text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1.5">
-                      <Lock className="w-4 h-4" /> Langkah 2 ditutup karena Nomor KK berstatus Blacklist/Hold.
+                    <span className="text-rose-600 font-bold flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Langkah 2 ditutup karena KK Blacklist/Hold.
                     </span>
                   ) : (
-                    <span>Langkah 1 dari 3: Lengkapi seluruh identitas calon penerima.</span>
+                    "Langkah 1 dari 3: Lengkapi seluruh biodata."
                   )}
-                </div>
+                </span>
 
                 <Button
                   type="button"
                   onClick={() => goToStep(2)}
                   disabled={isFormBlocked || isCheckingKk}
                   className={cn(
-                    "w-full sm:w-auto min-w-[240px] h-13 text-sm font-bold shadow-lg rounded-2xl transition-all duration-200",
+                    "h-10 text-xs sm:text-sm font-bold shadow-sm rounded-xl px-5 transition-all",
                     isFormBlocked 
                       ? "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none" 
-                      : "bg-primary hover:bg-primary/95 text-white shadow-primary/25"
+                      : "bg-primary hover:bg-primary/95 text-white"
                   )}
                 >
                   {isFormBlocked ? (
                     <>
-                      <Lock className="w-4 h-4 mr-2 text-rose-500" />
+                      <Lock className="w-3.5 h-3.5 mr-1.5 text-rose-500" />
                       <span>Langkah 2 Terkunci</span>
                     </>
                   ) : (
                     <>
                       <span>Lanjut ke Langkah 2: Alamat</span>
-                      <ArrowRight className="w-4 h-4 ml-2" />
+                      <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                     </>
                   )}
                 </Button>
@@ -1111,34 +985,34 @@ export default function InputDataPage() {
         {/* ========================================================
             LANGKAH 2: ALAMAT & LOKASI DOMISILI
            ======================================================== */}
-        <div className={cn("space-y-6", currentStep !== 2 && "hidden")}>
-          <Card className="rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 shadow-xl shadow-slate-200/40 dark:shadow-none overflow-hidden backdrop-blur-xl">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 pb-5">
+        <div className={cn("space-y-4", currentStep !== 2 && "hidden")}>
+          <Card className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 shadow-sm backdrop-blur-xl overflow-hidden">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 py-2.5 px-4 sm:px-5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shadow-sm">
-                    <MapPin className="w-5 h-5" />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                    <MapPin className="w-4 h-4" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                    <CardTitle className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">
                       2. Alamat & Lokasi Domisili
                     </CardTitle>
-                    <CardDescription className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                      Wilayah administrasi kependudukan dan alamat tempat tinggal pemohon
+                    <CardDescription className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                      Wilayah administrasi domisili tempat tinggal pemohon
                     </CardDescription>
                   </div>
                 </div>
-                <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-none">
+                <Badge variant="secondary" className="text-[10px] font-bold tracking-wider uppercase bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-none py-0.5 px-2">
                   Langkah 2 Dari 3
                 </Badge>
               </div>
             </CardHeader>
 
-            <CardContent className="p-6 sm:p-8 space-y-6">
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="address" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-primary" />
+            <CardContent className="p-3.5 sm:p-5 space-y-3">
+              <div className="grid gap-3 sm:gap-3.5 md:grid-cols-2">
+                <div className="space-y-1 md:col-span-2">
+                  <Label htmlFor="address" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin className="w-3 h-3 text-primary" />
                     Alamat Lengkap <span className="text-rose-500">*</span>
                   </Label>
                   <Textarea 
@@ -1148,12 +1022,12 @@ export default function InputDataPage() {
                     required 
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="rounded-xl min-h-[90px] text-sm font-semibold tracking-wide border-slate-200 dark:border-slate-800 focus-visible:ring-2 focus-visible:ring-primary/20"
+                    className="rounded-xl min-h-[68px] text-xs sm:text-sm font-semibold border-slate-200 dark:border-slate-800"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="rtRw" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1">
+                  <Label htmlFor="rtRw" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     RT / RW <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -1163,12 +1037,12 @@ export default function InputDataPage() {
                     required 
                     value={rtRw}
                     onChange={(e) => setRtRw(e.target.value)}
-                    className="h-12 rounded-xl text-sm font-semibold tracking-wide border-slate-200 dark:border-slate-800 focus-visible:ring-2 focus-visible:ring-primary/20 uppercase"
+                    className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800 uppercase"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="kelurahan" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1">
+                  <Label htmlFor="kelurahan" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Kelurahan <span className="text-rose-500">*</span>
                   </Label>
                   <Select 
@@ -1176,19 +1050,19 @@ export default function InputDataPage() {
                     onValueChange={setKelurahan} 
                     required 
                   >
-                    <SelectTrigger className="h-12 rounded-xl text-sm font-semibold border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary/20">
+                    <SelectTrigger className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800">
                       <SelectValue placeholder="Pilih Kelurahan..." />
                     </SelectTrigger>
-                    <SelectContent className="max-h-[300px] rounded-xl">
+                    <SelectContent className="max-h-[260px] rounded-xl">
                       {kelurahanList.map((k) => (
-                        <SelectItem key={k} value={k} className="font-semibold">{k}</SelectItem>
+                        <SelectItem key={k} value={k} className="font-semibold text-xs sm:text-sm">{k}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="kecamatan" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1 md:col-span-2">
+                  <Label htmlFor="kecamatan" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Kecamatan (Otomatis Sesuai Kelurahan)
                   </Label>
                   <Input 
@@ -1197,30 +1071,30 @@ export default function InputDataPage() {
                     value={kecamatan} 
                     readOnly 
                     placeholder="Terisi otomatis saat kelurahan dipilih"
-                    className="h-12 rounded-xl text-sm font-bold tracking-wide bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200" 
+                    className="h-10 text-xs sm:text-sm rounded-xl font-bold bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200" 
                   />
                 </div>
               </div>
 
               {/* Navigasi Footer Langkah 2 */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => goToStep(1)}
-                  className="w-full sm:w-auto h-13 rounded-2xl font-bold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+                  className="h-10 rounded-xl font-bold border-slate-200 dark:border-slate-800 text-xs sm:text-sm px-4"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
                   <span>Kembali ke Biodata</span>
                 </Button>
 
                 <Button
                   type="button"
                   onClick={() => goToStep(3)}
-                  className="w-full sm:w-auto min-w-[240px] h-13 text-sm font-bold shadow-lg rounded-2xl bg-primary hover:bg-primary/95 text-white shadow-primary/25"
+                  className="h-10 text-xs sm:text-sm font-bold shadow-sm rounded-xl bg-primary hover:bg-primary/95 text-white px-5"
                 >
                   <span>Lanjut ke Langkah 3: Usaha</span>
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                 </Button>
               </div>
             </CardContent>
@@ -1230,49 +1104,49 @@ export default function InputDataPage() {
         {/* ========================================================
             LANGKAH 3: DATA USAHA & USULAN KOORDINATOR
            ======================================================== */}
-        <div className={cn("space-y-6", currentStep !== 3 && "hidden")}>
-          <Card className="rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 shadow-xl shadow-slate-200/40 dark:shadow-none overflow-hidden backdrop-blur-xl">
-            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 pb-5">
+        <div className={cn("space-y-4", currentStep !== 3 && "hidden")}>
+          <Card className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/90 shadow-sm backdrop-blur-xl overflow-hidden">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/40 py-2.5 px-4 sm:px-5">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold shadow-sm">
-                    <Store className="w-5 h-5" />
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+                    <Store className="w-4 h-4" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                    <CardTitle className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100 tracking-tight">
                       3. Data Usaha & Usulan Koordinator
                     </CardTitle>
-                    <CardDescription className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                      Detail profil kegiatan usaha pelaku usaha dan koordinator pendamping
+                    <CardDescription className="text-[10px] sm:text-[11px] text-slate-500 font-medium">
+                      Legalitas usaha mikro dan pemilihan koordinator pengusul
                     </CardDescription>
                   </div>
                 </div>
-                <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] font-bold tracking-wider uppercase bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-none">
+                <Badge variant="secondary" className="text-[10px] font-bold tracking-wider uppercase bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-none py-0.5 px-2">
                   Langkah 3 Dari 3
                 </Badge>
               </div>
             </CardHeader>
 
-            <CardContent className="p-6 sm:p-8 space-y-6">
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="businessCategory" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Store className="w-3.5 h-3.5 text-primary" />
+            <CardContent className="p-3.5 sm:p-5 space-y-3">
+              <div className="grid gap-3 sm:gap-3.5 md:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="businessCategory" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Store className="w-3 h-3 text-primary" />
                     Jenis Usaha <span className="text-rose-500">*</span>
                   </Label>
                   <Select value={businessCategory} onValueChange={setBusinessCategory} required>
-                    <SelectTrigger className="h-12 rounded-xl text-sm font-semibold border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary/20">
+                    <SelectTrigger className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800">
                       <SelectValue placeholder="Pilih Jenis Usaha..." />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="Kuliner" className="font-semibold">Kuliner</SelectItem>
-                      <SelectItem value="Bukan Kuliner" className="font-semibold">Bukan Kuliner</SelectItem>
+                      <SelectItem value="Kuliner" className="font-semibold text-xs sm:text-sm">Kuliner</SelectItem>
+                      <SelectItem value="Bukan Kuliner" className="font-semibold text-xs sm:text-sm">Bukan Kuliner</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="businessName" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1">
+                  <Label htmlFor="businessName" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Nama Usaha / Produk <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -1282,12 +1156,12 @@ export default function InputDataPage() {
                     required 
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
-                    className="h-12 rounded-xl text-sm font-semibold tracking-wide border-slate-200 dark:border-slate-800 focus-visible:ring-2 focus-visible:ring-primary/20 uppercase"
+                    className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800 uppercase"
                   />
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="businessLocation" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <div className="space-y-1 md:col-span-2">
+                  <Label htmlFor="businessLocation" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                     Lokasi Tempat Usaha <span className="text-rose-500">*</span>
                   </Label>
                   <Input 
@@ -1297,35 +1171,35 @@ export default function InputDataPage() {
                     required 
                     value={businessLocation}
                     onChange={(e) => setBusinessLocation(e.target.value)}
-                    className="h-12 rounded-xl text-sm font-semibold tracking-wide border-slate-200 dark:border-slate-800 focus-visible:ring-2 focus-visible:ring-primary/20 uppercase"
+                    className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800 uppercase"
                   />
                 </div>
 
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="coordinator" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                <div className="space-y-1 md:col-span-2">
+                  <Label htmlFor="coordinator" className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center justify-between">
                     <span>USULAN (Koordinator Pendamping) <span className="text-rose-500">*</span></span>
-                    <span className="text-[10px] text-slate-400 font-semibold normal-case">Tersedia kuota real-time</span>
+                    <span className="text-[9px] text-slate-400 font-semibold normal-case">Sisa Kuota Terpantau Real-time</span>
                   </Label>
                   <Select 
                     value={selectedCoordinator} 
                     onValueChange={setSelectedCoordinator} 
                     required 
                   >
-                    <SelectTrigger className="h-12 rounded-xl text-sm font-semibold border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary/20">
+                    <SelectTrigger className="h-10 text-xs sm:text-sm rounded-xl font-semibold border-slate-200 dark:border-slate-800">
                       <SelectValue placeholder="Pilih Usulan Koordinator..." />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl max-h-[320px]">
+                    <SelectContent className="rounded-xl max-h-[260px]">
                       {availableCoordinators.filter(c => c.remaining > 0).map((c) => (
                         <SelectItem 
                           key={c.id} 
                           value={c.name} 
-                          className="group focus:bg-primary focus:text-white data-[highlighted]:bg-primary data-[highlighted]:text-white rounded-lg my-0.5"
+                          className="group focus:bg-primary focus:text-white data-[highlighted]:bg-primary data-[highlighted]:text-white rounded-lg my-0.5 text-xs sm:text-sm"
                         >
-                          <div className="flex justify-between items-center w-full min-w-[320px] py-0.5">
+                          <div className="flex justify-between items-center w-full min-w-[280px] sm:min-w-[320px] py-0.5">
                             <span className="font-bold group-focus:text-white group-data-[highlighted]:text-white">
                               {c.name}
                             </span>
-                            <span className="text-[10px] font-bold bg-primary/10 text-primary group-focus:bg-white/20 group-focus:text-white group-data-[highlighted]:bg-white/20 group-data-[highlighted]:text-white px-2 py-0.5 rounded-full whitespace-nowrap">
+                            <span className="text-[9px] sm:text-[10px] font-bold bg-primary/10 text-primary group-focus:bg-white/20 group-focus:text-white px-2 py-0.5 rounded-full whitespace-nowrap">
                               Sisa Kuota: {c.remaining}
                             </span>
                           </div>
@@ -1336,41 +1210,41 @@ export default function InputDataPage() {
                 </div>
               </div>
 
-              {/* Rangkuman Ringkas Data Calon Sebelum Disimpan */}
-              <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-                  Rangkuman Pengajuan Bantuan 2026:
+              {/* Rangkuman Ringkas Data Calon */}
+              <div className="p-2.5 sm:p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3 text-primary" />
+                  Rangkuman Data Sebelum Disimpan:
                 </span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px]">
                   <div>
-                    <span className="text-slate-400 text-[10px]">Nama Calon:</span>
-                    <p className="font-bold truncate text-slate-800 dark:text-slate-200">{fullName || "-"}</p>
+                    <span className="text-slate-400 text-[9px] block">Nama Calon:</span>
+                    <strong className="truncate block text-slate-800 dark:text-slate-200">{fullName || "-"}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[10px]">NIK / KK:</span>
-                    <p className="font-mono font-bold truncate text-slate-800 dark:text-slate-200">{nik || "-"}</p>
+                    <span className="text-slate-400 text-[9px] block">NIK:</span>
+                    <span className="font-mono font-bold truncate block">{nik || "-"}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[10px]">Wilayah:</span>
-                    <p className="font-bold truncate text-slate-800 dark:text-slate-200">{kelurahan || "-"}, {kecamatan || "-"}</p>
+                    <span className="text-slate-400 text-[9px] block">Kelurahan:</span>
+                    <strong className="truncate block">{kelurahan || "-"}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 text-[10px]">Koordinator:</span>
-                    <p className="font-bold truncate text-primary">{selectedCoordinator || "-"}</p>
+                    <span className="text-slate-400 text-[9px] block">Koordinator:</span>
+                    <strong className="truncate block text-primary">{selectedCoordinator || "-"}</strong>
                   </div>
                 </div>
               </div>
 
               {/* Navigasi Footer Langkah 3 & Submit Button */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => goToStep(2)}
-                  className="w-full sm:w-auto h-14 rounded-2xl font-bold border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+                  className="h-10 sm:h-10.5 rounded-xl font-bold border-slate-200 dark:border-slate-800 text-xs sm:text-sm px-4"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
                   <span>Kembali ke Alamat</span>
                 </Button>
 
@@ -1378,29 +1252,29 @@ export default function InputDataPage() {
                   type="submit" 
                   disabled={loading || isMonitoring || isFormBlocked} 
                   className={cn(
-                    "w-full sm:w-auto min-w-[260px] h-14 text-base font-bold shadow-xl rounded-2xl transition-all duration-200 active:scale-[0.98]",
+                    "h-10 sm:h-10.5 min-w-[200px] sm:min-w-[220px] text-xs sm:text-sm font-bold shadow-sm rounded-xl transition-all",
                     isFormBlocked 
                       ? "bg-slate-300 dark:bg-slate-800 text-slate-500 cursor-not-allowed shadow-none" 
                       : isMonitoring 
                       ? "bg-slate-400 cursor-not-allowed" 
-                      : "bg-gradient-to-r from-primary to-blue-600 hover:from-primary/95 hover:to-blue-600/95 text-white shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30"
+                      : "bg-primary hover:bg-primary/95 text-white"
                   )}
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      <span>Menyimpan Data...</span>
+                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                      <span>Menyimpan...</span>
                     </>
                   ) : isFormBlocked ? (
                     <>
-                      <Lock className="w-5 h-5 mr-2 text-rose-500" />
-                      <span>Formulir Ditutup (Terkunci)</span>
+                      <Lock className="w-4 h-4 mr-1.5 text-rose-500" />
+                      <span>Formulir Terkunci</span>
                     </>
                   ) : isMonitoring ? (
-                    <span>Akses Mode Monitoring</span>
+                    <span>Akses Monitoring</span>
                   ) : (
                     <>
-                      <Save className="w-5 h-5 mr-2" />
+                      <Save className="w-4 h-4 mr-1.5" />
                       <span>Simpan Data Pendaftaran</span>
                     </>
                   )}
@@ -1413,21 +1287,21 @@ export default function InputDataPage() {
 
       {/* Pop Out Sukses */}
       <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
-        <AlertDialogContent className="max-w-[420px] border-none shadow-2xl rounded-3xl p-6 sm:p-8 bg-white dark:bg-slate-900">
+        <AlertDialogContent className="max-w-[400px] border-none shadow-2xl rounded-3xl p-6 bg-white dark:bg-slate-900">
           <AlertDialogHeader className="items-center text-center">
-            <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-3 shadow-inner">
-              <CheckCircle2 className="w-10 h-10" />
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center mb-2 shadow-inner">
+              <CheckCircle2 className="w-8 h-8" />
             </div>
-            <AlertDialogTitle className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight font-headline">
+            <AlertDialogTitle className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
               DATA BERHASIL DISIMPAN!
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm font-semibold text-slate-600 dark:text-slate-300 leading-relaxed pt-2">
-              Data pelaku usaha telah berhasil dimasukkan ke sistem SIMPU Tunas Bangsa 2026 dan siap untuk diverifikasi.
+            <AlertDialogDescription className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
+              Data pelaku usaha telah masuk ke sistem SIMPU Tunas Bangsa 2026 dan siap untuk diverifikasi.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="mt-6 flex flex-col gap-2 w-full">
+          <AlertDialogFooter className="mt-5 flex flex-col gap-2 w-full">
             <AlertDialogAction 
-              className="w-full h-12 bg-primary hover:bg-primary/90 font-bold text-white rounded-2xl shadow-lg shadow-primary/20"
+              className="w-full h-11 bg-primary hover:bg-primary/90 font-bold text-white rounded-xl shadow-md text-xs sm:text-sm"
               onClick={() => router.push('/verify-actor')}
             >
               Lihat di Daftar Verifikasi
@@ -1435,7 +1309,7 @@ export default function InputDataPage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full h-12 rounded-2xl font-bold border-slate-200 dark:border-slate-800"
+              className="w-full h-11 rounded-xl font-bold border-slate-200 dark:border-slate-800 text-xs sm:text-sm"
               onClick={() => setShowSuccessDialog(false)}
             >
               Input Data Baru Lagi
