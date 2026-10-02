@@ -31,9 +31,11 @@ import {
   Info,
   Check,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  History,
+  AlertTriangle
 } from "lucide-react"
-import { cn, extractDobFromNik } from "@/lib/utils"
+import { cn, extractDobFromNik, formatCurrency } from "@/lib/utils"
 import { normalizeCoordinator } from "@/lib/coordinator-utils"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
@@ -46,6 +48,211 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { logActivity, getDeviceType } from "@/lib/logger"
+
+function KkDetailCard({ item }: { item: any }) {
+  const isBlockedSource =
+    item._table === "blacklist_data" ||
+    item._table === "master_data_2025" ||
+    item._table === "businessActors" ||
+    (item._source || "").toUpperCase().includes("BLACKLIST") ||
+    (item._source || "").toUpperCase().includes("SHEET 4") ||
+    (item._source || "").toUpperCase().includes("SHEET 3") ||
+    (item._source || "").toUpperCase().includes("2025") ||
+    (item._source || "").toUpperCase().includes("2026") ||
+    (item._source || "").toUpperCase().includes("PELAKU USAHA")
+
+  const sourceLabel = item._source || (
+    item._table === "blacklist_data" ? "Sheet 4 : Blacklist" :
+    item._table === "master_data_2025" ? "Sheet 3 : Pembanding 2025" :
+    item._table === "businessActors" ? "Data Pelaku Usaha 2026" :
+    item._table === "master_data_2024" ? "Sheet 1 : Pembanding 2024" :
+    item._table === "master_data_2023" ? "Sheet 2 : Pembanding 2023" : "Database"
+  )
+
+  const name = item.fullName || item.nama || item.NAMA || "-"
+  const nik = item.nik || item.Nik || item.NIK || "-"
+  const noKK = item.noKK || item.kk || item['NO KK'] || "-"
+  const phone = item.phone || item.noHp || item.telepon || "-"
+  const gender = item.gender || item.jenisKelamin || "-"
+  const pobDob = item.pobDob || (item.pob && item.dob ? `${item.pob}, ${item.dob}` : item.dob || item.pob || "-")
+  const businessName = item.businessName || item.usaha || item.USAHA || item.surveyData?.namaUsaha || "-"
+  const businessCategory = item.businessCategory || item.kategori || item.sektor || item.surveyData?.bidangUsaha || "-"
+  const businessLocation = item.businessLocation || item.alamatUsaha || item.surveyData?.alamatUsaha || "-"
+  const address = item.address || item.alamat || item.ALAMAT || "-"
+  const rtRw = item.rtRw || (item.rt && item.rw ? `${item.rt} / ${item.rw}` : item.rt || "-")
+  const kelurahan = item.kelurahan || "-"
+  const kecamatan = item.kecamatan || "-"
+  const coordinator = item.coordinator || item.koordinator || "-"
+  const status = item.status || item.STATUS || "-"
+  const statusLpj = item.statusLpj || "-"
+  const registrationCode = item.registrationCode || "-"
+  const tahun = item.tahunPengajuan || item.tahun || (item.createdAt ? new Date(item.createdAt).getFullYear().toString() : "-")
+  const petugasSurvey = item.petugasSurvey || item.surveyData?.namaPetugas || "-"
+  const verifikatorDinas = item.verifikatorDinas || "-"
+  const hasilVerifikasiDinas = item.hasilVerifikasiDinas || "-"
+  const notes = item.alasan || item.alasanCancelDinas || item.keterangan || item.bpjsCheckNote || ""
+  const createdDate = item.createdAt || item.uploadedAt ? new Date(item.createdAt || item.uploadedAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : "-"
+
+  const nominalVal = item.lpjNominal || item.nominal || item.NOM
+  const nominalStr = nominalVal ? (typeof nominalVal === 'number' ? formatCurrency(nominalVal) : !isNaN(Number(nominalVal)) ? formatCurrency(Number(nominalVal)) : String(nominalVal)) : "-"
+
+  return (
+    <div className={cn(
+      "rounded-2xl border p-4 sm:p-5 text-xs transition-all shadow-sm space-y-3.5",
+      isBlockedSource 
+        ? "bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800/80" 
+        : "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800/80"
+    )}>
+      {/* Header Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-black/10 dark:border-white/10">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge className={cn(
+            "font-black text-xs px-2.5 py-1 rounded-xl uppercase tracking-wider shadow-none",
+            isBlockedSource
+              ? "bg-rose-600 text-white hover:bg-rose-600"
+              : "bg-emerald-600 text-white hover:bg-emerald-600"
+          )}>
+            {sourceLabel}
+          </Badge>
+          <Badge variant="outline" className={cn(
+            "font-bold text-[11px] px-2 py-0.5 rounded-lg uppercase",
+            isBlockedSource
+              ? "border-rose-400 text-rose-700 dark:text-rose-300 bg-rose-100/50"
+              : "border-emerald-400 text-emerald-700 dark:text-emerald-300 bg-emerald-100/50"
+          )}>
+            {isBlockedSource ? "⛔ Dilarang Mendaftar" : "✅ Riwayat Diizinkan"}
+          </Badge>
+          <span className="text-[11px] font-bold text-slate-500">
+            Tahun: {tahun}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+          <span>Status:</span>
+          <span className={cn(
+            "font-black px-2 py-0.5 rounded-md uppercase text-[11px]",
+            isBlockedSource ? "bg-rose-200/70 text-rose-800" : "bg-emerald-200/70 text-emerald-800"
+          )}>
+            {status}
+          </span>
+        </div>
+      </div>
+
+      {/* Grid Informasi Lengkap */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Nama Lengkap */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nama Lengkap</span>
+          <strong className="text-xs sm:text-sm text-slate-900 dark:text-white block font-black uppercase truncate">{name}</strong>
+        </div>
+
+        {/* NIK */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">NIK</span>
+          <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 block truncate">{nik}</span>
+        </div>
+
+        {/* Nomor KK */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nomor KK</span>
+          <span className="font-mono font-bold text-xs text-primary block truncate">{noKK}</span>
+        </div>
+
+        {/* Nomor HP / WA */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nomor HP / WhatsApp</span>
+          <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 block truncate">{phone}</span>
+        </div>
+
+        {/* Jenis Kelamin & TTL */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Gender & TTL</span>
+          <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block truncate">{gender} • {pobDob}</span>
+        </div>
+
+        {/* Nama Usaha */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nama Usaha / Produk</span>
+          <strong className="text-xs font-bold text-slate-800 dark:text-slate-100 block uppercase truncate">{businessName}</strong>
+        </div>
+
+        {/* Kategori Usaha */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Kategori Usaha</span>
+          <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block truncate">{businessCategory}</span>
+        </div>
+
+        {/* Usulan Koordinator */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Koordinator</span>
+          <span className="font-bold text-xs text-primary block truncate">{coordinator}</span>
+        </div>
+
+        {/* Alamat Domisili */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5 sm:col-span-2">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Alamat Lengkap</span>
+          <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block line-clamp-1">{address}</span>
+        </div>
+
+        {/* RT / RW & Wilayah */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">RT/RW • Kelurahan</span>
+          <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block truncate">RT/RW: {rtRw} • {kelurahan}</span>
+        </div>
+
+        {/* Kecamatan */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Kecamatan</span>
+          <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block truncate">{kecamatan}</span>
+        </div>
+
+        {/* Nominal Bantuan */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nominal Bantuan / LPJ</span>
+          <span className="font-bold text-xs text-emerald-700 dark:text-emerald-400 block truncate">{nominalStr}</span>
+        </div>
+
+        {/* Status LPJ */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Status LPJ</span>
+          <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block truncate">{statusLpj}</span>
+        </div>
+
+        {/* Nomor Registrasi (Jika Ada) */}
+        {registrationCode !== "-" && (
+          <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">No. Registrasi SIMPU</span>
+            <span className="font-mono font-bold text-xs text-blue-600 block truncate">{registrationCode}</span>
+          </div>
+        )}
+
+        {/* Petugas Survey / Verifikator (Jika Ada) */}
+        {(petugasSurvey !== "-" || verifikatorDinas !== "-") && (
+          <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5 sm:col-span-2">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Petugas Survey / Dinas</span>
+            <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block truncate">
+              Surveyor: {petugasSurvey} • Dinas: {verifikatorDinas} ({hasilVerifikasiDinas})
+            </span>
+          </div>
+        )}
+
+        {/* Tanggal Terdata */}
+        <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
+          <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Tanggal Terdata</span>
+          <span className="font-medium text-xs text-slate-600 dark:text-slate-300 block truncate">{createdDate}</span>
+        </div>
+      </div>
+
+      {/* Catatan / Keterangan Tambahan jika ada */}
+      {notes && (
+        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs">
+          <span className="font-bold uppercase text-[10px] tracking-wider block">Catatan / Alasan:</span>
+          <p className="mt-0.5 font-medium">{notes}</p>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function InputDataPage() {
   const { toast } = useToast()
@@ -142,7 +349,7 @@ export default function InputDataPage() {
 
   // Pengecekan Nomor KK Otomatis Real-time
   useEffect(() => {
-    const cleanKk = noKK.trim()
+    const cleanKk = noKK.replace(/[^0-9]/g, "").trim()
     if (!cleanKk || cleanKk.length < 16) {
       setKkCheckResults([])
       setIsCheckingKk(false)
@@ -165,24 +372,39 @@ export default function InputDataPage() {
                   results.push({ ...item, _source: label, _table: sheetName })
                 }
               })
+            } else {
+              // Cek fallback jika nama field adalah 'kk'
+              try {
+                const qFallback = query(ref(database, sheetName), orderByChild('kk'), equalTo(cleanKk))
+                const snapFallback = await get(qFallback)
+                if (snapFallback.exists()) {
+                  Object.values(snapFallback.val()).forEach((item: any) => {
+                    if (item) {
+                      results.push({ ...item, _source: label, _table: sheetName })
+                    }
+                  })
+                }
+              } catch (eFallback) {
+                // Silently ignore fallback error
+              }
             }
           } catch (err) {
             console.warn(`Query index on ${sheetName} failed:`, err)
           }
         }
 
-        // Cek juga di Database Aktif (SIMPU 2026) untuk cegah duplikasi KK
+        // Cek juga di Database Aktif (Data Pelaku Usaha 2026) untuk cegah duplikasi KK
         const checkActiveActors = async () => {
           if (!database) return
           try {
-            const q = query(ref(database, 'businessActors'), orderByChild('noKK'), equalTo(cleanKk), limitToFirst(1))
+            const q = query(ref(database, 'businessActors'), orderByChild('noKK'), equalTo(cleanKk))
             const snap = await get(q)
             if (snap.exists()) {
               Object.values(snap.val()).forEach((item: any) => {
                 if (item) {
                   results.push({ 
                     ...item, 
-                    _source: 'SIMPU 2026 (SUDAH TERDAFTAR)', 
+                    _source: 'Data Pelaku Usaha 2026', 
                     _table: 'businessActors',
                     status: item.status || 'Terdaftar'
                   })
@@ -195,11 +417,11 @@ export default function InputDataPage() {
         }
 
         await Promise.all([
-          checkSheet('blacklist_data', 'DATA BLACKLIST (REJECT)'),
-          checkSheet('master_data_2025', 'SHEET 3 (2025 - HOLD)'),
-          checkSheet('master_data_2024', 'SHEET 1 (2024)'),
-          checkSheet('master_data_2023', 'SHEET 2 (2023)'),
-          checkActiveActors()
+          checkSheet('blacklist_data', 'Sheet 4 : Blacklist'),
+          checkSheet('master_data_2025', 'Sheet 3 : Pembanding 2025'),
+          checkActiveActors(),
+          checkSheet('master_data_2024', 'Sheet 1 : Pembanding 2024'),
+          checkSheet('master_data_2023', 'Sheet 2 : Pembanding 2023'),
         ])
 
         setKkCheckResults(results)
@@ -208,44 +430,30 @@ export default function InputDataPage() {
       } finally {
         setIsCheckingKk(false)
       }
-    }, 450)
+    }, 400)
 
     return () => clearTimeout(timer)
   }, [noKK, database])
 
-  // Evaluasi Status Blacklist & Hold dari hasil cek KK
+  // Evaluasi Status Blacklist, Hold, dan 2026 dari hasil cek KK
+  // Ketentuan:
+  // Blokir pendaftaran jika ditemukan di:
+  // - Sheet 4 : blacklist
+  // - Sheet 3 : pembanding 2025
+  // - Data pelaku usaha 2026
   const isKkBlacklisted = useMemo(() => {
     return kkCheckResults.some((res) => {
       const src = (res._source || "").toUpperCase()
-      const st = (res.status || "").toUpperCase()
-      const kat = (res.kategori || "").toUpperCase()
       const tbl = (res._table || "").toLowerCase()
-      return (
-        tbl === "blacklist_data" ||
-        src.includes("BLACKLIST") ||
-        src.includes("REJECT") ||
-        src.includes("DITOLAK") ||
-        st.includes("BLACKLIST") ||
-        st.includes("REJECT") ||
-        st.includes("DITOLAK") ||
-        kat.includes("BLACKLIST")
-      )
+      return tbl === "blacklist_data" || src.includes("BLACKLIST") || src.includes("SHEET 4")
     })
   }, [kkCheckResults])
 
   const isKkHold = useMemo(() => {
     return kkCheckResults.some((res) => {
       const src = (res._source || "").toUpperCase()
-      const st = (res.status || "").toUpperCase()
-      const kat = (res.kategori || "").toUpperCase()
       const tbl = (res._table || "").toLowerCase()
-      return (
-        tbl === "master_data_2025" ||
-        src.includes("HOLD") ||
-        src.includes("2025") ||
-        st.includes("HOLD") ||
-        kat.includes("HOLD")
-      )
+      return tbl === "master_data_2025" || src.includes("SHEET 3") || src.includes("2025")
     })
   }, [kkCheckResults])
 
@@ -253,21 +461,38 @@ export default function InputDataPage() {
     return kkCheckResults.some((res) => {
       const src = (res._source || "").toUpperCase()
       const tbl = (res._table || "").toLowerCase()
-      return tbl === "businessactors" || src.includes("SUDAH TERDAFTAR") || src.includes("SIMPU 2026")
+      return tbl === "businessactors" || src.includes("2026") || src.includes("SUDAH TERDAFTAR")
     })
   }, [kkCheckResults])
 
-  // Penentu apakah isian di bawah akan ditutup otomatis (tidak bisa diisi)
+  // Penentu apakah formulir isian lainnya akan ditutup otomatis (tidak bisa diisi)
   const isFormBlocked = isKkBlacklisted || isKkHold || isKkAlreadyRegistered
 
-  // Catatan riwayat 2023/2024 jika tidak ter-blacklist / hold
+  const blockedSourcesLabel = useMemo(() => {
+    const list: string[] = []
+    if (isKkBlacklisted) list.push("Sheet 4 : Blacklist")
+    if (isKkHold) list.push("Sheet 3 : Pembanding 2025")
+    if (isKkAlreadyRegistered) list.push("Data Pelaku Usaha 2026")
+    return list.join(" & ") || "Basis Data Terlarang"
+  }, [isKkBlacklisted, isKkHold, isKkAlreadyRegistered])
+
+  // Catatan riwayat Sheet 1 (2024) / Sheet 2 (2023) jika tidak ter-blacklist / hold / 2026
+  // Jika tidak ditemukan atau hanya ditemukan di Sheet 1 & 2, aplikasi mengizinkan penginputan dilanjutkan
   const kkHistoryResults = useMemo(() => {
     if (isFormBlocked) return []
     return kkCheckResults.filter((res) => {
       const src = (res._source || "").toUpperCase()
-      return src.includes("2023") || src.includes("2024")
+      const tbl = (res._table || "").toLowerCase()
+      return tbl === "master_data_2024" || tbl === "master_data_2023" || src.includes("SHEET 1") || src.includes("SHEET 2") || src.includes("2023") || src.includes("2024")
     })
   }, [kkCheckResults, isFormBlocked])
+
+  // Otomatis kembalikan ke Step 1 jika terdeteksi blocked saat sedang berada di step 2 atau 3
+  useEffect(() => {
+    if (isFormBlocked && currentStep > 1) {
+      setCurrentStep(1)
+    }
+  }, [isFormBlocked, currentStep])
 
   // Validasi Step 1 sebelum lanjut ke Step 2
   const validateStep1 = () => {
@@ -825,129 +1050,190 @@ export default function InputDataPage() {
                   {!isCheckingKk && noKK.length === 16 && (
                     <div className="space-y-2 pt-1 animate-in fade-in">
                       {isFormBlocked && (
-                        <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-xs sm:text-sm space-y-2.5">
+                        <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-xs sm:text-sm">
                           <div className="flex items-start gap-2.5">
                             <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                             <div className="flex-1 min-w-0">
-                              <span className="font-black text-rose-800 dark:text-rose-200 uppercase text-xs sm:text-sm">
-                                {isKkBlacklisted ? "DATA BLACKLIST (REJECT)" : isKkHold ? "DATA HOLD (PENGAJUAN DITAHAN)" : "SUDAH TERDAFTAR"}
+                              <span className="font-black text-rose-800 dark:text-rose-200 uppercase text-xs sm:text-sm block">
+                                KESAMAAN NOMOR KK TERDETEKSI: {blockedSourcesLabel}
                               </span>
-                              <p className="text-xs sm:text-[13px] text-rose-700 dark:text-rose-300 mt-0.5 leading-tight font-semibold">
-                                Nomor KK ini dilarang mendaftar. Seluruh isian di bawahnya ditutup otomatis.
+                              <p className="text-xs sm:text-[13px] text-rose-700 dark:text-rose-300 mt-1 leading-tight font-semibold">
+                                Nomor KK ini dilarang mendaftar. Seluruh isian lainnya otomatis ditutup dan rincian lengkap datanya ditampilkan di bawah formulir.
                               </p>
                             </div>
-                          </div>
-                          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                            {kkCheckResults.map((res, i) => (
-                              <div key={i} className="p-2.5 rounded-xl bg-white/90 dark:bg-slate-900 border border-rose-200 text-xs space-y-1">
-                                <div className="flex justify-between font-bold text-rose-700">
-                                  <span>{res._source}</span>
-                                  <span>{res.tahunPengajuan || "-"}</span>
-                                </div>
-                                <div className="text-slate-600 dark:text-slate-300">
-                                  <strong>{res.nama || res.fullName || "-"}</strong> ({res.status || "-"})
-                                </div>
-                              </div>
-                            ))}
                           </div>
                         </div>
                       )}
 
                       {!isFormBlocked && kkHistoryResults.length > 0 && (
-                        <div className="p-3 rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 text-xs sm:text-sm text-amber-800 flex items-center justify-between">
-                          <span className="font-semibold flex items-center gap-2">
-                            <Info className="w-4 h-4 text-amber-600 shrink-0" />
-                            Terdata riwayat tahun sebelumnya. Pendaftaran tetap dapat dilanjutkan.
-                          </span>
+                        <div className="p-3.5 rounded-xl sm:rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs sm:text-sm text-amber-800 dark:text-amber-200">
+                          <div className="flex items-start gap-2.5">
+                            <History className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <span className="font-black text-amber-900 dark:text-amber-100 uppercase text-xs sm:text-sm block">
+                                TERDATA RIWAYAT TAHUN SEBELUMNYA (DIIZINKAN LANJUT)
+                              </span>
+                              <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5 font-semibold">
+                                Nomor KK terdata pada Sheet riwayat tahun 2024 / 2023. Penginputan diizinkan untuk dilanjutkan dan rincian lengkap riwayat dapat dilihat di bagian bawah formulir.
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       )}
 
                       {!isFormBlocked && kkCheckResults.length === 0 && (
-                        <div className="flex items-center gap-2.5 p-3 rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 text-xs sm:text-sm text-emerald-800 font-bold">
+                        <div className="flex items-center gap-2.5 p-3 rounded-xl sm:rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs sm:text-sm text-emerald-800 dark:text-emerald-200 font-bold">
                           <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span>Nomor KK Bersih & Valid (Siap lanjut ke Langkah 2).</span>
+                          <span>Nomor KK Bersih & Valid (Belum pernah terdaftar. Siap lanjut ke Langkah 2).</span>
                         </div>
                       )}
                     </div>
                   )}
                 </div>
 
-                {/* Tempat Lahir */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="pob" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-primary" />
-                    Tempat Lahir <span className="text-rose-500">*</span>
-                  </Label>
-                  <Input 
-                    id="pob" 
-                    name="pob" 
-                    placeholder="Contoh: TANJUNGPINANG" 
-                    required 
-                    value={pob}
-                    disabled={isFormBlocked || isMonitoring || loading}
-                    onChange={(e) => setPob(e.target.value)}
-                    className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold tracking-wide border-slate-200 dark:border-slate-800 uppercase disabled:bg-slate-100"
-                  />
-                </div>
-
-                {/* Tanggal Lahir */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor="dob" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-primary" />
-                      Tanggal Lahir {isEditingDob ? "(Manual)" : "(Otomatis)"}
-                    </Label>
-                    {!isFormBlocked && (
-                      <button
-                        type="button"
-                        onClick={() => setIsEditingDob(!isEditingDob)}
-                        className="text-xs text-primary font-bold hover:underline"
-                      >
-                        {isEditingDob ? "Kunci" : "Edit Manual"}
-                      </button>
-                    )}
+                {/* FORMULIR ISIAN LAINNYA DI LANGKAH 1 */}
+                {isFormBlocked ? (
+                  <div className="md:col-span-2 p-4 sm:p-5 rounded-2xl bg-rose-50/80 dark:bg-rose-950/40 border-2 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200 animate-in fade-in">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                        <Lock className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-xs sm:text-sm uppercase tracking-wide text-rose-800 dark:text-rose-200">
+                          Formulir Isian Lainnya Ditutup Otomatis
+                        </h4>
+                        <p className="text-xs text-rose-700 dark:text-rose-300 mt-1 leading-relaxed font-semibold">
+                          Penginputan data ditutup karena Nomor KK terdeteksi terdapat kesamaan pada <span className="underline font-black">{blockedSourcesLabel}</span>. Kolom Tempat Lahir, Tanggal Lahir, Nomor HP, Alamat, dan Data Usaha dinonaktifkan dan ditutup.
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <Input 
-                    id="dob" 
-                    name="dob" 
-                    placeholder="DD-MM-YYYY" 
-                    readOnly={!isEditingDob || isFormBlocked}
-                    disabled={isFormBlocked || isMonitoring || loading}
-                    required 
-                    value={dob}
-                    onChange={(e) => setDob(e.target.value)}
-                    className={cn(
-                      "h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800",
-                      !isEditingDob && "bg-slate-50 dark:bg-slate-800/50"
-                    )}
-                  />
-                </div>
+                ) : (
+                  <>
+                    {/* Tempat Lahir */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="pob" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-primary" />
+                        Tempat Lahir <span className="text-rose-500">*</span>
+                      </Label>
+                      <Input 
+                        id="pob" 
+                        name="pob" 
+                        placeholder="Contoh: TANJUNGPINANG" 
+                        required 
+                        value={pob}
+                        disabled={isMonitoring || loading}
+                        onChange={(e) => setPob(e.target.value)}
+                        className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold tracking-wide border-slate-200 dark:border-slate-800 uppercase disabled:bg-slate-100"
+                      />
+                    </div>
 
-                {/* Nomor HP */}
-                <div className="space-y-1.5 md:col-span-2">
-                  <Label htmlFor="phone" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-primary" />
-                    Nomor HP / WhatsApp Aktif <span className="text-rose-500">*</span>
-                  </Label>
-                  <Input 
-                    id="phone" 
-                    name="phone" 
-                    placeholder="Contoh: 081234567890" 
-                    required 
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    disabled={isFormBlocked || isMonitoring || loading}
-                    className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800 disabled:bg-slate-100"
-                  />
-                </div>
+                    {/* Tanggal Lahir */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <Label htmlFor="dob" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-primary" />
+                          Tanggal Lahir {isEditingDob ? "(Manual)" : "(Otomatis)"}
+                        </Label>
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingDob(!isEditingDob)}
+                          className="text-xs text-primary font-bold hover:underline"
+                        >
+                          {isEditingDob ? "Kunci" : "Edit Manual"}
+                        </button>
+                      </div>
+                      <Input 
+                        id="dob" 
+                        name="dob" 
+                        placeholder="DD-MM-YYYY" 
+                        readOnly={!isEditingDob}
+                        disabled={isMonitoring || loading}
+                        required 
+                        value={dob}
+                        onChange={(e) => setDob(e.target.value)}
+                        className={cn(
+                          "h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800",
+                          !isEditingDob && "bg-slate-50 dark:bg-slate-800/50"
+                        )}
+                      />
+                    </div>
+
+                    {/* Nomor HP */}
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label htmlFor="phone" className="text-xs sm:text-[13px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-primary" />
+                        Nomor HP / WhatsApp Aktif <span className="text-rose-500">*</span>
+                      </Label>
+                      <Input 
+                        id="phone" 
+                        name="phone" 
+                        placeholder="Contoh: 081234567890" 
+                        required 
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        disabled={isMonitoring || loading}
+                        className="h-11 sm:h-12 text-sm sm:text-base rounded-xl sm:rounded-2xl font-semibold border-slate-200 dark:border-slate-800 disabled:bg-slate-100"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
+
+              {/* ========================================================
+                  DETAIL LENGKAP KESAMAAN / RIWAYAT DATA NOMOR KK
+                 ======================================================== */}
+              {kkCheckResults.length > 0 && !isCheckingKk && (
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3.5 animate-in fade-in">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50 dark:bg-slate-800/60 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-2.5">
+                      <div className={cn(
+                        "w-9 h-9 rounded-xl flex items-center justify-center font-bold text-white shrink-0 shadow-sm",
+                        isFormBlocked ? "bg-rose-600" : "bg-emerald-600"
+                      )}>
+                        {isFormBlocked ? <ShieldAlert className="w-5 h-5" /> : <History className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <h3 className="text-xs sm:text-sm font-black uppercase tracking-tight text-slate-800 dark:text-white">
+                          {isFormBlocked
+                            ? `Detail Data Kesamaan Nomor KK (${kkCheckResults.length} Data Ditemukan - Formulir Ditutup)`
+                            : `Detail Riwayat Nomor KK (${kkCheckResults.length} Data Ditemukan - Penginputan Diizinkan)`}
+                        </h3>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          {isFormBlocked
+                            ? "Nomor KK terdata pada basis data terlarang. Rincian lengkap seluruh datanya ditampilkan di bawah ini:"
+                            : "Nomor KK terdata pada riwayat tahun sebelumnya. Penginputan tetap diizinkan dilanjutkan."}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge 
+                      variant="secondary" 
+                      className={cn(
+                        "font-black text-xs uppercase tracking-wider px-3 py-1.5 rounded-xl self-start sm:self-auto shadow-none",
+                        isFormBlocked 
+                          ? "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-300" 
+                          : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300"
+                      )}
+                    >
+                      {isFormBlocked ? "⛔ Formulir Ditutup" : "✅ Penginputan Diizinkan"}
+                    </Badge>
+                  </div>
+
+                  {/* Daftar Detail Lengkap Setiap Data */}
+                  <div className="space-y-4">
+                    {kkCheckResults.map((item, idx) => (
+                      <KkDetailCard key={idx} item={item} />
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Navigasi Footer Langkah 1 */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3.5 pt-4 sm:pt-6 border-t border-slate-100 dark:border-slate-800">
                 <span className="text-xs sm:text-sm text-slate-500 font-medium">
                   {isFormBlocked ? (
                     <span className="text-rose-600 font-bold flex items-center gap-1.5">
-                      <Lock className="w-3.5 h-3.5" /> Langkah 2 ditutup karena KK Blacklist/Hold.
+                      <Lock className="w-3.5 h-3.5" /> Pendaftaran ditutup otomatis karena kesamaan Nomor KK ({blockedSourcesLabel}).
                     </span>
                   ) : (
                     "Langkah 1 dari 3: Lengkapi seluruh biodata pemohon."
@@ -968,7 +1254,7 @@ export default function InputDataPage() {
                   {isFormBlocked ? (
                     <>
                       <Lock className="w-4 h-4 mr-2 text-rose-500" />
-                      <span>Langkah 2 Terkunci</span>
+                      <span>Formulir Terkunci (Tidak Dapat Dilanjutkan)</span>
                     </>
                   ) : (
                     <>

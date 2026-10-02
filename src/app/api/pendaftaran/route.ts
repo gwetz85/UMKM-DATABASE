@@ -92,17 +92,66 @@ export async function POST(req: NextRequest) {
       }
     };
 
-    const [dupByNik, dupByKK] = await Promise.all([
+    // Pengecekan Nomor KK di Blacklist (Sheet 4) & Pembanding 2025 (Sheet 3)
+    const checkKkInTable = async (tableName: string, cleanKkValue: string) => {
+      if (!cleanKkValue) return null;
+      try {
+        const tableRef = ref(database, tableName);
+        const q1 = query(tableRef, orderByChild('noKK'), equalTo(cleanKkValue), limitToFirst(1));
+        const snap1 = await get(q1);
+        if (snap1.exists()) return Object.values(snap1.val())[0] as any;
+
+        const q2 = query(tableRef, orderByChild('kk'), equalTo(cleanKkValue), limitToFirst(1));
+        const snap2 = await get(q2);
+        if (snap2.exists()) return Object.values(snap2.val())[0] as any;
+      } catch (e) {
+        try {
+          const snap = await get(ref(database, tableName));
+          if (snap.exists()) {
+            const list = Object.values(snap.val()) as any[];
+            return list.find((item: any) => {
+              const itemKk = String(item?.noKK || item?.kk || item?.NOKK || '').replace(/[^0-9]/g, '');
+              return itemKk === cleanKkValue;
+            }) || null;
+          }
+        } catch (err) {}
+      }
+      return null;
+    };
+
+    const [dupByNik, dupByKK, blacklistRecord, data2025Record] = await Promise.all([
       checkDuplicateByField('nik', cleanNik),
       checkDuplicateByField('noKK', cleanKk),
+      checkKkInTable('blacklist_data', cleanKk),
+      checkKkInTable('master_data_2025', cleanKk),
     ]);
+
+    if (blacklistRecord) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `PENDAFTARAN DITOLAK! Nomor KK (${cleanKk}) terdaftar dalam Sheet 4 : Blacklist (${blacklistRecord.catatan || blacklistRecord.alasan || 'Data Masuk Daftar Blacklist'}). Pendaftaran tidak diizinkan.`,
+        },
+        { status: 403 }
+      );
+    }
+
+    if (data2025Record) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `PENDAFTARAN DITOLAK! Nomor KK (${cleanKk}) sudah terdaftar dalam Sheet 3 : Pembanding 2025. Pendaftaran untuk tahun ini tidak diizinkan.`,
+        },
+        { status: 403 }
+      );
+    }
 
     const duplicateInActors = dupByNik || dupByKK;
     if (duplicateInActors) {
       return NextResponse.json(
         {
           success: false,
-          message: `DATA TELAH DI INPUT! NIK atau Nomor KK ini sudah terdaftar di SIMPU dengan Nomor Registrasi: ${duplicateInActors.registrationCode || '-'} dan Usulan Koordinator: ${duplicateInActors.coordinator || '-'}.`,
+          message: `DATA TELAH DI INPUT! NIK atau Nomor KK ini sudah terdaftar di SIMPU (Data Pelaku Usaha 2026) dengan Nomor Registrasi: ${duplicateInActors.registrationCode || '-'} dan Usulan Koordinator: ${duplicateInActors.coordinator || '-'}.`,
           duplicateData: {
             registrationCode: duplicateInActors.registrationCode,
             coordinator: duplicateInActors.coordinator,
