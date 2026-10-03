@@ -130,25 +130,53 @@ export function AddActorDialog() {
         return
       }
 
-      // Tahap 2: Cek di Database Pembanding (Informasi) secara efisien
+      // Tahap 1: Cek Database Blacklist (Sheet 4) — WAJIB DIBLOKIR TOTAL
+      const checkBlacklist = async () => {
+        try {
+          if (nik) {
+            const q = query(ref(database, 'blacklist_data'), orderByChild('nik'), equalTo(nik), limitToFirst(1));
+            const snap = await get(q);
+            if (snap.exists()) return Object.values(snap.val())[0] as any;
+          }
+          if (noKK) {
+            const q = query(ref(database, 'blacklist_data'), orderByChild('noKK'), equalTo(noKK), limitToFirst(1));
+            const snap = await get(q);
+            if (snap.exists()) return Object.values(snap.val())[0] as any;
+          }
+          const allSnap = await get(ref(database, 'blacklist_data'));
+          if (allSnap.exists()) {
+            const allItems = Object.values(allSnap.val()) as any[];
+            return allItems.find((item: any) => (nik && item.nik === nik) || (noKK && item.noKK === noKK)) || null;
+          }
+        } catch (e) {
+          console.warn("Blacklist check error:", e);
+        }
+        return null;
+      };
+
+      const blacklistedItem = await checkBlacklist();
+      if (blacklistedItem) {
+        toast({
+          variant: "destructive",
+          title: "PENGINPUTAN DITOLAK (BLACKLIST)",
+          description: `NIK (${nik}) atau Nomor KK (${noKK}) terdaftar dalam DATA BLACKLIST (Sheet 4)${blacklistedItem.nama ? ' a.n ' + blacklistedItem.nama : ''}. Penginputan data TIDAK BISA DILANJUTKAN!`,
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Tahap 2: Cek di Database Pembanding Tahun Sebelumnya (Informasi)
       const checkInMaster = async (path: string, field: string, value: string) => {
         const q = query(ref(database, path), orderByChild(field), equalTo(value), limitToFirst(1))
         const snap = await get(q)
         return snap.exists()
       }
       
-      const matchBlacklist = await checkInMaster('blacklist_data', 'nik', nik) || await checkInMaster('blacklist_data', 'noKK', noKK)
       const matchPrevious = await checkInMaster('master_data_2025', 'nik', nik) || 
                             await checkInMaster('master_data_2024', 'nik', nik) || 
-                            await checkInMaster('master_data_2023', 'nik', nik)
+                            await checkInMaster('master_data_2023', 'nik', nik);
 
-      if (matchBlacklist) {
-        toast({
-          variant: "destructive",
-          title: "PERINGATAN BLACKLIST",
-          description: "NIK/KK ini terdeteksi dalam database BLACKLIST. Data tetap dapat disimpan namun akan otomatis ditolak oleh sistem verifikasi."
-        })
-      } else if (matchPrevious) {
+      if (matchPrevious) {
         toast({
           title: "DATA PEMBANDING DITEMUKAN",
           description: "NIK/KK ini terdeteksi sudah pernah terdaftar di tahun sebelumnya. Data akan diverifikasi lebih lanjut oleh Admin.",

@@ -90,6 +90,7 @@ export default function VerifikasiDinasBerkasPage() {
   const [selectedPrintDate, setSelectedPrintDate] = useState<string>("")
   const [saveDateToSurvey, setSaveDateToSurvey] = useState<boolean>(true)
   const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null)
+  const [filterOnlyReturned, setFilterOnlyReturned] = useState<boolean>(false)
 
   // Kembalikan ke Petugas Survey Modal states
   const [returnTargetActor, setReturnTargetActor] = useState<BusinessActor | null>(null)
@@ -438,6 +439,12 @@ export default function VerifikasiDinasBerkasPage() {
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name))
   }, [actors])
 
+  // Hitung jumlah data yang dikembalikan oleh Admin
+  const totalReturnedCount = useMemo(() => {
+    if (!actors) return 0
+    return actors.filter(a => Boolean(a.dikembalikanKeVerifikatorReason || a.dikembalikanKeVerifikatorAt || a.dikembalikanKeVerifikatorBy)).length
+  }, [actors])
+
   // Filter berdasarkan search query dan pilihan verifikator
   const filteredActors = useMemo(() => {
     if (!actors) return []
@@ -449,6 +456,12 @@ export default function VerifikasiDinasBerkasPage() {
       // Filter Verifikator
       if (selectedVerifikatorFilter !== "ALL" && nipKey !== selectedVerifikatorFilter) {
         return false
+      }
+
+      // Filter Khusus Hanya yang Dikembalikan oleh Admin
+      if (filterOnlyReturned) {
+        const isRet = Boolean(actor.dikembalikanKeVerifikatorReason || actor.dikembalikanKeVerifikatorAt || actor.dikembalikanKeVerifikatorBy)
+        if (!isRet) return false
       }
 
       // Filter Pencarian
@@ -467,10 +480,13 @@ export default function VerifikasiDinasBerkasPage() {
         vName.toLowerCase().includes(q) ||
         nipKey.toLowerCase().includes(q) ||
         (pd?.verifikator?.nipppk && pd.verifikator.nipppk.includes(q)) ||
-        (pd?.verifikator?.jabatan && pd.verifikator.jabatan.toLowerCase().includes(q))
+        (pd?.verifikator?.jabatan && pd.verifikator.jabatan.toLowerCase().includes(q)) ||
+        (actor.dikembalikanKeVerifikatorReason && actor.dikembalikanKeVerifikatorReason.toLowerCase().includes(q)) ||
+        (actor.dikembalikanKeVerifikatorBy && actor.dikembalikanKeVerifikatorBy.toLowerCase().includes(q)) ||
+        (q === 'dikembalikan' && Boolean(actor.dikembalikanKeVerifikatorReason || actor.dikembalikanKeVerifikatorAt || actor.dikembalikanKeVerifikatorBy))
       )
     })
-  }, [actors, deferredSearch, selectedVerifikatorFilter])
+  }, [actors, deferredSearch, selectedVerifikatorFilter, filterOnlyReturned])
 
   // Mengelompokkan data berdasarkan NIPPPK Verifikator yang diisi oleh Petugas Survey
   const groupedActorsByVerifikator = useMemo(() => {
@@ -1201,9 +1217,29 @@ export default function VerifikasiDinasBerkasPage() {
                 ) : (
                   filteredActors.length
                 )}
-                {!isLoading && (selectedVerifikatorFilter !== "ALL" || searchQuery) && actors && ` / ${actors.length}`}
+                {!isLoading && (selectedVerifikatorFilter !== "ALL" || searchQuery || filterOnlyReturned) && actors && ` / ${actors.length}`}
               </span>
             </div>
+
+            {totalReturnedCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setFilterOnlyReturned(prev => !prev)}
+                className={`px-3 py-1 rounded-full text-xs font-bold border shadow-sm flex items-center gap-1.5 transition-all cursor-pointer ${
+                  filterOnlyReturned
+                    ? "bg-orange-600 text-white border-orange-700 ring-2 ring-orange-400 shadow-md scale-105"
+                    : "bg-orange-100 text-orange-900 border-orange-300 hover:bg-orange-200 dark:bg-orange-950 dark:text-orange-200"
+                }`}
+                title={filterOnlyReturned ? "Klik untuk tampilkan semua berkas" : "Klik untuk filter hanya berkas yang dikembalikan admin"}
+              >
+                <RotateCcw className={`w-3 h-3 ${filterOnlyReturned ? "text-white" : "text-orange-600"} shrink-0`} />
+                <span>Dikembalikan Admin:</span>
+                <span className={`${filterOnlyReturned ? "bg-white text-orange-700" : "bg-orange-600 text-white"} px-2 py-0.5 rounded-full text-[11px] font-black`}>
+                  {totalReturnedCount}
+                </span>
+                {filterOnlyReturned && <X className="w-3 h-3 ml-0.5" />}
+              </button>
+            )}
           </div>
           <p className="text-muted-foreground mt-1">
             Data dikelompokkan berdasarkan <strong>NIPPPK Verifikator</strong> yang diisi petugas survey pada Data Pejabat Berita Acara.
@@ -1345,13 +1381,14 @@ export default function VerifikasiDinasBerkasPage() {
           <p className="font-bold uppercase tracking-widest text-xs">
             Tidak ada data untuk diverifikasi Dinas
           </p>
-          {(selectedVerifikatorFilter !== "ALL" || searchQuery) && (
+          {(selectedVerifikatorFilter !== "ALL" || searchQuery || filterOnlyReturned) && (
             <Button
               variant="outline"
               size="sm"
               onClick={() => {
                 setSelectedVerifikatorFilter("ALL")
                 setSearchQuery("")
+                setFilterOnlyReturned(false)
               }}
               className="mt-4 text-xs font-bold rounded-xl gap-1.5"
             >
@@ -1698,7 +1735,21 @@ export default function VerifikasiDinasBerkasPage() {
                     {displayedGroupActors.map((actor) => {
                     const actorPejabat = getActorPejabat(actor)
                     const vDinas = actorPejabat?.verifikator || (actor.verifikatorDinas ? { nama: actor.verifikatorDinas } : null)
-                    const cardTheme = '#9333ea'
+                    
+                    const isReturnedByAdmin = Boolean(
+                      actor.dikembalikanKeVerifikatorReason ||
+                      actor.dikembalikanKeVerifikatorAt ||
+                      actor.dikembalikanKeVerifikatorBy
+                    )
+                    const adminReturnReason =
+                      actor.dikembalikanKeVerifikatorReason ||
+                      actor.catatanPengembalian ||
+                      actor.keteranganDinas ||
+                      "Data dikembalikan oleh Administrator untuk perbaikan / verifikasi ulang berkas."
+                    const adminReturnBy = actor.dikembalikanKeVerifikatorBy || "Administrator"
+                    const adminReturnAt = actor.dikembalikanKeVerifikatorAt
+
+                    const cardTheme = isReturnedByAdmin ? '#ea580c' : '#9333ea'
 
                     return (
                       <Card 
@@ -1744,10 +1795,18 @@ export default function VerifikasiDinasBerkasPage() {
                               >
                                 <User className="w-6 h-6" />
                               </div>
-                              <div className="min-w-0">
-                                <h3 className="font-black text-slate-800 dark:text-slate-100 uppercase text-sm truncate" title={actor.fullName || actor.surveyData?.namaPemilik}>
-                                  {actor.fullName || actor.surveyData?.namaPemilik}
-                                </h3>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                                  <h3 className="font-black text-slate-800 dark:text-slate-100 uppercase text-sm truncate" title={actor.fullName || actor.surveyData?.namaPemilik}>
+                                    {actor.fullName || actor.surveyData?.namaPemilik}
+                                  </h3>
+                                  {isReturnedByAdmin && (
+                                    <span className="inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-wider bg-orange-100 text-orange-900 border border-orange-300 dark:bg-orange-950 dark:text-orange-200 dark:border-orange-800 px-2 py-0.5 rounded-full animate-pulse shrink-0">
+                                      <RotateCcw className="w-2.5 h-2.5 text-orange-600" />
+                                      Dikembalikan Admin
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-[10px] font-mono text-slate-500 mt-0.5 tracking-tighter">
                                   NIK: {actor.nik}
                                 </p>
@@ -1764,6 +1823,43 @@ export default function VerifikasiDinasBerkasPage() {
                                 <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300 truncate uppercase">{actor.kelurahan || "-"}</p>
                               </div>
                             </div>
+
+                            {/* Alasan Dikembalikan oleh Admin */}
+                            {isReturnedByAdmin && (
+                              <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-orange-950/40 dark:to-amber-950/30 border-2 border-orange-300 dark:border-orange-800/80 rounded-2xl p-3 shadow-xs space-y-2">
+                                <div className="flex items-center justify-between gap-1 flex-wrap">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="p-1 rounded-lg bg-orange-500 text-white shrink-0 shadow-xs">
+                                      <RotateCcw className="w-3.5 h-3.5" />
+                                    </span>
+                                    <div className="min-w-0">
+                                      <p className="text-[9px] font-black uppercase text-orange-900 dark:text-orange-200 tracking-wider">
+                                        Alasan Dikembalikan Admin
+                                      </p>
+                                      {adminReturnBy && (
+                                        <p className="text-[8px] font-bold text-orange-700 dark:text-orange-400 truncate">
+                                          Oleh: <span className="underline font-black">{adminReturnBy}</span>
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {adminReturnAt && (
+                                    <span className="text-[8px] font-mono font-bold text-orange-800 dark:text-orange-300 bg-orange-200/80 dark:bg-orange-900/60 px-1.5 py-0.5 rounded-md shrink-0">
+                                      {new Date(adminReturnAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="bg-white/95 dark:bg-slate-900/90 rounded-xl p-2.5 border border-orange-200 dark:border-orange-900/60 max-h-40 overflow-y-auto">
+                                  <p 
+                                    className="text-[11px] font-semibold text-orange-950 dark:text-orange-100 whitespace-pre-line leading-relaxed break-words"
+                                    title={adminReturnReason}
+                                  >
+                                    {adminReturnReason}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
 
                             {/* Section Info Aktor (USULAN, PETUGAS SURVEY, & VERIFIKATOR DINAS) */}
                             <div className="flex flex-col gap-2 mt-1">
@@ -1987,6 +2083,34 @@ export default function VerifikasiDinasBerkasPage() {
                   </DialogHeader>
                   
                   <div className="grid gap-6 py-4">
+                    {/* ALERT DIKEMBALIKAN OLEH ADMIN */}
+                    {Boolean(verifyingActor.dikembalikanKeVerifikatorReason || verifyingActor.dikembalikanKeVerifikatorAt || verifyingActor.dikembalikanKeVerifikatorBy) && (
+                      <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-orange-950/40 dark:to-amber-950/30 border-2 border-orange-300 dark:border-orange-800 rounded-2xl p-4 space-y-2">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <span className="p-1 rounded-lg bg-orange-500 text-white shrink-0 shadow-xs">
+                              <RotateCcw className="w-4 h-4" />
+                            </span>
+                            <span className="font-black text-xs uppercase tracking-wider text-orange-900 dark:text-orange-200 bg-orange-200 dark:bg-orange-900/60 px-2.5 py-0.5 rounded-full">
+                              Perhatian: Berkas Dikembalikan oleh Admin
+                            </span>
+                          </div>
+                          {verifyingActor.dikembalikanKeVerifikatorBy && (
+                            <span className="text-xs font-bold text-orange-800 dark:text-orange-300">
+                              Oleh: <strong className="underline">{verifyingActor.dikembalikanKeVerifikatorBy}</strong>
+                              {verifyingActor.dikembalikanKeVerifikatorAt && ` • ${new Date(verifyingActor.dikembalikanKeVerifikatorAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                            </span>
+                          )}
+                        </div>
+                        <div className="bg-white/95 dark:bg-slate-900/90 p-3 rounded-xl border border-orange-200 dark:border-orange-900/60 max-h-48 overflow-y-auto">
+                          <p className="text-[10px] font-bold text-orange-800 dark:text-orange-300 uppercase tracking-tight mb-1">Catatan / Alasan Pengembalian:</p>
+                          <p className="text-xs font-semibold text-orange-950 dark:text-orange-100 whitespace-pre-line leading-relaxed">
+                            {verifyingActor.dikembalikanKeVerifikatorReason || verifyingActor.catatanPengembalian || verifyingActor.keteranganDinas || "Data dikembalikan oleh Administrator untuk perbaikan / verifikasi ulang berkas."}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* DATA PEJABAT BERITA ACARA SURVEY */}
                     <section className="space-y-3">
                       <div className="flex items-center justify-between border-b pb-1">
@@ -2316,6 +2440,34 @@ export default function VerifikasiDinasBerkasPage() {
                 </DialogHeader>
 
                 <div className="grid gap-6 pt-4">
+
+                  {/* ALERT DIKEMBALIKAN OLEH ADMIN */}
+                  {Boolean(av.dikembalikanKeVerifikatorReason || av.dikembalikanKeVerifikatorAt || av.dikembalikanKeVerifikatorBy) && (
+                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-orange-950/40 dark:to-amber-950/30 border-2 border-orange-300 dark:border-orange-800 rounded-2xl p-4 space-y-2">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <span className="p-1 rounded-lg bg-orange-500 text-white shrink-0 shadow-xs">
+                            <RotateCcw className="w-4 h-4" />
+                          </span>
+                          <span className="font-black text-xs uppercase tracking-wider text-orange-900 dark:text-orange-200 bg-orange-200 dark:bg-orange-900/60 px-2.5 py-0.5 rounded-full">
+                            Perhatian: Berkas Dikembalikan oleh Admin
+                          </span>
+                        </div>
+                        {av.dikembalikanKeVerifikatorBy && (
+                          <span className="text-xs font-bold text-orange-800 dark:text-orange-300">
+                            Oleh: <strong className="underline">{av.dikembalikanKeVerifikatorBy}</strong>
+                            {av.dikembalikanKeVerifikatorAt && ` • ${new Date(av.dikembalikanKeVerifikatorAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                          </span>
+                        )}
+                      </div>
+                      <div className="bg-white/95 dark:bg-slate-900/90 p-3 rounded-xl border border-orange-200 dark:border-orange-900/60 max-h-48 overflow-y-auto">
+                        <p className="text-[10px] font-bold text-orange-800 dark:text-orange-300 uppercase tracking-tight mb-1">Catatan / Alasan Pengembalian:</p>
+                        <p className="text-xs font-semibold text-orange-950 dark:text-orange-100 whitespace-pre-line leading-relaxed">
+                          {av.dikembalikanKeVerifikatorReason || av.catatanPengembalian || av.keteranganDinas || "Data dikembalikan oleh Administrator untuk perbaikan / verifikasi ulang berkas."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* 1. STATUS & TRACKING */}
                   <section>

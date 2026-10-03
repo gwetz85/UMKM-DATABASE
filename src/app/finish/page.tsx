@@ -563,6 +563,7 @@ ${(a.verificationLocationDinas || a.verificationLocation) ? `
       updates.hasilVerifikasiDinas = 'Lolos'
       updates.dikembalikanKeVerifikatorAt = new Date().toISOString()
       updates.dikembalikanKeVerifikatorBy = userProfile?.fullName || user?.email || user?.uid || 'Administrator'
+      updates.dikembalikanKeVerifikatorReason = 'Dikembalikan dari antrean Tahap Selesai oleh Admin'
     }
 
     updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), updates)

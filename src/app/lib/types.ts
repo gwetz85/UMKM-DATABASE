@@ -88,6 +88,9 @@ export interface BusinessActor {
   dikembalikanKePetugasAt?: string;
   dikembalikanKePetugasBy?: string;
   dikembalikanKePetugasReason?: string;
+  dikembalikanKeVerifikatorAt?: string;
+  dikembalikanKeVerifikatorBy?: string;
+  dikembalikanKeVerifikatorReason?: string;
   catatanPengembalian?: string;
   verifiedDinasAt?: string;
   verifiedDinasBy?: string;
