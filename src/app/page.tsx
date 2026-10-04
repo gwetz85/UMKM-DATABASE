@@ -1,6 +1,6 @@
 "use client"
 
-import { MenuLaunchpad } from "@/components/menu-launchpad"
+import DashboardStatsPage from "./dashboard/page"
 import { useUser } from "@/firebase"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
@@ -45,7 +45,7 @@ export default function RootPage() {
 
   if (isUserLoading || isProfileLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
       </div>
     )
@@ -53,9 +53,6 @@ export default function RootPage() {
 
   if (!user) return null
 
-  return (
-    <div className="w-full flex flex-col p-0">
-      <MenuLaunchpad />
-    </div>
-  )
+  // Render Dashboard directly as the primary view (replacing launchpad menu)
+  return <DashboardStatsPage />
 }

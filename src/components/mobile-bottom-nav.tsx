@@ -127,10 +127,10 @@ export function MobileBottomNav() {
 
   const navItems = [
     {
-      label: 'Menu',
+      label: 'Dashboard',
       href: '/',
       icon: Home,
-      active: pathname === '/',
+      active: pathname === '/' || pathname === '/dashboard',
       highlight: false,
     },
     {

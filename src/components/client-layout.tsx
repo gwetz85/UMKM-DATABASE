@@ -27,6 +27,7 @@ import { WeatherWidget } from './weather-widget';
 import { SystemInfoWidget } from './system-info-widget';
 import { KelurahanWidget } from './kelurahan-widget';
 import { MobileBottomNav } from './mobile-bottom-nav';
+import { AppSidebar } from '@/components/app-sidebar';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -270,7 +271,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
   const getPageTitle = (path: string) => {
     switch (path) {
-      case '/': return 'Menu Utama';
+      case '/': return 'Dashboard Statistik';
       case '/dashboard': return 'Dashboard Statistik';
       case '/actor-data': return 'Data Pelaku Usaha';
       case '/finish': return 'Data Selesai';
@@ -297,34 +298,43 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <ThemePersistence />
-      <SidebarProvider>
-        <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-transparent">
-          {user && !isLoginPage && <GlobalStatsAutoSync />}
-          {user && !isLoginPage && <MessageNotification />}
-          <Toaster />
+      <SidebarProvider defaultOpen={true}>
+        <div className="flex h-[100dvh] w-full overflow-hidden bg-transparent">
+          {user && !isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
+            <AppSidebar />
+          )}
 
-          {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
-            <>
-              <header className="sticky top-0 z-50 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 h-14 sm:h-16 md:h-20 bg-white/75 dark:bg-slate-900/80 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shrink-0 print:hidden shadow-[0_4px_24px_rgba(15,23,42,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] gap-2 sm:gap-3 md:gap-4 relative">
-                <div className="flex items-center gap-2 sm:gap-3 md:gap-5 shrink-0">
-                  <Link href={user ? "/" : "/cek-data"} className="flex flex-col cursor-pointer hover:opacity-85 transition-opacity">
-                    <span className="text-xl sm:text-2xl md:text-3xl font-black tracking-tighter leading-none text-primary">
-                      SIMPU
-                    </span>
-                    <span className="text-[8.5px] sm:text-[9.5px] md:text-[10.5px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5 sm:mt-1">
-                      {isCekDataPage && !user ? "Portal Cek Data Publik" : (isPendaftaranPage && !user ? "Pendaftaran Pelaku Usaha" : "Sistem Manajemen UMKM")}
-                    </span>
-                  </Link>
+          <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
+            {user && !isLoginPage && <GlobalStatsAutoSync />}
+            {user && !isLoginPage && <MessageNotification />}
+            <Toaster />
 
-                  {currentTitle && (
-                    <>
-                      <div className="hidden 2xl:flex h-8 w-px bg-slate-200/80 dark:border-white/10 mx-1" />
-                      <h1 className="hidden 2xl:block text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase max-w-[200px] truncate">
-                        {currentTitle}
-                      </h1>
-                    </>
-                  )}
-                </div>
+            {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
+              <>
+                <header className="sticky top-0 z-50 flex items-center justify-between px-3 sm:px-4 md:px-6 h-14 sm:h-16 md:h-18 bg-white/75 dark:bg-slate-900/80 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shrink-0 print:hidden shadow-[0_4px_24px_rgba(15,23,42,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] gap-2 sm:gap-3 md:gap-4 relative">
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                    {user && (
+                      <SidebarTrigger className="h-9 w-9 rounded-2xl border border-white/70 dark:border-white/10 bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 shadow-xs transition-all active:scale-95 shrink-0" />
+                    )}
+
+                    <Link href={user ? "/" : "/cek-data"} className="flex flex-col cursor-pointer hover:opacity-85 transition-opacity">
+                      <span className="text-xl sm:text-2xl font-black tracking-tighter leading-none text-primary">
+                        SIMPU
+                      </span>
+                      <span className="text-[8.5px] sm:text-[9.5px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">
+                        {isCekDataPage && !user ? "Portal Cek Data Publik" : (isPendaftaranPage && !user ? "Pendaftaran Pelaku Usaha" : "Kota Tanjungpinang")}
+                      </span>
+                    </Link>
+
+                    {currentTitle && (
+                      <>
+                        <div className="hidden xl:flex h-6 w-px bg-slate-200/80 dark:border-white/10 mx-1" />
+                        <h1 className="hidden xl:block text-sm md:text-base font-black text-slate-900 dark:text-white tracking-tight uppercase max-w-[240px] truncate">
+                          {currentTitle}
+                        </h1>
+                      </>
+                    )}
+                  </div>
 
                 {activeEvent && !isCekDataPage && !isPendaftaranPage && (
                   <div className="hidden lg:flex items-center justify-center absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-none z-10 animate-in fade-in zoom-in duration-1000">
@@ -462,21 +472,21 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                 isLayarInformasiPage ? "p-0 min-h-full lg:h-full lg:max-h-full flex-1 flex flex-col overflow-y-auto lg:overflow-hidden" :
                 isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-7xl mx-auto" :
                 isPendaftaranPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-5xl mx-auto" :
-                isRootPage ? "p-3 sm:p-4 lg:p-4 min-h-full pb-6 lg:pr-[20.5rem] xl:pr-[21rem] 2xl:pr-[21.5rem]" : 
+                isRootPage || pathname === '/dashboard' ? "p-3 sm:p-4 lg:p-4 min-h-full pb-6 lg:pr-[20.5rem] xl:pr-[21rem] 2xl:pr-[21.5rem]" : 
                 "p-3 sm:p-4 lg:p-4 min-h-full pb-32 sm:pb-28 md:pb-20 lg:pr-[20.5rem] xl:pr-[21rem] 2xl:pr-[21.5rem]"
               )}>
-                {!isRootPage && !isKoordinator && !isLoginPage && !isPortalSurveyPage && !isLayarInformasiPage && (
+                {!isRootPage && pathname !== '/dashboard' && !isKoordinator && !isLoginPage && !isPortalSurveyPage && !isLayarInformasiPage && (
                   <div className="mb-3.5 flex items-center justify-between gap-3 print:hidden">
                     <button
                       onClick={() => router.push('/')}
                       className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:bg-white dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 border border-white/70 dark:border-white/10 shadow-sm hover:shadow-md transition-all group active:scale-95 text-xs font-extrabold"
                     >
                       <ArrowLeft className="w-3.5 h-3.5 text-primary group-hover:-translate-x-1 transition-transform" />
-                      <span>Kembali ke Menu</span>
+                      <span>Kembali ke Dashboard</span>
                     </button>
                     {currentTitle && (
                       <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-bold select-none">
-                        <span>Sistem Navigasi</span>
+                        <span>Dashboard</span>
                         <span>/</span>
                         <span className="text-slate-900 dark:text-white font-black uppercase">{currentTitle}</span>
                       </div>
@@ -501,7 +511,8 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
           <MobileBottomNav />
         </div>
-      </SidebarProvider>
+      </div>
+    </SidebarProvider>
 
       {/* Single-device displaced overlay — shown when another device took over this session */}
       {isDisplaced && (

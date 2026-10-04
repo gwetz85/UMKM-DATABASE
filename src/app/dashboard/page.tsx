@@ -26,7 +26,8 @@ import {
   Sparkles,
   Store,
   CheckCircle2,
-  ChevronRight
+  ChevronRight,
+  Search
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useMemo, useState, useRef } from "react"
@@ -607,6 +608,61 @@ export default function DashboardStatsPage() {
               <span className="text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
                 Sistem: <strong className="text-emerald-700 dark:text-emerald-400 font-black">AKTIF</strong>
               </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── GROWLY LMS HERO OVERVIEW BANNER ─── */}
+        <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 text-white p-5 sm:p-6 lg:p-7 shadow-xl border border-white/10">
+          <div className="absolute -top-14 -right-14 w-72 h-72 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-14 -left-14 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-1 rounded-full text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30 backdrop-blur-md">
+                  TAHUN ANGGARAN 2026
+                </span>
+                <span className="px-3 py-1 rounded-full text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 backdrop-blur-md">
+                  ROLE: {userProfile?.role?.toUpperCase() || 'STAFF'}
+                </span>
+                <span className="px-3 py-1 rounded-full text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
+                  TARGET: 3.000 UMKM
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white uppercase">
+                Selamat Datang, {userProfile?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'Administrator'} 👋
+              </h2>
+              <p className="text-xs sm:text-sm font-medium text-slate-300 max-w-2xl leading-relaxed">
+                Pusat Kendali Terpadu Monitoring Alur Verifikasi Dinas, Survey Lapangan, Rekening Bank, dan Capaian Kuota Pelaku Usaha Kota Tanjungpinang.
+              </p>
+            </div>
+
+            {/* Quick Action Shortcuts */}
+            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0">
+              <Button
+                onClick={() => router.push('/input')}
+                className="h-9.5 sm:h-10 px-3.5 sm:px-4 rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-teal-500/25 transition-all active:scale-95 flex items-center gap-2"
+              >
+                <UserCheck className="w-4 h-4" />
+                <span>+ Input Data</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => router.push('/check-data')}
+                className="h-9.5 sm:h-10 px-3.5 sm:px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white border-white/20 font-black text-xs uppercase tracking-wider backdrop-blur-md transition-all active:scale-95 flex items-center gap-2"
+              >
+                <Search className="w-4 h-4" />
+                <span>Cek NIK</span>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => router.push('/rekapan-data')}
+                className="h-9.5 sm:h-10 px-3.5 sm:px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white border-white/20 font-black text-xs uppercase tracking-wider backdrop-blur-md transition-all active:scale-95 flex items-center gap-2"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Rekapan</span>
+              </Button>
             </div>
           </div>
         </div>

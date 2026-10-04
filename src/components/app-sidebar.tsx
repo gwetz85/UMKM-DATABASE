@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -29,13 +28,14 @@ import {
   ClipboardCheck,
   ListChecks,
   ShieldAlert,
-  Calendar
+  Calendar,
+  Sparkles
 } from "lucide-react"
 
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
-import { useUser, useObject, useMemoFirebase, useAuth, useList, useDatabase } from "@/firebase"
-import { ref, query, update } from "firebase/database"
+import { useUser, useAuth, useDatabase } from "@/firebase"
+import { ref, update } from "firebase/database"
 import { signOut } from "firebase/auth"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
@@ -105,14 +105,14 @@ export function AppSidebar() {
   }
 
   const handleAuthAction = async () => {
-    if (isMobile) setOpenMobile(false);
+    if (isMobile) setOpenMobile(false)
     if (user) {
       if (userProfile?.id && database) {
         try {
           await update(ref(database, `system_users/${userProfile.id}`), {
             isOnline: false,
             lastSeen: Date.now()
-          });
+          })
         } catch (e) {
           // ignore
         }
@@ -124,173 +124,274 @@ export function AppSidebar() {
     }
   }
 
+  // Growly-style categorized navigation groups
+  const categorizedNavigation = React.useMemo(() => {
+    const visible = navigation.filter((i: any) => i.show)
+
+    const groups: { label: string; items: any[] }[] = [
+      {
+        label: "OVERVIEW",
+        items: visible.filter((i: any) => i.href === "/dashboard" || i.href === "/")
+      },
+      {
+        label: "ALUR TAHAPAN DINAS",
+        items: visible.filter((i: any) => {
+          const h = (i.href || '').toLowerCase()
+          return h.includes('verifikasi-dinas') || h.includes('hasil-verifikasi') || h.includes('finish') || h.includes('rekening') || h.includes('portal-survey')
+        })
+      },
+      {
+        label: "DATA & PENDAFTARAN",
+        items: visible.filter((i: any) => {
+          const h = (i.href || '').toLowerCase()
+          return h.includes('input') || h.includes('actor') || h.includes('check-data') || h.includes('cek-usaha') || h.includes('rejected') || h.includes('verify-actor') || h.includes('daftar')
+        })
+      },
+      {
+        label: "LAPORAN & DOKUMEN",
+        items: visible.filter((i: any) => {
+          const h = (i.href || '').toLowerCase()
+          return h.includes('rekapan') || h.includes('gbas') || h.includes('cetak') || h.includes('lpj')
+        })
+      },
+      {
+        label: "KOMUNIKASI & SISTEM",
+        items: visible.filter((i: any) => {
+          const h = (i.href || '').toLowerCase()
+          return h.includes('messages') || h.includes('settings') || h.includes('users') || h.includes('layar-informasi') || h.includes('compliance')
+        })
+      }
+    ]
+
+    const categorizedHrefs = new Set(groups.flatMap(g => g.items.map(i => i.href)))
+    const others = visible.filter((i: any) => !categorizedHrefs.has(i.href))
+    if (others.length > 0) {
+      groups.push({ label: "MODUL LAINNYA", items: others })
+    }
+
+    return groups.filter(g => g.items.length > 0)
+  }, [navigation])
+
   if (pathname === "/login") return null
 
   if (!mounted) {
     return (
-      <Sidebar collapsible="icon" className="border-r-0 shadow-2xl bg-primary">
-        <SidebarHeader className="py-6 flex flex-col items-center justify-center border-b border-white/5">
-          <div className="bg-accent rounded-xl p-2 w-10 h-10 shadow-inner" />
+      <Sidebar collapsible="icon" className="border-r border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl">
+        <SidebarHeader className="py-5 flex flex-col items-center justify-center border-b border-slate-200/70 dark:border-white/10">
+          <div className="bg-primary/10 rounded-2xl p-2 w-10 h-10 animate-pulse" />
         </SidebarHeader>
         <SidebarContent />
-        <SidebarFooter className="p-4 bg-black/10 mt-auto" />
+        <SidebarFooter className="p-4" />
       </Sidebar>
     )
   }
 
   return (
-    <Sidebar collapsible="icon" className="border-r-0 text-white">
-      <SidebarHeader className="py-6 flex flex-col items-center justify-center border-b border-white/10">
-        <div className="flex flex-col items-center justify-center w-full">
+    <Sidebar collapsible="icon" className="border-r border-slate-200/80 dark:border-white/10 bg-white/90 dark:bg-slate-900/95 backdrop-blur-2xl text-slate-800 dark:text-slate-100 shadow-xl shadow-slate-200/40 dark:shadow-none">
+      {/* ─── BRAND HEADER ─── */}
+      <SidebarHeader className="py-4 px-4 flex flex-col border-b border-slate-200/70 dark:border-white/10">
+        <div className="flex items-center gap-3 w-full">
           <InfoDialog>
-            <button className="flex flex-col items-center gap-2 transition-all duration-300 hover:scale-105 active:scale-95 outline-none">
-              <div className="relative group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:h-10 w-24 h-24 flex items-center justify-center overflow-hidden rounded-full border-2 border-white/20 shadow-2xl bg-white">
-                <img
-                  src="/logo.png"
-                  alt="SIMPU Logo"
-                  className="w-full h-full object-contain p-2"
-                />
+            <button className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 outline-none group text-left">
+              <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#005e61] to-[#00C48C] p-[2px] shadow-md shadow-teal-700/20 shrink-0">
+                <div className="w-full h-full rounded-[14px] bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden">
+                  <img
+                    src="/logo.png"
+                    alt="SIMPU Logo"
+                    className="w-full h-full object-contain p-1"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-black text-base text-slate-900 dark:text-white tracking-tight uppercase">
+                    SIMPU
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase tracking-wider bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+                    2026
+                  </span>
+                </div>
+                <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider truncate">
+                  Kota Tanjungpinang
+                </span>
               </div>
             </button>
           </InfoDialog>
         </div>
-
-
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-2">
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-2 mb-2 group-data-[collapsible=icon]:hidden text-white/40 font-bold text-[10px] uppercase tracking-[0.2em]">
-            MENU UTAMA
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-1">
-              {navigation.filter((i: any) => i.show).map((item: any) => (
-                <SidebarMenuItem key={item.name}>
-                  {item.items ? (
-                    <Collapsible defaultOpen className="group/collapsible">
-                      <SidebarMenuButton
-                        asChild
-                        tooltip={item.name}
-                        className={cn(
-                          "h-10.5 px-3 rounded-2xl transition-all duration-300 hover:bg-white/15 text-white/90",
-                          item.items.some((sub: any) => pathname === sub.href) && "bg-white/10",
-                          "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
-                          "active:scale-95 animate-in fade-in-up"
-                        )}
-                      >
-                        <CollapsibleTrigger asChild>
-                          <div
-                            className="flex items-center gap-3 w-full cursor-pointer"
-                            onClick={() => playSound('click')}
+      {/* ─── NAVIGATION GROUPS ─── */}
+      <SidebarContent className="px-2.5 py-3 space-y-4 custom-scrollbar">
+        {categorizedNavigation.map((group) => (
+          <SidebarGroup key={group.label} className="p-0">
+            <SidebarGroupLabel className="px-3 mb-1.5 group-data-[collapsible=icon]:hidden text-slate-400 dark:text-slate-500 font-black text-[9.5px] uppercase tracking-[0.16em]">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-1">
+                {group.items.map((item: any) => {
+                  const isActive = pathname === item.href || (item.href === "/dashboard" && pathname === "/")
+                  const itemColor = item.color || '#005e61'
+
+                  return (
+                    <SidebarMenuItem key={item.name}>
+                      {item.items ? (
+                        <Collapsible defaultOpen={item.items.some((sub: any) => pathname === sub.href)} className="group/collapsible">
+                          <SidebarMenuButton
+                            asChild
+                            tooltip={item.name}
+                            className={cn(
+                              "h-10 px-3 rounded-2xl transition-all duration-200 font-bold text-xs",
+                              item.items.some((sub: any) => pathname === sub.href)
+                                ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black"
+                                : "text-slate-600 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white",
+                              "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
+                              "active:scale-95"
+                            )}
                           >
-                            <item.icon className="w-5 h-5 shrink-0" />
-                            <span className="font-extrabold text-xs tracking-tight truncate group-data-[collapsible=icon]:hidden">
+                            <CollapsibleTrigger asChild>
+                              <div
+                                className="flex items-center gap-3 w-full cursor-pointer"
+                                onClick={() => playSound('click')}
+                              >
+                                <div 
+                                  className="w-5 h-5 rounded-lg flex items-center justify-center shrink-0"
+                                  style={{ color: itemColor }}
+                                >
+                                  <item.icon className="w-4.5 h-4.5" />
+                                </div>
+                                <span className="font-extrabold text-xs tracking-tight truncate group-data-[collapsible=icon]:hidden">
+                                  {item.name}
+                                </span>
+                                <ChevronRight className="ml-auto w-3.5 h-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden opacity-50" />
+                              </div>
+                            </CollapsibleTrigger>
+                          </SidebarMenuButton>
+                          <CollapsibleContent className="animate-in slide-in-from-top-1 duration-200">
+                            <SidebarMenuSub className="border-slate-200 dark:border-white/10 ml-6 mr-1 mt-1 gap-1">
+                              {item.items.map((subItem: any) => {
+                                const isSubActive = pathname === subItem.href
+                                return (
+                                  <SidebarMenuSubItem key={subItem.name}>
+                                    <SidebarMenuSubButton
+                                      asChild
+                                      isActive={isSubActive}
+                                      className={cn(
+                                        "rounded-xl transition-all h-8.5 font-bold text-[11px]",
+                                        isSubActive
+                                          ? "bg-[#005e61] text-white font-black shadow-xs"
+                                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white"
+                                      )}
+                                    >
+                                      <Link
+                                        href={subItem.href}
+                                        className="flex items-center gap-2 w-full"
+                                        onClick={() => {
+                                          playSound('click')
+                                          if (isMobile) setOpenMobile(false)
+                                        }}
+                                      >
+                                        <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", isSubActive ? "bg-white" : "bg-slate-400")} />
+                                        <span className="uppercase tracking-wider truncate">{subItem.name}</span>
+                                      </Link>
+                                    </SidebarMenuSubButton>
+                                  </SidebarMenuSubItem>
+                                )
+                              })}
+                            </SidebarMenuSub>
+                          </CollapsibleContent>
+                        </Collapsible>
+                      ) : (
+                        <SidebarMenuButton
+                          asChild
+                          isActive={isActive}
+                          tooltip={item.name}
+                          onClick={() => {
+                            playSound('click')
+                            if (isMobile) setOpenMobile(false)
+                          }}
+                          className={cn(
+                            "h-10 px-3 rounded-2xl transition-all duration-200 text-xs",
+                            isActive
+                              ? "bg-[#005e61] text-white hover:bg-[#005e61] hover:text-white font-black shadow-md shadow-[#005e61]/25 border border-[#005e61]"
+                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white font-bold",
+                            "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
+                            "active:scale-95"
+                          )}
+                        >
+                          <Link
+                            href={item.href}
+                            className="flex items-center gap-3 w-full"
+                          >
+                            <div 
+                              className={cn("w-5 h-5 rounded-lg flex items-center justify-center shrink-0 transition-transform", isActive && "text-white")}
+                              style={{ color: isActive ? '#ffffff' : itemColor }}
+                            >
+                              <item.icon className="w-4.5 h-4.5" />
+                            </div>
+                            <span className="truncate group-data-[collapsible=icon]:hidden">
                               {item.name}
                             </span>
-                            <ChevronRight className="ml-auto w-3.5 h-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden opacity-60" />
-                          </div>
-                        </CollapsibleTrigger>
-                      </SidebarMenuButton>
-                      <CollapsibleContent className="animate-in slide-in-from-top-1 duration-200">
-                        <SidebarMenuSub className="border-white/15 ml-6 mr-2 mt-1 gap-1">
-                          {item.items.map((subItem: any) => (
-                            <SidebarMenuSubItem key={subItem.name}>
-                              <SidebarMenuSubButton
-                                asChild
-                                isActive={pathname === subItem.href}
-                                className={cn(
-                                  "rounded-xl transition-all text-white/80 hover:text-white hover:bg-white/10 h-8.5",
-                                  "data-[active=true]:bg-white data-[active=true]:text-primary font-black shadow-sm"
-                                )}
-                              >
-                                <Link
-                                  href={subItem.href}
-                                  className="flex items-center gap-2 w-full"
-                                  onClick={() => playSound('click')}
-                                >
-                                  <div className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
-                                  <span className="text-[11px] font-black uppercase tracking-wider">{subItem.name}</span>
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ) : (
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === item.href}
-                      tooltip={item.name}
-                      onClick={() => playSound('click')}
-                      className={cn(
-                        "h-10 px-3 rounded-xl transition-all duration-300 hover:bg-white/10 text-white/80",
-                        "data-[active=true]:bg-white data-[active=true]:text-primary data-[active=true]:shadow-lg",
-                        "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
-                        "active:scale-95 animate-in fade-in-up"
+                            {item.badge !== undefined && (
+                              <div className="ml-auto flex items-center justify-center bg-rose-500 text-white text-[9.5px] font-black min-w-[18px] h-[18px] rounded-full px-1 shadow-xs group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-1 group-data-[collapsible=icon]:right-1 animate-pulse">
+                                {item.badge}
+                              </div>
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
                       )}
-                    >
-                      <Link
-                        href={item.href}
-                        className="flex items-center gap-3 w-full"
-                      >
-                        <item.icon className="w-4.5 h-4.5 shrink-0" />
-                        <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
-                          {item.name}
-                        </span>
-                        {item.badge !== undefined && (
-                          <div className="ml-auto flex items-center justify-center bg-rose-500 text-white text-[10px] font-black min-w-[18px] h-[18px] rounded-full px-1 shadow-sm group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:top-1 group-data-[collapsible=icon]:right-1">
-                            {item.badge}
-                          </div>
-                        )}
-                      </Link>
-                    </SidebarMenuButton>
-                  )}
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                    </SidebarMenuItem>
+                  )
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
 
-      <SidebarFooter className="p-3 bg-black/10 mt-auto">
-        <div className="flex flex-col gap-3">
+      {/* ─── BOTTOM PROFILE & LOGOUT FOOTER ─── */}
+      <SidebarFooter className="p-3 border-t border-slate-200/70 dark:border-white/10 mt-auto bg-slate-50/50 dark:bg-slate-900/50">
+        <div className="flex flex-col gap-2.5">
           {user && (
             <div className="group-data-[collapsible=icon]:hidden flex flex-col gap-2">
-              <div className="bg-white/10 rounded-xl border border-white/10 p-2.5 space-y-2">
+              <div className="bg-white/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200/70 dark:border-white/10 p-2.5 space-y-2 shadow-xs">
                 <Link
                   href="/profile"
-                  className="flex items-center gap-2 hover:bg-white/5 p-1 rounded-lg transition-colors cursor-pointer w-full group/profile"
+                  className="flex items-center gap-2.5 hover:opacity-85 transition-opacity cursor-pointer w-full group/profile"
                 >
-                  <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center group-hover/profile:bg-white/30 transition-colors overflow-hidden border border-white/10">
-                    {userProfile?.photoURL ? (
-                      <img src={userProfile.photoURL} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <UserIcon className="w-3.5 h-3.5 text-white" />
-                    )}
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#005e61] to-[#00C48C] p-[1.5px] shrink-0">
+                    <div className="w-full h-full rounded-[10px] bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden">
+                      {userProfile?.photoURL ? (
+                        <img src={userProfile.photoURL} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="font-black text-xs text-primary">
+                          {userProfile?.fullName?.[0]?.toUpperCase() || 'U'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[10px] font-black text-white truncate group-hover/profile:text-accent transition-colors">
-                      {userProfile?.fullName?.toUpperCase() || user.email?.split('@')[0].toUpperCase()}
+                    <span className="text-[11px] font-black text-slate-900 dark:text-white truncate">
+                      {userProfile?.fullName || user.email?.split('@')[0]}
                     </span>
-                    <span className="text-[8px] text-white/60 font-black uppercase tracking-tighter">
-                      {isAdmin ? "🛡️ Admin" : isStaff ? "📋 Staff" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 USULAN" : isPetugas ? "📝 Petugas" : isDinas ? "🏢 Dinas" : "👤 User"}
+                    <span className="text-[8.5px] text-teal-700 dark:text-teal-400 font-black uppercase tracking-wider">
+                      {isAdmin ? "🛡️ Admin" : isStaff ? "📋 Staff" : isMonitoring ? "👁️ Monitoring" : isKoordinator ? "🤝 Koordinator" : isPetugas ? "📝 Petugas" : isDinas ? "🏢 Dinas" : "👤 User"}
                     </span>
                   </div>
                 </Link>
 
-                <div className="flex items-center justify-between bg-black/20 p-1.5 rounded-lg gap-2">
-                  <span className="text-[8px] text-white/40 font-mono truncate select-all">
+                <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-900/60 px-2 py-1 rounded-xl gap-2">
+                  <span className="text-[8.5px] text-slate-500 font-mono truncate select-all">
                     {user.uid}
                   </span>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5 text-white/30 hover:text-white hover:bg-white/10"
+                    className="h-5 w-5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                     onClick={copyUid}
                   >
-                    {copied ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
+                    {copied ? <Check className="h-2.5 w-2.5 text-emerald-500" /> : <Copy className="h-2.5 w-2.5" />}
                   </Button>
                 </div>
               </div>
@@ -301,19 +402,19 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={handleAuthAction}
-                className="h-10 rounded-xl hover:bg-white/20 hover:text-white text-white/60 transition-colors group-data-[collapsible=icon]:justify-center"
+                className="h-9.5 rounded-2xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-extrabold transition-colors group-data-[collapsible=icon]:justify-center text-xs"
               >
                 {user ? (
                   <>
-                    <LogOut className="w-4.5 h-4.5 shrink-0" />
-                    <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">
-                      Keluar
+                    <LogOut className="w-4 h-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">
+                      Keluar (Logout)
                     </span>
                   </>
                 ) : (
                   <>
-                    <LogIn className="w-4.5 h-4.5 shrink-0" />
-                    <span className="text-xs font-bold group-data-[collapsible=icon]:hidden">
+                    <LogIn className="w-4 h-4 shrink-0" />
+                    <span className="group-data-[collapsible=icon]:hidden">
                       Masuk (Login)
                     </span>
                   </>
