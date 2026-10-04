@@ -798,23 +798,8 @@ export default function DashboardStatsPage() {
         </div>
       </div>
 
-      {/* ─── MIDDLE SECTION: DESCRIPTION & TAB PILLS ─── */}
-      <div className="space-y-3 pt-1">
-        <div>
-          <h3 className="text-base font-black text-slate-900 dark:text-white mb-1">
-            Description
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-4xl">
-            Sistem Informasi Pendataan UMKM (SIMPU) Kota Tanjungpinang memfasilitasi pendataan terpadu, survey lapangan oleh petugas resmi, verifikasi kelengkapan berkas dinas, hingga pencairan rekening bantuan secara terpadu dan akuntabel.{" "}
-            <button
-              onClick={() => setSelectedFilter({ name: 'Seluruh Pelaku Usaha', filterType: 'total' })}
-              className="text-primary font-bold hover:underline inline-flex items-center gap-0.5 ml-1"
-            >
-              Read more
-            </button>
-          </p>
-        </div>
-
+      {/* ─── MIDDLE SECTION: TAB PILLS ─── */}
+      <div className="pt-1">
         {/* Tab Pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar">
           <button
