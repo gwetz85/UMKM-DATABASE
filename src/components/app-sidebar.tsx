@@ -169,7 +169,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-slate-800/80 bg-[#0B132B] text-slate-100 shadow-2xl">
       {/* ─── BRAND HEADER ─── */}
-      <SidebarHeader className="py-4 px-4 flex flex-row items-center justify-between border-b border-white/10">
+      <SidebarHeader className="py-4 px-4 flex flex-row items-center justify-between border-b border-white/10 bg-[#0B132B]">
         <InfoDialog>
           <button className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 outline-none group text-left">
             <div className="relative w-9 h-9 rounded-2xl bg-gradient-to-tr from-sky-500 to-teal-400 p-[2px] shadow-md shadow-sky-500/20 shrink-0">
@@ -191,7 +191,7 @@ export function AppSidebar() {
                   2026
                 </span>
               </div>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">
+              <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider truncate">
                 Kota Tanjungpinang
               </span>
             </div>
@@ -201,7 +201,7 @@ export function AppSidebar() {
         {/* Circular Collapse Toggle Button matching Growly LMS */}
         <button
           onClick={() => toggleSidebar()}
-          className="group-data-[collapsible=icon]:hidden w-7 h-7 rounded-full bg-[#162238] hover:bg-[#1f2d47] border border-white/10 text-slate-300 hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0 active:scale-90"
+          className="group-data-[collapsible=icon]:hidden w-7 h-7 rounded-full bg-[#162238] hover:bg-[#1f2d47] border border-white/10 text-slate-200 hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0 active:scale-90"
           title="Tutup/Buka Sidebar"
         >
           <ChevronLeft className="w-3.5 h-3.5" />
@@ -209,10 +209,10 @@ export function AppSidebar() {
       </SidebarHeader>
 
       {/* ─── NAVIGATION GROUPS ─── */}
-      <SidebarContent className="px-2.5 py-3 space-y-4 custom-scrollbar">
+      <SidebarContent className="px-2.5 py-3 space-y-4 custom-scrollbar bg-[#0B132B]">
         {categorizedNavigation.map((group) => (
           <SidebarGroup key={group.label} className="p-0">
-            <SidebarGroupLabel className="px-3 mb-1.5 group-data-[collapsible=icon]:hidden text-slate-400 font-extrabold text-[10px] uppercase tracking-[0.16em]">
+            <SidebarGroupLabel className="px-3 mb-1.5 group-data-[collapsible=icon]:hidden text-slate-300/80 font-black text-[10.5px] uppercase tracking-[0.16em]">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
@@ -232,7 +232,7 @@ export function AppSidebar() {
                               "h-10 px-3 rounded-2xl transition-all duration-200 text-xs font-bold",
                               item.items.some((sub: any) => pathname === sub.href)
                                 ? "bg-[#162238] text-white"
-                                : "text-slate-300 hover:bg-white/5 hover:text-white",
+                                : "text-slate-100 hover:bg-white/10 hover:text-white",
                               "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
                               "active:scale-95"
                             )}
@@ -251,10 +251,10 @@ export function AppSidebar() {
                                 >
                                   <item.icon className="w-4 h-4" />
                                 </div>
-                                <span className="font-bold text-xs text-slate-200 tracking-tight truncate group-data-[collapsible=icon]:hidden">
+                                <span className="font-bold text-xs text-slate-100 tracking-tight truncate group-data-[collapsible=icon]:hidden">
                                   {item.name}
                                 </span>
-                                <ChevronRight className="ml-auto w-3.5 h-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden text-slate-400" />
+                                <ChevronRight className="ml-auto w-3.5 h-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden text-slate-300" />
                               </div>
                             </CollapsibleTrigger>
                           </SidebarMenuButton>
@@ -271,7 +271,7 @@ export function AppSidebar() {
                                         "rounded-xl transition-all h-8.5 font-bold text-[11px]",
                                         isSubActive
                                           ? "bg-sky-600 text-white shadow-xs font-extrabold"
-                                          : "text-slate-400 hover:bg-white/5 hover:text-white"
+                                          : "text-slate-200 hover:bg-white/10 hover:text-white font-medium"
                                       )}
                                     >
                                       <Link
@@ -304,8 +304,8 @@ export function AppSidebar() {
                           className={cn(
                             "h-10 px-3 rounded-2xl transition-all duration-200 text-xs font-bold",
                             isActive
-                              ? "bg-[#162238] text-white hover:bg-[#162238] hover:text-white shadow-md border border-white/10"
-                              : "text-slate-300 hover:bg-white/5 hover:text-white",
+                              ? "bg-[#162238] text-white hover:bg-[#1b2a47] hover:text-white shadow-md border border-white/15"
+                              : "text-slate-100 hover:bg-white/10 hover:text-white",
                             "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
                             "active:scale-95"
                           )}
@@ -330,7 +330,7 @@ export function AppSidebar() {
                             </div>
                             <span className={cn(
                               "truncate group-data-[collapsible=icon]:hidden font-bold text-xs tracking-tight",
-                              isActive ? "text-white font-extrabold" : "text-slate-200"
+                              isActive ? "text-white font-extrabold" : "text-slate-100"
                             )}>
                               {item.name}
                             </span>

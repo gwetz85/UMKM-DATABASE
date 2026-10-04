@@ -646,16 +646,16 @@ export default function DashboardStatsPage() {
 
               {/* Translucent Stage Pills */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-md border border-white/25 text-white">
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-sky-950/30 backdrop-blur-md border border-white/30 text-white shadow-xs">
                   Input Pendaftaran
                 </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-md border border-white/25 text-white">
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-sky-950/30 backdrop-blur-md border border-white/30 text-white shadow-xs">
                   Survey Lapangan
                 </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-md border border-white/25 text-white">
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-sky-950/30 backdrop-blur-md border border-white/30 text-white shadow-xs">
                   Verifikasi Dinas
                 </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-md border border-white/25 text-white">
+                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-sky-950/30 backdrop-blur-md border border-white/30 text-white shadow-xs">
                   Penyaluran Bantuan
                 </span>
               </div>
@@ -663,19 +663,19 @@ export default function DashboardStatsPage() {
 
             {/* Right Frosted Tags */}
             <div className="flex flex-col gap-2 shrink-0 w-full sm:w-auto">
-              <div className="px-3.5 py-1.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-semibold flex items-center gap-2">
+              <div className="px-3.5 py-1.5 rounded-2xl bg-sky-950/30 backdrop-blur-md border border-white/30 text-white text-xs font-bold flex items-center gap-2 shadow-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
                 <span>4 Kecamatan & 18 Kelurahan</span>
               </div>
-              <div className="px-3.5 py-1.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-semibold flex items-center gap-2">
+              <div className="px-3.5 py-1.5 rounded-2xl bg-sky-950/30 backdrop-blur-md border border-white/30 text-white text-xs font-bold flex items-center gap-2 shadow-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
                 <span>Verifikasi Berkas & Fisik</span>
               </div>
-              <div className="px-3.5 py-1.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-semibold flex items-center gap-2">
+              <div className="px-3.5 py-1.5 rounded-2xl bg-sky-950/30 backdrop-blur-md border border-white/30 text-white text-xs font-bold flex items-center gap-2 shadow-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
                 <span>Validasi NIB & KTP Disdukcapil</span>
               </div>
-              <div className="px-3.5 py-1.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-semibold flex items-center gap-2">
+              <div className="px-3.5 py-1.5 rounded-2xl bg-sky-950/30 backdrop-blur-md border border-white/30 text-white text-xs font-bold flex items-center gap-2 shadow-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
                 <span>Rekening Bank Riau Kepri</span>
               </div>
@@ -820,10 +820,10 @@ export default function DashboardStatsPage() {
           <button
             onClick={() => setActiveTab('details')}
             className={cn(
-              "px-5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 active:scale-95",
+              "px-5 py-2 rounded-full text-xs font-bold transition-all shrink-0 active:scale-95 shadow-2xs",
               activeTab === 'details'
-                ? "bg-sky-100 text-sky-700 dark:bg-sky-950/80 dark:text-sky-300 shadow-2xs font-extrabold"
-                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                ? "bg-sky-500 text-white dark:bg-sky-600 dark:text-white shadow-sm font-extrabold"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white border border-slate-200/80 dark:border-slate-700"
             )}
           >
             Statistik & Kelurahan
@@ -831,10 +831,10 @@ export default function DashboardStatsPage() {
           <button
             onClick={() => setActiveTab('alur')}
             className={cn(
-              "px-5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 active:scale-95",
+              "px-5 py-2 rounded-full text-xs font-bold transition-all shrink-0 active:scale-95 shadow-2xs",
               activeTab === 'alur'
-                ? "bg-sky-100 text-sky-700 dark:bg-sky-950/80 dark:text-sky-300 shadow-2xs font-extrabold"
-                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                ? "bg-sky-500 text-white dark:bg-sky-600 dark:text-white shadow-sm font-extrabold"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white border border-slate-200/80 dark:border-slate-700"
             )}
           >
             Alur Berkas & Verifikasi
@@ -842,10 +842,10 @@ export default function DashboardStatsPage() {
           <button
             onClick={() => setActiveTab('kuota')}
             className={cn(
-              "px-5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 active:scale-95",
+              "px-5 py-2 rounded-full text-xs font-bold transition-all shrink-0 active:scale-95 shadow-2xs",
               activeTab === 'kuota'
-                ? "bg-sky-100 text-sky-700 dark:bg-sky-950/80 dark:text-sky-300 shadow-2xs font-extrabold"
-                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                ? "bg-sky-500 text-white dark:bg-sky-600 dark:text-white shadow-sm font-extrabold"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white border border-slate-200/80 dark:border-slate-700"
             )}
           >
             Data Wilayah & Kuota

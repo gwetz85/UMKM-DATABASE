@@ -307,12 +307,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                         <span>SIMPU</span>
                       </Link>
                       <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
-                      <Link href="/dashboard" className="hover:text-slate-900 dark:hover:text-white transition-colors truncate hidden xs:inline">
+                      <Link href="/dashboard" className="hover:text-slate-900 dark:hover:text-white transition-colors truncate">
                         Dashboard
                       </Link>
                       {currentTitle && currentTitle !== 'Dashboard Statistik' && (
                         <>
-                          <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0 hidden xs:inline" />
+                          <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
                           <span className="text-slate-900 dark:text-white font-extrabold truncate max-w-[200px] sm:max-w-[320px]">
                             {currentTitle}
                           </span>

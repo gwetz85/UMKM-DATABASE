@@ -173,7 +173,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
       return (
         <div
           className={cn(
-            "flex h-full w-[--sidebar-width] flex-col bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100",
+            "flex h-full w-[--sidebar-width] flex-col bg-[#0B132B] text-slate-100",
             className
           )}
           ref={ref}
@@ -190,7 +190,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-white dark:bg-slate-900 p-0 text-slate-900 dark:text-slate-100 [&>button]:hidden"
+            className="w-[--sidebar-width] bg-[#0B132B] p-0 text-slate-100 border-r border-slate-800/80 [&>button]:hidden"
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -211,7 +211,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
     return (
       <div
         ref={ref}
-        className="group peer hidden md:block text-slate-900 dark:text-slate-100"
+        className="group peer hidden md:block text-slate-100"
         data-state={state}
         data-collapsible={state === "collapsed" ? collapsible : ""}
         data-variant={variant}
@@ -235,14 +235,14 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
             variant === "floating" || variant === "inset"
               ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
-              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
+              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=left]:border-slate-800/80 group-data-[side=right]:border-l group-data-[side=right]:border-slate-800/80",
             className
           )}
           {...props}
         >
           <div
             data-sidebar="sidebar"
-            className="flex h-full w-full flex-col bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-slate-200 dark:group-data-[variant=floating]:border-slate-800 group-data-[variant=floating]:shadow"
+            className="flex h-full w-full flex-col bg-[#0B132B] text-slate-100 group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-slate-800 group-data-[variant=floating]:shadow"
           >
             {children}
           </div>
