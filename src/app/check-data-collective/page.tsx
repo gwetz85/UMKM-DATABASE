@@ -240,7 +240,7 @@ export default function CheckDataCollectivePage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
-        <Card className="lg:col-span-3 border-none shadow-xl h-fit bg-white/80 backdrop-blur-md">
+        <Card className="lg:col-span-3 border border-slate-200/80 dark:border-slate-800 shadow-xl dark:shadow-2xl h-fit bg-white/90 dark:bg-[#0B132B] backdrop-blur-md">
           <CardHeader>
             <CardTitle className="text-lg">Input Nomor KK</CardTitle>
             <CardDescription>Masukkan hingga 20 Nomor KK (satu per baris atau dipisah koma).</CardDescription>
@@ -256,7 +256,7 @@ export default function CheckDataCollectivePage() {
                   placeholder="Contoh:&#10;1234567890123456&#10;1234567890123457" 
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  className="min-h-[200px] font-mono text-base bg-white"
+                  className="min-h-[200px] font-mono text-base bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white"
                   required 
                 />
                 <p className="text-[10px] text-muted-foreground italic">
@@ -274,19 +274,19 @@ export default function CheckDataCollectivePage() {
 
         <div className="lg:col-span-9 space-y-6">
           {!searchDone && !loading && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed rounded-3xl border-muted bg-white/30 backdrop-blur-sm p-8 text-center">
-              <div className="bg-white/50 p-4 rounded-full mb-4">
-                <TableIcon className="w-8 h-8 text-muted-foreground/60" />
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed rounded-3xl border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-[#0B132B]/60 backdrop-blur-sm p-8 text-center">
+              <div className="bg-white/80 dark:bg-slate-800/80 p-4 rounded-full mb-4 shadow-xs">
+                <TableIcon className="w-8 h-8 text-muted-foreground/60 dark:text-slate-400" />
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Hasil akan ditampilkan di sini</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">Hasil akan ditampilkan di sini</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 Masukkan daftar Nomor KK di sebelah kiri untuk memulai validasi massal.
               </p>
             </div>
           )}
 
           {loading && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border p-8 text-center">
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-white/80 dark:bg-[#0B132B]/80 backdrop-blur-md rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 p-8 text-center">
               <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
               <p className="text-primary font-bold animate-pulse">Memeriksa Database...</p>
             </div>
@@ -294,36 +294,36 @@ export default function CheckDataCollectivePage() {
 
           {searchDone && !loading && (
             <div className="animate-in fade-in duration-500 space-y-6">
-              <Card className="border-none shadow-xl bg-white overflow-hidden rounded-2xl">
-                <div className="bg-primary/5 p-4 border-b border-primary/10 flex items-center justify-between">
+              <Card className="border border-slate-200/80 dark:border-slate-800 shadow-xl bg-white dark:bg-[#0B132B] overflow-hidden rounded-2xl">
+                <div className="bg-primary/5 dark:bg-primary/10 p-4 border-b border-primary/10 dark:border-primary/20 flex items-center justify-between">
                   <h3 className="font-black text-primary uppercase flex items-center gap-2">
                     <TableIcon className="w-5 h-5" /> Hasil Pengecekkan Kolektif
                   </h3>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={handleExportPdf} className="font-bold border-red-200 text-red-600 hover:bg-red-50 shadow-sm">
+                    <Button variant="outline" size="sm" onClick={handleExportPdf} className="font-bold border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 shadow-sm">
                       <FileDown className="w-4 h-4 mr-2" /> Cetak PDF
                     </Button>
-                    <Button variant="outline" size="sm" onClick={resetSearch} className="font-bold border-primary/20 hover:bg-primary/5">
+                    <Button variant="outline" size="sm" onClick={resetSearch} className="font-bold border-primary/20 hover:bg-primary/5 dark:hover:bg-primary/10">
                       Reset
                     </Button>
                   </div>
                 </div>
                 {/* Mobile Cards View */}
-                <div className="md:hidden divide-y divide-slate-100">
+                <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
                   {results.map((res, idx) => (
                     <div
                       key={idx}
                       onClick={() => !res._notFound && setSelectedResult(res)}
                       className={cn(
                         "p-4 transition-colors",
-                        !res._notFound && "cursor-pointer active:bg-slate-50",
-                        res._notFound && "bg-red-50/30",
-                        res._isMultiple && "bg-amber-50/30"
+                        !res._notFound && "cursor-pointer active:bg-slate-50 dark:active:bg-slate-800/60",
+                        res._notFound && "bg-red-50/30 dark:bg-red-950/20",
+                        res._isMultiple && "bg-amber-50/30 dark:bg-amber-950/20"
                       )}
                     >
                       <div className="flex items-center justify-between gap-2 mb-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                          <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                             #{idx + 1}
                           </span>
                           <span className="font-mono font-bold text-xs text-primary">
@@ -338,14 +338,14 @@ export default function CheckDataCollectivePage() {
                         {!res._notFound && (
                           <span className={cn(
                             "text-[9px] font-black px-2 py-0.5 rounded uppercase shrink-0",
-                            res._source === "DATA BLACKLIST" ? "bg-red-100 text-red-700" : "bg-primary/10 text-primary"
+                            res._source === "DATA BLACKLIST" ? "bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300" : "bg-primary/10 text-primary"
                           )}>
                             {res._source}
                           </span>
                         )}
                       </div>
 
-                      <div className="text-sm font-bold uppercase text-slate-900 mb-2">
+                      <div className="text-sm font-bold uppercase text-slate-900 dark:text-white mb-2">
                         {res._notFound ? (
                           <span className="text-red-500 italic">TIDAK DITEMUKAN</span>
                         ) : (
@@ -354,29 +354,29 @@ export default function CheckDataCollectivePage() {
                       </div>
 
                       {!res._notFound && (
-                        <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
                           <div>
-                            <div className="text-[10px] text-slate-400 font-semibold uppercase">Usaha</div>
-                            <div className="text-slate-700 font-medium truncate">{res.usaha || res.businessName || "-"}</div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Usaha</div>
+                            <div className="text-slate-700 dark:text-slate-200 font-medium truncate">{res.usaha || res.businessName || "-"}</div>
                           </div>
                           <div>
-                            <div className="text-[10px] text-slate-400 font-semibold uppercase">Koordinator</div>
-                            <div className="text-slate-700 font-medium truncate">{res.coordinator || "-"}</div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Koordinator</div>
+                            <div className="text-slate-700 dark:text-slate-200 font-medium truncate">{res.coordinator || "-"}</div>
                           </div>
                           <div>
-                            <div className="text-[10px] text-slate-400 font-semibold uppercase">Status LPJ</div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Status LPJ</div>
                             <span className={cn(
                               "inline-block text-[9px] font-bold px-2 py-0.5 rounded-full uppercase mt-0.5",
                               res.statusLpj?.toLowerCase().includes("lengkap") || res.statusLpj?.toLowerCase().includes("sudah")
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-amber-100 text-amber-700"
+                                ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
+                                : "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300"
                             )}>
                               {res.statusLpj || "PENDING"}
                             </span>
                           </div>
                           <div>
-                            <div className="text-[10px] text-slate-400 font-semibold uppercase">Nominal LPJ</div>
-                            <div className="font-mono font-bold text-slate-900 mt-0.5">
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Nominal LPJ</div>
+                            <div className="font-mono font-bold text-slate-900 dark:text-white mt-0.5">
                               {formatCurrency(res.nominal || res.lpjNominal || 0)}
                             </div>
                           </div>
@@ -389,15 +389,15 @@ export default function CheckDataCollectivePage() {
                 {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto">
                   <Table>
-                    <TableHeader className="bg-muted/50">
-                      <TableRow>
-                        <TableHead className="font-black text-[10px] uppercase text-slate-500">Nomor KK</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase text-slate-500">Nama Pelaku Usaha</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase text-slate-500">Sumber Sheet</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase text-slate-500">Koordinator</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase text-slate-500">Usaha</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase text-slate-500 text-center">Status LPJ</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase text-slate-500 text-right">Nominal LPJ</TableHead>
+                    <TableHeader className="bg-muted/50 dark:bg-slate-900/60">
+                      <TableRow className="border-b border-slate-100 dark:border-slate-800">
+                        <TableHead className="font-black text-[10px] uppercase text-slate-500 dark:text-slate-400">Nomor KK</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase text-slate-500 dark:text-slate-400">Nama Pelaku Usaha</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase text-slate-500 dark:text-slate-400">Sumber Sheet</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase text-slate-500 dark:text-slate-400">Koordinator</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase text-slate-500 dark:text-slate-400">Usaha</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase text-slate-500 dark:text-slate-400 text-center">Status LPJ</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase text-slate-500 dark:text-slate-400 text-right">Nominal LPJ</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -405,9 +405,9 @@ export default function CheckDataCollectivePage() {
                         <TableRow 
                           key={idx} 
                           className={cn(
-                            "group hover:bg-primary/5 transition-colors cursor-pointer",
-                            res._notFound && "bg-red-50/30",
-                            res._isMultiple && "bg-amber-50/30"
+                            "group hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-800/60",
+                            res._notFound && "bg-red-50/30 dark:bg-red-950/20",
+                            res._isMultiple && "bg-amber-50/30 dark:bg-amber-950/20"
                           )}
                           onClick={() => !res._notFound && setSelectedResult(res)}
                         >
@@ -419,23 +419,23 @@ export default function CheckDataCollectivePage() {
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className="font-bold text-xs uppercase">
+                          <TableCell className="font-bold text-xs uppercase text-slate-900 dark:text-slate-100">
                             {res._notFound ? <span className="text-red-500 italic">TIDAK DITEMUKAN</span> : (res.nama || res.fullName)}
                           </TableCell>
                           <TableCell>
                             {!res._notFound && (
                               <span className={cn(
                                 "text-[9px] font-black px-2 py-1 rounded-lg uppercase",
-                                res._source === "DATA BLACKLIST" ? "bg-red-100 text-red-700" : "bg-primary/10 text-primary"
+                                res._source === "DATA BLACKLIST" ? "bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300" : "bg-primary/10 text-primary"
                               )}>
                                 {res._source}
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className="text-[10px] font-medium text-slate-600">
+                          <TableCell className="text-[10px] font-medium text-slate-600 dark:text-slate-300">
                             {res.coordinator || "-"}
                           </TableCell>
-                          <TableCell className="text-[10px] font-medium text-slate-600 max-w-[150px] truncate">
+                          <TableCell className="text-[10px] font-medium text-slate-600 dark:text-slate-300 max-w-[150px] truncate">
                             {res.usaha || res.businessName || "-"}
                           </TableCell>
                           <TableCell className="text-center">
@@ -443,14 +443,14 @@ export default function CheckDataCollectivePage() {
                               <span className={cn(
                                 "text-[9px] font-bold px-2 py-0.5 rounded-full uppercase",
                                 res.statusLpj?.toLowerCase().includes("lengkap") || res.statusLpj?.toLowerCase().includes("sudah")
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : "bg-amber-100 text-amber-700"
+                                    ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300"
+                                    : "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300"
                               )}>
                                 {res.statusLpj || "PENDING"}
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className="text-right font-mono font-bold text-xs">
+                          <TableCell className="text-right font-mono font-bold text-xs text-slate-900 dark:text-slate-100">
                             {res._notFound ? "-" : formatCurrency(res.nominal || res.lpjNominal || 0)}
                           </TableCell>
                         </TableRow>
@@ -460,10 +460,10 @@ export default function CheckDataCollectivePage() {
                 </div>
               </Card>
 
-              <div className="flex items-center gap-4 p-4 bg-blue-50 border border-blue-100 rounded-2xl text-blue-800">
+              <div className="flex items-center gap-4 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/40 rounded-2xl text-blue-800 dark:text-blue-300">
                 <Info className="w-5 h-5 shrink-0" />
                 <p className="text-xs font-medium">
-                  Klik pada baris data untuk melihat informasi lengkap. Data yang disorot <span className="bg-amber-200 px-1 rounded">kuning</span> menunjukkan Nomor KK tersebut memiliki lebih dari satu entri data di sistem.
+                  Klik pada baris data untuk melihat informasi lengkap. Data yang disorot <span className="bg-amber-200 dark:bg-amber-900/60 dark:text-amber-200 px-1 rounded">kuning</span> menunjukkan Nomor KK tersebut memiliki lebih dari satu entri data di sistem.
                 </p>
               </div>
             </div>
@@ -473,7 +473,7 @@ export default function CheckDataCollectivePage() {
 
       {/* Pop Out Detail */}
       <Dialog open={!!selectedResult} onOpenChange={(open) => !open && setSelectedResult(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-none shadow-2xl rounded-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B132B] shadow-2xl rounded-2xl">
           <DialogHeader>
             <DialogTitle className={cn(
               "text-2xl font-black uppercase flex items-center gap-2",
@@ -482,7 +482,7 @@ export default function CheckDataCollectivePage() {
               <UserSearch className="w-6 h-6" /> 
               {selectedResult?._source}
             </DialogTitle>
-            <DialogDescription className="font-bold text-muted-foreground">
+            <DialogDescription className="font-bold text-muted-foreground dark:text-slate-400">
               {selectedResult?._source === "DATA BLACKLIST" 
                 ? "Informasi Detail Data Pembatalan / Blacklist" 
                 : "Informasi Detail Data Pelaku Usaha"}
@@ -491,10 +491,10 @@ export default function CheckDataCollectivePage() {
           {selectedResult && (
             <div className="py-4 space-y-6">
               {selectedResult._isMultiple && (
-                <Alert className="bg-amber-50 border-amber-200">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  <AlertTitle className="text-amber-800 font-bold">Data Ganda Ditemukan</AlertTitle>
-                  <AlertDescription className="text-amber-700 text-xs">
+                <Alert className="bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <AlertTitle className="text-amber-800 dark:text-amber-300 font-bold">Data Ganda Ditemukan</AlertTitle>
+                  <AlertDescription className="text-amber-700 dark:text-amber-400 text-xs">
                     Nomor KK ini terdaftar lebih dari satu kali. Pastikan untuk meninjau semua entri yang muncul di tabel hasil.
                   </AlertDescription>
                 </Alert>
@@ -517,10 +517,10 @@ export default function CheckDataCollectivePage() {
                    { label: "Alamat", value: selectedResult.alamat || selectedResult.address, icon: UserSearch, full: true },
                 ].map((item, i) => (
                   <div key={i} className={item.full ? "md:col-span-2 space-y-1" : "space-y-1"}>
-                    <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                    <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground dark:text-slate-400 uppercase tracking-wider">
                       {item.icon && <item.icon className="w-3 h-3" />} {item.label}
                     </div>
-                    <div className="p-3 bg-muted/50 rounded-xl border border-muted text-sm font-bold text-slate-800 uppercase">
+                    <div className="p-3 bg-muted/50 dark:bg-slate-900/60 rounded-xl border border-muted dark:border-slate-800 text-sm font-bold text-slate-800 dark:text-slate-100 uppercase">
                       {item.value || "-"}
                     </div>
                   </div>

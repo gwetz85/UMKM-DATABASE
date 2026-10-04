@@ -213,26 +213,26 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
     <div className="w-full max-w-4xl mx-auto space-y-6 sm:space-y-8 font-sans px-1 sm:px-2">
       {/* Header Section: Minimalist & Clean */}
       <div className="text-center space-y-2.5 pt-2 sm:pt-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-blue-800 text-[11px] font-bold tracking-wide">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800 text-blue-800 dark:text-blue-300 text-[11px] font-bold tracking-wide">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <Building2 className="w-3.5 h-3.5 text-blue-600" />
+          <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
           <span>Dinas Koperasi & Usaha Mikro</span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
           Pengecekan Data Pelaku Usaha
         </h1>
 
-        <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-xl mx-auto leading-relaxed">
           Layanan mandiri pengecekan status pendaftaran, verifikasi, dan histori data UMKM secara cepat, akurat, dan transparan.
         </p>
       </div>
 
       {/* Main Search Box: Minimalist Card */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-sm p-4 sm:p-6 md:p-8 space-y-5">
+      <div className="bg-white dark:bg-[#0B132B] rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-sm dark:shadow-2xl p-4 sm:p-6 md:p-8 space-y-5">
         {/* Parameter Selector Pills */}
         <div>
-          <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5 block">
+          <Label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2.5 block">
             Pilih Kategori Pencarian
           </Label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -255,14 +255,14 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                   className={cn(
                     "flex items-center gap-2.5 p-3 rounded-xl sm:rounded-2xl border text-left transition-all",
                     isActive
-                      ? "border-blue-600 bg-blue-50/70 text-blue-900 shadow-sm ring-1 ring-blue-600/30"
-                      : "border-slate-200 bg-slate-50/60 hover:bg-slate-100 text-slate-700 hover:border-slate-300"
+                      ? "border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-300 shadow-sm ring-1 ring-blue-600/30"
+                      : "border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300"
                   )}
                 >
                   <div
                     className={cn(
                       "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs",
-                      isActive ? "bg-blue-600 text-white" : "bg-white text-slate-500 border border-slate-200"
+                      isActive ? "bg-blue-600 text-white" : "bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
                     )}
                   >
                     <Icon className="w-4 h-4" />
@@ -280,7 +280,7 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
         {/* Input Form */}
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="search-input" className="text-xs font-semibold text-slate-700">
+            <Label htmlFor="search-input" className="text-xs font-semibold text-slate-700 dark:text-slate-200">
               {searchType === "nik" && "Masukkan 16 Digit NIK KTP"}
               {searchType === "noKK" && "Masukkan 16 Digit Nomor Kartu Keluarga (KK)"}
               {searchType === "nama" && "Masukkan Nama Lengkap Pelaku Usaha"}
@@ -306,10 +306,10 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   className={cn(
-                    "h-12 sm:h-13 px-4 text-sm sm:text-base rounded-xl border border-slate-300 bg-white shadow-none focus-visible:ring-2 focus-visible:ring-blue-600 text-slate-900 placeholder:text-slate-400 font-medium",
+                    "h-12 sm:h-13 px-4 text-sm sm:text-base rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 shadow-none focus-visible:ring-2 focus-visible:ring-blue-600 text-slate-900 dark:text-white placeholder:text-slate-400 font-medium",
                     searchType !== "nama" && "font-mono tracking-wider"
                   )}
-                  required
+                  required 
                 />
                 {inputValue && (
                   <button
@@ -327,10 +327,10 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                 type="button"
                 variant="outline"
                 onClick={() => setIsScannerOpen(true)}
-                className="h-12 sm:h-13 px-4 sm:px-5 rounded-xl border-teal-500/60 bg-teal-50/80 hover:bg-teal-100 text-teal-800 font-bold text-xs sm:text-sm tracking-wide shadow-sm transition-all shrink-0 flex items-center justify-center gap-2 hover:border-teal-600"
+                className="h-12 sm:h-13 px-4 sm:px-5 rounded-xl border-teal-500/60 dark:border-teal-500/40 bg-teal-50/80 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-300 font-bold text-xs sm:text-sm tracking-wide shadow-sm transition-all shrink-0 flex items-center justify-center gap-2 hover:border-teal-600"
                 title="Scan NIK KTP atau Nomor KK menggunakan kamera perangkat"
               >
-                <Camera className="w-4 h-4 text-teal-600" />
+                <Camera className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                 <span>Scan KTP / KK</span>
               </Button>
 
@@ -355,7 +355,7 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
           </div>
 
           {/* Privacy Note */}
-          <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] sm:text-xs text-slate-600">
+          <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 text-[11px] sm:text-xs text-slate-600 dark:text-slate-400">
             <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
             <p className="leading-relaxed">
               <strong>Perlindungan Data Pribadi:</strong> Sesuai UU PDP, 4 digit terakhir NIK & Nomor KK disamarkan untuk melindungi privasi masyarakat.
@@ -366,11 +366,11 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
 
       {/* Loading State */}
       {isLoading && (
-        <div className="p-8 sm:p-12 rounded-2xl bg-white border border-slate-200 text-center space-y-3">
+        <div className="p-8 sm:p-12 rounded-2xl bg-white dark:bg-[#0B132B] border border-slate-200 dark:border-slate-800 text-center space-y-3">
           <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
           <div className="space-y-1">
-            <p className="text-sm font-bold text-slate-800">Sedang Memeriksa Basis Data...</p>
-            <p className="text-xs text-slate-500">Mencocokkan data di sistem SIMPU dan data master pembanding.</p>
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Sedang Memeriksa Basis Data...</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Mencocokkan data di sistem SIMPU dan data master pembanding.</p>
           </div>
         </div>
       )}
@@ -381,14 +381,14 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
           {searchResults.length > 0 ? (
             <div className="space-y-4">
               {/* Results Banner */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200">
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   <div>
                     <p className="text-xs sm:text-sm font-bold">
                       Ditemukan {searchResults.length} data yang cocok
                     </p>
-                    <p className="text-[11px] sm:text-xs text-emerald-700">
+                    <p className="text-[11px] sm:text-xs text-emerald-700 dark:text-emerald-300">
                       Kata kunci: <strong>"{submittedQuery?.value}"</strong> ({submittedQuery?.type.toUpperCase()})
                     </p>
                   </div>
@@ -398,7 +398,7 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                   onClick={handleReset}
                   variant="outline"
                   size="sm"
-                  className="h-8 px-3 rounded-lg border-emerald-300 text-emerald-800 hover:bg-emerald-100/70 text-xs font-semibold self-start sm:self-auto"
+                  className="h-8 px-3 rounded-lg border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100/70 dark:hover:bg-emerald-900/40 text-xs font-semibold self-start sm:self-auto"
                 >
                   <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
                   Cari Ulang
@@ -406,7 +406,7 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
               </div>
 
               {/* Filter Tabs */}
-              <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-100/80 rounded-xl text-xs">
+              <div className="flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-100/80 dark:bg-slate-900/80 rounded-xl text-xs">
                 {[
                   { id: "ALL", label: "Semua", count: sourceCounts.ALL },
                   { id: "actors", label: "SIMPU", count: sourceCounts.actors },
@@ -424,15 +424,15 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                       className={cn(
                         "px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5",
                         filterSource === f.id
-                          ? "bg-white text-slate-900 shadow-sm font-bold"
-                          : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                          ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm font-bold"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-800/50"
                       )}
                     >
                       <span>{f.label}</span>
                       <span
                         className={cn(
                           "px-1.5 py-0.2 rounded-full text-[10px]",
-                          filterSource === f.id ? "bg-slate-100 text-slate-700" : "bg-slate-200 text-slate-600"
+                          filterSource === f.id ? "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200" : "bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                         )}
                       >
                         {f.count}
@@ -575,13 +575,13 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
 
       {/* Initial Landing Guidance */}
       {!searchDone && !isLoading && (
-        <div className="p-6 sm:p-8 rounded-2xl border border-dashed border-slate-300 bg-white/60 text-center space-y-3">
-          <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+        <div className="p-6 sm:p-8 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/60 dark:bg-[#0B132B]/60 text-center space-y-3">
+          <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
             <Search className="w-5 h-5" />
           </div>
           <div className="space-y-1 max-w-sm mx-auto">
-            <h3 className="text-sm font-bold text-slate-800">Siap Melakukan Pengecekan</h3>
-            <p className="text-xs text-slate-500">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Siap Melakukan Pengecekan</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Pilih parameter pencarian di atas, ketik data yang ingin diperiksa, lalu klik tombol <strong>Cari Data</strong>.
             </p>
           </div>
@@ -590,7 +590,7 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
 
       {/* Detail Modal Dialog */}
       <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
-        <DialogContent className="max-w-2xl w-[95vw] max-h-[88vh] overflow-y-auto p-0 border border-slate-200 rounded-2xl sm:rounded-3xl bg-white shadow-xl">
+        <DialogContent className="max-w-2xl w-[95vw] max-h-[88vh] overflow-y-auto p-0 border border-slate-200 dark:border-slate-800 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0B132B] shadow-xl">
           {selectedItem && (
             <div>
               {/* Modal Header */}
@@ -621,39 +621,39 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
               <div className="p-5 sm:p-6 space-y-5 text-xs">
                 {/* 1. Identitas */}
                 <div className="space-y-2.5">
-                  <div className="flex items-center gap-1.5 font-bold text-blue-700 uppercase tracking-wider pb-1 border-b">
+                  <div className="flex items-center gap-1.5 font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider pb-1 border-b border-slate-100 dark:border-slate-800">
                     <User className="w-3.5 h-3.5" />
                     <span>Data Identitas Pemilik</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 font-semibold block">Nama Lengkap</span>
-                      <span className="font-bold text-slate-800 uppercase">{selectedItem._displayName}</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-100 uppercase">{selectedItem._displayName}</span>
                     </div>
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 font-semibold block">NIK (Disamarkan)</span>
-                      <span className="font-mono font-bold text-slate-800">{maskLast4Digits(selectedItem._displayNik)}</span>
+                      <span className="font-mono font-bold text-slate-800 dark:text-slate-100">{maskLast4Digits(selectedItem._displayNik)}</span>
                     </div>
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 font-semibold block">Nomor KK (Disamarkan)</span>
-                      <span className="font-mono font-bold text-slate-800">{maskLast4Digits(selectedItem._displayKk)}</span>
+                      <span className="font-mono font-bold text-slate-800 dark:text-slate-100">{maskLast4Digits(selectedItem._displayKk)}</span>
                     </div>
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 font-semibold block">Nomor Ponsel</span>
-                      <span className="font-bold text-slate-800">{maskPhoneNumber(selectedItem._displayPhone)}</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-100">{maskPhoneNumber(selectedItem._displayPhone)}</span>
                     </div>
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 font-semibold block">Kelurahan</span>
-                      <span className="font-bold text-slate-800 uppercase">{selectedItem._displayKelurahan}</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-100 uppercase">{selectedItem._displayKelurahan}</span>
                     </div>
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 font-semibold block">Kecamatan</span>
-                      <span className="font-bold text-slate-800 uppercase">{selectedItem._displayKecamatan}</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-100 uppercase">{selectedItem._displayKecamatan}</span>
                     </div>
-                    <div className="sm:col-span-2 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="sm:col-span-2 p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 font-semibold block">Alamat Lengkap</span>
-                      <span className="font-medium text-slate-800 uppercase">
+                      <span className="font-medium text-slate-800 dark:text-slate-200 uppercase">
                         {selectedItem._displayAddress} {selectedItem.rtRw ? `(RT/RW: ${selectedItem.rtRw})` : ""}
                       </span>
                     </div>
@@ -662,34 +662,34 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
 
                 {/* 2. Usaha & Histori */}
                 <div className="space-y-2.5">
-                  <div className="flex items-center gap-1.5 font-bold text-blue-700 uppercase tracking-wider pb-1 border-b">
+                  <div className="flex items-center gap-1.5 font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider pb-1 border-b border-slate-100 dark:border-slate-800">
                     <Store className="w-3.5 h-3.5" />
                     <span>Data Usaha & Bantuan</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 font-semibold block">Nama Usaha</span>
-                      <span className="font-bold text-slate-800 uppercase">{selectedItem._displayBusiness}</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-100 uppercase">{selectedItem._displayBusiness}</span>
                     </div>
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 font-semibold block">Kategori Usaha</span>
-                      <span className="font-medium text-slate-800 uppercase">
+                      <span className="font-medium text-slate-800 dark:text-slate-200 uppercase">
                         {selectedItem.businessCategory || selectedItem.kategori || "-"}
                       </span>
                     </div>
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 font-semibold block">Tahun Pengajuan / Data</span>
-                      <span className="font-bold text-slate-800">{selectedItem._displayYear}</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-100">{selectedItem._displayYear}</span>
                     </div>
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 font-semibold block">Nominal Bantuan</span>
-                      <span className="font-bold text-emerald-600">{formatCurrency(selectedItem._displayNominal)}</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(selectedItem._displayNominal)}</span>
                     </div>
 
                     {selectedItem.rejectionReason && (
-                      <div className="sm:col-span-2 p-3 bg-red-50 rounded-xl border border-red-200 text-red-900 space-y-1">
-                        <span className="text-[10px] font-bold text-red-700 flex items-center gap-1">
+                      <div className="sm:col-span-2 p-3 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-200 dark:border-red-800 text-red-900 dark:text-red-200 space-y-1">
+                        <span className="text-[10px] font-bold text-red-700 dark:text-red-400 flex items-center gap-1">
                           <AlertTriangle className="w-3 h-3" />
                           Alasan Penolakan / Catatan
                         </span>
@@ -698,8 +698,8 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                     )}
 
                     {selectedItem.keteranganDinas && (
-                      <div className="sm:col-span-2 p-3 bg-blue-50 rounded-xl border border-blue-200 text-blue-900 space-y-1">
-                        <span className="text-[10px] font-bold text-blue-700 flex items-center gap-1">
+                      <div className="sm:col-span-2 p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-200 space-y-1">
+                        <span className="text-[10px] font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1">
                           <Info className="w-3 h-3" />
                           Keterangan Dinas
                         </span>
@@ -712,31 +712,31 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                 {/* 3. Field Survey (If any) */}
                 {selectedItem.surveyData && (
                   <div className="space-y-2.5">
-                    <div className="flex items-center gap-1.5 font-bold text-blue-700 uppercase tracking-wider pb-1 border-b">
+                    <div className="flex items-center gap-1.5 font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider pb-1 border-b border-slate-100 dark:border-slate-800">
                       <FileText className="w-3.5 h-3.5" />
                       <span>Hasil Survey Lapangan Dinas</span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {selectedItem.surveyData.tanggalSurvey && (
-                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                        <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                           <span className="text-[10px] text-slate-400 font-semibold block">Tanggal Survey</span>
-                          <span className="font-bold text-slate-800">
+                          <span className="font-bold text-slate-800 dark:text-slate-100">
                             {formatTanggalIndonesia(selectedItem.surveyData.tanggalSurvey).fullText}
                           </span>
                         </div>
                       )}
-                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                         <span className="text-[10px] text-slate-400 font-semibold block">Modal Usaha</span>
-                        <span className="font-medium text-slate-800">{selectedItem.surveyData.modalUsaha || "-"}</span>
+                        <span className="font-medium text-slate-800 dark:text-slate-200">{selectedItem.surveyData.modalUsaha || "-"}</span>
                       </div>
-                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                         <span className="text-[10px] text-slate-400 font-semibold block">Omset Usaha</span>
-                        <span className="font-medium text-slate-800">{selectedItem.surveyData.omset || "-"}</span>
+                        <span className="font-medium text-slate-800 dark:text-slate-200">{selectedItem.surveyData.omset || "-"}</span>
                       </div>
-                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                      <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-800">
                         <span className="text-[10px] text-slate-400 font-semibold block">Tahun Berdiri</span>
-                        <span className="font-medium text-slate-800">{selectedItem.surveyData.tahunBerdiri || "-"}</span>
+                        <span className="font-medium text-slate-800 dark:text-slate-200">{selectedItem.surveyData.tahunBerdiri || "-"}</span>
                       </div>
                     </div>
                   </div>
@@ -744,15 +744,15 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
               </div>
 
               {/* Modal Footer Actions */}
-              <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 rounded-b-2xl sm:rounded-b-3xl">
+              <div className="p-4 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 rounded-b-2xl sm:rounded-b-3xl">
                 <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleCopySummary(selectedItem)}
-                    className="h-9 px-3 rounded-xl font-semibold text-xs border-slate-300"
+                    className="h-9 px-3 rounded-xl font-semibold text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200"
                   >
-                    {hasCopied ? <Check className="w-3.5 h-3.5 mr-1 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+                    {hasCopied ? <Check className="w-3.5 h-3.5 mr-1 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
                     {hasCopied ? "Tersalin" : "Salin Ringkasan"}
                   </Button>
 
@@ -760,9 +760,9 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                     variant="outline"
                     size="sm"
                     onClick={handlePrint}
-                    className="h-9 px-3 rounded-xl font-semibold text-xs border-slate-300"
+                    className="h-9 px-3 rounded-xl font-semibold text-xs border-slate-300 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-200"
                   >
-                    <Printer className="w-3.5 h-3.5 mr-1 text-slate-600" />
+                    <Printer className="w-3.5 h-3.5 mr-1 text-slate-600 dark:text-slate-400" />
                     Cetak
                   </Button>
                 </div>
@@ -770,7 +770,7 @@ Dicek melalui Portal SIMPU Dinas Koperasi dan UKM
                 <Button
                   onClick={() => setSelectedItem(null)}
                   size="sm"
-                  className="h-9 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs"
+                  className="h-9 px-5 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-semibold text-xs"
                 >
                   Tutup
                 </Button>

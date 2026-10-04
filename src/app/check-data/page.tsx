@@ -113,7 +113,7 @@ export default function CheckDataPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-12">
-        <Card className="lg:col-span-3 border-none shadow-xl h-fit bg-white/80 backdrop-blur-md">
+        <Card className="lg:col-span-3 border border-slate-200/80 dark:border-slate-800 shadow-xl dark:shadow-2xl h-fit bg-white/90 dark:bg-[#0B132B] backdrop-blur-md">
           <CardHeader>
             <CardTitle className="text-lg">Parameter Pencarian</CardTitle>
             <CardDescription>Pilih metode validasi data.</CardDescription>
@@ -131,17 +131,17 @@ export default function CheckDataPage() {
                   }}
                   className="flex flex-col gap-3"
                 >
-                  <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted hover:bg-muted/50 cursor-pointer transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-muted/50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
                     <RadioGroupItem value="nik" id="r-nik" />
-                    <Label htmlFor="r-nik" className="flex-1 cursor-pointer font-bold">Berdasarkan NIK</Label>
+                    <Label htmlFor="r-nik" className="flex-1 cursor-pointer font-bold text-slate-700 dark:text-slate-200">Berdasarkan NIK</Label>
                   </div>
-                  <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted hover:bg-muted/50 cursor-pointer transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-muted/50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
                     <RadioGroupItem value="noKK" id="r-kk" />
-                    <Label htmlFor="r-kk" className="flex-1 cursor-pointer font-bold">Berdasarkan Nomor KK</Label>
+                    <Label htmlFor="r-kk" className="flex-1 cursor-pointer font-bold text-slate-700 dark:text-slate-200">Berdasarkan Nomor KK</Label>
                   </div>
-                  <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted hover:bg-muted/50 cursor-pointer transition-colors">
+                  <div className="flex items-center space-x-3 p-3 rounded-xl border border-muted dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-muted/50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors">
                     <RadioGroupItem value="nama" id="r-nama" />
-                    <Label htmlFor="r-nama" className="flex-1 cursor-pointer font-bold">Berdasarkan Nama</Label>
+                    <Label htmlFor="r-nama" className="flex-1 cursor-pointer font-bold text-slate-700 dark:text-slate-200">Berdasarkan Nama</Label>
                   </div>
                 </RadioGroup>
               </div>
@@ -157,7 +157,7 @@ export default function CheckDataPage() {
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   className={cn(
-                    "flex h-12 w-full text-lg bg-white",
+                    "flex h-12 w-full text-lg bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white",
                     searchType !== "nama" ? "font-mono tracking-widest" : "font-sans font-bold"
                   )}
                   required 
@@ -168,10 +168,10 @@ export default function CheckDataPage() {
                 type="button"
                 variant="outline"
                 onClick={() => setIsScannerOpen(true)}
-                className="w-full h-11 border-teal-500/60 bg-teal-50/80 hover:bg-teal-100 text-teal-800 font-bold gap-2"
+                className="w-full h-11 border-teal-500/60 dark:border-teal-500/40 bg-teal-50/80 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/50 text-teal-800 dark:text-teal-300 font-bold gap-2"
                 title="Scan NIK KTP atau Nomor KK menggunakan kamera"
               >
-                <Camera className="w-4 h-4 text-teal-600" />
+                <Camera className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                 <span>Scan Dokumen KTP / KK</span>
               </Button>
 
@@ -185,19 +185,19 @@ export default function CheckDataPage() {
 
         <div className="lg:col-span-9 space-y-6">
           {!searchDone && !loading && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed rounded-3xl border-muted bg-white/30 backdrop-blur-sm p-8 text-center">
-              <div className="bg-white/50 p-4 rounded-full mb-4">
-                <Info className="w-8 h-8 text-muted-foreground/60" />
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] border-2 border-dashed rounded-3xl border-slate-200 dark:border-slate-800 bg-white/40 dark:bg-[#0B132B]/60 backdrop-blur-sm p-8 text-center">
+              <div className="bg-white/80 dark:bg-slate-800/80 p-4 rounded-full mb-4 shadow-xs">
+                <Info className="w-8 h-8 text-muted-foreground/60 dark:text-slate-400" />
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Siap Melakukan Validasi</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">Siap Melakukan Validasi</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 Silakan pilih tipe pencarian dan masukkan data yang ingin divalidasi.
               </p>
             </div>
           )}
 
           {loading && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-white/80 backdrop-blur-md rounded-3xl shadow-sm border p-8 text-center">
+            <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-white/80 dark:bg-[#0B132B]/80 backdrop-blur-md rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-800 p-8 text-center">
               <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
               <p className="text-primary font-bold animate-pulse">Menghubungkan ke Database...</p>
             </div>
@@ -207,10 +207,10 @@ export default function CheckDataPage() {
             <div className="animate-in fade-in duration-500 space-y-6">
               {searchResults && searchResults.length > 0 ? (
                 <div className="space-y-6">
-                  <Alert className="bg-emerald-50/90 backdrop-blur-sm border-emerald-200 text-emerald-900 rounded-2xl p-6">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                  <Alert className="bg-emerald-50/90 dark:bg-emerald-950/40 backdrop-blur-sm border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200 rounded-2xl p-6">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
                     <AlertTitle className="text-xl font-black mb-1 uppercase">DATA DITEMUKAN!</AlertTitle>
-                    <AlertDescription className="font-medium">
+                    <AlertDescription className="font-medium text-emerald-800 dark:text-emerald-300">
                       Terdapat kecocokan data pada database sistem ({searchResults.length} data ditemukan). Silakan tinjau detail di bawah.
                     </AlertDescription>
                   </Alert>
@@ -219,7 +219,7 @@ export default function CheckDataPage() {
                     {searchResults.map((res, idx) => (
                       <Card 
                         key={idx} 
-                        className="border-none shadow-md hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm cursor-pointer group active:scale-95"
+                        className="border border-slate-200/80 dark:border-slate-800 shadow-md hover:shadow-xl transition-all duration-300 bg-white/90 dark:bg-[#0B132B] backdrop-blur-sm cursor-pointer group active:scale-95"
                         onClick={() => setSelectedResult(res)}
                       >
                         <CardContent className="p-6 flex items-center gap-4">
@@ -245,10 +245,10 @@ export default function CheckDataPage() {
                                 {String(res._source || '').includes('BLACKLIST') ? "DITOLAK" : (res._displayStatus || res.status || "TERDAFTAR")}
                               </span>
                             </div>
-                            <span className="text-sm font-black text-slate-800 uppercase truncate">
+                            <span className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase truncate">
                               {res._displayName || res.nama || res.fullName || "-"}
                             </span>
-                            <span className="text-[10px] font-mono font-bold text-muted-foreground mt-0.5">
+                            <span className="text-[10px] font-mono font-bold text-muted-foreground dark:text-slate-400 mt-0.5">
                               NIK: {res._displayNik || res.nik || "-"}
                             </span>
                           </div>
@@ -260,10 +260,10 @@ export default function CheckDataPage() {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <Alert className="bg-red-50/90 backdrop-blur-sm border-red-200 text-red-900 rounded-2xl p-6">
-                    <XCircle className="w-6 h-6 text-red-600" />
+                  <Alert className="bg-red-50/90 dark:bg-red-950/40 backdrop-blur-sm border-red-200 dark:border-red-800/60 text-red-900 dark:text-red-200 rounded-2xl p-6">
+                    <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
                     <AlertTitle className="text-xl font-black mb-2 uppercase">DATA TIDAK DITEMUKAN</AlertTitle>
-                    <AlertDescription className="font-medium">
+                    <AlertDescription className="font-medium text-red-800 dark:text-red-300">
                       Data yang Anda masukkan tidak terdaftar di Database Pembanding manapun maupun Blacklist.
                     </AlertDescription>
                   </Alert>
@@ -272,7 +272,7 @@ export default function CheckDataPage() {
               
               <Button 
                 variant="outline" 
-                className="w-full h-11 rounded-xl bg-white/50 backdrop-blur-sm border-primary/20 hover:bg-primary/5 text-primary font-bold" 
+                className="w-full h-11 rounded-xl bg-white/50 dark:bg-slate-800/80 backdrop-blur-sm border-primary/20 hover:bg-primary/5 dark:hover:bg-primary/10 text-primary font-bold" 
                 onClick={() => {
                   setSearchCriteria(null);
                   setSearchDone(false);
@@ -287,7 +287,7 @@ export default function CheckDataPage() {
 
       {/* Pop Out Detail */}
       <Dialog open={!!selectedResult} onOpenChange={(open) => !open && setSelectedResult(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-none shadow-2xl rounded-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B132B] shadow-2xl rounded-2xl">
           <DialogHeader>
             <DialogTitle className={cn(
               "text-2xl font-black uppercase flex items-center gap-2",
@@ -296,7 +296,7 @@ export default function CheckDataPage() {
               <UserSearch className="w-6 h-6" /> 
               {selectedResult?._source}
             </DialogTitle>
-            <DialogDescription className="font-bold text-muted-foreground">
+            <DialogDescription className="font-bold text-muted-foreground dark:text-slate-400">
               {selectedResult?._source === "DATA BLACKLIST" 
                 ? "Informasi Detail Data Pembatalan / Blacklist" 
                 : "Informasi Detail Data Pelaku Usaha"}
@@ -321,10 +321,10 @@ export default function CheckDataPage() {
                    { label: "Alamat", value: selectedResult._displayAddress || selectedResult.alamat || selectedResult.address, icon: UserSearch, full: true },
                 ].map((item, i) => (
                   <div key={i} className={item.full ? "md:col-span-2 space-y-1" : "space-y-1"}>
-                    <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                    <div className="flex items-center gap-1.5 text-[10px] font-black text-muted-foreground dark:text-slate-400 uppercase tracking-wider">
                       {item.icon && <item.icon className="w-3 h-3" />} {item.label}
                     </div>
-                    <div className="p-3 bg-muted/50 rounded-xl border border-muted text-sm font-bold text-slate-800 uppercase">
+                    <div className="p-3 bg-muted/50 dark:bg-slate-900/60 rounded-xl border border-muted dark:border-slate-800 text-sm font-bold text-slate-800 dark:text-slate-100 uppercase">
                       {item.value || "-"}
                     </div>
                   </div>
