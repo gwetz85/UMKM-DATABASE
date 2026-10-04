@@ -134,17 +134,33 @@ export function AppSidebar() {
         items: visible.filter((i: any) => i.href === "/dashboard" || i.href === "/")
       },
       {
-        label: "ALUR TAHAPAN DINAS",
-        items: visible.filter((i: any) => {
-          const h = (i.href || '').toLowerCase()
-          return h.includes('verifikasi-dinas') || h.includes('hasil-verifikasi') || h.includes('finish') || h.includes('rekening') || h.includes('portal-survey')
-        })
-      },
-      {
         label: "DATA & PENDAFTARAN",
         items: visible.filter((i: any) => {
           const h = (i.href || '').toLowerCase()
           return h.includes('input') || h.includes('actor') || h.includes('check-data') || h.includes('cek-usaha') || h.includes('rejected') || h.includes('verify-actor') || h.includes('daftar')
+        }).sort((a: any, b: any) => {
+          const priority = ['/input', '/pendaftaran', '/daftar', '/verify-actor', '/actor-data', '/check-data', '/check-data-collective', '/cek-usaha', '/rejected']
+          const aIndex = priority.indexOf(a.href)
+          const bIndex = priority.indexOf(b.href)
+          if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex
+          if (aIndex !== -1) return -1
+          if (bIndex !== -1) return 1
+          return 0
+        })
+      },
+      {
+        label: "ALUR TAHAPAN DINAS",
+        items: visible.filter((i: any) => {
+          const h = (i.href || '').toLowerCase()
+          return h.includes('verifikasi-dinas') || h.includes('hasil-verifikasi') || h.includes('finish') || h.includes('rekening') || h.includes('portal-survey')
+        }).sort((a: any, b: any) => {
+          const priority = ['/portal-survey', '/verifikasi-dinas', '/verifikasi-dinas-berkas', '/hasil-verifikasi', '/data-rekening', '/finish']
+          const aIndex = priority.indexOf(a.href)
+          const bIndex = priority.indexOf(b.href)
+          if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex
+          if (aIndex !== -1) return -1
+          if (bIndex !== -1) return 1
+          return 0
         })
       },
       {
