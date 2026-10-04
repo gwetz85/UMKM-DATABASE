@@ -20,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { MobileBottomNav } from './mobile-bottom-nav';
 import { AppSidebar } from '@/components/app-sidebar';
 import { RunningText } from '@/components/running-text';
+import { HeaderOfficeHoursCountdown } from '@/components/HeaderOfficeHoursCountdown';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -297,9 +298,9 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
               {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
                 <>
-                  <header className="flex items-center justify-between px-3 sm:px-6 h-14 sm:h-16 border-b border-slate-100 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shrink-0 print:hidden gap-3">
+                  <header className="relative flex items-center justify-between px-3 sm:px-6 h-14 sm:h-16 border-b border-slate-100 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shrink-0 print:hidden gap-2 sm:gap-3">
                     {/* Breadcrumbs matching Growly LMS */}
-                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400 shrink-0 z-10">
                       {user && (
                         <SidebarTrigger className="h-8.5 w-8.5 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-2xs transition-all active:scale-95 shrink-0 md:hidden" />
                       )}
@@ -314,15 +315,20 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                       {currentTitle && currentTitle !== 'Dashboard Statistik' && (
                         <>
                           <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
-                          <span className="text-slate-900 dark:text-white font-extrabold truncate max-w-[200px] sm:max-w-[320px]">
+                          <span className="text-slate-900 dark:text-white font-extrabold truncate max-w-[80px] sm:max-w-[160px] md:max-w-[260px]">
                             {currentTitle}
                           </span>
                         </>
                       )}
                     </div>
 
+                    {/* Center: Countdown Buka Jam Kantor */}
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center z-20 pointer-events-auto">
+                      <HeaderOfficeHoursCountdown />
+                    </div>
+
                     {/* Action Pills matching Growly LMS: Share, Theme, Options/Logout */}
-                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto z-10">
                       {user ? (
                         <>
                           <button
