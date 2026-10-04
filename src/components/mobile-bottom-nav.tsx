@@ -23,6 +23,7 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const { user } = useUser();
   const { isPetugas, isDinas, isVerifikatorDinas, isAdmin, isStaff } = useNavigation();
+  const { toggleSidebar, openMobile } = useSidebar();
 
   // Do not show on login, fullscreen layar informasi, or survey portal
   if (pathname === '/login' || pathname?.startsWith('/layar-informasi')) {

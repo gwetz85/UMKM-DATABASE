@@ -36,7 +36,22 @@ import { cn, formatDateTimeIndo } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { WeatherWidget } from "@/components/weather-widget"
+import dynamic from "next/dynamic"
+
+const WeatherWidget = dynamic(
+  () => import("@/components/weather-widget").then((mod) => mod.WeatherWidget),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full min-h-[260px] bg-white dark:bg-slate-800/90 rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 flex flex-col items-center justify-center gap-2.5">
+        <Loader2 className="w-8 h-8 rounded-full text-sky-500 animate-spin" />
+        <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+          Memuat Informasi Cuaca...
+        </span>
+      </div>
+    ),
+  }
+)
 
 const KELURAHAN_LIST = [
   "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
