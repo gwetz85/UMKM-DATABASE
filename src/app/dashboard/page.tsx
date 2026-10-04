@@ -618,8 +618,8 @@ export default function DashboardStatsPage() {
               key={stat.name} 
               onClick={() => setSelectedFilter({ name: stat.name, filterType: stat.filterType })}
               className={cn(
-                "relative overflow-hidden bg-white/95 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-sm transition-all duration-300 group cursor-pointer active:scale-95 flex flex-col justify-between h-full",
-                "hover:shadow-xl hover:-translate-y-1",
+                "relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[24px] border border-white/80 dark:border-white/10 shadow-[0_8px_25px_-5px_rgba(15,23,42,0.05)] dark:shadow-none transition-all duration-300 group cursor-pointer active:scale-95 flex flex-col justify-between h-full",
+                "hover:shadow-2xl hover:-translate-y-1.5",
                 stat.accentBorder,
                 stat.glowColor
               )}
@@ -636,7 +636,7 @@ export default function DashboardStatsPage() {
                     {isStatsLoading ? "..." : stat.value.toLocaleString('id-ID')}
                   </div>
                 </div>
-                <div className={cn("p-2 sm:p-2.5 rounded-xl transition-transform duration-300 group-hover:scale-110 shadow-sm shrink-0", stat.iconBg)}>
+                <div className={cn("p-2.5 sm:p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110 shadow-md shrink-0 border border-white/60 dark:border-white/10 backdrop-blur-md", stat.iconBg)}>
                   <stat.icon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
                 </div>
               </CardHeader>
@@ -649,9 +649,9 @@ export default function DashboardStatsPage() {
                       <span>Proporsi / Capaian</span>
                       <span className="font-mono font-black text-slate-700 dark:text-slate-200">{stat.percentage}%</span>
                     </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-slate-100/90 dark:bg-slate-800/90 rounded-full h-2 overflow-hidden p-0.5">
                       <div 
-                        className={cn("h-full rounded-full transition-all duration-700 ease-out", stat.barColor)}
+                        className={cn("h-full rounded-full transition-all duration-700 ease-out shadow-xs", stat.barColor)}
                         style={{ width: `${Math.min(100, Math.max(3, Number(stat.barPercent)))}%` }}
                       />
                     </div>
@@ -700,7 +700,7 @@ export default function DashboardStatsPage() {
                 key={stage.name}
                 onClick={() => setSelectedFilter({ name: stage.name, filterType: stage.filterType, targetUrl: stage.targetUrl })}
                 className={cn(
-                  "relative overflow-hidden border border-white/20 shadow-md transition-all duration-300 cursor-pointer active:scale-95 group flex flex-col justify-between h-full rounded-2xl text-white",
+                  "relative overflow-hidden border border-white/25 shadow-lg transition-all duration-300 cursor-pointer active:scale-95 group flex flex-col justify-between h-full rounded-[26px] text-white",
                   "bg-gradient-to-br",
                   stage.cardGradient,
                   stage.accentBorder,
@@ -721,7 +721,7 @@ export default function DashboardStatsPage() {
                     <span className={cn("text-[9px] md:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border shadow-sm", stage.badgeBg)}>
                       {stage.stageTag}
                     </span>
-                    <div className={cn("p-2 rounded-xl backdrop-blur-md group-hover:scale-110 transition-transform duration-300 shadow-sm", stage.iconBg)}>
+                    <div className={cn("p-2.5 rounded-2xl backdrop-blur-md group-hover:scale-110 transition-transform duration-300 shadow-md border border-white/30", stage.iconBg)}>
                       <stage.icon className="w-4 h-4 md:w-4.5 md:h-4.5" />
                     </div>
                   </div>
@@ -745,7 +745,7 @@ export default function DashboardStatsPage() {
                   </div>
 
                   {/* Progress bar relative to total verified */}
-                  <div className="w-full bg-black/20 rounded-full h-1.5 overflow-hidden p-0.5">
+                  <div className="w-full bg-black/20 rounded-full h-2 overflow-hidden p-0.5">
                     <div 
                       className="bg-white h-full rounded-full transition-all duration-700 ease-out shadow-sm" 
                       style={{ width: `${Math.min(100, Math.max(3, Number(stage.percentage)))}%` }}
@@ -764,7 +764,7 @@ export default function DashboardStatsPage() {
                         e.stopPropagation()
                         router.push(stage.targetUrl)
                       }}
-                      className="h-6 px-2 text-[9px] md:text-[10px] font-black bg-white/20 hover:bg-white text-white hover:text-slate-900 rounded-lg transition-all shadow-sm flex items-center gap-1 active:scale-95"
+                      className="h-6 px-2.5 text-[9px] md:text-[10px] font-black bg-white/20 hover:bg-white text-white hover:text-slate-900 rounded-xl transition-all shadow-sm flex items-center gap-1 active:scale-95"
                     >
                       Buka Menu <ArrowRight className="w-2.5 h-2.5" />
                     </Button>
@@ -791,10 +791,10 @@ export default function DashboardStatsPage() {
 
           <div className="grid gap-4 md:gap-5 grid-cols-1 lg:grid-cols-2 items-stretch">
             {/* Card 1: 5 Data Terbaru Verifikasi Dinas (Tahap 2) */}
-            <Card className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-md overflow-hidden transition-all hover:shadow-xl border border-indigo-100 dark:border-indigo-950/60 flex flex-col shadow-sm rounded-2xl">
-              <CardHeader className="bg-gradient-to-r from-indigo-50/90 via-violet-50/80 to-blue-50/90 dark:from-indigo-950/40 dark:to-slate-900 border-b border-indigo-100/80 dark:border-indigo-900/50 p-3.5 pb-2.5 flex flex-row items-center justify-between">
+            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl overflow-hidden transition-all hover:shadow-2xl hover:-translate-y-1 border border-indigo-100/90 dark:border-indigo-950/60 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[26px]">
+              <CardHeader className="bg-gradient-to-r from-indigo-50/90 via-violet-50/80 to-blue-50/90 dark:from-indigo-950/40 dark:to-slate-900 border-b border-indigo-100/80 dark:border-indigo-900/50 p-4 pb-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-600/20">
+                  <div className="p-2.5 bg-indigo-600 text-white rounded-2xl shadow-md shadow-indigo-600/30">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div>
@@ -830,16 +830,16 @@ export default function DashboardStatsPage() {
                     </colgroup>
                     <thead>
                       <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800">
-                        <th className="w-8 md:w-9 text-center font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-1">
+                        <th className="w-8 md:w-9 text-center font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5 px-1">
                           No
                         </th>
-                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-2">
+                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5 px-2">
                           Pelaku Usaha
                         </th>
-                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-2">
+                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5 px-2">
                           Usaha / Wilayah
                         </th>
-                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-2 text-left">
+                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5 px-2 text-left">
                           Waktu Masuk
                         </th>
                       </tr>
@@ -877,7 +877,7 @@ export default function DashboardStatsPage() {
                               </td>
                               <td className="py-2 px-2 min-w-0">
                                 <div className="flex items-center gap-2 min-w-0">
-                                  <div className="w-6 h-6 md:w-7 md:h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-black text-[9px] md:text-[10px] flex items-center justify-center shrink-0 border border-indigo-200/50">
+                                  <div className="w-6 h-6 md:w-7 md:h-7 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-black text-[9px] md:text-[10px] flex items-center justify-center shrink-0 border border-indigo-200/50">
                                     {getInitials(actor.fullName)}
                                   </div>
                                   <div className="flex flex-col min-w-0 flex-1">
@@ -920,13 +920,13 @@ export default function DashboardStatsPage() {
                   </table>
                 </div>
 
-                <div className="p-2.5 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 dark:text-slate-400 px-4">
+                <div className="p-3 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 dark:text-slate-400 px-4">
                   <span>Total antrean: <strong className="text-indigo-600 dark:text-indigo-400 font-bold">{statsValues.verifikasiDinas}</strong> pelaku usaha</span>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => router.push('/verifikasi-dinas-berkas')}
-                    className="h-6 text-[9px] md:text-[10px] font-black border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 px-2.5 rounded-lg"
+                    className="h-6.5 text-[9px] md:text-[10px] font-black border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 px-2.5 rounded-xl"
                   >
                     Buka Verifikasi Dinas <ExternalLink className="w-2.5 h-2.5 ml-1" />
                   </Button>
@@ -935,10 +935,10 @@ export default function DashboardStatsPage() {
             </Card>
 
             {/* Card 2: 5 Data Terbaru Hasil Verifikasi (Tahap 3) */}
-            <Card className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-md overflow-hidden transition-all hover:shadow-xl border border-teal-100 dark:border-teal-950/60 flex flex-col shadow-sm rounded-2xl">
-              <CardHeader className="bg-gradient-to-r from-teal-50/90 via-emerald-50/80 to-teal-50/90 dark:from-teal-950/40 dark:to-slate-900 border-b border-teal-100/80 dark:border-teal-900/50 p-3.5 pb-2.5 flex flex-row items-center justify-between">
+            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl overflow-hidden transition-all hover:shadow-2xl hover:-translate-y-1 border border-teal-100/90 dark:border-teal-950/60 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[26px]">
+              <CardHeader className="bg-gradient-to-r from-teal-50/90 via-emerald-50/80 to-teal-50/90 dark:from-teal-950/40 dark:to-slate-900 border-b border-teal-100/80 dark:border-teal-900/50 p-4 pb-3 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 bg-teal-600 text-white rounded-xl shadow-md shadow-teal-600/20">
+                  <div className="p-2.5 bg-teal-600 text-white rounded-2xl shadow-md shadow-teal-600/30">
                     <ListChecks className="w-4 h-4" />
                   </div>
                   <div>
@@ -1064,13 +1064,13 @@ export default function DashboardStatsPage() {
                   </table>
                 </div>
 
-                <div className="p-2.5 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 dark:text-slate-400 px-4">
+                <div className="p-3 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 dark:text-slate-400 px-4">
                   <span>Total lolos: <strong className="text-teal-600 dark:text-teal-400 font-bold">{statsValues.hasilVerifikasi}</strong> pelaku usaha</span>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => router.push('/hasil-verifikasi')}
-                    className="h-6 text-[9px] md:text-[10px] font-black border-teal-200 text-teal-700 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-300 px-2.5 rounded-lg"
+                    className="h-6.5 text-[9px] md:text-[10px] font-black border-teal-200 text-teal-700 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-300 px-2.5 rounded-xl"
                   >
                     Buka Hasil Verifikasi <ExternalLink className="w-2.5 h-2.5 ml-1" />
                   </Button>
