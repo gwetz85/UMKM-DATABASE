@@ -301,7 +301,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                     {/* Breadcrumbs matching Growly LMS */}
                     <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
                       {user && (
-                        <SidebarTrigger className="h-8 w-8 sm:h-8.5 sm:w-8.5 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-2xs transition-all active:scale-95 shrink-0" />
+                        <SidebarTrigger className="h-8.5 w-8.5 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-2xs transition-all active:scale-95 shrink-0 md:hidden" />
                       )}
 
                       <Link href={user ? "/" : "/cek-data"} className="font-extrabold text-slate-900 dark:text-white hover:text-primary transition-colors flex items-center gap-1.5">

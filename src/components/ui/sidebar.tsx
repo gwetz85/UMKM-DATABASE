@@ -4,7 +4,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft } from "lucide-react"
+import { PanelLeft, Menu } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -190,7 +190,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-[#0B132B] p-0 text-slate-100 border-r border-slate-800/80 [&>button]:hidden"
+            className="w-[--sidebar-width] bg-[#0B132B] p-0 text-slate-100 border-r border-slate-800/80 [&>button]:text-slate-300 [&>button]:hover:text-white [&>button]:bg-white/10 [&>button]:rounded-full [&>button]:p-1.5 [&>button]:top-3.5 [&>button]:right-3.5"
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -202,7 +202,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
               <SheetTitle>Menu Navigasi</SheetTitle>
               <SheetDescription>Akses menu utama aplikasi UMKM Database</SheetDescription>
             </SheetHeader>
-            <div className="flex h-full w-full flex-col">{children}</div>
+            <div className="flex h-full w-full flex-col overflow-y-auto">{children}</div>
           </SheetContent>
         </Sheet>
       )
@@ -238,7 +238,27 @@ const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref: React.Ref<HTMLButtonElement>) => {
-  return null
+  const { toggleSidebar } = useSidebar()
+
+  return (
+    <Button
+      ref={ref}
+      data-sidebar="trigger"
+      variant="ghost"
+      size="icon"
+      className={cn("h-8.5 w-8.5 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-2xs transition-all active:scale-95 flex items-center justify-center shrink-0", className)}
+      onClick={(event) => {
+        onClick?.(event)
+        toggleSidebar()
+      }}
+      aria-label="Buka Menu"
+      title="Buka Menu Navigasi"
+      {...props}
+    >
+      <Menu className="h-4.5 w-4.5 text-slate-700 dark:text-slate-200" />
+      <span className="sr-only">Buka Menu Navigasi</span>
+    </Button>
+  )
 })
 SidebarTrigger.displayName = "SidebarTrigger"
 

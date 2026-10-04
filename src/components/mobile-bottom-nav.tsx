@@ -11,10 +11,12 @@ import {
   ClipboardCheck, 
   MessageSquare, 
   Database,
-  LogIn
+  LogIn,
+  Menu
 } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { useNavigation } from '@/hooks/use-navigation';
+import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
 export function MobileBottomNav() {
@@ -155,10 +157,14 @@ export function MobileBottomNav() {
       highlight: false,
     },
     {
-      label: 'Profil',
-      href: '/profile',
-      icon: User,
-      active: pathname === '/profile',
+      label: 'Menu',
+      href: '#',
+      onClick: (e: React.MouseEvent) => {
+        e.preventDefault();
+        toggleSidebar();
+      },
+      icon: Menu,
+      active: openMobile,
       highlight: false,
     },
   ];
@@ -168,17 +174,8 @@ export function MobileBottomNav() {
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all duration-200 min-w-[56px] active:scale-95',
-                item.active
-                  ? 'text-primary font-black'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-bold'
-              )}
-            >
+          const content = (
+            <>
               <div
                 className={cn(
                   'p-2 rounded-2xl transition-all',
@@ -199,6 +196,39 @@ export function MobileBottomNav() {
               >
                 {item.label}
               </span>
+            </>
+          );
+
+          if ((item as any).onClick) {
+            return (
+              <button
+                key={item.label}
+                type="button"
+                onClick={(item as any).onClick}
+                className={cn(
+                  'flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all duration-200 min-w-[56px] active:scale-95 outline-none',
+                  item.active
+                    ? 'text-primary font-black'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-bold'
+                )}
+              >
+                {content}
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all duration-200 min-w-[56px] active:scale-95',
+                item.active
+                  ? 'text-primary font-black'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-bold'
+              )}
+            >
+              {content}
             </Link>
           );
         })}
