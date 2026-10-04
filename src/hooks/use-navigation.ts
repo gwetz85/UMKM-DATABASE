@@ -63,14 +63,6 @@ export function useNavigation() {
 
   const navigation = React.useMemo(() => [
     {
-      name: "Portal SIMPU",
-      href: "/portal-survey",
-      icon: UserCheck,
-      show: false,
-      color: "#4f46e5",
-      description: "Portal Petugas Survey Lapangan"
-    },
-    {
       name: "Dashboard Statistik",
       href: "/dashboard",
       icon: LayoutDashboard,
@@ -79,15 +71,7 @@ export function useNavigation() {
       description: "Statistik & Ringkasan Data"
     },
     {
-      name: "Layar Informasi",
-      href: "/layar-informasi",
-      icon: Tv,
-      show: false,
-      color: "#06b6d4",
-      description: "Live Display & Layar Monitoring Realtime"
-    },
-    {
-      name: "Pesan Chat",
+      name: "Pesan Teks",
       href: "/messages",
       icon: MessageSquare,
       show: !!user && !isDinas && !isInspektorat && !isKoordinator,
@@ -95,6 +79,8 @@ export function useNavigation() {
       description: "Komunikasi Internal",
       badge: totalUnread > 0 ? totalUnread : undefined
     },
+
+    // ─── 1. PENDAFTARAN ───
     {
       name: "Cek Data",
       href: "/check-data",
@@ -112,12 +98,20 @@ export function useNavigation() {
       description: "Verifikasi Data Massal"
     },
     {
-      name: "CEK USAHA",
+      name: "Cek Usaha",
       href: "/cek-usaha",
       icon: Store,
       show: isAdmin, // KHUSUS ADMINISTRATOR
       color: "#0284c7",
       description: "Pengecekan Pelaku Usaha Berdasarkan Usaha"
+    },
+    {
+      name: "Kuota Usulan",
+      href: "/kuota-koordinator",
+      icon: BarChart3,
+      show: isAdmin, // STAFF tidak bisa
+      color: "#f59e0b",
+      description: "Manajemen Kuota"
     },
     {
       name: "Input Data",
@@ -152,6 +146,24 @@ export function useNavigation() {
       description: "Arsip Data yang Tidak Disetujui"
     },
     {
+      name: "Rekapan Data",
+      href: "/rekapan-data",
+      icon: BarChart3,
+      show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
+      color: "#d97706",
+      description: "Rekap Semua Data Input (Per Wilayah)"
+    },
+
+    // ─── 2. ALUR DINAS ───
+    {
+      name: "Pembagian Petugas Survey",
+      href: "/upload-petugas-survey",
+      icon: UserCheck,
+      show: isAdmin || isKoordinator || isMonitoring,
+      color: "#8b5cf6",
+      description: "Import Pemetaan & Kelola Petugas Survey"
+    },
+    {
       name: "Survey Dinas",
       href: "/verifikasi-dinas",
       icon: ClipboardCheck,
@@ -183,22 +195,8 @@ export function useNavigation() {
       color: "#6366f1",
       description: "Download Berita Acara Survey"
     },
-    {
-      name: "Hasil Verifikasi BPJS",
-      href: "/bpjs",
-      icon: ShieldCheck,
-      show: false, // Dipindahkan ke menu Pengaturan (Data Pembanding BPJS)
-      color: "#059669",
-      description: "Upload & Verifikasi Hasil BPJS Ketenagakerjaan"
-    },
-    {
-      name: "Rekapan Data",
-      href: "/rekapan-data",
-      icon: BarChart3,
-      show: !!user && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
-      color: "#d97706",
-      description: "Rekap Semua Data Input (Per Wilayah)"
-    },
+
+    // ─── 3. PENCAIRAN DAN FINISH ───
     {
       name: "Rekening Bank",
       href: "/rekening-bank",
@@ -224,14 +222,6 @@ export function useNavigation() {
       ]
     },
     {
-      name: "Cetak Berkas Pencairan",
-      href: "/cetak-berkas",
-      icon: FileDown,
-      show: (isAdmin || isStaff) && !isDinas && !isVerifikatorDinas && !isPetugas,
-      color: "#0284c7",
-      description: "Cetak Surat Pernyataan Pencairan Dana"
-    },
-    {
       name: "Data Rekening",
       href: "/data-rekening",
       icon: CreditCard,
@@ -240,12 +230,12 @@ export function useNavigation() {
       description: "Rekap Seluruh Rekening Terinput"
     },
     {
-      name: "LPJ",
-      href: "/lpj",
-      icon: FileText,
-      show: (isAdmin || isMonitoring || isKoordinator || isStaff) && !isDinas && !isVerifikatorDinas && !isPetugas,
-      color: "#52525b",
-      description: "Laporan Pertanggungjawaban"
+      name: "Cetak Berkas Pencairan",
+      href: "/cetak-berkas",
+      icon: FileDown,
+      show: (isAdmin || isStaff) && !isDinas && !isVerifikatorDinas && !isPetugas,
+      color: "#0284c7",
+      description: "Cetak Surat Pernyataan Pencairan Dana"
     },
     {
       name: "Tanda Terima LPJ",
@@ -254,6 +244,14 @@ export function useNavigation() {
       show: (isAdmin || isMonitoring || isStaff) && !isDinas && !isVerifikatorDinas && !isPetugas,
       color: "#6366f1",
       description: "Cetak Tanda Terima LPJ Koordinator"
+    },
+    {
+      name: "LPJ",
+      href: "/lpj",
+      icon: FileText,
+      show: (isAdmin || isMonitoring || isKoordinator || isStaff) && !isDinas && !isVerifikatorDinas && !isPetugas,
+      color: "#52525b",
+      description: "Laporan Pertanggungjawaban"
     },
     {
       name: "Menu Blacklist",
@@ -271,7 +269,8 @@ export function useNavigation() {
       color: "#1d4ed8",
       description: "Data yang Telah Selesai Diproses"
     },
-    // ─── Menu yang TIDAK boleh diakses STAFF ───────────────────────────────────
+
+    // ─── 4. PENGATURAN SYSTEM ───
     {
       name: "Manajemen User",
       href: "/users",
@@ -279,14 +278,6 @@ export function useNavigation() {
       show: isAdmin, // STAFF tidak bisa
       color: "#1e293b",
       description: "Kelola Pengguna Sistem"
-    },
-    {
-      name: "Pembagian Petugas Survey",
-      href: "/upload-petugas-survey",
-      icon: UserCheck,
-      show: isAdmin || isKoordinator || isMonitoring,
-      color: "#8b5cf6",
-      description: "Import Pemetaan & Kelola Petugas Survey"
     },
     {
       name: "Pengaturan",
@@ -305,28 +296,20 @@ export function useNavigation() {
       description: "Konfigurasi Teks Berjalan"
     },
     {
-      name: "Pengaturan Slideshow",
-      href: "/settings-slideshow",
-      icon: Calendar,
-      show: isAdmin, // STAFF tidak bisa
-      color: "#db2777",
-      description: "Manajemen Slideshow Login"
-    },
-    {
-      name: "Kuota USULAN",
-      href: "/kuota-koordinator",
-      icon: BarChart3,
-      show: isAdmin, // STAFF tidak bisa
-      color: "#f59e0b",
-      description: "Manajemen Kuota"
-    },
-    {
       name: "Pengaturan Event",
       href: "/settings-event",
       icon: Calendar,
       show: isAdmin, // STAFF tidak bisa
       color: "#8b5cf6",
       description: "Manajemen Event & Jadwal"
+    },
+    {
+      name: "Pengaturan Informasi",
+      href: "/settings-info",
+      icon: Info,
+      show: isAdmin, // STAFF tidak bisa
+      color: "#64748b",
+      description: "Kelola Konten Informasi Aplikasi"
     },
     {
       name: "Jam & Libur Kantor",
@@ -345,20 +328,46 @@ export function useNavigation() {
       description: "Pengaturan Mode Perbaikan Aplikasi"
     },
     {
-      name: "Pengaturan Informasi",
-      href: "/settings-info",
-      icon: Info,
-      show: isAdmin, // STAFF tidak bisa
-      color: "#64748b",
-      description: "Kelola Konten Informasi Aplikasi"
-    },
-    {
-      name: "LOG APLIKASI",
+      name: "Log Aplikasi",
       href: "/app-logs",
       icon: History,
       show: isAdmin, // STAFF tidak bisa
       color: "#000000",
       description: "Riwayat Aktivitas Sistem"
+    },
+    {
+      name: "Pengaturan Slideshow",
+      href: "/settings-slideshow",
+      icon: Calendar,
+      show: isAdmin, // STAFF tidak bisa
+      color: "#db2777",
+      description: "Manajemen Slideshow Login"
+    },
+
+    // ─── PORTAL & DISPLAY LAINNYA ───
+    {
+      name: "Portal SIMPU",
+      href: "/portal-survey",
+      icon: UserCheck,
+      show: false,
+      color: "#4f46e5",
+      description: "Portal Petugas Survey Lapangan"
+    },
+    {
+      name: "Layar Informasi",
+      href: "/layar-informasi",
+      icon: Tv,
+      show: false,
+      color: "#06b6d4",
+      description: "Live Display & Layar Monitoring Realtime"
+    },
+    {
+      name: "Hasil Verifikasi BPJS",
+      href: "/bpjs",
+      icon: ShieldCheck,
+      show: false, // Dipindahkan ke menu Pengaturan (Data Pembanding BPJS)
+      color: "#059669",
+      description: "Upload & Verifikasi Hasil BPJS Ketenagakerjaan"
     },
   ], [user, isAdmin, isMonitoring, isKoordinator, isPetugas, isVerifikatorDinas, isDinas, isStaff, userProfile, totalUnread])
 

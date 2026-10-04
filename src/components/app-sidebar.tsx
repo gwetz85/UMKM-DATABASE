@@ -92,58 +92,74 @@ export function AppSidebar() {
   const categorizedNavigation = React.useMemo(() => {
     const visible = navigation.filter((i: any) => i.show)
 
-    const groups: { label: string; items: any[] }[] = [
+    const groupDefinitions: { label: string; hrefs: string[] }[] = [
       {
         label: "OVERVIEW",
-        items: visible.filter((i: any) => i.href === "/dashboard" || i.href === "/")
+        hrefs: ["/dashboard", "/messages"]
       },
       {
-        label: "DATA & PENDAFTARAN",
-        items: visible.filter((i: any) => {
-          const h = (i.href || '').toLowerCase()
-          return h.includes('input') || h.includes('actor') || h.includes('check-data') || h.includes('cek-usaha') || h.includes('rejected') || h.includes('verify-actor') || h.includes('daftar')
-        }).sort((a: any, b: any) => {
-          const priority = ['/input', '/pendaftaran', '/daftar', '/verify-actor', '/actor-data', '/check-data', '/check-data-collective', '/cek-usaha', '/rejected']
-          const aIndex = priority.indexOf(a.href)
-          const bIndex = priority.indexOf(b.href)
-          if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex
-          if (aIndex !== -1) return -1
-          if (bIndex !== -1) return 1
-          return 0
-        })
+        label: "1. PENDAFTARAN",
+        hrefs: [
+          "/check-data",
+          "/check-data-collective",
+          "/cek-usaha",
+          "/kuota-koordinator",
+          "/input",
+          "/verify-actor",
+          "/actor-data",
+          "/rejected",
+          "/rekapan-data"
+        ]
       },
       {
-        label: "ALUR TAHAPAN DINAS",
-        items: visible.filter((i: any) => {
-          const h = (i.href || '').toLowerCase()
-          return h.includes('verifikasi-dinas') || h.includes('hasil-verifikasi') || h.includes('finish') || h.includes('rekening') || h.includes('portal-survey')
-        }).sort((a: any, b: any) => {
-          const priority = ['/portal-survey', '/verifikasi-dinas', '/verifikasi-dinas-berkas', '/hasil-verifikasi', '/data-rekening', '/finish']
-          const aIndex = priority.indexOf(a.href)
-          const bIndex = priority.indexOf(b.href)
-          if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex
-          if (aIndex !== -1) return -1
-          if (bIndex !== -1) return 1
-          return 0
-        })
+        label: "2. ALUR DINAS",
+        hrefs: [
+          "/upload-petugas-survey",
+          "/verifikasi-dinas",
+          "/verifikasi-dinas-berkas",
+          "/hasil-verifikasi",
+          "/gbas"
+        ]
       },
       {
-        label: "LAPORAN & DOKUMEN",
-        items: visible.filter((i: any) => {
-          const h = (i.href || '').toLowerCase()
-          return h.includes('rekapan') || h.includes('gbas') || h.includes('cetak') || h.includes('lpj')
-        })
+        label: "3. PENCAIRAN DAN FINISH",
+        hrefs: [
+          "/rekening-bank",
+          "/data-rekening",
+          "/cetak-berkas",
+          "/lpj-receipt",
+          "/lpj",
+          "/blacklist",
+          "/finish"
+        ]
       },
       {
-        label: "KOMUNIKASI & SISTEM",
-        items: visible.filter((i: any) => {
-          const h = (i.href || '').toLowerCase()
-          return h.includes('messages') || h.includes('settings') || h.includes('users') || h.includes('layar-informasi') || h.includes('compliance')
-        })
+        label: "4. PENGATURAN SYSTEM",
+        hrefs: [
+          "/users",
+          "/settings",
+          "/settings-running-text",
+          "/settings-event",
+          "/settings-info",
+          "/settings-office-hours",
+          "/settings-maintenance",
+          "/app-logs",
+          "/settings-slideshow"
+        ]
       }
     ]
 
-    const categorizedHrefs = new Set(groups.flatMap(g => g.items.map(i => i.href)))
+    const groups = groupDefinitions.map(g => {
+      const items = g.hrefs
+        .map(href => visible.find((item: any) => item.href === href))
+        .filter(Boolean)
+      return {
+        label: g.label,
+        items
+      }
+    })
+
+    const categorizedHrefs = new Set(groups.flatMap(g => g.items.map((i: any) => i.href)))
     const others = visible.filter((i: any) => !categorizedHrefs.has(i.href))
     if (others.length > 0) {
       groups.push({ label: "MODUL LAINNYA", items: others })
