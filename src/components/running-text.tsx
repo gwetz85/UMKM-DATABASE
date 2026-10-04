@@ -17,18 +17,18 @@ export function RunningText() {
   const text = (typeof config === 'string' ? config : config?.text) || defaultText;
 
   return (
-    <div className="w-full shrink-0 relative bg-[#005e61] border-t border-white/10 overflow-hidden py-2.5 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-[100] print:hidden">
+    <div className="w-full shrink-0 relative bg-[#005e61]/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-white/20 dark:border-white/10 overflow-hidden py-2.5 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-[100] print:hidden">
       <div className="relative flex overflow-x-hidden whitespace-nowrap">
         <div className="animate-marquee inline-block whitespace-nowrap">
-          <span className="text-[11px] font-bold text-white uppercase tracking-widest px-8">
+          <span className="text-[11.5px] font-black text-white uppercase tracking-widest px-8">
             {text}
           </span>
           {/* Pemisah antar teks */}
-          <span className="text-white/40 mx-4">•</span>
-          <span className="text-[11px] font-bold text-white uppercase tracking-widest px-8">
+          <span className="text-white/50 mx-4 font-black">•</span>
+          <span className="text-[11.5px] font-black text-white uppercase tracking-widest px-8">
             {text}
           </span>
-          <span className="text-white/40 mx-4">•</span>
+          <span className="text-white/50 mx-4 font-black">•</span>
         </div>
       </div>
 

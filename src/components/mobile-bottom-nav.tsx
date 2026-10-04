@@ -54,7 +54,7 @@ export function MobileBottomNav() {
     ];
 
     return (
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-4 py-2 shadow-lg pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]">
+      <nav className="md:hidden fixed bottom-2 left-3 right-3 z-50 bg-white/80 dark:bg-slate-900/85 backdrop-blur-2xl border border-white/70 dark:border-white/10 rounded-3xl px-3 py-2 shadow-[0_8px_32px_rgba(15,23,42,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)]">
         <div className="flex items-center justify-around max-w-md mx-auto">
           {publicItems.map((item) => {
             const Icon = item.icon;
@@ -63,27 +63,27 @@ export function MobileBottomNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-200',
+                  'flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all duration-200 active:scale-95',
                   item.highlight
-                    ? 'text-primary font-bold'
+                    ? 'text-primary font-black'
                     : item.active
-                    ? 'text-primary font-bold'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100'
+                    ? 'text-primary font-black'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-bold'
                 )}
               >
                 <div
                   className={cn(
-                    'p-1.5 rounded-xl transition-all',
+                    'p-2 rounded-2xl transition-all',
                     item.highlight
-                      ? 'bg-primary text-white shadow-md shadow-primary/30 -mt-3'
+                      ? 'bg-primary text-white shadow-lg shadow-primary/30 -mt-3.5 ring-4 ring-white/80 dark:ring-slate-900'
                       : item.active
-                      ? 'bg-primary/10 text-primary'
+                      ? 'bg-primary/15 text-primary'
                       : ''
                   )}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
-                <span className="text-[10px] tracking-tight mt-0.5">{item.label}</span>
+                <span className="text-[10px] font-black uppercase tracking-wider mt-0.5">{item.label}</span>
               </Link>
             );
           })}
@@ -164,7 +164,7 @@ export function MobileBottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-t border-slate-200/60 dark:border-slate-800/60 px-2 py-1.5 shadow-[0_-4px_25px_rgba(0,0,0,0.06)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] print:hidden">
+    <nav className="md:hidden fixed bottom-2 left-3 right-3 z-50 bg-white/80 dark:bg-slate-900/85 backdrop-blur-2xl border border-white/70 dark:border-white/10 rounded-3xl px-2.5 py-1.5 shadow-[0_8px_32px_rgba(15,23,42,0.12)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] print:hidden">
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -173,28 +173,28 @@ export function MobileBottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all duration-200 min-w-[56px]',
+                'flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all duration-200 min-w-[56px] active:scale-95',
                 item.active
-                  ? 'text-primary font-bold'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100'
+                  ? 'text-primary font-black'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 font-bold'
               )}
             >
               <div
                 className={cn(
-                  'p-1.5 rounded-xl transition-all',
+                  'p-2 rounded-2xl transition-all',
                   item.highlight
-                    ? 'bg-primary text-white shadow-md shadow-primary/30 -mt-3.5 ring-4 ring-white dark:ring-slate-900'
+                    ? 'bg-primary text-white shadow-lg shadow-primary/30 -mt-3.5 ring-4 ring-white/80 dark:ring-slate-900'
                     : item.active
-                    ? 'bg-primary/10 text-primary'
+                    ? 'bg-primary/15 text-primary'
                     : ''
                 )}
               >
-                <Icon className={cn('w-5 h-5', item.highlight && 'w-6 h-6')} />
+                <Icon className={cn('w-5 h-5', item.highlight && 'w-5.5 h-5.5')} />
               </div>
               <span
                 className={cn(
-                  'text-[9px] tracking-tight mt-0.5 truncate max-w-[62px]',
-                  item.active && 'text-primary font-bold'
+                  'text-[9.5px] font-black uppercase tracking-wider mt-0.5 truncate max-w-[62px]',
+                  item.active ? 'text-primary' : 'text-slate-600 dark:text-slate-400'
                 )}
               >
                 {item.label}

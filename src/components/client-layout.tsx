@@ -305,21 +305,21 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
           {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
             <>
-              <header className="sticky top-0 z-50 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 h-14 sm:h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 shrink-0 print:hidden shadow-sm gap-2 sm:gap-3 md:gap-4 relative">
+              <header className="sticky top-0 z-50 flex items-center justify-between px-3 sm:px-4 md:px-6 lg:px-8 h-14 sm:h-16 md:h-20 bg-white/75 dark:bg-slate-900/80 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shrink-0 print:hidden shadow-[0_4px_24px_rgba(15,23,42,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] gap-2 sm:gap-3 md:gap-4 relative">
                 <div className="flex items-center gap-2 sm:gap-3 md:gap-5 shrink-0">
-                  <Link href={user ? "/" : "/cek-data"} className="flex flex-col cursor-pointer hover:opacity-80 transition-opacity">
+                  <Link href={user ? "/" : "/cek-data"} className="flex flex-col cursor-pointer hover:opacity-85 transition-opacity">
                     <span className="text-xl sm:text-2xl md:text-3xl font-black tracking-tighter leading-none text-primary">
                       SIMPU
                     </span>
-                    <span className="text-[8px] sm:text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 sm:mt-1">
+                    <span className="text-[8.5px] sm:text-[9.5px] md:text-[10.5px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5 sm:mt-1">
                       {isCekDataPage && !user ? "Portal Cek Data Publik" : (isPendaftaranPage && !user ? "Pendaftaran Pelaku Usaha" : "Sistem Manajemen UMKM")}
                     </span>
                   </Link>
 
                   {currentTitle && (
                     <>
-                      <div className="hidden 2xl:flex h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
-                      <h1 className="hidden 2xl:block text-xl md:text-2xl font-black text-slate-800 dark:text-slate-100 tracking-tight uppercase max-w-[200px] truncate">
+                      <div className="hidden 2xl:flex h-8 w-px bg-slate-200/80 dark:border-white/10 mx-1" />
+                      <h1 className="hidden 2xl:block text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase max-w-[200px] truncate">
                         {currentTitle}
                       </h1>
                     </>
@@ -345,29 +345,29 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
 
                       <div className="hidden sm:flex items-center gap-2">
                         <RealtimeClock 
-                          className="bg-white/95 dark:bg-slate-800/90 backdrop-blur-md px-3 py-1.5 md:px-3.5 md:py-2 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-md" 
-                          timeClassName="text-xs md:text-sm font-mono font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none" 
-                          dateClassName="text-[8px] md:text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5" 
+                          className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl px-3.5 py-1.5 md:px-4 md:py-2 rounded-2xl border border-white/70 dark:border-white/10 shadow-sm hover:shadow transition-all" 
+                          timeClassName="text-xs md:text-sm font-mono font-black text-slate-900 dark:text-white tracking-tight leading-none" 
+                          dateClassName="text-[8.5px] md:text-[9.5px] font-extrabold text-slate-600 dark:text-slate-300 uppercase tracking-wider mt-0.5" 
                         />
                         <OfficeHoursTimer />
                       </div>
 
                       <button
                         onClick={handleToggleTheme}
-                        className="flex w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-xl sm:rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-amber-400 items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-90 border border-slate-200 dark:border-slate-700 shadow-sm shrink-0"
+                        className="flex w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl text-slate-800 dark:text-amber-400 items-center justify-center hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-90 border border-white/70 dark:border-white/10 shadow-sm shrink-0"
                         title={isDarkMode ? "Ganti ke Mode Terang (Light Mode)" : "Ganti ke Mode Gelap (Dark Mode)"}
                         aria-label="Toggle Dark Mode"
                       >
                         {isDarkMode ? (
                           <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 transition-transform hover:rotate-45" />
                         ) : (
-                          <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600 transition-transform hover:-rotate-12" />
+                          <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700 transition-transform hover:-rotate-12" />
                         )}
                       </button>
 
                       <button
                         onClick={() => setIsLogoutDialogOpen(true)}
-                        className="flex w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-xl sm:rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 items-center justify-center hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all active:scale-90 border border-rose-200/80 dark:border-rose-900/40 shadow-sm group shrink-0"
+                        className="flex w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-2xl bg-rose-50/90 dark:bg-rose-950/40 backdrop-blur-xl text-rose-600 dark:text-rose-400 items-center justify-center hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all active:scale-90 border border-rose-200/80 dark:border-rose-900/40 shadow-sm group shrink-0"
                         title="Logout / Keluar"
                         aria-label="Logout"
                       >
@@ -405,14 +405,14 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                           className="flex items-center gap-2 md:gap-3 group"
                         >
                           <div className="hidden md:flex flex-col items-end">
-                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">{profile?.fullName?.split(' ')[0] || 'User'}</span>
-                            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Profil</span>
+                            <span className="text-[11px] font-black text-primary uppercase tracking-wider">{profile?.fullName?.split(' ')[0] || 'User'}</span>
+                            <span className="text-[8.5px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Profil</span>
                           </div>
-                          <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-xl sm:rounded-2xl overflow-hidden border-2 border-white dark:border-slate-700 ring-2 ring-primary/5 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                          <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-2xl overflow-hidden border-2 border-white/80 dark:border-white/20 ring-2 ring-primary/20 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md flex items-center justify-center">
                             {profile?.photoURL ? (
                               <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
-                              <UserIcon className="w-4 h-4 md:w-5 md:h-5 text-primary/30" />
+                              <UserIcon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                             )}
                           </div>
                         </Link>
@@ -421,7 +421,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   ) : (
                     <Link
                       href="/login"
-                      className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-widest transition-all shadow-md active:scale-95 bg-primary text-white hover:bg-primary/90 shadow-primary/20 shrink-0"
+                      className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 bg-primary text-white hover:bg-primary/90 shadow-primary/20 shrink-0"
                     >
                       <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       <span>Login</span>
@@ -469,16 +469,16 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   <div className="mb-3.5 flex items-center justify-between gap-3 print:hidden">
                     <button
                       onClick={() => router.push('/')}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/90 dark:bg-slate-900/90 hover:bg-white dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow transition-all group active:scale-95 text-xs font-bold"
+                      className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:bg-white dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 border border-white/70 dark:border-white/10 shadow-sm hover:shadow-md transition-all group active:scale-95 text-xs font-extrabold"
                     >
                       <ArrowLeft className="w-3.5 h-3.5 text-primary group-hover:-translate-x-1 transition-transform" />
                       <span>Kembali ke Menu</span>
                     </button>
                     {currentTitle && (
-                      <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400 font-semibold select-none">
+                      <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-bold select-none">
                         <span>Sistem Navigasi</span>
                         <span>/</span>
-                        <span className="text-slate-700 dark:text-slate-200 font-bold uppercase">{currentTitle}</span>
+                        <span className="text-slate-900 dark:text-white font-black uppercase">{currentTitle}</span>
                       </div>
                     )}
                   </div>

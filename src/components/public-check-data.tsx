@@ -75,17 +75,19 @@ export function PublicCheckData() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-slate-50 dark:bg-slate-800/80 p-4 sm:p-6 rounded-2xl border dark:border-slate-700 mb-6">
-        <h3 className="font-black text-primary uppercase text-center mb-6 text-lg tracking-wider">Cek Data Pelaku Usaha</h3>
+      <div className="bg-white/75 dark:bg-slate-900/80 backdrop-blur-2xl p-5 sm:p-7 rounded-[26px] border border-white/70 dark:border-white/10 shadow-[0_12px_36px_rgba(15,23,42,0.06)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.4)] mb-6">
+        <h3 className="font-black text-primary uppercase text-center mb-6 text-xl tracking-wide">Cek Data Pelaku Usaha</h3>
         
         {/* Method Selection */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+        <div className="flex flex-wrap items-center justify-center gap-2.5 mb-6">
           <button
             type="button"
             onClick={() => setSearchMethod('nik')}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase transition-all duration-300",
-              searchMethod === 'nik' ? "bg-primary text-white shadow-lg scale-105" : "bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 border dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600"
+              "flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black uppercase transition-all duration-300 active:scale-95",
+              searchMethod === 'nik' 
+                ? "bg-primary text-white shadow-lg shadow-primary/25 scale-105 ring-2 ring-primary/20" 
+                : "bg-white/75 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 border border-white/70 dark:border-white/10 backdrop-blur-md hover:bg-white dark:hover:bg-slate-800 shadow-xs"
             )}
           >
             <CreditCard className="w-3.5 h-3.5" />
@@ -95,8 +97,10 @@ export function PublicCheckData() {
             type="button"
             onClick={() => setSearchMethod('kk')}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase transition-all duration-300",
-              searchMethod === 'kk' ? "bg-primary text-white shadow-lg scale-105" : "bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 border dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600"
+              "flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black uppercase transition-all duration-300 active:scale-95",
+              searchMethod === 'kk' 
+                ? "bg-primary text-white shadow-lg shadow-primary/25 scale-105 ring-2 ring-primary/20" 
+                : "bg-white/75 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 border border-white/70 dark:border-white/10 backdrop-blur-md hover:bg-white dark:hover:bg-slate-800 shadow-xs"
             )}
           >
             <Database className="w-3.5 h-3.5" />
@@ -110,8 +114,10 @@ export function PublicCheckData() {
               setSearchDone(false)
             }}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase transition-all duration-300",
-              searchMethod === 'nama' ? "bg-primary text-white shadow-lg scale-105" : "bg-white dark:bg-slate-700 text-slate-400 dark:text-slate-300 border dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600"
+              "flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black uppercase transition-all duration-300 active:scale-95",
+              searchMethod === 'nama' 
+                ? "bg-primary text-white shadow-lg shadow-primary/25 scale-105 ring-2 ring-primary/20" 
+                : "bg-white/75 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 border border-white/70 dark:border-white/10 backdrop-blur-md hover:bg-white dark:hover:bg-slate-800 shadow-xs"
             )}
           >
             <User className="w-3.5 h-3.5" />
@@ -127,8 +133,8 @@ export function PublicCheckData() {
               "Masukkan Nama Lengkap..."
             }
             className={cn(
-              "flex-1 h-12 bg-white dark:bg-slate-900 text-center sm:text-left shadow-inner dark:border-slate-700 dark:text-white",
-              searchMethod !== 'nama' ? "font-mono tracking-wider" : "font-sans font-bold"
+              "flex-1 h-12 rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-md text-center sm:text-left border border-slate-200/90 dark:border-slate-800 shadow-xs text-slate-900 dark:text-white",
+              searchMethod !== 'nama' ? "font-mono font-black tracking-wider text-base" : "font-sans font-bold text-base"
             )}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -138,13 +144,13 @@ export function PublicCheckData() {
             type="button"
             variant="outline"
             onClick={() => setIsScannerOpen(true)}
-            className="h-12 border-teal-500/50 bg-teal-50/80 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 text-teal-800 dark:text-teal-200 font-bold px-4 gap-2"
+            className="h-12 rounded-2xl border-teal-500/40 bg-teal-50/80 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 text-teal-800 dark:text-teal-200 font-extrabold px-5 gap-2 backdrop-blur-md shadow-xs active:scale-95 transition-all"
             title="Scan NIK KTP atau Nomor KK dengan kamera"
           >
             <Camera className="w-4 h-4 text-teal-600" />
             <span>Scan KTP / KK</span>
           </Button>
-          <Button type="submit" className="h-12 font-bold px-8 shadow-md hover:bg-primary/90 hover:scale-[1.02] active:scale-95 transition-all" disabled={loading}>
+          <Button type="submit" className="h-12 rounded-2xl font-black px-8 shadow-md hover:bg-primary/90 hover:scale-[1.02] active:scale-95 transition-all" disabled={loading}>
              {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <SearchCheck className="w-5 h-5 mr-2" />}
              CARI
           </Button>
@@ -154,7 +160,7 @@ export function PublicCheckData() {
       {loading && (
         <div className="flex flex-col items-center justify-center p-8 text-center animate-in fade-in">
           <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-          <p className="text-primary font-bold animate-pulse uppercase text-sm">Menghubungkan ke Database...</p>
+          <p className="text-primary font-black animate-pulse uppercase text-sm tracking-wider">Menghubungkan ke Database...</p>
         </div>
       )}
 
@@ -162,58 +168,58 @@ export function PublicCheckData() {
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
            {searchResults && searchResults.length > 0 ? (
              <div className="space-y-4">
-               <Alert className="bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 rounded-xl">
-                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                 <AlertTitle className="font-black uppercase">DATA DITEMUKAN</AlertTitle>
-                 <AlertDescription className="font-medium text-xs">
+               <Alert className="bg-emerald-50/90 dark:bg-emerald-950/50 backdrop-blur-xl border-emerald-200/80 dark:border-emerald-800/80 text-emerald-900 dark:text-emerald-100 rounded-2xl shadow-sm">
+                 <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                 <AlertTitle className="font-black uppercase tracking-tight">DATA DITEMUKAN</AlertTitle>
+                 <AlertDescription className="font-bold text-xs">
                    Ditemukan <strong>{searchResults.length}</strong> tiket pendaftaran untuk nomor tersebut.
                  </AlertDescription>
                </Alert>
                
                <div className="grid gap-4">
                  {searchResults.map((res, idx) => (
-                   <div key={idx} className="bg-white dark:bg-slate-800/90 border dark:border-slate-700 rounded-xl p-4 sm:p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                      <div className={cn("absolute top-0 left-0 w-1 h-full", String(res._source || '').includes('BLACKLIST') ? "bg-red-500" : "bg-emerald-500")} />
+                   <div key={idx} className="bg-white/75 dark:bg-slate-900/75 backdrop-blur-xl border border-white/70 dark:border-white/10 rounded-2xl p-5 sm:p-6 shadow-[0_6px_24px_rgba(15,23,42,0.04)] hover:shadow-lg transition-all relative overflow-hidden">
+                      <div className={cn("absolute top-0 left-0 w-1.5 h-full", String(res._source || '').includes('BLACKLIST') ? "bg-red-500" : "bg-emerald-500")} />
                       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
                          <div>
                            <div className="flex flex-wrap items-center gap-2 mb-2">
                              <span className={cn(
-                               "text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded border",
-                               String(res._source || '').includes('BLACKLIST') ? "bg-red-50 text-red-600 border-red-200" : "bg-primary/10 text-primary border-primary/20"
+                               "text-[10px] uppercase font-black tracking-wider px-2.5 py-0.5 rounded-full border shadow-2xs backdrop-blur-md",
+                               String(res._source || '').includes('BLACKLIST') ? "bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800" : "bg-primary/10 text-primary border-primary/20"
                              )}>
                                {String(res._source || '').includes('BLACKLIST') ? "BLACKLIST / DITOLAK" : (res._source || "MASTER DATA")}
                              </span>
                              <span className={cn(
-                               "text-[10px] font-bold px-2 py-0.5 rounded uppercase border",
-                               String(res._displayStatus || res.status || '').toLowerCase().includes("finish") ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-amber-50 text-amber-600 border-amber-200"
+                               "text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase border shadow-2xs backdrop-blur-md",
+                               String(res._displayStatus || res.status || '').toLowerCase().includes("finish") ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800" : "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800"
                              )}>
                                {(res._displayStatus || res.status || "TERDAFTAR").replace(/_/g, " ")}
                              </span>
                            </div>
-                           <h4 className="font-black text-slate-800 dark:text-white uppercase text-lg">{res._displayName || res.nama || res.fullName || "-"}</h4>
-                           <div className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 mt-1">NIK: {res._displayNik || res.nik || "-"}</div>
+                           <h4 className="font-black text-slate-900 dark:text-white uppercase text-lg sm:text-xl tracking-tight">{res._displayName || res.nama || res.fullName || "-"}</h4>
+                           <div className="text-xs font-mono font-black text-slate-600 dark:text-slate-300 mt-1">NIK: {res._displayNik || res.nik || "-"}</div>
                          </div>
                          <div className="text-left sm:text-right mt-2 sm:mt-0">
-                           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Usaha</div>
-                           <div className="font-black text-primary uppercase text-sm">{res._displayBusiness || res.businessName || res.usaha || "-"}</div>
+                           <div className="text-[10px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">Usaha</div>
+                           <div className="font-black text-primary uppercase text-sm sm:text-base">{res._displayBusiness || res.businessName || res.usaha || "-"}</div>
                          </div>
                       </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t dark:border-slate-700">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-200/70 dark:border-white/10">
                         <div>
-                          <div className="text-[9px] font-bold text-slate-400 uppercase">Kategori</div>
-                          <div className="text-xs font-bold uppercase dark:text-slate-200">{res.businessCategory || res.kategori || "-"}</div>
+                          <div className="text-[9.5px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kategori</div>
+                          <div className="text-xs font-black uppercase text-slate-900 dark:text-white mt-0.5">{res.businessCategory || res.kategori || "-"}</div>
                         </div>
                         <div>
-                          <div className="text-[9px] font-bold text-slate-400 uppercase">Tahun</div>
-                          <div className="text-xs font-bold uppercase dark:text-slate-200">{res._displayYear || res.tahunPengajuan || "-"}</div>
+                          <div className="text-[9.5px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tahun</div>
+                          <div className="text-xs font-black uppercase text-slate-900 dark:text-white mt-0.5">{res._displayYear || res.tahunPengajuan || "-"}</div>
                         </div>
                         <div>
-                          <div className="text-[9px] font-bold text-slate-400 uppercase">Kelurahan</div>
-                          <div className="text-xs font-bold uppercase dark:text-slate-200">{res._displayKelurahan || res.kelurahan || "-"}</div>
+                          <div className="text-[9.5px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kelurahan</div>
+                          <div className="text-xs font-black uppercase text-slate-900 dark:text-white mt-0.5">{res._displayKelurahan || res.kelurahan || "-"}</div>
                         </div>
                         <div>
-                          <div className="text-[9px] font-bold text-slate-400 uppercase">Nominal</div>
-                          <div className="text-xs font-bold uppercase dark:text-slate-200">{formatCurrency(res._displayNominal || res.lpjNominal || res.nominal || 0)}</div>
+                          <div className="text-[9.5px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nominal</div>
+                          <div className="text-xs font-black uppercase text-slate-900 dark:text-white mt-0.5">{formatCurrency(res._displayNominal || res.lpjNominal || res.nominal || 0)}</div>
                         </div>
                       </div>
                    </div>

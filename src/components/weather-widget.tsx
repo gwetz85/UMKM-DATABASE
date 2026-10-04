@@ -548,21 +548,21 @@ export function WeatherWidget({ className }: { className?: string }) {
 
   if (isLoading) {
     return (
-      <div className={cn("w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/70 dark:border-slate-800/80 p-4 shadow-lg flex flex-col items-center justify-center gap-2.5 min-h-[180px]", className)}>
+      <div className={cn("w-72 bg-white/75 dark:bg-slate-900/80 backdrop-blur-2xl rounded-3xl border border-white/70 dark:border-white/10 p-4 shadow-lg flex flex-col items-center justify-center gap-2.5 min-h-[180px]", className)}>
         <div className="w-8 h-8 rounded-full border-3 border-primary/20 border-t-primary animate-spin" />
-        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-widest">Memuat Cuaca...</span>
+        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Memuat Cuaca...</span>
       </div>
     )
   }
 
   if (error || !weather) {
     return (
-      <div className={cn("w-72 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/70 dark:border-slate-800/80 p-4 shadow-lg flex flex-col items-center justify-center gap-2 text-center min-h-[140px]", className)}>
+      <div className={cn("w-72 bg-white/75 dark:bg-slate-900/80 backdrop-blur-2xl rounded-3xl border border-white/70 dark:border-white/10 p-4 shadow-lg flex flex-col items-center justify-center gap-2 text-center min-h-[140px]", className)}>
         <AlertCircle className="w-5 h-5 text-rose-500" />
-        <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{error || 'Data tidak tersedia'}</span>
+        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{error || 'Data tidak tersedia'}</span>
         <button 
           onClick={() => fetchWeather(true)} 
-          className="text-[9px] font-black uppercase tracking-wider text-primary px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20 transition-all"
+          className="text-[9.5px] font-black uppercase tracking-wider text-primary px-3.5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 transition-all active:scale-95"
         >
           Coba Lagi
         </button>
@@ -579,7 +579,7 @@ export function WeatherWidget({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "w-72 bg-white/85 dark:bg-slate-900/85 backdrop-blur-xl rounded-2xl border overflow-hidden flex flex-col transition-all duration-700 relative group",
+        "w-72 bg-white/75 dark:bg-slate-900/80 backdrop-blur-2xl rounded-3xl border overflow-hidden flex flex-col transition-all duration-700 relative group",
         tier.cardBorder,
         tier.cardShadow,
         className

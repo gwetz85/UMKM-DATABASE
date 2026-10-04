@@ -860,7 +860,7 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={handleAuth} className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
               <div className="space-y-0 relative">
-                <div className="relative group flex items-center shadow-xl rounded-2xl bg-white/95 backdrop-blur-xl border border-white/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all z-20">
+                <div className="relative group flex items-center shadow-xl rounded-2xl bg-white/85 backdrop-blur-2xl border border-white/60 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all z-20">
                   <div className="pl-5 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
                     <User className="w-5 h-5" />
                   </div>
@@ -880,7 +880,7 @@ export default function LoginPage() {
                   identifier.trim().length > 0 ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
                 )}>
                   <div className="overflow-hidden">
-                    <div className="relative group flex items-center mt-3 shadow-xl rounded-2xl bg-white/95 backdrop-blur-xl border border-white/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                    <div className="relative group flex items-center mt-3 shadow-xl rounded-2xl bg-white/85 backdrop-blur-2xl border border-white/60 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
                       <div className="pl-5 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
                         <Key className="w-5 h-5" />
                       </div>
@@ -909,18 +909,18 @@ export default function LoginPage() {
                 <button 
                   type="button"
                   onClick={() => router.push('/pendaftaran')}
-                  className="text-[10px] font-black text-emerald-400 hover:text-emerald-300 uppercase tracking-[0.15em] transition-colors flex items-center gap-1.5"
+                  className="px-3.5 py-2 rounded-2xl bg-emerald-500/25 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-400/30 backdrop-blur-md text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md active:scale-95"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
-                  Daftar Pelaku Usaha
+                  <span>Daftar Pelaku Usaha</span>
                 </button>
                 <button 
                   type="button"
                   onClick={() => router.push('/cek-data')}
-                  className="text-[10px] font-black text-white/40 hover:text-white/80 uppercase tracking-[0.15em] transition-colors flex items-center gap-1.5"
+                  className="px-3.5 py-2 rounded-2xl bg-white/15 hover:bg-white/25 text-white border border-white/25 backdrop-blur-md text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md active:scale-95"
                 >
                   <SearchCheck className="w-3.5 h-3.5" />
-                  Cek Data Publik
+                  <span>Cek Data Publik</span>
                 </button>
               </div>
             </form>

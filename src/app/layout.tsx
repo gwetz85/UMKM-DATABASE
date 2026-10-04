@@ -8,7 +8,7 @@ import {PwaRegister} from '@/components/pwa-register';
 
 const poppins = Poppins({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
   variable: '--font-poppins',
   display: 'swap',
 });
@@ -42,8 +42,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={poppins.className}>
-      <body className="font-body antialiased bg-transparent">
+    <html lang="id" className={`${poppins.variable} ${poppins.className}`}>
+      <body className="font-body antialiased bg-transparent selection:bg-primary/20 selection:text-primary">
         <FirebaseClientProvider>
           <ClientLayout>
             {children}

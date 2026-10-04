@@ -88,8 +88,8 @@ export function ActorMenuBadge({
     )
 
     const commonClasses = cn(
-      "inline-flex items-center gap-1.5 font-black rounded-lg border shadow-xs leading-tight transition-all select-none max-w-full",
-      compact ? "text-[9px] px-1.5 py-0.5 shrink-0" : "text-[10px] px-2 py-0.5",
+      "inline-flex items-center gap-1.5 font-black rounded-xl border shadow-xs leading-tight transition-all select-none max-w-full backdrop-blur-md",
+      compact ? "text-[9px] px-2 py-0.5 shrink-0" : "text-[10px] px-2.5 py-1",
       asLink ? "hover:scale-[1.02] hover:brightness-95 dark:hover:brightness-110 cursor-pointer active:scale-95" : "",
       menuInfo.badgeColorClass,
       className

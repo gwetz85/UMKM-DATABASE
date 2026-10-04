@@ -173,8 +173,8 @@ export function AppSidebar() {
                         asChild
                         tooltip={item.name}
                         className={cn(
-                          "h-10 px-3 rounded-xl transition-all duration-300 hover:bg-white/10 text-white/80",
-                          item.items.some((sub: any) => pathname === sub.href) && "bg-white/5",
+                          "h-10.5 px-3 rounded-2xl transition-all duration-300 hover:bg-white/15 text-white/90",
+                          item.items.some((sub: any) => pathname === sub.href) && "bg-white/10",
                           "group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
                           "active:scale-95 animate-in fade-in-up"
                         )}
@@ -184,24 +184,24 @@ export function AppSidebar() {
                             className="flex items-center gap-3 w-full cursor-pointer"
                             onClick={() => playSound('click')}
                           >
-                            <item.icon className="w-4.5 h-4.5 shrink-0" />
-                            <span className="font-bold text-xs truncate group-data-[collapsible=icon]:hidden">
+                            <item.icon className="w-5 h-5 shrink-0" />
+                            <span className="font-extrabold text-xs tracking-tight truncate group-data-[collapsible=icon]:hidden">
                               {item.name}
                             </span>
-                            <ChevronRight className="ml-auto w-3 h-3 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden opacity-40" />
+                            <ChevronRight className="ml-auto w-3.5 h-3.5 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden opacity-60" />
                           </div>
                         </CollapsibleTrigger>
                       </SidebarMenuButton>
                       <CollapsibleContent className="animate-in slide-in-from-top-1 duration-200">
-                        <SidebarMenuSub className="border-white/10 ml-6 mr-2 mt-1 gap-1">
+                        <SidebarMenuSub className="border-white/15 ml-6 mr-2 mt-1 gap-1">
                           {item.items.map((subItem: any) => (
                             <SidebarMenuSubItem key={subItem.name}>
                               <SidebarMenuSubButton
                                 asChild
                                 isActive={pathname === subItem.href}
                                 className={cn(
-                                  "rounded-lg transition-all text-white/60 hover:text-white hover:bg-white/5 h-8",
-                                  "data-[active=true]:bg-white data-[active=true]:text-primary font-bold shadow-sm"
+                                  "rounded-xl transition-all text-white/80 hover:text-white hover:bg-white/10 h-8.5",
+                                  "data-[active=true]:bg-white data-[active=true]:text-primary font-black shadow-sm"
                                 )}
                               >
                                 <Link
@@ -209,8 +209,8 @@ export function AppSidebar() {
                                   className="flex items-center gap-2 w-full"
                                   onClick={() => playSound('click')}
                                 >
-                                  <div className="w-1 h-1 rounded-full bg-current opacity-40" />
-                                  <span className="text-[11px] uppercase tracking-wider">{subItem.name}</span>
+                                  <div className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+                                  <span className="text-[11px] font-black uppercase tracking-wider">{subItem.name}</span>
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
