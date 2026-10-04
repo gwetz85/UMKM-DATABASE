@@ -279,12 +279,12 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     <>
       <ThemePersistence />
       <SidebarProvider defaultOpen={true}>
-        <div className="flex h-[100dvh] w-full overflow-hidden p-0 sm:p-2.5 md:p-3.5 lg:p-4.5 xl:p-5 items-center justify-center">
+        <div className="flex h-[100dvh] w-full overflow-hidden p-0 sm:p-2.5 sm:pb-0 md:p-3.5 md:pb-0 lg:p-4.5 lg:pb-0 xl:p-5 xl:pb-0 items-start justify-center">
           <div className={cn(
             "flex w-full h-full overflow-hidden transition-all duration-300",
             isLoginPage || isLayarInformasiPage || isPortalSurveyPage
               ? "rounded-none max-w-full"
-              : "max-w-[1720px] rounded-none sm:rounded-[28px] lg:rounded-[36px] shadow-2xl border border-white/50 dark:border-white/10 bg-white dark:bg-slate-900"
+              : "max-w-[1720px] rounded-none sm:rounded-t-[28px] lg:rounded-t-[36px] rounded-b-none shadow-2xl border border-b-0 border-white/50 dark:border-white/10 bg-white dark:bg-slate-900"
           )}>
             {user && !isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
               <AppSidebar />

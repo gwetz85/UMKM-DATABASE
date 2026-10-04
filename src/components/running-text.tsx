@@ -1,12 +1,26 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDatabase, useObject, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
-import { Megaphone } from 'lucide-react';
 
 export function RunningText() {
   const database = useDatabase();
+  const [timeString, setTimeString] = useState<string>('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      setTimeString(`${h}:${m}:${s}`);
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
   
   const configRef = useMemoFirebase(() => {
     if (!database) return null;
@@ -21,15 +35,14 @@ export function RunningText() {
 
   return (
     <div className="w-full shrink-0 relative bg-[#070D1D] text-slate-100 border-t border-slate-800/80 overflow-hidden h-9 sm:h-10 flex items-center z-30 print:hidden shadow-lg select-none">
-      {/* Label Badge on Left */}
+      {/* Realtime Clock Badge on Left (HH:MM:SS) */}
       <div className="h-full px-3 sm:px-4 bg-[#0B132B] border-r border-slate-800/80 flex items-center gap-2 shrink-0 z-10 shadow-md">
         <span className="relative flex h-2 w-2">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
         </span>
-        <Megaphone className="w-3.5 h-3.5 text-sky-400 shrink-0 hidden xs:inline" />
-        <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-sky-300 whitespace-nowrap">
-          INFO
+        <span className="text-xs sm:text-sm font-mono font-black tracking-wider text-sky-300 whitespace-nowrap tabular-nums">
+          {timeString || '--:--:--'}
         </span>
       </div>
 
