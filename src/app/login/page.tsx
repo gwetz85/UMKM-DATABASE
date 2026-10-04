@@ -699,15 +699,15 @@ export default function LoginPage() {
         ) : (
           <div className="w-full space-y-6 min-w-[280px] sm:min-w-[320px] animate-in slide-in-from-bottom-2 fade-in duration-300">
             {pending2FA ? (
-              <div className="bg-white/95 backdrop-blur-2xl border border-white/20 rounded-[2rem] p-6 sm:p-7 shadow-2xl space-y-5 animate-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-white/95 dark:bg-[#0B132B] backdrop-blur-2xl border border-white/20 dark:border-slate-800 rounded-[2rem] p-6 sm:p-7 shadow-2xl space-y-5 animate-in slide-in-from-bottom-4 duration-500">
                 <div className="text-center space-y-1.5">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-sm">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/60 flex items-center justify-center mx-auto shadow-sm">
                     <ShieldCheck className="w-6 h-6" />
                   </div>
-                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                  <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
                     Verifikasi 2 Langkah
                   </h2>
-                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Akun @{pending2FA.username}
                   </p>
                 </div>
@@ -715,7 +715,7 @@ export default function LoginPage() {
                 <form onSubmit={handleVerify2FASubmit} className="space-y-4">
                   {isUsingBackupCode ? (
                     <div className="space-y-2">
-                      <Label className="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                      <Label className="text-[11px] font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider">
                         Kode Cadangan (8 Karakter):
                       </Label>
                       <Input
@@ -723,17 +723,17 @@ export default function LoginPage() {
                         placeholder="Contoh: A1B2-C3D4"
                         value={otpCode}
                         onChange={(e) => setOtpCode(e.target.value.toUpperCase())}
-                        className="h-12 text-center text-lg font-mono font-black tracking-widest rounded-2xl bg-white border border-slate-300 text-slate-900"
+                        className="h-12 text-center text-lg font-mono font-black tracking-widest rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:border-primary"
                         autoFocus
                         required
                       />
-                      <p className="text-[10px] text-slate-500 italic text-center">
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 italic text-center">
                         Kode cadangan ini akan hangus setelah digunakan.
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <Label className="text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                      <Label className="text-[11px] font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider">
                         Kode Google Authenticator (6 Digit):
                       </Label>
                       <Input
@@ -744,11 +744,11 @@ export default function LoginPage() {
                         placeholder="000000"
                         value={otpCode}
                         onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                        className="h-12 text-center text-2xl font-mono font-black tracking-[0.3em] rounded-2xl bg-white border border-slate-300 text-slate-900"
+                        className="h-12 text-center text-2xl font-mono font-black tracking-[0.3em] rounded-2xl bg-slate-50 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:border-primary"
                         autoFocus
                         required
                       />
-                      <p className="text-[10px] text-slate-500 italic text-center">
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 italic text-center">
                         Masukkan 6 angka yang tertera di aplikasi Authenticator ponsel Anda.
                       </p>
                     </div>
@@ -770,7 +770,7 @@ export default function LoginPage() {
                         setIsUsingBackupCode(!isUsingBackupCode)
                         setOtpCode("")
                       }}
-                      className="w-full h-8 text-[11px] font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100/60 rounded-xl"
+                      className="w-full h-8 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-slate-800/60 rounded-xl"
                     >
                       {isUsingBackupCode ? "Gunakan Kode 6 Digit Authenticator" : "Gunakan Kode Cadangan"}
                     </Button>
@@ -779,7 +779,7 @@ export default function LoginPage() {
                       type="button"
                       variant="ghost"
                       onClick={handleCancel2FA}
-                      className="w-full h-8 text-[11px] font-bold text-slate-400 hover:text-slate-700 hover:bg-slate-100/60 rounded-xl"
+                      className="w-full h-8 text-[11px] font-bold text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 rounded-xl"
                     >
                       Batal & Kembali
                     </Button>
@@ -811,20 +811,20 @@ export default function LoginPage() {
               <h2 className="text-2xl font-black text-white uppercase tracking-tight ml-2">Daftar Akun Baru</h2>
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="space-y-3">
-                  <div className="relative group flex items-center shadow-lg rounded-2xl bg-white/95 backdrop-blur-xl border border-white/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
-                    <div className="pl-6 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                  <div className="relative group flex items-center shadow-lg rounded-2xl bg-white/95 dark:bg-[#0B132B]/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/80 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                    <div className="pl-6 pr-3 flex items-center justify-center text-slate-400 dark:text-slate-400 group-focus-within:text-primary transition-colors">
                       <User className="w-5 h-5" />
                     </div>
                     <Input 
                       placeholder="Username" 
                       value={regName}
                       onChange={(e) => setRegName(e.target.value)}
-                      className="h-14 border-0 bg-transparent text-slate-900 placeholder:text-slate-400 px-2 font-bold focus-visible:ring-0 focus-visible:ring-offset-0"
+                      className="h-14 border-0 dark:border-0 bg-transparent dark:bg-transparent rounded-none shadow-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 px-2 font-bold focus-visible:ring-0 focus-visible:ring-offset-0"
                       required 
                     />
                   </div>
-                  <div className="relative group flex items-center shadow-lg rounded-2xl bg-white/95 backdrop-blur-xl border border-white/20 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
-                    <div className="pl-6 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                  <div className="relative group flex items-center shadow-lg rounded-2xl bg-white/95 dark:bg-[#0B132B]/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/80 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                    <div className="pl-6 pr-3 flex items-center justify-center text-slate-400 dark:text-slate-400 group-focus-within:text-primary transition-colors">
                       <Key className="w-5 h-5" />
                     </div>
                     <Input 
@@ -832,7 +832,7 @@ export default function LoginPage() {
                       placeholder="Kata Sandi" 
                       value={regPass}
                       onChange={(e) => setRegPass(e.target.value)}
-                      className="h-14 border-0 bg-transparent text-slate-900 placeholder:text-slate-400 px-2 font-bold focus-visible:ring-0 focus-visible:ring-offset-0"
+                      className="h-14 border-0 dark:border-0 bg-transparent dark:bg-transparent rounded-none shadow-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 px-2 font-bold focus-visible:ring-0 focus-visible:ring-offset-0"
                       required 
                     />
                   </div>
@@ -860,8 +860,8 @@ export default function LoginPage() {
           ) : (
             <form onSubmit={handleAuth} className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
               <div className="space-y-0 relative">
-                <div className="relative group flex items-center shadow-xl rounded-2xl bg-white/85 backdrop-blur-2xl border border-white/60 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all z-20">
-                  <div className="pl-5 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                <div className="relative group flex items-center shadow-xl rounded-2xl bg-white/85 dark:bg-[#0B132B]/90 backdrop-blur-2xl border border-white/60 dark:border-slate-700/80 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all z-20">
+                  <div className="pl-5 pr-3 flex items-center justify-center text-slate-400 dark:text-slate-400 group-focus-within:text-primary transition-colors">
                     <User className="w-5 h-5" />
                   </div>
                   <Input
@@ -870,7 +870,7 @@ export default function LoginPage() {
                     placeholder="Username"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    className="h-12 md:h-14 border-0 bg-transparent text-slate-900 placeholder:text-slate-400 px-2 font-bold text-base focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="h-12 md:h-14 border-0 dark:border-0 bg-transparent dark:bg-transparent rounded-none shadow-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 px-2 font-bold text-base focus-visible:ring-0 focus-visible:ring-offset-0"
                     required
                   />
                 </div>
@@ -880,8 +880,8 @@ export default function LoginPage() {
                   identifier.trim().length > 0 ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
                 )}>
                   <div className="overflow-hidden">
-                    <div className="relative group flex items-center mt-3 shadow-xl rounded-2xl bg-white/85 backdrop-blur-2xl border border-white/60 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
-                      <div className="pl-5 pr-3 flex items-center justify-center text-slate-400 group-focus-within:text-primary transition-colors">
+                    <div className="relative group flex items-center mt-3 shadow-xl rounded-2xl bg-white/85 dark:bg-[#0B132B]/90 backdrop-blur-2xl border border-white/60 dark:border-slate-700/80 overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                      <div className="pl-5 pr-3 flex items-center justify-center text-slate-400 dark:text-slate-400 group-focus-within:text-primary transition-colors">
                         <Key className="w-5 h-5" />
                       </div>
                       <Input
@@ -890,7 +890,7 @@ export default function LoginPage() {
                         placeholder="Kata Sandi"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="h-12 md:h-14 border-0 bg-transparent text-slate-900 placeholder:text-slate-400 px-2 font-bold text-base focus-visible:ring-0 focus-visible:ring-offset-0 pr-14"
+                        className="h-12 md:h-14 border-0 dark:border-0 bg-transparent dark:bg-transparent rounded-none shadow-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 px-2 font-bold text-base focus-visible:ring-0 focus-visible:ring-offset-0 pr-14"
                         required={identifier.trim().length > 0}
                       />
                       <button 
@@ -933,31 +933,31 @@ export default function LoginPage() {
 
       {/* Modals & Dialogs */}
       <Dialog open={showInfoModal} onOpenChange={setShowInfoModal}>
-        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl bg-white/95 backdrop-blur-xl rounded-[2.5rem]">
-          <div className="bg-slate-50/50 p-8 flex flex-col items-center justify-center border-b">
-            <div className="mb-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Waktu Operasional Kantor</div>
+        <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border border-slate-100 dark:border-slate-800 shadow-2xl bg-white/95 dark:bg-[#0B132B] backdrop-blur-xl rounded-[2.5rem]">
+          <div className="bg-slate-50/50 dark:bg-slate-900/50 p-8 flex flex-col items-center justify-center border-b border-slate-100 dark:border-slate-800">
+            <div className="mb-4 text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-[0.2em]">Waktu Operasional Kantor</div>
             <OfficeHoursTimer large />
           </div>
           <div className="p-8 space-y-8">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-xl text-primary"><Building2 className="w-5 h-5" /></div>
-                <h3 className="font-black text-lg text-slate-800 uppercase tracking-tight">Sekretariat</h3>
+                <h3 className="font-black text-lg text-slate-800 dark:text-slate-100 uppercase tracking-tight">Sekretariat</h3>
               </div>
               <div className="pl-11 space-y-2">
-                <p className="text-xs font-bold text-slate-600 leading-relaxed uppercase">{eventInfo?.address || "JALAN GATOT SUBROTO ( DEPAN RAWASARI )"}</p>
+                <p className="text-xs font-bold text-slate-600 dark:text-slate-300 leading-relaxed uppercase">{eventInfo?.address || "JALAN GATOT SUBROTO ( DEPAN RAWASARI )"}</p>
                 <p className="text-sm font-black text-primary">KONTAK : 0823-2880-4478</p>
               </div>
             </div>
-            <Separator className="bg-slate-100" />
+            <Separator className="bg-slate-100 dark:bg-slate-800" />
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-900/10 rounded-xl text-slate-900"><Code2 className="w-5 h-5" /></div>
-                <h3 className="font-black text-lg text-slate-800 uppercase tracking-tight">Pengembang</h3>
+                <div className="p-2 bg-slate-900/10 dark:bg-white/10 rounded-xl text-slate-900 dark:text-white"><Code2 className="w-5 h-5" /></div>
+                <h3 className="font-black text-lg text-slate-800 dark:text-slate-100 uppercase tracking-tight">Pengembang</h3>
               </div>
               <div className="pl-11 space-y-2">
-                <p className="text-sm font-black text-slate-900 uppercase">AGUS SURIYADI</p>
-                <p className="text-sm font-black text-slate-700">KONTAK : 0817319885</p>
+                <p className="text-sm font-black text-slate-900 dark:text-white uppercase">AGUS SURIYADI</p>
+                <p className="text-sm font-black text-slate-700 dark:text-slate-300">KONTAK : 0817319885</p>
               </div>
             </div>
           </div>
@@ -965,7 +965,7 @@ export default function LoginPage() {
       </Dialog>
 
       <Dialog open={showCheckDataModal} onOpenChange={setShowCheckDataModal}>
-        <DialogContent className="sm:max-w-[800px] w-[95vw] max-h-[90vh] overflow-hidden p-0 border-none shadow-2xl rounded-[2.5rem] bg-white/95 backdrop-blur-xl flex flex-col">
+        <DialogContent className="sm:max-w-[800px] w-[95vw] max-h-[90vh] overflow-hidden p-0 border border-slate-100 dark:border-slate-800 shadow-2xl rounded-[2.5rem] bg-white/95 dark:bg-[#0B132B] backdrop-blur-xl flex flex-col">
            <div className="p-8 overflow-y-auto flex-1">
              <PublicCheckData />
            </div>

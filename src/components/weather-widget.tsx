@@ -67,8 +67,8 @@ export function getAqiTier(aqi: number): AqiTier {
       shortAdvice: "Udara Bersih & Segar",
       detailedAdvice: "Kualitas udara sangat baik. Aman dan ideal untuk seluruh kegiatan luar ruangan.",
       color: "text-emerald-600 dark:text-emerald-400",
-      bgColor: "bg-emerald-500/10",
-      borderBadge: "border-emerald-500/30",
+      bgColor: "bg-emerald-500/10 dark:bg-emerald-950/40",
+      borderBadge: "border-emerald-500/30 dark:border-emerald-700/60",
       badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
       accentHex: "#10B981",
       rgbValues: "16, 185, 129",
@@ -88,8 +88,8 @@ export function getAqiTier(aqi: number): AqiTier {
       shortAdvice: "Kualitas Cukup Baik",
       detailedAdvice: "Kualitas udara dapat diterima. Sebagian besar orang dapat beraktivitas normal tanpa keluhan.",
       color: "text-amber-600 dark:text-amber-400",
-      bgColor: "bg-amber-500/10",
-      borderBadge: "border-amber-500/30",
+      bgColor: "bg-amber-500/10 dark:bg-amber-950/40",
+      borderBadge: "border-amber-500/30 dark:border-amber-700/60",
       badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
       accentHex: "#F59E0B",
       rgbValues: "245, 158, 11",
@@ -109,8 +109,8 @@ export function getAqiTier(aqi: number): AqiTier {
       shortAdvice: "Sensitif: Gunakan Masker",
       detailedAdvice: "Kelompok sensitif (anak-anak, lansia, penderita asma/paru) dianjurkan memakai masker di luar.",
       color: "text-orange-600 dark:text-orange-400",
-      bgColor: "bg-orange-500/10",
-      borderBadge: "border-orange-500/30",
+      bgColor: "bg-orange-500/10 dark:bg-orange-950/40",
+      borderBadge: "border-orange-500/30 dark:border-orange-700/60",
       badgeClass: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
       accentHex: "#F97316",
       rgbValues: "249, 115, 22",
@@ -130,8 +130,8 @@ export function getAqiTier(aqi: number): AqiTier {
       shortAdvice: "Kenakan Masker",
       detailedAdvice: "Udara tidak sehat. Seluruh warga disarankan memakai masker dan membatasi aktivitas fisik di luar ruangan.",
       color: "text-rose-600 dark:text-rose-400",
-      bgColor: "bg-rose-500/10",
-      borderBadge: "border-rose-500/30",
+      bgColor: "bg-rose-500/10 dark:bg-rose-950/40",
+      borderBadge: "border-rose-500/30 dark:border-rose-700/60",
       badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
       accentHex: "#EF4444",
       rgbValues: "239, 68, 68",
@@ -151,8 +151,8 @@ export function getAqiTier(aqi: number): AqiTier {
       shortAdvice: "Hindari Luar Ruangan",
       detailedAdvice: "Kualitas udara sangat buruk. Hindari segala aktivitas luar ruangan dan nyalakan penjernih udara.",
       color: "text-purple-600 dark:text-purple-400",
-      bgColor: "bg-purple-500/10",
-      borderBadge: "border-purple-500/30",
+      bgColor: "bg-purple-500/10 dark:bg-purple-950/40",
+      borderBadge: "border-purple-500/30 dark:border-purple-700/60",
       badgeClass: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
       accentHex: "#A855F7",
       rgbValues: "168, 85, 247",
@@ -171,8 +171,8 @@ export function getAqiTier(aqi: number): AqiTier {
     shortAdvice: "BAHAYA: Tetap di Dalam",
     detailedAdvice: "PERINGATAN DARURAT: Udara tingkat berbahaya bagi semua orang. Tetap di dalam ruangan tertutup.",
     color: "text-rose-700 dark:text-rose-300",
-    bgColor: "bg-red-950/20",
-    borderBadge: "border-red-600/50",
+    bgColor: "bg-red-950/20 dark:bg-red-950/50",
+    borderBadge: "border-red-600/50 dark:border-red-700/60",
     badgeClass: "bg-red-900/20 text-red-700 dark:text-red-300 border-red-600/40",
     accentHex: "#881337",
     rgbValues: "136, 19, 55",
@@ -221,30 +221,30 @@ interface WeatherDescription {
 
 function getWeatherDescription(code: number, isDay: boolean): WeatherDescription {
   const descriptions: Record<number, WeatherDescription> = {
-    0: { label: "Cerah", icon: isDay ? "sunny" : "clear-night", color: "text-amber-500 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60" },
-    1: { label: "Sebagian Cerah", icon: isDay ? "partly-cloudy" : "partly-cloudy-night", color: "text-sky-600 bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800/60" },
-    2: { label: "Berawan Sebagian", icon: isDay ? "partly-cloudy" : "partly-cloudy-night", color: "text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60" },
-    3: { label: "Mendung", icon: "cloudy", color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60" },
-    45: { label: "Berkabut", icon: "foggy", color: "text-slate-600 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" },
-    48: { label: "Kabut Tebal", icon: "foggy", color: "text-slate-600 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" },
-    51: { label: "Gerimis Ringan", icon: "drizzle", color: "text-cyan-600 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-800/60" },
-    53: { label: "Gerimis", icon: "drizzle", color: "text-cyan-600 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-800/60" },
-    55: { label: "Gerimis Lebat", icon: "drizzle", color: "text-cyan-700 bg-cyan-100 dark:bg-cyan-900/40 border-cyan-300 dark:border-cyan-800" },
-    61: { label: "Hujan Ringan", icon: "rainy", color: "text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60" },
-    63: { label: "Hujan Sedang", icon: "rainy", color: "text-blue-700 bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-800" },
-    65: { label: "Hujan Lebat", icon: "heavy-rain", color: "text-blue-800 bg-blue-100 dark:bg-blue-950/80 border-blue-400 dark:border-blue-700" },
-    71: { label: "Salju Ringan", icon: "snowy", color: "text-slate-600 bg-slate-50 dark:bg-slate-800 border-slate-200" },
-    80: { label: "Hujan Singkat", icon: "rainy", color: "text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200" },
-    81: { label: "Hujan Singkat", icon: "rainy", color: "text-blue-700 bg-blue-100 dark:bg-blue-900/40 border-blue-300" },
-    82: { label: "Hujan Lebat", icon: "heavy-rain", color: "text-blue-800 bg-blue-100 dark:bg-blue-950/80 border-blue-400" },
-    95: { label: "Badai Petir", icon: "thunderstorm", color: "text-amber-700 bg-amber-100 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800" },
-    96: { label: "Badai Petir", icon: "thunderstorm", color: "text-amber-800 bg-amber-100 dark:bg-amber-950/60 border-amber-400 dark:border-amber-800" },
-    99: { label: "Badai Petir Berat", icon: "thunderstorm", color: "text-rose-700 bg-rose-100 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800" },
+    0: { label: "Cerah", icon: isDay ? "sunny" : "clear-night", color: "text-amber-500 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60" },
+    1: { label: "Sebagian Cerah", icon: isDay ? "partly-cloudy" : "partly-cloudy-night", color: "text-sky-600 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800/60" },
+    2: { label: "Berawan Sebagian", icon: isDay ? "partly-cloudy" : "partly-cloudy-night", color: "text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60" },
+    3: { label: "Mendung", icon: "cloudy", color: "text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60" },
+    45: { label: "Berkabut", icon: "foggy", color: "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" },
+    48: { label: "Kabut Tebal", icon: "foggy", color: "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" },
+    51: { label: "Gerimis Ringan", icon: "drizzle", color: "text-cyan-600 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-800/60" },
+    53: { label: "Gerimis", icon: "drizzle", color: "text-cyan-600 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-800/60" },
+    55: { label: "Gerimis Lebat", icon: "drizzle", color: "text-cyan-700 dark:text-cyan-300 bg-cyan-100 dark:bg-cyan-900/40 border-cyan-300 dark:border-cyan-800" },
+    61: { label: "Hujan Ringan", icon: "rainy", color: "text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60" },
+    63: { label: "Hujan Sedang", icon: "rainy", color: "text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-800" },
+    65: { label: "Hujan Lebat", icon: "heavy-rain", color: "text-blue-800 dark:text-blue-200 bg-blue-100 dark:bg-blue-950/80 border-blue-400 dark:border-blue-700" },
+    71: { label: "Salju Ringan", icon: "snowy", color: "text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700" },
+    80: { label: "Hujan Singkat", icon: "rainy", color: "text-blue-600 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800" },
+    81: { label: "Hujan Singkat", icon: "rainy", color: "text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 border-blue-300 dark:border-blue-800" },
+    82: { label: "Hujan Lebat", icon: "heavy-rain", color: "text-blue-800 dark:text-blue-200 bg-blue-100 dark:bg-blue-950/80 border-blue-400 dark:border-blue-700" },
+    95: { label: "Badai Petir", icon: "thunderstorm", color: "text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800" },
+    96: { label: "Badai Petir", icon: "thunderstorm", color: "text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 border-amber-400 dark:border-amber-800" },
+    99: { label: "Badai Petir Berat", icon: "thunderstorm", color: "text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800" },
   }
   return descriptions[code] || { 
     label: "Berawan", 
     icon: "cloudy", 
-    color: "text-slate-600 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" 
+    color: "text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700" 
   }
 }
 
@@ -569,7 +569,7 @@ export function WeatherWidget({ className }: { className?: string }) {
 
   if (isLoading) {
     return (
-      <div className={cn("w-full bg-white dark:bg-slate-850/90 backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm flex flex-col items-center justify-center gap-2.5 min-h-[260px]", className)}>
+      <div className={cn("w-full bg-white dark:bg-[#0B132B] backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-slate-850 p-6 shadow-sm flex flex-col items-center justify-center gap-2.5 min-h-[260px]", className)}>
         <div className="w-8 h-8 rounded-full border-3 border-primary/20 border-t-primary animate-spin" />
         <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Memuat Informasi Cuaca...</span>
       </div>
@@ -578,7 +578,7 @@ export function WeatherWidget({ className }: { className?: string }) {
 
   if (error || !weather) {
     return (
-      <div className={cn("w-full bg-white dark:bg-slate-850/90 backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-slate-800 p-6 shadow-sm flex flex-col items-center justify-center gap-2 text-center min-h-[260px]", className)}>
+      <div className={cn("w-full bg-white dark:bg-[#0B132B] backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-slate-850 p-6 shadow-sm flex flex-col items-center justify-center gap-2 text-center min-h-[260px]", className)}>
         <AlertCircle className="w-6 h-6 text-rose-500" />
         <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{error || 'Data tidak tersedia'}</span>
         <button 
@@ -600,7 +600,7 @@ export function WeatherWidget({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "w-full bg-white dark:bg-slate-850/90 backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col justify-between transition-all duration-700 relative group shadow-sm",
+        "w-full bg-white dark:bg-[#0B132B] backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-slate-800 overflow-hidden flex flex-col justify-between transition-all duration-700 relative group shadow-sm",
         tier.cardBorder,
         tier.cardShadow,
         className
@@ -888,10 +888,10 @@ export function WeatherWidget({ className }: { className?: string }) {
       </div>
 
       {/* Footer & Source */}
-      <div className="px-4 sm:px-6 py-2.5 bg-slate-50/80 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-wider relative z-10">
+      <div className="px-4 sm:px-6 py-2.5 bg-slate-50/80 dark:bg-[#0B132B]/90 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[8px] sm:text-[9px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider relative z-10">
         <div className="flex items-center gap-1.5 truncate">
           <span>Stasiun Cuaca Tanjungpinang:</span>
-          <span className="text-slate-700 dark:text-slate-300 font-black">
+          <span className="text-slate-700 dark:text-slate-200 font-black">
             {weather?.lastUpdated instanceof Date 
               ? weather.lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':') 
               : "15:45:00"} WIB
@@ -901,7 +901,7 @@ export function WeatherWidget({ className }: { className?: string }) {
         <button 
           onClick={() => fetchWeather(true)} 
           disabled={isRefreshing}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-700 text-slate-500 hover:text-primary transition-all active:scale-95 shrink-0" 
+          className="flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-all active:scale-95 shrink-0" 
           title="Perbarui Cuaca & Kualitas Udara"
         >
           <RefreshCw className={cn("w-3 h-3", isRefreshing && "animate-spin text-primary")} />
