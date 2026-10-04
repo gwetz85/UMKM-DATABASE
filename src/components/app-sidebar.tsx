@@ -197,15 +197,6 @@ export function AppSidebar() {
             </div>
           </button>
         </InfoDialog>
-
-        {/* Circular Collapse Toggle Button matching Growly LMS */}
-        <button
-          onClick={() => toggleSidebar()}
-          className="group-data-[collapsible=icon]:hidden w-7 h-7 rounded-full bg-[#162238] hover:bg-[#1f2d47] border border-white/10 text-slate-200 hover:text-white flex items-center justify-center transition-all shadow-xs shrink-0 active:scale-90"
-          title="Tutup/Buka Sidebar"
-        >
-          <ChevronLeft className="w-3.5 h-3.5" />
-        </button>
       </SidebarHeader>
 
       {/* ─── NAVIGATION GROUPS ─── */}

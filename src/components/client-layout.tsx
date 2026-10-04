@@ -19,6 +19,7 @@ import { MessageNotification } from './MessageNotification';
 import { useToast } from '@/hooks/use-toast';
 import { MobileBottomNav } from './mobile-bottom-nav';
 import { AppSidebar } from '@/components/app-sidebar';
+import { RunningText } from '@/components/running-text';
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -433,6 +434,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
                   )}
                 </div>
               </main>
+
+              {/* Running Text at Bottom of Page */}
+              {!isLoginPage && !isLayarInformasiPage && (
+                <RunningText />
+              )}
             </div>
           </div>
           <MobileBottomNav />
