@@ -3,18 +3,14 @@
 import React, { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { InfoDialog } from '@/components/info-dialog';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
-import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
 import { GlobalStatsAutoSync } from '@/components/GlobalStatsAutoSync';
-import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
+import { useUser, useDatabase, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref, onValue, set, update, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
-import { User as UserIcon, LayoutGrid, Home, LogOut, Check, X as XIcon, AlertCircle, MonitorOff, Loader2, ArrowLeft, Moon, Sun, Share2, MoreHorizontal, ChevronRight } from 'lucide-react'
+import { User as UserIcon, LogOut, AlertCircle, MonitorOff, ArrowLeft, Moon, Sun, Share2, MoreHorizontal, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import { EventCountdown } from './event-countdown';
-import { useActiveEvent } from '@/hooks/use-active-event';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemePersistence } from '@/components/theme-persistence';
 import { useSoundEffect } from '@/hooks/use-sound-effect';
@@ -84,24 +80,11 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const isAdmin = profile?.role === 'admin' || (user?.email?.toLowerCase() === 'agus@umkm.id');
   const isStaff = profile?.role === 'staff';
 
-  const eventSettingsRef = useMemoFirebase(() => {
-    if (!database || isLoginPage) return null
-    return ref(database, 'settings/event_info')
-  }, [database, isLoginPage])
-  const { data: eventInfo } = useObject(eventSettingsRef)
-  const activeEvent = useActiveEvent(eventInfo)
-
   const maintenanceRef = useMemoFirebase(() => {
     if (!database || isLoginPage) return null;
     return ref(database, 'settings/maintenance');
   }, [database, isLoginPage]);
   const { data: maintenanceData } = useObject(maintenanceRef);
-
-  const systemConfigRef = useMemoFirebase(() => {
-    if (!database || isLoginPage) return null;
-    return ref(database, 'settings/system_config');
-  }, [database, isLoginPage]);
-  const { data: systemConfig } = useObject(systemConfigRef);
 
   React.useEffect(() => {
     if (maintenanceData && typeof maintenanceData === 'object' && user && profile) {

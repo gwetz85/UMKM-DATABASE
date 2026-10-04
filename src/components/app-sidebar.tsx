@@ -3,35 +3,10 @@
 import * as React from "react"
 import { InfoDialog } from "./info-dialog"
 import {
-  LayoutDashboard,
-  UserPlus,
-  ShieldCheck,
-  Users,
-  CreditCard,
-  CheckCircle2,
   LogOut,
-  UserCog,
-  Copy,
-  Check,
-  User as UserIcon,
-  Settings,
-  SearchCheck,
-  Clock,
-  LogIn,
-  Eye,
-  Ban,
-  MessageSquare,
-  History,
-  FileText,
   ChevronRight,
   ChevronLeft,
   ChevronsUpDown,
-  BarChart3,
-  ClipboardCheck,
-  ListChecks,
-  ShieldAlert,
-  Calendar,
-  Sparkles
 } from "lucide-react"
 
 import { usePathname, useRouter } from "next/navigation"
@@ -39,7 +14,6 @@ import Link from "next/link"
 import { useUser, useAuth, useDatabase } from "@/firebase"
 import { ref, update } from "firebase/database"
 import { signOut } from "firebase/auth"
-import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { useSoundEffect } from "@/hooks/use-sound-effect"
 import { useNavigation } from "@/hooks/use-navigation"
@@ -60,7 +34,6 @@ import {
   SidebarMenuSubItem,
   SidebarMenuSubButton,
 } from "@/components/ui/sidebar"
-import { Button } from "./ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible"
 
 export const SimpuLogo = ({ className }: { className?: string }) => (
@@ -85,9 +58,7 @@ export function AppSidebar() {
   const { isMobile, setOpenMobile, toggleSidebar } = useSidebar()
   const { user } = useUser()
   const auth = useAuth()
-  const { toast } = useToast()
   const database = useDatabase()
-  const [copied, setCopied] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
   const { playSound } = useSoundEffect()
 
@@ -96,15 +67,6 @@ export function AppSidebar() {
   }, [])
 
   const { navigation, isAdmin, isKoordinator, isMonitoring, isPetugas, isDinas, isStaff, userProfile } = useNavigation()
-
-  const copyUid = () => {
-    if (user?.uid) {
-      navigator.clipboard.writeText(user.uid)
-      setCopied(true)
-      toast({ title: "UID Disalin", description: "Berikan UID ini ke Admin untuk akses penuh." })
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }
 
   const handleAuthAction = async () => {
     if (isMobile) setOpenMobile(false)

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'simpu-pwa-v4';
+const CACHE_NAME = 'simpu-pwa-v5';
 
 // Install: Activate immediately
 self.addEventListener('install', (event) => {

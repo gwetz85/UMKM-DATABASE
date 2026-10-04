@@ -1,18 +1,11 @@
 "use client"
 
 import { useMemoFirebase, useList, useUser, useDatabase, useObject } from "@/firebase"
-import { ref, query, orderByChild, equalTo, limitToFirst, limitToLast } from "firebase/database"
+import { ref, query, orderByChild, equalTo } from "firebase/database"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { 
-  RefreshCw, 
-  Users, 
-  UserCheck, 
-  UserX, 
-  Loader2, 
   Building2, 
-  TrendingUp, 
-  MapPin, 
   BarChart3, 
   ClipboardCheck, 
   FileText, 
@@ -21,16 +14,9 @@ import {
   BadgeCheck, 
   AlertCircle,
   ExternalLink,
-  ShieldCheck,
   Clock,
-  Sparkles,
-  Store,
-  CheckCircle2,
-  ChevronRight,
-  Search,
   Globe,
   Star,
-  Info,
   ChevronDown,
   BookOpen,
   Award,
@@ -45,9 +31,6 @@ import { cn, formatDateTimeIndo } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { 
-  ChartConfig
-} from "@/components/ui/chart"
 
 const KELURAHAN_LIST = [
   "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
@@ -129,7 +112,7 @@ export default function DashboardStatsPage() {
     return query(ref(database, 'businessActors'), orderByChild('status'), equalTo('verified_dinas'))
   }, [database])
 
-  const { data: verifiedDinasData, isLoading: isVerifiedDinasLoading } = useList<BusinessActor>(verifiedDinasQuery)
+  const { data: verifiedDinasData } = useList<BusinessActor>(verifiedDinasQuery)
 
   const isCancelDinas = (d: any) => {
     const s = (d?.status || "").toLowerCase()
@@ -203,7 +186,7 @@ export default function DashboardStatsPage() {
     return ref(database, 'koordinator_kuotas')
   }, [database])
 
-  const { data: kuotaData, isLoading: isKuotaLoading } = useList(kuotaQuery)
+  const { data: kuotaData } = useList(kuotaQuery)
 
   // 5. On-demand fetch for modal data (only queried when modal is opened)
   const modalQuery = useMemoFirebase(() => {
@@ -249,20 +232,11 @@ export default function DashboardStatsPage() {
     }
   }, [systemStats])
 
-  const [isSyncing, setIsSyncing] = useState(false)
   const isSyncingGuardRef = React.useRef(false)
-  const [nextSyncIn, setNextSyncIn] = useState<number>(300)
-
-  const lastSyncTime = useMemo(() => {
-    if (!systemStats?.lastUpdated) return null;
-    const d = new Date(systemStats.lastUpdated);
-    return isNaN(d.getTime()) ? null : d;
-  }, [systemStats?.lastUpdated]);
 
   const handleSyncStats = async (isAuto = false) => {
     if (!database || isSyncingGuardRef.current) return
     isSyncingGuardRef.current = true
-    setIsSyncing(true)
     try {
       const { recalculateAndSaveSystemStats } = await import("@/lib/stats-service")
       await recalculateAndSaveSystemStats(database)
@@ -275,7 +249,6 @@ export default function DashboardStatsPage() {
         toast({ variant: "destructive", title: "Gagal Sinkronisasi", description: "Terjadi kesalahan saat menghitung ulang statistik." })
       }
     } finally {
-      setIsSyncing(false)
       isSyncingGuardRef.current = false
     }
   }
@@ -283,47 +256,25 @@ export default function DashboardStatsPage() {
   const handleSyncStatsRef = useRef(handleSyncStats);
   handleSyncStatsRef.current = handleSyncStats;
 
-  // Countdown Timer & Auto-Sync Execution synchronized with systemStats.lastUpdated (every 5 minutes)
+  // Auto-Sync Execution synchronized with systemStats.lastUpdated (every 5 minutes)
   useEffect(() => {
     const SYNC_INTERVAL_SEC = 300; // 5 menit
 
-    const calculateRemaining = () => {
-      if (!systemStats?.lastUpdated) return 0;
+    const checkAndSync = () => {
+      if (!systemStats?.lastUpdated) return;
       const lastTime = new Date(systemStats.lastUpdated).getTime();
-      if (isNaN(lastTime)) return 0;
+      if (isNaN(lastTime)) return;
 
       const elapsedSec = Math.floor((Date.now() - lastTime) / 1000);
       if (elapsedSec >= SYNC_INTERVAL_SEC) {
-        return 0;
-      }
-      return Math.max(0, SYNC_INTERVAL_SEC - elapsedSec);
-    };
-
-    const initialRemaining = calculateRemaining();
-    setNextSyncIn(initialRemaining);
-
-    if (initialRemaining === 0) {
-      handleSyncStatsRef.current(true);
-    }
-
-    const timer = setInterval(() => {
-      const remaining = calculateRemaining();
-      setNextSyncIn(remaining);
-
-      if (remaining <= 0) {
         handleSyncStatsRef.current(true);
       }
-    }, 1000);
+    };
 
+    checkAndSync();
+    const timer = setInterval(checkAndSync, 30000); // Check every 30s
     return () => clearInterval(timer);
   }, [systemStats?.lastUpdated, database]);
-
-  const coordinatorStats = useMemo(() => {
-    if (!systemStats?.coordinator) return []
-    return Object.entries(systemStats.coordinator)
-      .map(([name, count]) => ({ name, count: count as number }))
-      .sort((a, b) => b.count - a.count)
-  }, [systemStats])
 
   const combinedKuotaData = useMemo(() => {
     if (!kuotaData) return []
@@ -452,83 +403,6 @@ export default function DashboardStatsPage() {
     return ((value / total) * 100).toFixed(1);
   };
 
-  const topStats = [
-    { 
-      name: "Total Data", 
-      value: statsValues.total, 
-      icon: Building2, 
-      filterType: "total",
-      percentage: null,
-      detail: "DATA TERKINI",
-      accentGradient: "from-blue-600 via-indigo-600 to-indigo-700",
-      iconBg: "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/50",
-      accentBorder: "hover:border-indigo-400/80",
-      badgeColor: "bg-indigo-50 text-indigo-700 border-indigo-200/60 dark:bg-indigo-900/40 dark:text-indigo-300",
-      glowColor: "hover:shadow-indigo-500/10",
-      barPercent: 100,
-      barColor: "bg-indigo-500"
-    },
-    { 
-      name: "Laki-Laki", 
-      value: statsValues.laki, 
-      icon: Users, 
-      filterType: "laki",
-      percentage: getPercentage(statsValues.laki, statsValues.total),
-      detail: "PROPORSI GENDER",
-      accentGradient: "from-sky-500 via-blue-600 to-cyan-600",
-      iconBg: "bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/50",
-      accentBorder: "hover:border-sky-400/80",
-      badgeColor: "bg-sky-50 text-sky-700 border-sky-200/60 dark:bg-sky-900/40 dark:text-sky-300",
-      glowColor: "hover:shadow-sky-500/10",
-      barPercent: Number(getPercentage(statsValues.laki, statsValues.total)),
-      barColor: "bg-sky-500"
-    },
-    { 
-      name: "Perempuan", 
-      value: statsValues.perempuan, 
-      icon: Users, 
-      filterType: "perempuan",
-      percentage: getPercentage(statsValues.perempuan, statsValues.total),
-      detail: "PROPORSI GENDER",
-      accentGradient: "from-pink-500 via-rose-600 to-rose-700",
-      iconBg: "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/50",
-      accentBorder: "hover:border-rose-400/80",
-      badgeColor: "bg-rose-50 text-rose-700 border-rose-200/60 dark:bg-rose-900/40 dark:text-rose-300",
-      glowColor: "hover:shadow-rose-500/10",
-      barPercent: Number(getPercentage(statsValues.perempuan, statsValues.total)),
-      barColor: "bg-rose-500"
-    },
-    { 
-      name: "Data Terverifikasi", 
-      value: statsValues.verified, 
-      icon: UserCheck, 
-      filterType: "verified",
-      percentage: getPercentage(statsValues.verified, totalKuotaDashboard),
-      detail: "DARI TOTAL KUOTA",
-      accentGradient: "from-emerald-500 via-teal-600 to-teal-700",
-      iconBg: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50",
-      accentBorder: "hover:border-emerald-400/80",
-      badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200/60 dark:bg-emerald-900/40 dark:text-emerald-300",
-      glowColor: "hover:shadow-emerald-500/10",
-      barPercent: Number(getPercentage(statsValues.verified, totalKuotaDashboard)),
-      barColor: "bg-emerald-500"
-    },
-    { 
-      name: "Dibatalkan", 
-      value: statsValues.rejected, 
-      icon: UserX, 
-      filterType: "rejected",
-      percentage: getPercentage(statsValues.rejected, totalKuotaDashboard),
-      detail: "ADMIN & DINAS",
-      accentGradient: "from-amber-500 via-orange-600 to-rose-600",
-      iconBg: "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/50",
-      accentBorder: "hover:border-amber-400/80",
-      badgeColor: "bg-amber-50 text-amber-700 border-amber-200/60 dark:bg-amber-900/40 dark:text-amber-300",
-      glowColor: "hover:shadow-amber-500/10",
-      barPercent: Number(getPercentage(statsValues.rejected, totalKuotaDashboard)),
-      barColor: "bg-amber-500"
-    }
-  ]
 
   const dinasStageCards = [
     {
