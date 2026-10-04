@@ -16,7 +16,6 @@ import {
   ExternalLink,
   Clock,
   Globe,
-  Star,
   ChevronDown,
   BookOpen,
   Award,
@@ -37,6 +36,7 @@ import { cn, formatDateTimeIndo } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
+import { WeatherWidget } from "@/components/weather-widget"
 
 const KELURAHAN_LIST = [
   "Tanjungpinang Kota", "Senggarang", "Kampung Bugis", "Penyengat",
@@ -631,69 +631,9 @@ export default function DashboardStatsPage() {
     <div className="w-full space-y-6 animate-in fade-in duration-500">
       {/* ─── TOP SECTION: HERO BANNER + STATISTICS OVERVIEW ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
-        {/* Left Bento: Hero Banner in Sky Blue Gradient */}
-        <div className="lg:col-span-7 xl:col-span-7 rounded-[28px] bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] text-white p-6 sm:p-7 shadow-lg shadow-sky-500/15 relative overflow-hidden flex flex-col justify-between min-h-[260px]">
-          {/* Subtle Ambient Glows */}
-          <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/20 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-sky-900/20 rounded-full blur-2xl pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col sm:flex-row justify-between gap-6 items-start">
-            {/* Left Content */}
-            <div className="space-y-4 max-w-md">
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-snug">
-                SIMPU 2026: Rekapitulasi & Alur Pendataan UMKM
-              </h2>
-
-              {/* Translucent Stage Pills */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-sky-950/30 backdrop-blur-md border border-white/30 text-white shadow-xs">
-                  Input Pendaftaran
-                </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-sky-950/30 backdrop-blur-md border border-white/30 text-white shadow-xs">
-                  Survey Lapangan
-                </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-sky-950/30 backdrop-blur-md border border-white/30 text-white shadow-xs">
-                  Verifikasi Dinas
-                </span>
-                <span className="px-3 py-1 rounded-full text-[11px] font-bold bg-sky-950/30 backdrop-blur-md border border-white/30 text-white shadow-xs">
-                  Penyaluran Bantuan
-                </span>
-              </div>
-            </div>
-
-            {/* Right Frosted Tags */}
-            <div className="flex flex-col gap-2 shrink-0 w-full sm:w-auto">
-              <div className="px-3.5 py-1.5 rounded-2xl bg-sky-950/30 backdrop-blur-md border border-white/30 text-white text-xs font-bold flex items-center gap-2 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
-                <span>4 Kecamatan & 18 Kelurahan</span>
-              </div>
-              <div className="px-3.5 py-1.5 rounded-2xl bg-sky-950/30 backdrop-blur-md border border-white/30 text-white text-xs font-bold flex items-center gap-2 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
-                <span>Verifikasi Berkas & Fisik</span>
-              </div>
-              <div className="px-3.5 py-1.5 rounded-2xl bg-sky-950/30 backdrop-blur-md border border-white/30 text-white text-xs font-bold flex items-center gap-2 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
-                <span>Validasi NIB & KTP Disdukcapil</span>
-              </div>
-              <div className="px-3.5 py-1.5 rounded-2xl bg-sky-950/30 backdrop-blur-md border border-white/30 text-white text-xs font-bold flex items-center gap-2 shadow-xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
-                <span>Rekening Bank Riau Kepri</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Meta */}
-          <div className="relative z-10 flex items-center gap-3 pt-5 text-xs font-semibold text-white/90">
-            <span className="flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-white" />
-              Kota Tanjungpinang
-            </span>
-            <span>•</span>
-            <span className="flex items-center gap-1">
-              <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
-              4.8 Realtime Monitoring
-            </span>
-          </div>
+        {/* Left Bento: Real-time Weather & Air Quality Widget */}
+        <div className="lg:col-span-7 xl:col-span-7 flex flex-col">
+          <WeatherWidget className="w-full h-full min-h-[260px]" />
         </div>
 
         {/* Right Bento: Statistics Overview */}
@@ -716,23 +656,8 @@ export default function DashboardStatsPage() {
               </div>
             </div>
 
-            {/* Rounded Pill Bar Chart with Floating Tooltip matching Growly LMS */}
-            <div className="relative pt-6 pb-2">
-              {/* Floating Dark Charcoal Tooltip above active month */}
-              <div className="absolute top-0 right-16 sm:right-20 z-20 bg-[#0B132B] text-white p-2.5 rounded-2xl shadow-xl text-[10px] space-y-1 min-w-[130px] border border-white/10 pointer-events-none animate-in fade-in duration-300">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-slate-400">Total Usaha</span>
-                  <span className="font-black font-mono text-white">{statsValues.total || 19}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-slate-400">Terverifikasi</span>
-                  <span className="font-black font-mono text-emerald-400">{statsValues.verified || '3.25h'}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-slate-400">Rasio Valid</span>
-                  <span className="font-black font-mono text-sky-400">4.8 ★</span>
-                </div>
-              </div>
+            {/* Rounded Pill Bar Chart matching Growly LMS */}
+            <div className="relative pt-2 pb-2">
 
               {/* Chart Grid */}
               <div className="flex items-end justify-between h-32 gap-1 px-1 pt-6">
