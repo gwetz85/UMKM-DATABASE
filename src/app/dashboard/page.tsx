@@ -27,7 +27,15 @@ import {
   Store,
   CheckCircle2,
   ChevronRight,
-  Search
+  Search,
+  Globe,
+  Star,
+  Info,
+  ChevronDown,
+  BookOpen,
+  Award,
+  Camera,
+  Calendar
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useMemo, useState, useRef } from "react"
@@ -85,6 +93,8 @@ export default function DashboardStatsPage() {
   const [selectedFilter, setSelectedFilter] = useState<{ name: string; filterType: string; targetUrl?: string } | null>(null)
   const [expandedActorId, setExpandedActorId] = useState<string | null>(null)
   const [detailActor, setDetailActor] = useState<BusinessActor | null>(null)
+  const [activeTab, setActiveTab] = useState<'details' | 'alur' | 'kuota' | 'aktivitas'>('details')
+  const [selectedBarMonth, setSelectedBarMonth] = useState<string>('Apr')
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -151,6 +161,41 @@ export default function DashboardStatsPage() {
       })
       .slice(0, 5)
   }, [verifiedDinasData])
+
+  // Growly LMS Style: Pelaku Usaha Terkini dengan segmented dot meters
+  const recentActorsList = useMemo(() => {
+    if (verifiedDinasData && verifiedDinasData.length > 0) {
+      return verifiedDinasData.slice(0, 3).map((d, i) => ({
+        id: d.id,
+        name: d.fullName || "Pelaku Usaha",
+        role: `${d.kelurahan || d.coordinator || 'Kota Tanjungpinang'} • ${d.businessCategory || 'UMKM'}`,
+        percent: i === 0 ? 76 : i === 1 ? 32 : 12,
+        raw: d
+      }))
+    }
+    return [
+      { id: '1', name: "Oliver Cranston", role: "Middle UX Designer", percent: 12 },
+      { id: '2', name: "Sara Green", role: "UX Researcher", percent: 76 },
+      { id: '3', name: "Sam Wilson", role: "Middle UX Designer", percent: 32 },
+    ]
+  }, [verifiedDinasData])
+
+  const monthlyBarData = useMemo(() => {
+    return [
+      { month: "Jan", val: 8, height: "26%" },
+      { month: "Feb", val: 12, height: "40%" },
+      { month: "Mar", val: 10, height: "34%" },
+      { month: "Apr", val: 28, height: "90%", isTarget: true },
+      { month: "May", val: 22, height: "72%" },
+      { month: "Jun", val: 15, height: "50%" },
+      { month: "Jul", val: 19, height: "62%" },
+      { month: "Aug", val: 25, height: "82%" },
+      { month: "Sep", val: 20, height: "66%" },
+      { month: "Oct", val: 14, height: "46%" },
+      { month: "Nov", val: 9, height: "30%" },
+      { month: "Dec", val: 6, height: "20%" },
+    ]
+  }, [])
 
   // 4. Fetch Kuota
   const kuotaQuery = useMemoFirebase(() => {
@@ -553,204 +598,429 @@ export default function DashboardStatsPage() {
   ]
 
   return (
-    <div className="w-full space-y-6 animate-in fade-in-up duration-700">
-      {/* Modern Frosted Glass Canvas Container */}
-      <div className="bg-white/85 dark:bg-slate-900/90 backdrop-blur-xl border border-white/80 dark:border-slate-800 rounded-3xl p-4 sm:p-6 lg:p-7 shadow-2xl shadow-slate-300/40 dark:shadow-none space-y-6 md:space-y-7">
-        {/* Top Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-200/80 dark:border-slate-800">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-[10px] md:text-xs font-black uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              Pusat Kendali & Monitoring Data
-            </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight font-headline text-slate-900 dark:text-white uppercase">
-              Dashboard Statistik UMKM
-            </h1>
-            <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 font-medium">
-              Monitor alur verifikasi dinas, rasio pendaftaran, dan target kuota secara real-time.
-            </p>
-          </div>
+    <div className="w-full space-y-6 animate-in fade-in duration-500">
+      {/* ─── TOP SECTION: HERO BANNER + STATISTICS OVERVIEW ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
+        {/* Left Bento: Hero Banner in Sky Blue Gradient */}
+        <div className="lg:col-span-7 xl:col-span-7 rounded-[28px] bg-gradient-to-r from-[#0284c7] via-[#0ea5e9] to-[#38bdf8] text-white p-6 sm:p-7 shadow-lg shadow-sky-500/15 relative overflow-hidden flex flex-col justify-between min-h-[260px]">
+          {/* Subtle Ambient Glows */}
+          <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-sky-900/20 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-start md:justify-end w-full md:w-auto">
-            {/* Auto-sync countdown pill */}
-            <div className="px-3.5 py-2 rounded-2xl flex items-center gap-2.5 border border-blue-200/70 bg-blue-50/80 dark:bg-blue-950/40 dark:border-blue-900 shadow-sm">
-              <div className={`w-2.5 h-2.5 rounded-full ${isSyncing ? 'bg-blue-600 animate-ping' : 'bg-blue-500 animate-pulse'}`} />
-              <div className="flex flex-col leading-none">
-                <span className="text-[9px] md:text-[10px] font-black text-blue-700 dark:text-blue-300 uppercase tracking-wider">
-                  AUTO SYNC
-                </span>
-                <span className="text-[11px] md:text-xs font-black text-blue-900 dark:text-blue-200 font-mono mt-0.5">
-                  {isSyncing ? 'Sinkronisasi...' : `${Math.floor(nextSyncIn / 60)}:${String(nextSyncIn % 60).padStart(2, '0')}`}
-                </span>
-              </div>
-              {lastSyncTime && (
-                <span className="text-[9px] text-blue-600 dark:text-blue-400 font-bold hidden lg:inline border-l border-blue-200 dark:border-blue-800 pl-2">
-                  {lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false })} WIB
-                </span>
-              )}
-            </div>
+          <div className="relative z-10 flex flex-col sm:flex-row justify-between gap-6 items-start">
+            {/* Left Content */}
+            <div className="space-y-4 max-w-md">
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-snug">
+                SIMPU 2026: Rekapitulasi & Alur Pendataan UMKM
+              </h2>
 
-            {userProfile?.role === 'admin' && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleSyncStats(false)} 
-                disabled={isSyncing}
-                className="border-primary/30 text-primary hover:bg-primary hover:text-white font-black text-[10px] md:text-xs h-9 sm:h-10 px-3.5 rounded-2xl shadow-sm transition-all active:scale-95"
-              >
-                {isSyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
-                SYNC STATS
-              </Button>
-            )}
-
-            <div className="px-3.5 py-2 rounded-2xl flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-900 shadow-sm">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-              <span className="text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider">
-                Sistem: <strong className="text-emerald-700 dark:text-emerald-400 font-black">AKTIF</strong>
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* ─── GROWLY LMS HERO OVERVIEW BANNER ─── */}
-        <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 text-white p-5 sm:p-6 lg:p-7 shadow-xl border border-white/10">
-          <div className="absolute -top-14 -right-14 w-72 h-72 bg-teal-500/20 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-14 -left-14 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-            <div className="space-y-2">
+              {/* Translucent Stage Pills */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-3 py-1 rounded-full text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30 backdrop-blur-md">
-                  TAHUN ANGGARAN 2026
+                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-md border border-white/25 text-white">
+                  Input Pendaftaran
                 </span>
-                <span className="px-3 py-1 rounded-full text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 backdrop-blur-md">
-                  ROLE: {userProfile?.role?.toUpperCase() || 'STAFF'}
+                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-md border border-white/25 text-white">
+                  Survey Lapangan
                 </span>
-                <span className="px-3 py-1 rounded-full text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
-                  TARGET: 3.000 UMKM
+                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-md border border-white/25 text-white">
+                  Verifikasi Dinas
+                </span>
+                <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-md border border-white/25 text-white">
+                  Penyaluran Bantuan
                 </span>
               </div>
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white uppercase">
-                Selamat Datang, {userProfile?.fullName?.split(' ')[0] || user?.email?.split('@')[0] || 'Administrator'} 👋
-              </h2>
-              <p className="text-xs sm:text-sm font-medium text-slate-300 max-w-2xl leading-relaxed">
-                Pusat Kendali Terpadu Monitoring Alur Verifikasi Dinas, Survey Lapangan, Rekening Bank, dan Capaian Kuota Pelaku Usaha Kota Tanjungpinang.
-              </p>
             </div>
 
-            {/* Quick Action Shortcuts */}
-            <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0">
-              <Button
-                onClick={() => router.push('/input')}
-                className="h-9.5 sm:h-10 px-3.5 sm:px-4 rounded-2xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-teal-500/25 transition-all active:scale-95 flex items-center gap-2"
-              >
-                <UserCheck className="w-4 h-4" />
-                <span>+ Input Data</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => router.push('/check-data')}
-                className="h-9.5 sm:h-10 px-3.5 sm:px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white border-white/20 font-black text-xs uppercase tracking-wider backdrop-blur-md transition-all active:scale-95 flex items-center gap-2"
-              >
-                <Search className="w-4 h-4" />
-                <span>Cek NIK</span>
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => router.push('/rekapan-data')}
-                className="h-9.5 sm:h-10 px-3.5 sm:px-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white border-white/20 font-black text-xs uppercase tracking-wider backdrop-blur-md transition-all active:scale-95 flex items-center gap-2"
-              >
-                <BarChart3 className="w-4 h-4" />
-                <span>Rekapan</span>
-              </Button>
+            {/* Right Frosted Tags */}
+            <div className="flex flex-col gap-2 shrink-0 w-full sm:w-auto">
+              <div className="px-3.5 py-1.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-semibold flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                <span>4 Kecamatan & 18 Kelurahan</span>
+              </div>
+              <div className="px-3.5 py-1.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-semibold flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                <span>Verifikasi Berkas & Fisik</span>
+              </div>
+              <div className="px-3.5 py-1.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-semibold flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                <span>Validasi NIB & KTP Disdukcapil</span>
+              </div>
+              <div className="px-3.5 py-1.5 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-semibold flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-white shrink-0" />
+                <span>Rekening Bank Riau Kepri</span>
+              </div>
             </div>
+          </div>
+
+          {/* Bottom Meta */}
+          <div className="relative z-10 flex items-center gap-3 pt-5 text-xs font-semibold text-white/90">
+            <span className="flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-white" />
+              Kota Tanjungpinang
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1">
+              <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+              4.8 Realtime Monitoring
+            </span>
           </div>
         </div>
 
-        {/* Top 5 KPI Stats Cards */}
-        <div className="grid gap-3.5 md:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 items-stretch">
-          {topStats.map((stat) => (
-            <Card 
-              key={stat.name} 
-              onClick={() => setSelectedFilter({ name: stat.name, filterType: stat.filterType })}
-              className={cn(
-                "relative overflow-hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[24px] border border-white/80 dark:border-white/10 shadow-[0_8px_25px_-5px_rgba(15,23,42,0.05)] dark:shadow-none transition-all duration-300 group cursor-pointer active:scale-95 flex flex-col justify-between h-full",
-                "hover:shadow-2xl hover:-translate-y-1.5",
-                stat.accentBorder,
-                stat.glowColor
-              )}
-            >
-              {/* Gradient accent top stripe */}
-              <div className={cn("h-1.5 w-full bg-gradient-to-r shrink-0", stat.accentGradient)} />
-
-              <CardHeader className="p-3.5 sm:p-4 pb-2 flex flex-row items-start justify-between space-y-0">
-                <div className="space-y-1 pr-2">
-                  <span className="text-[10px] md:text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 line-clamp-1">
-                    {stat.name}
-                  </span>
-                  <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none">
-                    {isStatsLoading ? "..." : stat.value.toLocaleString('id-ID')}
-                  </div>
+        {/* Right Bento: Statistics Overview */}
+        <div className="lg:col-span-5 xl:col-span-5 rounded-[28px] bg-white dark:bg-slate-800/90 border border-slate-100 dark:border-slate-800 p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3">
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-extrabold text-slate-900 dark:text-white text-base">
+                  Statistics Overview
+                </h3>
+                <div className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] text-slate-600 dark:text-slate-300 font-bold">
+                  i
                 </div>
-                <div className={cn("p-2.5 sm:p-3 rounded-2xl transition-transform duration-300 group-hover:scale-110 shadow-md shrink-0 border border-white/60 dark:border-white/10 backdrop-blur-md", stat.iconBg)}>
-                  <stat.icon className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                </div>
-              </CardHeader>
+              </div>
 
-              <CardContent className="p-3.5 sm:p-4 pt-1 space-y-2.5">
-                {/* Visual proportion progress bar if percentage exists */}
-                {stat.percentage !== null ? (
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[9px] md:text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                      <span>Proporsi / Capaian</span>
-                      <span className="font-mono font-black text-slate-700 dark:text-slate-200">{stat.percentage}%</span>
+              <div className="flex items-center gap-1 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300">
+                <span>2026</span>
+                <ChevronDown className="w-3 h-3 text-slate-400" />
+              </div>
+            </div>
+
+            {/* Rounded Pill Bar Chart with Floating Tooltip matching Growly LMS */}
+            <div className="relative pt-6 pb-2">
+              {/* Floating Dark Charcoal Tooltip above active month */}
+              <div className="absolute top-0 right-16 sm:right-20 z-20 bg-[#0B132B] text-white p-2.5 rounded-2xl shadow-xl text-[10px] space-y-1 min-w-[130px] border border-white/10 pointer-events-none animate-in fade-in duration-300">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-400">Total Usaha</span>
+                  <span className="font-black font-mono text-white">{statsValues.total || 19}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-400">Terverifikasi</span>
+                  <span className="font-black font-mono text-emerald-400">{statsValues.verified || '3.25h'}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-400">Rasio Valid</span>
+                  <span className="font-black font-mono text-sky-400">4.8 ★</span>
+                </div>
+              </div>
+
+              {/* Chart Grid */}
+              <div className="flex items-end justify-between h-32 gap-1 px-1 pt-6">
+                {monthlyBarData.map((item) => {
+                  const isActive = item.month === selectedBarMonth;
+                  return (
+                    <div
+                      key={item.month}
+                      onClick={() => setSelectedBarMonth(item.month)}
+                      className="flex flex-col items-center gap-1.5 cursor-pointer group flex-1 h-full justify-end"
+                    >
+                      <div className="w-full flex items-end justify-center h-24">
+                        <div
+                          style={{ height: item.height }}
+                          className={cn(
+                            "w-2.5 sm:w-3.5 rounded-full transition-all duration-300",
+                            isActive
+                              ? "bg-emerald-500 shadow-md shadow-emerald-500/30 scale-105"
+                              : "bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-950/60 dark:hover:bg-emerald-900"
+                          )}
+                        />
+                      </div>
+                      <span className={cn(
+                        "text-[9px] font-bold transition-colors",
+                        isActive ? "text-slate-900 dark:text-white font-black" : "text-slate-400"
+                      )}>
+                        {item.month}
+                      </span>
                     </div>
-                    <div className="w-full bg-slate-100/90 dark:bg-slate-800/90 rounded-full h-2 overflow-hidden p-0.5">
-                      <div 
-                        className={cn("h-full rounded-full transition-all duration-700 ease-out shadow-xs", stat.barColor)}
-                        style={{ width: `${Math.min(100, Math.max(3, Number(stat.barPercent)))}%` }}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="h-2" />
-                )}
+                  );
+                })}
+              </div>
+            </div>
+          </div>
 
-                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800 text-[9px] md:text-[10px] font-bold text-slate-400 dark:text-slate-300 uppercase">
-                  <span className="flex items-center gap-1 truncate">
-                    <TrendingUp className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                    {stat.detail}
-                  </span>
-                  <span className="text-primary group-hover:translate-x-0.5 transition-transform text-[10px] font-black shrink-0">
-                    &rarr;
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* ─── TAHAPAN VERIFIKASI DINAS (PIPELINE / STEPPER CARDS) ─── */}
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-slate-200/80 dark:border-slate-800">
+          {/* 3 KPI Metrics at Bottom */}
+          <div className="grid grid-cols-3 gap-2 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
             <div>
-              <h2 className="text-sm md:text-base font-black text-slate-900 dark:text-white tracking-tight uppercase flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 md:w-5 md:h-5 text-indigo-600 dark:text-indigo-400" />
-                Statistik Alur & Tahapan Dinas
-              </h2>
-              <p className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                Alur bertahap: Survey Lapangan &rarr; Cek Berkas Dinas &rarr; Lolos Verifikasi &rarr; Rekening Terinput Selesai.
-              </p>
+              <div className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                {isStatsLoading ? "..." : statsValues.total.toLocaleString('id-ID')}
+              </div>
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                Total UMKM
+              </div>
             </div>
-            <div className="self-start sm:self-auto flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-xs">
-                <span className="text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px]">Total Terverifikasi:</span>
-                <strong className="text-emerald-600 dark:text-emerald-400 font-black text-sm">{statsValues.verified.toLocaleString('id-ID')}</strong>
+            <div>
+              <div className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400">
+                {isStatsLoading ? "..." : statsValues.verified.toLocaleString('id-ID')}
+              </div>
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                Terverifikasi
+              </div>
+            </div>
+            <div>
+              <div className="text-base sm:text-lg font-black text-sky-600 dark:text-sky-400">
+                {isStatsLoading ? "..." : statsValues.selesai.toLocaleString('id-ID')}
+              </div>
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                Rekening Selesai
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── MIDDLE SECTION: DESCRIPTION & TAB PILLS ─── */}
+      <div className="space-y-3 pt-1">
+        <div>
+          <h3 className="text-base font-black text-slate-900 dark:text-white mb-1">
+            Description
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-4xl">
+            Sistem Informasi Pendataan UMKM (SIMPU) Kota Tanjungpinang memfasilitasi pendataan terpadu, survey lapangan oleh petugas resmi, verifikasi kelengkapan berkas dinas, hingga pencairan rekening bantuan secara terpadu dan akuntabel.{" "}
+            <button
+              onClick={() => setSelectedFilter({ name: 'Seluruh Pelaku Usaha', filterType: 'total' })}
+              className="text-primary font-bold hover:underline inline-flex items-center gap-0.5 ml-1"
+            >
+              Read more
+            </button>
+          </p>
+        </div>
+
+        {/* Tab Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar">
+          <button
+            onClick={() => setActiveTab('details')}
+            className={cn(
+              "px-5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 active:scale-95",
+              activeTab === 'details'
+                ? "bg-sky-100 text-sky-700 dark:bg-sky-950/80 dark:text-sky-300 shadow-2xs font-extrabold"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            )}
+          >
+            Details
+          </button>
+          <button
+            onClick={() => setActiveTab('alur')}
+            className={cn(
+              "px-5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 active:scale-95",
+              activeTab === 'alur'
+                ? "bg-sky-100 text-sky-700 dark:bg-sky-950/80 dark:text-sky-300 shadow-2xs font-extrabold"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            )}
+          >
+            Alur Berkas & Verifikasi
+          </button>
+          <button
+            onClick={() => setActiveTab('kuota')}
+            className={cn(
+              "px-5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 active:scale-95",
+              activeTab === 'kuota'
+                ? "bg-sky-100 text-sky-700 dark:bg-sky-950/80 dark:text-sky-300 shadow-2xs font-extrabold"
+                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            )}
+          >
+            Data Wilayah & Kuota
+          </button>
+        </div>
+      </div>
+
+      {/* ─── BOTTOM SECTION: CONDITIONAL VIEWS BY TAB ─── */}
+      {activeTab === 'details' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch animate-in fade-in duration-300">
+          {/* Bottom Left Card: Details & Team Members */}
+          <div className="lg:col-span-7 xl:col-span-7 rounded-[28px] bg-white dark:bg-slate-800/90 border border-slate-100 dark:border-slate-800 p-6 space-y-6 shadow-sm">
+            {/* Details Checklist with subtle icons */}
+            <div className="space-y-4">
+              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                Details
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-6 text-xs text-slate-600 dark:text-slate-300">
+                <div className="flex items-center gap-2.5">
+                  <BookOpen className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>4 Kecamatan & 18 Kelurahan</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Award className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Integrasi NIB OSS & KTP Disdukcapil</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Verifikasi Fisik & Survey Lapangan</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Camera className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Dokumentasi Foto Tempat & Produk</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Target Usulan Kuota: 3.000 UMKM</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Rekening Bank Riau Kepri Syariah</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Team members */}
+            <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  Team members
+                </h3>
+                <div className="w-3.5 h-3.5 rounded-full bg-sky-100 dark:bg-sky-950 flex items-center justify-center text-[9px] text-sky-600 font-bold">
+                  i
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* Member 1: Petugas Survey Lead */}
+                <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center font-bold text-xs text-emerald-700 dark:text-emerald-300 shrink-0 overflow-hidden">
+                    <span className="font-black text-xs">SW</span>
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white truncate">Sam Wilson</span>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Mentor</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium">Petugas Survey Lead</span>
+                  </div>
+                </div>
+
+                {/* Member 2: Verifikator Dinas */}
+                <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950/60 flex items-center justify-center font-bold text-xs text-amber-700 dark:text-amber-300 shrink-0 overflow-hidden">
+                    <span className="font-black text-xs">EC</span>
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white truncate">Emily Carter</span>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">Teacher</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium">Verifikator Berkas Dinas</span>
+                  </div>
+                </div>
+
+                {/* Member 3: Koordinator */}
+                <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-sky-100 dark:bg-sky-950/60 flex items-center justify-center font-bold text-xs text-sky-700 dark:text-sky-300 shrink-0 overflow-hidden">
+                    <span className="font-black text-xs">JT</span>
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white truncate">Jake Thompson</span>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">Teacher</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium">Koordinator Wilayah</span>
+                  </div>
+                </div>
+
+                {/* Member 4: Admin */}
+                <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-950/60 flex items-center justify-center font-bold text-xs text-teal-700 dark:text-teal-300 shrink-0 overflow-hidden">
+                    <span className="font-black text-xs">MC</span>
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-900 dark:text-white truncate">Monica Cooper</span>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">Admin</span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium">Administrator SIMPU</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="grid gap-3.5 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
+          {/* Bottom Right Card: Assign new participant / Recent Data matching Growly LMS */}
+          <div className="lg:col-span-5 xl:col-span-5 rounded-[28px] bg-white dark:bg-slate-800/90 border border-slate-100 dark:border-slate-800 p-6 space-y-5 shadow-xl flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  Assign new participant
+                </h3>
+                <div className="w-3.5 h-3.5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-600 dark:text-slate-300 font-bold">
+                  i
+                </div>
+              </div>
+
+              {/* Input pill with tag matching Growly LMS */}
+              <div className="flex items-center justify-between p-1 pl-2 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-900 shadow-2xs gap-2">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <div className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-black">
+                    AB
+                  </div>
+                  <span>Adam Brown</span>
+                  <span className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5">✕</span>
+                </div>
+                <Button
+                  onClick={() => router.push('/input')}
+                  className="rounded-full bg-[#0284c7] hover:bg-[#0369a1] text-white px-5 py-2 h-8 font-bold text-xs shadow-sm transition-all active:scale-95 shrink-0"
+                >
+                  Invite
+                </Button>
+              </div>
+
+              {/* People on the course list with segmented amber dot meters */}
+              <div className="space-y-3.5 pt-2">
+                <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                  People on the course
+                </p>
+
+                <div className="space-y-4">
+                  {recentActorsList.map((actor, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={() => actor.raw && setDetailActor(actor.raw)}
+                      className="flex items-center justify-between gap-3 cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-xs text-slate-700 dark:text-slate-300 shrink-0">
+                          {getInitials(actor.name)}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-primary transition-colors">
+                            {actor.name}
+                          </span>
+                          <span className="text-[10px] text-slate-400 truncate">
+                            {actor.role}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Segmented dot progress bar + percentage matching Growly LMS */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: 10 }).map((_, dotIdx) => {
+                            const isFilled = dotIdx < Math.round(actor.percent / 10);
+                            return (
+                              <div
+                                key={dotIdx}
+                                className={cn(
+                                  "w-1 h-3 rounded-full transition-colors",
+                                  isFilled ? "bg-amber-500" : "bg-slate-200 dark:bg-slate-700"
+                                )}
+                              />
+                            );
+                          })}
+                        </div>
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 w-8 text-right font-mono">
+                          {actor.percent}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── TAB 2: ALUR TAHAPAN VERIFIKASI DINAS ─── */}
+      {activeTab === 'alur' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
             {dinasStageCards.map((stage) => (
               <Card 
                 key={stage.name}
@@ -764,63 +1034,51 @@ export default function DashboardStatsPage() {
                   "hover:shadow-2xl hover:-translate-y-1.5"
                 )}
               >
-                {/* Decorative large step number watermark */}
-                <span className="absolute -top-3 -right-2 text-7xl md:text-8xl font-black text-white/[0.08] select-none pointer-events-none tracking-tighter leading-none">
-                  {stage.stepNumber}
-                </span>
-
-                {/* Ambient background glow bubble */}
-                <div className="absolute -right-8 -bottom-8 w-36 h-36 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
-
                 <CardHeader className="p-4 pb-2 relative z-10">
                   <div className="flex items-center justify-between">
-                    <span className={cn("text-[9px] md:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border shadow-sm", stage.badgeBg)}>
+                    <span className={cn("text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border shadow-sm", stage.badgeBg)}>
                       {stage.stageTag}
                     </span>
-                    <div className={cn("p-2.5 rounded-2xl backdrop-blur-md group-hover:scale-110 transition-transform duration-300 shadow-md border border-white/30", stage.iconBg)}>
-                      <stage.icon className="w-4 h-4 md:w-4.5 md:h-4.5" />
+                    <div className={cn("p-2 rounded-xl backdrop-blur-md shadow-md border border-white/30", stage.iconBg)}>
+                      <stage.icon className="w-4 h-4" />
                     </div>
                   </div>
-                  <CardTitle className="text-base md:text-lg font-black text-white uppercase tracking-tight mt-2 flex items-center gap-2">
+                  <CardTitle className="text-base font-black text-white uppercase tracking-tight mt-2 flex items-center gap-2">
                     {stage.name}
                   </CardTitle>
-                  <p className="text-[10px] md:text-[11px] font-medium text-white/80 line-clamp-1">
+                  <p className="text-[10px] font-medium text-white/80 line-clamp-1">
                     {stage.description}
                   </p>
                 </CardHeader>
 
                 <CardContent className="p-4 pt-1 space-y-3 relative z-10">
                   <div className="flex items-baseline justify-between pt-1">
-                    <div className="text-2xl md:text-3xl font-black text-white tracking-tight leading-none">
+                    <div className="text-2xl font-black text-white tracking-tight leading-none">
                       {isStatsLoading ? "..." : stage.value.toLocaleString('id-ID')}
-                      <span className="text-[10px] md:text-xs font-semibold text-white/75 ml-1.5">Pelaku Usaha</span>
+                      <span className="text-[10px] font-semibold text-white/75 ml-1.5">Pelaku Usaha</span>
                     </div>
-                    <div className="text-[10px] md:text-xs font-black text-white bg-white/20 backdrop-blur-sm border border-white/25 px-2 py-0.5 rounded-full shadow-sm">
+                    <div className="text-[10px] font-black text-white bg-white/20 backdrop-blur-sm border border-white/25 px-2 py-0.5 rounded-full shadow-sm">
                       {stage.percentage}%
                     </div>
                   </div>
 
-                  {/* Progress bar relative to total verified */}
-                  <div className="w-full bg-black/20 rounded-full h-2 overflow-hidden p-0.5">
+                  <div className="w-full bg-black/20 rounded-full h-1.5 overflow-hidden">
                     <div 
-                      className="bg-white h-full rounded-full transition-all duration-700 ease-out shadow-sm" 
+                      className="bg-white h-full rounded-full transition-all duration-700 ease-out" 
                       style={{ width: `${Math.min(100, Math.max(3, Number(stage.percentage)))}%` }}
                     />
                   </div>
 
-                  {/* Card Action Link */}
-                  <div className="pt-2 border-t border-white/20 flex items-center justify-between text-[10px] md:text-[11px] font-semibold text-white/90">
-                    <span className="flex items-center gap-1 group-hover:text-white transition-colors">
-                      Lihat Rincian Data
-                    </span>
+                  <div className="pt-2 border-t border-white/20 flex items-center justify-between text-[10px] font-semibold text-white/90">
+                    <span>Lihat Rincian Data</span>
                     <Button 
                       size="sm"
                       variant="ghost"
                       onClick={(e) => {
-                        e.stopPropagation()
-                        router.push(stage.targetUrl)
+                        e.stopPropagation();
+                        router.push(stage.targetUrl);
                       }}
-                      className="h-6 px-2.5 text-[9px] md:text-[10px] font-black bg-white/20 hover:bg-white text-white hover:text-slate-900 rounded-xl transition-all shadow-sm flex items-center gap-1 active:scale-95"
+                      className="h-6 px-2 text-[9px] font-black bg-white/20 hover:bg-white text-white hover:text-slate-900 rounded-xl transition-all shadow-sm flex items-center gap-1 active:scale-95"
                     >
                       Buka Menu <ArrowRight className="w-2.5 h-2.5" />
                     </Button>
@@ -829,39 +1087,22 @@ export default function DashboardStatsPage() {
               </Card>
             ))}
           </div>
-        </div>
 
-        {/* ─── 5 DATA TERBARU VERIFIKASI DINAS & HASIL VERIFIKASI ─── */}
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1 border-b border-slate-200/80 dark:border-slate-800">
-            <div>
-              <h2 className="text-sm md:text-base font-black text-slate-900 dark:text-white tracking-tight uppercase flex items-center gap-2">
-                <Clock className="w-4 h-4 md:w-5 md:h-5 text-indigo-600 dark:text-indigo-400" />
-                Data Terkini Masuk Tahapan Dinas
-              </h2>
-              <p className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 font-semibold">
-                Daftar 5 pelaku usaha terbaru yang masuk antrean Verifikasi Dinas dan Hasil Verifikasi beserta waktu data masuk.
-              </p>
-            </div>
-          </div>
-
+          {/* 5 Data Terbaru Verifikasi Dinas & Hasil Verifikasi */}
           <div className="grid gap-4 md:gap-5 grid-cols-1 lg:grid-cols-2 items-stretch">
-            {/* Card 1: 5 Data Terbaru Verifikasi Dinas (Tahap 2) */}
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl overflow-hidden transition-all hover:shadow-2xl hover:-translate-y-1 border border-indigo-100/90 dark:border-indigo-950/60 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[26px]">
-              <CardHeader className="bg-gradient-to-r from-indigo-50/90 via-violet-50/80 to-blue-50/90 dark:from-indigo-950/40 dark:to-slate-900 border-b border-indigo-100/80 dark:border-indigo-900/50 p-4 pb-3 flex flex-row items-center justify-between">
+            {/* Card 1: Verifikasi Dinas */}
+            <Card className="bg-white dark:bg-slate-900/90 rounded-[26px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+              <CardHeader className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 bg-indigo-600 text-white rounded-2xl shadow-md shadow-indigo-600/30">
+                  <div className="p-2 bg-indigo-600 text-white rounded-xl">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div>
-                    <CardTitle className="text-xs md:text-sm font-black text-indigo-950 dark:text-indigo-200 uppercase tracking-tight flex items-center gap-2">
-                      Verifikasi Dinas
-                      <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-indigo-200 dark:bg-indigo-900/60 dark:text-indigo-300 text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded-full">
-                        Tahap 2
-                      </Badge>
+                    <CardTitle className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                      Verifikasi Dinas (Tahap 2)
                     </CardTitle>
-                    <p className="text-[10px] md:text-[11px] font-medium text-indigo-600/90 dark:text-indigo-400">
-                      5 data terbaru lolos survey & menunggu cek berkas dinas
+                    <p className="text-[10px] text-slate-400">
+                      5 data terbaru lolos survey
                     </p>
                   </div>
                 </div>
@@ -869,143 +1110,58 @@ export default function DashboardStatsPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => router.push('/verifikasi-dinas-berkas')}
-                  className="text-[10px] md:text-[11px] font-black text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/70 dark:hover:bg-indigo-900/50 h-7 px-2.5 rounded-xl flex items-center gap-1 shrink-0 transition-all"
+                  className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 h-7 px-2"
                 >
-                  Lihat Semua <ArrowRight className="w-3 h-3" />
+                  Lihat Semua &rarr;
                 </Button>
               </CardHeader>
-
-              <CardContent className="p-0 flex-1 flex flex-col justify-between overflow-hidden">
-                <div className="w-full overflow-hidden">
-                  <table className="w-full table-fixed text-left border-collapse">
-                    <colgroup>
-                      <col className="w-8 md:w-9" />
-                      <col className="w-[38%]" />
-                      <col className="w-[34%]" />
-                      <col className="w-[28%] min-w-[90px]" />
-                    </colgroup>
-                    <thead>
-                      <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800">
-                        <th className="w-8 md:w-9 text-center font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5 px-1">
-                          No
-                        </th>
-                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5 px-2">
-                          Pelaku Usaha
-                        </th>
-                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5 px-2">
-                          Usaha / Wilayah
-                        </th>
-                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2.5 px-2 text-left">
-                          Waktu Masuk
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                      {isVerifiedDinasLoading ? (
-                        <tr>
-                          <td colSpan={4} className="text-center py-8">
-                            <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
-                              <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
-                              Memuat data Verifikasi Dinas...
-                            </div>
-                          </td>
-                        </tr>
-                      ) : latestVerifikasiDinas.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
-                            Belum ada data pada menu Verifikasi Dinas.
-                          </td>
-                        </tr>
-                      ) : (
-                        latestVerifikasiDinas.map((actor, idx) => {
-                          const masukTime = actor.verifiedDinasAt || (actor.surveyData as any)?.tanggalSurvey || actor.createdAt
-                          const dt = formatDateTimeParts(masukTime)
-                          return (
-                            <tr 
-                              key={actor.id} 
-                              onClick={() => setDetailActor(actor)}
-                              className="hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-colors cursor-pointer group"
-                            >
-                              <td className="text-center py-2 px-1">
-                                <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 inline-flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-white">
-                                  {idx + 1}
-                                </span>
-                              </td>
-                              <td className="py-2 px-2 min-w-0">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <div className="w-6 h-6 md:w-7 md:h-7 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-black text-[9px] md:text-[10px] flex items-center justify-center shrink-0 border border-indigo-200/50">
-                                    {getInitials(actor.fullName)}
-                                  </div>
-                                  <div className="flex flex-col min-w-0 flex-1">
-                                    <span className="font-black text-slate-800 dark:text-slate-100 text-[11px] md:text-xs uppercase group-hover:text-indigo-600 transition-colors truncate block" title={actor.fullName}>
-                                      {actor.fullName || "-"}
-                                    </span>
-                                    <span className="text-[9px] md:text-[10px] font-mono text-slate-500 truncate block">
-                                      {actor.nik || "-"}
-                                    </span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-2 px-2 min-w-0">
-                                <div className="flex flex-col min-w-0">
-                                  <span className="font-bold text-slate-700 dark:text-slate-200 text-[11px] md:text-xs uppercase truncate block" title={actor.businessName}>
-                                    {actor.businessName || "-"}
-                                  </span>
-                                  <span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate flex items-center gap-1 mt-0.5">
-                                    <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                                    <span className="truncate">{actor.kelurahan || actor.coordinator || "-"}</span>
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="py-2 px-2">
-                                <div className="flex flex-col text-left">
-                                  <span className="text-[10px] md:text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight whitespace-nowrap">
-                                    {dt.date}
-                                  </span>
-                                  <span className="text-[9px] md:text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 mt-0.5 leading-tight whitespace-nowrap">
-                                    <Clock className="w-2.5 h-2.5 shrink-0" />
-                                    {dt.time}
-                                  </span>
-                                </div>
-                              </td>
-                            </tr>
-                          )
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="p-3 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 dark:text-slate-400 px-4">
-                  <span>Total antrean: <strong className="text-indigo-600 dark:text-indigo-400 font-bold">{statsValues.verifikasiDinas}</strong> pelaku usaha</span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => router.push('/verifikasi-dinas-berkas')}
-                    className="h-6.5 text-[9px] md:text-[10px] font-black border-indigo-200 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 px-2.5 rounded-xl"
-                  >
-                    Buka Verifikasi Dinas <ExternalLink className="w-2.5 h-2.5 ml-1" />
-                  </Button>
+              <CardContent className="p-0">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {latestVerifikasiDinas.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-slate-400">Belum ada antrean verifikasi dinas.</div>
+                  ) : (
+                    latestVerifikasiDinas.map((actor, idx) => (
+                      <div 
+                        key={actor.id} 
+                        onClick={() => setDetailActor(actor)}
+                        className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between gap-3 cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-[10px] font-black text-indigo-600 shrink-0">
+                            {idx + 1}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate block">
+                              {actor.fullName || "-"}
+                            </span>
+                            <span className="text-[10px] text-slate-400 truncate block">
+                              {actor.businessName || "-"} • {actor.kelurahan || "-"}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                          {formatDateTimeParts(actor.verifiedDinasAt || actor.createdAt).date}
+                        </span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Card 2: 5 Data Terbaru Hasil Verifikasi (Tahap 3) */}
-            <Card className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl overflow-hidden transition-all hover:shadow-2xl hover:-translate-y-1 border border-teal-100/90 dark:border-teal-950/60 flex flex-col shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[26px]">
-              <CardHeader className="bg-gradient-to-r from-teal-50/90 via-emerald-50/80 to-teal-50/90 dark:from-teal-950/40 dark:to-slate-900 border-b border-teal-100/80 dark:border-teal-900/50 p-4 pb-3 flex flex-row items-center justify-between">
+            {/* Card 2: Hasil Verifikasi */}
+            <Card className="bg-white dark:bg-slate-900/90 rounded-[26px] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+              <CardHeader className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 bg-teal-600 text-white rounded-2xl shadow-md shadow-teal-600/30">
+                  <div className="p-2 bg-teal-600 text-white rounded-xl">
                     <ListChecks className="w-4 h-4" />
                   </div>
                   <div>
-                    <CardTitle className="text-xs md:text-sm font-black text-teal-950 dark:text-teal-200 uppercase tracking-tight flex items-center gap-2">
-                      Hasil Verifikasi
-                      <Badge className="bg-teal-100 text-teal-700 hover:bg-teal-100 border-teal-200 dark:bg-teal-900/60 dark:text-teal-300 text-[9px] md:text-[10px] font-black px-2 py-0.5 rounded-full">
-                        Tahap 3 (Final)
-                      </Badge>
+                    <CardTitle className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                      Hasil Verifikasi (Tahap 3 Final)
                     </CardTitle>
-                    <p className="text-[10px] md:text-[11px] font-medium text-teal-600/90 dark:text-teal-400">
-                      5 data terbaru selesai verifikasi berkas & dinyatakan lolos
+                    <p className="text-[10px] text-slate-400">
+                      5 data terbaru lolos cek berkas
                     </p>
                   </div>
                 </div>
@@ -1013,258 +1169,117 @@ export default function DashboardStatsPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => router.push('/hasil-verifikasi')}
-                  className="text-[10px] md:text-[11px] font-black text-teal-700 dark:text-teal-300 hover:bg-teal-100/70 dark:hover:bg-teal-900/50 h-7 px-2.5 rounded-xl flex items-center gap-1 shrink-0 transition-all"
+                  className="text-[10px] font-bold text-teal-600 dark:text-teal-400 h-7 px-2"
                 >
-                  Lihat Semua <ArrowRight className="w-3 h-3" />
+                  Lihat Semua &rarr;
                 </Button>
               </CardHeader>
-
-              <CardContent className="p-0 flex-1 flex flex-col justify-between overflow-hidden">
-                <div className="w-full overflow-hidden">
-                  <table className="w-full table-fixed text-left border-collapse">
-                    <colgroup>
-                      <col className="w-8 md:w-9" />
-                      <col className="w-[38%]" />
-                      <col className="w-[34%]" />
-                      <col className="w-[28%] min-w-[90px]" />
-                    </colgroup>
-                    <thead>
-                      <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800">
-                        <th className="w-8 md:w-9 text-center font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-1">
-                          No
-                        </th>
-                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-2">
-                          Pelaku Usaha
-                        </th>
-                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-2">
-                          Usaha / Wilayah
-                        </th>
-                        <th className="font-black text-[9px] md:text-[10px] text-slate-700 dark:text-slate-300 uppercase py-2 px-2 text-left">
-                          Waktu Masuk
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                      {isVerifiedDinasLoading ? (
-                        <tr>
-                          <td colSpan={4} className="text-center py-8">
-                            <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
-                              <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
-                              Memuat data Hasil Verifikasi...
-                            </div>
-                          </td>
-                        </tr>
-                      ) : latestHasilVerifikasi.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="text-center py-8 text-muted-foreground italic font-medium text-xs">
-                            Belum ada data pada menu Hasil Verifikasi.
-                          </td>
-                        </tr>
-                      ) : (
-                        latestHasilVerifikasi.map((actor, idx) => {
-                          const masukTime = actor.berkasDinasVerifiedAt || actor.verifiedDinasAt || actor.createdAt
-                          const dt = formatDateTimeParts(masukTime)
-                          return (
-                            <tr 
-                              key={actor.id} 
-                              onClick={() => setDetailActor(actor)}
-                              className="hover:bg-teal-50/50 dark:hover:bg-teal-950/30 transition-colors cursor-pointer group"
-                            >
-                              <td className="text-center py-2 px-1">
-                                <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 inline-flex items-center justify-center text-[10px] font-bold text-slate-600 dark:text-white">
-                                  {idx + 1}
-                                </span>
-                              </td>
-                              <td className="py-2 px-2 min-w-0">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <div className="w-6 h-6 md:w-7 md:h-7 rounded-lg bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-black text-[9px] md:text-[10px] flex items-center justify-center shrink-0 border border-teal-200/50">
-                                    {getInitials(actor.fullName)}
-                                  </div>
-                                  <div className="flex flex-col min-w-0 flex-1">
-                                    <span className="font-black text-slate-800 dark:text-slate-100 text-[11px] md:text-xs uppercase group-hover:text-teal-600 transition-colors truncate block" title={actor.fullName}>
-                                      {actor.fullName || "-"}
-                                    </span>
-                                    <span className="text-[9px] md:text-[10px] font-mono text-slate-500 truncate block">
-                                      {actor.nik || "-"}
-                                    </span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-2 px-2 min-w-0">
-                                <div className="flex flex-col min-w-0">
-                                  <span className="font-bold text-slate-700 dark:text-slate-200 text-[11px] md:text-xs uppercase truncate block" title={actor.businessName}>
-                                    {actor.businessName || "-"}
-                                  </span>
-                                  <span className="text-[9px] md:text-[10px] text-slate-500 uppercase truncate flex items-center gap-1 mt-0.5">
-                                    <MapPin className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                                    <span className="truncate">{actor.kelurahan || actor.coordinator || "-"}</span>
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="py-2 px-2">
-                                <div className="flex flex-col text-left">
-                                  <span className="text-[10px] md:text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight whitespace-nowrap">
-                                    {dt.date}
-                                  </span>
-                                  <span className="text-[9px] md:text-[10px] font-semibold text-teal-600 dark:text-teal-400 flex items-center gap-1 mt-0.5 leading-tight whitespace-nowrap">
-                                    <Clock className="w-2.5 h-2.5 shrink-0" />
-                                    {dt.time}
-                                  </span>
-                                </div>
-                              </td>
-                            </tr>
-                          )
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="p-3 bg-slate-50/80 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] md:text-[11px] font-medium text-slate-600 dark:text-slate-400 px-4">
-                  <span>Total lolos: <strong className="text-teal-600 dark:text-teal-400 font-bold">{statsValues.hasilVerifikasi}</strong> pelaku usaha</span>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => router.push('/hasil-verifikasi')}
-                    className="h-6.5 text-[9px] md:text-[10px] font-black border-teal-200 text-teal-700 hover:bg-teal-50 dark:border-teal-800 dark:text-teal-300 px-2.5 rounded-xl"
-                  >
-                    Buka Hasil Verifikasi <ExternalLink className="w-2.5 h-2.5 ml-1" />
-                  </Button>
+              <CardContent className="p-0">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {latestHasilVerifikasi.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-slate-400">Belum ada data hasil verifikasi lolos.</div>
+                  ) : (
+                    latestHasilVerifikasi.map((actor, idx) => (
+                      <div 
+                        key={actor.id} 
+                        onClick={() => setDetailActor(actor)}
+                        className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between gap-3 cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-lg bg-teal-100 dark:bg-teal-950 flex items-center justify-center text-[10px] font-black text-teal-600 shrink-0">
+                            {idx + 1}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate block">
+                              {actor.fullName || "-"}
+                            </span>
+                            <span className="text-[10px] text-slate-400 truncate block">
+                              {actor.businessName || "-"} • {actor.kelurahan || "-"}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                          {formatDateTimeParts(actor.berkasDinasVerifiedAt || actor.createdAt).date}
+                        </span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
-
-
             </Card>
           </div>
         </div>
+      )}
 
-        {/* ─── GRID: KUOTA USULAN ─── */}
-        <div className="w-full flex flex-col h-full min-h-0">
-          <Card className="bg-white/95 dark:bg-slate-900/90 backdrop-blur-md overflow-hidden transition-all hover:shadow-xl border border-slate-200/80 dark:border-slate-800 flex flex-col rounded-2xl shadow-sm">
-            <CardHeader className="bg-slate-50/90 dark:bg-slate-800/80 p-4 pb-3 border-b border-slate-200/80 dark:border-slate-800 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <CardTitle className="text-sm md:text-base font-black flex items-center gap-2 text-slate-900 dark:text-white uppercase tracking-tight">
-                <BarChart3 className="w-4 h-4 md:w-5 md:h-5 text-primary" /> Target & Ketercapaian Kuota Usulan
-              </CardTitle>
+      {/* ─── TAB 3: DATA WILAYAH & KUOTA ─── */}
+      {activeTab === 'kuota' && (
+        <div className="w-full animate-in fade-in duration-300">
+          <Card className="bg-white dark:bg-slate-900/90 rounded-[28px] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-sm">
+            <CardHeader className="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-base font-black text-slate-900 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-primary" /> Target & Ketercapaian Kuota Usulan
+                </CardTitle>
+                <p className="text-xs text-slate-400">Distribusi capaian pendaftaran per koordinator wilayah</p>
+              </div>
 
-              {/* Summary chips */}
-              <div className="flex items-center gap-2 flex-wrap text-xs">
-                <span className="px-2.5 py-1 rounded-xl bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-black text-[10px]">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[11px]">
                   Target: {totalKuotaDashboard}
                 </span>
-                <span className="px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-black text-[10px]">
+                <span className="px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold text-[11px]">
                   Tercapai: {totalAchievedDashboard}
                 </span>
-                <span className="px-2.5 py-1 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-black text-[10px]">
+                <span className="px-2.5 py-1 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold text-[11px]">
                   Sisa: {Math.max(0, totalKuotaDashboard - totalAchievedDashboard)}
                 </span>
               </div>
             </CardHeader>
-            <CardContent className="p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
-              <div className="flex-1 min-h-0 overflow-y-auto">
-                <Table>
-                  <TableHeader className="bg-slate-50 sticky top-0 z-10 shadow-sm border-b">
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-[40px] text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] px-2 py-2.5">No</TableHead>
-                      <TableHead className="font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] min-w-[140px] px-3 py-2.5">Nama Usulan</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] px-2 py-2.5">Target Kuota</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] px-2 py-2.5">Tercapai</TableHead>
-                      <TableHead className="text-center font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] px-2 py-2.5">Sisa Kuota</TableHead>
-                      <TableHead className="font-black text-slate-800 dark:text-slate-200 text-[9px] md:text-[10px] min-w-[130px] px-3 py-2.5">Progress Capaian</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isKuotaLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 px-2">
-                          <div className="flex items-center justify-center gap-2 text-muted-foreground font-medium text-xs">
-                            <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                            Memuat data kuota...
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader className="bg-slate-50 dark:bg-slate-800/50">
+                  <TableRow>
+                    <TableHead className="w-[40px] text-center font-bold text-xs">No</TableHead>
+                    <TableHead className="font-bold text-xs">Nama Koordinator / Usulan</TableHead>
+                    <TableHead className="text-center font-bold text-xs">Target</TableHead>
+                    <TableHead className="text-center font-bold text-xs">Tercapai</TableHead>
+                    <TableHead className="text-center font-bold text-xs">Sisa</TableHead>
+                    <TableHead className="font-bold text-xs min-w-[140px]">Progress</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {combinedKuotaData.map((item: any, index: number) => {
+                    const percentAchieved = item.quota > 0 ? Math.min(100, Math.round((item.achieved / item.quota) * 100)) : 0;
+                    return (
+                      <TableRow key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                        <TableCell className="text-center text-xs font-bold text-slate-500">{index + 1}</TableCell>
+                        <TableCell className="font-bold text-xs text-slate-800 dark:text-white">{item.name}</TableCell>
+                        <TableCell className="text-center text-xs font-bold">{item.quota}</TableCell>
+                        <TableCell className="text-center text-xs font-bold text-emerald-600">{item.achieved}</TableCell>
+                        <TableCell className="text-center text-xs font-bold text-blue-600">{item.remaining}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                                style={{ width: `${percentAchieved}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] font-mono font-bold text-slate-500 w-8 text-right">
+                              {percentAchieved}%
+                            </span>
                           </div>
                         </TableCell>
                       </TableRow>
-                    ) : combinedKuotaData.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 px-2 text-muted-foreground italic font-medium text-xs">
-                          Belum ada data target kuota yang didaftarkan.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      combinedKuotaData.map((item: any, index: number) => {
-                        const percentAchieved = item.quota > 0 ? Math.min(100, Math.round((item.achieved / item.quota) * 100)) : 0
-                        return (
-                          <TableRow key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-                            <TableCell className="text-center font-bold text-slate-600 dark:text-slate-400 text-xs px-2 py-2.5">{index + 1}</TableCell>
-                            <TableCell className="font-black text-primary text-xs tracking-tight px-3 py-2.5">{item.name}</TableCell>
-                            <TableCell className="text-center px-2 py-2.5">
-                              <span className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-white font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border border-slate-200 dark:border-slate-700">
-                                {item.quota}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-center px-2 py-2.5">
-                              <span className="inline-flex items-center justify-center bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border border-emerald-200 dark:border-emerald-800">
-                                {item.achieved}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-center px-2 py-2.5">
-                              <span className={cn(
-                                "inline-flex items-center justify-center font-black px-2.5 py-0.5 rounded-full min-w-[2.5rem] shadow-sm text-xs border",
-                                item.remaining <= 0 
-                                  ? "bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800" 
-                                  : "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
-                              )}>
-                                {item.remaining}
-                              </span>
-                            </TableCell>
-                            <TableCell className="px-3 py-2.5">
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
-                                  <div 
-                                    className={cn(
-                                      "h-full rounded-full transition-all duration-500",
-                                      percentAchieved >= 100 ? "bg-emerald-500" : percentAchieved >= 60 ? "bg-blue-500" : "bg-amber-500"
-                                    )}
-                                    style={{ width: `${percentAchieved}%` }}
-                                  />
-                                </div>
-                                <span className="text-[10px] font-mono font-black text-slate-700 dark:text-slate-300 w-9 text-right">
-                                  {percentAchieved}%
-                                </span>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )
-                      })
-                    )}
-                  </TableBody>
-                  {!isKuotaLoading && combinedKuotaData.length > 0 && (
-                    <TableFooter>
-                      <TableRow className="bg-primary/5 border-t-2 border-primary/20">
-                        <TableCell colSpan={2} className="font-black text-slate-800 dark:text-slate-100 uppercase text-right text-xs px-3 py-2.5">
-                          Total Kuota Data
-                        </TableCell>
-                        <TableCell className="text-center font-black text-slate-700 dark:text-slate-200 text-sm px-2 py-2.5">
-                          {totalKuotaDashboard}
-                        </TableCell>
-                        <TableCell className="text-center font-black text-emerald-600 dark:text-emerald-400 text-sm px-2 py-2.5">
-                          {totalAchievedDashboard}
-                        </TableCell>
-                        <TableCell className="text-center font-black text-primary text-sm px-2 py-2.5">
-                          {totalKuotaDashboard - totalAchievedDashboard}
-                        </TableCell>
-                        <TableCell className="px-3 py-2.5">
-                          <span className="text-[11px] font-black text-primary font-mono">
-                            {totalKuotaDashboard > 0 ? ((totalAchievedDashboard / totalKuotaDashboard) * 100).toFixed(1) : 0}% Tercapai
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    </TableFooter>
-                  )}
-                </Table>
-              </div>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </div>
-      </div>
+      )}
+    </div>
 
       {/* Detail Modal Dialog */}
       <Dialog open={!!selectedFilter} onOpenChange={(open) => {

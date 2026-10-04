@@ -6,26 +6,21 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { InfoDialog } from '@/components/info-dialog';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { ProfileStatusDialog } from '@/components/ProfileStatusDialog';
-import { OfficeHoursTimer } from '@/components/OfficeHoursTimer'
 import { GlobalAutoVerifier } from '@/components/GlobalAutoVerifier';
 import { GlobalStatsAutoSync } from '@/components/GlobalStatsAutoSync';
 import { useUser, useDatabase, useList, useMemoFirebase, useObject, useAuth } from '@/firebase'
 import { ref, onValue, set, update, onDisconnect, serverTimestamp } from 'firebase/database'
 import { signOut } from 'firebase/auth'
-import { User as UserIcon, LayoutGrid, Home, LogOut, Check, X as XIcon, AlertCircle, MonitorOff, Loader2, ArrowLeft, Moon, Sun } from 'lucide-react'
+import { User as UserIcon, LayoutGrid, Home, LogOut, Check, X as XIcon, AlertCircle, MonitorOff, Loader2, ArrowLeft, Moon, Sun, Share2, MoreHorizontal, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { EventCountdown } from './event-countdown';
 import { useActiveEvent } from '@/hooks/use-active-event';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemePersistence } from '@/components/theme-persistence';
-import { RunningText } from './running-text';
 import { useSoundEffect } from '@/hooks/use-sound-effect';
 import { cn } from '@/lib/utils';
 import { MessageNotification } from './MessageNotification';
-import { RealtimeClock } from './realtime-clock';
-import { WeatherWidget } from './weather-widget';
-import { SystemInfoWidget } from './system-info-widget';
-import { KelurahanWidget } from './kelurahan-widget';
+import { useToast } from '@/hooks/use-toast';
 import { MobileBottomNav } from './mobile-bottom-nav';
 import { AppSidebar } from '@/components/app-sidebar';
 
@@ -35,6 +30,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading, userProfile: profile, isProfileLoading } = useUser();
   const auth = useAuth()
   const database = useDatabase();
+  const { toast } = useToast();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = React.useState(false);
   const [isDisplaced, setIsDisplaced] = React.useState(false); // True when another device took over the session
   const [isDarkMode, setIsDarkMode] = React.useState(false);
@@ -299,220 +295,166 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
     <>
       <ThemePersistence />
       <SidebarProvider defaultOpen={true}>
-        <div className="flex h-[100dvh] w-full overflow-hidden bg-transparent">
-          {user && !isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
-            <AppSidebar />
-          )}
-
-          <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
-            {user && !isLoginPage && <GlobalStatsAutoSync />}
-            {user && !isLoginPage && <MessageNotification />}
-            <Toaster />
-
-            {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
-              <>
-                <header className="sticky top-0 z-50 flex items-center justify-between px-3 sm:px-4 md:px-6 h-14 sm:h-16 md:h-18 bg-white/75 dark:bg-slate-900/80 backdrop-blur-2xl border-b border-white/60 dark:border-white/10 shrink-0 print:hidden shadow-[0_4px_24px_rgba(15,23,42,0.03)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.3)] gap-2 sm:gap-3 md:gap-4 relative">
-                  <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-                    {user && (
-                      <SidebarTrigger className="h-9 w-9 rounded-2xl border border-white/70 dark:border-white/10 bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 shadow-xs transition-all active:scale-95 shrink-0" />
-                    )}
-
-                    <Link href={user ? "/" : "/cek-data"} className="flex flex-col cursor-pointer hover:opacity-85 transition-opacity">
-                      <span className="text-xl sm:text-2xl font-black tracking-tighter leading-none text-primary">
-                        SIMPU
-                      </span>
-                      <span className="text-[8.5px] sm:text-[9.5px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">
-                        {isCekDataPage && !user ? "Portal Cek Data Publik" : (isPendaftaranPage && !user ? "Pendaftaran Pelaku Usaha" : "Kota Tanjungpinang")}
-                      </span>
-                    </Link>
-
-                    {currentTitle && (
-                      <>
-                        <div className="hidden xl:flex h-6 w-px bg-slate-200/80 dark:border-white/10 mx-1" />
-                        <h1 className="hidden xl:block text-sm md:text-base font-black text-slate-900 dark:text-white tracking-tight uppercase max-w-[240px] truncate">
-                          {currentTitle}
-                        </h1>
-                      </>
-                    )}
-                  </div>
-
-                {activeEvent && !isCekDataPage && !isPendaftaranPage && (
-                  <div className="hidden lg:flex items-center justify-center absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-none z-10 animate-in fade-in zoom-in duration-1000">
-                    <div className="pointer-events-auto">
-                      <EventCountdown 
-                        targetDate={activeEvent.endDate || activeEvent.date} 
-                        startDate={activeEvent.startDate} 
-                        title={activeEvent.description}
-                        size="sm" 
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0 ml-auto">
-                  {user ? (
-                    <>
-
-                      <div className="hidden sm:flex items-center gap-2">
-                        <RealtimeClock 
-                          className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl px-3.5 py-1.5 md:px-4 md:py-2 rounded-2xl border border-white/70 dark:border-white/10 shadow-sm hover:shadow transition-all" 
-                          timeClassName="text-xs md:text-sm font-mono font-black text-slate-900 dark:text-white tracking-tight leading-none" 
-                          dateClassName="text-[8.5px] md:text-[9.5px] font-extrabold text-slate-600 dark:text-slate-300 uppercase tracking-wider mt-0.5" 
-                        />
-                        <OfficeHoursTimer />
-                      </div>
-
-                      <button
-                        onClick={handleToggleTheme}
-                        className="flex w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl text-slate-800 dark:text-amber-400 items-center justify-center hover:bg-white dark:hover:bg-slate-700 transition-all active:scale-90 border border-white/70 dark:border-white/10 shadow-sm shrink-0"
-                        title={isDarkMode ? "Ganti ke Mode Terang (Light Mode)" : "Ganti ke Mode Gelap (Dark Mode)"}
-                        aria-label="Toggle Dark Mode"
-                      >
-                        {isDarkMode ? (
-                          <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 transition-transform hover:rotate-45" />
-                        ) : (
-                          <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700 transition-transform hover:-rotate-12" />
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => setIsLogoutDialogOpen(true)}
-                        className="flex w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-2xl bg-rose-50/90 dark:bg-rose-950/40 backdrop-blur-xl text-rose-600 dark:text-rose-400 items-center justify-center hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-all active:scale-90 border border-rose-200/80 dark:border-rose-900/40 shadow-sm group shrink-0"
-                        title="Logout / Keluar"
-                        aria-label="Logout"
-                      >
-                        <LogOut className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:-translate-x-0.5" />
-                      </button>
-
-                      <ConfirmDialog
-                        open={isLogoutDialogOpen}
-                        onOpenChange={setIsLogoutDialogOpen}
-                        icon={<AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />}
-                        title="Keluar dari Aplikasi?"
-                        description="Anda akan keluar dari sesi ini."
-                        cancelText="Batal"
-                        confirmText="Keluar"
-                        confirmIcon={<LogOut className="w-4 h-4" />}
-                        variant="destructive"
-                        onConfirm={() => {
-                          setIsLogoutDialogOpen(false);
-                          if (profile?.id && database) {
-                            update(ref(database, `system_users/${profile.id}`), {
-                              isOnline: false,
-                              lastSeen: Date.now()
-                            }).catch(() => {});
-                          }
-                          if (typeof window !== 'undefined') {
-                            sessionStorage.removeItem('simpu_2fa_passed');
-                          }
-                          signOut(auth).then(() => router.push('/login'));
-                        }}
-                      />
-
-                      {!isKoordinator && (
-                        <Link 
-                          href="/profile" 
-                          className="flex items-center gap-2 md:gap-3 group"
-                        >
-                          <div className="hidden md:flex flex-col items-end">
-                            <span className="text-[11px] font-black text-primary uppercase tracking-wider">{profile?.fullName?.split(' ')[0] || 'User'}</span>
-                            <span className="text-[8.5px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Profil</span>
-                          </div>
-                          <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-2xl overflow-hidden border-2 border-white/80 dark:border-white/20 ring-2 ring-primary/20 shadow-md transition-transform group-hover:scale-105 active:scale-95 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md flex items-center justify-center">
-                            {profile?.photoURL ? (
-                              <img src={profile.photoURL} alt="Profile" className="w-full h-full object-cover" />
-                            ) : (
-                              <UserIcon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                            )}
-                          </div>
-                        </Link>
-                      )}
-                    </>
-                  ) : (
-                    <Link
-                      href="/login"
-                      className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-4 md:px-5 py-2 sm:py-2.5 rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 bg-primary text-white hover:bg-primary/90 shadow-primary/20 shrink-0"
-                    >
-                      <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      <span>Login</span>
-                    </Link>
-                  )}
-                </div>
-              </header>
-              {user && <ProfileStatusDialog />}
-            </>
-          )}
-
-          <div className="flex flex-1 min-h-0 w-full overflow-hidden relative">
-            {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (!isCekDataPage || (user && !isCekDataPage)) && (!isPendaftaranPage || (user && !isPendaftaranPage)) && (
-              <div className="hidden lg:block absolute top-4 bottom-2 right-3 sm:right-4 lg:right-6 z-50 pointer-events-none">
-                <div className="pointer-events-auto flex flex-col items-end w-72 h-full overflow-hidden select-none">
-                  <div className="flex flex-col gap-2.5 w-full h-full overflow-y-auto no-scrollbar pb-2">
-                    <WeatherWidget className="w-full shrink-0" />
-                    <SystemInfoWidget 
-                      systemConfig={systemConfig} 
-                      profile={profile} 
-                      user={user} 
-                      className="w-full shrink-0" 
-                    />
-                    <KelurahanWidget className="w-full flex-1 min-h-[180px]" />
-                  </div>
-                </div>
-              </div>
+        <div className="flex h-[100dvh] w-full overflow-hidden p-0 sm:p-2.5 md:p-3.5 lg:p-4.5 xl:p-5 items-center justify-center">
+          <div className={cn(
+            "flex w-full h-full overflow-hidden transition-all duration-300",
+            isLoginPage || isLayarInformasiPage || isPortalSurveyPage
+              ? "rounded-none max-w-full"
+              : "max-w-[1720px] rounded-none sm:rounded-[28px] lg:rounded-[36px] shadow-2xl border border-white/50 dark:border-white/10 bg-white dark:bg-slate-900"
+          )}>
+            {user && !isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
+              <AppSidebar />
             )}
 
-            <main className={cn(
-              "flex-1 bg-transparent print:bg-white relative z-0 isolate flex flex-col custom-scrollbar",
-              isLoginPage ? "overflow-hidden" : isPortalSurveyPage ? "overflow-y-auto overflow-x-hidden" : isLayarInformasiPage ? "overflow-y-auto lg:overflow-hidden" : "overflow-y-auto"
-            )}>
-              <div key={pathname} className={cn(
-                "w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out",
-                isLoginPage ? "flex-1 flex flex-col min-h-0 p-0 overflow-hidden" : 
-                isPortalSurveyPage ? "p-0 min-h-full flex-1 flex flex-col" :
-                isLayarInformasiPage ? "p-0 min-h-full lg:h-full lg:max-h-full flex-1 flex flex-col overflow-y-auto lg:overflow-hidden" :
-                isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-7xl mx-auto" :
-                isPendaftaranPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-5xl mx-auto" :
-                isRootPage || pathname === '/dashboard' ? "p-3 sm:p-4 lg:p-4 min-h-full pb-6 lg:pr-[20.5rem] xl:pr-[21rem] 2xl:pr-[21.5rem]" : 
-                "p-3 sm:p-4 lg:p-4 min-h-full pb-32 sm:pb-28 md:pb-20 lg:pr-[20.5rem] xl:pr-[21rem] 2xl:pr-[21.5rem]"
+            <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-white dark:bg-slate-900">
+              {user && !isLoginPage && <GlobalStatsAutoSync />}
+              {user && !isLoginPage && <MessageNotification />}
+              <Toaster />
+
+              {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
+                <>
+                  <header className="flex items-center justify-between px-3 sm:px-6 h-14 sm:h-16 border-b border-slate-100 dark:border-slate-800/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shrink-0 print:hidden gap-3">
+                    {/* Breadcrumbs matching Growly LMS */}
+                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
+                      {user && (
+                        <SidebarTrigger className="h-8 w-8 sm:h-8.5 sm:w-8.5 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-2xs transition-all active:scale-95 shrink-0" />
+                      )}
+
+                      <Link href={user ? "/" : "/cek-data"} className="font-extrabold text-slate-900 dark:text-white hover:text-primary transition-colors flex items-center gap-1.5">
+                        <span>SIMPU</span>
+                      </Link>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
+                      <Link href="/dashboard" className="hover:text-slate-900 dark:hover:text-white transition-colors truncate hidden xs:inline">
+                        Dashboard
+                      </Link>
+                      {currentTitle && currentTitle !== 'Dashboard Statistik' && (
+                        <>
+                          <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0 hidden xs:inline" />
+                          <span className="text-slate-900 dark:text-white font-extrabold truncate max-w-[200px] sm:max-w-[320px]">
+                            {currentTitle}
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Action Pills matching Growly LMS: Share, Theme, Options/Logout */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+                      {user ? (
+                        <>
+                          <button
+                            onClick={() => {
+                              if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                                navigator.clipboard.writeText(window.location.href);
+                                playSound('click');
+                                toast({ title: "Tautan Disalin", description: "URL halaman berhasil disalin ke clipboard." });
+                              }
+                            }}
+                            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all shadow-2xs active:scale-95"
+                            title="Salin tautan halaman"
+                          >
+                            <Share2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                            <span>Share</span>
+                          </button>
+
+                          <button
+                            onClick={handleToggleTheme}
+                            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-amber-400 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-90 shadow-2xs"
+                            title={isDarkMode ? "Ganti ke Mode Terang" : "Ganti ke Mode Gelap"}
+                            aria-label="Toggle Dark Mode"
+                          >
+                            {isDarkMode ? (
+                              <Sun className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" />
+                            ) : (
+                              <Moon className="w-4 h-4 text-slate-700 transition-transform hover:-rotate-12" />
+                            )}
+                          </button>
+
+                          <button
+                            onClick={() => setIsLogoutDialogOpen(true)}
+                            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-all active:scale-90 shadow-2xs"
+                            title="Logout"
+                            aria-label="Logout"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+
+                          <ConfirmDialog
+                            open={isLogoutDialogOpen}
+                            onOpenChange={setIsLogoutDialogOpen}
+                            icon={<AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-slate-400" />}
+                            title="Keluar dari Aplikasi?"
+                            description="Anda akan keluar dari sesi ini."
+                            cancelText="Batal"
+                            confirmText="Keluar"
+                            confirmIcon={<LogOut className="w-4 h-4" />}
+                            variant="destructive"
+                            onConfirm={() => {
+                              setIsLogoutDialogOpen(false);
+                              if (profile?.id && database) {
+                                update(ref(database, `system_users/${profile.id}`), {
+                                  isOnline: false,
+                                  lastSeen: Date.now()
+                                }).catch(() => {});
+                              }
+                              if (typeof window !== 'undefined') {
+                                sessionStorage.removeItem('simpu_2fa_passed');
+                              }
+                              signOut(auth).then(() => router.push('/login'));
+                            }}
+                          />
+                        </>
+                      ) : (
+                        <Link
+                          href="/login"
+                          className="flex items-center gap-1.5 px-4 py-1.5 rounded-full font-bold text-xs bg-primary text-white hover:bg-primary/90 shadow-sm transition-all active:scale-95"
+                        >
+                          <UserIcon className="w-3.5 h-3.5" />
+                          <span>Login</span>
+                        </Link>
+                      )}
+                    </div>
+                  </header>
+                  {user && <ProfileStatusDialog />}
+                </>
+              )}
+
+              <main className={cn(
+                "flex-1 bg-white dark:bg-slate-900 print:bg-white relative z-0 isolate flex flex-col custom-scrollbar",
+                isLoginPage ? "overflow-hidden" : isPortalSurveyPage ? "overflow-y-auto overflow-x-hidden" : isLayarInformasiPage ? "overflow-y-auto lg:overflow-hidden" : "overflow-y-auto"
               )}>
-                {!isRootPage && pathname !== '/dashboard' && !isKoordinator && !isLoginPage && !isPortalSurveyPage && !isLayarInformasiPage && (
-                  <div className="mb-3.5 flex items-center justify-between gap-3 print:hidden">
-                    <button
-                      onClick={() => router.push('/')}
-                      className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl hover:bg-white dark:hover:bg-slate-800 text-slate-800 dark:text-slate-100 border border-white/70 dark:border-white/10 shadow-sm hover:shadow-md transition-all group active:scale-95 text-xs font-extrabold"
-                    >
-                      <ArrowLeft className="w-3.5 h-3.5 text-primary group-hover:-translate-x-1 transition-transform" />
-                      <span>Kembali ke Dashboard</span>
-                    </button>
-                    {currentTitle && (
-                      <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-bold select-none">
-                        <span>Dashboard</span>
-                        <span>/</span>
-                        <span className="text-slate-900 dark:text-white font-black uppercase">{currentTitle}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {children}
+                <div key={pathname} className={cn(
+                  "w-full relative z-0 animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out",
+                  isLoginPage ? "flex-1 flex flex-col min-h-0 p-0 overflow-hidden" : 
+                  isPortalSurveyPage ? "p-0 min-h-full flex-1 flex flex-col" :
+                  isLayarInformasiPage ? "p-0 min-h-full lg:h-full lg:max-h-full flex-1 flex flex-col overflow-y-auto lg:overflow-hidden" :
+                  isCekDataPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-7xl mx-auto" :
+                  isPendaftaranPage ? "p-3 sm:p-6 md:p-8 min-h-full pb-32 sm:pb-28 md:pb-20 max-w-5xl mx-auto" :
+                  "p-3 sm:p-5 lg:p-6 min-h-full"
+                )}>
+                  {!isRootPage && pathname !== '/dashboard' && !isKoordinator && !isLoginPage && !isPortalSurveyPage && !isLayarInformasiPage && (
+                    <div className="mb-3.5 flex items-center justify-between gap-3 print:hidden">
+                      <button
+                        onClick={() => router.push('/')}
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all active:scale-95 text-xs font-bold"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5 text-primary" />
+                        <span>Kembali ke Dashboard</span>
+                      </button>
+                    </div>
+                  )}
+                  {children}
 
-                {/* Safe Area Spacer for Mobile Bottom Navigation */}
-                {!isLoginPage && !isLayarInformasiPage && (
-                  <div className="h-20 sm:h-16 md:hidden shrink-0 pointer-events-none" aria-hidden="true" />
-                )}
-              </div>
-            </main>
-          </div>
-
-          {!isLoginPage && !isLayarInformasiPage && !isPortalSurveyPage && (
-            <div className="hidden sm:block">
-              <RunningText />
+                  {/* Safe Area Spacer for Mobile Bottom Navigation */}
+                  {!isLoginPage && !isLayarInformasiPage && (
+                    <div className="h-16 md:hidden shrink-0 pointer-events-none" aria-hidden="true" />
+                  )}
+                </div>
+              </main>
             </div>
-          )}
-
+          </div>
           <MobileBottomNav />
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
 
       {/* Single-device displaced overlay — shown when another device took over this session */}
       {isDisplaced && (

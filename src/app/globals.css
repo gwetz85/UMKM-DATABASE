@@ -118,32 +118,40 @@
     line-height: 1.65;
   }
   body.app-bg {
-    background-image: linear-gradient(135deg, rgba(248, 250, 252, 0.94) 0%, rgba(241, 245, 249, 0.90) 100%), url('/bg-dkukm-bpjs.jpg?v=20260723');
+    background-color: #0284c7;
+    background-image: 
+      radial-gradient(ellipse at 80% 12%, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 45%),
+      radial-gradient(ellipse at 18% 78%, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 50%),
+      radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.2) 0%, transparent 60%),
+      linear-gradient(135deg, #0284c7 0%, #0ea5e9 30%, #38bdf8 65%, #7dd3fc 100%);
     background-size: cover;
-    background-position: center top;
+    background-position: center;
     background-attachment: fixed;
     background-repeat: no-repeat;
-    background-color: #f8fafc;
   }
   @media (max-width: 768px) {
     body.app-bg {
       background-attachment: scroll;
-      background-size: cover;
-      background-image: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      background-image: linear-gradient(180deg, #0284c7 0%, #38bdf8 100%);
     }
   }
   .dark body.app-bg,
   body.dark.app-bg,
   html.dark body.app-bg {
-    background-image: linear-gradient(rgba(11, 15, 25, 0.93), rgba(11, 15, 25, 0.93)), url('/bg-dkukm-bpjs.jpg?v=20260723');
-    background-color: #0b0f19;
+    background-color: #060b14;
+    background-image: 
+      radial-gradient(ellipse at 80% 12%, rgba(14, 165, 233, 0.16) 0%, transparent 45%),
+      radial-gradient(ellipse at 18% 78%, rgba(56, 189, 248, 0.1) 0%, transparent 50%),
+      linear-gradient(135deg, #060b14 0%, #0b132b 50%, #030712 100%);
+    background-size: cover;
+    background-attachment: fixed;
   }
   @media (max-width: 768px) {
     .dark body.app-bg,
     body.dark.app-bg,
     html.dark body.app-bg {
       background-image: none;
-      background-color: #0b0f19;
+      background-color: #060b14;
     }
   }
 }
