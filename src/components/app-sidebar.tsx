@@ -172,12 +172,12 @@ export function AppSidebar() {
       <SidebarHeader className="py-4 px-4 flex flex-row items-center justify-between border-b border-white/10 bg-[#0B132B]">
         <InfoDialog>
           <button className="flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 outline-none group text-left">
-            <div className="relative w-9 h-9 rounded-2xl bg-gradient-to-tr from-sky-500 to-teal-400 p-[2px] shadow-md shadow-sky-500/20 shrink-0">
-              <div className="w-full h-full rounded-[14px] bg-[#0B132B] flex items-center justify-center overflow-hidden">
+            <div className="relative w-9 h-9 rounded-full bg-gradient-to-tr from-sky-500 to-teal-400 p-[2px] shadow-md shadow-sky-500/20 shrink-0">
+              <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
                 <img
                   src="/logo.png"
                   alt="SIMPU Logo"
-                  className="w-full h-full object-contain p-1"
+                  className="w-full h-full object-cover rounded-full"
                 />
               </div>
             </div>
