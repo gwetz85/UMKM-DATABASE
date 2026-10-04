@@ -21,7 +21,9 @@ import {
   BookOpen,
   Award,
   Camera,
-  Calendar
+  Calendar,
+  Loader2,
+  UserCheck
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useMemo, useState, useRef } from "react"
