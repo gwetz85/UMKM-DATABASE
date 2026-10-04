@@ -37,23 +37,23 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[420px] border border-slate-200 shadow-2xl p-0 overflow-hidden rounded-3xl bg-white">
+      <DialogContent className="max-w-[420px] border border-slate-200 dark:border-white/10 shadow-2xl p-0 overflow-hidden rounded-3xl bg-white dark:bg-[#0B132B]">
         <div className="flex flex-col items-center pt-8 sm:pt-10 pb-4 sm:pb-6 px-5 sm:px-8">
           {/* Icon Circle */}
           {icon && (
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-[3px] border-slate-300 flex items-center justify-center mb-4 sm:mb-6">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-[3px] border-slate-300 dark:border-slate-700 flex items-center justify-center mb-4 sm:mb-6">
               {icon}
             </div>
           )}
 
           {/* Title */}
-          <h2 className="text-lg sm:text-xl font-black text-slate-800 text-center mb-1.5 sm:mb-2">
+          <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-white text-center mb-1.5 sm:mb-2">
             {title}
           </h2>
 
           {/* Description */}
           {description && (
-            <p className="text-xs sm:text-sm text-slate-400 text-center leading-relaxed max-w-[280px]">
+            <p className="text-xs sm:text-sm text-slate-400 dark:text-slate-400 text-center leading-relaxed max-w-[280px]">
               {description}
             </p>
           )}
@@ -64,7 +64,7 @@ export function ConfirmDialog({
           <button
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
-            className="flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all font-bold text-xs sm:text-sm active:scale-95 disabled:opacity-50"
+            className="flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-bold text-xs sm:text-sm active:scale-95 disabled:opacity-50"
           >
             {cancelText}
           </button>

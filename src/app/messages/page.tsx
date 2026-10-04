@@ -53,50 +53,50 @@ const RoleBadge = ({ role }: { role?: string }) => {
     case 'admin':
     case 'superadmin':
       return (
-        <Badge className="bg-primary hover:bg-primary font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
+        <Badge className="bg-primary hover:bg-primary text-white font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full shadow-xs">
           <Shield className="w-2 h-2" /> Admin
         </Badge>
       )
     case 'monitoring':
       return (
-        <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
+        <Badge variant="outline" className="text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
           <Eye className="w-2 h-2" /> Monitoring
         </Badge>
       )
     case 'koordinator':
       return (
-        <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
+        <Badge variant="outline" className="text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950/60 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
           <UserCheck className="w-2 h-2" /> Korlap
         </Badge>
       )
     case 'petugas':
     case 'petugas_survey':
       return (
-        <Badge variant="secondary" className="text-slate-600 bg-slate-100 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
+        <Badge variant="secondary" className="text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
           <UserCheck className="w-2 h-2" /> Petugas Survey
         </Badge>
       )
     case 'dinas':
       return (
-        <Badge variant="outline" className="text-indigo-600 border-indigo-200 bg-indigo-50 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
+        <Badge variant="outline" className="text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/60 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
           <Building2 className="w-2 h-2" /> Dinas
         </Badge>
       )
     case 'verifikator_dinas':
       return (
-        <Badge variant="outline" className="text-purple-600 border-purple-200 bg-purple-50 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
+        <Badge variant="outline" className="text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/60 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
           <ClipboardCheck className="w-2 h-2" /> Verifikator Dinas
         </Badge>
       )
     case 'staff':
       return (
-        <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
+        <Badge variant="outline" className="text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/60 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
           <UserIcon className="w-2 h-2" /> Staff
         </Badge>
       )
     default:
       return (
-        <Badge variant="outline" className="text-slate-500 border-slate-200 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
+        <Badge variant="outline" className="text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 font-black uppercase text-[8px] gap-0.5 h-4 px-1.5 rounded-full">
           <ShieldQuestion className="w-2 h-2" /> Pengguna
         </Badge>
       )
@@ -322,33 +322,33 @@ export default function PesanPage() {
       {/* ── Daftar Kontak ─────────────────────────────────────────────────── */}
       <aside
         className={cn(
-          "flex flex-col rounded-3xl bg-white border border-slate-200/80 shadow-xl overflow-hidden transition-all duration-300 shrink-0",
+          "flex flex-col rounded-3xl bg-white/95 dark:bg-[#0B132B] border border-slate-200/80 dark:border-white/10 shadow-xl dark:shadow-2xl overflow-hidden transition-all duration-300 shrink-0 backdrop-blur-md",
           isMobile
             ? selectedContact ? "hidden" : "w-full"
             : "w-[300px] lg:w-[340px]"
         )}
       >
         {/* Header */}
-        <div className="px-4 pt-5 pb-4 space-y-4 border-b border-slate-100">
+        <div className="px-4 pt-5 pb-4 space-y-4 border-b border-slate-100 dark:border-white/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <SidebarTrigger className="text-slate-500 hover:text-primary" />
+              <SidebarTrigger className="text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary" />
               <div>
-                <h1 className="text-lg font-black text-slate-800 leading-none">Kotak Pesan</h1>
-                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                <h1 className="text-lg font-black text-slate-800 dark:text-white leading-none">Kotak Pesan</h1>
+                <p className="text-[10px] text-slate-400 dark:text-slate-400 font-medium mt-0.5">
                   {contacts.length} anggota tersedia
                 </p>
               </div>
             </div>
-            <div className="p-2 bg-primary/10 rounded-xl">
-              <MessageCircle className="w-5 h-5 text-primary" />
+            <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-xl">
+              <MessageCircle className="w-5 h-5 text-primary dark:text-sky-400" />
             </div>
           </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
             <Input
               placeholder="Cari nama atau jabatan..."
-              className="pl-10 bg-slate-50 border-slate-200 rounded-xl h-10 text-sm focus-visible:ring-primary/30"
+              className="pl-10 bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-white/10 rounded-xl h-10 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-400 focus-visible:ring-primary/30"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -373,33 +373,33 @@ export default function PesanPage() {
                     className={cn(
                       "w-full flex items-center gap-3 p-3 rounded-2xl transition-all duration-200 text-left group",
                       isActive
-                        ? "bg-primary shadow-lg shadow-primary/20"
-                        : "hover:bg-slate-50 active:bg-slate-100"
+                        ? "bg-primary shadow-lg shadow-primary/25 text-white"
+                        : "hover:bg-slate-50 dark:hover:bg-white/5 active:bg-slate-100 dark:active:bg-white/10"
                     )}
                   >
                     <div className="relative shrink-0">
                       <Avatar className={cn(
                         "w-11 h-11 border-2 shadow-sm",
-                        isActive ? "border-white/30" : "border-slate-100"
+                        isActive ? "border-white/30" : "border-slate-100 dark:border-slate-700/80"
                       )}>
                         <AvatarImage src={contact.photoURL} />
                         <AvatarFallback className={cn(
                           "font-bold text-sm",
-                          isActive ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
+                          isActive ? "bg-white/20 text-white" : "bg-primary/10 dark:bg-primary/25 text-primary dark:text-sky-300"
                         )}>
                           {contact.fullName?.charAt(0)?.toUpperCase() ?? "?"}
                         </AvatarFallback>
                       </Avatar>
                       {/* Status dot */}
                       <span className={cn(
-                        "absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white rounded-full transition-colors duration-300",
-                        contact.isOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-300"
+                        "absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white dark:border-[#0B132B] rounded-full transition-colors duration-300",
+                        contact.isOnline ? "bg-emerald-500 animate-pulse" : "bg-slate-300 dark:bg-slate-600"
                       )} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className={cn(
                         "text-sm font-bold truncate",
-                        isActive ? "text-white" : "text-slate-800"
+                        isActive ? "text-white" : "text-slate-800 dark:text-slate-100"
                       )}>
                         {contact.fullName ?? "Pengguna"}
                       </p>
@@ -408,7 +408,7 @@ export default function PesanPage() {
                         {contact.isOnline ? (
                           <span className={cn(
                             "text-[8px] font-black uppercase tracking-tighter flex items-center gap-1",
-                            isActive ? "text-white/80" : "text-emerald-600"
+                            isActive ? "text-white/80" : "text-emerald-600 dark:text-emerald-400"
                           )}>
                             <span className="w-1 h-1 bg-current rounded-full animate-pulse" />
                             Online
@@ -416,7 +416,7 @@ export default function PesanPage() {
                         ) : (
                           <span className={cn(
                             "text-[8px] font-black uppercase tracking-tighter flex items-center gap-1 opacity-60",
-                            isActive ? "text-white/70" : "text-slate-400"
+                            isActive ? "text-white/70" : "text-slate-400 dark:text-slate-400"
                           )}>
                             Offline {contact.lastSeen && `• ${formatDistanceToNow(new Date(contact.lastSeen), { addSuffix: true, locale: localeId })}`}
                           </span>
@@ -433,11 +433,11 @@ export default function PesanPage() {
               })
             ) : (
               <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-                <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-                  <Search className="w-7 h-7 text-slate-300" />
+                <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+                  <Search className="w-7 h-7 text-slate-300 dark:text-slate-500" />
                 </div>
-                <p className="text-sm font-bold text-slate-500">Tidak Ditemukan</p>
-                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                <p className="text-sm font-bold text-slate-500 dark:text-slate-300">Tidak Ditemukan</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 leading-relaxed">
                   {searchQuery ? `Tidak ada pengguna bernama "${searchQuery}"` : "Belum ada anggota tim lain yang tersedia."}
                 </p>
               </div>
@@ -449,43 +449,43 @@ export default function PesanPage() {
       {/* ── Area Chat Utama ────────────────────────────────────────────────── */}
       <main
         className={cn(
-          "flex-1 flex flex-col rounded-3xl bg-white border border-slate-200/80 shadow-xl overflow-hidden",
+          "flex-1 flex flex-col rounded-3xl bg-white/95 dark:bg-[#0B132B] border border-slate-200/80 dark:border-white/10 shadow-xl dark:shadow-2xl overflow-hidden backdrop-blur-md",
         )}
       >
         {liveSelectedContact ? (
           <>
             {/* Header Chat */}
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3 bg-white/80 backdrop-blur-sm shrink-0">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-white/10 flex items-center gap-3 bg-white/80 dark:bg-[#0B132B]/90 backdrop-blur-sm shrink-0">
               {isMobile && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setSelectedContact(null)}
-                  className="shrink-0 -ml-1"
+                  className="shrink-0 -ml-1 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               )}
-              <Avatar className="w-10 h-10 border-2 border-primary/10 shrink-0">
+              <Avatar className="w-10 h-10 border-2 border-primary/10 dark:border-white/10 shrink-0">
                 <AvatarImage src={liveSelectedContact.photoURL} />
-                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                <AvatarFallback className="bg-primary/10 dark:bg-primary/25 text-primary dark:text-sky-300 font-bold">
                   {liveSelectedContact.fullName?.charAt(0)?.toUpperCase() ?? "?"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <h2 className="font-black text-slate-800 text-sm leading-none truncate">
+                <h2 className="font-black text-slate-800 dark:text-white text-sm leading-none truncate">
                   {liveSelectedContact.fullName}
                 </h2>
                 <div className="flex items-center gap-2 mt-1.5">
                   <RoleBadge role={liveSelectedContact.role} />
                   {liveSelectedContact.isOnline ? (
-                    <span className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold">
+                    <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
                       <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse inline-block" />
                       Online
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-[10px] text-slate-400 font-bold">
-                      <span className="w-1.5 h-1.5 bg-slate-300 rounded-full inline-block" />
+                    <span className="flex items-center gap-1 text-[10px] text-slate-400 dark:text-slate-400 font-bold">
+                      <span className="w-1.5 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full inline-block" />
                       Offline {liveSelectedContact.lastSeen && `• ${formatDistanceToNow(new Date(liveSelectedContact.lastSeen), { addSuffix: true, locale: localeId })}`}
                     </span>
                   )}
@@ -495,14 +495,14 @@ export default function PesanPage() {
               {/* Menu Opsi Chat */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="shrink-0 rounded-xl hover:bg-slate-100">
-                    <MoreVertical className="w-5 h-5 text-slate-400" />
+                  <Button variant="ghost" size="icon" className="shrink-0 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10">
+                    <MoreVertical className="w-5 h-5 text-slate-400 dark:text-slate-300" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 rounded-2xl p-1.5 shadow-2xl border-slate-100">
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl p-1.5 shadow-2xl border-slate-100 dark:border-white/10 dark:bg-[#0B132B]">
                   <DropdownMenuItem 
                     onClick={handleDeleteChat}
-                    className="flex items-center gap-2.5 p-3 rounded-xl text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer transition-colors"
+                    className="flex items-center gap-2.5 p-3 rounded-xl text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-300 focus:bg-red-50 dark:focus:bg-red-950/40 cursor-pointer transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                     <span className="font-bold text-xs uppercase tracking-tight">Hapus Riwayat Chat</span>
@@ -514,16 +514,11 @@ export default function PesanPage() {
             {/* Pesan-pesan */}
             <div
               ref={scrollRef}
-              className="flex-1 overflow-y-auto px-4 py-6 space-y-2"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0)",
-                backgroundSize: "24px 24px",
-              }}
+              className="flex-1 overflow-y-auto px-4 py-6 space-y-2 bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.04)_1px,transparent_0)] dark:bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.05)_1px,transparent_0)] bg-[size:24px_24px]"
             >
               {messagesLoading ? (
                 <div className="flex justify-center items-center h-full">
-                  <Loader2 className="w-8 h-8 animate-spin text-primary/30" />
+                  <Loader2 className="w-8 h-8 animate-spin text-primary/30 dark:text-primary/50" />
                 </div>
               ) : messages && messages.length > 0 ? (
                 (() => {
@@ -539,7 +534,7 @@ export default function PesanPage() {
                       <React.Fragment key={msg.id}>
                         {showDateSep && (
                           <div className="flex justify-center my-4">
-                            <span className="px-4 py-1 bg-slate-200/80 text-slate-500 text-[10px] font-black rounded-full uppercase tracking-widest backdrop-blur-sm">
+                            <span className="px-4 py-1 bg-slate-200/80 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 text-[10px] font-black rounded-full uppercase tracking-widest backdrop-blur-sm border border-transparent dark:border-white/10 shadow-xs">
                               {dateLabel}
                             </span>
                           </div>
@@ -560,8 +555,8 @@ export default function PesanPage() {
                               className={cn(
                                 "px-4 py-2.5 text-sm leading-relaxed shadow-sm",
                                 isMe
-                                  ? "bg-primary text-white rounded-2xl rounded-br-sm"
-                                  : "bg-white text-slate-700 rounded-2xl rounded-bl-sm border border-slate-100"
+                                  ? "bg-primary text-white rounded-2xl rounded-br-sm shadow-md shadow-primary/20"
+                                  : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-100 rounded-2xl rounded-bl-sm border border-slate-100 dark:border-white/10"
                               )}
                             >
                               {msg.text}
@@ -572,11 +567,11 @@ export default function PesanPage() {
                                 isMe ? "flex-row-reverse" : "flex-row"
                               )}
                             >
-                              <span className="text-[9px] text-slate-400 font-medium">
+                              <span className="text-[9px] text-slate-400 dark:text-slate-400 font-medium">
                                 {formatMessageTime(ts)}
                               </span>
                               {isMe && (
-                                <CheckCheck className="w-3 h-3 text-primary/60" />
+                                <CheckCheck className="w-3 h-3 text-primary/60 dark:text-sky-300" />
                               )}
                             </div>
                           </div>
@@ -586,13 +581,13 @@ export default function PesanPage() {
                   })
                 })()
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center gap-3 opacity-50">
-                  <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center">
-                    <MessageSquare className="w-10 h-10 text-slate-300" />
+                <div className="flex flex-col items-center justify-center h-full text-center gap-3 opacity-60">
+                  <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                    <MessageSquare className="w-10 h-10 text-slate-300 dark:text-slate-500" />
                   </div>
                   <div>
-                    <p className="font-bold text-slate-600 text-sm">Belum Ada Pesan</p>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="font-bold text-slate-600 dark:text-slate-200 text-sm">Belum Ada Pesan</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-400 mt-1">
                       Mulai percakapan dengan {liveSelectedContact.fullName}
                     </p>
                   </div>
@@ -601,16 +596,16 @@ export default function PesanPage() {
             </div>
 
             {/* Input Pesan */}
-            <div className="px-4 py-4 bg-white border-t border-slate-100 shrink-0">
+            <div className="px-4 py-4 bg-white dark:bg-[#070D1D]/90 border-t border-slate-100 dark:border-white/10 shrink-0">
               <form
                 onSubmit={handleSend}
-                className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 focus-within:border-primary/40 focus-within:bg-white transition-all shadow-sm"
+                className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-white/15 rounded-2xl px-3 py-2 focus-within:border-primary/40 dark:focus-within:border-sky-400/50 focus-within:bg-white dark:focus-within:bg-slate-800 transition-all shadow-sm"
               >
                 <input
                   ref={inputRef}
                   type="text"
                   placeholder={`Kirim pesan ke ${liveSelectedContact.fullName}...`}
-                  className="flex-1 bg-transparent border-none outline-none text-sm text-slate-700 placeholder:text-slate-400"
+                  className="flex-1 bg-transparent border-none outline-none text-sm text-slate-700 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-400"
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -625,8 +620,8 @@ export default function PesanPage() {
                   {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </form>
-              <p className="text-center text-[10px] text-slate-400 mt-2 font-medium">
-                Tekan <kbd className="px-1 py-0.5 bg-slate-200 rounded text-[9px] font-mono">Enter</kbd> untuk mengirim
+              <p className="text-center text-[10px] text-slate-400 dark:text-slate-400 mt-2 font-medium">
+                Tekan <kbd className="px-1 py-0.5 bg-slate-200 dark:bg-slate-800 dark:text-slate-300 border dark:border-white/10 rounded text-[9px] font-mono">Enter</kbd> untuk mengirim
               </p>
             </div>
           </>
@@ -634,8 +629,8 @@ export default function PesanPage() {
           /* ── Placeholder Kosong ────────────────────────────────────────── */
           <div className="flex-1 flex flex-col items-center justify-center text-center px-8 gap-6">
             <div className="relative">
-              <div className="w-28 h-28 bg-primary/5 rounded-full flex items-center justify-center border-2 border-dashed border-primary/20 relative">
-                <MessageCircle className="w-14 h-14 text-primary/30" />
+              <div className="w-28 h-28 bg-primary/5 dark:bg-primary/10 rounded-full flex items-center justify-center border-2 border-dashed border-primary/20 dark:border-primary/30 relative">
+                <MessageCircle className="w-14 h-14 text-primary/30 dark:text-primary/50" />
               </div>
               {/* Deco balls */}
               <span className="absolute -top-3 -right-3 w-8 h-8 bg-accent rounded-full shadow-lg flex items-center justify-center text-lg animate-bounce">
@@ -645,22 +640,22 @@ export default function PesanPage() {
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl font-black text-slate-700">Pilih Kontak</h2>
-              <p className="text-sm text-slate-400 max-w-xs mx-auto leading-relaxed">
+              <h2 className="text-2xl font-black text-slate-700 dark:text-white">Pilih Kontak</h2>
+              <p className="text-sm text-slate-400 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
                 Pilih salah satu anggota tim di sebelah kiri untuk memulai percakapan secara <span className="text-primary font-bold">real-time</span>.
               </p>
             </div>
 
             <div className="flex flex-wrap justify-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full text-[11px] font-bold text-slate-500">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-full text-[11px] font-bold text-slate-500 dark:text-slate-300 border border-transparent dark:border-white/10">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                 Pesan Langsung
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full text-[11px] font-bold text-slate-500">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-full text-[11px] font-bold text-slate-500 dark:text-slate-300 border border-transparent dark:border-white/10">
                 <Shield className="w-3 h-3 text-primary" />
                 Aman &amp; Terlindungi
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-full text-[11px] font-bold text-slate-500">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-full text-[11px] font-bold text-slate-500 dark:text-slate-300 border border-transparent dark:border-white/10">
                 <CheckCheck className="w-3 h-3 text-blue-500" />
                 Sinkronisasi Otomatis
               </span>
