@@ -23,7 +23,11 @@ import {
   Camera,
   Calendar,
   Loader2,
-  UserCheck
+  UserCheck,
+  Users,
+  UserX,
+  CreditCard,
+  MapPin
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useEffect, useMemo, useState, useRef } from "react"
@@ -379,11 +383,11 @@ export default function DashboardStatsPage() {
 
     if (type === "kelurahan") {
       return modalData.filter(d => {
-        const k = d.kelurahan?.toLowerCase().trim() || ""
-        const targetK = selectedFilter.name.toLowerCase().trim()
+        const k = (d.kelurahan || "").toLowerCase().replace(/[^a-z0-9]/g, "")
+        const targetK = selectedFilter.name.toLowerCase().replace(/[^a-z0-9]/g, "")
         const s = d.status || "pending"
         const isVerified = ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas(d)
-        return k === targetK && isVerified
+        return (k === targetK || k.includes(targetK) || targetK.includes(k)) && isVerified
       })
     }
 
@@ -404,6 +408,156 @@ export default function DashboardStatsPage() {
     if (total === 0) return 0;
     return ((value / total) * 100).toFixed(1);
   };
+
+  const kelurahanStats = useMemo(() => {
+    const map = (systemStats?.kelurahan || {}) as Record<string, number>
+    const totalVerified = statsValues.verified || 1
+
+    const list = KELURAHAN_LIST.map((name) => {
+      const key = name.toUpperCase().trim()
+      const count = Number(map[key] || 0)
+      const percent = Number(((count / totalVerified) * 100).toFixed(1))
+      return { name, count, percent }
+    })
+
+    Object.entries(map).forEach(([rawKey, val]) => {
+      const exists = list.some((item) => item.name.toUpperCase().trim() === rawKey)
+      if (!exists && typeof val === 'number' && val > 0) {
+        const percent = Number(((val / totalVerified) * 100).toFixed(1))
+        list.push({ name: rawKey, count: val, percent })
+      }
+    })
+
+    return list.sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+  }, [systemStats?.kelurahan, statsValues.verified])
+
+  const metricCards = useMemo(() => {
+    const total = statsValues.total || 1
+    const verified = statsValues.verified || 1
+
+    return [
+      {
+        id: "total",
+        title: "Total Berkas",
+        value: statsValues.total,
+        sublabel: "Data Terkini",
+        percentage: "100%",
+        icon: Building2,
+        iconBg: "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/50",
+        badgeColor: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/40",
+        accentBorder: "hover:border-indigo-400/80 group-hover:shadow-indigo-500/10",
+        barColor: "bg-indigo-500",
+        barPercent: 100,
+        filterType: "total",
+        filterName: "Total Seluruh Berkas UMKM"
+      },
+      {
+        id: "verified",
+        title: "Terverifikasi",
+        value: statsValues.verified,
+        sublabel: "Lolos Verifikasi",
+        percentage: `${getPercentage(statsValues.verified, total)}%`,
+        icon: UserCheck,
+        iconBg: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50",
+        badgeColor: "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40",
+        accentBorder: "hover:border-emerald-400/80 group-hover:shadow-emerald-500/10",
+        barColor: "bg-emerald-500",
+        barPercent: Number(getPercentage(statsValues.verified, total)),
+        filterType: "verified",
+        filterName: "Data Terverifikasi"
+      },
+      {
+        id: "survey_dinas",
+        title: "Survey Dinas",
+        value: statsValues.surveyDinas,
+        sublabel: "Tahap 1 Lapangan",
+        percentage: `${getPercentage(statsValues.surveyDinas, verified)}%`,
+        icon: ClipboardCheck,
+        iconBg: "bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/50",
+        badgeColor: "bg-purple-50 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/40",
+        accentBorder: "hover:border-purple-400/80 group-hover:shadow-purple-500/10",
+        barColor: "bg-purple-500",
+        barPercent: Number(getPercentage(statsValues.surveyDinas, verified)),
+        filterType: "survey_dinas",
+        filterName: "Tahap 1: Survey Dinas Lapangan"
+      },
+      {
+        id: "verifikasi_dinas",
+        title: "Verifikasi Dinas",
+        value: statsValues.verifikasiDinas,
+        sublabel: "Tahap 2 Cek Berkas",
+        percentage: `${getPercentage(statsValues.verifikasiDinas, verified)}%`,
+        icon: FileText,
+        iconBg: "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/50",
+        badgeColor: "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40",
+        accentBorder: "hover:border-blue-400/80 group-hover:shadow-blue-500/10",
+        barColor: "bg-blue-500",
+        barPercent: Number(getPercentage(statsValues.verifikasiDinas, verified)),
+        filterType: "verifikasi_dinas",
+        filterName: "Tahap 2: Verifikasi Berkas Dinas"
+      },
+      {
+        id: "selesai",
+        title: "Input Rekening",
+        value: statsValues.selesai,
+        sublabel: "Tahap 4 Final Bank",
+        percentage: `${getPercentage(statsValues.selesai, verified)}%`,
+        icon: CreditCard,
+        iconBg: "bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200/60 dark:border-sky-800/50",
+        badgeColor: "bg-sky-50 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200/60 dark:border-sky-800/40",
+        accentBorder: "hover:border-sky-400/80 group-hover:shadow-sky-500/10",
+        barColor: "bg-sky-500",
+        barPercent: Number(getPercentage(statsValues.selesai, verified)),
+        filterType: "selesai",
+        filterName: "Tahap 4: Input Rekening Bank Selesai"
+      },
+      {
+        id: "rejected",
+        title: "Cancell / Ditolak",
+        value: statsValues.rejected,
+        sublabel: "Admin & Dinas",
+        percentage: `${getPercentage(statsValues.rejected, total)}%`,
+        icon: UserX,
+        iconBg: "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/50",
+        badgeColor: "bg-rose-50 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40",
+        accentBorder: "hover:border-rose-400/80 group-hover:shadow-rose-500/10",
+        barColor: "bg-rose-500",
+        barPercent: Number(getPercentage(statsValues.rejected, total)),
+        filterType: "rejected",
+        filterName: "Data Dibatalkan & Ditolak"
+      },
+      {
+        id: "laki",
+        title: "Laki-Laki",
+        value: statsValues.laki,
+        sublabel: "Proporsi Gender",
+        percentage: `${getPercentage(statsValues.laki, total)}%`,
+        icon: Users,
+        iconBg: "bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 border border-cyan-200/60 dark:border-cyan-800/50",
+        badgeColor: "bg-cyan-50 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300 border border-cyan-200/60 dark:border-cyan-800/40",
+        accentBorder: "hover:border-cyan-400/80 group-hover:shadow-cyan-500/10",
+        barColor: "bg-cyan-500",
+        barPercent: Number(getPercentage(statsValues.laki, total)),
+        filterType: "laki",
+        filterName: "Pelaku Usaha Laki-Laki"
+      },
+      {
+        id: "perempuan",
+        title: "Perempuan",
+        value: statsValues.perempuan,
+        sublabel: "Proporsi Gender",
+        percentage: `${getPercentage(statsValues.perempuan, total)}%`,
+        icon: Users,
+        iconBg: "bg-pink-50 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 border border-pink-200/60 dark:border-pink-800/50",
+        badgeColor: "bg-pink-50 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300 border border-pink-200/60 dark:border-pink-800/40",
+        accentBorder: "hover:border-pink-400/80 group-hover:shadow-pink-500/10",
+        barColor: "bg-pink-500",
+        barPercent: Number(getPercentage(statsValues.perempuan, total)),
+        filterType: "perempuan",
+        filterName: "Pelaku Usaha Perempuan"
+      }
+    ]
+  }, [statsValues])
 
 
   const dinasStageCards = [
@@ -672,7 +826,7 @@ export default function DashboardStatsPage() {
                 : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
             )}
           >
-            Details
+            Statistik & Kelurahan
           </button>
           <button
             onClick={() => setActiveTab('alur')}
@@ -702,192 +856,175 @@ export default function DashboardStatsPage() {
       {/* ─── BOTTOM SECTION: CONDITIONAL VIEWS BY TAB ─── */}
       {activeTab === 'details' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch animate-in fade-in duration-300">
-          {/* Bottom Left Card: Details & Team Members */}
-          <div className="lg:col-span-7 xl:col-span-7 rounded-[28px] bg-white dark:bg-slate-800/90 border border-slate-100 dark:border-slate-800 p-6 space-y-6 shadow-sm">
-            {/* Details Checklist with subtle icons */}
-            <div className="space-y-4">
-              <h3 className="text-base font-black text-slate-900 dark:text-white">
-                Details
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3.5 gap-x-6 text-xs text-slate-600 dark:text-slate-300">
-                <div className="flex items-center gap-2.5">
-                  <BookOpen className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span>4 Kecamatan & 18 Kelurahan</span>
+          {/* ─── KIRI (lg:col-span-7): 8 KARTU STATISTIK REALTIME ─── */}
+          <div className="lg:col-span-7 xl:col-span-7 rounded-[28px] bg-white dark:bg-slate-800/90 border border-slate-100 dark:border-slate-800 p-5 sm:p-6 space-y-4 shadow-sm flex flex-col justify-between">
+            <div>
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-slate-900 dark:text-white">
+                      Statistik Data UMKM
+                    </h3>
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Realtime
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-medium">
+                    Klik kartu metrik untuk melihat daftar data pelaku usaha secara langsung
+                  </p>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <Award className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span>Integrasi NIB OSS & KTP Disdukcapil</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span>Verifikasi Fisik & Survey Lapangan</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <Camera className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span>Dokumentasi Foto Tempat & Produk</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span>Target Usulan Kuota: 3.000 UMKM</span>
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <Building2 className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span>Rekening Bank Riau Kepri Syariah</span>
-                </div>
+              </div>
+
+              {/* 8 Grid Kartu Statistik */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 pt-3">
+                {metricCards.map((card) => {
+                  const Icon = card.icon
+                  return (
+                    <div
+                      key={card.id}
+                      onClick={() => setSelectedFilter({ name: card.filterName, filterType: card.filterType })}
+                      className={cn(
+                        "p-3 rounded-2xl bg-slate-50/70 hover:bg-slate-100/90 dark:bg-slate-900/60 dark:hover:bg-slate-900 border border-slate-200/60 dark:border-slate-800/80 transition-all duration-200 cursor-pointer active:scale-95 group flex flex-col justify-between shadow-2xs hover:shadow-md",
+                        card.accentBorder
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-2">
+                        <div className={cn("p-1.5 rounded-xl shrink-0 transition-transform group-hover:scale-110", card.iconBg)}>
+                          <Icon className="w-3.5 h-3.5" />
+                        </div>
+                        {card.percentage && (
+                          <span className={cn("text-[9px] font-black px-1.5 py-0.5 rounded-full truncate font-mono", card.badgeColor)}>
+                            {card.percentage}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-0.5">
+                        <div className="text-base sm:text-lg font-black text-slate-900 dark:text-white font-mono tracking-tight group-hover:text-primary transition-colors">
+                          {isStatsLoading ? "..." : card.value.toLocaleString('id-ID')}
+                        </div>
+                        <div className="text-[11px] font-bold text-slate-700 dark:text-slate-200 truncate">
+                          {card.title}
+                        </div>
+                        <div className="text-[9px] font-semibold text-slate-400 truncate">
+                          {card.sublabel}
+                        </div>
+                      </div>
+
+                      {/* Mini Progress Bar Indicator */}
+                      <div className="w-full bg-slate-200/60 dark:bg-slate-800 rounded-full h-1 mt-2.5 overflow-hidden">
+                        <div
+                          className={cn("h-full rounded-full transition-all duration-500", card.barColor)}
+                          style={{ width: `${Math.min(100, Math.max(5, card.barPercent))}%` }}
+                        />
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
-            {/* Team members */}
-            <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-1.5">
-                <h3 className="text-base font-black text-slate-900 dark:text-white">
-                  Team members
-                </h3>
-                <div className="w-3.5 h-3.5 rounded-full bg-sky-100 dark:bg-sky-950 flex items-center justify-center text-[9px] text-sky-600 font-bold">
-                  i
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {/* Member 1: Petugas Survey Lead */}
-                <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center font-bold text-xs text-emerald-700 dark:text-emerald-300 shrink-0 overflow-hidden">
-                    <span className="font-black text-xs">SW</span>
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white truncate">Sam Wilson</span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Mentor</span>
-                    </div>
-                    <span className="text-[11px] text-slate-400 font-medium">Petugas Survey Lead</span>
-                  </div>
-                </div>
-
-                {/* Member 2: Verifikator Dinas */}
-                <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-950/60 flex items-center justify-center font-bold text-xs text-amber-700 dark:text-amber-300 shrink-0 overflow-hidden">
-                    <span className="font-black text-xs">EC</span>
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white truncate">Emily Carter</span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">Teacher</span>
-                    </div>
-                    <span className="text-[11px] text-slate-400 font-medium">Verifikator Berkas Dinas</span>
-                  </div>
-                </div>
-
-                {/* Member 3: Koordinator */}
-                <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-sky-100 dark:bg-sky-950/60 flex items-center justify-center font-bold text-xs text-sky-700 dark:text-sky-300 shrink-0 overflow-hidden">
-                    <span className="font-black text-xs">JT</span>
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white truncate">Jake Thompson</span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">Teacher</span>
-                    </div>
-                    <span className="text-[11px] text-slate-400 font-medium">Koordinator Wilayah</span>
-                  </div>
-                </div>
-
-                {/* Member 4: Admin */}
-                <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-teal-100 dark:bg-teal-950/60 flex items-center justify-center font-bold text-xs text-teal-700 dark:text-teal-300 shrink-0 overflow-hidden">
-                    <span className="font-black text-xs">MC</span>
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white truncate">Monica Cooper</span>
-                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">Admin</span>
-                    </div>
-                    <span className="text-[11px] text-slate-400 font-medium">Administrator SIMPU</span>
-                  </div>
-                </div>
-              </div>
+            {/* Hint Footer */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400 font-semibold">
+              <span className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-primary" />
+                Data terintegrasi Firebase Realtime DB
+              </span>
+              <span className="text-primary font-bold hover:underline cursor-pointer" onClick={() => setSelectedFilter({ name: 'Total Seluruh Berkas UMKM', filterType: 'total' })}>
+                Buka Semua Data &rarr;
+              </span>
             </div>
           </div>
 
-          {/* Bottom Right Card: Assign new participant / Recent Data matching Growly LMS */}
-          <div className="lg:col-span-5 xl:col-span-5 rounded-[28px] bg-white dark:bg-slate-800/90 border border-slate-100 dark:border-slate-800 p-6 space-y-5 shadow-xl flex flex-col justify-between">
-            <div className="space-y-4">
-              <div className="flex items-center gap-1.5">
-                <h3 className="text-base font-black text-slate-900 dark:text-white">
-                  Assign new participant
-                </h3>
-                <div className="w-3.5 h-3.5 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[9px] text-slate-600 dark:text-slate-300 font-bold">
-                  i
-                </div>
-              </div>
-
-              {/* Input pill with tag matching Growly LMS */}
-              <div className="flex items-center justify-between p-1 pl-2 border border-slate-200 dark:border-slate-700 rounded-full bg-white dark:bg-slate-900 shadow-2xs gap-2">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200">
-                  <div className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[10px] font-black">
-                    AB
+          {/* ─── KANAN (lg:col-span-5): PEMBAGIAN PER KELURAHAN ─── */}
+          <div className="lg:col-span-5 xl:col-span-5 rounded-[28px] bg-white dark:bg-slate-800/90 border border-slate-100 dark:border-slate-800 p-5 sm:p-6 space-y-3.5 shadow-sm flex flex-col justify-between">
+            <div>
+              {/* Header */}
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-slate-900 dark:text-white">
+                      Sebaran Per Kelurahan
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                      18 Kelurahan
+                    </span>
                   </div>
-                  <span>Adam Brown</span>
-                  <span className="cursor-pointer text-slate-400 hover:text-slate-600 ml-0.5">✕</span>
+                  <p className="text-[11px] text-slate-400 font-medium">
+                    Kota Tanjungpinang • Klik nama kelurahan untuk rincian data
+                  </p>
                 </div>
-                <Button
-                  onClick={() => router.push('/input')}
-                  className="rounded-full bg-[#0284c7] hover:bg-[#0369a1] text-white px-5 py-2 h-8 font-bold text-xs shadow-sm transition-all active:scale-95 shrink-0"
-                >
-                  Invite
-                </Button>
               </div>
 
-              {/* People on the course list with segmented amber dot meters */}
-              <div className="space-y-3.5 pt-2">
-                <p className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                  People on the course
-                </p>
-
-                <div className="space-y-4">
-                  {recentActorsList.map((actor, idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => actor.raw && setDetailActor(actor.raw)}
-                      className="flex items-center justify-between gap-3 cursor-pointer group"
+              {/* Scrollable List of 18 Kelurahan */}
+              <div className="max-h-[350px] overflow-y-auto pr-1 space-y-1.5 custom-scrollbar pt-2">
+                {kelurahanStats.map((item, idx) => {
+                  return (
+                    <div
+                      key={item.name}
+                      onClick={() => setSelectedFilter({ name: item.name, filterType: 'kelurahan' })}
+                      className="flex items-center justify-between p-2 sm:p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer group transition-all duration-150 active:scale-[0.99] border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-xs text-slate-700 dark:text-slate-300 shrink-0">
-                          {getInitials(actor.name)}
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {/* Rank Badge */}
+                        <div className={cn(
+                          "w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0",
+                          idx === 0 ? "bg-amber-400 text-slate-950 shadow-xs" :
+                          idx === 1 ? "bg-slate-300 text-slate-900 shadow-xs" :
+                          idx === 2 ? "bg-amber-600 text-white shadow-xs" :
+                          "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                        )}>
+                          {idx + 1}
                         </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-primary transition-colors">
-                            {actor.name}
-                          </span>
-                          <span className="text-[10px] text-slate-400 truncate">
-                            {actor.role}
+
+                        <div className="min-w-0">
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary transition-colors truncate block">
+                            {item.name}
                           </span>
                         </div>
                       </div>
 
-                      {/* Segmented dot progress bar + percentage matching Growly LMS */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: 10 }).map((_, dotIdx) => {
-                            const isFilled = dotIdx < Math.round(actor.percent / 10);
+                      {/* Segmented meter & count */}
+                      <div className="flex items-center gap-2.5 shrink-0">
+                        {/* Segmented dot meters matching Growly LMS */}
+                        <div className="flex items-center gap-0.5 hidden xs:flex">
+                          {Array.from({ length: 8 }).map((_, dotIdx) => {
+                            const isFilled = dotIdx < Math.round((item.percent / 100) * 8);
                             return (
                               <div
                                 key={dotIdx}
                                 className={cn(
-                                  "w-1 h-3 rounded-full transition-colors",
-                                  isFilled ? "bg-amber-500" : "bg-slate-200 dark:bg-slate-700"
+                                  "w-1 h-2.5 rounded-full transition-colors",
+                                  isFilled ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700"
                                 )}
                               />
                             );
                           })}
                         </div>
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 w-8 text-right font-mono">
-                          {actor.percent}%
-                        </span>
+
+                        <div className="text-right">
+                          <span className="text-xs font-black font-mono text-slate-900 dark:text-white">
+                            {item.count}
+                          </span>
+                          <span className="text-[10px] text-slate-400 ml-1 font-mono">
+                            ({item.percent}%)
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
+            </div>
+
+            {/* Footer Summary */}
+            <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              <span>Total Terverifikasi:</span>
+              <span className="font-black font-mono text-emerald-600 dark:text-emerald-400 text-xs">
+                {statsValues.verified} Pelaku Usaha
+              </span>
             </div>
           </div>
         </div>
