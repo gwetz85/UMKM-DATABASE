@@ -1153,7 +1153,6 @@ export default function DashboardStatsPage() {
           </Card>
         </div>
       )}
-    </div>
 
       {/* Detail Modal Dialog */}
       <Dialog open={!!selectedFilter} onOpenChange={(open) => {
