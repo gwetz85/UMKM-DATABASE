@@ -569,7 +569,7 @@ export function WeatherWidget({ className }: { className?: string }) {
 
   if (isLoading) {
     return (
-      <div className={cn("w-full bg-white dark:bg-[#0B132B] backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-slate-850 p-6 shadow-sm flex flex-col items-center justify-center gap-2.5 min-h-[260px]", className)}>
+      <div className={cn("w-full bg-white dark:bg-[#0B132B] backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-white/10 p-6 shadow-sm flex flex-col items-center justify-center gap-2.5 min-h-[260px]", className)}>
         <div className="w-8 h-8 rounded-full border-3 border-primary/20 border-t-primary animate-spin" />
         <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Memuat Informasi Cuaca...</span>
       </div>
@@ -578,7 +578,7 @@ export function WeatherWidget({ className }: { className?: string }) {
 
   if (error || !weather) {
     return (
-      <div className={cn("w-full bg-white dark:bg-[#0B132B] backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-slate-850 p-6 shadow-sm flex flex-col items-center justify-center gap-2 text-center min-h-[260px]", className)}>
+      <div className={cn("w-full bg-white dark:bg-[#0B132B] backdrop-blur-2xl rounded-[28px] border border-slate-100 dark:border-white/10 p-6 shadow-sm flex flex-col items-center justify-center gap-2 text-center min-h-[260px]", className)}>
         <AlertCircle className="w-6 h-6 text-rose-500" />
         <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{error || 'Data tidak tersedia'}</span>
         <button 

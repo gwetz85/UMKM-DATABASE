@@ -279,7 +279,7 @@ export default function ProfilePage() {
         {/* LEFT COLUMN: Identity Profile Card */}
         <div className="lg:col-span-4 space-y-5">
           {/* Hero Profile Card */}
-          <Card className="border-2 border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm bg-white dark:bg-slate-900">
+          <Card className="border-2 border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm bg-white dark:bg-[#0B132B]">
             {/* Gradient Top Cover */}
             <div className="h-28 w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 relative flex items-start justify-end p-3">
               <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/20 text-white backdrop-blur-xs">
@@ -346,15 +346,15 @@ export default function ProfilePage() {
               {/* Account Quick Meta */}
               <div className="w-full mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 space-y-2.5 text-left">
                 {/* User ID with Copy */}
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10">
                   <div className="space-y-0.5">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">ID Sistem</span>
-                    <p className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">{profile.id}</p>
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">ID Sistem</span>
+                    <p className="font-mono text-xs font-bold text-slate-800 dark:text-slate-100">{profile.id}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleCopy(profile.id, "ID Sistem")}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all cursor-pointer"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-white dark:hover:bg-slate-700 border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all cursor-pointer"
                     title="Salin ID"
                   >
                     {copiedKey === "ID Sistem" ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
@@ -363,9 +363,9 @@ export default function ProfilePage() {
 
                 {/* WhatsApp Quick Link */}
                 {profile.phoneNumber && (
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-white/10">
                     <div className="space-y-0.5">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Nomor WhatsApp</span>
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Nomor WhatsApp</span>
                       <p className="font-mono text-xs font-bold text-emerald-700 dark:text-emerald-400">{profile.phoneNumber}</p>
                     </div>
                     <a
@@ -384,7 +384,7 @@ export default function ProfilePage() {
           </Card>
 
           {/* Quick Notice Card */}
-          <Card className="border-2 border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-3xl p-5 shadow-xs">
+          <Card className="border-2 border-emerald-200 dark:border-emerald-800/50 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-3xl p-5 shadow-xs">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
                 <Info className="w-4 h-4" />
@@ -403,8 +403,8 @@ export default function ProfilePage() {
 
         {/* RIGHT COLUMN: Form Edit Profile */}
         <div className="lg:col-span-8">
-          <Card className="border-2 border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm bg-white dark:bg-slate-900">
-            <CardHeader className="bg-slate-50 dark:bg-slate-850/80 border-b border-slate-200 dark:border-slate-800 p-5 sm:p-6">
+          <Card className="border-2 border-slate-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm bg-white dark:bg-[#0B132B]">
+            <CardHeader className="bg-slate-50 dark:bg-[#070D1D]/90 border-b border-slate-200 dark:border-white/10 p-5 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <CardTitle className="text-base sm:text-lg font-black uppercase text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
@@ -422,9 +422,9 @@ export default function ProfilePage() {
               <form onSubmit={handleSave} className="space-y-6">
                 {/* SECTION 1: Kredensial Akun (Read Only) */}
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 pb-1 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-2 pb-1 border-b border-slate-200 dark:border-white/10">
                     <Lock className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-500">
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                       Kredensial &amp; Otoritas Sistem
                     </span>
                   </div>
@@ -433,7 +433,7 @@ export default function ProfilePage() {
                     {/* Username / ID */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-bold uppercase text-slate-500">Username / ID</Label>
+                        <Label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Username / ID</Label>
                         <span className="text-[10px] font-semibold text-slate-400">Terkunci</span>
                       </div>
                       <div className="relative">
@@ -441,7 +441,7 @@ export default function ProfilePage() {
                         <Input 
                           value={profile.id} 
                           disabled 
-                          className="pl-10 pr-10 bg-slate-100/70 dark:bg-slate-800/60 font-mono text-xs font-bold text-slate-700 dark:text-slate-300 h-10.5 rounded-xl border-slate-200 dark:border-slate-700 cursor-not-allowed" 
+                          className="pl-10 pr-10 bg-slate-100/70 dark:bg-slate-800/80 font-mono text-xs font-bold text-slate-800 dark:text-slate-100 h-10.5 rounded-xl border-slate-200 dark:border-white/10 cursor-not-allowed disabled:opacity-90" 
                         />
                         <button
                           type="button"
@@ -457,7 +457,7 @@ export default function ProfilePage() {
                     {/* Role / Jabatan */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-bold uppercase text-slate-500">Role / Hak Akses</Label>
+                        <Label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Role / Hak Akses</Label>
                         <span className="text-[10px] font-semibold text-slate-400">Ditetapkan Admin</span>
                       </div>
                       <div className="relative">
@@ -465,7 +465,7 @@ export default function ProfilePage() {
                         <Input 
                           value={roleLabel} 
                           disabled 
-                          className="pl-10 bg-slate-100/70 dark:bg-slate-800/60 font-black text-xs uppercase text-slate-700 dark:text-slate-300 h-10.5 rounded-xl border-slate-200 dark:border-slate-700 cursor-not-allowed" 
+                          className="pl-10 bg-slate-100/70 dark:bg-slate-800/80 font-black text-xs uppercase text-slate-800 dark:text-slate-100 h-10.5 rounded-xl border-slate-200 dark:border-white/10 cursor-not-allowed disabled:opacity-90" 
                         />
                       </div>
                     </div>
@@ -474,26 +474,26 @@ export default function ProfilePage() {
 
                 {/* SECTION 2: Data Pribadi & Kontak */}
                 <div className="space-y-4 pt-2">
-                  <div className="flex items-center gap-2 pb-1 border-b border-slate-200 dark:border-slate-800">
-                    <User className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  <div className="flex items-center gap-2 pb-1 border-b border-slate-200 dark:border-white/10">
+                    <User className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100">
                       Informasi Identitas Pribadi
                     </span>
                   </div>
 
                   {/* Nama Lengkap */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                    <Label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 flex items-center justify-between">
                       <span>Nama Lengkap</span>
-                      <span className="text-[10px] text-emerald-600 font-bold uppercase">* Wajib Diisi</span>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">* Wajib Diisi</span>
                     </Label>
                     <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       <Input 
                         name="fullName" 
                         defaultValue={profile.fullName} 
                         placeholder="Masukkan nama lengkap beserta gelar jika ada..." 
-                        className="pl-10 h-11 rounded-xl font-bold border-slate-300 dark:border-slate-700 focus-visible:ring-2 focus-visible:ring-emerald-500 text-sm shadow-xs" 
+                        className="pl-10 h-11 rounded-xl font-bold border-slate-300 dark:border-white/15 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white focus-visible:ring-2 focus-visible:ring-emerald-500 text-sm shadow-xs" 
                         required 
                       />
                     </div>
@@ -502,17 +502,17 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Nomor Ponsel / WhatsApp */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                      <Label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 flex items-center justify-between">
                         <span>Nomor WhatsApp / HP</span>
-                        <span className="text-[10px] text-emerald-600 font-bold uppercase">* Wajib</span>
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase">* Wajib</span>
                       </Label>
                       <div className="relative">
-                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
+                        <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         <Input 
                           name="phoneNumber" 
                           defaultValue={profile.phoneNumber} 
                           placeholder="Contoh: 081234567890" 
-                          className="pl-10 h-11 rounded-xl font-bold font-mono border-slate-300 dark:border-slate-700 focus-visible:ring-2 focus-visible:ring-emerald-500 text-sm shadow-xs" 
+                          className="pl-10 h-11 rounded-xl font-bold font-mono border-slate-300 dark:border-white/15 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white focus-visible:ring-2 focus-visible:ring-emerald-500 text-sm shadow-xs" 
                           required 
                         />
                       </div>
@@ -521,24 +521,24 @@ export default function ProfilePage() {
                     {/* NIK */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        <Label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
                           NIK (16 Digit KTP)
                         </Label>
                         <span className={cn(
-                          "text-[10px] font-mono font-bold px-1.5 py-0.2 rounded",
-                          nikInput.length === 16 ? "text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300" : "text-slate-400 bg-slate-100 dark:bg-slate-800"
+                          "text-[10px] font-mono font-bold px-1.5 py-0.2 rounded border",
+                          nikInput.length === 16 ? "text-emerald-700 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800" : "text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700"
                         )}>
                           {nikInput.length}/16
                         </span>
                       </div>
                       <div className="relative">
-                        <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
+                        <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         <Input 
                           name="nik" 
                           value={nikInput}
                           onChange={(e) => setNikInput(e.target.value.replace(/\D/g, "").slice(0, 16))}
                           placeholder="Masukkan 16 digit NIK..." 
-                          className="pl-10 h-11 rounded-xl font-bold font-mono tracking-wider border-slate-300 dark:border-slate-700 focus-visible:ring-2 focus-visible:ring-emerald-500 text-sm shadow-xs" 
+                          className="pl-10 h-11 rounded-xl font-bold font-mono tracking-wider border-slate-300 dark:border-white/15 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white focus-visible:ring-2 focus-visible:ring-emerald-500 text-sm shadow-xs" 
                           required 
                           maxLength={16} 
                         />
@@ -549,24 +549,24 @@ export default function ProfilePage() {
 
                 {/* SECTION 3: Alamat Domisili */}
                 <div className="space-y-3 pt-2">
-                  <div className="flex items-center gap-2 pb-1 border-b border-slate-200 dark:border-slate-800">
-                    <MapPin className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  <div className="flex items-center gap-2 pb-1 border-b border-slate-200 dark:border-white/10">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100">
                       Alamat &amp; Domisili Petugas
                     </span>
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    <Label className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
                       Alamat Lengkap (Domisili / Kantor)
                     </Label>
                     <div className="relative">
-                      <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-emerald-600" />
+                      <MapPin className="absolute left-3.5 top-3.5 w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       <Textarea 
                         name="address" 
                         defaultValue={profile.address} 
                         placeholder="Masukkan alamat lengkap domisili atau instansi tugas Anda..." 
-                        className="pl-10 min-h-[95px] rounded-xl font-medium border-slate-300 dark:border-slate-700 focus-visible:ring-2 focus-visible:ring-emerald-500 text-sm leading-relaxed shadow-xs" 
+                        className="pl-10 min-h-[95px] rounded-xl font-medium border-slate-300 dark:border-white/15 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white focus-visible:ring-2 focus-visible:ring-emerald-500 text-sm leading-relaxed shadow-xs" 
                         required 
                       />
                     </div>
@@ -574,7 +574,7 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Submit CTA Button */}
-                <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="pt-3 border-t border-slate-200 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
                   <p className="text-[11px] text-slate-400 font-medium text-center sm:text-left">
                     Data profil akan disinkronkan secara *real-time* ke server SIMPU.
                   </p>

@@ -1302,7 +1302,7 @@ function DataRekeningContent() {
                           </Badge>
                         )}
                         {viewingActor.status && (
-                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 capitalize px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-850">
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 capitalize px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 border border-transparent dark:border-white/10">
                             Status: {viewingActor.status.replace("_", " ")}
                           </span>
                         )}

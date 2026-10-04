@@ -520,7 +520,7 @@ function RejectedContent() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
           <Input 
             placeholder="Cari Nama Pelaku / Nama Usaha / NIK..." 
-            className="pl-10 pr-9 h-11 bg-slate-50 dark:bg-slate-850 border-slate-200 dark:border-slate-750 focus-visible:ring-2 focus-visible:ring-red-500 rounded-xl text-xs sm:text-sm font-medium w-full"
+            className="pl-10 pr-9 h-11 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-white/10 focus-visible:ring-2 focus-visible:ring-red-500 rounded-xl text-xs sm:text-sm font-medium w-full text-slate-900 dark:text-white"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -538,7 +538,7 @@ function RejectedContent() {
 
         <div className="w-full md:w-auto flex items-center gap-3 shrink-0">
           <select 
-            className="w-full md:w-auto h-11 px-4 rounded-xl border-2 border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-700 dark:text-slate-200 cursor-pointer"
+            className="w-full md:w-auto h-11 px-4 rounded-xl border-2 border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800 text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-500 text-slate-700 dark:text-slate-200 cursor-pointer"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
