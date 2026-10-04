@@ -95,7 +95,7 @@ export function AppSidebar() {
     const groupDefinitions: { label: string; hrefs: string[] }[] = [
       {
         label: "OVERVIEW",
-        hrefs: ["/dashboard", "/messages", "/perisai"]
+        hrefs: ["/dashboard", "/messages"]
       },
       {
         label: "1. PENDAFTARAN",

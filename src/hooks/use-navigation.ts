@@ -79,14 +79,6 @@ export function useNavigation() {
       description: "Komunikasi Internal",
       badge: totalUnread > 0 ? totalUnread : undefined
     },
-    {
-      name: "Perisai BPJS TK",
-      href: "/perisai",
-      icon: ShieldCheck,
-      show: (isAdmin || isStaff) && !isDinas && !isVerifikatorDinas && !isInspektorat && !isKoordinator && !isPetugas,
-      color: "#059669",
-      description: "Portal Agen & Pendaftaran BPJS TK"
-    },
 
     // ─── 1. PENDAFTARAN ───
     {
