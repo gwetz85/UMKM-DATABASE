@@ -555,29 +555,26 @@ export default function KuotaKorlapDewanAktifPage() {
 
                     <div className="grid grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
                       <div className="space-y-0.5">
-                        <span className="text-[9px] font-black uppercase text-slate-400 block">Kuota</span>
-                        <span className="inline-flex items-center justify-center font-black text-xs text-slate-700 dark:text-slate-300">
+                        <span className="text-[10px] font-bold uppercase text-slate-400 block">Kuota</span>
+                        <span className="font-black text-base text-slate-800 dark:text-slate-100">
                           {item.quota}
                         </span>
                       </div>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] font-black uppercase text-slate-400 block">Tercapai</span>
-                        <span className="inline-flex items-center justify-center font-black text-xs text-emerald-600 dark:text-emerald-400">
+                        <span className="text-[10px] font-bold uppercase text-slate-400 block">Tercapai</span>
+                        <span className="font-black text-base text-slate-800 dark:text-slate-100">
                           {item.achieved}
                         </span>
                       </div>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] font-black uppercase text-slate-400 block">Rekening</span>
-                        <span className="inline-flex items-center justify-center font-black text-xs text-amber-600 dark:text-amber-400">
+                        <span className="text-[10px] font-bold uppercase text-slate-400 block">Rekening</span>
+                        <span className="font-black text-base text-slate-800 dark:text-slate-100">
                           {item.rekeningInput}
                         </span>
                       </div>
                       <div className="space-y-0.5">
-                        <span className="text-[9px] font-black uppercase text-slate-400 block">Sisa</span>
-                        <span className={cn(
-                          "inline-flex items-center justify-center font-black text-xs px-2 py-0.5 rounded-full",
-                          item.remaining <= 0 ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400" : "bg-primary/10 text-primary"
-                        )}>
+                        <span className="text-[10px] font-bold uppercase text-slate-400 block">Sisa</span>
+                        <span className="font-black text-base text-slate-800 dark:text-slate-100">
                           {item.remaining}
                         </span>
                       </div>
@@ -598,20 +595,20 @@ export default function KuotaKorlapDewanAktifPage() {
                     </span>
                     <div className="grid grid-cols-4 gap-2 text-center text-xs">
                       <div>
-                        <span className="text-[9px] font-black text-slate-400 block uppercase">Kuota</span>
-                        <span className="font-black text-slate-700 dark:text-slate-300">{totalQuota}</span>
+                        <span className="text-[10px] font-bold text-slate-400 block uppercase">Kuota</span>
+                        <span className="font-black text-slate-800 dark:text-slate-100 text-base">{totalQuota}</span>
                       </div>
                       <div>
-                        <span className="text-[9px] font-black text-slate-400 block uppercase">Tercapai</span>
-                        <span className="font-black text-emerald-600">{totalAchieved}</span>
+                        <span className="text-[10px] font-bold text-slate-400 block uppercase">Tercapai</span>
+                        <span className="font-black text-slate-800 dark:text-slate-100 text-base">{totalAchieved}</span>
                       </div>
                       <div>
-                        <span className="text-[9px] font-black text-slate-400 block uppercase">Rekening</span>
-                        <span className="font-black text-amber-600">{totalRekeningInput}</span>
+                        <span className="text-[10px] font-bold text-slate-400 block uppercase">Rekening</span>
+                        <span className="font-black text-slate-800 dark:text-slate-100 text-base">{totalRekeningInput}</span>
                       </div>
                       <div>
-                        <span className="text-[9px] font-black text-slate-400 block uppercase">Sisa</span>
-                        <span className={cn("font-black", (totalQuota - totalAchieved) <= 0 ? "text-red-600" : "text-primary")}>
+                        <span className="text-[10px] font-bold text-slate-400 block uppercase">Sisa</span>
+                        <span className="font-black text-slate-800 dark:text-slate-100 text-base">
                           {totalQuota - totalAchieved}
                         </span>
                       </div>
@@ -665,29 +662,18 @@ export default function KuotaKorlapDewanAktifPage() {
                             <span className="text-slate-300">-</span>
                           )}
                         </TableCell>
-                         <TableCell className="text-center font-black text-slate-800 dark:text-white">
-                            <span className="inline-flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-white font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-slate-200 dark:border-slate-700">
-                               {item.quota}
-                            </span>
+                         <TableCell className="text-center font-black text-lg text-slate-800 dark:text-slate-100">
+                           {item.quota}
                          </TableCell>
-                        <TableCell className="text-center">
-                           <span className="inline-flex items-center justify-center bg-emerald-100 text-emerald-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-emerald-200">
-                              {item.achieved}
-                           </span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                           <span className="inline-flex items-center justify-center bg-amber-100 text-amber-700 font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border border-amber-200">
-                              {item.rekeningInput}
-                           </span>
-                        </TableCell>
-                        <TableCell className="text-center">
-                           <span className={cn(
-                              "inline-flex items-center justify-center font-black px-3 py-1 rounded-full min-w-[3rem] shadow-sm text-xs border",
-                              item.remaining <= 0 ? "bg-red-100 text-red-700 border-red-200" : "bg-primary text-white border-primary/20"
-                            )}>
-                              {item.remaining}
-                           </span>
-                        </TableCell>
+                         <TableCell className="text-center font-black text-lg text-slate-800 dark:text-slate-100">
+                           {item.achieved}
+                         </TableCell>
+                         <TableCell className="text-center font-black text-lg text-slate-800 dark:text-slate-100">
+                           {item.rekeningInput}
+                         </TableCell>
+                         <TableCell className="text-center font-black text-lg text-slate-800 dark:text-slate-100">
+                           {item.remaining}
+                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button variant="outline" size="sm" onClick={() => setEditingData(item)} className="h-8 text-[10px] font-bold border-primary/20 hover:bg-primary/5 text-primary">
@@ -718,24 +704,19 @@ export default function KuotaKorlapDewanAktifPage() {
                       <TableCell colSpan={3} className="font-black text-slate-800 uppercase text-right text-xs pr-6">
                         Total Keseluruhan Kuota Data
                       </TableCell>
-                      <TableCell className="text-center font-black text-slate-600 text-base">
+                      <TableCell className="text-center font-black text-slate-900 dark:text-white text-xl">
                         {totalQuota}
                       </TableCell>
-                      <TableCell className="text-center font-black text-emerald-600 text-base">
+                      <TableCell className="text-center font-black text-slate-900 dark:text-white text-xl">
                         {totalAchieved}
                       </TableCell>
-                      <TableCell className="text-center font-black text-amber-600 text-base">
+                      <TableCell className="text-center font-black text-slate-900 dark:text-white text-xl">
                         {totalRekeningInput}
                       </TableCell>
-                      <TableCell className="text-center">
-                        <span className={cn(
-                            "inline-flex items-center gap-1 font-black px-3 py-1 rounded-full shadow-sm text-xs border",
-                            (totalQuota - totalAchieved) <= 0 ? "bg-red-100 text-red-700 border-red-200" : "bg-primary text-white border-primary/20"
-                          )}>
-                            {totalQuota - totalAchieved}
-                            <span className="text-[10px] opacity-70">
-                              ({(totalQuota > 0 ? ((totalQuota - totalAchieved) / totalQuota) * 100 : 0).toFixed(1)}%)
-                            </span>
+                      <TableCell className="text-center font-black text-slate-900 dark:text-white text-xl">
+                        {totalQuota - totalAchieved}
+                        <span className="text-xs font-semibold text-slate-500 ml-1.5">
+                          ({(totalQuota > 0 ? ((totalQuota - totalAchieved) / totalQuota) * 100 : 0).toFixed(1)}%)
                         </span>
                       </TableCell>
                       <TableCell></TableCell>
