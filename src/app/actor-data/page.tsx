@@ -582,6 +582,36 @@ function ActorDataContent() {
     }).sort((a: any, b: any) => a.name.localeCompare(b.name))
   }, [groupedActors, kuotaData, systemStats])
 
+  const coordinatorOptions = useMemo(() => {
+    const names = new Set<string>()
+    if (kuotaData) {
+      kuotaData.forEach((q: any) => {
+        const n = normalizeCoordinator(q.name || q.coordinator || "").toUpperCase().trim()
+        if (
+          n &&
+          !n.includes("( PERBAIKKAN )") &&
+          !n.includes("( PERBAIKAN )") &&
+          !n.includes("( DIHAPUS )")
+        ) {
+          names.add(n)
+        }
+      })
+    }
+    coordinatorStats.forEach(s => {
+      const n = normalizeCoordinator(s.name || "").toUpperCase().trim()
+      if (
+        n &&
+        n !== "TANPA KOORDINATOR" &&
+        !n.includes("( PERBAIKKAN )") &&
+        !n.includes("( PERBAIKAN )") &&
+        !n.includes("( DIHAPUS )")
+      ) {
+        names.add(n)
+      }
+    })
+    return Array.from(names).sort((a, b) => a.localeCompare(b))
+  }, [kuotaData, coordinatorStats])
+
   const currentKoorStat = useMemo(() => {
     if (!filterCoordinator) return null
     return coordinatorStats.find(s => s.name === filterCoordinator)
@@ -803,7 +833,10 @@ function ActorDataContent() {
     
     toast({ title: "Tersimpan", description: "Data pelaku usaha berhasil diperbarui." })
     setIsEditMode(false)
-    setViewingActor({ ...viewingActor, ...updates } as BusinessActor)
+    const updatedActor = { ...viewingActor, ...updates } as BusinessActor
+    setViewingActor(updatedActor)
+    setLocalIndex(prev => prev ? prev.map(a => a.id === viewingActor.id ? { ...a, ...updates } : a) : null)
+    setSearchResults(prev => prev ? prev.map(a => a.id === viewingActor.id ? { ...a, ...updates } : a) : null)
   }
 
   const handleQuickReassignPetugas = (actorId: string, newPetugas: string) => {
@@ -813,6 +846,16 @@ function ActorDataContent() {
     updateDocumentNonBlocking(ref(database, `businessActors/${actorId}`), {
       petugasSurvey: val
     })
+
+    if (viewingActor && viewingActor.id === actorId) {
+      const updatedActor = { ...viewingActor, petugasSurvey: val }
+      setViewingActor(updatedActor)
+      import("@/lib/stats-service").then(({ syncActorToSearchIndex }) => {
+        syncActorToSearchIndex(database, updatedActor).catch(() => {})
+      })
+    }
+    setLocalIndex(prev => prev ? prev.map(a => a.id === actorId ? { ...a, petugasSurvey: val } : a) : null)
+    setSearchResults(prev => prev ? prev.map(a => a.id === actorId ? { ...a, petugasSurvey: val } : a) : null)
 
     logActivity({
       query: `GANTI PETUGAS SURVEY: ${viewingActor?.fullName || actorId} -> ${val}`,
@@ -827,9 +870,61 @@ function ActorDataContent() {
       title: "Petugas Survey Diperbarui",
       description: val === "BELUM ADA" ? "Status petugas diubah menjadi BELUM ADA (Hanya Admin yang dapat mengakses)." : `Petugas Survey dialihkan ke ${val}.`
     })
+  }
 
+  const handleQuickReassignCoordinator = async (actorId: string, newCoordinator: string) => {
+    if (!isAdmin || !database || !newCoordinator) return
+    const val = normalizeCoordinator(newCoordinator).toUpperCase().trim()
+    if (!val) return
+
+    const currentActor = actors?.find(a => a.id === actorId) || viewingActor
+    const oldCoord = normalizeCoordinator(currentActor?.coordinator || "").toUpperCase().trim()
+    if (oldCoord === val) return
+
+    // Optimistically update local states immediately
     if (viewingActor && viewingActor.id === actorId) {
-      setViewingActor(prev => prev ? { ...prev, petugasSurvey: val } : null)
+      setViewingActor(prev => prev ? { ...prev, coordinator: val } : null)
+    }
+    setLocalIndex(prev => prev ? prev.map(a => a.id === actorId ? { ...a, coordinator: val } : a) : null)
+    setSearchResults(prev => prev ? prev.map(a => a.id === actorId ? { ...a, coordinator: val } : a) : null)
+
+    try {
+      const actorRef = ref(database, `businessActors/${actorId}`)
+      const snap = await get(actorRef)
+      const baseActor = snap.exists() ? { ...snap.val(), id: actorId } : { ...(currentActor || {}), id: actorId }
+      const actualOldCoord = normalizeCoordinator(baseActor.coordinator || oldCoord).toUpperCase().trim()
+
+      updateDocumentNonBlocking(actorRef, {
+        coordinator: val
+      })
+
+      const { updateStatsOnEdit } = await import("@/lib/stats-service")
+      await updateStatsOnEdit(
+        database,
+        { ...baseActor, coordinator: actualOldCoord },
+        { ...baseActor, coordinator: val }
+      )
+
+      logActivity({
+        query: `PINDAH KOORDINATOR: ${baseActor.fullName || viewingActor?.fullName || actorId} (${actualOldCoord || '-'} -> ${val})`,
+        results: "Berhasil",
+        device: getDeviceType(navigator.userAgent),
+        source: 'Web',
+        method: 'DATA PELAKU USAHA',
+        userId: user?.email || user?.uid || 'Admin'
+      })
+
+      toast({
+        title: "Koordinator Diperbarui",
+        description: `Data ${baseActor.fullName || viewingActor?.fullName || ''} beserta seluruh data terkait berhasil dipindahkan dari ${actualOldCoord || '-'} ke ${val}.`
+      })
+    } catch (err) {
+      console.error("Error reassigning coordinator:", err)
+      toast({
+        variant: "destructive",
+        title: "Gagal Memindahkan Koordinator",
+        description: "Terjadi kesalahan saat memperbarui data koordinator."
+      })
     }
   }
 
@@ -2456,7 +2551,25 @@ function ActorDataContent() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Nama Usaha</Label><Input name="businessName" defaultValue={viewingActor.businessName} className="rounded-xl" /></div>
                           <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Kategori Usaha</Label><Input name="businessCategory" defaultValue={viewingActor.businessCategory} className="rounded-xl" /></div>
-                          <div className="space-y-1"><Label className="text-xs font-bold uppercase text-slate-500">Usulan Koordinator</Label><Input name="coordinator" defaultValue={viewingActor.coordinator} className="rounded-xl" /></div>
+                          <div className="space-y-1">
+                            <Label className="text-xs font-bold uppercase text-slate-500">Usulan Koordinator</Label>
+                            <select
+                              name="coordinator"
+                              defaultValue={normalizeCoordinator(viewingActor.coordinator || "").toUpperCase().trim()}
+                              className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm font-bold uppercase ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                            >
+                              {viewingActor.coordinator && !coordinatorOptions.includes(normalizeCoordinator(viewingActor.coordinator).toUpperCase().trim()) && (
+                                <option value={normalizeCoordinator(viewingActor.coordinator).toUpperCase().trim()}>
+                                  {normalizeCoordinator(viewingActor.coordinator).toUpperCase().trim()} (Saat Ini)
+                                </option>
+                              )}
+                              {coordinatorOptions.map((name: string) => (
+                                <option key={name} value={name}>
+                                  {name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                           <div className="space-y-1 md:col-span-2"><Label className="text-xs font-bold uppercase text-slate-500">Lokasi Usaha</Label><Input name="businessLocation" defaultValue={viewingActor.businessLocation} className="rounded-xl" /></div>
                         </div>
                       </section>
@@ -2824,6 +2937,8 @@ function ActorDataContent() {
 
                             const canonicalPetugas = resolveSurveyorCanonicalName(viewingActor.petugasSurvey, systemUsersRaw);
                             const isBelumAdaPetugas = canonicalPetugas === "BELUM ADA";
+                            const canonicalCoordinator = normalizeCoordinator(viewingActor.coordinator || "").toUpperCase().trim();
+                            const isBelumAdaCoordinator = !canonicalCoordinator || canonicalCoordinator === "-";
 
                             return (
                               <>
@@ -2877,7 +2992,7 @@ function ActorDataContent() {
                                 {!isInspektorat && (
                                   <>
                                     {/* Usulan / Koordinator */}
-                                    <div className="bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/80 hover:bg-amber-100/70 rounded-xl p-3.5 sm:p-4 transition-all space-y-2 shadow-2xs">
+                                    <div className="bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/80 hover:bg-amber-100/70 rounded-xl p-3.5 sm:p-4 transition-all space-y-2.5 shadow-2xs">
                                       <div className="flex items-center gap-2">
                                         <div className="w-6 h-6 rounded-md bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
                                           <Users className="w-3.5 h-3.5" />
@@ -2886,21 +3001,53 @@ function ActorDataContent() {
                                           Usulan / Koordinator
                                         </span>
                                       </div>
-                                      <p className="text-sm sm:text-base font-black uppercase text-slate-950 dark:text-white">
-                                        {viewingActor.coordinator || "-"}
-                                      </p>
-                                      {coordPhone && (
-                                        <div className="pt-0.5">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        {isBelumAdaCoordinator ? (
+                                          <span className="inline-flex items-center gap-1.5 text-xs font-black text-white uppercase bg-rose-600 px-3 py-1 rounded-xl shadow-2xs">
+                                            <span className="w-2 h-2 rounded-full bg-white shrink-0 animate-pulse" />
+                                            <span>BELUM ADA</span>
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1.5 text-xs font-black text-white uppercase bg-amber-600 px-3 py-1 rounded-xl shadow-2xs">
+                                            <span className="w-2 h-2 rounded-full bg-white shrink-0" />
+                                            <span>{canonicalCoordinator}</span>
+                                          </span>
+                                        )}
+                                        {coordPhone && (
                                           <a
                                             href={getWaLink(coordPhone)}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 rounded-xl shadow-xs transition-colors group cursor-pointer"
+                                            className="inline-flex items-center gap-1.5 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1 rounded-xl shadow-xs transition-colors group cursor-pointer"
                                             title="Chat WA Koordinator"
                                           >
                                             <MessageCircle className="w-3.5 h-3.5 text-white fill-white/20 group-hover:scale-110 transition-transform" />
                                             <span>WA: {coordPhone}</span>
                                           </a>
+                                        )}
+                                      </div>
+                                      {isAdmin && (
+                                        <div className="pt-0.5">
+                                          <select
+                                            value={!isBelumAdaCoordinator ? canonicalCoordinator : ""}
+                                            onChange={(e) => handleQuickReassignCoordinator(viewingActor.id, e.target.value)}
+                                            className="text-xs font-bold h-8 rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-800 px-2.5 py-0.5 shadow-2xs text-amber-950 dark:text-amber-200 cursor-pointer hover:border-amber-500 transition-all w-full max-w-[260px]"
+                                            title="Admin: Pindahkan Usulan / Koordinator secara langsung"
+                                          >
+                                            {isBelumAdaCoordinator && (
+                                              <option value="" disabled>-- Pilih Koordinator --</option>
+                                            )}
+                                            {!isBelumAdaCoordinator && !coordinatorOptions.includes(canonicalCoordinator) && (
+                                              <option value={canonicalCoordinator}>
+                                                🟢 {canonicalCoordinator} (Saat Ini)
+                                              </option>
+                                            )}
+                                            {coordinatorOptions.map((name: string) => (
+                                              <option key={name} value={name}>
+                                                🟢 {name}
+                                              </option>
+                                            ))}
+                                          </select>
                                         </div>
                                       )}
                                     </div>
