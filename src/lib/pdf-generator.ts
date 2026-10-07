@@ -2,7 +2,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { BusinessActor } from '@/app/lib/types';
 import { generateBarcodeBase64, generateQRCodeBase64 } from './barcode-utils';
-import { parsePobDob } from './utils';
+import { parsePobDob, calculateAge, extractDobFromNik, formatCurrency } from './utils';
+import { getActorCurrentMenu } from './actor-menu-status';
 
 export const addTunasBangsaHeader = (doc: jsPDF, hasLogo = false) => {
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -201,170 +202,596 @@ export const generateRegistrationForm = async (actor: BusinessActor, sequenceNum
   doc.save(filename);
 };
 
-export const generateCoordinatorReport = (coordinator: string, actors: BusinessActor[]) => {
+interface ResolvedOfficerInfo {
+  nama: string;
+  nipppk: string;
+}
+
+const buildOfficerResolver = (allActors: BusinessActor[], systemUsers?: any[]) => {
+  const userByName = new Map<string, any>();
+  const userByUsername = new Map<string, any>();
+  const surveyorToVerif = new Map<string, ResolvedOfficerInfo>();
+
+  if (Array.isArray(systemUsers)) {
+    systemUsers.forEach((u: any) => {
+      if (!u) return;
+      const fullUpper = u.fullName ? String(u.fullName).toUpperCase().trim() : '';
+      const idUpper = u.id ? String(u.id).toUpperCase().trim() : '';
+      const unameLower = u.username ? String(u.username).toLowerCase().trim() : '';
+      if (fullUpper) userByName.set(fullUpper, u);
+      if (idUpper) userByName.set(idUpper, u);
+      if (unameLower) userByUsername.set(unameLower, u);
+
+      const pdVerif = u.pejabatData?.verifikator;
+      if (pdVerif?.nama && pdVerif.nama.trim() !== '' && pdVerif.nama.trim() !== '-' && pdVerif.nama.trim() !== 'Belum Ditentukan') {
+        const vInfo: ResolvedOfficerInfo = {
+          nama: String(pdVerif.nama).trim().toUpperCase(),
+          nipppk: pdVerif.nipppk ? String(pdVerif.nipppk).trim() : '',
+        };
+        if (fullUpper) surveyorToVerif.set(fullUpper, vInfo);
+        if (idUpper) surveyorToVerif.set(idUpper, vInfo);
+        if (unameLower) surveyorToVerif.set(unameLower.toUpperCase(), vInfo);
+      }
+    });
+  }
+
+  // Enrich surveyor -> verifikator mapping from actors that already have both recorded
+  allActors.forEach((a) => {
+    if (!a) return;
+    const sd = (a as any).surveyData || {};
+    const pRaw = (
+      a.petugasSurvey ||
+      a.pejabatData?.petugas?.nama ||
+      sd.pejabatData?.petugas?.nama ||
+      ''
+    ).toUpperCase().trim();
+
+    const vRaw = (
+      a.pejabatData?.verifikator?.nama ||
+      sd.pejabatData?.verifikator?.nama ||
+      a.verifikatorDinas ||
+      (a as any).berkasDinasVerifiedBy ||
+      ''
+    ).trim();
+
+    if (
+      pRaw &&
+      pRaw !== '-' &&
+      pRaw !== 'BELUM ADA' &&
+      vRaw &&
+      vRaw !== '-' &&
+      vRaw !== 'Belum Ditentukan' &&
+      vRaw !== 'Verifikator Dinas'
+    ) {
+      const vNip =
+        a.pejabatData?.verifikator?.nipppk ||
+        sd.pejabatData?.verifikator?.nipppk ||
+        '';
+      if (!surveyorToVerif.has(pRaw)) {
+        surveyorToVerif.set(pRaw, {
+          nama: vRaw.toUpperCase(),
+          nipppk: vNip ? String(vNip).trim() : '',
+        });
+      }
+    }
+  });
+
+  const isValidName = (val?: string | null, invalidPlaceholders: string[] = []) => {
+    if (!val) return false;
+    const clean = String(val).trim();
+    if (!clean || clean === '-') return false;
+    const upper = clean.toUpperCase();
+    return !invalidPlaceholders.some((p) => p.toUpperCase() === upper);
+  };
+
+  const resolvePetugas = (actor: BusinessActor): ResolvedOfficerInfo => {
+    const sd = (actor as any).surveyData || {};
+    const pdPetugas = actor.pejabatData?.petugas || sd.pejabatData?.petugas;
+
+    let rawName = '';
+    if (isValidName(actor.petugasSurvey, ['BELUM ADA'])) {
+      rawName = String(actor.petugasSurvey).trim();
+    } else if (isValidName(pdPetugas?.nama, ['BELUM ADA', 'Belum Ditentukan'])) {
+      rawName = String(pdPetugas.nama).trim();
+    } else if (isValidName(actor.verifiedDinasBy, ['Petugas Survey', 'Verifikator Dinas', 'BELUM ADA'])) {
+      rawName = String(actor.verifiedDinasBy).trim();
+    } else if (isValidName(actor.createdBy, ['BELUM ADA', 'Admin'])) {
+      rawName = String(actor.createdBy).trim();
+    }
+
+    let nipppk = pdPetugas?.nipppk ? String(pdPetugas.nipppk).trim() : '';
+
+    if (rawName) {
+      const upper = rawName.toUpperCase().trim();
+      const lower = rawName.toLowerCase().trim();
+      const found = userByName.get(upper) || userByUsername.get(lower);
+      if (found) {
+        if (found.fullName) rawName = String(found.fullName).trim();
+        if (!nipppk && found.nipppk) nipppk = String(found.nipppk).trim();
+      }
+    }
+
+    return {
+      nama: rawName ? rawName.toUpperCase() : '-',
+      nipppk,
+    };
+  };
+
+  const resolveVerifikator = (actor: BusinessActor, petugasInfo: ResolvedOfficerInfo): ResolvedOfficerInfo => {
+    const sd = (actor as any).surveyData || {};
+    const pdVerif = actor.pejabatData?.verifikator || sd.pejabatData?.verifikator;
+
+    let rawName = '';
+    if (isValidName(pdVerif?.nama, ['Belum Ditentukan', 'BELUM ADA'])) {
+      rawName = String(pdVerif.nama).trim();
+    } else if (isValidName(actor.verifikatorDinas, ['Belum Ditentukan', 'BELUM ADA'])) {
+      rawName = String(actor.verifikatorDinas).trim();
+    } else if (isValidName((actor as any).berkasDinasVerifiedBy, ['Verifikator Dinas', 'Belum Ditentukan', 'BELUM ADA'])) {
+      rawName = String((actor as any).berkasDinasVerifiedBy).trim();
+    }
+
+    let nipppk = pdVerif?.nipppk ? String(pdVerif.nipppk).trim() : '';
+
+    if (!rawName && petugasInfo.nama && petugasInfo.nama !== '-') {
+      const mapped = surveyorToVerif.get(petugasInfo.nama.toUpperCase().trim());
+      if (mapped) {
+        rawName = mapped.nama;
+        if (!nipppk && mapped.nipppk) nipppk = mapped.nipppk;
+      }
+    }
+
+    if (rawName) {
+      const upper = rawName.toUpperCase().trim();
+      const lower = rawName.toLowerCase().trim();
+      const found = userByName.get(upper) || userByUsername.get(lower);
+      if (found) {
+        if (found.fullName) rawName = String(found.fullName).trim();
+        if (!nipppk && found.nipppk) nipppk = String(found.nipppk).trim();
+      }
+    }
+
+    return {
+      nama: rawName ? rawName.toUpperCase() : '-',
+      nipppk,
+    };
+  };
+
+  return { resolvePetugas, resolveVerifikator };
+};
+
+const renderCoordinatorSectionTable = (
+  doc: jsPDF,
+  coordinator: string,
+  actors: BusinessActor[],
+  resolver: ReturnType<typeof buildOfficerResolver>
+) => {
+  const pageWidth = doc.internal.pageSize.getWidth(); // 297mm on landscape A4
+  const margin = 8;
+  const coordUpper = (coordinator || 'TANPA KOORDINATOR').toUpperCase().trim();
+
+  // Sort actors alphabetically by fullName for neat presentation
+  const sortedActors = [...actors].sort((a, b) =>
+    String(a.fullName || '').localeCompare(String(b.fullName || ''))
+  );
+
+  // Compute Coordinator Summary Stats
+  let surveyCount = 0;
+  let layakCount = 0;
+  let rekeningCount = 0;
+  let verifDinasCount = 0;
+
+  sortedActors.forEach((a) => {
+    const sd = (a as any).surveyData || {};
+    const hasSurvey = Boolean(sd.hasilSurvey || sd.tanggalSurvey || sd.namaUsaha || sd.modalUsaha);
+    if (hasSurvey) surveyCount++;
+    if (String(sd.hasilSurvey || '').toLowerCase() === 'layak' || a.hasilVerifikasiDinas === 'Lolos') {
+      layakCount++;
+    }
+    if (a.bankNumber && String(a.bankNumber).trim() !== '' && String(a.bankNumber).trim() !== '-') {
+      rekeningCount++;
+    }
+    if (a.berkasDinasVerified || a.status === 'finish' || (a.status === 'verified_dinas' && a.hasilVerifikasiDinas === 'Lolos')) {
+      verifDinasCount++;
+    }
+  });
+
+  // --- TOP HEADER BANNER ---
+  doc.setFillColor(30, 58, 138); // Deep Blue header bar
+  doc.roundedRect(margin, 8, pageWidth - margin * 2, 16, 2, 2, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(255, 255, 255);
+  doc.text('TUNAS BANGSA KEPULAUAN RIAU - DATABASE PELAKU USAHA (SIMPU)', margin + 4, 14.5);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(219, 234, 254); // blue-100
+  doc.text(
+    'Laporan Lengkap Biodata Pelaku Usaha, Hasil Survey Lapangan, Data Rekening Bank, Petugas Survey & Verifikator Dinas',
+    margin + 4,
+    20.5
+  );
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text(`KOORDINATOR: ${coordUpper}`, pageWidth - margin - 4, 14.5, { align: 'right' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(254, 240, 138); // yellow-200
+  doc.text(
+    `Total: ${sortedActors.length} Pelaku Usaha  |  Sudah Survey: ${surveyCount}  |  Layak/Lolos: ${layakCount}  |  Sudah Rekening: ${rekeningCount}  |  Lolos Verifikasi: ${verifDinasCount}`,
+    pageWidth - margin - 4,
+    20.5,
+    { align: 'right' }
+  );
+
+  doc.setTextColor(0);
+
+  // Build rows with complete information
+  const rowMeta: { hasilSurvey: string; hasBank: boolean }[] = [];
+
+  const tableData = sortedActors.map((actor, index) => {
+    const sd = (actor as any).surveyData || {};
+    const parsedPobDob = parsePobDob(actor.pobDob || '');
+    const pob = (actor.pob || parsedPobDob.pob || '-').toUpperCase();
+    const dob = actor.dob || parsedPobDob.dob || extractDobFromNik(actor.nik || '') || '-';
+    const age = calculateAge(dob);
+    const gender = actor.gender || sd.jenisKelamin || '-';
+    const regCode = actor.registrationCode || '-';
+
+    // Col 1: Biodata Pelaku Usaha
+    const colBiodata = [
+      (actor.fullName || '-').toUpperCase(),
+      `Reg: ${regCode}`,
+      `JK: ${gender}`,
+      `TTL: ${pob}, ${dob}`,
+      `Umur: ${age}`,
+    ].join('\n');
+
+    // Col 2: NIK, No. KK & Kontak
+    const phoneVal = actor.phone || sd.noHp || '-';
+    const colIdentitasLines = [
+      `NIK: ${actor.nik || '-'}`,
+      `KK: ${actor.noKK || '-'}`,
+      `HP: ${phoneVal}`,
+    ];
+    if (sd.email && sd.email !== '-') colIdentitasLines.push(`Email: ${sd.email}`);
+    if (sd.sosmed && sd.sosmed !== '-') colIdentitasLines.push(`Sosmed: ${sd.sosmed}`);
+    const colIdentitas = colIdentitasLines.join('\n');
+
+    // Col 3: Alamat Domisili Lengkap
+    const addressVal = (actor.address || sd.alamatRumah || '-').toUpperCase();
+    const colAlamat = [
+      addressVal,
+      `RT/RW: ${actor.rtRw || '-'}`,
+      `Kel: ${(actor.kelurahan || '-').toUpperCase()}`,
+      `Kec: ${(actor.kecamatan || '-').toUpperCase()}`,
+    ].join('\n');
+
+    // Col 4: Data Usaha & Lokasi
+    const usahaName = (actor.businessName || sd.namaUsaha || '-').toUpperCase();
+    const kategori = (actor.businessCategory || '-').toUpperCase();
+    const bidang = sd.bidangUsaha || '-';
+    const thnBerdiri = sd.tahunBerdiri || '-';
+    const izinStr = Array.isArray(sd.izin) && sd.izin.length > 0 ? sd.izin.join(', ') : '-';
+    const lokasiUsaha = (actor.businessLocation || sd.alamatUsaha || actor.address || '-').toUpperCase();
+    const colUsaha = [
+      usahaName,
+      `Kat: ${kategori}`,
+      `Bidang: ${bidang}`,
+      `Thn: ${thnBerdiri} | Izin: ${izinStr}`,
+      `Lokasi: ${lokasiUsaha}`,
+    ].join('\n');
+
+    // Col 5: Rincian Hasil Survey Lapangan
+    const statusKeluarga = sd.status || '-';
+    const dtksStr =
+      sd.dtks?.masuk === true
+        ? `Ya (${sd.dtks.jenis || 'Bansos'})`
+        : sd.dtks?.masuk === false
+          ? 'Tidak'
+          : '-';
+    const modalStr = sd.modalUsaha ? formatCurrency(sd.modalUsaha) : '-';
+    const omsetStr = sd.omset ? formatCurrency(sd.omset) : '-';
+    const peralatanStr = sd.peralatan || '-';
+    const hibahStr =
+      sd.hibah?.pernah === true
+        ? `Pernah${sd.hibah.dariMana ? ' (' + sd.hibah.dariMana + (sd.hibah.tahun ? ' ' + sd.hibah.tahun : '') + ')' : ''}`
+        : sd.hibah?.pernah === false
+          ? 'Tidak'
+          : '-';
+
+    const colRincianSurvey = [
+      `Keluarga: ${statusKeluarga}`,
+      `DTKS: ${dtksStr}`,
+      `Modal: ${modalStr}`,
+      `Omset: ${omsetStr}`,
+      `Alat: ${peralatanStr}`,
+      `Hibah: ${hibahStr}`,
+    ].join('\n');
+
+    // Col 6: Rencana Penggunaan
+    const colRencana = sd.rencanaPenggunaan || '-';
+
+    // Col 7: Hasil Survey & Status Verifikasi
+    const hasilSurveyRaw = sd.hasilSurvey || (actor.hasilVerifikasiDinas === 'Lolos' ? 'Layak' : '');
+    const hasilSurveyDisplay = hasilSurveyRaw ? hasilSurveyRaw.toUpperCase() : 'BELUM SURVEY';
+    const tglSurveyDisplay = sd.tanggalSurvey || '-';
+    const menuInfo = getActorCurrentMenu(actor);
+    const verifStatusDisplay = actor.berkasDinasVerified
+      ? 'LOLOS VERIFIKASI'
+      : actor.hasilVerifikasiDinas
+        ? actor.hasilVerifikasiDinas.toUpperCase()
+        : 'PROSES';
+
+    const colKeputusanLines = [
+      `Survey: ${hasilSurveyDisplay}`,
+      `Tgl: ${tglSurveyDisplay}`,
+      `Verif: ${verifStatusDisplay}`,
+      `Posisi: ${menuInfo.menuName}`,
+    ];
+    if (actor.keteranganDinas && actor.keteranganDinas !== '-') {
+      colKeputusanLines.push(`Ket: ${actor.keteranganDinas}`);
+    }
+    const colKeputusan = colKeputusanLines.join('\n');
+
+    // Col 8: Rekening Bank
+    const hasBank = Boolean(actor.bankNumber && String(actor.bankNumber).trim() !== '' && String(actor.bankNumber).trim() !== '-');
+    const colRekening = hasBank
+      ? [
+          `Bank: ${(actor.bankName || '-').toUpperCase()}`,
+          `No: ${String(actor.bankNumber).trim()}`,
+          `A.n: ${(actor.bankOwner || actor.fullName || '-').toUpperCase()}`,
+        ].join('\n')
+      : 'BELUM DIINPUT';
+
+    // Col 9: Petugas Survey
+    const petugasInfo = resolver.resolvePetugas(actor);
+    const colPetugas =
+      petugasInfo.nama !== '-'
+        ? petugasInfo.nipppk
+          ? `${petugasInfo.nama}\nNIP: ${petugasInfo.nipppk}`
+          : petugasInfo.nama
+        : 'BELUM ADA';
+
+    // Col 10: Verifikator Dinas
+    const verifInfo = resolver.resolveVerifikator(actor, petugasInfo);
+    const colVerifikator =
+      verifInfo.nama !== '-'
+        ? verifInfo.nipppk
+          ? `${verifInfo.nama}\nNIP: ${verifInfo.nipppk}`
+          : verifInfo.nama
+        : 'BELUM DITENTUKAN';
+
+    rowMeta.push({ hasilSurvey: hasilSurveyDisplay, hasBank });
+
+    return [
+      index + 1,
+      colBiodata,
+      colIdentitas,
+      colAlamat,
+      colUsaha,
+      colRincianSurvey,
+      colRencana,
+      colKeputusan,
+      colRekening,
+      colPetugas,
+      colVerifikator,
+    ];
+  });
+
+  const initialPage = doc.getCurrentPageInfo().pageNumber;
+
+  autoTable(doc, {
+    startY: 26.5,
+    head: [[
+      'NO',
+      'BIODATA PELAKU USAHA',
+      'NIK / NO. KK / HP',
+      'ALAMAT DOMISILI',
+      'DATA USAHA & LOKASI',
+      'RINCIAN HASIL SURVEY',
+      'RENCANA PENGGUNAAN',
+      'KEPUTUSAN & STATUS',
+      'REKENING BANK',
+      'PETUGAS SURVEY',
+      'VERIFIKATOR DINAS',
+    ]],
+    body: tableData,
+    theme: 'grid',
+    rowPageBreak: 'avoid',
+    headStyles: {
+      fillColor: [30, 64, 175], // blue-800
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'center',
+      valign: 'middle',
+      fontSize: 6.2,
+      cellPadding: { top: 2, right: 1.5, bottom: 2, left: 1.5 },
+      lineColor: [30, 58, 138],
+      lineWidth: 0.2,
+    },
+    styles: {
+      font: 'helvetica',
+      fontSize: 5.8,
+      cellPadding: { top: 1.6, right: 1.6, bottom: 1.6, left: 1.6 },
+      valign: 'top',
+      overflow: 'linebreak',
+      lineColor: [203, 213, 225], // slate-300
+      lineWidth: 0.15,
+      textColor: [15, 23, 42], // slate-900
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252], // slate-50
+    },
+    // Sum of widths = 7 + 31 + 28 + 29 + 31 + 35 + 24 + 25 + 25 + 23 + 23 = 281mm (exact fit for 297mm - 16mm margins)
+    columnStyles: {
+      0: { halign: 'center', valign: 'middle', fontStyle: 'bold', cellWidth: 7 },
+      1: { cellWidth: 31 },
+      2: { cellWidth: 28 },
+      3: { cellWidth: 29 },
+      4: { cellWidth: 31 },
+      5: { cellWidth: 35 },
+      6: { cellWidth: 24 },
+      7: { cellWidth: 25 },
+      8: { cellWidth: 25 },
+      9: { cellWidth: 23 },
+      10: { cellWidth: 23 },
+    },
+    margin: { top: 18, bottom: 11, left: margin, right: margin },
+    didParseCell: (data) => {
+      if (data.section === 'body') {
+        const meta = rowMeta[data.row.index];
+        if (!meta) return;
+
+        // Highlight Keputusan Survey column
+        if (data.column.index === 7) {
+          if (meta.hasilSurvey.includes('LAYAK') && !meta.hasilSurvey.includes('TIDAK')) {
+            data.cell.styles.fillColor = [240, 253, 244]; // emerald-50
+            data.cell.styles.textColor = [20, 83, 45]; // emerald-900
+            data.cell.styles.fontStyle = 'bold';
+          } else if (meta.hasilSurvey.includes('TIDAK')) {
+            data.cell.styles.fillColor = [254, 242, 242]; // rose-50
+            data.cell.styles.textColor = [127, 29, 29]; // rose-900
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+
+        // Highlight Rekening Bank column
+        if (data.column.index === 8) {
+          if (meta.hasBank) {
+            data.cell.styles.fillColor = [239, 246, 255]; // blue-50
+            data.cell.styles.textColor = [30, 58, 138]; // blue-900
+            data.cell.styles.fontStyle = 'bold';
+          } else {
+            data.cell.styles.textColor = [148, 163, 184]; // slate-400
+            data.cell.styles.halign = 'center';
+            data.cell.styles.valign = 'middle';
+          }
+        }
+
+        // Bold officer names
+        if (data.column.index === 9 || data.column.index === 10) {
+          const rawText = String(data.cell.raw || '');
+          if (rawText === 'BELUM ADA' || rawText === 'BELUM DITENTUKAN') {
+            data.cell.styles.textColor = [148, 163, 184];
+            data.cell.styles.halign = 'center';
+            data.cell.styles.valign = 'middle';
+          } else {
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      }
+    },
+    didDrawPage: () => {
+      const currentPage = doc.getCurrentPageInfo().pageNumber;
+      if (currentPage > initialPage) {
+        // Compact continuation header on overflow pages
+        doc.setFillColor(30, 58, 138);
+        doc.roundedRect(margin, 7, pageWidth - margin * 2, 8.5, 1.5, 1.5, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(255, 255, 255);
+        doc.text(
+          `TUNAS BANGSA KEPRI - LAPORAN LENGKAP PELAKU USAHA (LANJUTAN)`,
+          margin + 3,
+          12.5
+        );
+        doc.text(
+          `KOORDINATOR: ${coordUpper}`,
+          pageWidth - margin - 3,
+          12.5,
+          { align: 'right' }
+        );
+        doc.setTextColor(0);
+      }
+    },
+  });
+};
+
+const addStandardLandscapeFooters = (doc: jsPDF, reportLabel: string) => {
+  const totalPages = doc.getNumberOfPages();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 8;
+  const printedAt = new Date().toLocaleString('id-ID');
+
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.2);
+    doc.line(margin, pageHeight - 8.5, pageWidth - margin, pageHeight - 8.5);
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(6.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(
+      `SIMPU Kepulauan Riau  |  ${reportLabel}`,
+      margin,
+      pageHeight - 4.8
+    );
+    doc.text(
+      `Dicetak pada: ${printedAt}  |  Halaman ${i} dari ${totalPages}`,
+      pageWidth - margin,
+      pageHeight - 4.8,
+      { align: 'right' }
+    );
+  }
+};
+
+export const generateCoordinatorReport = (
+  coordinator: string,
+  actors: BusinessActor[],
+  systemUsers?: any[]
+) => {
   const doc = new jsPDF({
-    orientation: 'portrait',
+    orientation: 'landscape',
     unit: 'mm',
     format: 'a4',
   });
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  
-  // Header Tunas Bangsa
-  const startY = addTunasBangsaHeader(doc);
-  
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text(`LAPORAN DATA PELAKU USAHA: ${coordinator.toUpperCase()}`, pageWidth - 14, 17, { align: 'right' });
-  doc.setFontSize(7);
-  doc.setTextColor(150);
-  doc.text('Sistem Informasi Manajemen Pelaku Usaha (SIMPU)', pageWidth - 14, 21, { align: 'right' });
-  doc.setTextColor(0);
+  const resolver = buildOfficerResolver(actors, systemUsers);
+  renderCoordinatorSectionTable(doc, coordinator, actors, resolver);
+  addStandardLandscapeFooters(doc, `Koordinator: ${(coordinator || '-').toUpperCase()}`);
 
-  const tableData = actors.map((actor, index) => [
-    index + 1,
-    actor.registrationCode || '-',
-    (actor.fullName || "").toUpperCase(),
-    actor.nik || "-",
-    actor.noKK || "-",
-    actor.phone || "-",
-    (actor.address || "").toUpperCase(),
-    (actor.businessName || "").toUpperCase(),
-    (actor.businessLocation || "").toUpperCase(),
-  ]);
-
-  autoTable(doc, {
-    startY: 38,
-    head: [['NO', 'REG', 'NAMA', 'NIK', 'NO KK', 'PONSEL', 'ALAMAT', 'USAHA', 'ALAMAT USAHA']],
-    body: tableData,
-    theme: 'grid',
-    headStyles: { 
-      fillColor: [41, 128, 185], 
-      textColor: 255, 
-      fontStyle: 'bold',
-      halign: 'center',
-      fontSize: 6.5
-    },
-    styles: { 
-      fontSize: 6.5, 
-      cellPadding: 1.5,
-      valign: 'middle',
-      overflow: 'linebreak'
-    },
-    columnStyles: {
-      0: { halign: 'center', cellWidth: 7 },
-      1: { halign: 'center', cellWidth: 15 },
-      2: { cellWidth: 25 },
-      3: { halign: 'center', cellWidth: 21 },
-      4: { halign: 'center', cellWidth: 21 },
-      5: { halign: 'center', cellWidth: 19 },
-      6: { cellWidth: 28 },
-      7: { cellWidth: 24 },
-      8: { cellWidth: 30 },
-    },
-    margin: { left: 10, right: 10 },
-    didDrawPage: (data) => {
-      // Footer
-      doc.setFontSize(6);
-      doc.setTextColor(150);
-      doc.setFont('helvetica', 'italic');
-      doc.text(
-        `Halaman ${data.pageNumber} | Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 
-        pageWidth / 2, 
-        doc.internal.pageSize.getHeight() - 8, 
-        { align: 'center' }
-      );
-    }
-  });
-
-  const filename = `LAPORAN_PELAKU_USAHA_${coordinator.replace(/\s+/g, '_').toUpperCase()}_${new Date().toISOString().split('T')[0]}.pdf`;
+  const cleanCoord = (coordinator || 'KOORDINATOR').replace(/\s+/g, '_').toUpperCase();
+  const filename = `LAPORAN_LENGKAP_PELAKU_USAHA_${cleanCoord}_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(filename);
 };
 
-export const generateAllCoordinatorsReport = (groupedActors: Record<string, BusinessActor[]>) => {
+export const generateAllCoordinatorsReport = (
+  groupedActors: Record<string, BusinessActor[]>,
+  systemUsers?: any[]
+) => {
   const doc = new jsPDF({
-    orientation: 'portrait',
+    orientation: 'landscape',
     unit: 'mm',
     format: 'a4',
   });
 
-  const pageWidth = doc.internal.pageSize.getWidth();
-  let isFirstPage = true;
-  let globalIndex = 1;
+  const allFlatActors: BusinessActor[] = [];
+  Object.values(groupedActors).forEach((list) => {
+    if (Array.isArray(list)) allFlatActors.push(...list);
+  });
 
-  Object.entries(groupedActors).forEach(([coordinator, actors]) => {
-    if (!isFirstPage) {
+  const resolver = buildOfficerResolver(allFlatActors, systemUsers);
+  const sortedEntries = Object.entries(groupedActors)
+    .filter(([, list]) => Array.isArray(list) && list.length > 0)
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  let isFirstSection = true;
+  sortedEntries.forEach(([coordinator, actors]) => {
+    if (!isFirstSection) {
       doc.addPage();
     }
-    isFirstPage = false;
-
-    // Header Tunas Bangsa
-    addTunasBangsaHeader(doc);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text(`LAPORAN KOORDINATOR: ${coordinator.toUpperCase()}`, pageWidth - 14, 17, { align: 'right' });
-    doc.setFontSize(7);
-    doc.setTextColor(150);
-    doc.setLineWidth(0.5);
-    doc.line(10, 32, pageWidth - 10, 32);
-
-    const tableData = actors.map((actor) => [
-      globalIndex++,
-      actor.registrationCode || '-',
-      (actor.fullName || "").toUpperCase(),
-      actor.nik || "-",
-      actor.noKK || "-",
-      actor.phone || "-",
-      (actor.address || "").toUpperCase(),
-      (actor.businessName || "").toUpperCase(),
-      (actor.businessLocation || "").toUpperCase(),
-    ]);
-
-    autoTable(doc, {
-      startY: 38,
-      head: [['NO', 'REG', 'NAMA', 'NIK', 'NO KK', 'PONSEL', 'ALAMAT', 'USAHA', 'ALAMAT USAHA']],
-      body: tableData,
-      theme: 'grid',
-      headStyles: { 
-        fillColor: [41, 128, 185], 
-        textColor: 255, 
-        fontStyle: 'bold',
-        halign: 'center',
-        fontSize: 6.5
-      },
-      styles: { 
-        fontSize: 6.5, 
-        cellPadding: 1.5,
-        valign: 'middle',
-        overflow: 'linebreak'
-      },
-      columnStyles: {
-        0: { halign: 'center', cellWidth: 7 },
-        1: { halign: 'center', cellWidth: 15 },
-        2: { cellWidth: 25 },
-        3: { halign: 'center', cellWidth: 21 },
-        4: { halign: 'center', cellWidth: 21 },
-        5: { halign: 'center', cellWidth: 19 },
-        6: { cellWidth: 28 },
-        7: { cellWidth: 24 },
-        8: { cellWidth: 30 },
-      },
-      margin: { left: 10, right: 10 },
-      didDrawPage: (data) => {
-        // Footer
-        doc.setFontSize(6);
-        doc.setTextColor(150);
-        doc.setFont('helvetica', 'italic');
-        doc.text(
-          `Halaman ${data.pageNumber} | Dicetak pada: ${new Date().toLocaleString('id-ID')}`, 
-          pageWidth / 2, 
-          doc.internal.pageSize.getHeight() - 8, 
-          { align: 'center' }
-        );
-      }
-    });
+    isFirstSection = false;
+    renderCoordinatorSectionTable(doc, coordinator, actors, resolver);
   });
+
+  addStandardLandscapeFooters(doc, `Laporan Lengkap Seluruh Koordinator (${sortedEntries.length} Koordinator)`);
 
   const filename = `LAPORAN_KOORDINATOR_LENGKAP_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(filename);

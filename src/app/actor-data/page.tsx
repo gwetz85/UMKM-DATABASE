@@ -449,8 +449,8 @@ function ActorDataContent() {
 
   const filteredActors = useMemo(() => {
     if (isSearching) {
-      // Prioritize localIndex for 0ms instant search, then searchResults, then actors
-      const sourceList = localIndex || searchResults || actors || [];
+      // Prioritize loaded full actors when available (e.g. inside coordinator view), otherwise localIndex for 0ms global search
+      const sourceList = (actors && actors.length > 0) ? actors : (localIndex || searchResults || actors || []);
       const lowerQuery = searchQuery.toLowerCase();
       const cleanDigits = searchQuery.replace(/[^0-9]/g, '');
 
@@ -1353,32 +1353,67 @@ function ActorDataContent() {
                 {!isMonitoring && (
                   <Button
                     onClick={async () => {
-                      if (filterCoordinator) {
-                        generateCoordinatorReport(filterCoordinator, groupedActors[filterCoordinator] || [])
-                      } else {
-                        if (Object.keys(groupedActors).length === 0) {
-                          toast({ title: "Menyiapkan Dokumen", description: "Sedang mengambil data untuk cetak PDF seluruh koordinator..." })
+                      const targetCoordinator = filterCoordinator || (isKoordinator ? userProfile?.fullName : null);
+                      if (targetCoordinator) {
+                        const coordKey = String(targetCoordinator).toUpperCase().trim();
+                        let coordActors: BusinessActor[] = [];
+
+                        if (actors && actors.length > 0) {
+                          if (filterMenu !== "all" || isSearching) {
+                            const displayIds = new Set(currentDataToDisplay.map((a) => a.id));
+                            coordActors = actors.filter((a) => displayIds.has(a.id));
+                          } else {
+                            coordActors = groupedActors[coordKey] || actors;
+                          }
+                        } else if (database) {
+                          toast({ title: "Menyiapkan PDF", description: `Mengambil data lengkap untuk Koordinator ${coordKey}...` });
                           try {
-                            const { get, ref } = await import("firebase/database")
-                            const snap = await get(ref(database!, 'businessActors'))
+                            const { get, ref, query, orderByChild, equalTo } = await import("firebase/database");
+                            const q = query(ref(database, 'businessActors'), orderByChild('coordinator'), equalTo(coordKey));
+                            const snap = await get(q);
                             if (snap.exists()) {
-                              const allActors = Object.values(snap.val()) as BusinessActor[]
-                              const groups: Record<string, BusinessActor[]> = {}
-                              allActors.forEach(a => {
+                              const rawList = Object.entries(snap.val()).map(([k, v]: [string, any]) => ({ ...v, id: v?.id || k })) as BusinessActor[];
+                              coordActors = rawList.filter((a) => {
+                                const s = a.status || "";
+                                const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
+                                return ['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) && !isCancelDinas;
+                              });
+                            }
+                          } catch (e) {
+                            console.error("Error fetching coordinator actors for PDF:", e);
+                          }
+                        }
+
+                        if (!coordActors || coordActors.length === 0) {
+                          toast({ variant: "destructive", title: "Tidak Ada Data", description: `Belum ada data pelaku usaha untuk koordinator ${coordKey}.` });
+                          return;
+                        }
+
+                        generateCoordinatorReport(coordKey, coordActors, systemUsersRaw || []);
+                      } else {
+                        if (!allActorsRaw || Object.keys(groupedActors).length === 0) {
+                          toast({ title: "Menyiapkan Dokumen", description: "Sedang mengambil data lengkap seluruh koordinator untuk cetak PDF..." });
+                          try {
+                            const { get, ref } = await import("firebase/database");
+                            const snap = await get(ref(database!, 'businessActors'));
+                            if (snap.exists()) {
+                              const allActors = Object.entries(snap.val()).map(([k, v]: [string, any]) => ({ ...v, id: v?.id || k })) as BusinessActor[];
+                              const groups: Record<string, BusinessActor[]> = {};
+                              allActors.forEach((a) => {
                                 const s = a.status || "";
                                 const isCancelDinas = (s === 'verified_dinas' && a.hasilVerifikasiDinas === 'Tidak Lolos') || Boolean(a.alasanCancelDinas);
                                 if (!['verified_actor', 'verified_dinas', 'bank_pending', 'lpj_pending', 'finish', 'dihapus_dinas'].includes(s) || isCancelDinas) return;
-                                const coord = (a.coordinator || "Tanpa Koordinator").toUpperCase().trim()
-                                if (!groups[coord]) groups[coord] = []
-                                groups[coord].push(a)
-                              })
-                              generateAllCoordinatorsReport(groups)
+                                const coord = (a.coordinator || "Tanpa Koordinator").toUpperCase().trim();
+                                if (!groups[coord]) groups[coord] = [];
+                                groups[coord].push(a);
+                              });
+                              generateAllCoordinatorsReport(groups, systemUsersRaw || []);
                             }
                           } catch (e) {
-                            toast({ variant: "destructive", title: "Gagal", description: "Gagal memuat data PDF." })
+                            toast({ variant: "destructive", title: "Gagal", description: "Gagal memuat data PDF." });
                           }
                         } else {
-                          generateAllCoordinatorsReport(groupedActors)
+                          generateAllCoordinatorsReport(groupedActors, systemUsersRaw || []);
                         }
                       }
                     }}
