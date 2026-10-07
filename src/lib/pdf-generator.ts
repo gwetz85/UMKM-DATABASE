@@ -395,36 +395,52 @@ const renderCoordinatorSectionTable = (
     }
   });
 
-  // --- TOP HEADER BANNER ---
+  // --- TIER 1: TOP HEADER BANNER ---
   doc.setFillColor(30, 58, 138); // Deep Blue header bar
-  doc.roundedRect(margin, 8, pageWidth - margin * 2, 16, 2, 2, 'F');
+  doc.roundedRect(margin, 7, pageWidth - margin * 2, 13.5, 2, 2, 'F');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setTextColor(255, 255, 255);
-  doc.text('TUNAS BANGSA KEPULAUAN RIAU - DATABASE PELAKU USAHA (SIMPU)', margin + 4, 14.5);
+  doc.text('TUNAS BANGSA KEPULAUAN RIAU - DATABASE PELAKU USAHA (SIMPU)', margin + 4, 12.8);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(219, 234, 254); // blue-100
   doc.text(
-    'Laporan Lengkap Biodata Pelaku Usaha, Hasil Survey Lapangan, Data Rekening Bank, Petugas Survey & Verifikator Dinas',
+    'Laporan Lengkap Biodata, Hasil Survey, Rekening Bank, Petugas Survey & Verifikator Dinas',
     margin + 4,
-    20.5
+    17.6
   );
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10.5);
-  doc.setTextColor(255, 255, 255);
-  doc.text(`KOORDINATOR: ${coordUpper}`, pageWidth - margin - 4, 14.5, { align: 'right' });
+  doc.setFontSize(6.8);
+  doc.setTextColor(191, 219, 254); // blue-200
+  doc.text('PENANGGUNG JAWAB / KOORDINATOR', pageWidth - margin - 4, 12.2, { align: 'right' });
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
+  doc.setFontSize(10);
   doc.setTextColor(254, 240, 138); // yellow-200
+  doc.text(`KOORDINATOR: ${coordUpper}`, pageWidth - margin - 4, 17.6, { align: 'right' });
+
+  // --- TIER 2: DEDICATED SUMMARY STATS RIBBON BAR (NO OVERLAP) ---
+  doc.setFillColor(239, 246, 255); // blue-50
+  doc.setDrawColor(191, 219, 254); // blue-200
+  doc.setLineWidth(0.25);
+  doc.roundedRect(margin, 21.8, pageWidth - margin * 2, 6.2, 1.5, 1.5, 'FD');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.2);
+  doc.setTextColor(30, 64, 175); // blue-800
+  doc.text(`REKAPITULASI DATA (${coordUpper})`, margin + 4, 25.9);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.2);
+  doc.setTextColor(15, 23, 42); // slate-900
   doc.text(
-    `Total: ${sortedActors.length} Pelaku Usaha  |  Sudah Survey: ${surveyCount}  |  Layak/Lolos: ${layakCount}  |  Sudah Rekening: ${rekeningCount}  |  Lolos Verifikasi: ${verifDinasCount}`,
+    `Total: ${sortedActors.length} Pelaku Usaha   |   Sudah Survey: ${surveyCount}   |   Layak/Lolos: ${layakCount}   |   Sudah Rekening: ${rekeningCount}   |   Lolos Verifikasi: ${verifDinasCount}`,
     pageWidth - margin - 4,
-    20.5,
+    25.9,
     { align: 'right' }
   );
 
@@ -586,7 +602,7 @@ const renderCoordinatorSectionTable = (
   const initialPage = doc.getCurrentPageInfo().pageNumber;
 
   autoTable(doc, {
-    startY: 26.5,
+    startY: 29.8,
     head: [[
       'NO',
       'BIODATA PELAKU USAHA',
