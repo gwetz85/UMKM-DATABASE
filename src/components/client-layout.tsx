@@ -114,11 +114,20 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
         set(userStatusRef, true);
         set(lastSeenRef, serverTimestamp());
 
-        // Jika belum ada lastLogin, lengkapi dengan waktu sekarang
+        // Jika belum ada lastLogin atau uid belum tercatat padahal sudah login, lengkapi otomatis
+        const presenceUpdates: Record<string, any> = {};
         if (!profile.lastLogin) {
-          update(ref(database, `system_users/${profile.id}`), {
-            lastLogin: new Date().toISOString()
-          }).catch(console.error);
+          presenceUpdates.lastLogin = new Date().toISOString();
+        }
+        const hasLoggedAfterAdded =
+          profile.lastLogin &&
+          profile.addedAt &&
+          new Date(profile.lastLogin).getTime() >= new Date(profile.addedAt).getTime();
+        if (!profile.uid && user.uid && (profile.id === user.uid || !profile.addedAt || hasLoggedAfterAdded)) {
+          presenceUpdates.uid = user.uid;
+        }
+        if (Object.keys(presenceUpdates).length > 0) {
+          update(ref(database, `system_users/${profile.id}`), presenceUpdates).catch(console.error);
         }
       }
     });
@@ -132,7 +141,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       unsubscribe();
       clearInterval(interval);
     };
-  }, [database, user, profile?.id, profile?.lastLogin]);
+  }, [database, user, profile?.id, profile?.lastLogin, profile?.uid, profile?.addedAt]);
 
   React.useEffect(() => {
     if (!isUserLoading && user && !isProfileLoading && !isPublicPage) {

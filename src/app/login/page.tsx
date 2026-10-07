@@ -258,7 +258,11 @@ export default function LoginPage() {
                 setLoading(false)
                 return
               }
+            } else if (!userData.uid && user.uid) {
+              await update(userRef, { uid: user.uid })
             }
+          } else if (!userData.uid && user.uid) {
+            await update(userRef, { uid: user.uid })
           }
         } else {
           // Record tidak ada di system_users — cek admin bypass
@@ -444,6 +448,9 @@ export default function LoginPage() {
         isOnline: true,
         lastSeen: Date.now()
       }
+      if (user?.uid) {
+        loginUpdates.uid = user.uid
+      }
       if (finalUserRole !== 'admin' && email !== 'agus@umkm.id') {
         loginUpdates.activeSessionId = sessionId
       }
@@ -537,6 +544,9 @@ export default function LoginPage() {
         lastLogin: new Date().toISOString(),
         isOnline: true,
         lastSeen: Date.now()
+      }
+      if (pending2FA.user?.uid) {
+        loginUpdates.uid = pending2FA.user.uid
       }
       if (pending2FA.finalUserRole !== 'admin' && pending2FA.email !== 'agus@umkm.id') {
         loginUpdates.activeSessionId = sessionId

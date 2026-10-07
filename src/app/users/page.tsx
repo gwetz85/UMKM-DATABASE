@@ -48,20 +48,30 @@ function UserDeletionTimer({
   userId, 
   userUid, 
   addedAt, 
+  lastLogin,
+  isOnline,
   database, 
   isAdmin 
 }: { 
   userId: string, 
   userUid: string | null, 
   addedAt: string, 
+  lastLogin?: string,
+  isOnline?: boolean,
   database: any,
   isAdmin: boolean 
 }) {
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
 
+  const hasLoggedIn = Boolean(
+    userUid ||
+    isOnline ||
+    (lastLogin && (!addedAt || new Date(lastLogin).getTime() >= new Date(addedAt).getTime()))
+  )
+
   useEffect(() => {
-    // Timer hanya berjalan jika user belum login (uid null) dan sudah ada addedAt
-    if (!addedAt || userUid || !isAdmin || !database) return
+    // Timer hanya berjalan jika user belum login dan sudah ada addedAt
+    if (!addedAt || hasLoggedIn || !isAdmin || !database) return
 
     const addedAtTime = new Date(addedAt).getTime()
     const targetTime = addedAtTime + (24 * 60 * 60 * 1000) // 24 jam
@@ -91,10 +101,10 @@ function UserDeletionTimer({
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [addedAt, userId, userUid, isAdmin, database])
+  }, [addedAt, userId, hasLoggedIn, isAdmin, database])
 
   // Jika sudah login, tidak perlu timer
-  if (userUid) return null
+  if (hasLoggedIn) return null
 
   // Jika tidak ada data addedAt (data lama), tampilkan status standar
   if (!addedAt) {
@@ -184,6 +194,33 @@ export default function UserManagementPage() {
   }, [database])
 
   const { data: systemUsers, isLoading } = useList(memoQuery)
+
+  const hasUserLoggedIn = (u: any) => {
+    if (!u) return false
+    if (u.uid) return true
+    if (u.id && user?.uid && u.id === user.uid) return true
+    if (u.isOnline) return true
+    if (u.lastLogin && u.addedAt) {
+      const lastLoginTime = new Date(u.lastLogin).getTime()
+      const addedAtTime = new Date(u.addedAt).getTime()
+      if (!isNaN(lastLoginTime) && !isNaN(addedAtTime) && lastLoginTime >= addedAtTime) {
+        return true
+      }
+    } else if (u.lastLogin && !u.addedAt) {
+      return true
+    }
+    return false
+  }
+
+  // Otomatis lengkapi field uid pada system_users jika akun yang sedang aktif / sudah login belum memiliki uid
+  useEffect(() => {
+    if (!database || !isAdmin || !systemUsers) return
+    systemUsers.forEach((u: any) => {
+      if (!u.uid && u.id && user?.uid && u.id === user.uid) {
+        updateDocumentNonBlocking(ref(database, `system_users/${u.id}`), { uid: user.uid })
+      }
+    })
+  }, [database, isAdmin, systemUsers, user?.uid])
 
   const handleAddUser = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -306,8 +343,14 @@ export default function UserManagementPage() {
     if (newPassword && newPassword.trim() !== '') {
       updates.password = newPassword.trim()
       updates.pwdVersion = (editingUser.pwdVersion || 0) + 1
-      updates.uid = null
-      updates.addedAt = new Date().toISOString()
+      if (isCurrentSelfAccount(editingUser) && user?.uid) {
+        updates.uid = user.uid
+      } else {
+        updates.uid = null
+        updates.isOnline = false
+        updates.activeSessionId = null
+        updates.addedAt = new Date().toISOString()
+      }
     }
 
     updateDocumentNonBlocking(userRef, updates)
@@ -378,6 +421,7 @@ export default function UserManagementPage() {
     const userRef = ref(database, `system_users/${id}`)
     updateDocumentNonBlocking(userRef, { 
       uid: null,
+      isOnline: false,
       activeSessionId: null, // Also clear session so user is logged out on other device
       addedAt: new Date().toISOString() 
     })
@@ -663,7 +707,7 @@ export default function UserManagementPage() {
                     </div>
 
                     <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
-                      {u.uid ? (
+                      {hasUserLoggedIn(u) ? (
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-[9px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-black uppercase w-fit">Terkunci di Perangkat</span>
@@ -674,13 +718,19 @@ export default function UserManagementPage() {
                               </span>
                             )}
                           </div>
-                          <span className="text-[8px] font-mono text-muted-foreground truncate max-w-[200px]">{u.uid}</span>
+                          {(u.uid || (u.id === user?.uid ? user?.uid : null)) && (
+                            <span className="text-[8px] font-mono text-muted-foreground truncate max-w-[200px]">
+                              {u.uid || user?.uid}
+                            </span>
+                          )}
                         </div>
                       ) : (
                         <UserDeletionTimer 
                           userId={u.id} 
                           userUid={u.uid} 
                           addedAt={u.addedAt} 
+                          lastLogin={u.lastLogin}
+                          isOnline={u.isOnline}
                           database={database} 
                           isAdmin={isAdmin} 
                         />
@@ -716,7 +766,7 @@ export default function UserManagementPage() {
                       >
                         <UserCog className="w-3.5 h-3.5" />
                       </Button>
-                      {u.uid && (
+                      {hasUserLoggedIn(u) && (
                         <Button 
                           variant="outline" 
                           size="icon" 
@@ -869,7 +919,7 @@ export default function UserManagementPage() {
                               </span>
                             </div>
 
-                            {u.uid ? (
+                            {hasUserLoggedIn(u) ? (
                               <div className="flex flex-col gap-1">
                                 <span className="text-[9px] px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-black uppercase w-fit">Terkunci di Perangkat</span>
                                 {u.activeSessionId && (
@@ -878,13 +928,19 @@ export default function UserManagementPage() {
                                     AKTIF DI PERANGKAT LAIN
                                   </span>
                                 )}
-                                <span className="text-[8px] font-mono text-muted-foreground truncate max-w-[100px]">{u.uid}</span>
+                                {(u.uid || (u.id === user?.uid ? user?.uid : null)) && (
+                                  <span className="text-[8px] font-mono text-muted-foreground truncate max-w-[100px]">
+                                    {u.uid || user?.uid}
+                                  </span>
+                                )}
                               </div>
                             ) : (
                               <UserDeletionTimer 
                                 userId={u.id} 
                                 userUid={u.uid} 
                                 addedAt={u.addedAt} 
+                                lastLogin={u.lastLogin}
+                                isOnline={u.isOnline}
                                 database={database} 
                                 isAdmin={isAdmin} 
                               />
@@ -923,7 +979,7 @@ export default function UserManagementPage() {
                               <UserCog className="w-4 h-4" />
                             </Button>
 
-                            {u.uid && (
+                            {hasUserLoggedIn(u) && (
                               <Button 
                                 variant="outline" 
                                 size="icon" 
@@ -1186,7 +1242,7 @@ export default function UserManagementPage() {
                 <div className="flex justify-between items-center pb-2 border-b border-slate-200/60">
                   <span className="text-muted-foreground text-xs font-semibold">Status Perangkat (UID)</span>
                   <span className="font-mono text-[10px] text-slate-600 bg-slate-200/70 px-2 py-0.5 rounded truncate max-w-[180px]">
-                    {detailUser.uid || 'Belum Terkunci'}
+                    {detailUser.uid || (detailUser.id === user?.uid ? user?.uid : null) || (hasUserLoggedIn(detailUser) ? 'Terkunci' : 'Belum Terkunci')}
                   </span>
                 </div>
 
