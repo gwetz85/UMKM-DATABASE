@@ -9,59 +9,64 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
-import { 
-  Loader2, 
-  Save, 
-  CheckCircle2, 
-  ShieldAlert, 
-  Building2, 
-  User, 
-  MapPin, 
-  Store, 
-  SearchCheck, 
-  Printer, 
-  Copy, 
-  Check, 
-  ExternalLink, 
-  AlertCircle,
-  RotateCcw,
-  FileCheck2,
-  Calendar,
-  Phone,
-  CreditCard,
+import {
+  Loader2,
+  Save,
+  CheckCircle2,
+  ShieldAlert,
+  Building2,
+  User,
+  Users,
+  MapPin,
+  Store,
+  SearchCheck,
+  Printer,
+  Copy,
+  Check,
   Lock,
   History,
-  AlertTriangle
+  AlertTriangle,
+  Camera,
+  ChevronRight,
+  ChevronLeft,
+  Search,
 } from "lucide-react"
-import { cn, extractDobFromNik, formatCurrency } from "@/lib/utils"
-import { normalizeCoordinator } from "@/lib/coordinator-utils"
+import {
+  cn,
+  extractDobFromNik,
+  extractGenderFromNik,
+  formatCurrency,
+  AGAMA_INDONESIA,
+  STATUS_KELUARGA_LIST,
+  PEKERJAAN_DUKCAPIL,
+} from "@/lib/utils"
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
 
 function KkDetailCard({ item }: { item: any }) {
-  const isBlockedSource =
+  const isHardBlocked =
     item._table === "blacklist_data" ||
-    item._table === "master_data_2025" ||
     item._table === "businessActors" ||
     (item._source || "").toUpperCase().includes("BLACKLIST") ||
     (item._source || "").toUpperCase().includes("SHEET 4") ||
-    (item._source || "").toUpperCase().includes("SHEET 3") ||
-    (item._source || "").toUpperCase().includes("2025") ||
     (item._source || "").toUpperCase().includes("2026") ||
     (item._source || "").toUpperCase().includes("PELAKU USAHA")
+
+  const isSheet3 =
+    item._table === "master_data_2025" ||
+    (item._source || "").toUpperCase().includes("SHEET 3") ||
+    (item._source || "").toUpperCase().includes("2025")
 
   const sourceLabel = item._source || (
     item._table === "blacklist_data" ? "Sheet 4 : Blacklist" :
     item._table === "master_data_2025" ? "Sheet 3 : Pembanding 2025" :
-    item._table === "businessActors" ? "Data Pelaku Usaha 2026" :
+    item._table === "businessActors" ? "Pengajuan Terbaru 2026" :
     item._table === "master_data_2024" ? "Sheet 1 : Pembanding 2024" :
     item._table === "master_data_2023" ? "Sheet 2 : Pembanding 2023" : "Database"
   )
@@ -74,7 +79,6 @@ function KkDetailCard({ item }: { item: any }) {
   const pobDob = item.pobDob || (item.pob && item.dob ? `${item.pob}, ${item.dob}` : item.dob || item.pob || "-")
   const businessName = item.businessName || item.usaha || item.USAHA || item.surveyData?.namaUsaha || "-"
   const businessCategory = item.businessCategory || item.kategori || item.sektor || item.surveyData?.bidangUsaha || "-"
-  const businessLocation = item.businessLocation || item.alamatUsaha || item.surveyData?.alamatUsaha || "-"
   const address = item.address || item.alamat || item.ALAMAT || "-"
   const rtRw = item.rtRw || (item.rt && item.rw ? `${item.rt} / ${item.rw}` : item.rt || "-")
   const kelurahan = item.kelurahan || "-"
@@ -87,7 +91,7 @@ function KkDetailCard({ item }: { item: any }) {
   const petugasSurvey = item.petugasSurvey || item.surveyData?.namaPetugas || "-"
   const verifikatorDinas = item.verifikatorDinas || "-"
   const hasilVerifikasiDinas = item.hasilVerifikasiDinas || "-"
-  const notes = item.alasan || item.alasanCancelDinas || item.keterangan || item.bpjsCheckNote || ""
+  const notes = item.alasan || item.alasanCancelDinas || item.keterangan || item.catatan || item.bpjsCheckNote || ""
   const createdDate = item.createdAt || item.uploadedAt ? new Date(item.createdAt || item.uploadedAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : "-"
 
   const nominalVal = item.lpjNominal || item.nominal || item.NOM
@@ -96,28 +100,37 @@ function KkDetailCard({ item }: { item: any }) {
   return (
     <div className={cn(
       "rounded-2xl border p-4 sm:p-5 text-xs transition-all shadow-sm space-y-3.5",
-      isBlockedSource 
-        ? "bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800/80" 
+      isHardBlocked
+        ? "bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800/80"
+        : isSheet3
+        ? "bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800/80"
         : "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800/80"
     )}>
-      {/* Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-black/10 dark:border-white/10">
         <div className="flex flex-wrap items-center gap-2">
           <Badge className={cn(
             "font-black text-xs px-2.5 py-1 rounded-xl uppercase tracking-wider shadow-none",
-            isBlockedSource
+            isHardBlocked
               ? "bg-rose-600 text-white hover:bg-rose-600"
+              : isSheet3
+              ? "bg-amber-600 text-white hover:bg-amber-600"
               : "bg-emerald-600 text-white hover:bg-emerald-600"
           )}>
             {sourceLabel}
           </Badge>
           <Badge variant="outline" className={cn(
             "font-bold text-[11px] px-2 py-0.5 rounded-lg uppercase",
-            isBlockedSource
+            isHardBlocked
               ? "border-rose-400 text-rose-700 dark:text-rose-300 bg-rose-100/50"
+              : isSheet3
+              ? "border-amber-400 text-amber-800 dark:text-amber-300 bg-amber-100/50"
               : "border-emerald-400 text-emerald-700 dark:text-emerald-300 bg-emerald-100/50"
           )}>
-            {isBlockedSource ? "⛔ Dilarang Mendaftar" : "✅ Riwayat Diizinkan"}
+            {isHardBlocked
+              ? "⛔ Form Terkunci"
+              : isSheet3
+              ? "📷 Wajib Fhoto Pembanding"
+              : "✅ Dapat Dilanjutkan"}
           </Badge>
           <span className="text-[11px] font-bold text-slate-500">
             Tahun: {tahun}
@@ -128,94 +141,83 @@ function KkDetailCard({ item }: { item: any }) {
           <span>Status:</span>
           <span className={cn(
             "font-black px-2 py-0.5 rounded-md uppercase text-[11px]",
-            isBlockedSource ? "bg-rose-200/70 text-rose-800" : "bg-emerald-200/70 text-emerald-800"
+            isHardBlocked
+              ? "bg-rose-200/70 text-rose-800"
+              : isSheet3
+              ? "bg-amber-200/70 text-amber-900"
+              : "bg-emerald-200/70 text-emerald-800"
           )}>
             {status}
           </span>
         </div>
       </div>
 
-      {/* Grid Informasi Lengkap */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Nama Lengkap */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nama Lengkap</span>
           <strong className="text-xs sm:text-sm text-slate-900 dark:text-white block font-black uppercase truncate">{name}</strong>
         </div>
 
-        {/* NIK */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">NIK</span>
           <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 block truncate">{nik}</span>
         </div>
 
-        {/* Nomor KK */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nomor KK</span>
           <span className="font-mono font-bold text-xs text-primary block truncate">{noKK}</span>
         </div>
 
-        {/* Nomor HP / WA */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nomor HP / WhatsApp</span>
           <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 block truncate">{phone}</span>
         </div>
 
-        {/* Jenis Kelamin & TTL */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Gender & TTL</span>
           <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block truncate">{gender} • {pobDob}</span>
         </div>
 
-        {/* Nama Usaha */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nama Usaha / Produk</span>
           <strong className="text-xs font-bold text-slate-800 dark:text-slate-100 block uppercase truncate">{businessName}</strong>
         </div>
 
-        {/* Kategori Usaha */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Kategori Usaha</span>
           <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block truncate">{businessCategory}</span>
         </div>
 
-        {/* Usulan Koordinator */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Koordinator</span>
           <span className="font-bold text-xs text-primary block truncate">{coordinator}</span>
         </div>
 
-        {/* Alamat Domisili */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5 sm:col-span-2">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Alamat Lengkap</span>
           <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block line-clamp-1">{address}</span>
         </div>
 
-        {/* RT / RW & Wilayah */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">RT/RW • Kelurahan</span>
           <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block truncate">RT/RW: {rtRw} • {kelurahan}</span>
         </div>
 
-        {/* Kecamatan */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Kecamatan</span>
           <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block truncate">{kecamatan}</span>
         </div>
 
-        {/* Nominal Bantuan */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Nominal Bantuan / LPJ</span>
           <span className="font-bold text-xs text-emerald-700 dark:text-emerald-400 block truncate">{nominalStr}</span>
         </div>
 
-        {/* Status LPJ */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Status LPJ</span>
           <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 block truncate">{statusLpj}</span>
         </div>
 
-        {/* Nomor Registrasi (Jika Ada) */}
         {registrationCode !== "-" && (
           <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
             <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">No. Registrasi SIMPU</span>
@@ -223,7 +225,6 @@ function KkDetailCard({ item }: { item: any }) {
           </div>
         )}
 
-        {/* Petugas Survey / Verifikator (Jika Ada) */}
         {(petugasSurvey !== "-" || verifikatorDinas !== "-") && (
           <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5 sm:col-span-2">
             <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Petugas Survey / Dinas</span>
@@ -233,14 +234,12 @@ function KkDetailCard({ item }: { item: any }) {
           </div>
         )}
 
-        {/* Tanggal Terdata */}
         <div className="bg-white/80 dark:bg-slate-900/60 p-2.5 rounded-xl border border-black/5 dark:border-white/5 space-y-0.5">
           <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Tanggal Terdata</span>
           <span className="font-medium text-xs text-slate-600 dark:text-slate-300 block truncate">{createdDate}</span>
         </div>
       </div>
 
-      {/* Catatan / Keterangan Tambahan jika ada */}
       {notes && (
         <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-900 dark:text-amber-200 text-xs">
           <span className="font-bold uppercase text-[10px] tracking-wider block">Catatan / Alasan:</span>
@@ -251,24 +250,103 @@ function KkDetailCard({ item }: { item: any }) {
   )
 }
 
+function PekerjaanSelect({
+  value,
+  onValueChange,
+  placeholder = "Pilih Pekerjaan...",
+}: {
+  value: string
+  onValueChange: (val: string) => void
+  placeholder?: string
+}) {
+  const [searchTerm, setSearchTerm] = useState("")
+
+  const filteredList = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase()
+    if (!q) return PEKERJAAN_DUKCAPIL
+    return PEKERJAAN_DUKCAPIL.filter((item) => item.toLowerCase().includes(q))
+  }, [searchTerm])
+
+  return (
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger className="h-11 rounded-xl font-bold border-slate-300">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent className="max-h-[300px] rounded-xl">
+        <div
+          className="sticky top-0 z-10 bg-popover p-2 border-b"
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Cari pekerjaan (89 jenis)..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-8 pl-8 text-xs rounded-lg"
+            />
+          </div>
+        </div>
+        {filteredList.length > 0 ? (
+          filteredList.map((job) => (
+            <SelectItem key={job} value={job} className="font-semibold text-xs">
+              {job}
+            </SelectItem>
+          ))
+        ) : (
+          <div className="p-3 text-center text-xs text-muted-foreground">
+            Pekerjaan tidak ditemukan
+          </div>
+        )}
+      </SelectContent>
+    </Select>
+  )
+}
+
 export default function PendaftaranPage() {
   const { toast } = useToast()
   const database = useDatabase()
 
+  const [currentStep, setCurrentStep] = useState<number>(1)
   const [loading, setLoading] = useState(false)
-  const [formKey, setFormKey] = useState(0)
-  const [kelurahan, setKelurahan] = useState<string>("")
-  const [kecamatan, setKecamatan] = useState<string>("")
-  const [selectedCoordinator, setSelectedCoordinator] = useState<string>("")
+
+  // Tahapan 1
+  const [fullName, setFullName] = useState("")
   const [nik, setNik] = useState("")
   const [noKK, setNoKK] = useState("")
+  const [comparisonPhotoUrl, setComparisonPhotoUrl] = useState<string>("")
+  const [kkCheckResults, setKkCheckResults] = useState<any[]>([])
+  const [isCheckingKk, setIsCheckingKk] = useState(false)
+
+  // Tahapan 2
   const [pob, setPob] = useState("")
   const [dob, setDob] = useState("")
   const [isEditingDob, setIsEditingDob] = useState(false)
+  const [phone, setPhone] = useState("")
+  const [agama, setAgama] = useState("")
+  const [pekerjaan, setPekerjaan] = useState("")
+  const [address, setAddress] = useState("")
+  const [rtRw, setRtRw] = useState("")
+  const [kelurahan, setKelurahan] = useState<string>("")
+  const [kecamatan, setKecamatan] = useState<string>("")
+  const [tanggalCetakKtp, setTanggalCetakKtp] = useState("")
 
-  // KK Verification States
-  const [kkCheckResults, setKkCheckResults] = useState<any[]>([])
-  const [isCheckingKk, setIsCheckingKk] = useState(false)
+  // Tahapan 3
+  const [statusKeluarga, setStatusKeluarga] = useState("")
+  const [namaKepalaKeluarga, setNamaKepalaKeluarga] = useState("")
+  const [nikKepalaKeluarga, setNikKepalaKeluarga] = useState("")
+  const [pobKepalaKeluarga, setPobKepalaKeluarga] = useState("")
+  const [dobKepalaKeluarga, setDobKepalaKeluarga] = useState("")
+  const [isEditingDobKk, setIsEditingDobKk] = useState(false)
+  const [agamaKepalaKeluarga, setAgamaKepalaKeluarga] = useState("")
+  const [pekerjaanKepalaKeluarga, setPekerjaanKepalaKeluarga] = useState("")
+  const [tanggalCetakKk, setTanggalCetakKk] = useState("")
+
+  // Tahapan 4
+  const [businessCategory, setBusinessCategory] = useState("")
+  const [businessName, setBusinessName] = useState("")
+  const [businessLocation, setBusinessLocation] = useState("")
+  const [selectedCoordinator, setSelectedCoordinator] = useState<string>("")
 
   // Success & Print States
   const [successData, setSuccessData] = useState<any | null>(null)
@@ -276,11 +354,9 @@ export default function PendaftaranPage() {
   const [hasCopiedCode, setHasCopiedCode] = useState(false)
   const printReceiptRef = useRef<HTMLDivElement>(null)
 
-  // Fetch Quotas realtime
   const quotaRef = useMemoFirebase(() => database ? ref(database, 'koordinator_kuotas') : null, [database])
   const { data: rawQuotaData, isLoading: isQuotaLoading } = useList<any>(quotaRef)
 
-  // Fetch pre-calculated system_stats for coordinator usage
   const statsRef = useMemoFirebase(() => database ? ref(database, 'system_stats') : null, [database])
   const { data: systemStats } = useObject(statsRef)
 
@@ -298,14 +374,13 @@ export default function PendaftaranPage() {
       })
       .filter((q: any) => {
         const nameUpper = (q.name || "").toUpperCase()
-        return !nameUpper.includes('( PERBAIKKAN )') && 
-               !nameUpper.includes('( PERBAIKAN )') && 
+        return !nameUpper.includes('( PERBAIKKAN )') &&
+               !nameUpper.includes('( PERBAIKAN )') &&
                !nameUpper.includes('( DIHAPUS )')
       })
       .sort((a: any, b: any) => (a.name || "").localeCompare(b.name || ""))
   }, [rawQuotaData, systemStats])
 
-  // Otomatis tentukan Kecamatan berdasarkan Kelurahan
   useEffect(() => {
     if (!kelurahan) {
       setKecamatan("")
@@ -330,7 +405,17 @@ export default function PendaftaranPage() {
     }
   }, [kelurahan])
 
-  // Live Pengecekan Nomor KK terhadap database pembanding
+  useEffect(() => {
+    if (statusKeluarga === "Kepala Keluarga") {
+      setNamaKepalaKeluarga(fullName)
+      setNikKepalaKeluarga(nik)
+      setPobKepalaKeluarga(pob)
+      setDobKepalaKeluarga(dob)
+      setAgamaKepalaKeluarga(agama)
+      setPekerjaanKepalaKeluarga(pekerjaan)
+    }
+  }, [statusKeluarga, fullName, nik, pob, dob, agama, pekerjaan])
+
   useEffect(() => {
     const cleanKk = noKK.replace(/[^0-9]/g, "").trim()
     if (!cleanKk || cleanKk.length < 16) {
@@ -361,13 +446,9 @@ export default function PendaftaranPage() {
                     results.push({ ...item, _source: label, _table: sheetName })
                   })
                 }
-              } catch (eFallback) {
-                // Silently ignore
-              }
+              } catch (eFallback) {}
             }
-          } catch (e) {
-            // Silently ignore index issues for live check
-          }
+          } catch (e) {}
         }
 
         const checkActiveActors = async () => {
@@ -377,11 +458,11 @@ export default function PendaftaranPage() {
             const snap = await get(q)
             if (snap.exists()) {
               Object.values(snap.val()).forEach((item: any) => {
-                results.push({ 
-                  ...item, 
-                  _source: 'Data Pelaku Usaha 2026', 
+                results.push({
+                  ...item,
+                  _source: 'Pengajuan Terbaru 2026',
                   _table: 'businessActors',
-                  status: item.status || 'Terdaftar' 
+                  status: item.status || 'Terdaftar'
                 })
               })
             }
@@ -407,7 +488,6 @@ export default function PendaftaranPage() {
     return () => clearTimeout(timer)
   }, [noKK, database])
 
-  // Evaluasi Status Blacklist, Hold, dan 2026 dari hasil cek KK
   const isKkBlacklisted = useMemo(() => {
     return kkCheckResults.some((res) => {
       const src = (res._source || "").toUpperCase()
@@ -416,7 +496,7 @@ export default function PendaftaranPage() {
     })
   }, [kkCheckResults])
 
-  const isKkHold = useMemo(() => {
+  const isKkSheet3 = useMemo(() => {
     return kkCheckResults.some((res) => {
       const src = (res._source || "").toUpperCase()
       const tbl = (res._table || "").toLowerCase()
@@ -424,7 +504,7 @@ export default function PendaftaranPage() {
     })
   }, [kkCheckResults])
 
-  const isKkAlreadyRegistered = useMemo(() => {
+  const isKkAlreadyRegistered2026 = useMemo(() => {
     return kkCheckResults.some((res) => {
       const src = (res._source || "").toUpperCase()
       const tbl = (res._table || "").toLowerCase()
@@ -432,56 +512,254 @@ export default function PendaftaranPage() {
     })
   }, [kkCheckResults])
 
-  const isFormBlocked = isKkBlacklisted || isKkHold || isKkAlreadyRegistered
+  const isKkSheet1Or2 = useMemo(() => {
+    return kkCheckResults.some((res) => {
+      const src = (res._source || "").toUpperCase()
+      const tbl = (res._table || "").toLowerCase()
+      return tbl === "master_data_2024" || tbl === "master_data_2023" || src.includes("SHEET 1") || src.includes("SHEET 2")
+    })
+  }, [kkCheckResults])
+
+  const isHardLocked = isKkBlacklisted || isKkAlreadyRegistered2026
+  const requiresComparisonPhoto = !isHardLocked && isKkSheet3
 
   const blockedSourcesLabel = useMemo(() => {
     const list: string[] = []
-    if (isKkBlacklisted) list.push("Sheet 4 : Blacklist")
-    if (isKkHold) list.push("Sheet 3 : Pembanding 2025")
-    if (isKkAlreadyRegistered) list.push("Data Pelaku Usaha 2026")
-    return list.join(" & ") || "Basis Data Terlarang"
-  }, [isKkBlacklisted, isKkHold, isKkAlreadyRegistered])
+    if (isKkBlacklisted) list.push("Sheet Blacklist")
+    if (isKkAlreadyRegistered2026) list.push("Pengajuan Terbaru 2026")
+    return list.join(" & ") || "Basis Data Terkunci"
+  }, [isKkBlacklisted, isKkAlreadyRegistered2026])
 
-  const kkHistoryResults = useMemo(() => {
-    if (isFormBlocked) return []
-    return kkCheckResults.filter((res) => {
-      const tbl = (res._table || "").toLowerCase()
-      const src = (res._source || "").toUpperCase()
-      return tbl === "master_data_2024" || tbl === "master_data_2023" || src.includes("SHEET 1") || src.includes("SHEET 2") || src.includes("2023") || src.includes("2024")
-    })
-  }, [kkCheckResults, isFormBlocked])
+  const handleComparisonPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) {
+      setComparisonPhotoUrl("")
+      return
+    }
+    if (!file.type.startsWith("image/")) {
+      toast({
+        variant: "destructive",
+        title: "Format tidak didukung",
+        description: "Harap pilih file gambar (JPG, PNG, WEBP)."
+      })
+      e.target.value = ""
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const img = new Image()
+      img.onload = () => {
+        const canvas = document.createElement("canvas")
+        let width = img.width
+        let height = img.height
+        const MAX_DIM = 800
+        if (width > height && width > MAX_DIM) {
+          height *= MAX_DIM / width
+          width = MAX_DIM
+        } else if (height > MAX_DIM) {
+          width *= MAX_DIM / height
+          height = MAX_DIM
+        }
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext("2d")
+        ctx?.drawImage(img, 0, 0, width, height)
+        setComparisonPhotoUrl(canvas.toDataURL("image/jpeg", 0.65))
+      }
+      img.src = ev.target?.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const validateStep1 = (): boolean => {
+    if (!fullName.trim()) {
+      toast({ variant: "destructive", title: "Data Belum Lengkap", description: "Nama Lengkap wajib diisi." })
+      return false
+    }
+    if (nik.trim().length !== 16) {
+      toast({ variant: "destructive", title: "NIK Tidak Valid", description: "Nomor Induk Kependudukan (NIK) harus 16 digit angka." })
+      return false
+    }
+    if (noKK.trim().length !== 16) {
+      toast({ variant: "destructive", title: "Nomor KK Tidak Valid", description: "Nomor Kartu Keluarga (Nomor KK) harus 16 digit angka." })
+      return false
+    }
+    if (isCheckingKk) {
+      toast({ variant: "destructive", title: "Harap Tunggu", description: "Sedang memeriksa Nomor KK pada database..." })
+      return false
+    }
+    if (isHardLocked) {
+      toast({
+        variant: "destructive",
+        title: "Form Terkunci",
+        description: `Nomor KK terdaftar pada ${blockedSourcesLabel}. Pendaftaran tidak dapat dilanjutkan.`
+      })
+      return false
+    }
+    if (requiresComparisonPhoto && !comparisonPhotoUrl) {
+      toast({
+        variant: "destructive",
+        title: "Fhoto Pembanding Wajib Diupload",
+        description: "Nomor KK terdeteksi di Sheet 3 (Pembanding 2025). Silakan upload Fhoto Pembanding terlebih dahulu sebelum melanjutkan."
+      })
+      return false
+    }
+    return true
+  }
+
+  const validateStep2 = (): boolean => {
+    if (
+      !fullName.trim() ||
+      nik.trim().length !== 16 ||
+      !pob.trim() ||
+      !dob.trim() ||
+      !phone.trim() ||
+      !agama ||
+      !pekerjaan ||
+      !address.trim() ||
+      !rtRw.trim() ||
+      !kelurahan ||
+      !kecamatan ||
+      !tanggalCetakKtp
+    ) {
+      toast({
+        variant: "destructive",
+        title: "Tahapan 2 Belum Lengkap",
+        description: "Semua kolom Data Pelaku Usaha (1 s/d 12) wajib diisi lengkap sebelum melanjutkan."
+      })
+      return false
+    }
+    return true
+  }
+
+  const validateStep3 = (): boolean => {
+    if (
+      noKK.trim().length !== 16 ||
+      !statusKeluarga ||
+      !namaKepalaKeluarga.trim() ||
+      nikKepalaKeluarga.trim().length !== 16 ||
+      !pobKepalaKeluarga.trim() ||
+      !dobKepalaKeluarga.trim() ||
+      !agamaKepalaKeluarga ||
+      !pekerjaanKepalaKeluarga ||
+      !tanggalCetakKk
+    ) {
+      toast({
+        variant: "destructive",
+        title: "Tahapan 3 Belum Lengkap",
+        description: "Semua kolom Data Keluarga (13 s/d 21) wajib diisi lengkap dan NIK Kepala Keluarga harus 16 digit."
+      })
+      return false
+    }
+    return true
+  }
+
+  const validateStep4 = (): boolean => {
+    if (
+      !businessCategory ||
+      !businessName.trim() ||
+      !businessLocation.trim() ||
+      !selectedCoordinator
+    ) {
+      toast({
+        variant: "destructive",
+        title: "Tahapan 4 Belum Lengkap",
+        description: "Semua kolom Data Usaha (22 s/d 25) wajib diisi lengkap sebelum mengirim pendaftaran."
+      })
+      return false
+    }
+    return true
+  }
+
+  const handleNextStep = () => {
+    if (currentStep === 1 && validateStep1()) {
+      setCurrentStep(2)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    } else if (currentStep === 2 && validateStep2()) {
+      setCurrentStep(3)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    } else if (currentStep === 3 && validateStep3()) {
+      setCurrentStep(4)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }
+
+  const handlePrevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    }
+  }
+
+  const resetAllFields = () => {
+    setCurrentStep(1)
+    setFullName("")
+    setNik("")
+    setNoKK("")
+    setComparisonPhotoUrl("")
+    setKkCheckResults([])
+    setPob("")
+    setDob("")
+    setIsEditingDob(false)
+    setPhone("")
+    setAgama("")
+    setPekerjaan("")
+    setAddress("")
+    setRtRw("")
+    setKelurahan("")
+    setKecamatan("")
+    setTanggalCetakKtp("")
+    setStatusKeluarga("")
+    setNamaKepalaKeluarga("")
+    setNikKepalaKeluarga("")
+    setPobKepalaKeluarga("")
+    setDobKepalaKeluarga("")
+    setIsEditingDobKk(false)
+    setAgamaKepalaKeluarga("")
+    setPekerjaanKepalaKeluarga("")
+    setTanggalCetakKk("")
+    setBusinessCategory("")
+    setBusinessName("")
+    setBusinessLocation("")
+    setSelectedCoordinator("")
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (isFormBlocked) {
-      toast({
-        variant: "destructive",
-        title: "Pendaftaran Ditutup",
-        description: `Nomor KK terdata pada ${blockedSourcesLabel}. Pendaftaran tidak dapat diproses.`
-      })
+    if (!validateStep1() || !validateStep2() || !validateStep3() || !validateStep4()) {
       return
     }
     setLoading(true)
 
-    const formElement = e.currentTarget
-    const formData = new FormData(formElement)
-
     const payload = {
-      fullName: formData.get("fullName") as string,
-      gender: formData.get("gender") as string,
+      fullName: fullName.trim().toUpperCase(),
+      gender: extractGenderFromNik(nik.trim()) || "Laki-laki",
       nik: nik.trim(),
       noKK: noKK.trim(),
-      pob: pob.trim(),
+      pob: pob.trim().toUpperCase(),
       dob: dob.trim(),
-      phone: formData.get("phone") as string,
-      address: formData.get("address") as string,
-      rtRw: formData.get("rtRw") as string,
-      kelurahan: kelurahan,
-      kecamatan: kecamatan,
-      businessCategory: formData.get("businessCategory") as string,
-      businessName: formData.get("businessName") as string,
-      businessLocation: formData.get("businessLocation") as string,
+      phone: phone.trim(),
+      agama,
+      pekerjaan,
+      address: address.trim().toUpperCase(),
+      rtRw: rtRw.trim(),
+      kelurahan,
+      kecamatan,
+      tanggalCetakKtp,
+      statusKeluarga,
+      namaKepalaKeluarga: namaKepalaKeluarga.trim().toUpperCase(),
+      nikKepalaKeluarga: nikKepalaKeluarga.trim(),
+      pobKepalaKeluarga: pobKepalaKeluarga.trim().toUpperCase(),
+      dobKepalaKeluarga: dobKepalaKeluarga.trim(),
+      agamaKepalaKeluarga,
+      pekerjaanKepalaKeluarga,
+      tanggalCetakKk,
+      businessCategory,
+      businessName: businessName.trim().toUpperCase(),
+      businessLocation: businessLocation.trim().toUpperCase(),
       coordinator: selectedCoordinator,
+      comparisonPhotoUrl: requiresComparisonPhoto ? comparisonPhotoUrl : undefined,
     }
 
     try {
@@ -505,24 +783,13 @@ export default function PendaftaranPage() {
         return
       }
 
-      // Berhasil
       setSuccessData({
         ...payload,
         registrationCode: result.registrationCode,
         createdAt: result.data?.createdAt || new Date().toISOString(),
       })
       setShowSuccessDialog(true)
-
-      // Reset form
-      formElement.reset()
-      setKelurahan("")
-      setKecamatan("")
-      setSelectedCoordinator("")
-      setNik("")
-      setNoKK("")
-      setPob("")
-      setDob("")
-      setFormKey(prev => prev + 1)
+      resetAllFields()
 
       toast({
         title: "Pendaftaran Berhasil!",
@@ -562,484 +829,843 @@ export default function PendaftaranPage() {
     "Air Raja", "Sei jang", "Dompak", "Tanjung Unggat", "Tanjungpinang Timur", "Tanjung Ayun Sakti"
   ]
 
+  const steps = [
+    { id: 1, title: "Tahapan 1", subtitle: "Cek Identitas & KK", icon: SearchCheck },
+    { id: 2, title: "Tahapan 2", subtitle: "Data Pelaku Usaha", icon: User },
+    { id: 3, title: "Tahapan 3", subtitle: "Data Keluarga", icon: Users },
+    { id: 4, title: "Tahapan 4", subtitle: "Data Usaha", icon: Store },
+  ]
+
   return (
     <div className="min-h-screen py-6 sm:py-10 px-3 sm:px-6 max-w-4xl mx-auto space-y-6 sm:space-y-8">
-      {/* Header Formulir */}
       <div className="flex flex-col gap-2 px-1">
         <h1 className="text-2xl sm:text-3xl font-bold text-primary font-headline uppercase tracking-tighter flex items-center gap-2.5">
           <Building2 className="w-7 h-7 sm:w-8 sm:h-8 text-primary shrink-0" />
-          Formulir Pendaftaran
+          Formulir Pendaftaran UMKM
         </h1>
         <p className="text-muted-foreground font-medium text-sm">
-          Silakan isi formulir di bawah ini dengan lengkap dan benar untuk pendaftaran pelaku usaha.
+          Silakan lengkapi pendaftaran secara bertahap (Tahapan 1 s/d Tahapan 4) untuk melanjutkan ke Verifikasi Admin.
         </p>
       </div>
 
-      {/* Main Registration Form */}
-      <form key={formKey} onSubmit={handleSubmit} className="space-y-6">
-        
-        {/* SECTION 1: BIODATA PRIBADI */}
-        <Card className="border-slate-200/80 dark:border-slate-800 shadow-md hover:shadow-lg transition-all rounded-3xl overflow-hidden bg-white/95 dark:bg-slate-900/90 backdrop-blur-md">
-          <CardHeader className="bg-slate-50/60 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 pb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm">
-                1
-              </div>
-              <div>
-                <CardTitle className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-800 dark:text-slate-100">
-                  Biodata Pribadi Pelaku Usaha
-                </CardTitle>
-                <CardDescription className="text-xs font-semibold text-slate-500">
-                  Pastikan identitas sesuai dengan KTP & Kartu Keluarga (KK) asli.
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="grid gap-4 sm:gap-5 md:grid-cols-2 p-5 sm:p-6">
-            <div className="space-y-2 md:col-span-2 sm:col-span-1">
-              <Label htmlFor="fullName" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-primary" />
-                Nama Lengkap <span className="text-rose-500">*</span>
-              </Label>
-              <Input 
-                id="fullName" 
-                name="fullName" 
-                placeholder="Contoh: AHMAD SYAFI'I" 
-                required 
-                className="h-11 rounded-xl uppercase font-semibold text-slate-900 dark:text-slate-100 border-slate-300 focus-visible:ring-primary"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="gender" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                Jenis Kelamin <span className="text-rose-500">*</span>
-              </Label>
-              <Select name="gender" required>
-                <SelectTrigger className="h-11 rounded-xl font-semibold border-slate-300">
-                  <SelectValue placeholder="Pilih Jenis Kelamin..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="Laki-laki" className="font-semibold">Laki-laki</SelectItem>
-                  <SelectItem value="Perempuan" className="font-semibold">Perempuan</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="nik" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <CreditCard className="w-3.5 h-3.5 text-primary" />
-                NIK (Nomor Induk Kependudukan) <span className="text-rose-500">*</span>
-              </Label>
-              <Input 
-                id="nik" 
-                name="nik" 
-                maxLength={16} 
-                placeholder="Masukkan 16 digit NIK..." 
-                required 
-                value={nik}
-                onChange={(e) => {
-                  const cleanNik = e.target.value.replace(/[^0-9]/g, "")
-                  setNik(cleanNik)
-                  if (cleanNik.length >= 12) {
-                    const extracted = extractDobFromNik(cleanNik)
-                    if (extracted) {
-                      setDob(extracted)
-                    }
-                  } else {
-                    setDob("")
-                  }
-                }}
-                className="h-11 rounded-xl font-mono font-bold tracking-wider text-slate-900 dark:text-slate-100 border-slate-300"
-              />
-              <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold px-1">
-                <span>Wajib 16 digit angka</span>
-                <span className={cn(nik.length === 16 ? "text-emerald-600 font-bold" : "text-slate-400")}>
-                  {nik.length} / 16
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="noKK" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <CreditCard className="w-3.5 h-3.5 text-primary" />
-                Nomor KK (Kartu Keluarga) <span className="text-rose-500">*</span>
-              </Label>
-              <Input 
-                id="noKK" 
-                name="noKK" 
-                maxLength={16} 
-                placeholder="Masukkan 16 digit Nomor KK..." 
-                required 
-                value={noKK}
-                onChange={(e) => setNoKK(e.target.value.replace(/[^0-9]/g, ""))}
-                className="h-11 rounded-xl font-mono font-bold tracking-wider text-slate-900 dark:text-slate-100 border-slate-300"
-              />
-              <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold px-1">
-                <span>Wajib 16 digit angka</span>
-                <span className={cn(noKK.length === 16 ? "text-emerald-600 font-bold" : "text-slate-400")}>
-                  {noKK.length} / 16
-                </span>
-              </div>
-
-              {/* Live KK Verification Indicators */}
-              {isCheckingKk && (
-                <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 font-semibold">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" /> Sedang memeriksa Nomor KK...
-                </div>
+      {/* Stepper Indicator */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        {steps.map((step) => {
+          const Icon = step.icon
+          const isActive = currentStep === step.id
+          const isCompleted = currentStep > step.id
+          return (
+            <div
+              key={step.id}
+              className={cn(
+                "flex items-center gap-3 p-3 rounded-2xl border transition-all",
+                isActive
+                  ? "bg-primary text-white border-primary shadow-md shadow-primary/20"
+                  : isCompleted
+                  ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200"
+                  : "bg-white/80 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-400"
               )}
-
-              {!isCheckingKk && noKK.length === 16 && (
-                <div className="space-y-2 pt-1 animate-in fade-in">
-                  {isFormBlocked && (
-                    <div className="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-xs sm:text-sm">
-                      <div className="flex items-start gap-2.5">
-                        <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <span className="font-black text-rose-800 dark:text-rose-200 uppercase text-xs sm:text-sm block">
-                            KESAMAAN NOMOR KK TERDETEKSI: {blockedSourcesLabel}
-                          </span>
-                          <p className="text-xs sm:text-[13px] text-rose-700 dark:text-rose-300 mt-1 leading-tight font-semibold">
-                            Nomor KK ini dilarang mendaftar. Seluruh isian lainnya otomatis ditutup dan rincian lengkap datanya ditampilkan di bawah formulir.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {!isFormBlocked && kkHistoryResults.length > 0 && (
-                    <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs sm:text-sm text-amber-800 dark:text-amber-200">
-                      <div className="flex items-start gap-2.5">
-                        <History className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                        <div className="flex-1 min-w-0">
-                          <span className="font-black text-amber-900 dark:text-amber-100 uppercase text-xs sm:text-sm block">
-                            TERDATA RIWAYAT TAHUN SEBELUMNYA (DIIZINKAN LANJUT)
-                          </span>
-                          <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5 font-semibold">
-                            Nomor KK terdata pada Sheet riwayat tahun 2024 / 2023. Penginputan diizinkan untuk dilanjutkan dan rincian lengkap riwayat dapat dilihat di bagian bawah formulir.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {!isFormBlocked && kkCheckResults.length === 0 && (
-                    <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs sm:text-sm text-emerald-800 dark:text-emerald-200 font-bold">
-                      <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>Nomor KK Bersih & Valid (Belum pernah terdaftar. Pendaftaran diizinkan dilanjutkan).</span>
-                    </div>
-                  )}
-                </div>
-              )}
+            >
+              <div
+                className={cn(
+                  "w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0",
+                  isActive
+                    ? "bg-white/20 text-white"
+                    : isCompleted
+                    ? "bg-emerald-600 text-white"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                )}
+              >
+                {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-wider leading-none">
+                  {step.title}
+                </p>
+                <p className={cn(
+                  "text-xs font-bold truncate mt-1",
+                  isActive ? "text-white" : isCompleted ? "text-emerald-900 dark:text-emerald-100" : "text-slate-500"
+                )}>
+                  {step.subtitle}
+                </p>
+              </div>
             </div>
+          )
+        })}
+      </div>
 
-            {/* FORMULIR ISIAN LAINNYA DI SECTION 1 */}
-            {isFormBlocked ? (
-              <div className="md:col-span-2 p-4 sm:p-5 rounded-2xl bg-rose-50/80 dark:bg-rose-950/40 border-2 border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200 animate-in fade-in">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                    <Lock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-black text-xs sm:text-sm uppercase tracking-wide text-rose-800 dark:text-rose-200">
-                      Formulir Isian Lainnya Ditutup Otomatis
-                    </h4>
-                    <p className="text-xs text-rose-700 dark:text-rose-300 mt-1 leading-relaxed font-semibold">
-                      Penginputan data ditutup karena Nomor KK terdeteksi terdapat kesamaan pada <span className="underline font-black">{blockedSourcesLabel}</span>. Kolom Tempat Lahir, Tanggal Lahir, Nomor HP, Alamat, dan Data Usaha dinonaktifkan dan ditutup.
-                    </p>
-                  </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* TAHAPAN 1 */}
+        {currentStep === 1 && (
+          <Card className="border-slate-200/80 dark:border-slate-800 shadow-md rounded-3xl overflow-hidden bg-white/95 dark:bg-slate-900/90 backdrop-blur-md">
+            <CardHeader className="bg-slate-50/60 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm">
+                  1
+                </div>
+                <div>
+                  <CardTitle className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-800 dark:text-slate-100">
+                    Tahapan 1 : Input Identitas Awal & Pengecekan Database
+                  </CardTitle>
+                  <CardDescription className="text-xs font-semibold text-slate-500">
+                    Masukkan Nama Lengkap, NIK, dan Nomor Kartu Keluarga (Nomor KK) untuk pengecekan database.
+                  </CardDescription>
                 </div>
               </div>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="pob" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    Tempat Lahir <span className="text-rose-500">*</span>
+            </CardHeader>
+
+            <CardContent className="p-5 sm:p-6 space-y-5">
+              <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="fullName" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Nama Lengkap (Sesuai KTP) <span className="text-rose-500">*</span>
                   </Label>
-                  <Input 
-                    id="pob" 
-                    name="pob" 
-                    placeholder="Contoh: TANJUNGPINANG" 
-                    required 
+                  <Input
+                    id="fullName"
+                    placeholder="CONTOH: SITI AMINAH"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value.toUpperCase())}
+                    required
+                    className="h-11 rounded-xl font-bold uppercase text-slate-900 dark:text-slate-100 border-slate-300"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="nik" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    Nomor Induk Kependudukan / NIK (16 Digit) <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    id="nik"
+                    placeholder="16 Digit Angka NIK"
+                    maxLength={16}
+                    value={nik}
+                    onChange={(e) => {
+                      const cleanNik = e.target.value.replace(/[^0-9]/g, "")
+                      setNik(cleanNik)
+                      if (cleanNik.length >= 12) {
+                        const extracted = extractDobFromNik(cleanNik)
+                        if (extracted) setDob(extracted)
+                      } else if (!isEditingDob) {
+                        setDob("")
+                      }
+                    }}
+                    required
+                    className="h-11 rounded-xl font-mono font-bold text-slate-900 dark:text-slate-100 border-slate-300"
+                  />
+                  <span className="text-[10px] font-bold text-slate-400 block">
+                    Terisi: {nik.length}/16 digit
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="noKK" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Nomor Kartu Keluarga / Nomor KK (16 Digit) <span className="text-rose-500">*</span>
+                    </Label>
+                    {isCheckingKk && (
+                      <span className="text-[10px] text-primary font-bold flex items-center gap-1 animate-pulse">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Memeriksa KK...
+                      </span>
+                    )}
+                  </div>
+                  <Input
+                    id="noKK"
+                    placeholder="16 Digit Angka Nomor KK"
+                    maxLength={16}
+                    value={noKK}
+                    onChange={(e) => {
+                      const cleanKk = e.target.value.replace(/[^0-9]/g, "")
+                      setNoKK(cleanKk)
+                    }}
+                    required
+                    className={cn(
+                      "h-11 rounded-xl font-mono font-bold text-slate-900 dark:text-slate-100 border-slate-300 transition-all",
+                      isHardLocked && "border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/40",
+                      requiresComparisonPhoto && "border-amber-500 ring-2 ring-amber-500/20 bg-amber-50/40",
+                      !isHardLocked && !requiresComparisonPhoto && kkCheckResults.length > 0 && "border-emerald-500 ring-2 ring-emerald-500/20"
+                    )}
+                  />
+                  <span className="text-[10px] font-bold text-slate-400 block">
+                    Terisi: {noKK.length}/16 digit (Pengecekan otomatis saat 16 digit)
+                  </span>
+                </div>
+              </div>
+
+              {noKK.replace(/[^0-9]/g, "").length === 16 && !isCheckingKk && (
+                <div className="space-y-4 pt-2">
+                  {kkCheckResults.length === 0 ? (
+                    <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 flex items-center gap-3">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+                      <div>
+                        <p className="text-xs sm:text-sm font-black uppercase text-emerald-800 dark:text-emerald-200">
+                          Nomor KK Belum Terdaftar di Database Pembanding & Pengajuan 2026
+                        </p>
+                        <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
+                          Silakan klik tombol &quot;Lanjut ke Tahapan 2&quot; untuk mengisi Data Pelaku Usaha.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {isHardLocked && (
+                        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-400 dark:border-rose-800 flex items-start gap-3">
+                          <Lock className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <p className="text-xs sm:text-sm font-black uppercase text-rose-800 dark:text-rose-200">
+                              ⛔ FORMULIR TERKUNCI — TIDAK DAPAT DILANJUTKAN
+                            </p>
+                            <p className="text-xs font-semibold text-rose-700 dark:text-rose-300">
+                              Nomor KK ({noKK}) ditemukan pada <strong>{blockedSourcesLabel}</strong>. Sesuai ketentuan, pendaftaran tidak dapat dilanjutkan.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {requiresComparisonPhoto && (
+                        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-400 dark:border-amber-800 space-y-4">
+                          <div className="flex items-start gap-3">
+                            <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="space-y-1">
+                              <p className="text-xs sm:text-sm font-black uppercase text-amber-900 dark:text-amber-200">
+                                ⚠️ TERDETEKSI DI SHEET 3 (PEMBANDING 2025) — WAJIB UPLOAD FHOTO PEMBANDING
+                              </p>
+                              <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                                Nomor KK ({noKK}) cocok dengan data pada Sheet 3 (Pembanding 2025). Sebelum melanjutkan ke Tahapan 2, wajib menginput/upload <strong>Fhoto Pembanding</strong> terlebih dahulu.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-800 space-y-3">
+                            <Label className="text-xs font-black uppercase text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                              <Camera className="w-4 h-4 text-amber-600" />
+                              Form Input Fhoto Pembanding <span className="text-rose-500">*</span>
+                            </Label>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleComparisonPhotoUpload}
+                              className="bg-slate-50 border-amber-300 cursor-pointer"
+                            />
+                            {comparisonPhotoUrl && (
+                              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 rounded-xl flex items-center gap-3">
+                                <img
+                                  src={comparisonPhotoUrl}
+                                  alt="Preview Fhoto Pembanding"
+                                  className="w-20 h-20 object-cover rounded-lg border-2 border-emerald-400 shadow-sm"
+                                />
+                                <div className="space-y-1">
+                                  <span className="text-xs font-black text-emerald-800 dark:text-emerald-200 uppercase flex items-center gap-1.5">
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Fhoto Pembanding Siap
+                                  </span>
+                                  <p className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium">
+                                    Anda sekarang dapat melanjutkan ke Tahapan 2.
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {!isHardLocked && !requiresComparisonPhoto && isKkSheet1Or2 && (
+                        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border-2 border-emerald-400 dark:border-emerald-800 flex items-start gap-3">
+                          <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+                          <div className="space-y-1">
+                            <p className="text-xs sm:text-sm font-black uppercase text-emerald-800 dark:text-emerald-200">
+                              ✅ DATA DITEMUKAN DI SHEET 1 / SHEET 2 — PENGISIAN DAPAT DILANJUTKAN
+                            </p>
+                            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                              Data riwayat ditemukan pada Sheet 1 (2024) / Sheet 2 (2023). Silakan periksa rincian data di bawah dan lanjutkan ke Tahapan 2.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-3 pt-2">
+                        <div className="flex items-center gap-2">
+                          <History className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+                          <h3 className="text-sm sm:text-base font-black uppercase tracking-tight text-slate-800 dark:text-slate-200">
+                            Rincian Data KK yang Ditemukan ({kkCheckResults.length} Data)
+                          </h3>
+                        </div>
+                        <div className="space-y-3">
+                          {kkCheckResults.map((item, idx) => (
+                            <KkDetailCard key={`${item._table}-${idx}`} item={item} />
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <div className="pt-4 border-t flex justify-end">
+                <Button
+                  type="button"
+                  onClick={handleNextStep}
+                  disabled={isHardLocked || isCheckingKk || (requiresComparisonPhoto && !comparisonPhotoUrl)}
+                  className="h-11 px-6 rounded-xl font-black uppercase tracking-wider gap-2"
+                >
+                  <span>Lanjut ke Tahapan 2</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* TAHAPAN 2 */}
+        {currentStep === 2 && (
+          <Card className="border-slate-200/80 dark:border-slate-800 shadow-md rounded-3xl overflow-hidden bg-white/95 dark:bg-slate-900/90 backdrop-blur-md">
+            <CardHeader className="bg-slate-50/60 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm">
+                  2
+                </div>
+                <div>
+                  <CardTitle className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-800 dark:text-slate-100">
+                    Tahapan 2 : Pengisian Data Pelaku Usaha
+                  </CardTitle>
+                  <CardDescription className="text-xs font-semibold text-slate-500">
+                    Semua kolom (1 s/d 12) wajib diisi lengkap sebelum dapat melanjutkan ke Tahapan 3.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-5 sm:p-6 space-y-5">
+              <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    1. Nama Lengkap (Dari Tahapan 1) <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    value={fullName}
+                    readOnly
+                    className="h-11 rounded-xl font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    2. Nomor Induk Kependudukan / NIK (Dari Tahapan 1) <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    value={nik}
+                    readOnly
+                    className="h-11 rounded-xl font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    3. Tempat Lahir <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    placeholder="CONTOH: TANJUNGPINANG"
                     value={pob}
-                    onChange={(e) => setPob(e.target.value)}
+                    onChange={(e) => setPob(e.target.value.toUpperCase())}
+                    required
+                    className="h-11 rounded-xl font-semibold uppercase text-slate-900 dark:text-slate-100 border-slate-300"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      4. Tanggal Lahir ({isEditingDob ? "Edit Manual" : "Otomatis NIK"}) <span className="text-rose-500">*</span>
+                    </Label>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingDob(!isEditingDob)}
+                      className="text-[11px] font-bold text-primary hover:underline"
+                    >
+                      {isEditingDob ? "Gunakan Otomatis NIK" : "Edit Manual"}
+                    </button>
+                  </div>
+                  <Input
+                    value={dob}
+                    readOnly={!isEditingDob}
+                    onChange={(e) => setDob(e.target.value)}
+                    placeholder="DD-MM-YYYY (Ketik NIK atau klik Edit Manual)"
+                    required
+                    className={cn(
+                      "h-11 rounded-xl font-bold border-slate-300",
+                      !isEditingDob
+                        ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-not-allowed"
+                        : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-primary ring-1 ring-primary/30"
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    5. Nomor WhatsApp <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    type="tel"
+                    placeholder="Contoh: 081234567890"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/[^0-9+]/g, ""))}
+                    required
+                    className="h-11 rounded-xl font-mono font-bold text-slate-900 dark:text-slate-100 border-slate-300"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    6. Agama <span className="text-rose-500">*</span>
+                  </Label>
+                  <Select value={agama} onValueChange={setAgama}>
+                    <SelectTrigger className="h-11 rounded-xl font-bold border-slate-300">
+                      <SelectValue placeholder="Pilih Agama..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {AGAMA_INDONESIA.map((agm) => (
+                        <SelectItem key={agm} value={agm} className="font-semibold">
+                          {agm}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    7. Pekerjaan (Sesuai Data Kependudukan Indonesia) <span className="text-rose-500">*</span>
+                  </Label>
+                  <PekerjaanSelect
+                    value={pekerjaan}
+                    onValueChange={setPekerjaan}
+                    placeholder="Pilih Pekerjaan Pelaku Usaha..."
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    8. Alamat Lengkap <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    placeholder="CONTOH: JL. SULTAN MAHMUD NO. 12"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value.toUpperCase())}
+                    required
                     className="h-11 rounded-xl uppercase font-semibold text-slate-900 dark:text-slate-100 border-slate-300"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor="dob" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-primary" />
-                      Tanggal Lahir {isEditingDob ? "(Edit Manual)" : "(Otomatis dari NIK)"} <span className="text-rose-500">*</span>
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    9. RT / RW <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    placeholder="Contoh: 001/002"
+                    value={rtRw}
+                    onChange={(e) => setRtRw(e.target.value)}
+                    required
+                    className="h-11 rounded-xl font-mono font-bold text-slate-900 dark:text-slate-100 border-slate-300"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    10. Kelurahan <span className="text-rose-500">*</span>
+                  </Label>
+                  <Select value={kelurahan} onValueChange={setKelurahan}>
+                    <SelectTrigger className="h-11 rounded-xl font-bold border-slate-300">
+                      <SelectValue placeholder="Pilih Kelurahan..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[260px] rounded-xl">
+                      {kelurahanList.map((k) => (
+                        <SelectItem key={k} value={k} className="font-semibold">
+                          {k}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    11. Kecamatan (Otomatis dari Kelurahan) <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    value={kecamatan}
+                    readOnly
+                    placeholder="Terisi otomatis saat memilih Kelurahan"
+                    required
+                    className="h-11 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold text-slate-700 dark:text-slate-200 cursor-not-allowed border-slate-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    12. Tanggal Cetak KTP <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    type="date"
+                    value={tanggalCetakKtp}
+                    onChange={(e) => setTanggalCetakKtp(e.target.value)}
+                    required
+                    className="h-11 rounded-xl font-bold text-slate-900 dark:text-slate-100 border-slate-300"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t flex items-center justify-between gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePrevStep}
+                  className="h-11 px-5 rounded-xl font-bold gap-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Kembali ke Tahapan 1</span>
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleNextStep}
+                  className="h-11 px-6 rounded-xl font-black uppercase tracking-wider gap-2"
+                >
+                  <span>Lanjut ke Tahapan 3</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* TAHAPAN 3 */}
+        {currentStep === 3 && (
+          <Card className="border-slate-200/80 dark:border-slate-800 shadow-md rounded-3xl overflow-hidden bg-white/95 dark:bg-slate-900/90 backdrop-blur-md">
+            <CardHeader className="bg-slate-50/60 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm">
+                  3
+                </div>
+                <div>
+                  <CardTitle className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-800 dark:text-slate-100">
+                    Tahapan 3 : Pengisian Data Keluarga
+                  </CardTitle>
+                  <CardDescription className="text-xs font-semibold text-slate-500">
+                    Semua kolom (13 s/d 21) wajib diisi lengkap sebelum dapat melanjutkan ke Tahapan 4.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-5 sm:p-6 space-y-5">
+              <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    13. Nomor Kartu Keluarga / Nomor KK (Dari Tahapan 1) <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    value={noKK}
+                    readOnly
+                    className="h-11 rounded-xl font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    14. Status Keluarga <span className="text-rose-500">*</span>
+                  </Label>
+                  <Select value={statusKeluarga} onValueChange={setStatusKeluarga}>
+                    <SelectTrigger className="h-11 rounded-xl font-bold border-slate-300">
+                      <SelectValue placeholder="Pilih Status Keluarga..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {STATUS_KELUARGA_LIST.map((st) => (
+                        <SelectItem key={st} value={st} className="font-semibold">
+                          {st}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    15. Nama Kepala Keluarga <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    placeholder="CONTOH: BUDI SANTOSO"
+                    value={namaKepalaKeluarga}
+                    onChange={(e) => setNamaKepalaKeluarga(e.target.value.toUpperCase())}
+                    required
+                    className="h-11 rounded-xl font-bold uppercase text-slate-900 dark:text-slate-100 border-slate-300"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    16. Nomor Induk Kependudukan (Kepala Keluarga) <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    placeholder="16 Digit NIK Kepala Keluarga"
+                    maxLength={16}
+                    value={nikKepalaKeluarga}
+                    onChange={(e) => {
+                      const cleanNikKk = e.target.value.replace(/[^0-9]/g, "")
+                      setNikKepalaKeluarga(cleanNikKk)
+                      if (cleanNikKk.length >= 12) {
+                        const extracted = extractDobFromNik(cleanNikKk)
+                        if (extracted) setDobKepalaKeluarga(extracted)
+                      } else if (!isEditingDobKk) {
+                        setDobKepalaKeluarga("")
+                      }
+                    }}
+                    required
+                    className="h-11 rounded-xl font-mono font-bold text-slate-900 dark:text-slate-100 border-slate-300"
+                  />
+                  <span className="text-[10px] font-bold text-slate-400 block">
+                    Terisi: {nikKepalaKeluarga.length}/16 digit
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    17. Tempat Lahir (Kepala Keluarga) <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    placeholder="CONTOH: TANJUNGPINANG"
+                    value={pobKepalaKeluarga}
+                    onChange={(e) => setPobKepalaKeluarga(e.target.value.toUpperCase())}
+                    required
+                    className="h-11 rounded-xl font-semibold uppercase text-slate-900 dark:text-slate-100 border-slate-300"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      18. Tanggal Lahir Kepala Keluarga ({isEditingDobKk ? "Edit Manual" : "Otomatis NIK"}) <span className="text-rose-500">*</span>
                     </Label>
                     <button
                       type="button"
-                      onClick={() => setIsEditingDob(!isEditingDob)}
-                      className="text-[11px] text-primary font-bold hover:underline"
+                      onClick={() => setIsEditingDobKk(!isEditingDobKk)}
+                      className="text-[11px] font-bold text-primary hover:underline"
                     >
-                      {isEditingDob ? "Kunci Otomatis" : "Ubah Manual"}
+                      {isEditingDobKk ? "Gunakan Otomatis NIK" : "Edit Manual"}
                     </button>
                   </div>
-                  <Input 
-                    id="dob" 
-                    name="dob" 
-                    placeholder="Terisi otomatis dari NIK..." 
-                    readOnly={!isEditingDob}
-                    required 
-                    value={dob}
-                    onChange={(e) => setDob(e.target.value)}
-                    className={cn("h-11 rounded-xl font-semibold border-slate-300", !isEditingDob && "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300")}
+                  <Input
+                    value={dobKepalaKeluarga}
+                    readOnly={!isEditingDobKk}
+                    onChange={(e) => setDobKepalaKeluarga(e.target.value)}
+                    placeholder="DD-MM-YYYY (Ketik NIK KK atau klik Edit Manual)"
+                    required
+                    className={cn(
+                      "h-11 rounded-xl font-bold border-slate-300",
+                      !isEditingDobKk
+                        ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 cursor-not-allowed"
+                        : "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-primary ring-1 ring-primary/30"
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    19. Agama (Kepala Keluarga) <span className="text-rose-500">*</span>
+                  </Label>
+                  <Select value={agamaKepalaKeluarga} onValueChange={setAgamaKepalaKeluarga}>
+                    <SelectTrigger className="h-11 rounded-xl font-bold border-slate-300">
+                      <SelectValue placeholder="Pilih Agama Kepala Keluarga..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {AGAMA_INDONESIA.map((agm) => (
+                        <SelectItem key={agm} value={agm} className="font-semibold">
+                          {agm}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    20. Pekerjaan Kepala Keluarga <span className="text-rose-500">*</span>
+                  </Label>
+                  <PekerjaanSelect
+                    value={pekerjaanKepalaKeluarga}
+                    onValueChange={setPekerjaanKepalaKeluarga}
+                    placeholder="Pilih Pekerjaan Kepala Keluarga..."
                   />
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="phone" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-primary" />
-                    Nomor HP / WhatsApp Aktif <span className="text-rose-500">*</span>
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    21. Tanggal Cetak di Kartu Keluarga <span className="text-rose-500">*</span>
                   </Label>
-                  <Input 
-                    id="phone" 
-                    name="phone" 
-                    placeholder="Contoh: 081234567890" 
-                    required 
-                    className="h-11 rounded-xl font-mono font-bold text-slate-900 dark:text-slate-100 border-slate-300"
+                  <Input
+                    type="date"
+                    value={tanggalCetakKk}
+                    onChange={(e) => setTanggalCetakKk(e.target.value)}
+                    required
+                    className="h-11 rounded-xl font-bold text-slate-900 dark:text-slate-100 border-slate-300"
                   />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t flex items-center justify-between gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePrevStep}
+                  className="h-11 px-5 rounded-xl font-bold gap-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Kembali ke Tahapan 2</span>
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleNextStep}
+                  className="h-11 px-6 rounded-xl font-black uppercase tracking-wider gap-2"
+                >
+                  <span>Lanjut ke Tahapan 4</span>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* TAHAPAN 4 */}
+        {currentStep === 4 && (
+          <Card className="border-slate-200/80 dark:border-slate-800 shadow-md rounded-3xl overflow-hidden bg-white/95 dark:bg-slate-900/90 backdrop-blur-md">
+            <CardHeader className="bg-slate-50/60 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm">
+                  4
+                </div>
+                <div>
+                  <CardTitle className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-800 dark:text-slate-100">
+                    Tahapan 4 : Pengisian Data Usaha
+                  </CardTitle>
+                  <CardDescription className="text-xs font-semibold text-slate-500">
+                    Semua kolom (22 s/d 25) wajib diisi lengkap sebelum mengirim ke tahapan Verifikasi Admin.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-5 sm:p-6 space-y-5">
+              <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    22. Jenis Usaha <span className="text-rose-500">*</span>
+                  </Label>
+                  <Select value={businessCategory} onValueChange={setBusinessCategory}>
+                    <SelectTrigger className="h-11 rounded-xl font-bold border-slate-300">
+                      <SelectValue placeholder="Pilih Jenis Usaha..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="Kuliner" className="font-semibold">
+                        Kuliner
+                      </SelectItem>
+                      <SelectItem value="Non Kuliner" className="font-semibold">
+                        Non Kuliner
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    23. Nama Usaha <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    placeholder="CONTOH: KERIPIK TEMPE BERKAH"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value.toUpperCase())}
+                    required
+                    className="h-11 rounded-xl uppercase font-bold text-slate-900 dark:text-slate-100 border-slate-300"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    24. Alamat Usaha <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    placeholder="CONTOH: JL. MERDEKA DEPAN KEDAI KOPI ATAU DI RUMAH"
+                    value={businessLocation}
+                    onChange={(e) => setBusinessLocation(e.target.value.toUpperCase())}
+                    required
+                    className="h-11 rounded-xl uppercase font-semibold text-slate-900 dark:text-slate-100 border-slate-300"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      25. Usulan (Koordinator dengan Sisa Kuota Tersedia) <span className="text-rose-500">*</span>
+                    </Label>
+                    {isQuotaLoading && (
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Memuat kuota...
+                      </span>
+                    )}
+                  </div>
+                  <Select value={selectedCoordinator} onValueChange={setSelectedCoordinator}>
+                    <SelectTrigger className="h-11 rounded-xl font-bold border-slate-300">
+                      <SelectValue placeholder="Pilih Usulan Koordinator..." />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px] rounded-xl">
+                      {availableCoordinators.filter((c) => c.remaining > 0).map((c) => (
+                        <SelectItem key={c.id || c.name} value={c.name} className="group font-semibold py-2.5">
+                          <div className="flex justify-between items-center w-full min-w-[260px] sm:min-w-[320px] gap-4">
+                            <span className="font-bold text-slate-800 dark:text-slate-200 group-data-[highlighted]:text-white group-focus:text-white transition-colors">
+                              {c.name}
+                            </span>
+                            <span className="text-[11px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 group-data-[highlighted]:bg-white/20 group-data-[highlighted]:text-white group-data-[highlighted]:border-transparent border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-bold whitespace-nowrap transition-colors">
+                              Sisa: {c.remaining}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <p className="text-[11px] text-slate-500 font-medium">
-                    Nomor ini akan digunakan petugas untuk konfirmasi dan penjadwalan survey dinas.
+                    Menampilkan nama koordinator yang kuotanya masih ada sisa.
                   </p>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        {!isFormBlocked && (
-          <>
-            {/* SECTION 2: ALAMAT & LOKASI */}
-            <Card className="border-slate-200/80 dark:border-slate-800 shadow-md hover:shadow-lg transition-all rounded-3xl overflow-hidden bg-white/95 dark:bg-slate-900/90 backdrop-blur-md">
-          <CardHeader className="bg-slate-50/60 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 pb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm">
-                2
               </div>
-              <div>
-                <CardTitle className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-800 dark:text-slate-100">
-                  Alamat Tempat Tinggal
-                </CardTitle>
-                <CardDescription className="text-xs font-semibold text-slate-500">
-                  Alamat domisili pelaku usaha di wilayah Kota Tanjungpinang.
-                </CardDescription>
+
+              <div className="pt-4 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePrevStep}
+                  className="w-full sm:w-auto h-11 px-5 rounded-xl font-bold gap-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Kembali ke Tahapan 3</span>
+                </Button>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  size="lg"
+                  className="w-full sm:w-auto min-w-[260px] h-12 rounded-2xl font-black uppercase tracking-wider shadow-xl shadow-primary/20 text-white bg-primary hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Menyimpan Pendaftaran...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      <span>Submit & Lanjut Verifikasi Admin</span>
+                    </>
+                  )}
+                </Button>
               </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="grid gap-4 sm:gap-5 md:grid-cols-2 p-5 sm:p-6">
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="address" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-primary" />
-                Alamat Lengkap <span className="text-rose-500">*</span>
-              </Label>
-              <Textarea 
-                id="address" 
-                name="address" 
-                rows={2}
-                placeholder="Contoh: JL. HANG TUAH NO. 45, GANG MAWAR" 
-                required 
-                className="rounded-xl uppercase font-semibold text-slate-900 dark:text-slate-100 border-slate-300 resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="rtRw" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                RT / RW <span className="text-rose-500">*</span>
-              </Label>
-              <Input 
-                id="rtRw" 
-                name="rtRw" 
-                placeholder="Contoh: 001 / 002" 
-                required 
-                className="h-11 rounded-xl font-bold uppercase text-slate-900 dark:text-slate-100 border-slate-300"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="kelurahan" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                Kelurahan <span className="text-rose-500">*</span>
-              </Label>
-              <Select value={kelurahan} onValueChange={setKelurahan} required>
-                <SelectTrigger className="h-11 rounded-xl font-bold border-slate-300">
-                  <SelectValue placeholder="Pilih Kelurahan..." />
-                </SelectTrigger>
-                <SelectContent className="max-h-[280px] rounded-xl">
-                  {kelurahanList.map((k) => (
-                    <SelectItem key={k} value={k} className="font-semibold">{k}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="kecamatan" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                Kecamatan (Terisi Otomatis)
-              </Label>
-              <Input 
-                id="kecamatan" 
-                name="kecamatan" 
-                value={kecamatan} 
-                readOnly 
-                placeholder="Pilih Kelurahan untuk mengisi Kecamatan"
-                className="h-11 rounded-xl bg-slate-100 dark:bg-slate-800 font-bold uppercase text-primary border-slate-300" 
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* SECTION 3: DATA USAHA */}
-        <Card className="border-slate-200/80 dark:border-slate-800 shadow-md hover:shadow-lg transition-all rounded-3xl overflow-hidden bg-white/95 dark:bg-slate-900/90 backdrop-blur-md">
-          <CardHeader className="bg-slate-50/60 dark:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800 pb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-sm">
-                3
-              </div>
-              <div>
-                <CardTitle className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-800 dark:text-slate-100">
-                  Data Usaha & Usulan Koordinator
-                </CardTitle>
-                <CardDescription className="text-xs font-semibold text-slate-500">
-                  Informasi jenis usaha, nama produk, lokasi operasional, dan usulan koordinator pendamping.
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="grid gap-4 sm:gap-5 md:grid-cols-2 p-5 sm:p-6">
-            <div className="space-y-2">
-              <Label htmlFor="businessCategory" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                Jenis Usaha <span className="text-rose-500">*</span>
-              </Label>
-              <Select name="businessCategory" required>
-                <SelectTrigger className="h-11 rounded-xl font-bold border-slate-300">
-                  <SelectValue placeholder="Pilih Jenis Usaha..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="Kuliner" className="font-semibold">Kuliner (Makanan / Minuman)</SelectItem>
-                  <SelectItem value="Bukan Kuliner" className="font-semibold">Bukan Kuliner (Jasa / Kerajinan / Lainnya)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="businessName" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Store className="w-3.5 h-3.5 text-primary" />
-                Nama Usaha / Produk <span className="text-rose-500">*</span>
-              </Label>
-              <Input 
-                id="businessName" 
-                name="businessName" 
-                placeholder="Contoh: KERIPIK TEMPE BERKAH" 
-                required 
-                className="h-11 rounded-xl uppercase font-bold text-slate-900 dark:text-slate-100 border-slate-300"
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="businessLocation" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-primary" />
-                Lokasi Tempat Usaha <span className="text-rose-500">*</span>
-              </Label>
-              <Input 
-                id="businessLocation" 
-                name="businessLocation" 
-                placeholder="Contoh: JL. MERDEKA DEPAN KEDAI KOPI ATAU DI RUMAH" 
-                required 
-                className="h-11 rounded-xl uppercase font-semibold text-slate-900 dark:text-slate-100 border-slate-300"
-              />
-            </div>
-
-            <div className="space-y-2 md:col-span-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="coordinator" className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-primary" />
-                  USULAN / KOORDINATOR <span className="text-rose-500">*</span>
-                </Label>
-                {isQuotaLoading && (
-                  <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Memuat kuota...
-                  </span>
-                )}
-              </div>
-              <Select value={selectedCoordinator} onValueChange={setSelectedCoordinator} required>
-                <SelectTrigger className="h-11 rounded-xl font-bold border-slate-300">
-                  <SelectValue placeholder="Pilih Usulan Koordinator..." />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px] rounded-xl">
-                  {availableCoordinators.filter(c => c.remaining > 0).map((c) => (
-                    <SelectItem key={c.id || c.name} value={c.name} className="group font-semibold py-2.5">
-                      <div className="flex justify-between items-center w-full min-w-[260px] sm:min-w-[320px] gap-4">
-                        <span className="font-bold text-slate-800 dark:text-slate-200 group-data-[highlighted]:text-white group-focus:text-white transition-colors">{c.name}</span>
-                        <span className="text-[11px] bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 group-data-[highlighted]:bg-white/20 group-data-[highlighted]:text-white group-data-[highlighted]:border-transparent border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full font-bold whitespace-nowrap transition-colors">
-                          Sisa: {c.remaining}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[11px] text-slate-500 font-medium">
-                Daftar koordinator di atas otomatis menyaring koordinator yang kuotanya masih tersedia.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-          </>
+            </CardContent>
+          </Card>
         )}
-
-        {/* KK CHECK RESULT DETAIL CARDS */}
-        {kkCheckResults.length > 0 && (
-          <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-2">
-              <History className="w-5 h-5 text-slate-700 dark:text-slate-300" />
-              <h3 className="text-base font-black uppercase tracking-tight text-slate-800 dark:text-slate-200">
-                Detail Riwayat & Data KK Terdeteksi ({kkCheckResults.length} Catatan Ditemukan)
-              </h3>
-            </div>
-            <div className="space-y-4">
-              {kkCheckResults.map((item, idx) => (
-                <KkDetailCard key={`${item.source || item._table}-${idx}`} item={item} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* SUBMIT BUTTON */}
-        <div className="pt-2 pb-12 flex flex-col sm:flex-row items-center justify-end gap-3">
-          {isFormBlocked ? (
-            <div className="w-full p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-sm font-bold flex items-center justify-center gap-2 text-center">
-              <Lock className="w-5 h-5 flex-shrink-0 text-rose-600" />
-              <span>Pendaftaran Dikunci: Nomor KK terdaftar pada {blockedSourcesLabel}. Formulir pendaftaran otomatis ditutup.</span>
-            </div>
-          ) : (
-            <Button 
-              type="submit" 
-              disabled={loading} 
-              size="lg"
-              className="w-full sm:w-auto min-w-[240px] h-12 rounded-2xl font-black uppercase tracking-wider shadow-xl shadow-primary/20 text-white bg-primary hover:bg-primary/90 active:scale-95 transition-all flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Menyimpan Pendaftaran...</span>
-                </>
-              ) : (
-                <>
-                  <Save className="w-5 h-5" />
-                  <span>Kirim Data Pendaftaran</span>
-                </>
-              )}
-            </Button>
-          )}
-        </div>
       </form>
 
       {/* POP-UP MODAL SUKSES & BUKTI PENDAFTARAN */}
@@ -1053,12 +1679,11 @@ export default function PendaftaranPage() {
               Pendaftaran Berhasil Disimpan!
             </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm font-semibold text-emerald-100 mt-1">
-              Data pelaku usaha telah tercatat di sistem SIMPU dan sedang dalam antrean verifikasi.
+              Data pelaku usaha telah tercatat di sistem SIMPU dan sedang dalam antrean Verifikasi Admin.
             </DialogDescription>
           </div>
 
           <div className="p-6 space-y-5" ref={printReceiptRef}>
-            {/* Nomor Registrasi Card */}
             <div className="bg-slate-50 dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-2 text-center">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">
                 Nomor Registrasi Resmi
@@ -1087,7 +1712,6 @@ export default function PendaftaranPage() {
               </Button>
             </div>
 
-            {/* Ringkasan Data */}
             <div className="space-y-2 text-xs border-y border-slate-100 dark:border-slate-800 py-3">
               <div className="flex justify-between py-1">
                 <span className="text-slate-500 font-medium">Nama Pelaku Usaha:</span>
@@ -1096,6 +1720,10 @@ export default function PendaftaranPage() {
               <div className="flex justify-between py-1">
                 <span className="text-slate-500 font-medium">NIK:</span>
                 <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{successData?.nik || "-"}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-slate-500 font-medium">Nomor KK:</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{successData?.noKK || "-"}</span>
               </div>
               <div className="flex justify-between py-1">
                 <span className="text-slate-500 font-medium">Nama Usaha:</span>
@@ -1111,7 +1739,6 @@ export default function PendaftaranPage() {
               </div>
             </div>
 
-            {/* Print & Status Buttons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
               <Button
                 type="button"

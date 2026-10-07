@@ -4,6 +4,7 @@ import { getDatabase, ref, get, push, set, query, orderByChild, equalTo, limitTo
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 import { normalizeCoordinator } from '@/lib/coordinator-utils';
+import { extractGenderFromNik } from '@/lib/utils';
 
 // Initialize Firebase App
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
@@ -29,30 +30,69 @@ export async function POST(req: NextRequest) {
       pob,
       dob,
       phone,
+      agama,
+      pekerjaan,
       address,
       rtRw,
       kelurahan,
       kecamatan,
+      tanggalCetakKtp,
+      statusKeluarga,
+      namaKepalaKeluarga,
+      nikKepalaKeluarga,
+      pobKepalaKeluarga,
+      dobKepalaKeluarga,
+      agamaKepalaKeluarga,
+      pekerjaanKepalaKeluarga,
+      tanggalCetakKk,
       businessCategory,
       businessName,
       businessLocation,
       coordinator,
+      comparisonPhotoUrl,
     } = body;
 
-    // 1. Validasi Kolom Wajib
-    if (!fullName || !gender || !nik || !noKK || !pob || !dob || !phone || !address || !rtRw || !kelurahan || !kecamatan || !businessCategory || !businessName || !businessLocation || !coordinator) {
+    // 1. Validasi Kolom Wajib (25 Kolom Tahapan 1-4)
+    if (
+      !fullName ||
+      !nik ||
+      !noKK ||
+      !pob ||
+      !dob ||
+      !phone ||
+      !agama ||
+      !pekerjaan ||
+      !address ||
+      !rtRw ||
+      !kelurahan ||
+      !kecamatan ||
+      !tanggalCetakKtp ||
+      !statusKeluarga ||
+      !namaKepalaKeluarga ||
+      !nikKepalaKeluarga ||
+      !pobKepalaKeluarga ||
+      !dobKepalaKeluarga ||
+      !agamaKepalaKeluarga ||
+      !pekerjaanKepalaKeluarga ||
+      !tanggalCetakKk ||
+      !businessCategory ||
+      !businessName ||
+      !businessLocation ||
+      !coordinator
+    ) {
       return NextResponse.json(
-        { success: false, message: "Semua kolom formulir pendaftaran wajib diisi lengkap." },
+        { success: false, message: "Semua kolom formulir pendaftaran (Tahapan 1 s/d Tahapan 4) wajib diisi lengkap." },
         { status: 400 }
       );
     }
 
     const cleanNik = String(nik).replace(/[^0-9]/g, "").trim();
     const cleanKk = String(noKK).replace(/[^0-9]/g, "").trim();
+    const cleanNikKk = String(nikKepalaKeluarga).replace(/[^0-9]/g, "").trim();
 
     if (cleanNik.length !== 16) {
       return NextResponse.json(
-        { success: false, message: "NIK harus berjumlah 16 digit angka." },
+        { success: false, message: "NIK Pelaku Usaha harus berjumlah 16 digit angka." },
         { status: 400 }
       );
     }
@@ -60,6 +100,13 @@ export async function POST(req: NextRequest) {
     if (cleanKk.length !== 16) {
       return NextResponse.json(
         { success: false, message: "Nomor KK harus berjumlah 16 digit angka." },
+        { status: 400 }
+      );
+    }
+
+    if (cleanNikKk.length !== 16) {
+      return NextResponse.json(
+        { success: false, message: "NIK Kepala Keluarga harus berjumlah 16 digit angka." },
         { status: 400 }
       );
     }
@@ -136,13 +183,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (data2025Record) {
+    if (data2025Record && !comparisonPhotoUrl) {
       return NextResponse.json(
         {
           success: false,
-          message: `PENDAFTARAN DITOLAK! Nomor KK (${cleanKk}) sudah terdaftar dalam Sheet 3 : Pembanding 2025. Pendaftaran untuk tahun ini tidak diizinkan.`,
+          message: `FHOTO PEMBANDING WAJIB! Nomor KK (${cleanKk}) terdaftar dalam Sheet 3 : Pembanding 2025. Wajib melampirkan Fhoto Pembanding pada Tahapan 1 sebelum melanjutkan.`,
         },
-        { status: 403 }
+        { status: 400 }
       );
     }
 
@@ -204,13 +251,14 @@ export async function POST(req: NextRequest) {
     // 5. Data Pelaku Usaha Baru
     const newActorRef = push(actorsRef);
     const actorId = newActorRef.key;
+    const derivedGender = gender ? String(gender).trim() : (extractGenderFromNik(cleanNik) || "Laki-laki");
 
-    const actorData = {
+    const actorData: any = {
       id: actorId,
       ownerId: "pendaftaran_mandiri",
       createdBy: "PENDAFTARAN MANDIRI (ONLINE)",
       fullName: String(fullName).trim(),
-      gender: String(gender).trim(),
+      gender: derivedGender,
       nik: cleanNik,
       noKK: cleanKk,
       registrationCode,
@@ -218,10 +266,22 @@ export async function POST(req: NextRequest) {
       pob: String(pob).trim(),
       dob: String(dob).trim(),
       phone: String(phone).trim(),
+      agama: String(agama).trim(),
+      pekerjaan: String(pekerjaan).trim(),
       address: String(address).trim(),
       rtRw: String(rtRw).trim(),
       kelurahan: String(kelurahan).trim(),
       kecamatan: String(kecamatan).trim(),
+      tanggalCetakKtp: String(tanggalCetakKtp).trim(),
+      statusKeluarga: String(statusKeluarga).trim(),
+      namaKepalaKeluarga: String(namaKepalaKeluarga).trim(),
+      nikKepalaKeluarga: cleanNikKk,
+      pobKepalaKeluarga: String(pobKepalaKeluarga).trim(),
+      dobKepalaKeluarga: String(dobKepalaKeluarga).trim(),
+      pobDobKepalaKeluarga: `${String(pobKepalaKeluarga).trim()}, ${String(dobKepalaKeluarga).trim()}`,
+      agamaKepalaKeluarga: String(agamaKepalaKeluarga).trim(),
+      pekerjaanKepalaKeluarga: String(pekerjaanKepalaKeluarga).trim(),
+      tanggalCetakKk: String(tanggalCetakKk).trim(),
       businessCategory: String(businessCategory).trim(),
       businessName: String(businessName).trim(),
       businessLocation: String(businessLocation).trim(),
@@ -229,6 +289,14 @@ export async function POST(req: NextRequest) {
       status: "pending",
       createdAt: new Date().toISOString(),
       source: "WEB_PENDAFTARAN_MANDIRI",
+      ...(comparisonPhotoUrl ? {
+        comparisonPhotoUrl,
+        verificationBypass: {
+          isBypassed: true,
+          reason: "Fhoto Pembanding Sheet 3 (2025) - Diinput pada Tahapan 1 Pendaftaran",
+          fileBase64: comparisonPhotoUrl,
+        }
+      } : {}),
     };
 
     await set(newActorRef, actorData);

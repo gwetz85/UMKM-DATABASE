@@ -641,7 +641,7 @@ export default function VerifyActorPage() {
     // Untuk verifikasi manual, otomatis aktifkan bypass mode (tidak perlu lokasi, tapi wajib foto)
     setIsBypassMode(actor.status === 'verifikasi_manual')
     setBypassKeterangan("")
-    setBypassFileBase64("")
+    setBypassFileBase64(actor.comparisonPhotoUrl || "")
   }
 
   if (!isAdmin && !isMonitoring && !isPetugas && !isAdminLoading) return <div className="p-20 flex flex-col items-center justify-center space-y-4 text-center"><ShieldAlert className="w-16 h-16 text-destructive" /><h1 className="text-2xl font-bold">Akses Ditolak</h1></div>
@@ -948,7 +948,7 @@ export default function VerifyActorPage() {
                                 </DialogHeader>
                                 <div className="grid gap-6 py-4">
                                   <section className="space-y-4">
-                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi</div>
+                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Informasi Pribadi Pelaku Usaha</div>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
                                       {[
                                         { label: "Nama Lengkap", value: viewingActor.fullName },
@@ -957,7 +957,10 @@ export default function VerifyActorPage() {
                                         { label: "Jenis Kelamin", value: viewingActor.gender },
                                         { label: "Tempat Lahir", value: viewingActor.pob || parsePobDob(viewingActor.pobDob).pob },
                                         { label: "Tanggal Lahir", value: viewingActor.dob || parsePobDob(viewingActor.pobDob).dob },
-                                        { label: "Nomor HP", value: viewingActor.phone, isPhone: true }
+                                        { label: "Nomor WhatsApp", value: viewingActor.phone, isPhone: true },
+                                        { label: "Agama", value: viewingActor.agama },
+                                        { label: "Pekerjaan", value: viewingActor.pekerjaan },
+                                        { label: "Tanggal Cetak KTP", value: viewingActor.tanggalCetakKtp },
                                       ].map((item, i) => (
                                         <div key={i} className="space-y-1">
                                           <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
@@ -994,6 +997,53 @@ export default function VerifyActorPage() {
                                       ))}
                                     </div>
                                   </section>
+
+                                  <section className="space-y-4">
+                                    <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><User className="w-4 h-4" /> Data Keluarga (Kartu Keluarga)</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-4 rounded-xl border">
+                                      {[
+                                        { label: "Nomor KK", value: viewingActor.noKK },
+                                        { label: "Status Dalam Keluarga", value: viewingActor.statusKeluarga },
+                                        { label: "Nama Kepala Keluarga", value: viewingActor.namaKepalaKeluarga },
+                                        { label: "NIK Kepala Keluarga", value: viewingActor.nikKepalaKeluarga },
+                                        { label: "Tempat Lahir Kepala Keluarga", value: viewingActor.pobKepalaKeluarga },
+                                        { label: "Tanggal Lahir Kepala Keluarga", value: viewingActor.dobKepalaKeluarga },
+                                        { label: "Agama Kepala Keluarga", value: viewingActor.agamaKepalaKeluarga },
+                                        { label: "Pekerjaan Kepala Keluarga", value: viewingActor.pekerjaanKepalaKeluarga },
+                                        { label: "Tanggal Cetak KK", value: viewingActor.tanggalCetakKk },
+                                      ].map((item, i) => (
+                                        <div key={i} className="space-y-1">
+                                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{item.label}</p>
+                                          <p className="text-xs font-bold">{item.value || "-"}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </section>
+
+                                  {viewingActor.comparisonPhotoUrl && (
+                                    <section className="space-y-4">
+                                      <div className="flex items-center gap-2 text-amber-600 font-black text-sm uppercase border-b pb-1"><Camera className="w-4 h-4" /> Fhoto Pembanding (Sheet 3 - 2025)</div>
+                                      <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                                        <img
+                                          src={viewingActor.comparisonPhotoUrl}
+                                          alt="Fhoto Pembanding"
+                                          className="w-32 h-32 object-cover rounded-xl border-2 border-amber-300 shadow-sm"
+                                        />
+                                        <div className="space-y-2">
+                                          <p className="text-xs font-bold text-amber-900 uppercase">Fhoto Pembanding Telah Dilampirkan</p>
+                                          <p className="text-xs text-amber-800">Foto pembanding antara pengajuan tahun 2025 (Sheet 3) dan pengajuan baru tahun 2026.</p>
+                                          <a
+                                            href={viewingActor.comparisonPhotoUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-block text-xs font-bold bg-amber-600 text-white px-3 py-1.5 rounded-lg hover:bg-amber-700 transition-colors"
+                                          >
+                                            Lihat Ukuran Penuh
+                                          </a>
+                                        </div>
+                                      </div>
+                                    </section>
+                                  )}
 
                                   <section className="space-y-4">
                                     <div className="flex items-center gap-2 text-primary font-black text-sm uppercase border-b pb-1"><Building2 className="w-4 h-4" /> Informasi Usaha</div>
@@ -1212,6 +1262,7 @@ export default function VerifyActorPage() {
                                           <SelectTrigger><SelectValue /></SelectTrigger>
                                           <SelectContent>
                                             <SelectItem value="Kuliner">Kuliner</SelectItem>
+                                            <SelectItem value="Non Kuliner">Non Kuliner</SelectItem>
                                             <SelectItem value="Bukan Kuliner">Bukan Kuliner</SelectItem>
                                           </SelectContent>
                                         </Select>
@@ -1300,15 +1351,15 @@ export default function VerifyActorPage() {
                                             e.target.value = '';
                                           }
                                         } else {
-                                          setBypassFileBase64("");
+                                          setBypassFileBase64(editingActor.comparisonPhotoUrl || "");
                                         }
                                       }} />
                                       {bypassFileBase64 && (
                                         <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
                                           <div className="bg-emerald-100 p-2 rounded-full"><Check className="w-4 h-4 text-emerald-600" /></div>
                                           <div className="flex-1">
-                                            <span className="text-xs font-bold text-emerald-800 block">Foto siap diupload</span>
-                                            <span className="text-[10px] text-emerald-600">Klik Simpan untuk melanjutkan</span>
+                                            <span className="text-xs font-bold text-emerald-800 block">Foto Pembanding Tersedia / Siap Disimpan</span>
+                                            <span className="text-[10px] text-emerald-600">Klik Simpan & Lanjutkan untuk menyetujui verifikasi</span>
                                           </div>
                                           <img src={bypassFileBase64} alt="Preview" className="w-16 h-16 object-cover rounded-lg border-2 border-emerald-200 shadow-sm" />
                                         </div>
@@ -1442,6 +1493,7 @@ export default function VerifyActorPage() {
                                           <SelectTrigger><SelectValue /></SelectTrigger>
                                           <SelectContent>
                                             <SelectItem value="Kuliner">Kuliner</SelectItem>
+                                            <SelectItem value="Non Kuliner">Non Kuliner</SelectItem>
                                             <SelectItem value="Bukan Kuliner">Bukan Kuliner</SelectItem>
                                           </SelectContent>
                                         </Select>

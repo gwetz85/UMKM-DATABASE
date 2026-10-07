@@ -58,6 +58,124 @@ export function extractDobFromNik(nik: string): string {
   return `${dayStr}-${monthStr}-${year}`;
 }
 
+export function extractGenderFromNik(nik: string): 'Laki-laki' | 'Perempuan' | '' {
+  if (!nik) return "";
+  const cleanNik = nik.replace(/[^0-9]/g, "");
+  if (cleanNik.length < 8) return "";
+  const dayVal = parseInt(cleanNik.substring(6, 8), 10);
+  if (isNaN(dayVal)) return "";
+  return dayVal > 40 ? "Perempuan" : "Laki-laki";
+}
+
+export const AGAMA_INDONESIA = [
+  "Islam",
+  "Kristen Protestan",
+  "Katolik",
+  "Hindu",
+  "Buddha",
+  "Konghucu",
+  "Kepercayaan Terhadap Tuhan YME",
+] as const;
+
+export const STATUS_KELUARGA_LIST = [
+  "Kepala Keluarga",
+  "Suami",
+  "Istri",
+  "Anak",
+] as const;
+
+export const PEKERJAAN_DUKCAPIL = [
+  "BELUM / TIDAK BEKERJA",
+  "MENGURUS RUMAH TANGGA",
+  "PELAJAR / MAHASISWA",
+  "PENSIUNAN",
+  "PEGAWAI NEGERI SIPIL (PNS)",
+  "TENTARA NASIONAL INDONESIA (TNI)",
+  "KEPOLISIAN RI (POLRI)",
+  "PERDAGANGAN",
+  "PETANI / PEKEBUN",
+  "PETERNAK",
+  "NELAYAN / PERIKANAN",
+  "INDUSTRI",
+  "KONSTRUKSI",
+  "TRANSPORTASI",
+  "KARYAWAN SWASTA",
+  "KARYAWAN BUMN",
+  "KARYAWAN BUMD",
+  "KARYAWAN HONORER",
+  "BURUH HARIAN LEPAS",
+  "BURUH TANI / PERKEBUNAN",
+  "BURUH NELAYAN / PERIKANAN",
+  "BURUH PETERNAKAN",
+  "PEMBANTU RUMAH TANGGA",
+  "TUKANG CUKUR",
+  "TUKANG LISTRIK",
+  "TUKANG BATU",
+  "TUKANG KAYU",
+  "TUKANG SOL SEPATU",
+  "TUKANG LAS / PANDAI BESI",
+  "TUKANG JAHIT",
+  "TUKANG GIGI",
+  "PENATA RIAS",
+  "PENATA BUSANA",
+  "PENATA RAMBUT",
+  "MEKANIK",
+  "SENIMAN",
+  "TABIB",
+  "PARAJI",
+  "PERANCANG BUSANA",
+  "PENTERJEMAH",
+  "IMAM MASJID",
+  "PENDETA",
+  "PASTOR",
+  "WARTAWAN",
+  "USTADZ / MUBALIGH",
+  "JURU MASAK",
+  "PROMOTOR ACARA",
+  "ANGGOTA DPR-RI",
+  "ANGGOTA DPD",
+  "ANGGOTA BPK",
+  "PRESIDEN",
+  "WAKIL PRESIDEN",
+  "ANGGOTA MAHKAMAH KONSTITUSI",
+  "ANGGOTA KABINET / KEMENTERIAN",
+  "DUTA BESAR",
+  "GUBERNUR",
+  "WAKIL GUBERNUR",
+  "BUPATI",
+  "WAKIL BUPATI",
+  "WALIKOTA",
+  "WAKIL WALIKOTA",
+  "ANGGOTA DPRD PROVINSI",
+  "ANGGOTA DPRD KABUPATEN / KOTA",
+  "DOSEN",
+  "GURU",
+  "PILOT",
+  "PENGACARA",
+  "NOTARIS",
+  "ARSITEK",
+  "AKUNTAN",
+  "KONSULTAN",
+  "DOKTER",
+  "BIDAN",
+  "PERAWAT",
+  "APOTEKER",
+  "PSIKIATER / PSIKOLOG",
+  "PENYIAR TELEVISI",
+  "PENYIAR RADIO",
+  "PELAUT",
+  "PENELITI",
+  "SOPIR",
+  "PIALANG",
+  "PARANORMAL",
+  "PEDAGANG",
+  "PERANGKAT DESA",
+  "KEPALA DESA",
+  "BIARAWATI",
+  "WIRASWASTA",
+  "LAINNYA",
+] as const;
+
 export function parsePobDob(pobDob: string): { pob: string; dob: string } {
   if (!pobDob || pobDob === "-") return { pob: "", dob: "" };
   const parts = pobDob.split(",");
