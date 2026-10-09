@@ -2541,7 +2541,7 @@ function ActorDataContent() {
           setEditingDriveMode(false)
         }
       }}>
-        <DialogContent className="w-[96vw] max-w-6xl max-h-[94vh] p-0 overflow-hidden flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl bg-[#F8FAFC] dark:bg-slate-950 [&>button]:hidden">
+        <DialogContent className="w-[96vw] max-w-6xl h-[92vh] max-h-[94vh] p-0 overflow-hidden flex flex-col rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl bg-[#F8FAFC] dark:bg-slate-950 [&>button]:hidden">
           {viewingActor && !editingBankMode && !editingDriveMode && (() => {
             const isFemale = normalizeGender(viewingActor.gender, viewingActor.nik) === 'Perempuan';
             const initials = (viewingActor.fullName || "U")
@@ -2810,10 +2810,10 @@ function ActorDataContent() {
                   </div>
                 </div>
 
-                {/* ── SCROLLABLE BODY: EDIT MODE OR 2-COLUMN CLEAN DETAIL VIEW ── */}
-                <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 sm:px-6 md:px-8 py-5">
+                {/* ── BODY: EDIT MODE OR 2-COLUMN CLEAN DETAIL VIEW ── */}
+                <div className="flex-1 min-h-0 overflow-hidden px-4 sm:px-6 md:px-8 py-4 flex flex-col">
                   {isEditMode ? (
-                    <form onSubmit={handleSaveFullEdit} className="space-y-5">
+                    <form onSubmit={handleSaveFullEdit} className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-4 space-y-5">
                       {/* 1. Edit Data Pelaku Usaha */}
                       <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 shadow-2xs space-y-4">
                         <h4 className="text-base font-bold text-slate-900 dark:text-white pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -3258,13 +3258,13 @@ function ActorDataContent() {
                     }
 
                     return (
-                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 min-h-0 h-full overflow-hidden">
                         {/* ════════════════════════════════════════════════════════════
-                            KOLOM KIRI: STACKED SUMMARY CARDS (SAMA SEPERTI SCREENSHOT)
+                            KOLOM KIRI: STACKED SUMMARY CARDS (TIDAK BISA DI-SCROLL)
                            ════════════════════════════════════════════════════════════ */}
-                        <div className="lg:col-span-4 xl:col-span-3 space-y-3.5">
+                        <div className="lg:col-span-4 xl:col-span-3 space-y-2.5 overflow-hidden shrink-0">
                           {/* Card 1: Status Data */}
-                          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs space-y-2">
+                          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs space-y-1.5">
                             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                               Status Data
                             </p>
@@ -3277,7 +3277,7 @@ function ActorDataContent() {
                                 {statusLabel}
                               </span>
                             </div>
-                            <div className="pt-1 flex flex-wrap gap-1.5">
+                            <div className="pt-0.5 flex flex-wrap gap-1.5">
                               <ActorMenuBadge actor={viewingActor} asLink />
                               <VerificationBadge actor={viewingActor} className="mt-0" />
                             </div>
@@ -3285,7 +3285,7 @@ function ActorDataContent() {
 
                           {/* Card 2: Koordinator / Pengusul (Hanya jika tersedia) */}
                           {!isInspektorat && hasCoordinator && (
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs space-y-1.5">
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs space-y-1">
                               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                                 Usulan / Koordinator
                               </p>
@@ -3297,17 +3297,17 @@ function ActorDataContent() {
                                   href={getWaLink(coordPhone)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:underline pt-0.5"
+                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 hover:underline"
                                 >
                                   <Phone className="w-3.5 h-3.5" /> WA Koordinator ({coordPhone})
                                 </a>
                               )}
                               {isAdmin && (
-                                <div className="pt-1.5">
+                                <div className="pt-1">
                                   <select
                                     value={canonicalCoordinator}
                                     onChange={(e) => handleQuickReassignCoordinator(viewingActor.id, e.target.value)}
-                                    className="text-xs font-medium h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-0.5 text-slate-700 dark:text-slate-200 cursor-pointer w-full"
+                                    className="text-xs font-medium h-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 text-slate-700 dark:text-slate-200 cursor-pointer w-full"
                                   >
                                     {!coordinatorOptions.includes(canonicalCoordinator) && (
                                       <option value={canonicalCoordinator}>{canonicalCoordinator} (Saat Ini)</option>
@@ -3323,7 +3323,7 @@ function ActorDataContent() {
 
                           {/* Card 3: Petugas Survey (Hanya jika tersedia) */}
                           {!isInspektorat && hasPetugasSurvey && (
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs space-y-1.5">
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs space-y-1">
                               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                                 Petugas Survey
                               </p>
@@ -3331,11 +3331,11 @@ function ActorDataContent() {
                                 {rawPetugas}
                               </p>
                               {isAdmin && (
-                                <div className="pt-1.5">
+                                <div className="pt-1">
                                   <select
                                     value={rawPetugas}
                                     onChange={(e) => handleQuickReassignPetugas(viewingActor.id, e.target.value)}
-                                    className="text-xs font-medium h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-0.5 text-slate-700 dark:text-slate-200 cursor-pointer w-full"
+                                    className="text-xs font-medium h-7 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 text-slate-700 dark:text-slate-200 cursor-pointer w-full"
                                   >
                                     <option value="BELUM ADA">BELUM ADA</option>
                                     {!surveyorOptions.includes(rawPetugas) && (
@@ -3352,7 +3352,7 @@ function ActorDataContent() {
 
                           {/* Card 4: Tanggal Terdaftar (Hanya jika tersedia) */}
                           {hasVal(createdAtVal) && (
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs space-y-1">
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs space-y-1">
                               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                                 Tanggal Terdaftar
                               </p>
@@ -3364,11 +3364,11 @@ function ActorDataContent() {
 
                           {/* Card 5: Kontak Cepat (Hanya jika tersedia) */}
                           {(hasVal(viewingActor.phone) || hasVal(sd.email) || hasVal(viewingActor.address) || hasDriveLink) && (
-                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs space-y-2.5">
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 shadow-2xs space-y-2">
                               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                                 Kontak Cepat
                               </p>
-                              <div className="space-y-2 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">
+                              <div className="space-y-1.5 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">
                                 {hasVal(sd.email) && (
                                   <a
                                     href={`mailto:${sd.email}`}
@@ -3417,9 +3417,9 @@ function ActorDataContent() {
                         </div>
 
                         {/* ════════════════════════════════════════════════════════════
-                            KOLOM KANAN: 6 KELOMPOK DATA LENGKAP (CLEAN WHITE CARDS)
+                            KOLOM KANAN: 6 KELOMPOK DATA LENGKAP (HANYA INI YANG BISA DI-SCROLL)
                            ════════════════════════════════════════════════════════════ */}
-                        <div className="lg:col-span-8 xl:col-span-9 space-y-5">
+                        <div className="lg:col-span-8 xl:col-span-9 h-full min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-6 space-y-5">
                           {/* ── 1. DATA PELAKU USAHA ── */}
                           {hasPelakuGroup && (
                             <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 shadow-2xs">
