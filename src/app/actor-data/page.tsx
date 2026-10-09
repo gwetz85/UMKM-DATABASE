@@ -2660,8 +2660,9 @@ function ActorDataContent() {
             );
 
             return (
-              <div className="flex flex-col h-full max-h-[94vh] overflow-y-auto custom-scrollbar">
-                <div className="p-4 sm:p-6 md:p-8 space-y-5">
+              <div className="flex flex-col flex-1 min-h-0 max-h-[94vh] overflow-hidden">
+                {/* ── FIXED HEADER: BREADCRUMB & HERO PROFILE CARD (NON-SCROLLABLE) ── */}
+                <div className="shrink-0 px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 pb-4 space-y-4 bg-[#F8FAFC] dark:bg-slate-950 border-b border-slate-200/70 dark:border-slate-800/80 z-20">
                   {/* ── TOP BREADCRUMB & BACK BUTTON BAR ── */}
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex-wrap">
@@ -2807,8 +2808,10 @@ function ActorDataContent() {
                       )}
                     </div>
                   </div>
+                </div>
 
-                  {/* ── BODY: EDIT MODE OR 2-COLUMN CLEAN DETAIL VIEW ── */}
+                {/* ── SCROLLABLE BODY: EDIT MODE OR 2-COLUMN CLEAN DETAIL VIEW ── */}
+                <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-4 sm:px-6 md:px-8 py-5">
                   {isEditMode ? (
                     <form onSubmit={handleSaveFullEdit} className="space-y-5">
                       {/* 1. Edit Data Pelaku Usaha */}
