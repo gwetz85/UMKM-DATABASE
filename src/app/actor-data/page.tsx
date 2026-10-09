@@ -4573,9 +4573,13 @@ function ActorDataContent() {
       {/* Dialog Preview Foto Penuh */}
       {showFullPhotoDialog && surveyPhotoUrl && (
         <Dialog open={showFullPhotoDialog} onOpenChange={setShowFullPhotoDialog}>
-          <DialogContent className="max-w-4xl max-h-[92vh] p-3 flex flex-col items-center justify-center bg-black/95 border-slate-800 text-white rounded-2xl overflow-hidden">
-            <div className="w-full flex items-center px-3 py-1.5 border-b border-white/10 mb-2 pr-12">
-              <span className="text-xs font-black uppercase tracking-wider flex items-center gap-2 text-teal-300 truncate">
+          <DialogContent className="max-w-4xl max-h-[92vh] p-3 flex flex-col items-center justify-center bg-slate-950 border-slate-800 text-white rounded-2xl overflow-hidden">
+            <div className="w-full flex items-center px-3 py-2 border-b border-white/15 mb-2 pr-12">
+              <DialogTitle className="sr-only">Foto Survey Lapangan</DialogTitle>
+              <span
+                className="text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-2 !text-white truncate"
+                style={{ color: "#ffffff" }}
+              >
                 <Camera className="w-4 h-4 text-teal-400 shrink-0" /> Foto Survey Lapangan &mdash; {surveyViewActor?.fullName}
               </span>
             </div>
@@ -4592,11 +4596,15 @@ function ActorDataContent() {
 
       {previewImageModal && (
         <Dialog open={!!previewImageModal} onOpenChange={(open) => !open && setPreviewImageModal(null)}>
-          <DialogContent className="max-w-4xl max-h-[92vh] p-3 flex flex-col items-center justify-center bg-black/95 border-slate-800 text-white rounded-2xl overflow-hidden">
-            <div className="w-full flex items-center px-3 py-1.5 border-b border-white/10 mb-2 pr-12">
-              <DialogTitle className="text-xs font-black uppercase tracking-wider flex items-center gap-2 text-teal-300 truncate">
+          <DialogContent className="max-w-4xl max-h-[92vh] p-3 flex flex-col items-center justify-center bg-slate-950 border-slate-800 text-white rounded-2xl overflow-hidden">
+            <div className="w-full flex items-center px-3 py-2 border-b border-white/15 mb-2 pr-12">
+              <DialogTitle className="sr-only">{previewImageModal.title}</DialogTitle>
+              <span
+                className="text-xs sm:text-sm font-black uppercase tracking-wider flex items-center gap-2 !text-white truncate"
+                style={{ color: "#ffffff" }}
+              >
                 <Camera className="w-4 h-4 text-teal-400 shrink-0" /> {previewImageModal.title}
-              </DialogTitle>
+              </span>
             </div>
             <div className="flex-1 flex items-center justify-center overflow-hidden w-full p-2">
               <img
